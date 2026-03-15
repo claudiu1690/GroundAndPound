@@ -1,0 +1,113 @@
+{
+  "gyms": [
+    {
+      "name": "Local Fight Club",
+      "tier": "T1",
+      "specialtyStats": ["STR"],
+      "monthlyIron": 0
+    },
+    {
+      "name": "Ironhands Boxing Club",
+      "tier": "T2",
+      "specialtyStats": ["STR", "SPD"],
+      "monthlyIron": 2500
+    },
+    {
+      "name": "Lockdown MMA",
+      "tier": "T2",
+      "specialtyStats": ["WRE", "GND"],
+      "monthlyIron": 2500
+    }
+  ],
+  "opponents": [
+    {
+      "name": "Jake Mills",
+      "nickname": "The Brawler",
+      "style": "Boxer",
+      "promotionTier": "Amateur",
+      "overallRating": 18,
+      "str": 22, "spd": 16, "chn": 20, "leg": 8, "wre": 8, "gnd": 8, "sub": 8, "fiq": 10
+    },
+    {
+      "name": "Marcus Reed",
+      "nickname": null,
+      "style": "Wrestler",
+      "promotionTier": "Amateur",
+      "overallRating": 16,
+      "str": 14, "spd": 10, "chn": 10, "leg": 8, "wre": 24, "gnd": 18, "sub": 10, "fiq": 8
+    },
+    {
+      "name": "Derek Soto",
+      "nickname": "Quick Hands",
+      "style": "Kickboxer",
+      "promotionTier": "Amateur",
+      "overallRating": 20,
+      "str": 18, "spd": 20, "chn": 12, "leg": 18, "wre": 8, "gnd": 8, "sub": 10, "fiq": 10
+    },
+    {
+      "name": "Tommy Walsh",
+      "nickname": null,
+      "style": "Brazilian Jiu-Jitsu",
+      "promotionTier": "Amateur",
+      "overallRating": 15,
+      "str": 10, "spd": 8, "chn": 10, "leg": 8, "wre": 12, "gnd": 20, "sub": 22, "fiq": 12
+    },
+    {
+      "name": "Vic Lane",
+      "nickname": "The Tank",
+      "style": "Boxer",
+      "promotionTier": "Amateur",
+      "overallRating": 22,
+      "str": 20, "spd": 14, "chn": 28, "leg": 8, "wre": 10, "gnd": 8, "sub": 8, "fiq": 10
+    },
+    {
+      "name": "Alex Rivera",
+      "nickname": null,
+      "style": "Muay Thai",
+      "promotionTier": "Amateur",
+      "overallRating": 19,
+      "str": 18, "spd": 16, "chn": 10, "leg": 20, "wre": 10, "gnd": 8, "sub": 10, "fiq": 10
+    },
+    {
+      "name": "Sam Foster",
+      "nickname": null,
+      "style": "Judo",
+      "promotionTier": "Amateur",
+      "overallRating": 17,
+      "str": 12, "spd": 8, "chn": 12, "leg": 12, "wre": 24, "gnd": 16, "sub": 12, "fiq": 8
+    },
+    {
+      "name": "Nick Webb",
+      "nickname": "The Grinder",
+      "style": "Wrestler",
+      "promotionTier": "Amateur",
+      "overallRating": 24,
+      "str": 16, "spd": 10, "chn": 14, "leg": 8, "wre": 26, "gnd": 22, "sub": 12, "fiq": 8
+    },
+    {
+      "name": "Leo Park",
+      "nickname": null,
+      "style": "Capoeira",
+      "promotionTier": "Amateur",
+      "overallRating": 14,
+      "str": 12, "spd": 20, "chn": 8, "leg": 18, "wre": 8, "gnd": 8, "sub": 10, "fiq": 16
+    },
+    {
+      "name": "Mike Torres",
+      "nickname": null,
+      "style": "Sambo",
+      "promotionTier": "Amateur",
+      "overallRating": 21,
+      "str": 14, "spd": 10, "chn": 12, "leg": 8, "wre": 20, "gnd": 16, "sub": 22, "fiq": 10
+    }
+  ],
+  "weightClasses": ["Bantamweight", "Featherweight", "Lightweight", "Welterweight"],
+  "demoFighter": {
+    "firstName": "Demo",
+    "lastName": "Fighter",
+    "nickname": "Rookie",
+    "weightClass": "Lightweight",
+    "style": "Boxer",
+    "backstory": "Street Fighter"
+  }
+}

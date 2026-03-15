@@ -1,0 +1,114 @@
+{
+  "strikingExchange": [
+    "They trade heavy shots in the pocket.",
+    "Both fighters exchange in the center of the cage.",
+    "A flurry of punches and kicks—neither gives an inch.",
+    "Striking back and forth; the crowd is on its feet.",
+    "Clean combinations from both. The pace is fierce.",
+    "They stand and bang. Leather is flying.",
+    "A technical striking exchange with neither backing down.",
+    "Punches and leg kicks traded in the middle.",
+    "{{playerName}} and {{opponentName}} trade in the center.",
+    "Heavy leather from both. {{playerName}} holds the center.",
+    "{{opponentName}} presses forward; {{playerName}} answers with combinations.",
+    "Back and forth—jabs, crosses, leg kicks. Neither backs down.",
+    "The pace picks up. Both land clean.",
+    "A wild exchange! Both fighters swing with bad intentions.",
+    "Technical boxing from range, then they clinch and separate."
+  ],
+  "takedownPlayer": [
+    "A powerful double-leg! {{playerName}} is on top and unloading.",
+    "Takedown! {{playerName}} is in side control and dropping bombs.",
+    "{{playerName}} shoots and gets it! Ground and pound from the top.",
+    "Beautiful takedown. {{playerName}} is in half guard, throwing fists.",
+    "{{opponentName}} is driven to the mat. The ground assault begins.",
+    "Slammed to the canvas. {{playerName}} with heavy shots from above.",
+    "Takedown secured by {{playerName}}. Mauling from top position.",
+    "Double-leg finish. {{playerName}} is in the driver's seat now.",
+    "{{playerName}} drags {{opponentName}} down and takes side control.",
+    "The takedown lands! {{playerName}} is in mount, dropping elbows.",
+    "{{opponentName}} is on his back. {{playerName}} is pouring it on."
+  ],
+  "takedownOpponent": [
+    "{{playerName}} gets taken down! {{opponentName}} is on top.",
+    "Takedown against {{playerName}}. Defending from his back.",
+    "{{playerName}} is slammed to the mat. In trouble underneath.",
+    "{{opponentName}} secures the takedown. Ground and pound incoming.",
+    "{{playerName}} is on his back. {{opponentName}} in side control.",
+    "Taken down. {{playerName}} is scrambling to survive.",
+    "Double-leg by {{opponentName}}. {{playerName}} is stuck on bottom.",
+    "{{playerName}} is driven to the canvas. Eating shots from above.",
+    "{{opponentName}} gets the takedown and moves to half guard.",
+    "{{playerName}} can't stop the takedown. {{opponentName}} is in control."
+  ],
+  "groundAndPound": [
+    "Hammer fists from the top! The ref is watching closely.",
+    "Ground and pound! Elbows and fists raining down.",
+    "Softening him up from top position.",
+    "Relentless ground strikes. The crowd roars.",
+    "Pouring it on from the mount.",
+    "Heavy shots from side control. The opponent is covering up.",
+    "Ground and pound in full effect. The ref steps in close.",
+    "Unloading from the top. This could be stopped any moment."
+  ],
+  "submissionWin": [
+    "{{playerName}} locks it in! {{opponentName}} taps! Submission victory!",
+    "It's deep! {{opponentName}} is tapping! {{playerName}} wins by submission!",
+    "The choke is under the chin! Tap! {{playerName}} wins by submission!",
+    "Arm locked! {{opponentName}} taps! Submission finish for {{playerName}}!",
+    "The hold is secured! {{opponentName}} has to tap!",
+    "Submission locked in! The ref signals the tap! {{playerName}} wins!",
+    "{{playerName}} sinks it in! Tap! Submission victory!"
+  ],
+  "submissionLoss": [
+    "{{playerName}} is caught! Has to tap. Submission loss.",
+    "The choke is in deep. {{playerName}} taps. Tough loss.",
+    "{{playerName}} trapped in the submission. Taps out.",
+    "The arm is extended. {{playerName}} taps. Submission defeat.",
+    "Caught in a tight hold. {{playerName}} has no choice but to tap.",
+    "{{opponentName}} locks the submission. {{playerName}} taps. Loss by submission."
+  ],
+  "koFinish": [
+    "{{playerName}} drops {{opponentName}}! The ref waves it off! KO!",
+    "Lights out! The fight is over. Knockout victory for {{playerName}}!",
+    "A huge shot from {{playerName}}! {{opponentName}} is out! KO finish!",
+    "The ref steps in! Knockout! {{playerName}} wins by KO!",
+    "{{opponentName}} is hurt! Another shot and it's over! {{playerName}} by KO!",
+    "Devastating finish! The ref calls it. KO victory for {{playerName}}!",
+    "One punch and it's over! {{playerName}} by knockout!"
+  ],
+  "koLoss": [
+    "{{playerName}} is dropped! The ref stops it. KO loss.",
+    "Lights out. {{playerName}} is stopped. Tough knockout loss.",
+    "{{playerName}} is hurt and the ref waves it off. KO defeat.",
+    "Caught clean. The fight is stopped. {{playerName}} loses by KO.",
+    "{{playerName}} goes down and doesn't recover. KO loss.",
+    "The ref steps in. {{playerName}} has been stopped. KO loss."
+  ],
+  "roundStart": [
+    "Round %d is underway.",
+    "Here we go, round %d.",
+    "The bell sounds for round %d.",
+    "Round %d begins."
+  ],
+  "decision": [
+    "The judges' scorecards are in. Decision.",
+    "It goes to the scorecards. The decision is announced.",
+    "After five rounds, we go to the judges."
+  ],
+  "resultWinner": [
+    "Winner: {{winnerName}} defeats {{loserName}} by {{method}}.",
+    "Result: {{winnerName}} def. {{loserName}} — {{method}}.",
+    "Official result: {{winnerName}} beats {{loserName}} by {{method}}."
+  ],
+  "resultLoser": [
+    "{{winnerName}} defeats {{playerName}} by {{method}}.",
+    "Result: {{winnerName}} def. {{playerName}} — {{method}}.",
+    "Official result: {{winnerName}} beats {{playerName}} by {{method}}."
+  ],
+  "resultDraw": [
+    "Draw: {{playerName}} vs {{opponentName}} ends in a majority draw.",
+    "Result: Draw. {{playerName}} and {{opponentName}} — majority draw.",
+    "Official result: Majority draw — {{playerName}} vs {{opponentName}}."
+  ]
+}

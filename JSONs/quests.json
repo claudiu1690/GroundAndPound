@@ -1,0 +1,82 @@
+[
+  {
+    "title": "Distribute Supplies",
+    "description": "The people are in need. Secure and distribute supplies to the less fortunate.",
+    "levelRequirement": 3,
+    "energyRequirement": 8,
+    "experienceReward": 80,
+    "money": 30,
+    "encounterChance": 0.2,
+    "enemy": {
+      "name": "Greedy Capitalist",
+      "level": 3,
+      "description": "A capitalist hoarding resources for profit.",
+      "health": 150,
+      "attack": 12,
+      "defense": 6,
+      "experienceReward": 60,
+      "money": 10
+    },
+    "faction": "Communists"
+  },
+  {
+    "title": "Restore Free Press",
+    "description": "Local news outlets have been silenced. Re-establish the press's freedom to report!",
+    "levelRequirement": 5,
+    "energyRequirement": 10,
+    "experienceReward": 100,
+    "money": 50,
+    "encounterChance": 0.4,
+    "enemy": {
+      "name": "Censorship Squad",
+      "level": 5,
+      "description": "Agents dedicated to suppressing the truth.",
+      "health": 200,
+      "attack": 15,
+      "defense": 10,
+      "experienceReward": 75,
+      "money": 15
+    },
+    "faction": "Democrats"
+  },
+  {
+    "title": "Take down communist banners",
+    "description": "The old town is full of communist propaganda. Take it down!",
+    "levelRequirement": 1,
+    "energyRequirement": 5,
+    "experienceReward": 50,
+    "money": 20,
+    "encounterChance": 0.3,
+    "enemy": {
+      "name": "Communist Supporter",
+      "level": 1,
+      "description": "",
+      "health": 100,
+      "attack": 8,
+      "defense": 4,
+      "experienceReward": 50,
+      "money": 5
+    },
+    "faction": "Fascists"
+  },
+  {
+    "title": "Establish Order",
+    "description": "Riots have broken out. Establish order by any means necessary.",
+    "levelRequirement": 8,
+    "energyRequirement": 15,
+    "experienceReward": 150,
+    "money": 75,
+    "encounterChance": 0.5,
+    "enemy": {
+      "name": "Rebel Leader",
+      "level": 8,
+      "description": "The leader of the riot, challenging your authority.",
+      "health": 300,
+      "attack": 20,
+      "defense": 15,
+      "experienceReward": 100,
+      "money": 25
+    },
+    "faction": "Fascists"
+  }
+]

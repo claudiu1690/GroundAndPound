@@ -1,0 +1,21 @@
+{
+  "firstNames": [
+    "Jake", "Marcus", "Derek", "Tommy", "Vic", "Alex", "Sam", "Nick", "Leo", "Mike",
+    "Ryan", "Chris", "Kyle", "Brandon", "Tyler", "Jordan", "Dylan", "Cole", "Chad", "Brett",
+    "Andre", "Dante", "Viktor", "Rico", "Enzo", "Luca", "Marco", "Pablo", "Hector", "Diego",
+    "Rashad", "Tyrell", "DeShawn", "Jamal", "Terrell", "Malik", "Darius", "Isaiah", "Xavier", "Quinton"
+  ],
+  "lastNames": [
+    "Mills", "Reed", "Soto", "Walsh", "Lane", "Rivera", "Foster", "Webb", "Park", "Torres",
+    "Hayes", "Brooks", "Coleman", "Bryant", "Stewart", "Morris", "Rogers", "Reed", "Cook", "Morgan",
+    "Bell", "Murphy", "Bailey", "Rivera", "Cooper", "Richardson", "Cox", "Howard", "Ward", "Peterson",
+    "Gray", "Ramirez", "James", "Watson", "Brooks", "Kelly", "Sanders", "Price", "Bennett", "Wood"
+  ],
+  "nicknames": [
+    "The Brawler", "Quick Hands", "The Tank", "The Grinder", "The Destroyer", "The Pitbull",
+    "The Hitman", "The Reaper", "Iron", "The Hulk", "The Phenom", "The Answer", "The Spider",
+    "Bones", "The Notorious", "The Eagle", "The Predator", "Rampage", "The Axe Murderer",
+    "The Iceman", "Ruthless", "The Natural", "The Count", "The Carpenter", "The Crippler",
+    "No Mercy", "The Assassin", "The Truth", "Hands of Stone", "El Cucuy", "The Highlight"
+  ]
+}
