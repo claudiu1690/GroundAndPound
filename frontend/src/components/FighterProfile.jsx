@@ -173,11 +173,6 @@ export function FighterProfile({ fighter, gyms, onUpdateFighter, onRefreshFighte
             </div>
           ) : (
             <div className="profile-actions-row">
-              {onUpdateFighter && (
-                <button type="button" className="btn btn-secondary btn-sm" onClick={startEdit}>
-                  Edit profile
-                </button>
-              )}
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"

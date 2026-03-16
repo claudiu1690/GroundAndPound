@@ -3,7 +3,8 @@ import { api, authStorage } from "./api";
 import "./App.css";
 import { MessageBar } from "./components/MessageBar";
 import { FighterProfile } from "./components/FighterProfile";
-import { GymTraining } from "./components/GymTraining";
+import { GymTraining, SESSION_META } from "./components/GymTraining";
+import { TrainingResultPopup } from "./components/TrainingResultPopup";
 import { FightOffers } from "./components/FightOffers";
 import { FightCamp } from "./components/FightCamp";
 import { FightDescription } from "./components/FightDescription";
@@ -14,8 +15,6 @@ import { AuthPage } from "./components/AuthPage";
 
 // ── Navigation definition ──────────────────────────────────
 const NAV_ITEMS = [
-  { id: "home",    label: "Dashboard",  icon: "▦", active: true },
-  { id: "fighter", label: "My Fighter", icon: "◉", active: true },
   { id: "gym",     label: "Training",   icon: "⬡", active: true },
   { id: "fights",  label: "Fight",      icon: "✕", active: true },
   { id: null,      label: "Rankings",   icon: "▲", active: false },
@@ -137,7 +136,6 @@ function QuickActions({ onNavigate, onRest }) {
         <button className="qa-btn qa-train"   onClick={() => onNavigate("gym")}>Train</button>
         <button className="qa-btn qa-fight"   onClick={() => onNavigate("fights")}>Fight</button>
         <button className="qa-btn qa-recover" onClick={onRest}>Recover</button>
-        <button className="qa-btn qa-profile" onClick={() => onNavigate("fighter")}>My Fighter</button>
       </div>
     </div>
   );
@@ -307,7 +305,8 @@ function App() {
   const [resolving, setResolving]               = useState(false);
   const [lastFightCommentary, setLastFightCommentary] = useState([]);
   const [lastFightSummary, setLastFightSummary] = useState(null);
-  const [activeTab, setActiveTab]               = useState("home");
+  const [activeTab, setActiveTab]               = useState("gym");
+  const [trainingResultPopup, setTrainingResultPopup] = useState({ open: false, sessionLabel: "", xpGained: {}, statLevelUps: [] });
 
   const loadFighter = useCallback(async (id, options = {}) => {
     if (!id) return;
@@ -363,7 +362,7 @@ function App() {
     setOffers([]);
     setLastFightSummary(null);
     setLastFightCommentary([]);
-    setActiveTab("home");
+    setActiveTab("gym");
     setMessage("");
   };
 
@@ -379,10 +378,15 @@ function App() {
 
   const handleTrain = async () => {
     if (!fighter?._id || !trainGym) { setMessage("Select a fighter and a gym."); return; }
-    setMessage("Training…");
     try {
       const result = await api.train(fighter._id, trainGym, trainSession);
-      setMessage(result.message || "Training done.");
+      const sessionLabel = (SESSION_META[trainSession] ?? SESSION_META.bag_work).label;
+      setTrainingResultPopup({
+        open: true,
+        sessionLabel,
+        xpGained: result.xpGained ?? {},
+        statLevelUps: result.statLevelUps ?? [],
+      });
       loadFighter(fighter._id, { clearMessage: false });
     } catch (e) {
       setMessage(e.message || "Train failed");
@@ -493,83 +497,103 @@ function App() {
   return (
     <div className="app">
 
-      {/* ── TOP HEADER ── */}
+      {/* ── TOP HEADER (centered) ── */}
       <header className="app-header">
-        <h1 className="app-logo">Ground <span>&amp;</span> Pound</h1>
-        <div className="hdr-sep" />
+        <div className="app-header-inner">
+          <h1 className="app-logo">Ground <span>&amp;</span> Pound</h1>
+          <div className="hdr-sep" />
 
-        {fighter && (
-          <span className="hdr-iron">
-            <span className="hdr-iron-icon">⊗</span>
-            {fighter.iron ?? 0}
-          </span>
-        )}
-
-        <div className="hdr-resources">
           {fighter && (
-            <>
-              <HdrResource icon="⚡" label="Energy"  value={fighter.energy}         max={100}                    barColor="#3b82f6" />
-              <HdrResource icon="❤" label="Health"  value={fighter.health ?? 100}  max={100}                    barColor="#e31837" />
-              <HdrResource icon="◎" label="Stamina" value={fighter.stamina ?? 100} max={fighter.maxStamina ?? 100} barColor="#22c55e" />
-            </>
+            <span className="hdr-iron">
+              <span className="hdr-iron-icon">⊗</span>
+              {fighter.iron ?? 0}
+            </span>
           )}
-        </div>
 
-        <div className="hdr-right">
-          {injuryCount > 0 && (
-            <div className="hdr-badge-btn">
-              🩹 <span className="hdr-badge-count">{injuryCount}</span>
-            </div>
-          )}
-          {campActive && (
-            <div className="hdr-badge-btn">
-              ⛺ Camp <span className="hdr-badge-count">{fighter.trainingCampActions ?? 0}</span>
-            </div>
-          )}
-          <button className="hdr-logout" onClick={handleLogout} title="Sign out">Sign Out</button>
+          <div className="hdr-resources">
+            {fighter && (
+              <>
+                <HdrResource icon="⚡" label="Energy"  value={fighter.energy}         max={100}                    barColor="#3b82f6" />
+                <HdrResource icon="❤" label="Health"  value={fighter.health ?? 100}  max={100}                    barColor="#e31837" />
+                <HdrResource icon="◎" label="Stamina" value={fighter.stamina ?? 100} max={fighter.maxStamina ?? 100} barColor="#22c55e" />
+              </>
+            )}
+          </div>
+
+          <div className="hdr-right">
+            {injuryCount > 0 && (
+              <div className="hdr-badge-btn">
+                🩹 <span className="hdr-badge-count">{injuryCount}</span>
+              </div>
+            )}
+            {campActive && (
+              <div className="hdr-badge-btn">
+                ⛺ Camp <span className="hdr-badge-count">{fighter.trainingCampActions ?? 0}</span>
+              </div>
+            )}
+            <button className="hdr-logout" onClick={handleLogout} title="Sign out">Sign Out</button>
+          </div>
         </div>
       </header>
 
       {/* ── MESSAGE BAR ── */}
       <MessageBar message={message} />
 
-      {/* ── BODY: NAV + MAIN ── */}
-      <div className="app-body">
+      {/* ── TRAINING RESULT POPUP (after train, no message bar) ── */}
+      <TrainingResultPopup
+        open={trainingResultPopup.open}
+        sessionLabel={trainingResultPopup.sessionLabel}
+        xpGained={trainingResultPopup.xpGained}
+        statLevelUps={trainingResultPopup.statLevelUps}
+        onClose={() => setTrainingResultPopup((p) => ({ ...p, open: false }))}
+      />
 
-        {/* Left nav */}
+      {/* ── BODY: centered block = nav + main ── */}
+      <div className="app-body">
+        <div className="app-center-wrap">
+
+        {/* Left nav — attached to center block */}
         <nav className="app-nav">
-          <div className="nav-section-label">Menu</div>
-          {NAV_ITEMS.map((item, i) => (
-            item.active ? (
-              <a
-                key={item.id}
-                href={`#${item.id}`}
-                className={`nav-item ${activeTab === item.id ? "active" : ""}`}
-                onClick={(e) => { e.preventDefault(); setActiveTab(item.id); }}
-              >
-                <span className="nav-icon">{item.icon}</span>
-                {item.label}
-              </a>
-            ) : (
-              <div key={i} className="nav-item disabled">
-                <span className="nav-icon">{item.icon}</span>
-                {item.label}
-              </div>
-            )
-          ))}
+          <div className="nav-fighter-profile">
+            <FighterProfile
+              fighter={fighter}
+              gyms={gyms}
+              onUpdateFighter={handleUpdateFighter}
+              onRefreshFighter={loadFighter}
+              onMessage={setMessage}
+            />
+          </div>
+          <div className="nav-menu">
+            <div className="nav-section-label">Menu</div>
+            {NAV_ITEMS.map((item, i) => (
+              item.active ? (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className={`nav-item ${activeTab === item.id ? "active" : ""}`}
+                  onClick={(e) => { e.preventDefault(); setActiveTab(item.id); }}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  {item.label}
+                </a>
+              ) : (
+                <div key={i} className="nav-item disabled">
+                  <span className="nav-icon">{item.icon}</span>
+                  {item.label}
+                </div>
+              )
+            ))}
+          </div>
         </nav>
 
-        {/* Main content */}
+        {/* Main content — centered column with left/right empty space */}
         <main className="app-main">
+          <div className="app-main-center">
 
           {/* ── DASHBOARD ── */}
           {activeTab === "home" && (
             <div className="dashboard">
               <div className="dashboard-left">
-                <FighterCard
-                  fighter={fighter}
-                />
-
                 <QuickActions
                   onNavigate={setActiveTab}
                   onRest={handleRest}
@@ -593,16 +617,10 @@ function App() {
             </div>
           )}
 
-          {/* ── MY FIGHTER ── */}
+          {/* ── MY FIGHTER ── (profile lives in left nav) */}
           {activeTab === "fighter" && (
-            <div className="fighter-page">
-              <FighterProfile
-                fighter={fighter}
-                gyms={gyms}
-                onUpdateFighter={handleUpdateFighter}
-                onRefreshFighter={loadFighter}
-                onMessage={setMessage}
-              />
+            <div className="fighter-page fighter-page-nav-only">
+              <p className="panel-hint" style={{ padding: "1.5rem" }}>Fighter details are in the left panel.</p>
             </div>
           )}
 
@@ -667,7 +685,10 @@ function App() {
             </div>
           )}
 
+          </div>
         </main>
+
+        </div>
       </div>
     </div>
   );

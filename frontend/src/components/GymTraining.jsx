@@ -1,5 +1,5 @@
-// Full session metadata matching backend TRAINING_SESSIONS constants
-const SESSION_META = {
+// Full session metadata matching backend TRAINING_SESSIONS constants (exported for TrainingResultPopup / App)
+export const SESSION_META = {
   bag_work: {
     label: "Bag Work",
     category: "striking",
