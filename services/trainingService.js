@@ -20,7 +20,7 @@ const {
  * @param {string} fighterId
  * @param {string} gymId
  * @param {string} sessionType - Key of TRAINING_SESSIONS (e.g. bag_work, sparring)
- * @returns {Promise<{ fighter: Object, message: string, xpGained: Object }>}
+ * @returns {Promise<{ fighter: Object, message: string, xpGained: Object, statLevelUps: string[] }>}
  */
 async function doTraining(fighterId, gymId, sessionType) {
     const config = TRAINING_SESSIONS[sessionType];
@@ -87,7 +87,7 @@ async function doTraining(fighterId, gymId, sessionType) {
         }
         await fighter.save();
         await questService.onTraining(fighterId, gymId, sessionType, fighter, gym);
-        return { fighter, message: "Strength & conditioning completed. Max Stamina increased.", xpGained: {} };
+        return { fighter, message: "Strength & conditioning completed. Max Stamina increased.", xpGained: {}, statLevelUps: [] };
     }
 
     if (config.reducesInjuryTimer) {
@@ -95,7 +95,7 @@ async function doTraining(fighterId, gymId, sessionType) {
         await fighter.save();
         await questService.onTraining(fighterId, gymId, sessionType, fighter, gym);
         const healMsg = healedLabels.length ? ` Healed: ${healedLabels.join(", ")}.` : "";
-        return { fighter, message: `Recovery session completed. Injury timer reduced.${healMsg}`, xpGained: {} };
+        return { fighter, message: `Recovery session completed. Injury timer reduced.${healMsg}`, xpGained: {}, statLevelUps: [] };
     }
 
     const backstoryMod = fighter.backstory && BACKSTORIES[fighter.backstory] && BACKSTORIES[fighter.backstory].trainingXpMod
@@ -109,6 +109,7 @@ async function doTraining(fighterId, gymId, sessionType) {
     let baseXp = config.xpBase * xpMultiplier * totalXpMod;
     const specialtyBonus = gym.specialtyStats && gym.specialtyStats.length ? 0.25 : 0;
     const xpGained = {};
+    const statLevelUps = [];
 
     for (const statName of config.stats) {
         const xpKey = STAT_TO_XP_KEY[statName];
@@ -128,6 +129,7 @@ async function doTraining(fighterId, gymId, sessionType) {
         fighter[valKey] = newStat;
         fighter[xpKey] = newXp;
         xpGained[statName] = Math.round(xp);
+        if (newStat > currentStat) statLevelUps.push(statName);
     }
 
     fighter.overallRating = calculateOverall(fighter);
@@ -165,7 +167,7 @@ async function doTraining(fighterId, gymId, sessionType) {
         message += ` Quest completed: ${completedQuests.map((q) => q.title).join(", ")}!`;
     }
 
-    return { fighter, message, xpGained, completedQuests, injurySustained };
+    return { fighter, message, xpGained, statLevelUps, completedQuests, injurySustained };
 }
 
 module.exports = { doTraining };
