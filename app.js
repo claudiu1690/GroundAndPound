@@ -10,6 +10,7 @@ const mongoose = require("mongoose");
 const config = require("./config");
 const swagger = require("./swagger");
 const scheduler = require("./modules/scheduler");
+const { ENERGY } = require("./consts/gameConstants");
 
 const app = express();
 app.use(cors());
@@ -27,10 +28,33 @@ app.use("/quests", authMiddleware, questRoutes);
 
 swagger(app);
 
+async function migrateLegacyEnergyShape() {
+    const fighters = mongoose.connection.collection("fighters");
+    const result = await fighters.updateMany(
+        { energy: { $type: "number" } },
+        [
+            {
+                $set: {
+                    energy: {
+                        current: "$energy",
+                        max: ENERGY.max,
+                        lastSyncedAt: "$$NOW",
+                    },
+                },
+            },
+        ]
+    );
+
+    if (result.modifiedCount > 0) {
+        console.log(`[Migration] Converted ${result.modifiedCount} fighter(s) to energy object shape.`);
+    }
+}
+
 mongoose.connect(config.database.url, config.database.options)
-    .then(() => {
+    .then(async () => {
         console.log("Connected to MongoDB");
-        scheduler.startEnergyIncrementScheduler();
+        await migrateLegacyEnergyShape();
+        await scheduler.startEnergyIncrementScheduler();
         app.listen(config.port, () => {
             console.log(`Ground & Pound API running on port ${config.port}`);
             console.log(`Swagger UI: http://localhost:${config.port}/api-docs`);

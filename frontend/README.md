@@ -25,5 +25,5 @@ Energy is reconciled on every request and ticks in the backend every minute; the
 The app calls `http://localhost:3000` by default. To use another backend:
 
 ```bash
-VITE_API_URL=http://localhost:4000 npm run dev
+VITE_API_URL=http://localhost:4001 npm run dev
 ```

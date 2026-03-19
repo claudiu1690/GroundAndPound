@@ -4,6 +4,7 @@ const { TRAINING_SESSIONS, GYM_TIERS, BACKSTORIES } = require("../consts/gameCon
 const { calculateOverall } = require("../utils/overallRating");
 const { applyXpToStat, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require("../utils/statProgression");
 const fighterService = require("./fighterService");
+const energyService = require("./energyService");
 const questService = require("./questService");
 const {
     rollForSparringInjury,
@@ -37,7 +38,7 @@ async function doTraining(fighterId, gymId, sessionType) {
     const gym = await Gym.findById(gymId);
     if (!gym) throw new Error("Gym not found");
 
-    if (fighter.energy < config.energy) throw new Error("Not enough energy");
+    if ((fighter.energy?.current ?? fighter.energy ?? 0) < config.energy) throw new Error("Not enough energy");
 
     // GDD 8.9: Block sessions based on active injuries
     if (sessionType === "sparring") {
@@ -72,9 +73,14 @@ async function doTraining(fighterId, gymId, sessionType) {
         }
     }
 
-    // Deduct energy directly on the loaded document — avoids a second findById/save cycle.
-    fighter.energy -= config.energy;
-    fighter.energyUpdatedAt = new Date();
+    // Deduct energy in Redis (authoritative), then mirror on this document.
+    const nextEnergy = await energyService.deductEnergy(fighterId, config.energy);
+    fighter.energy = {
+        ...(fighter.energy && typeof fighter.energy === "object" ? fighter.energy : {}),
+        current: nextEnergy.current,
+        max: nextEnergy.max,
+        lastSyncedAt: new Date(),
+    };
 
     // GDD 7.4: Coach's Test quest grants +3 to stat cap at this gym on completion
     const statCapBonus = await questService.getStatCapBonus(fighterId, gymId);

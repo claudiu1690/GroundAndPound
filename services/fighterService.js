@@ -1,13 +1,35 @@
-const { differenceInMinutes } = require("date-fns");
 const Fighter = require("../models/fighterModel");
 const Gym = require("../models/gymModel");
 const { STYLES, BACKSTORIES, ENERGY } = require("../consts/gameConstants");
 const { calculateOverall } = require("../utils/overallRating");
 const { xpRequiredForNextPoint } = require("../utils/statProgression");
+const energyService = require("./energyService");
 
 const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
 const STAT_NAMES = ["STR", "SPD", "LEG", "WRE", "GND", "SUB", "CHN", "FIQ"];
 const STAT_TO_XP = { str: "strXp", spd: "spdXp", leg: "legXp", wre: "wreXp", gnd: "gndXp", sub: "subXp", chn: "chnXp", fiq: "fiqXp" };
+
+function energySnapshot(fighter) {
+    if (fighter?.energy && typeof fighter.energy === "object") {
+        return {
+            current: Number.isFinite(fighter.energy.current) ? fighter.energy.current : ENERGY.max,
+            max: Number.isFinite(fighter.energy.max) ? fighter.energy.max : ENERGY.max,
+            lastSyncedAt: fighter.energy.lastSyncedAt || new Date(),
+        };
+    }
+    if (Number.isFinite(fighter?.energy)) {
+        return { current: fighter.energy, max: ENERGY.max, lastSyncedAt: new Date() };
+    }
+    return { current: ENERGY.max, max: ENERGY.max, lastSyncedAt: new Date() };
+}
+
+function setEnergySnapshot(fighter, snapshot) {
+    fighter.energy = {
+        current: snapshot.current,
+        max: snapshot.max,
+        lastSyncedAt: new Date(),
+    };
+}
 
 /**
  * Build stat progress for API: value, xp, xpToNext per stat (for XP meters in frontend).
@@ -71,8 +93,7 @@ async function createFighter(data) {
         maxStamina,
         stamina: 100,
         health: 100,
-        energy: ENERGY.max,
-        energyUpdatedAt: new Date(),
+        energy: { current: ENERGY.max, max: ENERGY.max, lastSyncedAt: new Date() },
         iron: 0,
         notoriety: 0,
         promotionTier: "Amateur",
@@ -104,48 +125,27 @@ async function updateFighter(id, data) {
 }
 
 /**
- * Reconcile energy from elapsed time (GDD: 1 Energy per minute, server-side).
- * Call before reading or using energy. Updates fighter in DB if energy changed.
- * @param {Object} fighter - Mongoose document with energy, energyUpdatedAt
- * @returns {Promise<Object>} Updated fighter
+ * Reconcile energy from Redis (authoritative) onto the fighter document in memory.
+ * Cold start fallback is handled inside energyService.getEnergy().
  */
 async function reconcileEnergy(fighter) {
-    const now = new Date();
-    const updatedAt = fighter.energyUpdatedAt ? new Date(fighter.energyUpdatedAt) : now;
-    const minutesPassed = differenceInMinutes(now, updatedAt);
-    if (minutesPassed <= 0 || fighter.energy >= ENERGY.max) return fighter;
-    const maxAdd = ENERGY.max - fighter.energy;
-    const toAdd = Math.min(minutesPassed, maxAdd);
-    fighter.energy += toAdd;
-    fighter.energyUpdatedAt = now;
-    await fighter.save();
+    const snap = await energyService.getEnergy(String(fighter._id));
+    setEnergySnapshot(fighter, snap);
     return fighter;
 }
 
 /**
- * Reconcile energy for all fighters under cap (for cron: makes energy "tick" in DB while user is idle).
- * Uses same time-based logic as reconcileEnergy; safe to run every minute.
+ * Legacy compatibility wrapper. Energy ticking is now handled by BullMQ + Redis.
  */
 async function reconcileAllFightersEnergy() {
-    const fighters = await Fighter.find({ energy: { $lt: ENERGY.max } }).limit(5000);
-    let updated = 0;
-    for (const f of fighters) {
-        const before = f.energy;
-        await reconcileEnergy(f);
-        if (f.energy !== before) updated++;
-    }
-    return updated;
+    return 0;
 }
 
 /**
- * Replenish energy for all fighters (legacy/bulk; prefer time-based reconcile).
+ * Legacy compatibility wrapper. Prefer addEnergy() from energyService.
  */
-async function replenishEnergyAll(amount = 1) {
-    const updated = await Fighter.updateMany(
-        { energy: { $lt: ENERGY.max } },
-        { $inc: { energy: amount }, $min: { energy: ENERGY.max } }
-    );
-    return updated;
+async function replenishEnergyAll() {
+    return { acknowledged: true, modifiedCount: 0 };
 }
 
 /**
@@ -154,10 +154,8 @@ async function replenishEnergyAll(amount = 1) {
 async function deductEnergy(fighterId, amount) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
-    await reconcileEnergy(fighter);
-    if (fighter.energy < amount) throw new Error("Not enough energy");
-    fighter.energy -= amount;
-    fighter.energyUpdatedAt = new Date();
+    const snap = await energyService.deductEnergy(fighterId, amount);
+    setEnergySnapshot(fighter, snap);
     await fighter.save();
     return fighter;
 }
@@ -171,6 +169,7 @@ async function doctorVisit(fighterId, injuryType) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
     await reconcileEnergy(fighter);
+    const currentEnergy = energySnapshot(fighter).current;
 
     const idx = (fighter.injuries || []).findIndex(
         (inj) => inj.type === injuryType && inj.requiresDoctorVisit && !inj.doctorVisited
@@ -178,15 +177,15 @@ async function doctorVisit(fighterId, injuryType) {
     if (idx === -1) throw new Error("Injury not found or does not require a doctor visit");
 
     const inj = fighter.injuries[idx];
-    if (fighter.energy < inj.docVisitEnergy) {
+    if (currentEnergy < inj.docVisitEnergy) {
         throw new Error(`Not enough energy (doctor visit costs ${inj.docVisitEnergy})`);
     }
     if (fighter.iron < inj.docVisitIron) {
         throw new Error(`Not enough Iron (doctor visit costs ${inj.docVisitIron} ⊗)`);
     }
 
-    fighter.energy -= inj.docVisitEnergy;
-    fighter.energyUpdatedAt = new Date();
+    const updatedEnergy = await energyService.deductEnergy(fighterId, inj.docVisitEnergy);
+    setEnergySnapshot(fighter, updatedEnergy);
     fighter.iron -= inj.docVisitIron;
     reverseInjuryFromFighter(fighter, inj);
     fighter.injuries.splice(idx, 1);
@@ -202,10 +201,11 @@ async function mentalReset(fighterId) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
     await reconcileEnergy(fighter);
+    const currentEnergy = energySnapshot(fighter).current;
     if (!fighter.mentalResetRequired) throw new Error("Mental Reset is not required");
-    if (fighter.energy < MENTAL_RESET_ENERGY) throw new Error(`Not enough energy (Mental Reset costs ${MENTAL_RESET_ENERGY})`);
-    fighter.energy -= MENTAL_RESET_ENERGY;
-    fighter.energyUpdatedAt = new Date();
+    if (currentEnergy < MENTAL_RESET_ENERGY) throw new Error(`Not enough energy (Mental Reset costs ${MENTAL_RESET_ENERGY})`);
+    const updatedEnergy = await energyService.deductEnergy(fighterId, MENTAL_RESET_ENERGY);
+    setEnergySnapshot(fighter, updatedEnergy);
     fighter.mentalResetRequired = false;
     fighter.consecutiveLosses = 0;
     await fighter.save();
@@ -253,9 +253,10 @@ async function rest(fighterId) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
     await reconcileEnergy(fighter);
-    if (fighter.energy < REST_ENERGY_COST) throw new Error("Not enough energy (Rest costs 3)");
-    fighter.energy -= REST_ENERGY_COST;
-    fighter.energyUpdatedAt = new Date();
+    const currentEnergy = energySnapshot(fighter).current;
+    if (currentEnergy < REST_ENERGY_COST) throw new Error("Not enough energy (Rest costs 3)");
+    const updatedEnergy = await energyService.deductEnergy(fighterId, REST_ENERGY_COST);
+    setEnergySnapshot(fighter, updatedEnergy);
     const maxStamina = fighter.maxStamina ?? 100;
     fighter.health = Math.min(100, (fighter.health ?? 100) + REST_HEALTH);
     fighter.stamina = Math.min(maxStamina, (fighter.stamina ?? maxStamina) + REST_STAMINA);

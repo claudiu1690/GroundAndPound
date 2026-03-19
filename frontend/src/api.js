@@ -1,4 +1,4 @@
-const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API = import.meta.env.VITE_API_URL || "http://localhost:4001";
 
 const TOKEN_KEY = "gnp_token";
 const FIGHTER_KEY = "gnp_fighter_id";

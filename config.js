@@ -1,5 +1,5 @@
 module.exports = {
-    port: process.env.PORT || 4000,
+    port: process.env.PORT || 4001,
     database: {
         url: process.env.MONGODB_URI || 'mongodb://localhost:27017/mmaGame',
         options: {}

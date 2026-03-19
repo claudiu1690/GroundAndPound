@@ -63,7 +63,7 @@ export function FighterProfile({ fighter, gyms, onUpdateFighter, onRefreshFighte
           {/* Resource bars */}
           <div className="fighter-resources">
             {[
-              { label: "Energy",  value: fighter.energy,         max: 100,                      cls: "resource-bar-energy" },
+              { label: "Energy",  value: fighter.energy?.current ?? fighter.energy ?? 0, max: fighter.energy?.max ?? 100, cls: "resource-bar-energy" },
               { label: "Health",  value: fighter.health ?? 100,  max: 100,                      cls: "resource-bar-health" },
               { label: "Stamina", value: fighter.stamina ?? 100, max: fighter.maxStamina ?? 100, cls: "resource-bar-stamina" },
             ].map(({ label, value, max, cls }) => (

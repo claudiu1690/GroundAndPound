@@ -47,8 +47,12 @@
  *         stamina: { type: number }
  *         maxStamina: { type: number }
  *         health: { type: number }
- *         energy: { type: number, minimum: 0, maximum: 100 }
- *         energyUpdatedAt: { type: string, format: date-time, description: Last time energy was updated (regen 1/min since) }
+ *         energy:
+ *           type: object
+ *           properties:
+ *             current: { type: number, minimum: 0 }
+ *             max: { type: number, minimum: 1 }
+ *             lastSyncedAt: { type: string, format: date-time }
  *         iron: { type: number, description: In-game currency }
  *         notoriety: { type: number }
  *         promotionTier:

@@ -54,8 +54,11 @@ const fighterSchema = new mongoose.Schema({
     stamina: { type: Number, default: 100 },
     maxStamina: { type: Number, default: 100 },
     health: { type: Number, default: 100 },
-    energy: { type: Number, default: 100, min: 0, max: 100 },
-    energyUpdatedAt: { type: Date, default: Date.now },
+    energy: {
+        current: { type: Number, default: 100, min: 0 },
+        max: { type: Number, default: 100, min: 1 },
+        lastSyncedAt: { type: Date, default: Date.now },
+    },
     iron: { type: Number, default: 0 },
     notoriety: { type: Number, default: 0 },
     // Career

@@ -513,7 +513,7 @@ function App() {
           <div className="hdr-resources">
             {fighter && (
               <>
-                <HdrResource icon="⚡" label="Energy"  value={fighter.energy}         max={100}                    barColor="#3b82f6" />
+                <HdrResource icon="⚡" label="Energy"  value={fighter.energy?.current ?? fighter.energy ?? 0} max={fighter.energy?.max ?? 100} barColor="#3b82f6" />
                 <HdrResource icon="❤" label="Health"  value={fighter.health ?? 100}  max={100}                    barColor="#e31837" />
                 <HdrResource icon="◎" label="Stamina" value={fighter.stamina ?? 100} max={fighter.maxStamina ?? 100} barColor="#22c55e" />
               </>
