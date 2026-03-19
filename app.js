@@ -50,10 +50,44 @@ async function migrateLegacyEnergyShape() {
     }
 }
 
+async function backfillFighterGymFromQuestProgress() {
+    const fighters = mongoose.connection.collection("fighters");
+    const questProgress = mongoose.connection.collection("questprogresses");
+
+    const latestGymPerFighter = await questProgress.aggregate([
+        { $match: { gymId: { $ne: null } } },
+        { $sort: { updatedAt: -1 } },
+        {
+            $group: {
+                _id: "$fighterId",
+                gymId: { $first: "$gymId" },
+            },
+        },
+    ]).toArray();
+
+    if (latestGymPerFighter.length === 0) return;
+
+    const ops = latestGymPerFighter.map((row) => ({
+        updateOne: {
+            filter: {
+                _id: row._id,
+                $or: [{ gymId: null }, { gymId: { $exists: false } }],
+            },
+            update: { $set: { gymId: row.gymId } },
+        },
+    }));
+
+    const result = await fighters.bulkWrite(ops, { ordered: false });
+    if (result.modifiedCount > 0) {
+        console.log(`[Migration] Backfilled gymId for ${result.modifiedCount} fighter(s) from quest progress.`);
+    }
+}
+
 mongoose.connect(config.database.url, config.database.options)
     .then(async () => {
         console.log("Connected to MongoDB");
         await migrateLegacyEnergyShape();
+        await backfillFighterGymFromQuestProgress();
         await scheduler.startEnergyIncrementScheduler();
         app.listen(config.port, () => {
             console.log(`Ground & Pound API running on port ${config.port}`);

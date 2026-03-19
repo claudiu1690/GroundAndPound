@@ -9,6 +9,11 @@ const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
 const STAT_NAMES = ["STR", "SPD", "LEG", "WRE", "GND", "SUB", "CHN", "FIQ"];
 const STAT_TO_XP = { str: "strXp", spd: "spdXp", leg: "legXp", wre: "wreXp", gnd: "gndXp", sub: "subXp", chn: "chnXp", fiq: "fiqXp" };
 
+/**
+ * Read a fighter's energy shape safely (supports legacy numeric energy).
+ * @param {Object} fighter
+ * @returns {{ current: number, max: number, lastSyncedAt: Date }}
+ */
 function energySnapshot(fighter) {
     if (fighter?.energy && typeof fighter.energy === "object") {
         return {
@@ -23,6 +28,11 @@ function energySnapshot(fighter) {
     return { current: ENERGY.max, max: ENERGY.max, lastSyncedAt: new Date() };
 }
 
+/**
+ * Apply an energy snapshot to the fighter mongoose document.
+ * @param {Object} fighter
+ * @param {{ current: number, max: number }} snapshot
+ */
 function setEnergySnapshot(fighter, snapshot) {
     fighter.energy = {
         current: snapshot.current,
@@ -104,11 +114,21 @@ async function createFighter(data) {
     return fighter;
 }
 
+/**
+ * List fighters for selection screens and admin views.
+ * @param {number} limit
+ * @returns {Promise<Array<Object>>}
+ */
 async function listFighters(limit = 50) {
     const fighters = await Fighter.find({}).limit(limit).select("firstName lastName nickname weightClass style overallRating energy record").lean();
     return fighters;
 }
 
+/**
+ * Get one fighter and refresh in-memory energy from Redis.
+ * @param {string} id
+ * @returns {Promise<Object>}
+ */
 async function getFighterById(id) {
     const fighter = await Fighter.findById(id).populate("gymId");
     if (!fighter) throw new Error("Fighter not found");
@@ -116,6 +136,12 @@ async function getFighterById(id) {
     return fighter;
 }
 
+/**
+ * Update fighter profile fields and recalculate overall rating.
+ * @param {string} id
+ * @param {Object} data
+ * @returns {Promise<Object>}
+ */
 async function updateFighter(id, data) {
     const fighter = await Fighter.findByIdAndUpdate(id, data, { new: true });
     if (!fighter) throw new Error("Fighter not found");
@@ -249,6 +275,11 @@ const REST_ENERGY_COST = 3;
 const REST_HEALTH = 25;
 const REST_STAMINA = 25;
 
+/**
+ * Spend energy to restore health and stamina.
+ * @param {string} fighterId
+ * @returns {Promise<Object>}
+ */
 async function rest(fighterId) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
@@ -270,13 +301,10 @@ module.exports = {
     getFighterById,
     updateFighter,
     reconcileEnergy,
-    reconcileAllFightersEnergy,
-    replenishEnergyAll,
     deductEnergy,
     rest,
     doctorVisit,
     mentalReset,
     payGymMembership,
-    buildStartingStats,
     buildStatProgress
 };

@@ -2,241 +2,268 @@
  * GDD 7.4 — Gym Side Quest service.
  * Tracks per-fighter-per-gym quest progress and applies rewards on completion.
  */
-const Fighter = require("../models/fighterModel");
 const Gym = require("../models/gymModel");
 const QuestProgress = require("../models/questProgressModel");
-const { QUEST_DEFINITIONS, TIER_ORDER, getQuestsForGym } = require("../consts/questDefinitions");
-const { GYM_TIERS } = require("../consts/gameConstants");
+const { getQuestsForGym } = require("../consts/questDefinitions");
+const { GYM_TIERS, TRAINING_SESSIONS } = require("../consts/gameConstants");
+const {
+    COMBAT_STAT_KEYS,
+    DECISION_OUTCOMES,
+    WIN_OUTCOMES,
+    NATIONAL_PLUS_TIERS,
+    GCS_TIERS,
+} = require("../consts/questProgressConfig");
 
-const NATIONAL_PLUS = ["National", "GCS Contender", "GCS"];
+const PROGRESS_KEY_PREFIX = "progress.";
 
-// ─── helpers ────────────────────────────────────────────────────────────────
+/** Build an empty Mongo update payload for progress mutations. */
+function emptyUpdate() {
+    return { $inc: {}, $set: {} };
+}
 
-/** Ensure a QuestProgress doc exists for every applicable quest at this gym. */
+/** Increment a progress counter in the current update payload. */
+function addInc(update, key, amount = 1) {
+    update.$inc[`${PROGRESS_KEY_PREFIX}${key}`] = (update.$inc[`${PROGRESS_KEY_PREFIX}${key}`] || 0) + amount;
+}
+
+/** Set a binary snapshot progress value in the current update payload. */
+function setSnapshot(update, key, value) {
+    update.$set[`${PROGRESS_KEY_PREFIX}${key}`] = value;
+}
+
+/** Remove empty $inc/$set blocks before sending to Mongo. */
+function cleanupUpdate(update) {
+    if (Object.keys(update.$inc).length === 0) delete update.$inc;
+    if (Object.keys(update.$set).length === 0) delete update.$set;
+    return update;
+}
+
+/** Check whether a quest is locked because its prerequisite isn't completed yet. */
+function isQuestLockedForFighter(quest, fighter) {
+    return !!(quest.requiresQuest && !fighter.completedQuests?.includes(quest.requiresQuest));
+}
+
+/** True when all combat stats are at least 60. */
+function allStats60Plus(fighter) {
+    return COMBAT_STAT_KEYS.every((k) => (fighter[k] || 0) >= 60);
+}
+
+/** True when all quest conditions have reached target values. */
+function conditionsMet(quest, progressDoc) {
+    return quest.conditions.every((cond) => (progressDoc.progress?.[cond.key] ?? 0) >= cond.target);
+}
+
+/** Clamp tracked condition counters so they never exceed their target. */
+function getCappedProgressForQuest(quest, progress = {}) {
+    const capped = { ...(progress || {}) };
+    for (const cond of quest.conditions) {
+        const current = capped[cond.key] ?? 0;
+        if (typeof current === "number") capped[cond.key] = Math.min(current, cond.target);
+    }
+    return capped;
+}
+
+/** Persist capped counters for a quest progress document if needed. */
+async function clampQuestProgressDoc(quest, doc) {
+    if (!doc) return doc;
+    const cappedProgress = getCappedProgressForQuest(quest, doc.progress);
+    const toSet = {};
+
+    for (const cond of quest.conditions) {
+        const key = cond.key;
+        const before = doc.progress?.[key] ?? 0;
+        const after = cappedProgress[key] ?? 0;
+        if (before !== after) toSet[`${PROGRESS_KEY_PREFIX}${key}`] = after;
+    }
+
+    if (Object.keys(toSet).length === 0) return doc;
+
+    return QuestProgress.findOneAndUpdate(
+        { _id: doc._id },
+        { $set: toSet },
+        { new: true }
+    );
+}
+
+/** Ensure all applicable quest docs exist for a fighter at the current gym. */
 async function ensureQuestDocs(fighterId, gymId, gymTier, gymSpecialtyStats) {
     const applicable = getQuestsForGym(gymTier, gymSpecialtyStats);
-    for (const q of applicable) {
+    for (const quest of applicable) {
         await QuestProgress.findOneAndUpdate(
-            { fighterId, gymId, questId: q.id },
-            { $setOnInsert: { fighterId, gymId, questId: q.id, status: "available", progress: {}, completedAt: null } },
+            { fighterId, gymId, questId: quest.id },
+            {
+                $setOnInsert: {
+                    fighterId,
+                    gymId,
+                    questId: quest.id,
+                    status: "available",
+                    progress: {},
+                    completedAt: null,
+                },
+            },
             { upsert: true, new: false }
         );
     }
+    return applicable;
 }
 
-/** Check if all conditions of a quest are met given the current progress doc and fighter snapshot. */
-function conditionsMet(quest, progressDoc, fighter, gymStatCap) {
-    for (const cond of quest.conditions) {
-        const val = progressDoc.progress[cond.key] ?? 0;
-        if (cond.key === "specialtyStatAtCap") {
-            // snapshot: check whether the fighter's specialty stat is at or near cap
-            if (val < cond.target) return false;
-        } else if (cond.key === "allStats60Plus") {
-            if (val < cond.target) return false;
-        } else {
-            if (val < cond.target) return false;
-        }
-    }
-    return true;
-}
-
-/** Apply the quest reward to the fighter (mutates fighter doc, caller must save). */
+/** Apply quest reward effects to fighter data (caller saves fighter). */
 async function applyReward(fighter, gym, quest) {
     const reward = quest.reward;
     switch (reward.type) {
         case "perk":
-            if (reward.perkId === "ironWill")       fighter.activePerks.ironWill = true;
-            if (reward.perkId === "apexRegimen")    fighter.activePerks.apexRegimen = true;
+            if (reward.perkId === "ironWill") fighter.activePerks.ironWill = true;
+            if (reward.perkId === "apexRegimen") fighter.activePerks.apexRegimen = true;
             if (reward.perkId === "specialistStat" && gym.specialtyStats?.length) {
                 fighter.activePerks.specialistStat = gym.specialtyStats[0];
             }
-            if (reward.perkId === "theGrind") {
-                fighter.activePerks.theGrindGymId = gym._id;
-            }
+            if (reward.perkId === "theGrind") fighter.activePerks.theGrindGymId = gym._id;
             break;
         case "stat_bonus":
             if (reward.stat === "maxStamina") {
                 fighter.maxStamina = Math.min(150, (fighter.maxStamina || 100) + reward.value);
-                fighter.stamina    = Math.min(fighter.maxStamina, (fighter.stamina || 100) + reward.value);
+                fighter.stamina = Math.min(fighter.maxStamina, (fighter.stamina || 100) + reward.value);
             } else if (typeof fighter[reward.stat] === "number") {
                 fighter[reward.stat] = Math.min(100, fighter[reward.stat] + reward.value);
             }
             break;
         case "stat_cap_bonus":
-            // Tracked as a QuestProgress completion + lookup at training time (no fighter field needed).
-            break;
         default:
             break;
     }
+
     if (!fighter.completedQuests) fighter.completedQuests = [];
-    if (!fighter.completedQuests.includes(quest.id)) {
-        fighter.completedQuests.push(quest.id);
-    }
+    if (!fighter.completedQuests.includes(quest.id)) fighter.completedQuests.push(quest.id);
 }
 
-// ─── public API ─────────────────────────────────────────────────────────────
-
 /**
- * Call after every training session.
- * @param {string} fighterId
- * @param {string} gymId
- * @param {string} sessionType  - e.g. "sparring", "film_study", "bag_work"
- * @param {Object} fighter      - Mongoose doc (unsaved)
- * @param {Object} gym          - Mongoose doc
+ * Shared quest progression pipeline for training/fight events.
+ * Handles unlock checks, progress update, capping, completion, and reward apply.
  */
-async function onTraining(fighterId, gymId, sessionType, fighter, gym) {
-    const gymTier = gym.tier;
-    const gymStatCap = (GYM_TIERS[gymTier] || {}).statCap || 35;
-    await ensureQuestDocs(fighterId, gymId, gymTier, gym.specialtyStats);
-
-    const applicable = getQuestsForGym(gymTier, gym.specialtyStats);
+async function processApplicableQuests({ fighterId, gymId, fighter, gym, buildUpdate }) {
+    const applicable = await ensureQuestDocs(fighterId, gymId, gym.tier, gym.specialtyStats);
     const completedThisBatch = [];
 
     for (const quest of applicable) {
         if (fighter.completedQuests?.includes(quest.id)) continue;
-        // Don't progress locked quests (prerequisite not completed)
-        if (quest.requiresQuest && !fighter.completedQuests?.includes(quest.requiresQuest)) continue;
-        const doc = await QuestProgress.findOne({ fighterId, gymId, questId: quest.id });
-        if (!doc || doc.status === "completed") continue;
+        if (isQuestLockedForFighter(quest, fighter)) continue;
 
-        const update = { $inc: {} };
+        const existing = await QuestProgress.findOne({ fighterId, gymId, questId: quest.id });
+        if (!existing || existing.status === "completed") continue;
 
-        // Increment general counters
-        update.$inc["progress.gymTotalSessions"]    = 1;
-        update.$inc["progress.gymTrainingSessions"] = 1;
-        if (sessionType === "sparring")    update.$inc["progress.sparringSessions"]  = 1;
-        if (sessionType === "film_study")  update.$inc["progress.filmStudySessions"] = 1;
+        const update = cleanupUpdate(buildUpdate(quest));
+        if (!update.$inc && !update.$set) continue;
 
-        // Specialty stat sessions
-        const isSpecialty = gym.specialtyStats?.some((s) =>
-            (require("../consts/gameConstants").TRAINING_SESSIONS[sessionType]?.stats || []).includes(s)
-        );
-        if (isSpecialty) update.$inc["progress.specialtyStatSessions"] = 1;
-
-        // Snapshot: specialty stat at cap
-        const specialtyStat = gym.specialtyStats?.[0];
-        if (specialtyStat) {
-            const statKey = specialtyStat.toLowerCase();
-            if ((fighter[statKey] || 0) >= gymStatCap) {
-                update.$set = { "progress.specialtyStatAtCap": 1 };
-            }
-        }
-
-        // Snapshot: all stats 60+
-        const statKeys = ["str","spd","leg","wre","gnd","sub","chn","fiq"];
-        if (statKeys.every((k) => (fighter[k] || 0) >= 60)) {
-            update.$set = { ...(update.$set || {}), "progress.allStats60Plus": 1 };
-        }
-
-        const updated = await QuestProgress.findOneAndUpdate(
+        let updated = await QuestProgress.findOneAndUpdate(
             { fighterId, gymId, questId: quest.id },
             update,
             { new: true }
         );
+        updated = await clampQuestProgressDoc(quest, updated);
 
-        if (updated && conditionsMet(quest, updated, fighter, gymStatCap)) {
-            await QuestProgress.findOneAndUpdate(
-                { fighterId, gymId, questId: quest.id },
-                { status: "completed", completedAt: new Date() }
-            );
-            await applyReward(fighter, gym, quest);
-            completedThisBatch.push(quest);
-        }
+        if (!updated || !conditionsMet(quest, updated)) continue;
+
+        await QuestProgress.findOneAndUpdate(
+            { fighterId, gymId, questId: quest.id },
+            { status: "completed", completedAt: new Date() }
+        );
+        await applyReward(fighter, gym, quest);
+        completedThisBatch.push(quest);
     }
 
-    if (completedThisBatch.length > 0) {
-        await fighter.save();
-    }
-
+    if (completedThisBatch.length > 0) await fighter.save();
     return completedThisBatch;
 }
 
-/**
- * Call after every fight resolution.
- * @param {string} fighterId
- * @param {Object} fighter      - Mongoose doc (already updated with new record)
- * @param {Object} fight        - Mongoose doc (completed, populated opponentId)
- */
+/** Build per-training-session progress mutations. */
+function buildTrainingUpdate({ fighter, gym, sessionType }) {
+    const gymStatCap = (GYM_TIERS[gym.tier] || {}).statCap || 35;
+    const sessionStats = TRAINING_SESSIONS[sessionType]?.stats || [];
+    const isSpecialtySession = gym.specialtyStats?.some((s) => sessionStats.includes(s));
+    const specialtyStat = gym.specialtyStats?.[0];
+
+    return () => {
+        const update = emptyUpdate();
+        addInc(update, "gymTotalSessions");
+        addInc(update, "gymTrainingSessions");
+        if (sessionType === "sparring") addInc(update, "sparringSessions");
+        if (sessionType === "film_study") addInc(update, "filmStudySessions");
+        if (isSpecialtySession) addInc(update, "specialtyStatSessions");
+
+        if (specialtyStat) {
+            const specialtyKey = specialtyStat.toLowerCase();
+            if ((fighter[specialtyKey] || 0) >= gymStatCap) setSnapshot(update, "specialtyStatAtCap", 1);
+        }
+        if (allStats60Plus(fighter)) setSnapshot(update, "allStats60Plus", 1);
+        return update;
+    };
+}
+
+/** Build per-fight progress mutations. */
+function buildFightUpdate({ fighter, fight }) {
+    const isWin = WIN_OUTCOMES.includes(fight.outcome);
+    const isDecisionWin = DECISION_OUTCOMES.includes(fight.outcome);
+    const isNationalPlus = NATIONAL_PLUS_TIERS.includes(fight.promotionTier);
+    const isGcsTier = GCS_TIERS.includes(fight.promotionTier);
+
+    return () => {
+        const update = emptyUpdate();
+        addInc(update, "fightsCompleted");
+        if (isWin) addInc(update, "winsWhileEnrolled");
+        if (isDecisionWin) addInc(update, "decisionWins");
+        if (isNationalPlus) addInc(update, "nationalPlusFights");
+        if (isGcsTier) addInc(update, "gcsFights");
+        if (allStats60Plus(fighter)) setSnapshot(update, "allStats60Plus", 1);
+        return update;
+    };
+}
+
+/** Update quest progress after a training session. */
+async function onTraining(fighterId, gymId, sessionType, fighter, gym) {
+    return processApplicableQuests({
+        fighterId,
+        gymId,
+        fighter,
+        gym,
+        buildUpdate: buildTrainingUpdate({ fighter, gym, sessionType }),
+    });
+}
+
+/** Update quest progress after fight resolution. */
 async function onFight(fighterId, fighter, fight) {
-    const gymId = fighter.gymId;
+    let gymId = fighter.gymId;
+    // Backward compatibility: older fighters may have null gymId.
+    // In that case, use the most recently updated quest gym so win counters still progress.
+    if (!gymId) {
+        const lastQuest = await QuestProgress.findOne({ fighterId }).sort({ updatedAt: -1 }).select("gymId").lean();
+        gymId = lastQuest?.gymId || null;
+    }
     if (!gymId) return [];
 
     const gym = await Gym.findById(gymId);
     if (!gym) return [];
 
-    await ensureQuestDocs(fighterId, gymId, gym.tier, gym.specialtyStats);
-    const applicable = getQuestsForGym(gym.tier, gym.specialtyStats);
-    const completedThisBatch = [];
-    const gymStatCap = (GYM_TIERS[gym.tier] || {}).statCap || 35;
-
-    const isWin  = ["KO/TKO","Submission","Decision (unanimous)","Decision (split)"].includes(fight.outcome);
-    const isDecisionWin = ["Decision (unanimous)","Decision (split)"].includes(fight.outcome);
-    const isNationalPlus = NATIONAL_PLUS.includes(fight.promotionTier);
-    const isGcs  = ["GCS Contender","GCS"].includes(fight.promotionTier);
-
-    for (const quest of applicable) {
-        if (fighter.completedQuests?.includes(quest.id)) continue;
-        // Don't progress locked quests (prerequisite not completed)
-        if (quest.requiresQuest && !fighter.completedQuests?.includes(quest.requiresQuest)) continue;
-        const doc = await QuestProgress.findOne({ fighterId, gymId, questId: quest.id });
-        if (!doc || doc.status === "completed") continue;
-
-        const update = { $inc: {} };
-        update.$inc["progress.fightsCompleted"]    = 1;
-        if (isWin)           update.$inc["progress.winsWhileEnrolled"] = 1;
-        if (isDecisionWin)   update.$inc["progress.decisionWins"]      = 1;
-        if (isNationalPlus)  update.$inc["progress.nationalPlusFights"] = 1;
-        if (isGcs)           update.$inc["progress.gcsFights"]          = 1;
-
-        // Snapshot: all stats 60+
-        const statKeys = ["str","spd","leg","wre","gnd","sub","chn","fiq"];
-        if (statKeys.every((k) => (fighter[k] || 0) >= 60)) {
-            update.$set = { "progress.allStats60Plus": 1 };
-        }
-
-        const updated = await QuestProgress.findOneAndUpdate(
-            { fighterId, gymId, questId: quest.id },
-            update,
-            { new: true }
-        );
-
-        if (updated && conditionsMet(quest, updated, fighter, gymStatCap)) {
-            await QuestProgress.findOneAndUpdate(
-                { fighterId, gymId, questId: quest.id },
-                { status: "completed", completedAt: new Date() }
-            );
-            await applyReward(fighter, gym, quest);
-            completedThisBatch.push(quest);
-        }
-    }
-
-    if (completedThisBatch.length > 0) {
-        await fighter.save();
-    }
-
-    return completedThisBatch;
+    return processApplicableQuests({
+        fighterId,
+        gymId,
+        fighter,
+        gym,
+        buildUpdate: buildFightUpdate({ fighter, fight }),
+    });
 }
 
-/**
- * Get all quest progress for a fighter at a gym, enriched with definition metadata.
- */
+/** Read enriched quest progress for a fighter at a specific gym. */
 async function getQuestProgress(fighterId, gymId) {
     const gym = await Gym.findById(gymId).lean();
     if (!gym) throw new Error("Gym not found");
 
-    await ensureQuestDocs(fighterId, gymId, gym.tier, gym.specialtyStats);
-
+    const applicable = await ensureQuestDocs(fighterId, gymId, gym.tier, gym.specialtyStats);
     const docs = await QuestProgress.find({ fighterId, gymId }).lean();
-    const applicable = getQuestsForGym(gym.tier, gym.specialtyStats);
-
-    // Build set of completed quest IDs for prerequisite checks
     const completedQuestIds = new Set(docs.filter((d) => d.status === "completed").map((d) => d.questId));
 
     return applicable.map((quest) => {
         const doc = docs.find((d) => d.questId === quest.id) || { progress: {}, status: "available" };
-
-        // If this quest requires a prerequisite that isn't done yet, mark as locked
-        const isLocked = quest.requiresQuest && !completedQuestIds.has(quest.requiresQuest);
+        const isLocked = !!(quest.requiresQuest && !completedQuestIds.has(quest.requiresQuest));
 
         return {
             questId: quest.id,
@@ -245,23 +272,29 @@ async function getQuestProgress(fighterId, gymId) {
             reward: quest.reward.description,
             requiresQuest: quest.requiresQuest || null,
             status: isLocked ? "locked" : doc.status,
-            conditions: quest.conditions.map((c) => ({
-                label: c.label,
-                current: isLocked ? 0 : (doc.progress[c.key] ?? 0),
-                target: c.target,
-                done: !isLocked && (doc.progress[c.key] ?? 0) >= c.target
-            })),
-            completedAt: doc.completedAt || null
+            conditions: quest.conditions.map((cond) => {
+                const rawCurrent = doc.progress?.[cond.key] ?? 0;
+                const current = Math.min(rawCurrent, cond.target);
+                return {
+                    label: cond.label,
+                    current: isLocked ? 0 : current,
+                    target: cond.target,
+                    done: !isLocked && rawCurrent >= cond.target,
+                };
+            }),
+            completedAt: doc.completedAt || null,
         };
     });
 }
 
-/**
- * Get the stat-cap bonus granted by the Coach's Test at a specific gym.
- * Returns 0 or 3 (the only possible value right now).
- */
+/** Return Coach's Test cap bonus at this gym (0 or 3). */
 async function getStatCapBonus(fighterId, gymId) {
-    const doc = await QuestProgress.findOne({ fighterId, gymId, questId: "coaches_test", status: "completed" }).lean();
+    const doc = await QuestProgress.findOne({
+        fighterId,
+        gymId,
+        questId: "coaches_test",
+        status: "completed",
+    }).lean();
     return doc ? 3 : 0;
 }
 

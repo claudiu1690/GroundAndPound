@@ -37,6 +37,8 @@ async function doTraining(fighterId, gymId, sessionType) {
 
     const gym = await Gym.findById(gymId);
     if (!gym) throw new Error("Gym not found");
+    // Keep fighter's enrolled gym aligned with where they are actively training.
+    fighter.gymId = gym._id;
 
     if ((fighter.energy?.current ?? fighter.energy ?? 0) < config.energy) throw new Error("Not enough energy");
 

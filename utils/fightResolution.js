@@ -100,9 +100,15 @@ function getSubAttemptChance(playerStrategy) {
 }
 
 /**
- * Resolve one round. Returns { playerDamage, opponentDamage, playerStamina, opponentStamina, event?, finished, outcome? }.
+ * Resolve one round.
+ * @param {Object} player
+ * @param {Object} opponent
+ * @param {number} roundNum
+ * @param {string|null} playerStrategy
+ * @param {boolean} ironWillPerk - Applies only to player's KO loss check
+ * @returns {{ playerDamage: number, opponentDamage: number, playerStamina: number, opponentStamina: number, event: string|null, finished: boolean, outcome: string|null, playerHealth: number, opponentHealth: number }}
  */
-function resolveRound(player, opponent, roundNum, playerStrategy) {
+function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk = false) {
     const staminaDrain = 8 + Math.floor(Math.random() * 6);
     let playerDamage = 0;
     let opponentDamage = 0;
@@ -161,14 +167,14 @@ function resolveRound(player, opponent, roundNum, playerStrategy) {
         finished = true;
         outcome = "KO/TKO";
     }
-        if (!finished && player.health < 25 && koCheck(player, playerDamage, ironWillPerk)) {
-                finished = true;
-                outcome = "Loss (KO/TKO)";
-            }
-            if (!finished && opponent.health < 25 && koCheck(opponent, opponentDamage, false)) {
-                finished = true;
-                outcome = "KO/TKO";
-            }
+    if (!finished && player.health < 25 && koCheck(player, playerDamage, ironWillPerk)) {
+        finished = true;
+        outcome = "Loss (KO/TKO)";
+    }
+    if (!finished && opponent.health < 25 && koCheck(opponent, opponentDamage, false)) {
+        finished = true;
+        outcome = "KO/TKO";
+    }
 
     return {
         playerDamage,
@@ -261,7 +267,7 @@ function resolveFight(player, opponent, options = {}) {
     };
 
     for (let r = 1; r <= maxRounds; r++) {
-        const result = resolveRound(p, o, r, playerStrategy);
+        const result = resolveRound(p, o, r, playerStrategy, ironWillPerk);
         rounds.push({
             round: r,
             event: result.event,

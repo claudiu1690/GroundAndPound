@@ -2,8 +2,15 @@ const Fighter = require("../models/fighterModel");
 const { ENERGY } = require("../consts/gameConstants");
 const { redis, ensureRedisConnected } = require("../lib/redis");
 
+/** Build the Redis hash key for a fighter's live energy state. */
 const ENERGY_KEY = (id) => `energy:${id}`;
 
+/**
+ * Normalize Mongo fighter energy shape into the canonical object form.
+ * Supports legacy numeric `energy` values for backward compatibility.
+ * @param {Object} fighter
+ * @returns {{ current: number, max: number }}
+ */
 function readMongoEnergy(fighter) {
     if (!fighter) return { current: ENERGY.max, max: ENERGY.max };
     if (fighter.energy && typeof fighter.energy === "object") {
@@ -19,6 +26,11 @@ function readMongoEnergy(fighter) {
     return { current: ENERGY.max, max: ENERGY.max };
 }
 
+/**
+ * Read live energy from Redis, falling back to MongoDB on cold start.
+ * @param {string} characterId
+ * @returns {Promise<{ current: number, max: number }>}
+ */
 async function getEnergy(characterId) {
     await ensureRedisConnected();
     const cached = await redis.hgetall(ENERGY_KEY(characterId));
@@ -37,6 +49,12 @@ async function getEnergy(characterId) {
     return mongoEnergy;
 }
 
+/**
+ * Spend energy atomically in Redis and asynchronously persist backup to Mongo.
+ * @param {string} characterId
+ * @param {number} amount
+ * @returns {Promise<{ current: number, max: number }>}
+ */
 async function deductEnergy(characterId, amount) {
     const { current, max } = await getEnergy(characterId);
     if (current < amount) throw new Error("Not enough energy");
@@ -53,6 +71,12 @@ async function deductEnergy(characterId, amount) {
     return { current: newValue, max };
 }
 
+/**
+ * Add energy (capped at max) and persist snapshot to Mongo backup.
+ * @param {string} characterId
+ * @param {number} amount
+ * @returns {Promise<{ current: number, max: number }>}
+ */
 async function addEnergy(characterId, amount) {
     const { current, max } = await getEnergy(characterId);
     const newValue = Math.min(current + amount, max);
@@ -66,6 +90,13 @@ async function addEnergy(characterId, amount) {
     return { current: newValue, max };
 }
 
+/**
+ * Update a fighter's energy max in Redis and Mongo.
+ * Current value is clamped to the new max.
+ * @param {string} characterId
+ * @param {number} max
+ * @returns {Promise<{ current: number, max: number }>}
+ */
 async function setEnergyMax(characterId, max) {
     const normalizedMax = Number.isFinite(max) ? max : ENERGY.max;
     const current = await getEnergy(characterId);
@@ -85,6 +116,10 @@ async function setEnergyMax(characterId, max) {
     return { current: currentClamped, max: normalizedMax };
 }
 
+/**
+ * BullMQ tick worker body: increment every active Redis energy key by 1.
+ * @returns {Promise<void>}
+ */
 async function tickAllActiveEnergy() {
     await ensureRedisConnected();
     let cursor = "0";
@@ -110,6 +145,10 @@ async function tickAllActiveEnergy() {
     } while (cursor !== "0");
 }
 
+/**
+ * BullMQ sync worker body: write Redis energy snapshots back to Mongo.
+ * @returns {Promise<number>} Number of synced fighter records
+ */
 async function syncRedisEnergyToMongo() {
     await ensureRedisConnected();
     const bulkOps = [];
