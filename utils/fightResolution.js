@@ -4,29 +4,47 @@
  */
 
 const { getCommentaryLine, getResultLine } = require("./fightCommentary");
+const { FIGHT_RESOLUTION_CONFIG: CFG } = require("../consts/fightResolutionConfig");
 
-const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
-
-const EVENT_TO_KEY = {
-    "Striking exchange.": "strikingExchange",
-    "Takedown; ground and pound.": "takedownPlayer",
-    "Opponent took you down.": "takedownOpponent"
-};
+const STAT_KEYS = CFG.statKeys;
+const EVENT_TO_KEY = CFG.eventToCommentaryKey;
 
 function outcomeToCommentaryKey(outcome) {
     if (!outcome) return "decision";
-    if (outcome === "KO/TKO") return "koFinish";
-    if (outcome === "Submission") return "submissionWin";
-    if (outcome === "Loss (KO/TKO)") return "koLoss";
-    if (outcome === "Loss (submission)") return "submissionLoss";
-    if (outcome === "Loss (decision)" || outcome === "Draw") return "decision";
-    if (outcome === "Decision (unanimous)" || outcome === "Decision (split)") return "decision";
-    return "decision";
+    return CFG.outcomeToCommentaryKey[outcome] || "decision";
 }
 
 function getStat(obj, key) {
     const v = obj[key];
-    return typeof v === "number" ? v : 10;
+    return typeof v === "number" ? v : CFG.defaults.stat;
+}
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function strikingComposite(f) {
+    return (getStat(f, "str") + getStat(f, "spd") + getStat(f, "leg")) / 3;
+}
+
+function grapplingComposite(f) {
+    return (getStat(f, "wre") + getStat(f, "gnd") + getStat(f, "sub")) / 3;
+}
+
+/**
+ * Positive when a fighter is striking-heavy, negative when grappling-heavy.
+ */
+function strikingProfileMod(fighter) {
+    const diff = strikingComposite(fighter) - grapplingComposite(fighter);
+    return clamp(diff / CFG.profile.divisor, CFG.profile.minMod, CFG.profile.maxMod);
+}
+
+/**
+ * Positive when a fighter is grappling-heavy, negative when striking-heavy.
+ */
+function grapplingProfileMod(fighter) {
+    const diff = grapplingComposite(fighter) - strikingComposite(fighter);
+    return clamp(diff / CFG.profile.divisor, CFG.profile.minMod, CFG.profile.maxMod);
 }
 
 /**
@@ -36,8 +54,8 @@ function strikeDamage(attacker, defender) {
     const attack = (getStat(attacker, "str") + getStat(attacker, "leg")) / 2;
     const spd = getStat(attacker, "spd");
     const chn = getStat(defender, "chn");
-    const base = Math.max(0, attack * 0.5 + spd * 0.2 - chn * 0.3);
-    const variance = 0.85 + Math.random() * 0.3;
+    const base = Math.max(0, attack * CFG.strikeDamage.attackWeight + spd * CFG.strikeDamage.speedWeight - chn * CFG.strikeDamage.chinWeight);
+    const variance = CFG.strikeDamage.varianceMin + Math.random() * CFG.strikeDamage.varianceRange;
     return Math.max(0, Math.round(base * variance));
 }
 
@@ -48,7 +66,22 @@ function takedownSuccess(attacker, defender) {
     const aWre = getStat(attacker, "wre");
     const dWre = getStat(defender, "wre");
     const roll = Math.random();
-    return roll < 0.4 + (aWre - dWre) / 250;
+    return roll < CFG.takedown.baseSuccessChance + (aWre - dWre) / CFG.takedown.wreDiffDivisor;
+}
+
+/**
+ * Choose takedown initiator with a fair, stat-weighted roll.
+ * Equal wrestling = ~50/50 who initiates.
+ */
+function playerShootsTakedown(player, opponent) {
+    const pWre = getStat(player, "wre");
+    const oWre = getStat(opponent, "wre");
+    const chance = clamp(
+        CFG.takedown.shooterBaseChance + (pWre - oWre) / CFG.takedown.shooterDiffDivisor,
+        CFG.takedown.shooterChanceMin,
+        CFG.takedown.shooterChanceMax
+    );
+    return Math.random() < chance;
 }
 
 /**
@@ -57,46 +90,112 @@ function takedownSuccess(attacker, defender) {
 function submissionSuccess(attacker, defender) {
     const aSub = getStat(attacker, "sub");
     const dSub = getStat(defender, "sub");
+    const aWre = getStat(attacker, "wre");
+    const dWre = getStat(defender, "wre");
+    const aGnd = getStat(attacker, "gnd");
+    const dGnd = getStat(defender, "gnd");
     const roll = Math.random();
-    const chance = Math.max(0.05, Math.min(0.6, 0.2 + (aSub - dSub) / 100));
+    const chance = clamp(
+        CFG.submission.baseChance +
+        (aSub - dSub) / CFG.submission.subDiffDivisor +
+        (aWre - dWre) / CFG.submission.wreDiffDivisor +
+        (aGnd - dGnd) / CFG.submission.gndDiffDivisor +
+        grapplingProfileMod(attacker),
+        CFG.submission.chanceMin,
+        CFG.submission.chanceMax
+    );
     return roll < chance;
+}
+
+/**
+ * Defender with strong anti-grappling stats reduces submission opportunity frequency.
+ */
+function submissionDefenseMod(defender) {
+    const antiSub = (getStat(defender, "sub") + getStat(defender, "wre")) / 2;
+    // 10 -> ~1.0, 30 -> ~0.75, 40+ -> floor at 0.65
+    return clamp(
+        CFG.submissionDefense.base - (antiSub - CFG.submissionDefense.anchorStat) / CFG.submissionDefense.divisor,
+        CFG.submissionDefense.minMod,
+        CFG.submissionDefense.maxMod
+    );
 }
 
 /**
  * KO/TKO check when health drops below 25. Probability scales with recent damage and low CHN.
  * ironWillPerk reduces KO probability by 5%.
  */
-function koCheck(defender, damageThisRound, ironWillPerk = false) {
+function koCheck(defender, damageThisRound, ironWillPerk = false, attacker = null) {
     const health = defender.health;
-    if (health > 25) return false;
+    const stamina = Math.max(0, defender.stamina ?? 100);
+    // Exhaustion opens a wider finish window.
+    const healthWindow = stamina < CFG.koCheck.healthWindow.lowStaminaThreshold
+        ? CFG.koCheck.healthWindow.lowStaminaWindow
+        : stamina < CFG.koCheck.healthWindow.midStaminaThreshold
+            ? CFG.koCheck.healthWindow.midStaminaWindow
+            : stamina < CFG.koCheck.healthWindow.highStaminaThreshold
+                ? CFG.koCheck.healthWindow.highStaminaWindow
+                : CFG.koCheck.healthWindow.normalWindow;
+    if (health > healthWindow) return false;
     const chn = getStat(defender, "chn");
-    const perkMod = ironWillPerk ? -0.05 : 0;
-    const prob = 0.15 + (25 - health) / 100 - chn / 500 + damageThisRound / 200 + perkMod;
-    return Math.random() < Math.max(0.02, Math.min(0.7, prob));
+    // Exhausted fighters are easier to finish; ramps up strongly below 40 stamina.
+    const lowStaminaMod = stamina < CFG.koCheck.lowStaminaThreshold
+        ? (CFG.koCheck.lowStaminaThreshold - stamina) / CFG.koCheck.lowStaminaDivisor
+        : 0;
+    const attackerStrikingMod = attacker ? strikingProfileMod(attacker) : 0;
+    const perkMod = ironWillPerk ? CFG.koCheck.ironWillMod : 0;
+    const prob = CFG.koCheck.base
+        + (healthWindow - health) / CFG.koCheck.healthDiffDivisor
+        - chn / CFG.koCheck.chinDivisor
+        + damageThisRound / CFG.koCheck.damageDivisor
+        + lowStaminaMod
+        + attackerStrikingMod
+        + perkMod;
+    return Math.random() < clamp(prob, CFG.koCheck.minProb, CFG.koCheck.maxProb);
+}
+
+/**
+ * Exhaustion finish check: very low stamina can create TKO vulnerability.
+ * This supplements normal KO logic and makes low stamina materially dangerous.
+ */
+function exhaustionTkoCheck(defender, damageThisRound, ironWillPerk = false) {
+    const stamina = Math.max(0, defender.stamina ?? 100);
+    if (stamina > CFG.exhaustionTko.maxStamina) return false;
+    const health = defender.health ?? 100;
+    const chn = getStat(defender, "chn");
+    const staminaMod = stamina <= CFG.exhaustionTko.veryLowStamina
+        ? CFG.exhaustionTko.veryLowBase
+        : CFG.exhaustionTko.lowBase;
+    const damageMod = Math.max(0, damageThisRound - CFG.exhaustionTko.damageFloor) / CFG.exhaustionTko.damageDivisor;
+    const healthMod = health < CFG.exhaustionTko.healthThreshold
+        ? (CFG.exhaustionTko.healthThreshold - health) / CFG.exhaustionTko.healthDivisor
+        : 0;
+    const perkMod = ironWillPerk ? CFG.exhaustionTko.ironWillMod : 0;
+    const prob = staminaMod + damageMod + healthMod - chn / CFG.exhaustionTko.chinDivisor + perkMod;
+    return Math.random() < clamp(prob, CFG.exhaustionTko.minProb, CFG.exhaustionTko.maxProb);
 }
 
 /**
  * Strategy modifiers (GDD 8.3): bias takedown attempt, strike damage, defence.
  */
 function getTakedownAttemptChance(playerStrategy) {
-    if (!playerStrategy) return 0.4;
-    if (playerStrategy === "Takedown Heavy" || playerStrategy === "Ground & Pound") return 0.58;
-    if (playerStrategy === "Submission Hunter") return 0.5;
-    return 0.4;
+    if (!playerStrategy) return CFG.strategy.takedownAttempt.default;
+    if (playerStrategy === "Takedown Heavy" || playerStrategy === "Ground & Pound") return CFG.strategy.takedownAttempt.takedownHeavy;
+    if (playerStrategy === "Submission Hunter") return CFG.strategy.takedownAttempt.submissionHunter;
+    return CFG.strategy.takedownAttempt.default;
 }
 
 function getStrikeDamageMod(playerStrategy, isAttacker) {
-    if (!playerStrategy) return 1;
-    if (isAttacker && (playerStrategy === "Pressure Fighter" || playerStrategy === "Clinch Bully")) return 1.1;
-    if (!isAttacker && playerStrategy === "Counter Striker") return 0.9;
-    if (!isAttacker && playerStrategy === "Survival Mode") return 0.92;
-    return 1;
+    if (!playerStrategy) return CFG.strategy.strikeDamageMod.default;
+    if (isAttacker && (playerStrategy === "Pressure Fighter" || playerStrategy === "Clinch Bully")) return CFG.strategy.strikeDamageMod.pressureAttacker;
+    if (!isAttacker && playerStrategy === "Counter Striker") return CFG.strategy.strikeDamageMod.counterDefender;
+    if (!isAttacker && playerStrategy === "Survival Mode") return CFG.strategy.strikeDamageMod.survivalDefender;
+    return CFG.strategy.strikeDamageMod.default;
 }
 
 function getSubAttemptChance(playerStrategy) {
-    if (!playerStrategy) return 0.25;
-    if (playerStrategy === "Submission Hunter" || playerStrategy === "Ground & Pound") return 0.38;
-    return 0.25;
+    if (!playerStrategy) return CFG.strategy.subAttempt.default;
+    if (playerStrategy === "Submission Hunter" || playerStrategy === "Ground & Pound") return CFG.strategy.subAttempt.submissionHunter;
+    return CFG.strategy.subAttempt.default;
 }
 
 /**
@@ -109,35 +208,47 @@ function getSubAttemptChance(playerStrategy) {
  * @returns {{ playerDamage: number, opponentDamage: number, playerStamina: number, opponentStamina: number, event: string|null, finished: boolean, outcome: string|null, playerHealth: number, opponentHealth: number }}
  */
 function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk = false) {
-    const staminaDrain = 8 + Math.floor(Math.random() * 6);
+    const staminaDrain = CFG.round.staminaDrainBase + Math.floor(Math.random() * CFG.round.staminaDrainRandom);
     let playerDamage = 0;
     let opponentDamage = 0;
     let event = null;
+    let grapplingControl = 0;
     let finished = false;
     let outcome = null;
 
-    const pStamina = Math.max(0, (player.stamina || 100) - staminaDrain);
-    const oStamina = Math.max(0, (opponent.stamina || 100) - staminaDrain);
+    const pStamina = Math.max(0, (player.stamina ?? CFG.defaults.stamina) - staminaDrain);
+    const oStamina = Math.max(0, (opponent.stamina ?? CFG.defaults.stamina) - staminaDrain);
     const pStaminaMod = pStamina / 100;
     const oStaminaMod = oStamina / 100;
 
     const takedownChance = getTakedownAttemptChance(playerStrategy);
-    if (roundNum <= 2 && Math.random() < takedownChance) {
-        const playerShoots = getStat(player, "wre") > getStat(opponent, "wre");
+    if (roundNum <= CFG.round.takedownRoundsLimit && Math.random() < takedownChance) {
+        const playerShoots = playerShootsTakedown(player, opponent);
         if (playerShoots && takedownSuccess(player, opponent)) {
-            opponentDamage = Math.round((getStat(player, "gnd") * 0.4) * oStaminaMod);
+            opponentDamage = Math.round((getStat(player, "gnd") * 0.4) * pStaminaMod);
             event = "Takedown; ground and pound.";
-            const subChance = getSubAttemptChance(playerStrategy);
-            if (getStat(player, "sub") > 50 && Math.random() < subChance) {
+            grapplingControl = 1;
+            const subChance = clamp(
+                (getSubAttemptChance(playerStrategy) + grapplingProfileMod(player)) * submissionDefenseMod(opponent),
+                CFG.submission.attemptMin,
+                CFG.submission.attemptMax
+            );
+            if (Math.random() < subChance) {
                 if (submissionSuccess(player, opponent)) {
                     finished = true;
                     outcome = "Submission";
                 }
             }
         } else if (!playerShoots && takedownSuccess(opponent, player)) {
-            playerDamage = Math.round((getStat(opponent, "gnd") * 0.4) * pStaminaMod);
+            playerDamage = Math.round((getStat(opponent, "gnd") * 0.4) * oStaminaMod);
             event = "Opponent took you down.";
-            if (getStat(opponent, "sub") > 50 && Math.random() < 0.25) {
+            grapplingControl = -1;
+            const oppSubChance = clamp(
+                (0.25 + grapplingProfileMod(opponent)) * submissionDefenseMod(player),
+                CFG.submission.attemptMin,
+                CFG.submission.attemptMax
+            );
+            if (Math.random() < oppSubChance) {
                 if (submissionSuccess(opponent, player)) {
                     finished = true;
                     outcome = "Loss (submission)";
@@ -149,13 +260,37 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     if (!event) {
         const oppStrike = strikeDamage(opponent, player) * getStrikeDamageMod(playerStrategy, false);
         const plStrike = strikeDamage(player, opponent) * getStrikeDamageMod(playerStrategy, true);
-        playerDamage = Math.round(oppStrike * pStaminaMod);
-        opponentDamage = Math.round(plStrike * oStaminaMod);
+        playerDamage = Math.round(oppStrike * oStaminaMod);
+        opponentDamage = Math.round(plStrike * pStaminaMod);
         event = "Striking exchange.";
+
+        // Flash KO path: high-impact striking builds can produce early finishes.
+        if (!finished && opponentDamage >= CFG.flashKo.minDamage) {
+            const flashKoChance = clamp(
+                CFG.flashKo.baseChance + strikingProfileMod(player) + (opponentDamage - CFG.flashKo.minDamage) / CFG.flashKo.extraDamageDivisor,
+                CFG.flashKo.minProb,
+                CFG.flashKo.maxProb
+            );
+            if (Math.random() < flashKoChance) {
+                finished = true;
+                outcome = "KO/TKO";
+            }
+        }
+        if (!finished && playerDamage >= CFG.flashKo.minDamage) {
+            const oppFlashKoChance = clamp(
+                CFG.flashKo.baseChance + strikingProfileMod(opponent) + (playerDamage - CFG.flashKo.minDamage) / CFG.flashKo.extraDamageDivisor,
+                CFG.flashKo.minProb,
+                CFG.flashKo.maxProb
+            );
+            if (Math.random() < oppFlashKoChance * (ironWillPerk ? CFG.flashKo.ironWillMultiplier : 1)) {
+                finished = true;
+                outcome = "Loss (KO/TKO)";
+            }
+        }
     }
 
-    player.health = Math.max(0, (player.health || 100) - playerDamage);
-    opponent.health = Math.max(0, (opponent.health || 100) - opponentDamage);
+    player.health = Math.max(CFG.round.healthZero, (player.health ?? CFG.defaults.health) - playerDamage);
+    opponent.health = Math.max(CFG.round.healthZero, (opponent.health ?? CFG.defaults.health) - opponentDamage);
     player.stamina = pStamina;
     opponent.stamina = oStamina;
 
@@ -167,11 +302,19 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         finished = true;
         outcome = "KO/TKO";
     }
-    if (!finished && player.health < 25 && koCheck(player, playerDamage, ironWillPerk)) {
+    if (!finished && exhaustionTkoCheck(player, playerDamage, ironWillPerk)) {
         finished = true;
         outcome = "Loss (KO/TKO)";
     }
-    if (!finished && opponent.health < 25 && koCheck(opponent, opponentDamage, false)) {
+    if (!finished && exhaustionTkoCheck(opponent, opponentDamage, false)) {
+        finished = true;
+        outcome = "KO/TKO";
+    }
+    if (!finished && player.health < CFG.koCheck.healthWindow.normalWindow && koCheck(player, playerDamage, ironWillPerk, opponent)) {
+        finished = true;
+        outcome = "Loss (KO/TKO)";
+    }
+    if (!finished && opponent.health < CFG.koCheck.healthWindow.normalWindow && koCheck(opponent, opponentDamage, false, player)) {
         finished = true;
         outcome = "KO/TKO";
     }
@@ -182,6 +325,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         playerStamina: pStamina,
         opponentStamina: oStamina,
         event,
+        grapplingControl,
         finished,
         outcome,
         playerHealth: player.health,
@@ -195,26 +339,37 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
 function scoreRoundForJudge(round, judgeBias) {
     const pd = round.playerDamage ?? 0; // damage to player
     const od = round.opponentDamage ?? 0; // damage to opponent
-    const net = od - pd; // positive = player dealt more (player won round)
+    let net = od - pd; // positive = player dealt more (player won round)
+    const control = round.grapplingControl ?? 0;
+    if (judgeBias === "grappler") net += control * CFG.judging.controlWeights.grappler;
+    if (judgeBias === "striker") net += control * CFG.judging.controlWeights.striker;
     let playerRound = 9;
     let oppRound = 9;
-    if (net > 8) {
+    if (net > CFG.judging.dominantRoundThreshold) {
         playerRound = 10;
-        oppRound = net > 18 ? 8 : 9;
-    } else if (net < -8) {
+        oppRound = net > CFG.judging.dominantRound10_8Threshold ? 8 : 9;
+    } else if (net < -CFG.judging.dominantRoundThreshold) {
         oppRound = 10;
-        playerRound = net < -18 ? 8 : 9;
+        playerRound = net < -CFG.judging.dominantRound10_8Threshold ? 8 : 9;
     } else {
-        if (judgeBias === "striker") playerRound = net >= 0 ? 10 : 9;
-        else if (judgeBias === "grappler") playerRound = net > 0 ? 10 : 9;
-        else playerRound = net >= 0 ? 10 : 9;
-        oppRound = 20 - playerRound;
+        if (net === 0) {
+            // True toss-up round: avoid structural side bias.
+            playerRound = Math.random() < 0.5 ? 10 : 9;
+        } else if (judgeBias === "striker") {
+            playerRound = net > 0 ? 10 : 9;
+        } else if (judgeBias === "grappler") {
+            playerRound = net > 0 ? 10 : 9;
+        } else {
+            playerRound = net > 0 ? 10 : 9;
+        }
+        // Standard close round: 10-9 either way (never 11 points).
+        oppRound = playerRound === 10 ? 9 : 10;
     }
     return { player: playerRound, opponent: oppRound };
 }
 
 function judgeScorecard(rounds) {
-    const biases = ["striker", "grappler", "balanced"];
+    const biases = CFG.judging.biases;
     const totals = { player: 0, opponent: 0 };
     const scorecard = [];
     for (const b of biases) {
@@ -246,7 +401,7 @@ function judgeScorecard(rounds) {
  * options: { maxRounds, playerStrategy, playerName, opponentName, ironWillPerk }.
  */
 function resolveFight(player, opponent, options = {}) {
-    const maxRounds = options.maxRounds ?? 5;
+    const maxRounds = options.maxRounds ?? CFG.defaults.maxRounds;
     const playerStrategy = options.playerStrategy || null;
     const ironWillPerk = !!options.ironWillPerk;
     const playerName = options.playerName || "Your fighter";
@@ -254,14 +409,14 @@ function resolveFight(player, opponent, options = {}) {
     const rounds = [];
     const commentary = [];
     let p = {
-        health: player.health ?? 100,
-        stamina: player.stamina ?? 100,
+        health: player.health ?? CFG.defaults.health,
+        stamina: player.stamina ?? CFG.defaults.stamina,
         str: player.str, spd: player.spd, leg: player.leg, wre: player.wre,
         gnd: player.gnd, sub: player.sub, chn: player.chn, fiq: player.fiq
     };
     let o = {
-        health: opponent.health ?? 100,
-        stamina: opponent.stamina ?? 100,
+        health: opponent.health ?? CFG.defaults.health,
+        stamina: opponent.stamina ?? CFG.defaults.stamina,
         str: opponent.str, spd: opponent.spd, leg: opponent.leg, wre: opponent.wre,
         gnd: opponent.gnd, sub: opponent.sub, chn: opponent.chn, fiq: opponent.fiq
     };
@@ -271,6 +426,7 @@ function resolveFight(player, opponent, options = {}) {
         rounds.push({
             round: r,
             event: result.event,
+            grapplingControl: result.grapplingControl,
             playerDamage: result.playerDamage,
             opponentDamage: result.opponentDamage,
             playerHealth: result.playerHealth,
