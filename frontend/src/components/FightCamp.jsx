@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { api } from "../api";
 import { RECOMMENDED_TCA, FIGHT_STRATEGIES } from "../constants/gameConstants";
 
@@ -8,7 +8,7 @@ const WEIGHT_CUTS = [
   { value: "aggressive", label: "Aggressive cut", sub: "75% Stamina · 20% miss risk · +12 Max Stamina" },
 ];
 
-export function FightCamp({ fighter, resolving, onCamp, onResolve, onMessage }) {
+export const FightCamp = memo(function FightCamp({ fighter, resolving, onCamp, onResolve, onMessage }) {
   const [strategy, setStrategyLocal] = useState("");
   const [weightCut, setWeightCutLocal] = useState("easy");
 
@@ -116,4 +116,4 @@ export function FightCamp({ fighter, resolving, onCamp, onResolve, onMessage }) 
       </div>
     </section>
   );
-}
+});

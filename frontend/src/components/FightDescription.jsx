@@ -1,4 +1,6 @@
-export function FightDescription({ commentary }) {
+import { memo } from "react";
+
+export const FightDescription = memo(function FightDescription({ commentary }) {
   if (!commentary?.length) return null;
 
   return (
@@ -11,4 +13,4 @@ export function FightDescription({ commentary }) {
       </div>
     </section>
   );
-}
+});

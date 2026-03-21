@@ -1,7 +1,9 @@
+import { memo } from "react";
+
 /**
  * Post-fight summary: health/stamina lost, XP gained, notoriety, iron, injuries, comeback, weight miss, etc.
  */
-export function FightSummary({ summary }) {
+export const FightSummary = memo(function FightSummary({ summary }) {
   if (!summary) return null;
 
   const {
@@ -149,4 +151,4 @@ export function FightSummary({ summary }) {
       </div>
     </section>
   );
-}
+});

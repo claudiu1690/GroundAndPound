@@ -1,8 +1,10 @@
+import { memo } from "react";
+
 /**
  * Inline SVG octagon arena background — no image file needed.
  * Renders a perspective-view MMA cage with spotlights, crowd, and grain texture.
  */
-export function OctagonBackground() {
+export const OctagonBackground = memo(function OctagonBackground() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -234,4 +236,4 @@ export function OctagonBackground() {
       <rect width="600" height="520" fill="url(#vignette)" />
     </svg>
   );
-}
+});

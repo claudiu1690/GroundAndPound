@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { api } from "../api";
 
-export function GymQuests({ fighter, gymId }) {
+export const GymQuests = memo(function GymQuests({ fighter, gymId }) {
   const [quests, setQuests] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -78,4 +78,4 @@ export function GymQuests({ fighter, gymId }) {
       </div>
     </section>
   );
-}
+});

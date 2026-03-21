@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 // Full session metadata matching backend TRAINING_SESSIONS constants (exported for TrainingResultPopup / App)
 export const SESSION_META = {
   bag_work: {
@@ -122,7 +124,16 @@ function isMembershipValid(fighter, gymId) {
   return new Date(m.paidUntil) > new Date();
 }
 
-export function GymTraining({ fighter, gyms, trainGym, trainSession, onGymChange, onSessionChange, onTrain, onPayMembership }) {
+export const GymTraining = memo(function GymTraining({
+  fighter,
+  gyms,
+  trainGym,
+  trainSession,
+  onGymChange,
+  onSessionChange,
+  onTrain,
+  onPayMembership,
+}) {
   if (!fighter) return null;
 
   const selectedGym = trainGym && gyms?.length ? gyms.find((g) => g._id === trainGym) : null;
@@ -258,4 +269,4 @@ export function GymTraining({ fighter, gyms, trainGym, trainSession, onGymChange
       </div>
     </section>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { api, authStorage } from "./api";
 import "./App.css";
 import { MessageBar } from "./components/MessageBar";
@@ -34,7 +34,7 @@ const TIER_LADDER_DISPLAY = [
 ];
 
 // ── Header resource bar ─────────────────────────────────────
-function HdrResource({ icon, label, value, max, barColor }) {
+const HdrResource = memo(function HdrResource({ icon, label, value, max, barColor }) {
   const pct = Math.min(100, Math.round(((value ?? 0) / (max ?? 100)) * 100));
   return (
     <div className="hdr-resource">
@@ -46,7 +46,7 @@ function HdrResource({ icon, label, value, max, barColor }) {
       </div>
     </div>
   );
-}
+});
 
 // ── Fighter card (dashboard) ────────────────────────────────
 /** Derive a stable 1-20 photo index from the fighter's Mongo _id string */
@@ -128,7 +128,7 @@ function FighterCard({ fighter }) {
 }
 
 // ── Quick actions ────────────────────────────────────────────
-function QuickActions({ onNavigate, onRest }) {
+const QuickActions = memo(function QuickActions({ onNavigate, onRest }) {
   return (
     <div className="quick-actions-section">
       <div className="quick-actions-title">Quick Actions</div>
@@ -139,10 +139,10 @@ function QuickActions({ onNavigate, onRest }) {
       </div>
     </div>
   );
-}
+});
 
 // ── Fight history from record data ──────────────────────────
-function FightHistoryPanel({ fighter, lastFightSummary }) {
+const FightHistoryPanel = memo(function FightHistoryPanel({ fighter, lastFightSummary }) {
   const rec = fighter?.record ?? {};
   const items = [];
 
@@ -175,10 +175,10 @@ function FightHistoryPanel({ fighter, lastFightSummary }) {
       )}
     </section>
   );
-}
+});
 
 // ── Tier progress (right panel) ─────────────────────────────
-function TierProgress({ fighter }) {
+const TierProgress = memo(function TierProgress({ fighter }) {
   if (!fighter) return null;
   const currentTier = fighter.promotionTier ?? "Amateur";
   const ovr = fighter.overallRating ?? 0;
@@ -223,10 +223,10 @@ function TierProgress({ fighter }) {
       </div>
     </section>
   );
-}
+});
 
 // ── Right column panels ─────────────────────────────────────
-function RightPanels({ fighter, lastFightSummary }) {
+const RightPanels = memo(function RightPanels({ fighter, lastFightSummary }) {
   const hasInjuries = fighter?.injuries?.length > 0;
   const inCamp = !!fighter?.acceptedFightId;
 
@@ -287,7 +287,44 @@ function RightPanels({ fighter, lastFightSummary }) {
       <TierProgress fighter={fighter} />
     </>
   );
-}
+});
+
+/**
+ * Gym + session selection lives here so changing gym/session does not re-render all of App.
+ */
+const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, onPayMembership }) {
+  const [trainGym, setTrainGym] = useState("");
+  const [trainSession, setTrainSession] = useState("bag_work");
+
+  useEffect(() => {
+    if (gyms?.length && !trainGym) setTrainGym(gyms[0]._id);
+  }, [gyms, trainGym]);
+
+  useEffect(() => {
+    if (!gyms?.length || !trainGym) return;
+    if (!gyms.some((g) => g._id === trainGym)) setTrainGym(gyms[0]._id);
+  }, [gyms, trainGym]);
+
+  const handleTrainClick = useCallback(() => {
+    onTrain(trainGym, trainSession);
+  }, [onTrain, trainGym, trainSession]);
+
+  return (
+    <div className="page-two-col">
+      <GymTraining
+        fighter={fighter}
+        gyms={gyms}
+        trainGym={trainGym}
+        trainSession={trainSession}
+        onGymChange={setTrainGym}
+        onSessionChange={setTrainSession}
+        onTrain={handleTrainClick}
+        onPayMembership={onPayMembership}
+      />
+      <GymQuests fighter={fighter} gymId={trainGym} />
+    </div>
+  );
+});
 
 // ── Main App ────────────────────────────────────────────────
 function App() {
@@ -300,8 +337,6 @@ function App() {
   const [offers,   setOffers]                   = useState([]);
   const [message,  setMessage]                  = useState("");
   const [loading,  setLoading]                  = useState(true);
-  const [trainGym, setTrainGym]                 = useState("");
-  const [trainSession, setTrainSession]         = useState("bag_work");
   const [resolving, setResolving]               = useState(false);
   const [lastFightCommentary, setLastFightCommentary] = useState([]);
   const [lastFightSummary, setLastFightSummary] = useState(null);
@@ -323,9 +358,8 @@ function App() {
     try {
       const list = await api.listGyms();
       setGyms(Array.isArray(list) ? list : []);
-      if (list?.length && !trainGym) setTrainGym(list[0]._id);
     } catch (_) {}
-  }, [trainGym]);
+  }, []);
 
   // Load initial data once authenticated
   useEffect(() => {
@@ -349,13 +383,16 @@ function App() {
   }, [fighter?._id, loadFighter]);
 
   // Called by AuthPage after successful login/register
-  const handleAuthenticated = (fighterId) => {
-    setAuthed(true);
-    loadFighter(fighterId);
-    loadGyms();
-  };
+  const handleAuthenticated = useCallback(
+    (fighterId) => {
+      setAuthed(true);
+      loadFighter(fighterId);
+      loadGyms();
+    },
+    [loadFighter, loadGyms]
+  );
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     authStorage.clear();
     setAuthed(false);
     setFighter(null);
@@ -364,60 +401,72 @@ function App() {
     setLastFightCommentary([]);
     setActiveTab("gym");
     setMessage("");
-  };
+  }, []);
 
-  const handleUpdateFighter = async (id, body) => {
-    try {
-      await api.updateFighter(id, body);
-      await loadFighter(id);
-      setMessage("Profile updated.");
-    } catch (e) {
-      setMessage(e.message || "Update failed");
-    }
-  };
+  const handleUpdateFighter = useCallback(
+    async (id, body) => {
+      try {
+        await api.updateFighter(id, body);
+        await loadFighter(id);
+        setMessage("Profile updated.");
+      } catch (e) {
+        setMessage(e.message || "Update failed");
+      }
+    },
+    [loadFighter]
+  );
 
-  const handleTrain = async () => {
-    if (!fighter?._id || !trainGym) { setMessage("Select a fighter and a gym."); return; }
-    try {
-      const result = await api.train(fighter._id, trainGym, trainSession);
-      const sessionLabel = (SESSION_META[trainSession] ?? SESSION_META.bag_work).label;
-      setTrainingResultPopup({
-        open: true,
-        sessionLabel,
-        xpGained: result.xpGained ?? {},
-        statLevelUps: result.statLevelUps ?? [],
-      });
-      loadFighter(fighter._id, { clearMessage: false });
-    } catch (e) {
-      setMessage(e.message || "Train failed");
-    }
-  };
+  const handleTrain = useCallback(
+    async (trainGym, trainSession) => {
+      if (!fighter?._id || !trainGym) {
+        setMessage("Select a fighter and a gym.");
+        return;
+      }
+      try {
+        const result = await api.train(fighter._id, trainGym, trainSession);
+        const sessionLabel = (SESSION_META[trainSession] ?? SESSION_META.bag_work).label;
+        setTrainingResultPopup({
+          open: true,
+          sessionLabel,
+          xpGained: result.xpGained ?? {},
+          statLevelUps: result.statLevelUps ?? [],
+        });
+        loadFighter(fighter._id, { clearMessage: false });
+      } catch (e) {
+        setMessage(e.message || "Train failed");
+      }
+    },
+    [fighter?._id, loadFighter]
+  );
 
-  const handlePayMembership = async (gymId, cost) => {
-    if (!fighter?._id) return;
-    setMessage(`Paying gym membership (${cost} ⊗)…`);
-    try {
-      const result = await api.payGymMembership(fighter._id, gymId);
-      setMessage(result.message || "Membership paid.");
-      loadFighter(fighter._id, { clearMessage: false });
-    } catch (e) {
-      setMessage(e.message || "Payment failed");
-    }
-  };
+  const handlePayMembership = useCallback(
+    async (gymId, cost) => {
+      if (!fighter?._id) return;
+      setMessage(`Paying gym membership (${cost} ⊗)…`);
+      try {
+        const result = await api.payGymMembership(fighter._id, gymId);
+        setMessage(result.message || "Membership paid.");
+        loadFighter(fighter._id, { clearMessage: false });
+      } catch (e) {
+        setMessage(e.message || "Payment failed");
+      }
+    },
+    [fighter?._id, loadFighter]
+  );
 
-  const handleRest = async () => {
+  const handleRest = useCallback(async () => {
     if (!fighter?._id) return;
     setMessage("Resting…");
     try {
-      const result = await api.rest(fighter._id);
+      await api.rest(fighter._id);
       setMessage("Rest complete. Health and Stamina restored.");
       loadFighter(fighter._id, { clearMessage: false });
     } catch (e) {
       setMessage(e.message || "Rest failed");
     }
-  };
+  }, [fighter?._id, loadFighter]);
 
-  const handleGetOffers = async () => {
+  const handleGetOffers = useCallback(async () => {
     if (!fighter?._id) return;
     setMessage("Loading offers…");
     try {
@@ -428,23 +477,26 @@ function App() {
       setMessage(e.message || "Failed to get offers");
       setOffers([]);
     }
-  };
+  }, [fighter?._id]);
 
-  const handleAcceptOffer = async (opponentId, offerType = "Even") => {
-    if (!fighter?._id) return;
-    setMessage("Accepting fight…");
-    try {
-      const fight = await api.createOffer(fighter._id, { opponentId, offerType });
-      await api.acceptOffer(fighter._id, fight._id);
-      setMessage("Fight accepted. Build your camp then step into the cage.");
-      loadFighter(fighter._id);
-      setOffers([]);
-    } catch (e) {
-      setMessage(e.message || "Accept failed");
-    }
-  };
+  const handleAcceptOffer = useCallback(
+    async (opponentId, offerType = "Even") => {
+      if (!fighter?._id) return;
+      setMessage("Accepting fight…");
+      try {
+        const fight = await api.createOffer(fighter._id, { opponentId, offerType });
+        await api.acceptOffer(fighter._id, fight._id);
+        setMessage("Fight accepted. Build your camp then step into the cage.");
+        loadFighter(fighter._id);
+        setOffers([]);
+      } catch (e) {
+        setMessage(e.message || "Accept failed");
+      }
+    },
+    [fighter?._id, loadFighter]
+  );
 
-  const handleCamp = async () => {
+  const handleCamp = useCallback(async () => {
     if (!fighter?._id) return;
     try {
       await api.addCampAction(fighter._id);
@@ -454,9 +506,9 @@ function App() {
     } catch (e) {
       setMessage(e.message || "Camp failed");
     }
-  };
+  }, [fighter?._id]);
 
-  const handleResolve = async () => {
+  const handleResolve = useCallback(async () => {
     if (!fighter?._id) return;
     setResolving(true);
     setMessage("Fight night…");
@@ -467,16 +519,24 @@ function App() {
       const commentary = result.fight?.commentary || result.result?.commentary || [];
       setLastFightCommentary(Array.isArray(commentary) ? commentary : []);
       setLastFightSummary(result.summary ?? null);
-      const out  = result.fight?.outcome || "—";
+      const out = result.fight?.outcome || "—";
       const iron = result.fight?.ironEarned ?? 0;
-      const rec  = result.fighter?.record;
+      const rec = result.fighter?.record;
       setMessage(`${out} — +${iron} ⊗${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}`);
       loadFighter(fighter._id);
     } catch (e) {
       setMessage(e.message || "Resolve failed");
     }
     setResolving(false);
-  };
+  }, [fighter?._id, loadFighter]);
+
+  const closeTrainingPopup = useCallback(() => {
+    setTrainingResultPopup((p) => ({ ...p, open: false }));
+  }, []);
+
+  const handleNavTab = useCallback((id) => {
+    setActiveTab(id);
+  }, []);
 
   // Show auth page if not logged in
   if (!authed) {
@@ -545,7 +605,7 @@ function App() {
         sessionLabel={trainingResultPopup.sessionLabel}
         xpGained={trainingResultPopup.xpGained}
         statLevelUps={trainingResultPopup.statLevelUps}
-        onClose={() => setTrainingResultPopup((p) => ({ ...p, open: false }))}
+        onClose={closeTrainingPopup}
       />
 
       {/* ── BODY: centered block = nav + main ── */}
@@ -571,7 +631,7 @@ function App() {
                   key={item.id}
                   href={`#${item.id}`}
                   className={`nav-item ${activeTab === item.id ? "active" : ""}`}
-                  onClick={(e) => { e.preventDefault(); setActiveTab(item.id); }}
+                  onClick={(e) => { e.preventDefault(); handleNavTab(item.id); }}
                 >
                   <span className="nav-icon">{item.icon}</span>
                   {item.label}
@@ -627,19 +687,12 @@ function App() {
           {/* ── TRAINING / GYM ── */}
           {activeTab === "gym" && (
             <div className="page-layout">
-              <div className="page-two-col">
-                <GymTraining
-                  fighter={fighter}
-                  gyms={gyms}
-                  trainGym={trainGym}
-                  trainSession={trainSession}
-                  onGymChange={setTrainGym}
-                  onSessionChange={setTrainSession}
-                  onTrain={handleTrain}
-                  onPayMembership={handlePayMembership}
-                />
-                <GymQuests fighter={fighter} gymId={trainGym} />
-              </div>
+              <GymTrainingTab
+                fighter={fighter}
+                gyms={gyms}
+                onTrain={handleTrain}
+                onPayMembership={handlePayMembership}
+              />
             </div>
           )}
 

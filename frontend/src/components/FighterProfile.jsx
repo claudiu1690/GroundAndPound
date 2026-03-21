@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { STAT_TOOLTIPS } from "../constants/statTooltips";
 import { api } from "../api";
 
 const STAT_ORDER = ["STR", "SPD", "LEG", "WRE", "GND", "SUB", "CHN", "FIQ"];
 const SEVERITY_CLASS = { minor: "injury-minor", major: "injury-major" };
 
-export function FighterProfile({ fighter, gyms, onUpdateFighter, onRefreshFighter, onMessage }) {
+export const FighterProfile = memo(function FighterProfile({ fighter, gyms, onUpdateFighter, onRefreshFighter, onMessage }) {
   const [editing, setEditing] = useState(false);
   const [editNickname, setEditNickname] = useState("");
   const [editGymId, setEditGymId] = useState("");
@@ -277,4 +277,4 @@ export function FighterProfile({ fighter, gyms, onUpdateFighter, onRefreshFighte
       )}
     </section>
   );
-}
+});

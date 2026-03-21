@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 const TYPE_CLASS = { Easy: "offer-card-easy", Even: "offer-card-even", Hard: "offer-card-hard" };
 const BADGE_CLASS = { Easy: "badge-easy", Even: "badge-even", Hard: "badge-hard" };
 
@@ -7,7 +9,7 @@ const TYPE_META = {
   Hard:  { desc: "2–5 OVR above you · High risk, high reward" },
 };
 
-export function FightOffers({ fighter, offers, onGetOffers, onAcceptOffer }) {
+export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOffers, onAcceptOffer }) {
   if (!fighter) return null;
 
   return (
@@ -65,4 +67,4 @@ export function FightOffers({ fighter, offers, onGetOffers, onAcceptOffer }) {
       </div>
     </section>
   );
-}
+});

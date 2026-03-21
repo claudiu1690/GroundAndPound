@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 /**
  * Popup shown after a gym training session: "You did '[Session]'" and XP gained per stat.
  */
@@ -12,7 +14,13 @@ const STAT_CHIP_CLASS = {
   FIQ: "stat-chip-fiq",
 };
 
-export function TrainingResultPopup({ open, sessionLabel, xpGained, statLevelUps, onClose }) {
+export const TrainingResultPopup = memo(function TrainingResultPopup({
+  open,
+  sessionLabel,
+  xpGained,
+  statLevelUps,
+  onClose,
+}) {
   if (!open) return null;
 
   const hasXp = xpGained && typeof xpGained === "object" && Object.keys(xpGained).length > 0;
@@ -56,4 +64,4 @@ export function TrainingResultPopup({ open, sessionLabel, xpGained, statLevelUps
       </div>
     </div>
   );
-}
+});
