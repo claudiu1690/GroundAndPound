@@ -250,7 +250,7 @@ export function FighterProfile({ fighter, gyms, onUpdateFighter, onRefreshFighte
                     <button
                       type="button"
                       className="btn btn-warning btn-sm"
-                      title={`Doctor: ${inj.docVisitEnergy}E + ${inj.docVisitIron}⊗`}
+                      title={`Doctor: ${inj.docVisitEnergy} energy`}
                       onClick={async () => {
                         try {
                           await api.doctorVisit(fighter._id, inj.type);
@@ -261,7 +261,7 @@ export function FighterProfile({ fighter, gyms, onUpdateFighter, onRefreshFighte
                         }
                       }}
                     >
-                      Visit doctor ({inj.docVisitEnergy}E + {inj.docVisitIron}⊗)
+                      Visit doctor ({inj.docVisitEnergy}E)
                     </button>
                   )}
                   {!inj.requiresDoctorVisit && inj.recoverySessionsLeft > 0 && (

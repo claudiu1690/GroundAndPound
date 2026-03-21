@@ -187,7 +187,8 @@ async function deductEnergy(fighterId, amount) {
 }
 
 /**
- * GDD 8.9: Doctor visit — spend energy + iron to clear an injury that requires medical attention.
+ * GDD 8.9: Doctor visit — spend energy to clear an injury that requires medical attention.
+ * Iron cost temporarily disabled (no ⊗ check or deduction).
  * Instantly heals the injury and reverses its stat penalties.
  */
 async function doctorVisit(fighterId, injuryType) {
@@ -206,13 +207,9 @@ async function doctorVisit(fighterId, injuryType) {
     if (currentEnergy < inj.docVisitEnergy) {
         throw new Error(`Not enough energy (doctor visit costs ${inj.docVisitEnergy})`);
     }
-    if (fighter.iron < inj.docVisitIron) {
-        throw new Error(`Not enough Iron (doctor visit costs ${inj.docVisitIron} ⊗)`);
-    }
 
     const updatedEnergy = await energyService.deductEnergy(fighterId, inj.docVisitEnergy);
     setEnergySnapshot(fighter, updatedEnergy);
-    fighter.iron -= inj.docVisitIron;
     reverseInjuryFromFighter(fighter, inj);
     fighter.injuries.splice(idx, 1);
     await fighter.save();
