@@ -10,12 +10,13 @@ const STAT_TO_VAL_KEY = { STR: 'str', SPD: 'spd', LEG: 'leg', WRE: 'wre', GND: '
 /**
  * XP required to gain one point at current stat value.
  * @param {number} currentStat - Current stat value (1–100)
- * @returns {number|null} XP needed for next point, or null if 96+
+ * @returns {number|null} XP needed for next point, or null if already max (100)
  */
 function xpRequiredForNextPoint(currentStat) {
-    if (currentStat >= 96) return null;
+    if (currentStat >= 100) return null;
     const band = XP_PER_POINT.find(b => currentStat >= b.min && currentStat <= b.max);
-    return band ? band.xp : null;
+    if (!band || band.xp == null) return null;
+    return band.xp;
 }
 
 /**
@@ -23,11 +24,13 @@ function xpRequiredForNextPoint(currentStat) {
  * @param {number} currentStat - Current stat (1–100)
  * @param {number} currentXp - Current accumulated XP for this stat
  * @param {number} xpToAdd - XP to add
- * @param {number} statCap - Gym stat cap (e.g. 35 for T1)
- * @returns {{ newStat: number, newXp: number }} newStat capped at statCap and 95 (96+ is fight only)
+ * @param {number} statCap - Gym stat cap (e.g. 35 for T1); ignored when fightMode (uses 100 max)
+ * @param {{ fightMode?: boolean }} [options] - fightMode: true → allow progression up to 100 (fight XP only)
+ * @returns {{ newStat: number, newXp: number }} newStat capped at gym cap (max 95) or 100 for fights
  */
-function applyXpToStat(currentStat, currentXp, xpToAdd, statCap) {
-    const effectiveCap = Math.min(statCap, 95);
+function applyXpToStat(currentStat, currentXp, xpToAdd, statCap, options = {}) {
+    const fightMode = options.fightMode === true;
+    const effectiveCap = fightMode ? 100 : Math.min(statCap, 95);
     if (currentStat >= effectiveCap) return { newStat: currentStat, newXp: currentXp };
 
     let stat = currentStat;

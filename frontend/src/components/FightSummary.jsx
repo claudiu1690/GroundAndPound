@@ -29,6 +29,7 @@ export const FightSummary = memo(function FightSummary({ summary }) {
     mentalResetRequired,
     completedQuests,
     promoted,
+    statLevelUps,
   } = summary;
 
   const hasXp = xpGained && typeof xpGained === "object" && Object.keys(xpGained).length > 0;
@@ -137,6 +138,14 @@ export const FightSummary = memo(function FightSummary({ summary }) {
                       <span key={stat} className="fight-summary-xp-stat">{stat} +{xp}</span>
                     ))}
                   </span>
+                </td>
+              </tr>
+            )}
+            {statLevelUps?.length > 0 && (
+              <tr>
+                <td className="torn-td-label">Stat level up</td>
+                <td className="torn-td-value">
+                  <strong>{statLevelUps.join(", ")}</strong>
                 </td>
               </tr>
             )}

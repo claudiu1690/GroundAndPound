@@ -40,7 +40,8 @@ exports.XP_PER_POINT = [
     { min: 61, max: 75,  xp: 1000 },
     { min: 76, max: 85,  xp: 2500 },
     { min: 86, max: 95,  xp: 6000 },
-    { min: 96, max: 100, xp: null }, // Fight XP only
+    // 96–100: cannot be raised via gym training; fight XP uses this cost per point
+    { min: 96, max: 99, xp: 8000 },
 ];
 
 // ----- Gym tiers (Overall to unlock, stat cap, XP multiplier) -----

@@ -33,6 +33,7 @@ const {
     applyInjuryToFighter,
     isFightBlocked,
 } = require("../utils/injuryUtils");
+const { applyXpToStat, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require("../utils/statProgression");
 
 /**
  * Generate 3 fight offers for the fighter (Easy, Even, Hard).
@@ -370,11 +371,28 @@ async function resolveFightAndApply(fighterId) {
     fighter.fightsToday = (fighter.fightsToday || 0) + 1;
     fighter.lastFightDate = new Date();
 
+    /** Same progression as training: XP banks toward the next point, then stat increases (fixes raw XP like 80/50). */
+    const statLevelUps = [];
+    const fightXpApplied = {};
     if (Object.keys(fightXp).length > 0) {
-        const STAT_TO_XP = { STR: "strXp", SPD: "spdXp", LEG: "legXp", WRE: "wreXp", GND: "gndXp", SUB: "subXp", CHN: "chnXp", FIQ: "fiqXp" };
-        for (const [stat, xp] of Object.entries(fightXp)) {
-            const key = STAT_TO_XP[stat];
-            if (key) fighter[key] = (fighter[key] || 0) + xp;
+        for (const [statName, baseXp] of Object.entries(fightXp)) {
+            const xpAmount = Math.round(baseXp);
+            fightXpApplied[statName] = xpAmount;
+            const xpKey = STAT_TO_XP_KEY[statName];
+            const valKey = STAT_TO_VAL_KEY[statName];
+            if (!xpKey || !valKey) continue;
+            const currentStat = fighter[valKey] ?? 10;
+            const currentXp = fighter[xpKey] ?? 0;
+            const { newStat, newXp } = applyXpToStat(
+                currentStat,
+                currentXp,
+                xpAmount,
+                100,
+                { fightMode: true }
+            );
+            if (newStat > currentStat) statLevelUps.push(statName);
+            fighter[valKey] = newStat;
+            fighter[xpKey] = newXp;
         }
     }
 
@@ -410,7 +428,8 @@ async function resolveFightAndApply(fighterId) {
         ironEarned,
         notorietyGained: notorietyGain,
         notorietyFrozen,
-        xpGained: fightXp,
+        xpGained: fightXpApplied,
+        statLevelUps,
         xpMultiplier: xpMult,
         isComeback,
         weightCut,
