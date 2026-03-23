@@ -38,6 +38,12 @@ export const FighterProfile = memo(function FighterProfile({ fighter, gyms, onUp
     } catch (_) {}
   };
 
+  const maxStForRest = fighter.maxStamina ?? 100;
+  const restDisabled = (fighter.health ?? 100) >= 100 && (fighter.stamina ?? maxStForRest) >= maxStForRest;
+  const restButtonTitle = restDisabled
+    ? "Health and stamina are already full"
+    : "3 Energy → +25 Health, +25 Stamina";
+
   return (
     <section className="panel fighter-profile">
       <h2 className="panel-title">Fighter</h2>
@@ -176,7 +182,8 @@ export const FighterProfile = memo(function FighterProfile({ fighter, gyms, onUp
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
-                title="3 Energy → +25 Health, +25 Stamina"
+                disabled={restDisabled}
+                title={restButtonTitle}
                 onClick={async () => {
                   try {
                     await api.rest(fighter._id);

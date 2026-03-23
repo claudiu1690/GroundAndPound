@@ -128,14 +128,27 @@ function FighterCard({ fighter }) {
 }
 
 // ── Quick actions ────────────────────────────────────────────
-const QuickActions = memo(function QuickActions({ onNavigate, onRest }) {
+const QuickActions = memo(function QuickActions({ onNavigate, onRest, fighter }) {
+  const maxSt = fighter?.maxStamina ?? 100;
+  const healthFull = (fighter?.health ?? 100) >= 100;
+  const staminaFull = (fighter?.stamina ?? maxSt) >= maxSt;
+  const restDisabled = !fighter || (healthFull && staminaFull);
+
   return (
     <div className="quick-actions-section">
       <div className="quick-actions-title">Quick Actions</div>
       <div className="quick-actions">
         <button className="qa-btn qa-train"   onClick={() => onNavigate("gym")}>Train</button>
         <button className="qa-btn qa-fight"   onClick={() => onNavigate("fights")}>Fight</button>
-        <button className="qa-btn qa-recover" onClick={onRest}>Recover</button>
+        <button
+          type="button"
+          className="qa-btn qa-recover"
+          disabled={restDisabled}
+          title={restDisabled ? "Health and stamina are already full" : "Rest — 3 energy, +25 Health & Stamina (same as profile)"}
+          onClick={onRest}
+        >
+          Recover
+        </button>
       </div>
     </div>
   );
@@ -655,6 +668,7 @@ function App() {
             <div className="dashboard">
               <div className="dashboard-left">
                 <QuickActions
+                  fighter={fighter}
                   onNavigate={setActiveTab}
                   onRest={handleRest}
                 />

@@ -657,6 +657,15 @@ code {
 .qa-train   { background: #2563eb; }
 .qa-fight   { background: var(--red); }
 .qa-recover { background: #16a34a; }
+.qa-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.35);
+  pointer-events: none;
+}
+.qa-btn:disabled:hover {
+  filter: grayscale(0.35);
+}
 .qa-profile { background: #475569; }
 
 /* ============================================================

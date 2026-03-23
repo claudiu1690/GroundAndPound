@@ -283,9 +283,14 @@ async function rest(fighterId) {
     await reconcileEnergy(fighter);
     const currentEnergy = energySnapshot(fighter).current;
     if (currentEnergy < REST_ENERGY_COST) throw new Error("Not enough energy (Rest costs 3)");
+    const maxStamina = fighter.maxStamina ?? 100;
+    const healthNow = fighter.health ?? 100;
+    const staminaNow = fighter.stamina ?? maxStamina;
+    if (healthNow >= 100 && staminaNow >= maxStamina) {
+        throw new Error("Health and stamina are already full.");
+    }
     const updatedEnergy = await energyService.deductEnergy(fighterId, REST_ENERGY_COST);
     setEnergySnapshot(fighter, updatedEnergy);
-    const maxStamina = fighter.maxStamina ?? 100;
     fighter.health = Math.min(100, (fighter.health ?? 100) + REST_HEALTH);
     fighter.stamina = Math.min(maxStamina, (fighter.stamina ?? maxStamina) + REST_STAMINA);
     await fighter.save();
