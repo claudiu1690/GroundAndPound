@@ -34,14 +34,18 @@ exports.KEY_TO_STAT = { str: 'STR', spd: 'SPD', leg: 'LEG', wre: 'WRE', gnd: 'GN
 
 // ----- XP per stat point by range (GDD Section 5.1) -----
 exports.XP_PER_POINT = [
-    { min: 1,  max: 20,  xp: 50 },
-    { min: 21, max: 40,  xp: 150 },
-    { min: 41, max: 60,  xp: 400 },
-    { min: 61, max: 75,  xp: 1000 },
-    { min: 76, max: 85,  xp: 2500 },
-    { min: 86, max: 95,  xp: 6000 },
-    // 96–100: cannot be raised via gym training; fight XP uses this cost per point
-    { min: 96, max: 99, xp: 8000 },
+    { min: 1,  max: 10,  xp: 10 },
+    { min: 11, max: 20,  xp: 25 },
+    { min: 21, max: 30,  xp: 50 },
+    { min: 31, max: 40,  xp: 100 },
+    { min: 41, max: 50,  xp: 200 },
+    { min: 51, max: 60,  xp: 400 },
+    { min: 61, max: 70,  xp: 800 },
+    { min: 71, max: 80,  xp: 1500 },
+    { min: 81, max: 90,  xp: 2500 },
+    { min: 91, max: 95,  xp: 6000 },
+    // 96–99: cannot be raised via gym training; fight XP uses this cost per point
+    { min: 96, max: 99,  xp: 8000 },
 ];
 
 // ----- Gym tiers (Overall to unlock, stat cap, XP multiplier) -----
