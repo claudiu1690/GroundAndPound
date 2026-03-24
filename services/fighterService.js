@@ -2,7 +2,7 @@ const Fighter = require("../models/fighterModel");
 const Gym = require("../models/gymModel");
 const { STYLES, BACKSTORIES, ENERGY } = require("../consts/gameConstants");
 const { calculateOverall } = require("../utils/overallRating");
-const { xpRequiredForNextPoint } = require("../utils/statProgression");
+const { xpRequiredForNextPoint, roundStatXp, normalizeBankedXp } = require("../utils/statProgression");
 const notorietyService = require("./notorietyService");
 const energyService = require("./energyService");
 
@@ -51,11 +51,40 @@ function buildStatProgress(fighter) {
     for (const name of STAT_NAMES) {
         const key = name.toLowerCase();
         const value = fighter[key] != null ? fighter[key] : 10;
-        const xp = fighter[STAT_TO_XP[key]] != null ? fighter[STAT_TO_XP[key]] : 0;
-        const xpToNext = xpRequiredForNextPoint(value);
-        progress[name] = { value, xp, xpToNext: xpToNext ?? null };
+        const rawXp = fighter[STAT_TO_XP[key]] != null ? fighter[STAT_TO_XP[key]] : 0;
+        const { newStat, newXp } = normalizeBankedXp(value, rawXp);
+        const xpToNext = xpRequiredForNextPoint(newStat);
+        progress[name] = {
+            value: newStat,
+            xp: roundStatXp(newXp),
+            xpToNext: xpToNext ?? null,
+        };
     }
     return progress;
+}
+
+/**
+ * Persist overflow XP into stat points (same pipeline as fights). Fixes bad rows + quest direct stat bonuses.
+ */
+async function reconcileStatXpBanks(fighter) {
+    let dirty = false;
+    for (const name of STAT_NAMES) {
+        const key = name.toLowerCase();
+        const val = fighter[key] ?? 10;
+        const xpKey = STAT_TO_XP[key];
+        const xp = fighter[xpKey] ?? 0;
+        const { newStat, newXp } = normalizeBankedXp(val, xp);
+        const rounded = roundStatXp(newXp);
+        if (newStat !== val || Math.abs(rounded - xp) > 1e-6) {
+            fighter[key] = newStat;
+            fighter[xpKey] = rounded;
+            dirty = true;
+        }
+    }
+    if (dirty) {
+        fighter.overallRating = calculateOverall(fighter);
+        await fighter.save();
+    }
 }
 
 /**
@@ -170,6 +199,7 @@ function toPublicFighter(fighter) {
 async function getFighterById(id) {
     const fighter = await Fighter.findById(id).populate("gymId");
     if (!fighter) throw new Error("Fighter not found");
+    await reconcileStatXpBanks(fighter);
     await reconcileEnergy(fighter);
     return toPublicFighter(fighter);
 }
@@ -315,6 +345,8 @@ async function payGymMembership(fighterId, gymId) {
     } else {
         fighter.gymMemberships.push({ gymId, paidUntil });
     }
+    // Paid membership sets this gym as the fighter's default / home gym.
+    fighter.gymId = gym._id;
     await fighter.save();
     return toPublicFighter(fighter);
 }

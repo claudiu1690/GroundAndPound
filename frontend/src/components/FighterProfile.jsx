@@ -239,7 +239,9 @@ export const FighterProfile = memo(function FighterProfile({ fighter, gyms, onUp
                 if (!p) return null;
                 const { value, xp, xpToNext } = p;
                 const isMax = xpToNext == null;
-                const pct = isMax ? 100 : (xpToNext > 0 ? Math.min(100, (xp / xpToNext) * 100) : 0);
+                const xpShown =
+                  typeof xp === "number" && Number.isFinite(xp) ? Math.round(xp * 100) / 100 : xp;
+                const pct = isMax ? 100 : (xpToNext > 0 ? Math.min(100, (xpShown / xpToNext) * 100) : 0);
                 return (
                   <div key={name} className="stat-row">
                     <span className="stat-name stat-tooltip" title={STAT_TOOLTIPS[name] ?? ""}>{name}</span>
@@ -248,7 +250,7 @@ export const FighterProfile = memo(function FighterProfile({ fighter, gyms, onUp
                       <div className="stat-bar" style={{ width: `${pct}%` }} />
                     </div>
                     <span className="stat-xp-text">
-                      {isMax ? "Fight XP only" : `${xp} / ${xpToNext} XP`}
+                      {isMax ? "Fight XP only" : `${xpShown} / ${xpToNext} XP`}
                     </span>
                   </div>
                 );

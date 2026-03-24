@@ -33,7 +33,7 @@ const {
     applyInjuryToFighter,
     isFightBlocked,
 } = require("../utils/injuryUtils");
-const { applyXpToStat, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require("../utils/statProgression");
+const { applyXpToStat, roundStatXp, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require("../utils/statProgression");
 const notorietyService = require("./notorietyService");
 const { tierRank } = require("../consts/notorietyConfig");
 
@@ -492,7 +492,7 @@ async function resolveFightAndApply(fighterId) {
             );
             if (newStat > currentStat) statLevelUps.push(statName);
             fighter[valKey] = newStat;
-            fighter[xpKey] = newXp;
+            fighter[xpKey] = roundStatXp(newXp);
         }
     }
 

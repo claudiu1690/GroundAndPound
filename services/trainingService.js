@@ -2,7 +2,7 @@ const Fighter = require("../models/fighterModel");
 const Gym = require("../models/gymModel");
 const { TRAINING_SESSIONS, GYM_TIERS, BACKSTORIES } = require("../consts/gameConstants");
 const { calculateOverall } = require("../utils/overallRating");
-const { applyXpToStat, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require("../utils/statProgression");
+const { applyXpToStat, roundStatXp, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require("../utils/statProgression");
 const fighterService = require("./fighterService");
 const energyService = require("./energyService");
 const questService = require("./questService");
@@ -37,8 +37,8 @@ async function doTraining(fighterId, gymId, sessionType) {
 
     const gym = await Gym.findById(gymId);
     if (!gym) throw new Error("Gym not found");
-    // Keep fighter's enrolled gym aligned with where they are actively training.
-    fighter.gymId = gym._id;
+    // Do not change fighter.gymId here — that is home/default gym (membership / profile).
+    // Training at another gym must not drop paid membership association or fight-quest enrollment.
 
     if ((fighter.energy?.current ?? fighter.energy ?? 0) < config.energy) throw new Error("Not enough energy");
 
@@ -141,7 +141,7 @@ async function doTraining(fighterId, gymId, sessionType) {
         const { newStat, newXp } = applyXpToStat(currentStat, currentXp, xp, effectiveStatCap);
 
         fighter[valKey] = newStat;
-        fighter[xpKey] = newXp;
+        fighter[xpKey] = roundStatXp(newXp);
         xpGained[statName] = Math.round(xp);
         if (newStat > currentStat) statLevelUps.push(statName);
     }

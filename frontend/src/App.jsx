@@ -309,21 +309,47 @@ const RightPanels = memo(function RightPanels({ fighter, lastFightSummary }) {
   );
 });
 
+/** Default gym: home (`fighter.gymId`), else first gym with valid paid membership, else first listed gym. */
+function pickDefaultGymId(fighter, gyms) {
+  if (!gyms?.length) return "";
+  const homeId = fighter?.gymId?._id ?? fighter?.gymId;
+  if (homeId != null && homeId !== "" && gyms.some((g) => String(g._id) === String(homeId))) {
+    return String(homeId);
+  }
+  const now = Date.now();
+  for (const m of fighter?.gymMemberships || []) {
+    if (!m?.paidUntil || new Date(m.paidUntil).getTime() <= now) continue;
+    if (gyms.some((g) => String(g._id) === String(m.gymId))) return String(m.gymId);
+  }
+  return String(gyms[0]._id);
+}
+
 /**
  * Gym + session selection lives here so changing gym/session does not re-render all of App.
  */
-const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, onPayMembership }) {
+const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, onPayMembership, questRefreshKey }) {
   const [trainGym, setTrainGym] = useState("");
   const [trainSession, setTrainSession] = useState("bag_work");
 
   useEffect(() => {
-    if (gyms?.length && !trainGym) setTrainGym(gyms[0]._id);
-  }, [gyms, trainGym]);
+    if (!gyms?.length) return;
+    const preferred = pickDefaultGymId(fighter, gyms);
+    if (!trainGym) {
+      setTrainGym(preferred);
+      return;
+    }
+    const naiveFirst = String(gyms[0]._id);
+    if (String(trainGym) === naiveFirst && preferred !== naiveFirst) {
+      setTrainGym(preferred);
+    }
+  }, [gyms, trainGym, fighter]);
 
   useEffect(() => {
     if (!gyms?.length || !trainGym) return;
-    if (!gyms.some((g) => g._id === trainGym)) setTrainGym(gyms[0]._id);
-  }, [gyms, trainGym]);
+    if (!gyms.some((g) => String(g._id) === String(trainGym))) {
+      setTrainGym(pickDefaultGymId(fighter, gyms));
+    }
+  }, [gyms, trainGym, fighter]);
 
   const handleTrainClick = useCallback(() => {
     onTrain(trainGym, trainSession);
@@ -341,7 +367,7 @@ const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, on
         onTrain={handleTrainClick}
         onPayMembership={onPayMembership}
       />
-      <GymQuests fighter={fighter} gymId={trainGym} />
+      <GymQuests fighter={fighter} gymId={trainGym} refreshKey={questRefreshKey} />
     </div>
   );
 });
@@ -364,6 +390,8 @@ function App() {
   const [trainingResultPopup, setTrainingResultPopup] = useState({ open: false, sessionLabel: "", xpGained: {}, statLevelUps: [] });
   const [tierUpModal, setTierUpModal] = useState(null);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
+  /** Bumps after train / membership pay so gym quest panel refetches without a full page reload. */
+  const [gymQuestRefresh, setGymQuestRefresh] = useState(0);
 
   const maybeShowBlockPopup = useCallback((rawMessage, errorCode) => {
     const blockingCodes = new Set([
@@ -482,6 +510,7 @@ function App() {
           statLevelUps: result.statLevelUps ?? [],
         });
         loadFighter(fighter._id, { clearMessage: false });
+        setGymQuestRefresh((k) => k + 1);
       } catch (e) {
         setMessage(e.message || "Train failed");
       }
@@ -497,6 +526,7 @@ function App() {
         const result = await api.payGymMembership(fighter._id, gymId);
         setMessage(result.message || "Membership paid.");
         loadFighter(fighter._id, { clearMessage: false });
+        setGymQuestRefresh((k) => k + 1);
       } catch (e) {
         setMessage(e.message || "Payment failed");
       }
@@ -776,6 +806,7 @@ function App() {
                 gyms={gyms}
                 onTrain={handleTrain}
                 onPayMembership={handlePayMembership}
+                questRefreshKey={gymQuestRefresh}
               />
             </div>
           )}

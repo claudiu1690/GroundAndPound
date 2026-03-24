@@ -47,4 +47,25 @@ function applyXpToStat(currentStat, currentXp, xpToAdd, statCap, options = {}) {
     return { newStat: stat, newXp: xp };
 }
 
-module.exports = { xpRequiredForNextPoint, applyXpToStat, STAT_TO_XP_KEY, STAT_TO_VAL_KEY };
+/** Round banked stat XP for storage/display (avoids long floats from training splits). */
+function roundStatXp(n) {
+    if (!Number.isFinite(n)) return 0;
+    return Math.round(n * 100) / 100;
+}
+
+/**
+ * Drain overflow XP into stat levels (same rules as fight progression). Use after load or direct stat rewards.
+ * @returns {{ newStat: number, newXp: number }}
+ */
+function normalizeBankedXp(currentStat, bankedXp) {
+    return applyXpToStat(currentStat, bankedXp, 0, 100, { fightMode: true });
+}
+
+module.exports = {
+    xpRequiredForNextPoint,
+    applyXpToStat,
+    roundStatXp,
+    normalizeBankedXp,
+    STAT_TO_XP_KEY,
+    STAT_TO_VAL_KEY,
+};

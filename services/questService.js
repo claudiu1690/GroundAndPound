@@ -3,7 +3,9 @@
  * Tracks per-fighter-per-gym quest progress and applies rewards on completion.
  */
 const Gym = require("../models/gymModel");
+const Fighter = require("../models/fighterModel");
 const QuestProgress = require("../models/questProgressModel");
+const { normalizeBankedXp, roundStatXp } = require("../utils/statProgression");
 const { getQuestsForGym } = require("../consts/questDefinitions");
 const { GYM_TIERS, TRAINING_SESSIONS } = require("../consts/gameConstants");
 const {
@@ -38,9 +40,16 @@ function cleanupUpdate(update) {
     return update;
 }
 
-/** Check whether a quest is locked because its prerequisite isn't completed yet. */
+/** Check whether a quest is locked because its prerequisite isn't completed yet (global completion). */
 function isQuestLockedForFighter(quest, fighter) {
     return !!(quest.requiresQuest && !fighter.completedQuests?.includes(quest.requiresQuest));
+}
+
+function hasValidGymMembership(fighter, gym) {
+    if (!gym.monthlyIron || gym.monthlyIron === 0) return true;
+    return (fighter.gymMemberships || []).some(
+        (m) => String(m.gymId) === String(gym._id) && new Date(m.paidUntil) > new Date()
+    );
 }
 
 /** True when all combat stats are at least 60. */
@@ -125,6 +134,10 @@ async function applyReward(fighter, gym, quest) {
                 fighter.stamina = Math.min(fighter.maxStamina, (fighter.stamina || 100) + reward.value);
             } else if (typeof fighter[reward.stat] === "number") {
                 fighter[reward.stat] = Math.min(100, fighter[reward.stat] + reward.value);
+                const xpKey = `${reward.stat}Xp`;
+                const { newStat, newXp } = normalizeBankedXp(fighter[reward.stat], fighter[xpKey] ?? 0);
+                fighter[reward.stat] = newStat;
+                fighter[xpKey] = roundStatXp(newXp);
             }
             break;
         case "stat_cap_bonus":
@@ -141,6 +154,7 @@ async function applyReward(fighter, gym, quest) {
  * Handles unlock checks, progress update, capping, completion, and reward apply.
  */
 async function processApplicableQuests({ fighterId, gymId, fighter, gym, buildUpdate }) {
+    if (!hasValidGymMembership(fighter, gym)) return [];
     const applicable = await ensureQuestDocs(fighterId, gymId, gym.tier, gym.specialtyStats);
     const completedThisBatch = [];
 
@@ -148,7 +162,25 @@ async function processApplicableQuests({ fighterId, gymId, fighter, gym, buildUp
         if (fighter.completedQuests?.includes(quest.id)) continue;
         if (isQuestLockedForFighter(quest, fighter)) continue;
 
-        const existing = await QuestProgress.findOne({ fighterId, gymId, questId: quest.id });
+        let existing = await QuestProgress.findOne({ fighterId, gymId, questId: quest.id });
+        if (existing?.status === "completed") continue;
+        if (!existing) {
+            await QuestProgress.findOneAndUpdate(
+                { fighterId, gymId, questId: quest.id },
+                {
+                    $setOnInsert: {
+                        fighterId,
+                        gymId,
+                        questId: quest.id,
+                        status: "available",
+                        progress: {},
+                        completedAt: null,
+                    },
+                },
+                { upsert: true }
+            );
+            existing = await QuestProgress.findOne({ fighterId, gymId, questId: quest.id });
+        }
         if (!existing || existing.status === "completed") continue;
 
         const update = cleanupUpdate(buildUpdate(quest));
@@ -257,13 +289,25 @@ async function getQuestProgress(fighterId, gymId) {
     const gym = await Gym.findById(gymId).lean();
     if (!gym) throw new Error("Gym not found");
 
+    const fighter = await Fighter.findById(fighterId).lean();
+    if (!fighter) throw new Error("Fighter not found");
+
     const applicable = await ensureQuestDocs(fighterId, gymId, gym.tier, gym.specialtyStats);
     const docs = await QuestProgress.find({ fighterId, gymId }).lean();
-    const completedQuestIds = new Set(docs.filter((d) => d.status === "completed").map((d) => d.questId));
+    const hasAccess = hasValidGymMembership(fighter, gym);
 
     return applicable.map((quest) => {
         const doc = docs.find((d) => d.questId === quest.id) || { progress: {}, status: "available" };
-        const isLocked = !!(quest.requiresQuest && !completedQuestIds.has(quest.requiresQuest));
+        const isDone = doc.status === "completed";
+        const prereqLocked = isQuestLockedForFighter(quest, fighter);
+        const membershipLocked = !hasAccess && !isDone;
+
+        let status = doc.status;
+        if (isDone) status = "completed";
+        else if (membershipLocked) status = "membership_locked";
+        else if (prereqLocked) status = "locked";
+
+        const blockProgress = status === "locked" || status === "membership_locked";
 
         return {
             questId: quest.id,
@@ -271,15 +315,15 @@ async function getQuestProgress(fighterId, gymId) {
             description: quest.description,
             reward: quest.reward.description,
             requiresQuest: quest.requiresQuest || null,
-            status: isLocked ? "locked" : doc.status,
+            status,
             conditions: quest.conditions.map((cond) => {
                 const rawCurrent = doc.progress?.[cond.key] ?? 0;
                 const current = Math.min(rawCurrent, cond.target);
                 return {
                     label: cond.label,
-                    current: isLocked ? 0 : current,
+                    current: blockProgress ? 0 : current,
                     target: cond.target,
-                    done: !isLocked && rawCurrent >= cond.target,
+                    done: !blockProgress && rawCurrent >= cond.target,
                 };
             }),
             completedAt: doc.completedAt || null,
