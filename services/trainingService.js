@@ -87,6 +87,7 @@ async function doTraining(fighterId, gymId, sessionType) {
     // GDD 7.4: Coach's Test quest grants +3 to stat cap at this gym on completion
     const statCapBonus = await questService.getStatCapBonus(fighterId, gymId);
     const effectiveStatCap = statCap + statCapBonus;
+    const injuryLockedStats = new Set(fighterService.getInjuryLockedStats(fighter));
 
     if (config.raisesMaxStamina) {
         const currentMax = fighter.maxStamina || 100;
@@ -120,6 +121,11 @@ async function doTraining(fighterId, gymId, sessionType) {
     const statLevelUps = [];
 
     for (const statName of config.stats) {
+        // Injury-penalized stats are locked from training progression until healed.
+        if (injuryLockedStats.has(statName)) {
+            xpGained[statName] = 0;
+            continue;
+        }
         const xpKey = STAT_TO_XP_KEY[statName];
         const valKey = STAT_TO_VAL_KEY[statName];
         if (!xpKey || !valKey) continue;

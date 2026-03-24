@@ -99,6 +99,94 @@
       "promotionTier": "Amateur",
       "overallRating": 21,
       "str": 14, "spd": 10, "chn": 12, "leg": 8, "wre": 20, "gnd": 16, "sub": 22, "fiq": 10
+    },
+    {
+      "name": "Ryan Cole",
+      "nickname": "Southpaw",
+      "style": "Boxer",
+      "promotionTier": "Regional Pro",
+      "overallRating": 28,
+      "str": 28, "spd": 22, "chn": 22, "leg": 10, "wre": 10, "gnd": 10, "sub": 10, "fiq": 12
+    },
+    {
+      "name": "Eddie Vance",
+      "nickname": null,
+      "style": "Wrestler",
+      "promotionTier": "Regional Pro",
+      "overallRating": 30,
+      "str": 18, "spd": 12, "chn": 14, "leg": 10, "wre": 28, "gnd": 22, "sub": 14, "fiq": 10
+    },
+    {
+      "name": "Tariq Benson",
+      "nickname": "Heat",
+      "style": "Kickboxer",
+      "promotionTier": "Regional Pro",
+      "overallRating": 32,
+      "str": 22, "spd": 24, "chn": 14, "leg": 22, "wre": 12, "gnd": 10, "sub": 12, "fiq": 12
+    },
+    {
+      "name": "Chris Dalton",
+      "nickname": null,
+      "style": "Brazilian Jiu-Jitsu",
+      "promotionTier": "Regional Pro",
+      "overallRating": 34,
+      "str": 12, "spd": 10, "chn": 12, "leg": 10, "wre": 14, "gnd": 24, "sub": 26, "fiq": 14
+    },
+    {
+      "name": "Omar Silva",
+      "nickname": "El Toro",
+      "style": "Muay Thai",
+      "promotionTier": "Regional Pro",
+      "overallRating": 36,
+      "str": 24, "spd": 20, "chn": 14, "leg": 24, "wre": 12, "gnd": 12, "sub": 12, "fiq": 12
+    },
+    {
+      "name": "Jared Pike",
+      "nickname": null,
+      "style": "Judo",
+      "promotionTier": "Regional Pro",
+      "overallRating": 38,
+      "str": 16, "spd": 12, "chn": 14, "leg": 14, "wre": 28, "gnd": 20, "sub": 16, "fiq": 10
+    },
+    {
+      "name": "Devon Hayes",
+      "nickname": "Iron",
+      "style": "Wrestler",
+      "promotionTier": "Regional Pro",
+      "overallRating": 40,
+      "str": 20, "spd": 14, "chn": 16, "leg": 10, "wre": 30, "gnd": 24, "sub": 14, "fiq": 10
+    },
+    {
+      "name": "Luis Ortega",
+      "nickname": null,
+      "style": "Sambo",
+      "promotionTier": "Regional Pro",
+      "overallRating": 42,
+      "str": 18, "spd": 12, "chn": 14, "leg": 10, "wre": 24, "gnd": 20, "sub": 26, "fiq": 12
+    },
+    {
+      "name": "Kyle Marsh",
+      "nickname": "Flash",
+      "style": "Capoeira",
+      "promotionTier": "Regional Pro",
+      "overallRating": 44,
+      "str": 16, "spd": 26, "chn": 12, "leg": 22, "wre": 10, "gnd": 10, "sub": 14, "fiq": 18
+    },
+    {
+      "name": "Brad Owens",
+      "nickname": null,
+      "style": "Boxer",
+      "promotionTier": "Regional Pro",
+      "overallRating": 46,
+      "str": 32, "spd": 24, "chn": 26, "leg": 12, "wre": 12, "gnd": 10, "sub": 10, "fiq": 14
+    },
+    {
+      "name": "Nate Cross",
+      "nickname": "The Pro",
+      "style": "Muay Thai",
+      "promotionTier": "Regional Pro",
+      "overallRating": 48,
+      "str": 26, "spd": 22, "chn": 16, "leg": 28, "wre": 14, "gnd": 12, "sub": 14, "fiq": 14
     }
   ],
   "weightClasses": ["Bantamweight", "Featherweight", "Lightweight", "Welterweight"],

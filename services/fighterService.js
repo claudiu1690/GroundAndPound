@@ -9,6 +9,7 @@ const energyService = require("./energyService");
 const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
 const STAT_NAMES = ["STR", "SPD", "LEG", "WRE", "GND", "SUB", "CHN", "FIQ"];
 const STAT_TO_XP = { str: "strXp", spd: "spdXp", leg: "legXp", wre: "wreXp", gnd: "gndXp", sub: "subXp", chn: "chnXp", fiq: "fiqXp" };
+const KEY_TO_STAT = { str: "STR", spd: "SPD", leg: "LEG", wre: "WRE", gnd: "GND", sub: "SUB", chn: "CHN", fiq: "FIQ" };
 
 /**
  * Read a fighter's energy shape safely (supports legacy numeric energy).
@@ -55,6 +56,21 @@ function buildStatProgress(fighter) {
         progress[name] = { value, xp, xpToNext: xpToNext ?? null };
     }
     return progress;
+}
+
+/**
+ * Stats that are currently injury-penalized (negative effect active).
+ * Used by training UI/service to lock progression while injured.
+ */
+function getInjuryLockedStats(fighter) {
+    const locked = new Set();
+    for (const inj of fighter.injuries || []) {
+        const effects = inj.appliedStatEffects || {};
+        for (const [key, statName] of Object.entries(KEY_TO_STAT)) {
+            if ((effects[key] || 0) < 0) locked.add(statName);
+        }
+    }
+    return Array.from(locked);
 }
 
 /**
@@ -142,6 +158,7 @@ function toPublicFighter(fighter) {
     notorietyService.ensureNotorietyShape(fighter);
     const out = fighter.toObject ? fighter.toObject() : { ...fighter };
     out.notoriety = notorietyService.buildNotorietyPublicState(fighter);
+    out.injuryLockedStats = getInjuryLockedStats(fighter);
     return out;
 }
 
@@ -345,5 +362,6 @@ module.exports = {
     doctorVisit,
     mentalReset,
     payGymMembership,
-    buildStatProgress
+    buildStatProgress,
+    getInjuryLockedStats
 };

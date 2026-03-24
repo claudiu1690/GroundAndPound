@@ -13,6 +13,7 @@ import { FightSummary } from "./components/FightSummary";
 import { GymQuests } from "./components/GymQuests";
 import { OctagonBackground } from "./components/OctagonBackground";
 import { AuthPage } from "./components/AuthPage";
+import { FightLimitPopup } from "./components/FightLimitPopup";
 
 // ── Navigation definition ──────────────────────────────────
 const NAV_ITEMS = [
@@ -27,11 +28,11 @@ const NAV_ITEMS = [
 
 // ── Tier ladder for display ────────────────────────────────
 const TIER_LADDER_DISPLAY = [
-  { id: "Amateur",        label: "Amateur",       minOvr: 0,  nextOvr: 28 },
-  { id: "Regional Pro",   label: "Regional Pro",  minOvr: 28, nextOvr: 44 },
-  { id: "National",       label: "National",      minOvr: 44, nextOvr: 60 },
-  { id: "GCS Contender",  label: "GCS Contender", minOvr: 60, nextOvr: 72 },
-  { id: "GCS",            label: "GCS",           minOvr: 72, nextOvr: null },
+  { id: "Amateur",        label: "Amateur",       minOvr: 0,  nextOvr: 30 },
+  { id: "Regional Pro",   label: "Regional Pro",  minOvr: 30, nextOvr: 45 },
+  { id: "National",       label: "National",      minOvr: 45, nextOvr: 60 },
+  { id: "GCS Contender",  label: "GCS Contender", minOvr: 60, nextOvr: 62 },
+  { id: "GCS",            label: "GCS",           minOvr: 62, nextOvr: null },
 ];
 
 // ── Header resource bar ─────────────────────────────────────
@@ -362,6 +363,35 @@ function App() {
   const [activeTab, setActiveTab]               = useState("gym");
   const [trainingResultPopup, setTrainingResultPopup] = useState({ open: false, sessionLabel: "", xpGained: {}, statLevelUps: [] });
   const [tierUpModal, setTierUpModal] = useState(null);
+  const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
+
+  const maybeShowBlockPopup = useCallback((rawMessage, errorCode) => {
+    const blockingCodes = new Set([
+      "FIGHT_DAILY_CAP_REACHED",
+      "FIGHT_NOT_ENOUGH_ENERGY",
+      "FIGHT_MENTAL_RESET_REQUIRED",
+      "FIGHT_DOCTOR_VISIT_REQUIRED",
+      "FIGHT_NO_ACCEPTED_FIGHT",
+      "FIGHT_INVALID_STRATEGY",
+      "FIGHT_INVALID_WEIGHT_CUT",
+    ]);
+    const msg = (rawMessage || "").toLowerCase();
+    const fallbackByMessage = [
+      "daily fight cap reached",
+      "not enough energy",
+      "mental reset required",
+      "cannot fight:",
+      "no accepted fight",
+      "invalid strategy",
+      "invalid weight cut strategy",
+    ];
+    const shouldPopup = (errorCode && blockingCodes.has(errorCode))
+      || fallbackByMessage.some((p) => msg.includes(p));
+    if (shouldPopup) {
+      setFightLimitPopup({ open: true, message: rawMessage || "Action unavailable right now." });
+    }
+    return shouldPopup;
+  }, []);
 
   const loadFighter = useCallback(async (id, options = {}) => {
     if (!id) return;
@@ -494,10 +524,12 @@ function App() {
       setOffers(Array.isArray(list) ? list : []);
       setMessage(list?.length ? `${list.length} offer(s) ready.` : "No offers. Seed opponents?");
     } catch (e) {
-      setMessage(e.message || "Failed to get offers");
+      const errMsg = e.message || "Failed to get offers";
+      maybeShowBlockPopup(errMsg, e.code);
+      setMessage(errMsg);
       setOffers([]);
     }
-  }, [fighter?._id]);
+  }, [fighter?._id, maybeShowBlockPopup]);
 
   const handleAcceptOffer = useCallback(
     async (opponentId, offerType = "Even") => {
@@ -510,10 +542,12 @@ function App() {
         loadFighter(fighter._id);
         setOffers([]);
       } catch (e) {
-        setMessage(e.message || "Accept failed");
+        const errMsg = e.message || "Accept failed";
+        maybeShowBlockPopup(errMsg, e.code);
+        setMessage(errMsg);
       }
     },
-    [fighter?._id, loadFighter]
+    [fighter?._id, loadFighter, maybeShowBlockPopup]
   );
 
   const handleCamp = useCallback(async () => {
@@ -524,9 +558,11 @@ function App() {
       setFighter(updated);
       setMessage(`Camp action added. Total: ${updated.trainingCampActions ?? 0}.`);
     } catch (e) {
-      setMessage(e.message || "Camp failed");
+      const errMsg = e.message || "Camp failed";
+      maybeShowBlockPopup(errMsg, e.code);
+      setMessage(errMsg);
     }
-  }, [fighter?._id]);
+  }, [fighter?._id, maybeShowBlockPopup]);
 
   const handleResolve = useCallback(async () => {
     if (!fighter?._id) return;
@@ -548,10 +584,12 @@ function App() {
       setMessage(`${out} — +${iron} ⊗${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}`);
       loadFighter(fighter._id);
     } catch (e) {
-      setMessage(e.message || "Resolve failed");
+      const errMsg = e.message || "Resolve failed";
+      maybeShowBlockPopup(errMsg, e.code);
+      setMessage(errMsg);
     }
     setResolving(false);
-  }, [fighter?._id, loadFighter]);
+  }, [fighter?._id, loadFighter, maybeShowBlockPopup]);
 
   const closeTrainingPopup = useCallback(() => {
     setTrainingResultPopup((p) => ({ ...p, open: false }));
@@ -645,6 +683,12 @@ function App() {
         fromTier={tierUpModal?.from}
         toTier={tierUpModal?.to}
         onClose={() => setTierUpModal(null)}
+      />
+
+      <FightLimitPopup
+        open={!!fightLimitPopup.open}
+        message={fightLimitPopup.message}
+        onClose={() => setFightLimitPopup({ open: false, message: "" })}
       />
 
       {/* ── BODY: centered block = nav + main ── */}

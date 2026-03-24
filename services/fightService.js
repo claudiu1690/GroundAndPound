@@ -4,16 +4,16 @@ const Fight = require("../models/fightModel");
 const { PROMOTION_TIERS } = require("../consts/gameConstants");
 
 /**
- * Tier promotion ladder. Each entry describes when a fighter advances to the next tier.
- * A fighter is promoted when their overallRating reaches the threshold AND they are winning
- * at their current tier (checked by record at time of fight).
+ * Tier promotion ladder derived from PROMOTION_TIERS.
+ * Promotion threshold for each tier jump is the next tier's minOverall.
+ * This keeps promotion logic and tier config aligned in one source of truth.
  */
-const TIER_LADDER = [
-    { from: "Amateur",        to: "Regional Pro",   minOverall: 28 },
-    { from: "Regional Pro",   to: "National",       minOverall: 44 },
-    { from: "National",       to: "GCS Contender",  minOverall: 60 },
-    { from: "GCS Contender",  to: "GCS",            minOverall: 72 },
-];
+const TIER_ORDER = Object.keys(PROMOTION_TIERS);
+const TIER_LADDER = TIER_ORDER.slice(0, -1).map((fromTier, idx) => {
+    const nextTier = TIER_ORDER[idx + 1];
+    const minOverall = PROMOTION_TIERS[nextTier]?.minOverall ?? Infinity;
+    return { from: fromTier, to: nextTier, minOverall };
+});
 
 /**
  * Check if a fighter qualifies for a tier promotion. Returns the new tier name or null.
@@ -38,12 +38,49 @@ const notorietyService = require("./notorietyService");
 const { tierRank } = require("../consts/notorietyConfig");
 
 /**
+ * Daily fight caps are per promotion tier. Legacy `fightsToday` was one global counter, so Amateur
+ * fights incorrectly counted against Regional Pro's cap after promotion.
+ */
+function ensureDailyFightTierState(fighter) {
+    const today = new Date().toDateString();
+    if (fighter.fightDayKey == null) {
+        fighter.fightsTodayByTier = fighter.fightsTodayByTier && typeof fighter.fightsTodayByTier === "object"
+            ? { ...fighter.fightsTodayByTier }
+            : {};
+        if (fighter.lastFightDate && fighter.lastFightDate.toDateString() === today && (fighter.fightsToday || 0) > 0) {
+            fighter.fightsTodayByTier.Amateur = (fighter.fightsTodayByTier.Amateur || 0) + (fighter.fightsToday || 0);
+        }
+        fighter.fightDayKey = today;
+        return;
+    }
+    if (fighter.fightDayKey !== today) {
+        fighter.fightsTodayByTier = {};
+        fighter.fightDayKey = today;
+        fighter.fightsToday = 0;
+    }
+    if (!fighter.fightsTodayByTier || typeof fighter.fightsTodayByTier !== "object") {
+        fighter.fightsTodayByTier = {};
+    }
+}
+
+function incrementFightsTodayForTier(fighter, tier) {
+    ensureDailyFightTierState(fighter);
+    fighter.fightsTodayByTier[tier] = (fighter.fightsTodayByTier[tier] || 0) + 1;
+    fighter.fightsToday = (fighter.fightsToday || 0) + 1;
+    fighter.lastFightDate = new Date();
+}
+
+/**
  * Generate 3 fight offers for the fighter (Easy, Even, Hard).
  * Uses opponents in DB for same weight class and promotion tier.
  */
 async function generateOffers(fighterId) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
+    const blockingInjury = isFightBlocked(fighter);
+    if (blockingInjury) {
+        throw new Error(`Cannot fight: ${blockingInjury.label} requires a doctor visit first.`);
+    }
 
     const tier = fighter.promotionTier;
     const tierConfig = PROMOTION_TIERS[tier];
@@ -105,10 +142,22 @@ async function createOffer(fighterId, opponentId, offerType) {
  * Accept a fight offer: deduct energy, set status to accepted, link to fighter.
  */
 async function acceptOffer(fighterId, fightId) {
+    const fighter = await Fighter.findById(fighterId);
+    if (!fighter) throw new Error("Fighter not found");
+
     const fight = await Fight.findOne({ _id: fightId, fighterId, status: "offered" });
     if (!fight) throw new Error("Fight not found or not available");
 
+    ensureDailyFightTierState(fighter);
+    if (fighter.isModified && fighter.isModified()) await fighter.save();
+
     const tierConfig = PROMOTION_TIERS[fight.promotionTier];
+    const dailyCap = tierConfig ? tierConfig.dailyFightCap : 1;
+    const fightsThisTierToday = fighter.fightsTodayByTier[fight.promotionTier] || 0;
+    if (fightsThisTierToday >= dailyCap) {
+        throw new Error(`Daily fight cap reached for ${fight.promotionTier} (${dailyCap}/day). Come back tomorrow.`);
+    }
+
     const energyCost = tierConfig ? tierConfig.fightEnergyCost : 10;
     await fighterService.deductEnergy(fighterId, energyCost);
 
@@ -194,8 +243,6 @@ async function resolveFightAndApply(fighterId) {
     }
 
     const tierConfig = PROMOTION_TIERS[fight.promotionTier];
-    const energyCost = tierConfig ? tierConfig.fightEnergyCost : 10;
-    await fighterService.deductEnergy(fighterId, energyCost);
 
     // GDD 8.2: Apply training camp penalty when TCA < recommended
     const recommendedTca = (tierConfig && tierConfig.recommendedTca) || 2;
@@ -264,7 +311,7 @@ async function resolveFightAndApply(fighterId) {
     if (isComeback) xpMult = +(xpMult * 1.5).toFixed(2);
 
     // GDD 8.8: Weight miss → -20% iron purse + notoriety penalty
-    const basePurse = tierConfig && fight.promotionTier !== "Amateur" ? (tierConfig.signingFee ? 1500 : 500) : 0;
+    const basePurse = tierConfig && fight.promotionTier !== "Amateur" ? Math.max(0, tierConfig.signingFee || 0) : 0;
     const outcomeIronMult = isWin ? 1 : (isDraw ? 0.5 : 0.7);
     // GDD 7.4: The Grind perk → +500 iron per fight while enrolled at that gym
     const grindBonus = (fighter.activePerks?.theGrindGymId &&
@@ -336,7 +383,8 @@ async function resolveFightAndApply(fighterId) {
             injuriesSustained.push(concussion.label);
         }
     } else {
-        const fightInjuryType = rollForFightInjury(fighter.fiq || 10);
+        const injuryRiskMult = (tierConfig && tierConfig.injuryRiskMult) || 1;
+        const fightInjuryType = rollForFightInjury(fighter.fiq || 10, injuryRiskMult);
         if (fightInjuryType) {
             const inj = buildInjury(fightInjuryType);
             if (inj) {
@@ -421,12 +469,7 @@ async function resolveFightAndApply(fighterId) {
         notorietyTierUp = { from: peakTierBefore, to: fighter.notoriety.peakTier };
     }
 
-    const today = new Date().toDateString();
-    if (fighter.lastFightDate && fighter.lastFightDate.toDateString() !== today) {
-        fighter.fightsToday = 0;
-    }
-    fighter.fightsToday = (fighter.fightsToday || 0) + 1;
-    fighter.lastFightDate = new Date();
+    incrementFightsTodayForTier(fighter, promoTier);
 
     /** Same progression as training: XP banks toward the next point, then stat increases (fixes raw XP like 80/50). */
     const statLevelUps = [];

@@ -32,7 +32,12 @@ async function request(path, options = {}) {
     window.location.reload();
   }
 
-  if (!res.ok) throw new Error(data.message || res.statusText || "Request failed");
+  if (!res.ok) {
+    const err = new Error(data.message || res.statusText || "Request failed");
+    err.code = data.code || null;
+    err.status = res.status;
+    throw err;
+  }
   return data;
 }
 

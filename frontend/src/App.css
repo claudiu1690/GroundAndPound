@@ -1110,6 +1110,12 @@ code {
 
 .session-card:hover { background: var(--bg-hover); border-color: var(--border-bright); }
 .session-card.active { background: var(--red-glow); border-color: var(--red); border-left-color: var(--red-bright); }
+.session-card-disabled {
+  opacity: 0.45;
+  filter: grayscale(0.25);
+  cursor: not-allowed;
+  pointer-events: none;
+}
 
 .session-card.cat-striking  { border-left-color: #ef4444; }
 .session-card.cat-grappling { border-left-color: #3b82f6; }
@@ -1148,6 +1154,12 @@ code {
 .stat-chip-chn { background: rgba(34,197,94,0.18);  color: #166534; border-color: #14532d; }
 .stat-chip-fiq { background: rgba(6,182,212,0.18);  color: #0e7490; border-color: #164e63; }
 .stat-chip-special { background: rgba(200,150,44,0.2); color: #b45309; border-color: #78350f; }
+.stat-chip-disabled {
+  background: #e5e7eb !important;
+  color: #6b7280 !important;
+  border-color: #9ca3af !important;
+  opacity: 0.8;
+}
 
 .session-card-xp { font-size: 9px; color: var(--text-muted); }
 .session-card.active .session-card-xp { color: var(--text-sec); }
@@ -1670,8 +1682,16 @@ code {
 .meta-fame-stack {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 0.2rem;
+  align-items: stretch;
+  gap: 0.25rem;
+  min-width: 140px;
+}
+.meta-fame-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  white-space: nowrap;
 }
 .meta-fame-score {
   font-size: 12px;
@@ -1679,7 +1699,6 @@ code {
 }
 .fame-tier-bar-wrap {
   width: 100%;
-  max-width: 140px;
   height: 4px;
   background: var(--border);
   border-radius: 2px;

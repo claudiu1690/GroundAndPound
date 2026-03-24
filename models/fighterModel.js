@@ -101,9 +101,13 @@ const fighterSchema = new mongoose.Schema({
     // Training camp state for accepted fight
     acceptedFightId: { type: mongoose.Schema.Types.ObjectId, ref: "Fight", default: null },
     trainingCampActions: { type: Number, default: 0 },
-    // Daily fight count (resets at midnight server time)
+    // Daily fight count — legacy total (kept for migration / display); cap uses fightsTodayByTier
     fightsToday: { type: Number, default: 0 },
     lastFightDate: { type: Date, default: null },
+    /** Calendar day key (toDateString) for fightsTodayByTier reset */
+    fightDayKey: { type: String, default: null },
+    /** Fights completed today per promotion tier (e.g. Amateur vs Regional Pro caps are separate) */
+    fightsTodayByTier: { type: mongoose.Schema.Types.Mixed, default: {} },
     // Comeback mode after loss
     comebackMode: { type: Boolean, default: false },
     consecutiveLosses: { type: Number, default: 0 },

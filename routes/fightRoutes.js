@@ -142,7 +142,7 @@ router.put("/strategy", fightController.setStrategy);
  *   post:
  *     summary: Resolve the accepted fight (simulation, then apply outcome and rewards)
  *     tags: [Fights]
- *     description: Deducts fight energy, runs round-by-round resolution, updates fighter record/iron/notoriety/fight XP/comeback mode and daily fight count.
+ *     description: Runs round-by-round resolution, updates fighter record/iron/notoriety/fight XP/comeback mode and daily fight count.
  *     parameters:
  *       - in: path
  *         name: fighterId

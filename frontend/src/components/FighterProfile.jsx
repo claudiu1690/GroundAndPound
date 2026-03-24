@@ -85,10 +85,12 @@ export const FighterProfile = memo(function FighterProfile({ fighter, gyms, onUp
             <div className="meta-row meta-row-fame">
               <span className="meta-label">Fame</span>
               <div className="meta-value meta-fame-stack">
-                <span className={`fc-tier fc-tier-${fighter.notoriety?.peakTier ?? "UNKNOWN"}`}>
-                  {fighter.notoriety?.tierLabel ?? "Unknown"}
-                </span>
-                <span className="meta-fame-score">{(fighter.notoriety?.score ?? 0).toLocaleString()}</span>
+                <div className="meta-fame-head">
+                  <span className={`fc-tier fc-tier-${fighter.notoriety?.peakTier ?? "UNKNOWN"}`}>
+                    {fighter.notoriety?.tierLabel ?? "Unknown"}
+                  </span>
+                  <span className="meta-fame-score">{(fighter.notoriety?.score ?? 0).toLocaleString()}</span>
+                </div>
                 {fighter.notoriety?.nextTierThreshold != null && (
                   <div className="fame-tier-bar-wrap" title="Progress within this band toward next threshold">
                     <div

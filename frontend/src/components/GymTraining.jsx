@@ -135,11 +135,14 @@ export const GymTraining = memo(function GymTraining({
   onPayMembership,
 }) {
   if (!fighter) return null;
+  const injuryLocked = new Set(fighter?.injuryLockedStats || []);
 
   const selectedGym = trainGym && gyms?.length ? gyms.find((g) => g._id === trainGym) : null;
   const selected = SESSION_META[trainSession] ?? SESSION_META.bag_work;
   const needsMembership = selectedGym && selectedGym.monthlyIron > 0;
   const membershipPaid = needsMembership ? isMembershipValid(fighter, trainGym) : true;
+  const isSessionInjuryLocked = (meta) => (meta.stats || []).some((s) => injuryLocked.has(s));
+  const selectedSessionLocked = isSessionInjuryLocked(selected);
 
   let membershipExpiresLabel = null;
   if (needsMembership && membershipPaid) {
@@ -209,12 +212,15 @@ export const GymTraining = memo(function GymTraining({
             {SESSION_KEYS.map((key) => {
               const m = SESSION_META[key];
               const isActive = trainSession === key;
+              const isLocked = isSessionInjuryLocked(m);
               return (
                 <button
                   key={key}
                   type="button"
-                  className={`session-card cat-${m.category}${isActive ? " active" : ""}`}
-                  onClick={() => onSessionChange(key)}
+                  className={`session-card cat-${m.category}${isActive ? " active" : ""}${isLocked ? " session-card-disabled" : ""}`}
+                  onClick={() => { if (!isLocked) onSessionChange(key); }}
+                  disabled={isLocked}
+                  title={isLocked ? "This session trains an injury-penalized stat and is locked until healed." : undefined}
                 >
                   <div className="session-card-header">
                     <span className="session-card-name">{m.label}</span>
@@ -226,7 +232,13 @@ export const GymTraining = memo(function GymTraining({
                   <div className="session-card-stats">
                     {m.stats.length > 0 ? (
                       m.stats.map((s) => (
-                        <span key={s} className={`stat-chip ${STAT_CHIP_CLASS[s] ?? ""}`}>{s}</span>
+                        <span
+                          key={s}
+                          className={`stat-chip ${STAT_CHIP_CLASS[s] ?? ""}${injuryLocked.has(s) ? " stat-chip-disabled" : ""}`}
+                          title={injuryLocked.has(s) ? `${s} is injury-limited and cannot gain XP until healed.` : undefined}
+                        >
+                          {s}
+                        </span>
                       ))
                     ) : m.special ? (
                       <span className="stat-chip stat-chip-special">{m.special}</span>
@@ -253,6 +265,10 @@ export const GymTraining = memo(function GymTraining({
           {needsMembership && !membershipPaid ? (
             <button type="button" className="btn btn-secondary" disabled style={{ width: "100%" }}>
               Pay Membership to Train
+            </button>
+          ) : selectedSessionLocked ? (
+            <button type="button" className="btn btn-secondary" disabled style={{ width: "100%" }}>
+              Session locked by injury
             </button>
           ) : (
             <button

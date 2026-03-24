@@ -10,8 +10,10 @@ const Opponent = require("../models/opponentModel");
 const { WEIGHT_CLASSES, STYLES } = require("../consts/gameConstants");
 const { generateOpponentName } = require("../utils/opponentNames");
 const { buildOpponentStatsFromStyle } = require("../utils/opponentStats");
+const { calculateOverall } = require("../utils/overallRating");
 
 const OPPONENTS_PER_WEIGHT_CLASS = 10;
+const REGIONAL_PRO_TIERS = ["Regional Pro"];
 
 function pickRandom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
@@ -67,6 +69,48 @@ async function run() {
             });
         }
         console.log(`Created ${toCreate} Amateur opponents for ${wc} (random names & styles)`);
+    }
+
+    // Regional Pro (and future tiers): fight offers require opponents with matching promotionTier.
+    for (const promoTier of REGIONAL_PRO_TIERS) {
+        for (const wc of WEIGHT_CLASSES) {
+            const count = await Opponent.countDocuments({ weightClass: wc, promotionTier: promoTier });
+            if (count >= OPPONENTS_PER_WEIGHT_CLASS) {
+                console.log(`${promoTier} opponents for ${wc}: ${count} already exist`);
+                continue;
+            }
+            const toCreate = OPPONENTS_PER_WEIGHT_CLASS - count;
+            for (let i = 0; i < toCreate; i++) {
+                const { name, nickname } = generateOpponentName(true);
+                const style = pickRandom(styleKeys);
+                const base = buildOpponentStatsFromStyle(style);
+                const targetOvr = 28 + Math.floor(Math.random() * 21);
+                const scale = targetOvr / Math.max(1, base.overallRating);
+                const scaled = { ...base };
+                ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"].forEach((k) => {
+                    scaled[k] = Math.min(100, Math.max(1, Math.round(scaled[k] * scale)));
+                });
+                scaled.overallRating = calculateOverall({ ...scaled, style });
+                await Opponent.create({
+                    name,
+                    nickname,
+                    weightClass: wc,
+                    style,
+                    promotionTier: promoTier,
+                    overallRating: scaled.overallRating,
+                    str: scaled.str,
+                    spd: scaled.spd,
+                    leg: scaled.leg,
+                    wre: scaled.wre,
+                    gnd: scaled.gnd,
+                    sub: scaled.sub,
+                    chn: scaled.chn,
+                    fiq: scaled.fiq,
+                    record: { wins: 0, losses: 0, draws: 0 },
+                });
+            }
+            console.log(`Created ${toCreate} ${promoTier} opponents for ${wc}`);
+        }
     }
 
     await mongoose.disconnect();

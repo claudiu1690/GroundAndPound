@@ -35,12 +35,14 @@ function rollForSparringInjury(fiq = 10) {
  * Roll for a fight injury (not KO-induced concussion — that's handled separately).
  * Base rates: 4% major, 12% minor.
  * FIQ reduces both probabilities slightly.
+ * riskMultiplier scales both probabilities by tier/difficulty context.
  * Returns an injury type key or null.
  */
-function rollForFightInjury(fiq = 10) {
+function rollForFightInjury(fiq = 10, riskMultiplier = 1) {
     const fiqReduction = Math.max(0, (fiq - 10) * 0.001);
-    const majorChance = Math.max(0.01, 0.04 - fiqReduction);
-    const minorChance = Math.max(0.05, 0.12 - fiqReduction);
+    const safeMultiplier = Math.max(0.1, Number(riskMultiplier) || 1);
+    const majorChance = Math.min(0.5, Math.max(0.01, 0.04 - fiqReduction) * safeMultiplier);
+    const minorChance = Math.min(0.7, Math.max(0.05, 0.12 - fiqReduction) * safeMultiplier);
     const roll = Math.random();
     if (roll < majorChance) return pickRandom(MAJOR_FIGHT_INJURIES);
     if (roll < majorChance + minorChance) return pickRandom(MINOR_FIGHT_INJURIES);
