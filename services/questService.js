@@ -18,6 +18,18 @@ const {
 
 const PROGRESS_KEY_PREFIX = "progress.";
 
+/**
+ * Quest IDs where progress and completion are tracked per gym (e.g. Coach's Test stat-cap reward).
+ * Fighter.completedQuests still records a global completion for unlock chains, but that flag must not
+ * block incrementing this gym's QuestProgress document — otherwise a new gym shows "Active" with frozen counters.
+ */
+const PER_GYM_PROGRESS_QUEST_IDS = new Set([
+    "coaches_test",
+    "iron_will",
+    "the_specialist",
+    "the_grind",
+]);
+
 /** Build an empty Mongo update payload for progress mutations. */
 function emptyUpdate() {
     return { $inc: {}, $set: {} };
@@ -159,7 +171,8 @@ async function processApplicableQuests({ fighterId, gymId, fighter, gym, buildUp
     const completedThisBatch = [];
 
     for (const quest of applicable) {
-        if (fighter.completedQuests?.includes(quest.id)) continue;
+        const globallyMarked = fighter.completedQuests?.includes(quest.id);
+        if (globallyMarked && !PER_GYM_PROGRESS_QUEST_IDS.has(quest.id)) continue;
         if (isQuestLockedForFighter(quest, fighter)) continue;
 
         let existing = await QuestProgress.findOne({ fighterId, gymId, questId: quest.id });

@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { formatSessionXpHint } from "../utils/trainingXpDisplay";
 
 // Full session metadata matching backend TRAINING_SESSIONS constants (exported for TrainingResultPopup / App)
 export const SESSION_META = {
@@ -246,8 +247,8 @@ export const GymTraining = memo(function GymTraining({
                   </div>
 
                   {m.stats.length > 0 && m.xpBase > 0 && (
-                    <div className="session-card-xp">
-                      ~{m.xpBase} XP{m.stats.length > 1 ? ` / ${m.stats.length} stats` : ""}
+                    <div className="session-card-xp" title="Approximate XP per trained stat at this gym (tier, backstory, perks, specialty).">
+                      {formatSessionXpHint(m, selectedGym, fighter) ?? `~${m.xpBase} XP`}
                     </div>
                   )}
 

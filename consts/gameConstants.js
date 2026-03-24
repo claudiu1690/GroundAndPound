@@ -49,6 +49,7 @@ exports.XP_PER_POINT = [
 ];
 
 // ----- Gym tiers (Overall to unlock, stat cap, XP multiplier) -----
+// If xpMultiplier values change, update frontend/src/utils/trainingXpDisplay.js (session card XP preview).
 exports.GYM_TIERS = {
     T1: { name: 'Local Gym', overallRequired: 0,  statCap: 35,  xpMultiplier: 1.0,   monthlyIron: 0 },
     T2: { name: 'Regional Gym', overallRequired: 33, statCap: 52,  xpMultiplier: 1.15, monthlyIron: 2500 },
