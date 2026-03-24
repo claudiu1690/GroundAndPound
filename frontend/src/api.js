@@ -102,4 +102,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ gymId }),
     }),
+
+  /** Top fighters by fame score (backend route name unchanged) */
+  fameLeaderboard: () => request("/fighters/leaderboard/notoriety"),
 };

@@ -20,13 +20,6 @@ export const FighterProfile = memo(function FighterProfile({ fighter, gyms, onUp
       </section>
     );
   }
-
-  const startEdit = () => {
-    setEditNickname(fighter?.nickname ?? "");
-    setEditGymId(fighter?.gymId?._id ?? fighter?.gymId ?? "");
-    setEditing(true);
-  };
-
   const saveEdit = async () => {
     if (!fighter?._id || !onUpdateFighter) return;
     try {
@@ -89,9 +82,28 @@ export const FighterProfile = memo(function FighterProfile({ fighter, gyms, onUp
               <span className="meta-label">Iron ⊗</span>
               <span className="meta-value meta-value-gold">{fighter.iron ?? 0}</span>
             </div>
-            <div className="meta-row">
-              <span className="meta-label">Notoriety</span>
-              <span className="meta-value">{fighter.notoriety ?? 0}</span>
+            <div className="meta-row meta-row-fame">
+              <span className="meta-label">Fame</span>
+              <div className="meta-value meta-fame-stack">
+                <span className={`fc-tier fc-tier-${fighter.notoriety?.peakTier ?? "UNKNOWN"}`}>
+                  {fighter.notoriety?.tierLabel ?? "Unknown"}
+                </span>
+                <span className="meta-fame-score">{(fighter.notoriety?.score ?? 0).toLocaleString()}</span>
+                {fighter.notoriety?.nextTierThreshold != null && (
+                  <div className="fame-tier-bar-wrap" title="Progress within this band toward next threshold">
+                    <div
+                      className="fame-tier-bar"
+                      style={{ width: `${fighter.notoriety.progressWithinTier ?? 0}%` }}
+                    />
+                  </div>
+                )}
+                {fighter.notoriety?.isFrozen && (
+                  <span className="meta-fame-freeze" title="Fame frozen — win your next fight to resume growth">❄ Frozen</span>
+                )}
+                {fighter.notoriety?.decayWarningActive && (
+                  <span className="meta-fame-decay" title="Fight or do a media event to stop decay">⚠ Decay risk</span>
+                )}
+              </div>
             </div>
             <div className="meta-row">
               <span className="meta-label">Record</span>

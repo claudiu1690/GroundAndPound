@@ -28,7 +28,7 @@ async function getById(req, res) {
     try {
         const fighter = await fighterService.getFighterById(req.params.id);
         const statProgress = fighterService.buildStatProgress(fighter);
-        res.json({ ...fighter.toObject(), statProgress });
+        res.json({ ...fighter, statProgress });
     } catch (err) {
         if (err.message === "Fighter not found") {
             return res.status(404).json({ message: err.message });
@@ -63,6 +63,25 @@ async function deductEnergy(req, res) {
             console.error(err);
             res.status(500).json({ message: "Internal server error" });
         }
+    }
+}
+
+function isDebugEnergyRechargeAllowed() {
+    return process.env.NODE_ENV !== "production" || process.env.DEBUG_ALLOW_ENERGY_RECHARGE === "1";
+}
+
+/** DEBUG: refill energy to max (disabled in production unless DEBUG_ALLOW_ENERGY_RECHARGE=1). */
+async function debugRechargeEnergy(req, res) {
+    if (!isDebugEnergyRechargeAllowed()) {
+        return res.status(404).json({ message: "Not found" });
+    }
+    try {
+        const fighter = await fighterService.debugRefillEnergyToMax(req.params.id);
+        res.json(fighter);
+    } catch (err) {
+        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
     }
 }
 
@@ -140,4 +159,56 @@ async function payGymMembership(req, res) {
     }
 }
 
-module.exports = { list, create, getById, update, deductEnergy, train, rest, doctorVisit, mentalReset, payGymMembership };
+async function notorietyLeaderboard(req, res) {
+    try {
+        const Fighter = require("../models/fighterModel");
+        const { NOTORIETY_TIERS } = require("../consts/notorietyConfig");
+        const list = await Fighter.find({})
+            .sort({ "notoriety.score": -1 })
+            .limit(20)
+            .select("firstName lastName nickname overallRating notoriety weightClass")
+            .lean();
+        const rows = list.map((f) => {
+            const n = f.notoriety;
+            const score = typeof n === "object" && n != null ? n.score ?? 0 : Number(n) || 0;
+            const peakTier = typeof n === "object" && n != null ? n.peakTier : "UNKNOWN";
+            const def = NOTORIETY_TIERS[peakTier] || NOTORIETY_TIERS.UNKNOWN;
+            return {
+                id: f._id,
+                name: `${f.firstName} ${f.lastName}`,
+                nickname: f.nickname,
+                overallRating: f.overallRating,
+                weightClass: f.weightClass,
+                notorietyScore: score,
+                peakTier,
+                tierLabel: def.label,
+            };
+        });
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+async function mediaEventStub(req, res) {
+    res.status(501).json({
+        message: "Media events are not implemented yet. (Post-fight interview, weigh-in, podcast, etc.)",
+    });
+}
+
+module.exports = {
+    list,
+    create,
+    getById,
+    update,
+    deductEnergy,
+    debugRechargeEnergy,
+    train,
+    rest,
+    doctorVisit,
+    mentalReset,
+    payGymMembership,
+    notorietyLeaderboard,
+    mediaEventStub,
+};

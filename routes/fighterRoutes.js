@@ -41,6 +41,8 @@ const fighterController = require("../controllers/fighterController");
  */
 router.get("/", fighterController.list);
 
+router.get("/leaderboard/notoriety", fighterController.notorietyLeaderboard);
+
 router.post("/", fighterController.create);
 
 /**
@@ -130,6 +132,7 @@ router.put("/:id", fighterController.update);
  *         description: Internal server error
  */
 router.patch("/:id/energy", fighterController.deductEnergy);
+router.post("/:id/debug/recharge-energy", fighterController.debugRechargeEnergy);
 
 /**
  * @swagger
@@ -178,5 +181,7 @@ router.post("/:id/rest", fighterController.rest);
 router.post("/:id/doctor-visit", fighterController.doctorVisit);
 router.post("/:id/mental-reset", fighterController.mentalReset);
 router.post("/:id/pay-membership", fighterController.payGymMembership);
+/** Reserved for media events (notoriety) — returns 501 until implemented */
+router.post("/:id/media-event", fighterController.mediaEventStub);
 
 module.exports = router;

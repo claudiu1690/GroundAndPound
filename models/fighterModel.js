@@ -60,7 +60,31 @@ const fighterSchema = new mongoose.Schema({
         lastSyncedAt: { type: Date, default: Date.now },
     },
     iron: { type: Number, default: 0 },
-    notoriety: { type: Number, default: 0 },
+    /** Consecutive wins (resets on loss/draw) — notoriety streak bonuses */
+    winStreak: { type: Number, default: 0 },
+    /**
+     * Fame score + tier (never demotes below peak tier floor; score can decay).
+     */
+    notoriety: {
+        score: { type: Number, default: 0, min: 0 },
+        peakTier: {
+            type: String,
+            enum: ["UNKNOWN", "PROSPECT", "RISING_STAR", "CONTENDER", "STAR", "LEGEND"],
+            default: "UNKNOWN",
+        },
+        isFrozen: { type: Boolean, default: false },
+        lastEventAt: { type: Date, default: null },
+        /** Once per account — documentary media (future) */
+        documentaryUsed: { type: Boolean, default: false },
+        milestones: {
+            wins10: { type: Boolean, default: false },
+            wins25: { type: Boolean, default: false },
+            wins50: { type: Boolean, default: false },
+            ko10: { type: Boolean, default: false },
+        },
+        /** Promotion tiers where first KO/TKO or Sub finish bonus was claimed */
+        firstFinishPromoTiers: { type: [String], default: [] },
+    },
     // Career
     promotionTier: { type: String, enum: promotionTierValues, default: "Amateur" },
     gymId: { type: mongoose.Schema.Types.ObjectId, ref: "Gym", default: null },
@@ -133,6 +157,7 @@ const fighterSchema = new mongoose.Schema({
 
 fighterSchema.index({ promotionTier: 1, weightClass: 1, overallRating: -1 });
 fighterSchema.index({ gymId: 1 });
+fighterSchema.index({ "notoriety.score": -1 });
 
 const Fighter = mongoose.model("Fighter", fighterSchema);
 module.exports = Fighter;

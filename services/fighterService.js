@@ -3,6 +3,7 @@ const Gym = require("../models/gymModel");
 const { STYLES, BACKSTORIES, ENERGY } = require("../consts/gameConstants");
 const { calculateOverall } = require("../utils/overallRating");
 const { xpRequiredForNextPoint } = require("../utils/statProgression");
+const notorietyService = require("./notorietyService");
 const energyService = require("./energyService");
 
 const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
@@ -105,13 +106,22 @@ async function createFighter(data) {
         health: 100,
         energy: { current: ENERGY.max, max: ENERGY.max, lastSyncedAt: new Date() },
         iron: 0,
-        notoriety: 0,
+        winStreak: 0,
+        notoriety: {
+            score: 0,
+            peakTier: "UNKNOWN",
+            isFrozen: false,
+            lastEventAt: null,
+            documentaryUsed: false,
+            milestones: {},
+            firstFinishPromoTiers: [],
+        },
         promotionTier: "Amateur",
         overallRating: 14
     });
     fighter.overallRating = calculateOverall(fighter);
     await fighter.save();
-    return fighter;
+    return getFighterById(fighter._id);
 }
 
 /**
@@ -125,6 +135,17 @@ async function listFighters(limit = 50) {
 }
 
 /**
+ * Plain fighter JSON for API: energy reconciled + notoriety public state.
+ * @param {import("mongoose").Document} fighter
+ */
+function toPublicFighter(fighter) {
+    notorietyService.ensureNotorietyShape(fighter);
+    const out = fighter.toObject ? fighter.toObject() : { ...fighter };
+    out.notoriety = notorietyService.buildNotorietyPublicState(fighter);
+    return out;
+}
+
+/**
  * Get one fighter and refresh in-memory energy from Redis.
  * @param {string} id
  * @returns {Promise<Object>}
@@ -133,7 +154,7 @@ async function getFighterById(id) {
     const fighter = await Fighter.findById(id).populate("gymId");
     if (!fighter) throw new Error("Fighter not found");
     await reconcileEnergy(fighter);
-    return fighter;
+    return toPublicFighter(fighter);
 }
 
 /**
@@ -143,11 +164,12 @@ async function getFighterById(id) {
  * @returns {Promise<Object>}
  */
 async function updateFighter(id, data) {
-    const fighter = await Fighter.findByIdAndUpdate(id, data, { new: true });
+    const fighter = await Fighter.findByIdAndUpdate(id, data, { new: true }).populate("gymId");
     if (!fighter) throw new Error("Fighter not found");
     fighter.overallRating = calculateOverall(fighter);
     await fighter.save();
-    return fighter;
+    await reconcileEnergy(fighter);
+    return toPublicFighter(fighter);
 }
 
 /**
@@ -183,7 +205,20 @@ async function deductEnergy(fighterId, amount) {
     const snap = await energyService.deductEnergy(fighterId, amount);
     setEnergySnapshot(fighter, snap);
     await fighter.save();
-    return fighter;
+    return toPublicFighter(fighter);
+}
+
+/**
+ * DEBUG: set energy to max (testing only). Gated by route / env in non-production.
+ */
+async function debugRefillEnergyToMax(fighterId) {
+    const fighter = await Fighter.findById(fighterId);
+    if (!fighter) throw new Error("Fighter not found");
+    const { current, max } = await energyService.getEnergy(fighterId);
+    const snap = await energyService.addEnergy(fighterId, Math.max(0, max - current));
+    setEnergySnapshot(fighter, snap);
+    await fighter.save();
+    return toPublicFighter(fighter);
 }
 
 /**
@@ -213,7 +248,7 @@ async function doctorVisit(fighterId, injuryType) {
     reverseInjuryFromFighter(fighter, inj);
     fighter.injuries.splice(idx, 1);
     await fighter.save();
-    return fighter;
+    return toPublicFighter(fighter);
 }
 
 /**
@@ -232,7 +267,7 @@ async function mentalReset(fighterId) {
     fighter.mentalResetRequired = false;
     fighter.consecutiveLosses = 0;
     await fighter.save();
-    return fighter;
+    return toPublicFighter(fighter);
 }
 
 /**
@@ -264,7 +299,7 @@ async function payGymMembership(fighterId, gymId) {
         fighter.gymMemberships.push({ gymId, paidUntil });
     }
     await fighter.save();
-    return fighter;
+    return toPublicFighter(fighter);
 }
 
 /** GDD: Rest/Recovery — spend 3 Energy to restore 25 Health and 25 Stamina (capped at max). */
@@ -294,16 +329,18 @@ async function rest(fighterId) {
     fighter.health = Math.min(100, (fighter.health ?? 100) + REST_HEALTH);
     fighter.stamina = Math.min(maxStamina, (fighter.stamina ?? maxStamina) + REST_STAMINA);
     await fighter.save();
-    return fighter;
+    return toPublicFighter(fighter);
 }
 
 module.exports = {
     createFighter,
     listFighters,
     getFighterById,
+    toPublicFighter,
     updateFighter,
     reconcileEnergy,
     deductEnergy,
+    debugRefillEnergyToMax,
     rest,
     doctorVisit,
     mentalReset,

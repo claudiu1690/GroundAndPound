@@ -5,6 +5,7 @@ import { MessageBar } from "./components/MessageBar";
 import { FighterProfile } from "./components/FighterProfile";
 import { GymTraining, SESSION_META } from "./components/GymTraining";
 import { TrainingResultPopup } from "./components/TrainingResultPopup";
+import { TierUpOverlay } from "./components/TierUpOverlay";
 import { FightOffers } from "./components/FightOffers";
 import { FightCamp } from "./components/FightCamp";
 import { FightDescription } from "./components/FightDescription";
@@ -120,7 +121,12 @@ function FighterCard({ fighter }) {
         <div className="fighter-card-footer">
           <span>⊗ {fighter?.iron ?? 0}</span>
           <span>Gym: {gymName}</span>
-          <span>Notoriety: {fighter?.notoriety ?? 0}</span>
+          <span className="fighter-card-fame">
+            {fighter?.notoriety?.tierLabel && (
+              <span className={`fc-tier fc-tier-${fighter.notoriety.peakTier}`}>{fighter.notoriety.tierLabel}</span>
+            )}
+            <span className="fc-fame-score">{(fighter?.notoriety?.score ?? 0).toLocaleString()}</span>
+          </span>
         </div>
       </div>
     </div>
@@ -355,6 +361,7 @@ function App() {
   const [lastFightSummary, setLastFightSummary] = useState(null);
   const [activeTab, setActiveTab]               = useState("gym");
   const [trainingResultPopup, setTrainingResultPopup] = useState({ open: false, sessionLabel: "", xpGained: {}, statLevelUps: [] });
+  const [tierUpModal, setTierUpModal] = useState(null);
 
   const loadFighter = useCallback(async (id, options = {}) => {
     if (!id) return;
@@ -532,6 +539,9 @@ function App() {
       const commentary = result.fight?.commentary || result.result?.commentary || [];
       setLastFightCommentary(Array.isArray(commentary) ? commentary : []);
       setLastFightSummary(result.summary ?? null);
+      if (result.summary?.notorietyTierUp) {
+        setTierUpModal(result.summary.notorietyTierUp);
+      }
       const out = result.fight?.outcome || "—";
       const iron = result.fight?.ironEarned ?? 0;
       const rec = result.fighter?.record;
@@ -577,10 +587,19 @@ function App() {
           <div className="hdr-sep" />
 
           {fighter && (
-            <span className="hdr-iron">
-              <span className="hdr-iron-icon">⊗</span>
-              {fighter.iron ?? 0}
-            </span>
+            <>
+              <div className="hdr-fame-block" title={fighter.notoriety?.isFrozen ? "Fame frozen — win to resume growth" : "Fame — affects fight purses"}>
+                <span className={`hdr-fame-tier hdr-tier-${fighter.notoriety?.peakTier ?? "UNKNOWN"}`}>
+                  {fighter.notoriety?.tierLabel ?? "Unknown"}
+                </span>
+                <span className="hdr-fame-score">{(fighter.notoriety?.score ?? 0).toLocaleString()}</span>
+                {fighter.notoriety?.isFrozen && <span className="hdr-fame-freeze" title="Frozen">❄</span>}
+              </div>
+              <span className="hdr-iron">
+                <span className="hdr-iron-icon">⊗</span>
+                {fighter.iron ?? 0}
+              </span>
+            </>
           )}
 
           <div className="hdr-resources">
@@ -619,6 +638,13 @@ function App() {
         xpGained={trainingResultPopup.xpGained}
         statLevelUps={trainingResultPopup.statLevelUps}
         onClose={closeTrainingPopup}
+      />
+
+      <TierUpOverlay
+        open={!!tierUpModal}
+        fromTier={tierUpModal?.from}
+        toTier={tierUpModal?.to}
+        onClose={() => setTierUpModal(null)}
       />
 
       {/* ── BODY: centered block = nav + main ── */}

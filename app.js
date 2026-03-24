@@ -50,6 +50,43 @@ async function migrateLegacyEnergyShape() {
     }
 }
 
+async function migrateLegacyNotorietyNumber() {
+    const { calculateTierFromScore } = require("./consts/notorietyConfig");
+    const fighters = mongoose.connection.collection("fighters");
+    const cursor = fighters.find({
+        $or: [
+            { notoriety: { $type: "double" } },
+            { notoriety: { $type: "int" } },
+            { notoriety: { $type: "long" } },
+        ],
+    });
+    let count = 0;
+    for await (const doc of cursor) {
+        const score = Math.max(0, Number(doc.notoriety) || 0);
+        await fighters.updateOne(
+            { _id: doc._id },
+            {
+                $set: {
+                    winStreak: doc.winStreak ?? 0,
+                    notoriety: {
+                        score,
+                        peakTier: calculateTierFromScore(score),
+                        isFrozen: false,
+                        lastEventAt: doc.lastFightDate || null,
+                        documentaryUsed: false,
+                        milestones: {},
+                        firstFinishPromoTiers: [],
+                    },
+                },
+            }
+        );
+        count += 1;
+    }
+    if (count > 0) {
+        console.log(`[Migration] Converted ${count} fighter(s) from legacy numeric notoriety to notoriety subdocument.`);
+    }
+}
+
 async function backfillFighterGymFromQuestProgress() {
     const fighters = mongoose.connection.collection("fighters");
     const questProgress = mongoose.connection.collection("questprogresses");
@@ -87,6 +124,7 @@ mongoose.connect(config.database.url, config.database.options)
     .then(async () => {
         console.log("Connected to MongoDB");
         await migrateLegacyEnergyShape();
+        await migrateLegacyNotorietyNumber();
         await backfillFighterGymFromQuestProgress();
         await scheduler.startEnergyIncrementScheduler();
         app.listen(config.port, () => {

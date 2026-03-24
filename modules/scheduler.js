@@ -4,6 +4,7 @@ const {
     tickAllActiveEnergy,
     syncRedisEnergyToMongo,
 } = require("../services/energyService");
+const notorietyService = require("../services/notorietyService");
 
 const QUEUE_CONNECTION = {
     host: process.env.REDIS_HOST || "127.0.0.1",
@@ -14,6 +15,7 @@ const QUEUE_CONNECTION = {
 
 const energyQueue = new Queue("energy", { connection: QUEUE_CONNECTION });
 const energySyncQueue = new Queue("energy-sync", { connection: QUEUE_CONNECTION });
+const notorietyDecayQueue = new Queue("notoriety-decay", { connection: QUEUE_CONNECTION });
 
 const energyWorker = new Worker(
     "energy",
@@ -35,6 +37,17 @@ const energySyncWorker = new Worker(
 energyWorker.on("error", (err) => console.error("[Energy Tick] Worker error:", err));
 energySyncWorker.on("error", (err) => console.error("[Energy Sync] Worker error:", err));
 
+const notorietyDecayWorker = new Worker(
+    "notoriety-decay",
+    async () => {
+        const n = await notorietyService.runNotorietyDecayBatch();
+        if (n > 0) console.log(`[Notoriety decay] Applied inactivity decay to ${n} fighter(s).`);
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+
+notorietyDecayWorker.on("error", (err) => console.error("[Notoriety decay] Worker error:", err));
+
 async function startEnergyIncrementScheduler() {
     await ensureRedisConnected();
 
@@ -50,14 +63,22 @@ async function startEnergyIncrementScheduler() {
         removeOnComplete: true,
     });
 
-    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s).");
+    await notorietyDecayQueue.add("decay", {}, {
+        repeat: { every: 86_400_000 },
+        jobId: "notoriety-inactivity-decay",
+        removeOnComplete: true,
+    });
+
+    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h).");
 }
 
 module.exports = {
     startEnergyIncrementScheduler,
     energyQueue,
     energySyncQueue,
+    notorietyDecayQueue,
     energyWorker,
     energySyncWorker,
+    notorietyDecayWorker,
     redis,
 };

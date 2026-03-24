@@ -34,6 +34,8 @@ const {
     isFightBlocked,
 } = require("../utils/injuryUtils");
 const { applyXpToStat, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require("../utils/statProgression");
+const notorietyService = require("./notorietyService");
+const { tierRank } = require("../consts/notorietyConfig");
 
 /**
  * Generate 3 fight offers for the fighter (Easy, Even, Hard).
@@ -171,6 +173,7 @@ async function setStrategy(fighterId, fightId, strategy) {
 async function resolveFightAndApply(fighterId) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
+    notorietyService.ensureNotorietyShape(fighter);
     if (!fighter.acceptedFightId) throw new Error("No accepted fight");
 
     const fight = await Fight.findById(fighter.acceptedFightId).populate("opponentId");
@@ -261,22 +264,35 @@ async function resolveFightAndApply(fighterId) {
     if (isComeback) xpMult = +(xpMult * 1.5).toFixed(2);
 
     // GDD 8.8: Weight miss → -20% iron purse + notoriety penalty
-    const comebackIronMult = isComeback ? 1.3 : 1;
     const basePurse = tierConfig && fight.promotionTier !== "Amateur" ? (tierConfig.signingFee ? 1500 : 500) : 0;
     const outcomeIronMult = isWin ? 1 : (isDraw ? 0.5 : 0.7);
     // GDD 7.4: The Grind perk → +500 iron per fight while enrolled at that gym
     const grindBonus = (fighter.activePerks?.theGrindGymId &&
         String(fighter.activePerks.theGrindGymId) === String(fighter.gymId)) ? 500 : 0;
-    let ironEarned = Math.round(basePurse * outcomeIronMult * comebackIronMult) + grindBonus;
+    const notorietyPurseFrac = notorietyService.getNotorietyPurseFraction(fighter.notoriety.peakTier);
+    const comebackPurseFrac = isComeback ? 0.3 : 0;
+    let ironEarned = Math.round(
+        basePurse * outcomeIronMult * (1 + notorietyPurseFrac + comebackPurseFrac)
+    ) + grindBonus;
     if (weightMissed) ironEarned = Math.round(ironEarned * 0.8);
 
-    // GDD 8.5: Notoriety gains/losses (frozen after 3 consecutive losses)
-    const notorietyFrozen = (fighter.consecutiveLosses || 0) >= 3;
-    let notorietyGain = 0;
-    if (!notorietyFrozen) {
-        notorietyGain = isWin ? 100 : (isDraw ? 0 : -20);
-    }
-    if (weightMissed) notorietyGain = Math.min(0, notorietyGain - 30); // weight miss penalty
+    const wasFrozenBeforeFight = !!fighter.notoriety.isFrozen;
+    const prevConsecutiveLosses = fighter.consecutiveLosses || 0;
+    const prevWinStreak = fighter.winStreak || 0;
+    const peakTierBefore = fighter.notoriety.peakTier;
+    const opponentOvr = opponent.overallRating ?? 14;
+    const fighterOvr = fighter.overallRating ?? 14;
+    const healthEnd = result.playerHealthAfter ?? 100;
+    const isFinishWin = isWin && (result.outcome === "KO/TKO" || result.outcome === "Submission");
+    const promoTier = fight.promotionTier;
+    const firstFinishInThisPromotion =
+        isFinishWin &&
+        !(fighter.notoriety.firstFinishPromoTiers || []).includes(promoTier);
+    const fightOfTheNight =
+        isWin &&
+        (result.outcome === "Decision (unanimous)" || result.outcome === "Decision (split)") &&
+        healthEnd < 50;
+    const giantKiller = isWin && opponentOvr >= fighterOvr + 10;
 
     // Build fight XP totals
     const fightXp = {};
@@ -338,6 +354,8 @@ async function resolveFightAndApply(fighterId) {
         else fighter.record.decisionWins += 1;
         fighter.consecutiveLosses = 0;
         fighter.mentalResetRequired = false;
+        fighter.winStreak = (fighter.winStreak || 0) + 1;
+        fighter.notoriety.isFrozen = false;
 
         // GDD 8.6: Win on a comeback → earn Resilience badge
         if (isComeback) {
@@ -352,17 +370,56 @@ async function resolveFightAndApply(fighterId) {
         const newConsecLosses = (fighter.consecutiveLosses || 0) + 1;
         fighter.consecutiveLosses = newConsecLosses;
         fighter.comebackMode = true;
+        fighter.winStreak = 0;
 
         // GDD 8.5: 3 consecutive losses → Mental Reset required
         if (newConsecLosses >= 3) {
             fighter.mentalResetRequired = true;
+            fighter.notoriety.isFrozen = true;
         }
     } else {
         fighter.record.draws += 1;
+        fighter.winStreak = 0;
     }
 
     fighter.iron += ironEarned;
-    fighter.notoriety = Math.max(0, (fighter.notoriety || 0) + notorietyGain);
+
+    const winStreakAfterWin = isWin ? (fighter.winStreak || 0) : 0;
+    const awardCtx = {
+        promotionTier: promoTier,
+        outcome: result.outcome,
+        weightMissed,
+        wasFrozenBeforeFight,
+        isWin,
+        opponentOverall: opponentOvr,
+        fighterOverall: fighterOvr,
+        prevConsecutiveLosses,
+        winStreakAfterWin,
+        firstFinishInThisPromotion,
+        fightOfTheNight,
+        giantKiller,
+        grudgeMatchWin: false,
+        titleFightWin: false,
+        titleDefenceWin: false,
+        finishedHigherRanked: false,
+    };
+    const fightNotoriety = notorietyService.computeFightNotorietyAward(awardCtx);
+    let notorietyGain = fightNotoriety.total;
+    const notorietyBreakdown = fightNotoriety.breakdown;
+
+    if (notorietyGain !== 0) {
+        notorietyService.applyNotorietyDelta(fighter, notorietyGain, {});
+    }
+    if (firstFinishInThisPromotion && isFinishWin) {
+        notorietyService.registerFirstFinishInPromotion(fighter, promoTier);
+    }
+    const milestoneResult = isWin ? notorietyService.applyWinMilestoneBonuses(fighter) : { bonus: 0, notes: [] };
+    notorietyService.touchLastEvent(fighter);
+
+    let notorietyTierUp = null;
+    if (tierRank(fighter.notoriety.peakTier) > tierRank(peakTierBefore)) {
+        notorietyTierUp = { from: peakTierBefore, to: fighter.notoriety.peakTier };
+    }
 
     const today = new Date().toDateString();
     if (fighter.lastFightDate && fighter.lastFightDate.toDateString() !== today) {
@@ -412,7 +469,6 @@ async function resolveFightAndApply(fighterId) {
     const completedQuests = await questService.onFight(fighterId, fighter, fight);
 
     const maxStaminaVal = fighter.maxStamina ?? 100;
-    const healthEnd = result.playerHealthAfter ?? 100;
     const staminaEnd = result.playerStaminaAfter ?? maxStaminaVal;
     const promoted = newTier ? { from: oldTier, to: newTier } : null;
     const summary = {
@@ -427,7 +483,10 @@ async function resolveFightAndApply(fighterId) {
         staminaLost: Math.max(0, maxStaminaVal - staminaEnd),
         ironEarned,
         notorietyGained: notorietyGain,
-        notorietyFrozen,
+        notorietyBreakdown,
+        notorietyTierUp,
+        notorietyFrozen: !!fighter.notoriety.isFrozen,
+        milestoneNotoriety: milestoneResult,
         xpGained: fightXpApplied,
         statLevelUps,
         xpMultiplier: xpMult,
@@ -441,7 +500,7 @@ async function resolveFightAndApply(fighterId) {
         promoted,
     };
 
-    return { fight, fighter, result, summary };
+    return { fight, fighter: fighterService.toPublicFighter(fighter), result, summary };
 }
 
 /**

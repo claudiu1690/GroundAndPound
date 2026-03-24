@@ -93,10 +93,10 @@ export const FightCamp = memo(function FightCamp({ fighter, resolving, onCamp, o
         </div>
 
         {weightCut === "moderate" && (
-          <p className="camp-weight-note">Moderate cut: 5% chance to miss weight → −20% purse + Notoriety penalty.</p>
+          <p className="camp-weight-note">Moderate cut: 5% chance to miss weight → −20% purse + Fame penalty.</p>
         )}
         {weightCut === "aggressive" && (
-          <p className="camp-weight-note camp-weight-danger">Aggressive cut: 20% chance to miss weight → −20% purse + Notoriety penalty. High risk.</p>
+          <p className="camp-weight-note camp-weight-danger">Aggressive cut: 20% chance to miss weight → −20% purse + Fame penalty. High risk.</p>
         )}
 
         <div className="camp-actions">

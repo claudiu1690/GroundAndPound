@@ -1,7 +1,8 @@
 import { memo } from "react";
+import { tierLabel } from "../constants/fame";
 
 /**
- * Post-fight summary: health/stamina lost, XP gained, notoriety, iron, injuries, comeback, weight miss, etc.
+ * Post-fight summary: health/stamina lost, XP gained, fame, iron, injuries, comeback, weight miss, etc.
  */
 export const FightSummary = memo(function FightSummary({ summary }) {
   if (!summary) return null;
@@ -17,8 +18,8 @@ export const FightSummary = memo(function FightSummary({ summary }) {
     staminaEnd,
     staminaLost,
     ironEarned,
-    notorietyGained,
-    notorietyFrozen,
+    notorietyGained: fameGained,
+    notorietyFrozen: fameFrozen,
     xpGained,
     xpMultiplier,
     isComeback,
@@ -30,6 +31,9 @@ export const FightSummary = memo(function FightSummary({ summary }) {
     completedQuests,
     promoted,
     statLevelUps,
+    notorietyBreakdown: fameBreakdown,
+    notorietyTierUp: fameTierUp,
+    milestoneNotoriety: milestoneFame,
   } = summary;
 
   const hasXp = xpGained && typeof xpGained === "object" && Object.keys(xpGained).length > 0;
@@ -56,19 +60,25 @@ export const FightSummary = memo(function FightSummary({ summary }) {
 
         {weightMissed && (
           <div className="fight-summary-note fight-summary-warning">
-            ⚠ Missed weight ({weightCut} cut) — purse reduced by 20% and Notoriety penalised.
+            ⚠ Missed weight ({weightCut} cut) — purse reduced by 20% and Fame penalised.
           </div>
         )}
 
-        {notorietyFrozen && (
+        {fameFrozen && (
           <div className="fight-summary-note fight-summary-warning">
-            Notoriety frozen after 3 consecutive losses.
+            Fame frozen after 3 consecutive losses.
           </div>
         )}
 
         {mentalResetRequired && (
           <div className="fight-summary-note fight-summary-danger">
             Mental Reset required — complete it in your fighter profile before your next fight.
+          </div>
+        )}
+
+        {fameTierUp && (
+          <div className="fight-summary-note fight-summary-badge">
+            ⭐ Fame tier: {tierLabel(fameTierUp.from)} → <strong>{tierLabel(fameTierUp.to)}</strong>
           </div>
         )}
 
@@ -114,10 +124,22 @@ export const FightSummary = memo(function FightSummary({ summary }) {
               </td>
             </tr>
             <tr>
-              <td className="torn-td-label">Notoriety</td>
+              <td className="torn-td-label">Fame</td>
               <td className="torn-td-value">
-                {notorietyGained > 0 ? `+${notorietyGained}` : notorietyGained === 0 ? "—" : notorietyGained}
-                {notorietyFrozen && <span className="fight-summary-delta"> (frozen)</span>}
+                {fameGained > 0 ? `+${fameGained}` : fameGained === 0 ? "—" : fameGained}
+                {fameFrozen && <span className="fight-summary-delta"> (frozen)</span>}
+                {milestoneFame?.bonus > 0 && (
+                  <span className="fight-summary-delta"> +{milestoneFame.bonus} milestone</span>
+                )}
+                {Array.isArray(fameBreakdown) && fameBreakdown.length > 1 && (
+                  <ul className="fight-summary-fame-lines">
+                    {fameBreakdown.map((line, i) => (
+                      <li key={i}>
+                        {line.note}: {line.amount > 0 ? `+${line.amount}` : line.amount}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </td>
             </tr>
             {xpMultiplier != null && (

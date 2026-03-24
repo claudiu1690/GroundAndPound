@@ -175,7 +175,14 @@ async function doTraining(fighterId, gymId, sessionType) {
         message += ` Quest completed: ${completedQuests.map((q) => q.title).join(", ")}!`;
     }
 
-    return { fighter, message, xpGained, statLevelUps, completedQuests, injurySustained };
+    return {
+        fighter: fighterService.toPublicFighter(fighter),
+        message,
+        xpGained,
+        statLevelUps,
+        completedQuests,
+        injurySustained,
+    };
 }
 
 module.exports = { doTraining };
