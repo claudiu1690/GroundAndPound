@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { tierLabel } from "../constants/fame";
+import { tierLabel } from "../../constants/fame";
 
 /**
  * Full-screen moment when fame peak tier increases (spec §14).

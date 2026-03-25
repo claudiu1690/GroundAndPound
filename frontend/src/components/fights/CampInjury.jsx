@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { CAMP_INJURY_LABELS, getRatingConfig, modifierToGradeLabel } from "../constants/campConfig";
+import { CAMP_INJURY_LABELS, getRatingConfig, modifierToGradeLabel } from "../../constants/campConfig";
 
 export const CampInjury = memo(function CampInjury({
     injuryType,

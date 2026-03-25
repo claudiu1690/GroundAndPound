@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { tierLabel } from "../constants/fame";
+import { tierLabel } from "../../constants/fame";
 
 /**
  * Post-fight summary: health/stamina lost, XP gained, fame, iron, injuries, comeback, weight miss, etc.

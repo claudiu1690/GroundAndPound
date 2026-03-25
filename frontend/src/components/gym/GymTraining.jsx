@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { formatSessionXpHint } from "../utils/trainingXpDisplay";
+import { formatSessionXpHint } from "../../utils/trainingXpDisplay";
 
 // Full session metadata matching backend TRAINING_SESSIONS constants (exported for TrainingResultPopup / App)
 export const SESSION_META = {
