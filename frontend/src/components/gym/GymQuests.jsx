@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, memo, useCallback } from "react";
-import { api } from "../api";
+import { api } from "../../api";
 
 /** Shallow compare quest payload for memo — avoids re-rendering unchanged cards after refetch. */
 function questPropsEqual(prev, next) {

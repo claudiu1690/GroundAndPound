@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { CAMP_SESSIONS, CAMP_SESSION_KEYS, getRatingConfig, modifierToGradeLabel } from "../constants/campConfig";
+import { CAMP_SESSIONS, CAMP_SESSION_KEYS, getRatingConfig, modifierToGradeLabel } from "../../constants/campConfig";
 import { CampInjury } from "./CampInjury";
 
 const MATCH_STATUS_CLASS = {

@@ -1,21 +1,21 @@
 import { useState, useEffect, useCallback, memo } from "react";
 import { api, authStorage } from "./api";
 import "./App.css";
-import { MessageBar } from "./components/MessageBar";
-import { FighterProfile } from "./components/FighterProfile";
-import { GymTraining, SESSION_META } from "./components/GymTraining";
-import { TrainingResultPopup } from "./components/TrainingResultPopup";
-import { TierUpOverlay } from "./components/TierUpOverlay";
-import { FightOffers } from "./components/FightOffers";
-import { FightCamp } from "./components/FightCamp";
-import { FighterReport } from "./components/FighterReport";
-import { CampSummary } from "./components/CampSummary";
-import { FightDescription } from "./components/FightDescription";
-import { FightSummary } from "./components/FightSummary";
-import { GymQuests } from "./components/GymQuests";
-import { OctagonBackground } from "./components/OctagonBackground";
-import { AuthPage } from "./components/AuthPage";
-import { FightLimitPopup } from "./components/FightLimitPopup";
+import { MessageBar } from "./components/layout/MessageBar";
+import { FighterProfile } from "./components/fighterProfile/FighterProfile";
+import { GymTraining, SESSION_META } from "./components/gym/GymTraining";
+import { TrainingResultPopup } from "./components/gym/TrainingResultPopup";
+import { TierUpOverlay } from "./components/fights/TierUpOverlay";
+import { FightOffers } from "./components/fights/FightOffers";
+import { FightCamp } from "./components/fights/FightCamp";
+import { FighterReport } from "./components/fights/FighterReport";
+import { CampSummary } from "./components/fights/CampSummary";
+import { FightDescription } from "./components/fights/FightDescription";
+import { FightSummary } from "./components/fights/FightSummary";
+import { GymQuests } from "./components/gym/GymQuests";
+import { OctagonBackground } from "./components/layout/OctagonBackground";
+import { AuthPage } from "./components/auth/AuthPage";
+import { FightLimitPopup } from "./components/fights/FightLimitPopup";
 
 // ── Navigation definition ──────────────────────────────────
 const NAV_ITEMS = [

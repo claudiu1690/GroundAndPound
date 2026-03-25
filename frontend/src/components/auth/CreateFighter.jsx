@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { WEIGHT_CLASSES, STYLE_OPTIONS, BACKSTORY_OPTIONS } from "../constants/gameConstants";
-import { api } from "../api";
+import { WEIGHT_CLASSES, STYLE_OPTIONS, BACKSTORY_OPTIONS } from "../../constants/gameConstants";
+import { api } from "../../api";
 
 export function CreateFighter({ onCreated, onMessage }) {
   const [firstName, setFirstName] = useState("");

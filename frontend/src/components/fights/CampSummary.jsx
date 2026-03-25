@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { CAMP_SESSIONS, getRatingConfig, modifierToGradeLabel } from "../constants/campConfig";
+import { CAMP_SESSIONS, getRatingConfig, modifierToGradeLabel } from "../../constants/campConfig";
 
 const MATCH_ICON = { matched: "✓", not_a_match: "✕" };
 const MATCH_CLASS = { matched: "csd-matched", not_a_match: "csd-unmatched" };
