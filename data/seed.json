@@ -3,19 +3,27 @@
     {
       "name": "Local Fight Club",
       "tier": "T1",
-      "specialtyStats": ["STR"],
+      "specialtyStats": [
+        "STR"
+      ],
       "monthlyIron": 0
     },
     {
       "name": "Ironhands Boxing Club",
       "tier": "T2",
-      "specialtyStats": ["STR", "SPD"],
+      "specialtyStats": [
+        "STR",
+        "SPD"
+      ],
       "monthlyIron": 2500
     },
     {
       "name": "Lockdown MMA",
       "tier": "T2",
-      "specialtyStats": ["WRE", "GND"],
+      "specialtyStats": [
+        "WRE",
+        "GND"
+      ],
       "monthlyIron": 2500
     }
   ],
@@ -26,7 +34,14 @@
       "style": "Boxer",
       "promotionTier": "Amateur",
       "overallRating": 18,
-      "str": 22, "spd": 16, "chn": 20, "leg": 8, "wre": 8, "gnd": 8, "sub": 8, "fiq": 10
+      "str": 30,
+      "spd": 22,
+      "chn": 28,
+      "leg": 11,
+      "wre": 11,
+      "gnd": 11,
+      "sub": 11,
+      "fiq": 14
     },
     {
       "name": "Marcus Reed",
@@ -34,7 +49,14 @@
       "style": "Wrestler",
       "promotionTier": "Amateur",
       "overallRating": 16,
-      "str": 14, "spd": 10, "chn": 10, "leg": 8, "wre": 24, "gnd": 18, "sub": 10, "fiq": 8
+      "str": 17,
+      "spd": 12,
+      "chn": 12,
+      "leg": 10,
+      "wre": 30,
+      "gnd": 22,
+      "sub": 12,
+      "fiq": 10
     },
     {
       "name": "Derek Soto",
@@ -42,7 +64,14 @@
       "style": "Kickboxer",
       "promotionTier": "Amateur",
       "overallRating": 20,
-      "str": 18, "spd": 20, "chn": 12, "leg": 18, "wre": 8, "gnd": 8, "sub": 10, "fiq": 10
+      "str": 28,
+      "spd": 31,
+      "chn": 18,
+      "leg": 28,
+      "wre": 12,
+      "gnd": 12,
+      "sub": 15,
+      "fiq": 13
     },
     {
       "name": "Tommy Walsh",
@@ -50,7 +79,14 @@
       "style": "Brazilian Jiu-Jitsu",
       "promotionTier": "Amateur",
       "overallRating": 15,
-      "str": 10, "spd": 8, "chn": 10, "leg": 8, "wre": 12, "gnd": 20, "sub": 22, "fiq": 12
+      "str": 12,
+      "spd": 9,
+      "chn": 12,
+      "leg": 9,
+      "wre": 14,
+      "gnd": 23,
+      "sub": 25,
+      "fiq": 14
     },
     {
       "name": "Vic Lane",
@@ -58,7 +94,14 @@
       "style": "Boxer",
       "promotionTier": "Amateur",
       "overallRating": 22,
-      "str": 20, "spd": 14, "chn": 28, "leg": 8, "wre": 10, "gnd": 8, "sub": 8, "fiq": 10
+      "str": 31,
+      "spd": 22,
+      "chn": 44,
+      "leg": 13,
+      "wre": 16,
+      "gnd": 13,
+      "sub": 13,
+      "fiq": 16
     },
     {
       "name": "Alex Rivera",
@@ -66,7 +109,14 @@
       "style": "Muay Thai",
       "promotionTier": "Amateur",
       "overallRating": 19,
-      "str": 18, "spd": 16, "chn": 10, "leg": 20, "wre": 10, "gnd": 8, "sub": 10, "fiq": 10
+      "str": 26,
+      "spd": 23,
+      "chn": 15,
+      "leg": 29,
+      "wre": 15,
+      "gnd": 12,
+      "sub": 15,
+      "fiq": 15
     },
     {
       "name": "Sam Foster",
@@ -74,7 +124,14 @@
       "style": "Judo",
       "promotionTier": "Amateur",
       "overallRating": 17,
-      "str": 12, "spd": 8, "chn": 12, "leg": 12, "wre": 24, "gnd": 16, "sub": 12, "fiq": 8
+      "str": 16,
+      "spd": 10,
+      "chn": 16,
+      "leg": 16,
+      "wre": 31,
+      "gnd": 21,
+      "sub": 16,
+      "fiq": 9
     },
     {
       "name": "Nick Webb",
@@ -82,7 +139,14 @@
       "style": "Wrestler",
       "promotionTier": "Amateur",
       "overallRating": 24,
-      "str": 16, "spd": 10, "chn": 14, "leg": 8, "wre": 26, "gnd": 22, "sub": 12, "fiq": 8
+      "str": 26,
+      "spd": 16,
+      "chn": 22,
+      "leg": 13,
+      "wre": 42,
+      "gnd": 35,
+      "sub": 19,
+      "fiq": 13
     },
     {
       "name": "Leo Park",
@@ -90,7 +154,14 @@
       "style": "Capoeira",
       "promotionTier": "Amateur",
       "overallRating": 14,
-      "str": 12, "spd": 20, "chn": 8, "leg": 18, "wre": 8, "gnd": 8, "sub": 10, "fiq": 16
+      "str": 12,
+      "spd": 25,
+      "chn": 8,
+      "leg": 18,
+      "wre": 8,
+      "gnd": 8,
+      "sub": 10,
+      "fiq": 16
     },
     {
       "name": "Mike Torres",
@@ -98,7 +169,14 @@
       "style": "Sambo",
       "promotionTier": "Amateur",
       "overallRating": 21,
-      "str": 14, "spd": 10, "chn": 12, "leg": 8, "wre": 20, "gnd": 16, "sub": 22, "fiq": 10
+      "str": 21,
+      "spd": 15,
+      "chn": 18,
+      "leg": 12,
+      "wre": 30,
+      "gnd": 24,
+      "sub": 33,
+      "fiq": 13
     },
     {
       "name": "Ryan Cole",
@@ -106,7 +184,14 @@
       "style": "Boxer",
       "promotionTier": "Regional Pro",
       "overallRating": 28,
-      "str": 28, "spd": 22, "chn": 22, "leg": 10, "wre": 10, "gnd": 10, "sub": 10, "fiq": 12
+      "str": 49,
+      "spd": 39,
+      "chn": 39,
+      "leg": 18,
+      "wre": 18,
+      "gnd": 18,
+      "sub": 18,
+      "fiq": 19
     },
     {
       "name": "Eddie Vance",
@@ -114,7 +199,14 @@
       "style": "Wrestler",
       "promotionTier": "Regional Pro",
       "overallRating": 30,
-      "str": 18, "spd": 12, "chn": 14, "leg": 10, "wre": 28, "gnd": 22, "sub": 14, "fiq": 10
+      "str": 32,
+      "spd": 21,
+      "chn": 25,
+      "leg": 18,
+      "wre": 50,
+      "gnd": 39,
+      "sub": 25,
+      "fiq": 18
     },
     {
       "name": "Tariq Benson",
@@ -122,7 +214,14 @@
       "style": "Kickboxer",
       "promotionTier": "Regional Pro",
       "overallRating": 32,
-      "str": 22, "spd": 24, "chn": 14, "leg": 22, "wre": 12, "gnd": 10, "sub": 12, "fiq": 12
+      "str": 44,
+      "spd": 45,
+      "chn": 26,
+      "leg": 41,
+      "wre": 23,
+      "gnd": 19,
+      "sub": 23,
+      "fiq": 23
     },
     {
       "name": "Chris Dalton",
@@ -130,7 +229,14 @@
       "style": "Brazilian Jiu-Jitsu",
       "promotionTier": "Regional Pro",
       "overallRating": 34,
-      "str": 12, "spd": 10, "chn": 12, "leg": 10, "wre": 14, "gnd": 24, "sub": 26, "fiq": 14
+      "str": 26,
+      "spd": 21,
+      "chn": 26,
+      "leg": 21,
+      "wre": 30,
+      "gnd": 52,
+      "sub": 55,
+      "fiq": 30
     },
     {
       "name": "Omar Silva",
@@ -138,7 +244,14 @@
       "style": "Muay Thai",
       "promotionTier": "Regional Pro",
       "overallRating": 36,
-      "str": 24, "spd": 20, "chn": 14, "leg": 24, "wre": 12, "gnd": 12, "sub": 12, "fiq": 12
+      "str": 52,
+      "spd": 42,
+      "chn": 30,
+      "leg": 51,
+      "wre": 25,
+      "gnd": 25,
+      "sub": 25,
+      "fiq": 25
     },
     {
       "name": "Jared Pike",
@@ -146,7 +259,14 @@
       "style": "Judo",
       "promotionTier": "Regional Pro",
       "overallRating": 38,
-      "str": 16, "spd": 12, "chn": 14, "leg": 14, "wre": 28, "gnd": 20, "sub": 16, "fiq": 10
+      "str": 36,
+      "spd": 27,
+      "chn": 31,
+      "leg": 31,
+      "wre": 64,
+      "gnd": 45,
+      "sub": 36,
+      "fiq": 22
     },
     {
       "name": "Devon Hayes",
@@ -154,7 +274,14 @@
       "style": "Wrestler",
       "promotionTier": "Regional Pro",
       "overallRating": 40,
-      "str": 20, "spd": 14, "chn": 16, "leg": 10, "wre": 30, "gnd": 24, "sub": 14, "fiq": 10
+      "str": 44,
+      "spd": 31,
+      "chn": 36,
+      "leg": 22,
+      "wre": 67,
+      "gnd": 53,
+      "sub": 31,
+      "fiq": 22
     },
     {
       "name": "Luis Ortega",
@@ -162,7 +289,14 @@
       "style": "Sambo",
       "promotionTier": "Regional Pro",
       "overallRating": 42,
-      "str": 18, "spd": 12, "chn": 14, "leg": 10, "wre": 24, "gnd": 20, "sub": 26, "fiq": 12
+      "str": 42,
+      "spd": 28,
+      "chn": 33,
+      "leg": 23,
+      "wre": 60,
+      "gnd": 47,
+      "sub": 61,
+      "fiq": 28
     },
     {
       "name": "Kyle Marsh",
@@ -170,7 +304,14 @@
       "style": "Capoeira",
       "promotionTier": "Regional Pro",
       "overallRating": 44,
-      "str": 16, "spd": 26, "chn": 12, "leg": 22, "wre": 10, "gnd": 10, "sub": 14, "fiq": 18
+      "str": 42,
+      "spd": 69,
+      "chn": 32,
+      "leg": 58,
+      "wre": 27,
+      "gnd": 27,
+      "sub": 37,
+      "fiq": 48
     },
     {
       "name": "Brad Owens",
@@ -178,7 +319,14 @@
       "style": "Boxer",
       "promotionTier": "Regional Pro",
       "overallRating": 46,
-      "str": 32, "spd": 24, "chn": 26, "leg": 12, "wre": 12, "gnd": 10, "sub": 10, "fiq": 14
+      "str": 82,
+      "spd": 61,
+      "chn": 66,
+      "leg": 31,
+      "wre": 31,
+      "gnd": 26,
+      "sub": 26,
+      "fiq": 33
     },
     {
       "name": "Nate Cross",
@@ -186,10 +334,22 @@
       "style": "Muay Thai",
       "promotionTier": "Regional Pro",
       "overallRating": 48,
-      "str": 26, "spd": 22, "chn": 16, "leg": 28, "wre": 14, "gnd": 12, "sub": 14, "fiq": 14
+      "str": 67,
+      "spd": 56,
+      "chn": 40,
+      "leg": 71,
+      "wre": 35,
+      "gnd": 30,
+      "sub": 35,
+      "fiq": 35
     }
   ],
-  "weightClasses": ["Bantamweight", "Featherweight", "Lightweight", "Welterweight"],
+  "weightClasses": [
+    "Bantamweight",
+    "Featherweight",
+    "Lightweight",
+    "Welterweight"
+  ],
   "demoFighter": {
     "firstName": "Demo",
     "lastName": "Fighter",
