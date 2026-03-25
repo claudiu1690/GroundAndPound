@@ -26,6 +26,7 @@ function FighterProfileLoading() {
 export const FighterProfile = memo(function FighterProfile({
   fighter,
   gyms,
+  campSlotsUsed,
   onUpdateFighter,
   onRefreshFighter,
   onMessage,
@@ -59,7 +60,7 @@ export const FighterProfile = memo(function FighterProfile({
 
       <FighterNameplate fighter={fighter} />
       <FighterResourceBars rows={resourceRowsFromFighter(fighter)} />
-      <FighterMetaPanel fighter={fighter} />
+      <FighterMetaPanel fighter={fighter} campSlotsUsed={campSlotsUsed} />
       <FighterBadgeRow badges={badgesForDisplay(fighter.badges, fighter.activePerks)} />
 
       <ProfileActionsSection

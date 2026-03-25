@@ -1,7 +1,9 @@
 const Fighter = require("../models/fighterModel");
 const Opponent = require("../models/opponentModel");
 const Fight = require("../models/fightModel");
+const FightCamp = require("../models/fightCampModel");
 const { PROMOTION_TIERS } = require("../consts/gameConstants");
+const campService = require("./campService");
 
 /**
  * Tier promotion ladder derived from PROMOTION_TIERS.
@@ -36,6 +38,7 @@ const {
 const { applyXpToStat, roundStatXp, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require("../utils/statProgression");
 const notorietyService = require("./notorietyService");
 const { tierRank } = require("../consts/notorietyConfig");
+const { logFightResolve } = require("../utils/fightResolveLogger");
 
 /**
  * Daily fight caps are per promotion tier. Legacy `fightsToday` was one global counter, so Amateur
@@ -166,23 +169,13 @@ async function acceptOffer(fighterId, fightId) {
 
     await Fighter.findByIdAndUpdate(fighterId, {
         acceptedFightId: fight._id,
-        trainingCampActions: 0
+        trainingCampActions: 0,
     });
 
+    // Create the FightCamp document for this fight
+    await campService.createCamp(fight._id, fighterId, fight.promotionTier, false);
+
     return fight;
-}
-
-/**
- * Add one training camp action (TCA) for the accepted fight.
- */
-async function addCampAction(fighterId) {
-    const fighter = await Fighter.findById(fighterId);
-    if (!fighter) throw new Error("Fighter not found");
-    if (!fighter.acceptedFightId) throw new Error("No accepted fight");
-
-    fighter.trainingCampActions = (fighter.trainingCampActions || 0) + 1;
-    await fighter.save();
-    return fighter;
 }
 
 /**
@@ -217,6 +210,29 @@ async function setStrategy(fighterId, fightId, strategy) {
 }
 
 /**
+ * Legacy TCA penalty — applied to fights accepted before the camp overhaul.
+ * Kept as a backward-compat fallback; removed from the main path.
+ */
+function applyLegacyTcaPenalty(fightPlayer, fighter, tierConfig) {
+    const recommendedTca = (tierConfig && tierConfig.recommendedTca) || 2;
+    const tca = fighter.trainingCampActions ?? 0;
+    const statPenalty = (tierConfig && tierConfig.penaltyStatPct) || 0.1;
+    const staminaPenalty = (tierConfig && tierConfig.penaltyStaminaPct) || 0;
+    const underCamped = tca < recommendedTca;
+    if (!underCamped) return;
+    const statMult = Math.max(0.5, 1 - statPenalty * (1 - tca / recommendedTca));
+    const staminaMult = staminaPenalty > 0
+        ? Math.max(0.5, 1 - staminaPenalty * (1 - tca / recommendedTca))
+        : 1;
+    ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"].forEach((k) => {
+        if (typeof fightPlayer[k] === "number") fightPlayer[k] = Math.max(1, Math.round(fightPlayer[k] * statMult));
+    });
+    const maxSt = fightPlayer.maxStamina ?? 100;
+    fightPlayer.stamina = Math.round((fightPlayer.stamina ?? maxSt) * staminaMult);
+    fightPlayer.maxStamina = Math.round(maxSt * staminaMult);
+}
+
+/**
  * Resolve the accepted fight: run simulation, apply outcome, update fighter and fight.
  */
 async function resolveFightAndApply(fighterId) {
@@ -243,24 +259,40 @@ async function resolveFightAndApply(fighterId) {
     }
 
     const tierConfig = PROMOTION_TIERS[fight.promotionTier];
+    const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
 
-    // GDD 8.2: Apply training camp penalty when TCA < recommended
-    const recommendedTca = (tierConfig && tierConfig.recommendedTca) || 2;
-    const tca = fighter.trainingCampActions ?? 0;
-    const statPenalty = (tierConfig && tierConfig.penaltyStatPct) || 0.1;
-    const staminaPenalty = (tierConfig && tierConfig.penaltyStaminaPct) || 0;
-    const underCamped = tca < recommendedTca;
-    const statMult = underCamped ? Math.max(0.5, 1 - statPenalty * (1 - tca / recommendedTca)) : 1;
-    const staminaMult = underCamped && staminaPenalty > 0 ? Math.max(0.5, 1 - staminaPenalty * (1 - tca / recommendedTca)) : 1;
-
+    // Build a mutable copy of the fighter's stats for the fight simulation.
+    // All modifiers are applied to this copy — the real fighter document is never mutated.
     const fightPlayer = { ...fighter.toObject() };
-    if (underCamped) {
-        ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"].forEach((k) => {
-            if (typeof fightPlayer[k] === "number") fightPlayer[k] = Math.max(1, Math.round(fightPlayer[k] * statMult));
+
+    // Load the FightCamp for this fight (created on accept; may be absent for old fights)
+    const fightCamp = await FightCamp.findOne({ fightId: fight._id });
+
+    if (fightCamp?.finalisedAt) {
+        // ── New camp system ──────────────────────────────────────────────────
+        // STEP 1: aggregate camp stat modifier (replaces old TCA penalty)
+        const campMod = fightCamp.campModifier ?? 0;
+        STAT_KEYS.forEach((k) => {
+            if (typeof fightPlayer[k] === "number")
+                fightPlayer[k] = Math.max(1, Math.round(fightPlayer[k] * (1 + campMod)));
         });
-        const maxSt = fightPlayer.maxStamina ?? 100;
-        fightPlayer.stamina = Math.round((fightPlayer.stamina ?? maxSt) * staminaMult);
-        fightPlayer.maxStamina = Math.round(maxSt * staminaMult);
+
+        // STEP 2: camp injury penalty (only if fighter pushed through sparring injury)
+        if (fightCamp.injuryChoice === "PUSH_THROUGH" && fightCamp.injuryPenalty) {
+            const pen = fightCamp.injuryPenalty;
+            STAT_KEYS.forEach((k) => {
+                if (pen[k] && typeof fightPlayer[k] === "number")
+                    fightPlayer[k] = Math.max(1, Math.round(fightPlayer[k] * (1 + pen[k])));
+            });
+            if (pen.maxStamina) {
+                const maxSt = fightPlayer.maxStamina ?? 100;
+                fightPlayer.maxStamina = Math.round(maxSt * (1 + pen.maxStamina));
+                fightPlayer.stamina = Math.min(fightPlayer.stamina ?? maxSt, fightPlayer.maxStamina);
+            }
+        }
+    } else {
+        // ── Legacy TCA fallback (for fights accepted before this deploy) ─────
+        applyLegacyTcaPenalty(fightPlayer, fighter, tierConfig);
     }
 
     // GDD 8.8: Apply weight cut modifier to fight player stats
@@ -284,11 +316,28 @@ async function resolveFightAndApply(fighterId) {
         : opponent.name;
 
     // GDD 7.4: Iron Will perk → pass flag to reduce KO probability
+    const ironWillPerk = !!(fighter.activePerks && fighter.activePerks.ironWill);
+    const campBonuses = fightCamp?.campBonuses ?? {};
     const result = resolveFight(fightPlayer, opponent, {
         playerStrategy: fight.playerStrategy || undefined,
         playerName,
         opponentName,
-        ironWillPerk: !!(fighter.activePerks && fighter.activePerks.ironWill),
+        ironWillPerk,
+        campBonuses,
+    });
+
+    logFightResolve({
+        fighter,
+        fight,
+        fightPlayer,
+        opponent,
+        result,
+        campRating: fightCamp?.campRating ?? null,
+        campModifier: fightCamp?.campModifier ?? null,
+        campBonuses,
+        weightCut,
+        weightMissed,
+        ironWillPerk,
     });
 
     const isWin = ["KO/TKO", "Submission", "Decision (unanimous)", "Decision (split)"].includes(result.outcome);
@@ -558,9 +607,8 @@ module.exports = {
     generateOffers,
     createOffer,
     acceptOffer,
-    addCampAction,
     setStrategy,
     setWeightCut,
     resolveFightAndApply,
-    getOffers
+    getOffers,
 };

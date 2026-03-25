@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const fightController = require("../controllers/fightController");
+const campController = require("../controllers/campController");
 
 /**
  * @swagger
@@ -89,31 +90,13 @@ router.post("/offers/:fighterId", fightController.createOffer);
  */
 router.post("/accept/:fighterId/:fightId", fightController.acceptOffer);
 
-/**
- * @swagger
- * /fights/camp/{fighterId}:
- *   post:
- *     summary: Add one training camp action (TCA) for the accepted fight
- *     tags: [Fights]
- *     parameters:
- *       - in: path
- *         name: fighterId
- *         required: true
- *         schema: { type: string, format: objectId }
- *     responses:
- *       200:
- *         description: Camp action added
- *         content:
- *           application/json:
- *             schema: { $ref: '#/components/schemas/Fighter' }
- *       400:
- *         description: No accepted fight
- *       404:
- *         description: Fighter not found
- *       500:
- *         description: Internal server error
- */
-router.post("/camp/:fighterId", fightController.addCampAction);
+// ── Fight Camp v1.1 routes ─────────────────────────────────────────────────
+// :fightId = Fight document _id (not the fighter's id)
+router.get("/camp/:fightId/report",        campController.getReport);
+router.get("/camp/:fightId",               campController.getCampState);
+router.post("/camp/:fightId/session",      campController.addSession);
+router.post("/camp/:fightId/injury-choice",campController.resolveInjury);
+router.post("/camp/:fightId/finalise",     campController.finaliseCamp);
 
 /**
  * @swagger

@@ -59,20 +59,6 @@ async function acceptOffer(req, res) {
     }
 }
 
-async function addCampAction(req, res) {
-    try {
-        const fighter = await fightService.addCampAction(req.params.fighterId);
-        res.json(fighter);
-    } catch (err) {
-        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
-        if (err.message === "No accepted fight") {
-            return res.status(400).json({ message: err.message, code: FIGHT_ERROR_CODES.NO_ACCEPTED_FIGHT });
-        }
-        console.error(err);
-        res.status(500).json({ message: "Internal server error" });
-    }
-}
-
 async function setWeightCut(req, res) {
     try {
         const { fighterId, fightId, weightCut } = req.body;
@@ -130,4 +116,4 @@ async function resolveFight(req, res) {
     }
 }
 
-module.exports = { getOffers, createOffer, acceptOffer, addCampAction, setWeightCut, setStrategy, resolveFight };
+module.exports = { getOffers, createOffer, acceptOffer, setWeightCut, setStrategy, resolveFight };

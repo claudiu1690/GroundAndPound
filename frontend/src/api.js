@@ -68,8 +68,6 @@ export const api = {
     request(`/fights/offers/${fighterId}`, { method: "POST", body: JSON.stringify(body) }),
   acceptOffer: (fighterId, fightId) =>
     request(`/fights/accept/${fighterId}/${fightId}`, { method: "POST" }),
-  addCampAction: (fighterId) =>
-    request(`/fights/camp/${fighterId}`, { method: "POST" }),
   setStrategy: (fighterId, fightId, strategy) =>
     request("/fights/strategy", {
       method: "PUT",
@@ -81,6 +79,27 @@ export const api = {
     request("/fights/weight-cut", {
       method: "PUT",
       body: JSON.stringify({ fighterId, fightId, weightCut }),
+    }),
+
+  // ── Fight Camp v1.1 ─────────────────────────────────────
+  getCampReport: (fightId) =>
+    request(`/fights/camp/${fightId}/report`),
+  getCampState: (fightId, fighterId) =>
+    request(`/fights/camp/${fightId}?fighterId=${fighterId}`),
+  addCampSession: (fightId, fighterId, sessionType) =>
+    request(`/fights/camp/${fightId}/session`, {
+      method: "POST",
+      body: JSON.stringify({ fighterId, sessionType }),
+    }),
+  resolveCampInjury: (fightId, fighterId, choice) =>
+    request(`/fights/camp/${fightId}/injury-choice`, {
+      method: "POST",
+      body: JSON.stringify({ fighterId, choice }),
+    }),
+  finaliseCamp: (fightId, fighterId, skip = false) =>
+    request(`/fights/camp/${fightId}/finalise`, {
+      method: "POST",
+      body: JSON.stringify({ fighterId, skip }),
     }),
 
   // ── Training / Recovery ─────────────────────────────────

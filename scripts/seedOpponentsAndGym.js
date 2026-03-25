@@ -11,12 +11,36 @@ const { WEIGHT_CLASSES, STYLES } = require("../consts/gameConstants");
 const { generateOpponentName } = require("../utils/opponentNames");
 const { buildOpponentStatsFromStyle } = require("../utils/opponentStats");
 const { calculateOverall } = require("../utils/overallRating");
+const { generateFightHistory } = require("./migrateCampHistory");
 
 const OPPONENTS_PER_WEIGHT_CLASS = 10;
 const REGIONAL_PRO_TIERS = ["Regional Pro"];
 
 function pickRandom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function randInt(min, max) {
+    return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+/**
+ * Generate a plausible win/loss/draw record based on promotion tier.
+ * Higher tiers have more fights and a better win percentage.
+ */
+function generateRecord(promotionTier) {
+    const ranges = {
+        Amateur:         { wins: [1, 5],   losses: [0, 3], drawChance: 0.10 },
+        "Regional Pro":  { wins: [4, 12],  losses: [1, 5], drawChance: 0.08 },
+        National:        { wins: [8, 20],  losses: [2, 7], drawChance: 0.06 },
+        "GCS Contender": { wins: [14, 28], losses: [2, 8], drawChance: 0.05 },
+        GCS:             { wins: [20, 38], losses: [3, 10], drawChance: 0.04 },
+    };
+    const r = ranges[promotionTier] || ranges.Amateur;
+    const wins   = randInt(r.wins[0],   r.wins[1]);
+    const losses = randInt(r.losses[0], r.losses[1]);
+    const draws  = Math.random() < r.drawChance ? randInt(1, 2) : 0;
+    return { wins, losses, draws };
 }
 
 async function run() {
@@ -50,6 +74,8 @@ async function run() {
             const { name, nickname } = generateOpponentName(true);
             const style = pickRandom(styleKeys);
             const stats = buildOpponentStatsFromStyle(style);
+            const record = generateRecord("Amateur");
+            const fightHistory = generateFightHistory({ style, chn: stats.chn, record });
             await Opponent.create({
                 name,
                 nickname,
@@ -65,7 +91,8 @@ async function run() {
                 sub: stats.sub,
                 chn: stats.chn,
                 fiq: stats.fiq,
-                record: { wins: 0, losses: 0, draws: 0 }
+                record,
+                fightHistory,
             });
         }
         console.log(`Created ${toCreate} Amateur opponents for ${wc} (random names & styles)`);
@@ -91,6 +118,8 @@ async function run() {
                     scaled[k] = Math.min(100, Math.max(1, Math.round(scaled[k] * scale)));
                 });
                 scaled.overallRating = calculateOverall({ ...scaled, style });
+                const record = generateRecord(promoTier);
+                const fightHistory = generateFightHistory({ style, chn: scaled.chn, record });
                 await Opponent.create({
                     name,
                     nickname,
@@ -106,7 +135,8 @@ async function run() {
                     sub: scaled.sub,
                     chn: scaled.chn,
                     fiq: scaled.fiq,
-                    record: { wins: 0, losses: 0, draws: 0 },
+                    record,
+                    fightHistory,
                 });
             }
             console.log(`Created ${toCreate} ${promoTier} opponents for ${wc}`);

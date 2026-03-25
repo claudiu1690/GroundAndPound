@@ -8,6 +8,8 @@ import { TrainingResultPopup } from "./components/TrainingResultPopup";
 import { TierUpOverlay } from "./components/TierUpOverlay";
 import { FightOffers } from "./components/FightOffers";
 import { FightCamp } from "./components/FightCamp";
+import { FighterReport } from "./components/FighterReport";
+import { CampSummary } from "./components/CampSummary";
 import { FightDescription } from "./components/FightDescription";
 import { FightSummary } from "./components/FightSummary";
 import { GymQuests } from "./components/GymQuests";
@@ -246,9 +248,10 @@ const TierProgress = memo(function TierProgress({ fighter }) {
 });
 
 // ── Right column panels ─────────────────────────────────────
-const RightPanels = memo(function RightPanels({ fighter, lastFightSummary }) {
+const RightPanels = memo(function RightPanels({ fighter, lastFightSummary, campSlotsUsed }) {
   const hasInjuries = fighter?.injuries?.length > 0;
   const inCamp = !!fighter?.acceptedFightId;
+  const campSessions = campSlotsUsed ?? fighter?.trainingCampActions ?? 0;
 
   return (
     <>
@@ -285,7 +288,7 @@ const RightPanels = memo(function RightPanels({ fighter, lastFightSummary }) {
         <div className="panel-body">
           <ul className="status-list">
             <li className={`sl-item ${inCamp ? "sl-active" : ""}`}>
-              ● Fight camp: {inCamp ? `${fighter?.trainingCampActions ?? 0} TCA logged` : "None"}
+              ● Fight camp: {inCamp ? `${campSessions} session${campSessions === 1 ? "" : "s"} logged` : "None"}
             </li>
             <li className={`sl-item ${fighter?.comebackMode ? "sl-warn" : ""}`}>
               ● Comeback mode: {fighter?.comebackMode ? "Active — ×1.5 XP on next fight" : "—"}
@@ -393,6 +396,14 @@ function App() {
   /** Bumps after train / membership pay so gym quest panel refetches without a full page reload. */
   const [gymQuestRefresh, setGymQuestRefresh] = useState(0);
 
+  // ── Camp v1.1 state ────────────────────────────────────────
+  const [campReport, setCampReport]           = useState(null);
+  const [showFighterReport, setShowFighterReport] = useState(false);
+  const [campState, setCampState]             = useState(null);
+  const [addingSession, setAddingSession]     = useState(null); // sessionType key while loading
+  const [showCampSummary, setShowCampSummary] = useState(false);
+  const [campSummaryData, setCampSummaryData] = useState(null);
+
   const maybeShowBlockPopup = useCallback((rawMessage, errorCode) => {
     const blockingCodes = new Set([
       "FIGHT_DAILY_CAP_REACHED",
@@ -432,6 +443,20 @@ function App() {
     }
   }, []);
 
+  // Sync camp state when fighter data indicates an active fight
+  const syncCampState = useCallback(async (f) => {
+    if (!f?.acceptedFightId) {
+      setCampState(null);
+      return;
+    }
+    try {
+      const state = await api.getCampState(f.acceptedFightId, f._id);
+      setCampState(state);
+    } catch (_) {
+      setCampState(null);
+    }
+  }, []);
+
   const loadGyms = useCallback(async () => {
     try {
       const list = await api.listGyms();
@@ -452,6 +477,11 @@ function App() {
       setLoading(false);
     })();
   }, [authed, loadFighter, loadGyms]);
+
+  // Sync camp state whenever fighter changes
+  useEffect(() => {
+    if (fighter) syncCampState(fighter);
+  }, [fighter?._id, fighter?.acceptedFightId, syncCampState]);
 
   // Periodic refresh every minute
   useEffect(() => {
@@ -568,9 +598,19 @@ function App() {
       try {
         const fight = await api.createOffer(fighter._id, { opponentId, offerType });
         await api.acceptOffer(fighter._id, fight._id);
-        setMessage("Fight accepted. Build your camp then step into the cage.");
-        loadFighter(fighter._id);
         setOffers([]);
+
+        // Fetch Fighter Report and camp state immediately after accept
+        const [report, state] = await Promise.all([
+          api.getCampReport(fight._id),
+          api.getCampState(fight._id, fighter._id),
+        ]);
+        setCampReport(report);
+        setCampState(state);
+        setShowFighterReport(true);
+        setMessage("Fight accepted — review your opponent before camp.");
+        loadFighter(fighter._id, { clearMessage: false });
+        setActiveTab("fights");
       } catch (e) {
         const errMsg = e.message || "Accept failed";
         maybeShowBlockPopup(errMsg, e.code);
@@ -580,19 +620,58 @@ function App() {
     [fighter?._id, loadFighter, maybeShowBlockPopup]
   );
 
-  const handleCamp = useCallback(async () => {
-    if (!fighter?._id) return;
+  const loadCampState = useCallback(async (fightId) => {
+    if (!fightId || !fighter?._id) return;
     try {
-      await api.addCampAction(fighter._id);
-      const updated = await api.getFighter(fighter._id);
-      setFighter(updated);
-      setMessage(`Camp action added. Total: ${updated.trainingCampActions ?? 0}.`);
+      const state = await api.getCampState(fightId, fighter._id);
+      setCampState(state);
+    } catch (_) {}
+  }, [fighter?._id]);
+
+  const handleAddCampSession = useCallback(async (sessionType) => {
+    const fightId = fighter?.acceptedFightId;
+    if (!fightId || !fighter?._id) return;
+    setAddingSession(sessionType);
+    try {
+      const result = await api.addCampSession(fightId, fighter._id, sessionType);
+      setCampState(result.camp ? { ...result.camp, slotsUsed: result.slotsUsed, slotsRemaining: result.slotsRemaining, previewRating: result.previewRating } : null);
+      if (result.injuryTriggered) {
+        setMessage(`Injury in camp: ${result.injuryTriggered.label} — make a choice.`);
+      } else {
+        setMessage(`Session added: ${sessionType.replace(/_/g, " ").toLowerCase()}.`);
+      }
+      loadFighter(fighter._id, { clearMessage: false });
     } catch (e) {
-      const errMsg = e.message || "Camp failed";
-      maybeShowBlockPopup(errMsg, e.code);
-      setMessage(errMsg);
+      setMessage(e.message || "Failed to add session");
     }
-  }, [fighter?._id, maybeShowBlockPopup]);
+    setAddingSession(null);
+  }, [fighter?._id, fighter?.acceptedFightId, loadFighter]);
+
+  const handleResolveCampInjury = useCallback(async (choice) => {
+    const fightId = fighter?.acceptedFightId;
+    if (!fightId || !fighter?._id) return;
+    try {
+      await api.resolveCampInjury(fightId, fighter._id, choice);
+      await loadCampState(fightId);
+      setMessage(choice === "STOP" ? "Camp stopped — entering fight healthy." : "Pushing through — injury penalty will apply at fight time.");
+    } catch (e) {
+      setMessage(e.message || "Failed to resolve injury");
+    }
+  }, [fighter?._id, fighter?.acceptedFightId, loadCampState]);
+
+  const handleFinaliseCamp = useCallback(async (skip = false) => {
+    const fightId = fighter?.acceptedFightId;
+    if (!fightId || !fighter?._id) return;
+    try {
+      const summary = await api.finaliseCamp(fightId, fighter._id, skip);
+      setCampSummaryData(summary);
+      await loadCampState(fightId);
+      setShowCampSummary(true);
+      setMessage(skip ? "Camp skipped — entering fight underprepared." : `Camp finalised — Rating: ${summary.campRating}`);
+    } catch (e) {
+      setMessage(e.message || "Failed to finalise camp");
+    }
+  }, [fighter?._id, fighter?.acceptedFightId, loadCampState]);
 
   const handleResolve = useCallback(async () => {
     if (!fighter?._id) return;
@@ -613,6 +692,11 @@ function App() {
       const rec = result.fighter?.record;
       setMessage(`${out} — +${iron} ⊗${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}`);
       loadFighter(fighter._id);
+      // Clean up camp state after fight
+      setCampState(null);
+      setCampReport(null);
+      setCampSummaryData(null);
+      setShowCampSummary(false);
     } catch (e) {
       const errMsg = e.message || "Resolve failed";
       maybeShowBlockPopup(errMsg, e.code);
@@ -620,6 +704,11 @@ function App() {
     }
     setResolving(false);
   }, [fighter?._id, loadFighter, maybeShowBlockPopup]);
+
+  const handleBeginFight = useCallback(() => {
+    setShowCampSummary(false);
+    handleResolve();
+  }, [handleResolve]);
 
   const closeTrainingPopup = useCallback(() => {
     setTrainingResultPopup((p) => ({ ...p, open: false }));
@@ -688,7 +777,7 @@ function App() {
             )}
             {campActive && (
               <div className="hdr-badge-btn">
-                ⛺ Camp <span className="hdr-badge-count">{fighter.trainingCampActions ?? 0}</span>
+                ⛺ Camp <span className="hdr-badge-count">{campState?.slotsUsed ?? fighter.trainingCampActions ?? 0}</span>
               </div>
             )}
             <button className="hdr-logout" onClick={handleLogout} title="Sign out">Sign Out</button>
@@ -721,6 +810,24 @@ function App() {
         onClose={() => setFightLimitPopup({ open: false, message: "" })}
       />
 
+      {/* ── FIGHTER REPORT MODAL ── */}
+      {showFighterReport && campReport && (
+        <FighterReport
+          report={campReport}
+          onStartCamp={() => setShowFighterReport(false)}
+          onClose={() => setShowFighterReport(false)}
+        />
+      )}
+
+      {/* ── CAMP SUMMARY MODAL ── */}
+      {showCampSummary && campSummaryData && (
+        <CampSummary
+          summaryData={campSummaryData}
+          onBeginFight={handleBeginFight}
+          resolving={resolving}
+        />
+      )}
+
       {/* ── BODY: centered block = nav + main ── */}
       <div className="app-body">
         <div className="app-center-wrap">
@@ -731,6 +838,7 @@ function App() {
             <FighterProfile
               fighter={fighter}
               gyms={gyms}
+              campSlotsUsed={campState?.slotsUsed}
               onUpdateFighter={handleUpdateFighter}
               onRefreshFighter={loadFighter}
               onMessage={setMessage}
@@ -785,6 +893,7 @@ function App() {
                   <RightPanels
                     fighter={fighter}
                     lastFightSummary={lastFightSummary}
+                    campSlotsUsed={campState?.slotsUsed}
                   />
                 </div>
               </div>
@@ -824,9 +933,15 @@ function App() {
               ) : (
                 <FightCamp
                   fighter={fighter}
-                  resolving={resolving}
-                  onCamp={handleCamp}
-                  onResolve={handleResolve}
+                  campState={campState}
+                  campReport={campReport}
+                  onAddSession={handleAddCampSession}
+                  onResolveInjury={handleResolveCampInjury}
+                  onFinalise={() => handleFinaliseCamp(false)}
+                  onSkip={() => handleFinaliseCamp(true)}
+                  onViewReport={() => setShowFighterReport(true)}
+                  addingSession={addingSession}
+                  finalising={resolving}
                   onMessage={setMessage}
                 />
               )}
