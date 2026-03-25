@@ -42,23 +42,3 @@ export const PROMOTION_TIERS = [
   "GCS",
 ];
 
-/** GDD 8.2: Recommended TCAs per tier (penalty if below). */
-export const RECOMMENDED_TCA = {
-  Amateur: 2,
-  "Regional Pro": 3,
-  National: 5,
-  "GCS Contender": 8,
-  GCS: 10,
-};
-
-/** GDD 8.3: Fight strategies. */
-export const FIGHT_STRATEGIES = [
-  "Pressure Fighter",
-  "Counter Striker",
-  "Takedown Heavy",
-  "Submission Hunter",
-  "Ground & Pound",
-  "Leg Kick Attrition",
-  "Clinch Bully",
-  "Survival Mode",
-];

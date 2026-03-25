@@ -207,8 +207,9 @@ function getSubAttemptChance(playerStrategy) {
  * @param {boolean} ironWillPerk - Applies only to player's KO loss check
  * @returns {{ playerDamage: number, opponentDamage: number, playerStamina: number, opponentStamina: number, event: string|null, finished: boolean, outcome: string|null, playerHealth: number, opponentHealth: number }}
  */
-function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk = false) {
+function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk = false, campBonuses = {}) {
     const staminaDrain = CFG.round.staminaDrainBase + Math.floor(Math.random() * CFG.round.staminaDrainRandom);
+    const playerDrainMult = campBonuses.playerStaminaDrainMult ?? 1;
     let playerDamage = 0;
     let opponentDamage = 0;
     let event = null;
@@ -216,7 +217,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     let finished = false;
     let outcome = null;
 
-    const pStamina = Math.max(0, (player.stamina ?? CFG.defaults.stamina) - staminaDrain);
+    const pStamina = Math.max(0, (player.stamina ?? CFG.defaults.stamina) - Math.round(staminaDrain * playerDrainMult));
     const oStamina = Math.max(0, (opponent.stamina ?? CFG.defaults.stamina) - staminaDrain);
     const pStaminaMod = pStamina / 100;
     const oStaminaMod = oStamina / 100;
@@ -404,6 +405,7 @@ function resolveFight(player, opponent, options = {}) {
     const maxRounds = options.maxRounds ?? CFG.defaults.maxRounds;
     const playerStrategy = options.playerStrategy || null;
     const ironWillPerk = !!options.ironWillPerk;
+    const campBonuses = options.campBonuses ?? {};
     const playerName = options.playerName || "Your fighter";
     const opponentName = options.opponentName || "Opponent";
     const rounds = [];
@@ -422,7 +424,7 @@ function resolveFight(player, opponent, options = {}) {
     };
 
     for (let r = 1; r <= maxRounds; r++) {
-        const result = resolveRound(p, o, r, playerStrategy, ironWillPerk);
+        const result = resolveRound(p, o, r, playerStrategy, ironWillPerk, campBonuses);
         rounds.push({
             round: r,
             event: result.event,

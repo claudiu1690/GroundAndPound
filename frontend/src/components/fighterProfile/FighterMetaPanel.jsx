@@ -55,7 +55,7 @@ function FameBlock({ notoriety }) {
 /**
  * Iron, fame, record, optional gym / camp / comeback / backstory lines.
  */
-export const FighterMetaPanel = memo(function FighterMetaPanel({ fighter }) {
+export const FighterMetaPanel = memo(function FighterMetaPanel({ fighter, campSlotsUsed }) {
   const rec = fighter.record ?? {};
   const koWins = rec.koWins ?? 0;
   const subWins = rec.subWins ?? 0;
@@ -96,7 +96,10 @@ export const FighterMetaPanel = memo(function FighterMetaPanel({ fighter }) {
 
       {fighter.acceptedFightId && (
         <MetaRow label="Camp" valueClassName="meta-value-green">
-          <>{fighter.trainingCampActions ?? 0} TCA</>
+          <>
+            {campSlotsUsed ?? fighter.trainingCampActions ?? 0} session
+            {(campSlotsUsed ?? fighter.trainingCampActions ?? 0) === 1 ? "" : "s"}
+          </>
         </MetaRow>
       )}
 

@@ -1,119 +1,229 @@
-import { useState, memo } from "react";
-import { api } from "../api";
-import { RECOMMENDED_TCA, FIGHT_STRATEGIES } from "../constants/gameConstants";
+import { memo } from "react";
+import { CAMP_SESSIONS, CAMP_SESSION_KEYS, getRatingConfig, modifierToGradeLabel } from "../constants/campConfig";
+import { CampInjury } from "./CampInjury";
 
-const WEIGHT_CUTS = [
-  { value: "easy",       label: "Easy cut",       sub: "100% Stamina · 0% miss risk" },
-  { value: "moderate",   label: "Moderate cut",   sub: "90% Stamina · 5% miss risk · +5 Max Stamina" },
-  { value: "aggressive", label: "Aggressive cut", sub: "75% Stamina · 20% miss risk · +12 Max Stamina" },
-];
+const MATCH_STATUS_CLASS = {
+    matched:     "session-matched",
+    not_a_match: "session-unmatched",
+};
 
-export const FightCamp = memo(function FightCamp({ fighter, resolving, onCamp, onResolve, onMessage }) {
-  const [strategy, setStrategyLocal] = useState("");
-  const [weightCut, setWeightCutLocal] = useState("easy");
+const MATCH_STATUS_LABEL = {
+    matched:     "Recommended",
+    not_a_match: "Not a match",
+};
 
-  if (!fighter?.acceptedFightId) return null;
+function SlotGrid({ maxSlots, slotsUsed }) {
+    return (
+        <div className="camp-slot-grid">
+            {Array.from({ length: maxSlots }, (_, i) => (
+                <div
+                    key={i}
+                    className={`camp-slot-dot ${i < slotsUsed ? "camp-slot-filled" : "camp-slot-empty"}`}
+                    title={i < slotsUsed ? `Slot ${i + 1} used` : `Slot ${i + 1} available`}
+                />
+            ))}
+        </div>
+    );
+}
 
-  const recommended = RECOMMENDED_TCA[fighter.promotionTier] ?? 2;
-  const tca = fighter.trainingCampActions ?? 0;
-  const underCamped = tca < recommended;
-  const tcaPct = Math.min(100, (tca / recommended) * 100);
-
-  const handleSetStrategy = async (e) => {
-    const value = e.target.value;
-    if (!value) return;
-    setStrategyLocal(value);
-    try {
-      await api.setStrategy(fighter._id, fighter.acceptedFightId, value);
-      onMessage?.(`Strategy set: ${value}`);
-    } catch (err) {
-      onMessage?.(err.message || "Failed to set strategy");
-    }
-  };
-
-  const handleSetWeightCut = async (e) => {
-    const value = e.target.value;
-    setWeightCutLocal(value);
-    try {
-      await api.setWeightCut(fighter._id, fighter.acceptedFightId, value);
-      const wc = WEIGHT_CUTS.find((w) => w.value === value);
-      onMessage?.(`Weight cut: ${wc?.label ?? value}`);
-    } catch (err) {
-      onMessage?.(err.message || "Failed to set weight cut");
-    }
-  };
-
-  return (
-    <section className="panel fight-camp">
-      <h2 className="panel-title">Fight Camp</h2>
-      <div className="panel-body">
-        {/* TCA progress */}
-        <div className="camp-header">
-          <div>
-            <div className="camp-tca-big">{tca}</div>
-            <div className="camp-tca-label">TCA</div>
-          </div>
-          <div className="camp-tca-info">
-            <div className="camp-tca-status">
-              {tca} of {recommended} recommended actions
-            </div>
-            <div style={{ height: "6px", background: "var(--bg-input)", borderRadius: "3px", overflow: "hidden", margin: "0.35rem 0" }}>
-              <div style={{ height: "100%", width: `${tcaPct}%`, background: underCamped ? "#fbbf24" : "var(--green-bright)", borderRadius: "3px", transition: "width 0.3s" }} />
-            </div>
-            {underCamped ? (
-              <div className="camp-tca-warning">Under-camped — stat/stamina penalty will apply</div>
-            ) : (
-              <div className="camp-tca-ok">Camp complete — ready to fight</div>
+function RatingBadge({ grade, modifier }) {
+    if (!grade) return null;
+    const cfg = getRatingConfig(grade);
+    return (
+        <div className="camp-rating-badge" style={{ borderColor: cfg.color, color: cfg.color }}>
+            <span className="camp-rating-grade">{grade}</span>
+            {modifier != null && (
+                <span className="camp-rating-mod" style={{ color: modifier >= 0 ? "var(--green-bright)" : "var(--red-bright)" }}>
+                    {modifierToGradeLabel(modifier)}
+                </span>
             )}
-          </div>
         </div>
+    );
+}
 
-        <p className="camp-explanation">
-          Each TCA is one focused training session for this fight. Fewer TCAs than recommended means a stat penalty on fight night. Stack your camp, choose your game plan, then step into the cage.
-        </p>
+function SessionCard({ sessionKey, energyAvailable, isInjuredPending, onAddSession, loading }) {
+    const session = CAMP_SESSIONS[sessionKey];
+    if (!session) return null;
 
-        <div className="camp-grid">
-          <div className="form-row" style={{ margin: 0 }}>
-            <label>Fight Strategy</label>
-            <select value={strategy} onChange={handleSetStrategy} className="strategy-select">
-              <option value="">— Choose before resolving —</option>
-              {FIGHT_STRATEGIES.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-          <div className="form-row" style={{ margin: 0 }}>
-            <label>Weight Cut</label>
-            <select value={weightCut} onChange={handleSetWeightCut}>
-              {WEIGHT_CUTS.map((wc) => (
-                <option key={wc.value} value={wc.value}>{wc.label} — {wc.sub}</option>
-              ))}
-            </select>
-          </div>
+    const notEnoughEnergy = (energyAvailable ?? 0) < session.energy;
+    const blocked = notEnoughEnergy || isInjuredPending || loading;
+
+    let tooltip = "";
+    if (isInjuredPending) tooltip = "Resolve camp injury first";
+    else if (notEnoughEnergy) tooltip = `Need ${session.energy}E (have ${energyAvailable ?? 0}E)`;
+
+    return (
+        <div className={`camp-session-card ${blocked ? "camp-session-disabled" : ""}`}>
+            <div className="camp-session-header">
+                <span className="camp-session-name">{session.label}</span>
+                <span className="camp-session-energy">{session.energy}E</span>
+            </div>
+            <div className="camp-session-effect">{session.effectLabel}</div>
+            <div className="camp-session-footer">
+                <span className="camp-session-hint">{session.recommendedAgainst}</span>
+                {session.injuryRisk && (
+                    <span className="camp-session-risk">⚠ Injury risk</span>
+                )}
+            </div>
+            <button
+                className="btn btn-secondary btn-sm camp-session-btn"
+                disabled={blocked}
+                title={tooltip || undefined}
+                onClick={() => !blocked && onAddSession(sessionKey)}
+            >
+                {loading ? "Adding…" : "Add to camp"}
+            </button>
         </div>
+    );
+}
 
-        {weightCut === "moderate" && (
-          <p className="camp-weight-note">Moderate cut: 5% chance to miss weight → −20% purse + Fame penalty.</p>
-        )}
-        {weightCut === "aggressive" && (
-          <p className="camp-weight-note camp-weight-danger">Aggressive cut: 20% chance to miss weight → −20% purse + Fame penalty. High risk.</p>
-        )}
+export const FightCamp = memo(function FightCamp({
+    fighter,
+    campState,
+    campReport,
+    onAddSession,
+    onResolveInjury,
+    onFinalise,
+    onSkip,
+    onViewReport,
+    addingSession,
+    finalising,
+    onMessage,
+}) {
+    if (!fighter?.acceptedFightId || !campState) return null;
 
-        <div className="camp-actions">
-          <button type="button" className="btn btn-secondary" onClick={onCamp}>
-            + Add camp action
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={onResolve}
-            disabled={resolving}
-            style={{ minWidth: "140px" }}
-          >
-            {resolving ? "Fight night…" : "⚔ Resolve fight"}
-          </button>
-        </div>
-      </div>
-    </section>
-  );
+    const {
+        maxSlots = 0,
+        slotsUsed = 0,
+        slotsRemaining = 0,
+        previewRating,
+        campRating,
+        campModifier,
+        isInjured,
+        injuryChoice,
+        injuryType,
+        injuryPenalty,
+        finalisedAt,
+        sessions = [],
+    } = campState;
+
+    const isInjuredPending = isInjured && !injuryChoice;
+    const isFinalised = !!finalisedAt;
+    const displayGrade = isFinalised ? campRating : previewRating?.grade;
+    const displayModifier = isFinalised ? campModifier : previewRating?.campModifier;
+    const canFinalise = !isFinalised && slotsUsed >= 1 && !isInjuredPending;
+    const energyAvailable = fighter.energy?.current ?? fighter.energy ?? 0;
+
+    return (
+        <section className="panel fight-camp">
+            <div className="camp-v2-header">
+                <div className="camp-v2-header-left">
+                    <h2 className="panel-title">Fight Camp</h2>
+                    {campReport && (
+                        <button className="btn btn-ghost btn-sm camp-view-report" onClick={onViewReport}>
+                            View Report
+                        </button>
+                    )}
+                </div>
+                <div className="camp-v2-header-right">
+                    {(displayGrade || slotsUsed > 0) && (
+                        <RatingBadge grade={displayGrade} modifier={displayModifier} />
+                    )}
+                </div>
+            </div>
+
+            <div className="panel-body">
+                <div className="camp-slots-row">
+                    <SlotGrid maxSlots={maxSlots} slotsUsed={slotsUsed} />
+                    <span className="camp-slots-label">
+                        {slotsUsed}/{maxSlots} slots used
+                        {slotsRemaining > 0 && !isFinalised && (
+                            <span className="camp-slots-remaining"> · {slotsRemaining} remaining</span>
+                        )}
+                    </span>
+                    <span className="camp-energy-badge">{energyAvailable}E available</span>
+                </div>
+
+                {isInjuredPending && (
+                    <CampInjury
+                        injuryType={injuryType}
+                        slotsRemaining={slotsRemaining}
+                        previewRating={previewRating}
+                        onStop={() => onResolveInjury("STOP")}
+                        onPushThrough={() => onResolveInjury("PUSH_THROUGH")}
+                    />
+                )}
+
+                {injuryChoice === "PUSH_THROUGH" && injuryPenalty && (
+                    <div className="camp-injury-pushed">
+                        ⚠ Pushing through injury — fight penalties active:{" "}
+                        {Object.entries(injuryPenalty)
+                            .map(([k, v]) => `${k.toUpperCase()} ${Math.round(v * 100)}%`)
+                            .join(", ")}
+                    </div>
+                )}
+
+                {!isFinalised && !isInjuredPending && slotsRemaining > 0 && (
+                    <div className="camp-sessions-grid">
+                        {CAMP_SESSION_KEYS.map((key) => (
+                            <SessionCard
+                                key={key}
+                                sessionKey={key}
+                                energyAvailable={energyAvailable}
+                                isInjuredPending={isInjuredPending}
+                                onAddSession={onAddSession}
+                                loading={addingSession === key}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {sessions.length > 0 && (
+                    <div className="camp-sessions-taken">
+                        <div className="camp-sessions-taken-title">Sessions logged</div>
+                        {sessions.map((s, i) => {
+                            const cfg = CAMP_SESSIONS[s.sessionType];
+                            return (
+                                <div key={i} className={`camp-session-row ${MATCH_STATUS_CLASS[s.matchStatus] ?? ""}`}>
+                                    <span className="csr-name">{cfg?.label ?? s.sessionType}</span>
+                                    <span className="csr-status">
+                                        {MATCH_STATUS_LABEL[s.matchStatus]}
+                                        {s.diminishingFactor < 1 && (
+                                            <span className="csr-dr"> · repeat ×{s.diminishingFactor}</span>
+                                        )}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {!isFinalised && (
+                    <div className="camp-v2-actions">
+                        <button
+                            className="btn btn-primary"
+                            onClick={onFinalise}
+                            disabled={!canFinalise || finalising}
+                            title={!canFinalise ? "Add at least one session before finalising" : undefined}
+                        >
+                            {finalising ? "Finalising…" : "Finalise Camp"}
+                        </button>
+                        <button
+                            className="btn btn-ghost camp-skip-btn"
+                            onClick={onSkip}
+                            disabled={finalising}
+                        >
+                            Fight Now (skip camp)
+                        </button>
+                    </div>
+                )}
+
+                {isFinalised && (
+                    <div className="camp-finalised-notice">
+                        Camp finalised — camp summary shown before fight.
+                    </div>
+                )}
+            </div>
+        </section>
+    );
 });

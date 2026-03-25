@@ -1197,22 +1197,6 @@ code {
 .offer-opponent-ovr  { color: var(--red-bright); font-weight: 800; }
 
 /* ============================================================
-   FIGHT CAMP
-   ============================================================ */
-.camp-header { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.6rem; padding: 0.5rem 0.65rem; background: var(--bg-nav-header); border-radius: 3px; border: 1px solid var(--border); color: var(--header-text); }
-.camp-tca-big { font-size: 26px; font-weight: 900; color: var(--red-bright); line-height: 1; }
-.camp-tca-label { font-size: 8px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0; }
-.camp-tca-info { flex: 1; }
-.camp-tca-status { font-size: 11px; color: var(--header-text); font-weight: 600; }
-.camp-tca-warning { font-size: 10px; color: #fbbf24; margin-top: 0.15rem; }
-.camp-tca-ok { font-size: 10px; color: #86efac; margin-top: 0.15rem; }
-.camp-explanation { margin: 0 0 0.5rem; font-size: 10px; color: var(--text-sec); line-height: 1.4; padding: 0.35rem 0.5rem; border-left: 2px solid var(--border-bright); }
-.camp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem; }
-.camp-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
-.camp-weight-note { font-size: 10px; color: #92400e; background: rgba(245,158,11,0.12); border-left: 2px solid #b45309; padding: 0.25rem 0.45rem; border-radius: 2px; margin-top: 0.2rem; }
-.camp-weight-danger { color: var(--red-dim); background: rgba(220,38,38,0.1); border-left-color: var(--red); }
-
-/* ============================================================
    FIGHT SUMMARY
    ============================================================ */
 .torn-table { width: 100%; border-collapse: collapse; font-size: 11px; }
@@ -1773,3 +1757,467 @@ code {
 .tier-up-dismiss {
   min-width: 160px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   FIGHT CAMP v1.1
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── FighterReport overlay ──────────────────────────────────── */
+.fr-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.fr-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 92vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,.35);
+}
+
+/* ── Coloured banner (top section) ── */
+.fr-banner {
+  padding: 1.25rem 1.5rem 1.5rem;
+  flex-shrink: 0;
+}
+.fr-banner-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.fr-banner-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.5);
+}
+.fr-close {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.7);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+.fr-close:hover { background: rgba(255,255,255,.2); color: #fff; }
+
+/* Identity block inside banner */
+.fr-identity { display: flex; flex-direction: column; gap: 0.45rem; }
+.fr-identity-name {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.fr-identity-nickname {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,.55);
+  font-style: italic;
+  font-weight: 400;
+}
+.fr-identity-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.15rem;
+}
+.fr-style-pill {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  padding: 0.25rem 0.7rem;
+  border-radius: 20px;
+}
+.fr-record-pill {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,.85);
+}
+.fr-ovr-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,.45);
+  margin-left: auto;
+  letter-spacing: 0.04em;
+}
+.fr-record-detail {
+  font-size: 11px;
+  color: rgba(255,255,255,.4);
+  margin-top: 0.1rem;
+}
+
+/* ── Body (scrollable) ── */
+.fr-body {
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Intel columns */
+.fr-intel { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media(max-width:480px){ .fr-intel { grid-template-columns: 1fr; } }
+.fr-intel-heading {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 0.5rem;
+}
+.fr-intel-danger { color: #dc2626; }
+.fr-intel-safe   { color: #16a34a; }
+.fr-intel-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.35rem; }
+.fr-intel-item {
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+  color: var(--text);
+}
+.fr-intel-item-danger { background: #fef2f2; border-color: #dc2626; }
+.fr-intel-item-safe   { background: #f0fdf4; border-color: #16a34a; }
+.fr-intel-muted { color: var(--text-muted); padding: 0.3rem 0; }
+.fr-arrow { margin-right: 0.35rem; opacity: 0.5; }
+
+/* Tendency + warning */
+.fr-tendency {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  background: #f8f8f9;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.fr-tendency-row { display: flex; gap: 0.5rem; align-items: flex-start; font-size: 13px; }
+.fr-tendency-label { font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+.fr-tendency-text  { color: var(--text); line-height: 1.5; }
+.fr-warning-label  { color: #b45309; }
+.fr-warning-text   { color: #92400e; font-style: italic; line-height: 1.5; }
+
+.fr-actions { display: flex; justify-content: flex-end; }
+.fr-start-btn { min-width: 140px; }
+
+/* ── Fight camp (pre-fight sessions) ─────────────────────────── */
+.fight-camp { padding: 1.5rem; }
+
+.camp-v2-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.camp-v2-header-left { display: flex; align-items: center; gap: 0.75rem; }
+.camp-v2-header-right { display: flex; align-items: center; }
+.camp-view-report { font-size: 12px; padding: 0.3rem 0.75rem; }
+
+/* Slot grid */
+.camp-slots-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.camp-slot-grid { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.camp-slot-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  transition: background 0.2s, border-color 0.2s;
+}
+.camp-slot-filled { background: #3b82f6; border-color: #3b82f6; }
+.camp-slot-empty  { background: transparent; }
+.camp-slots-label { font-size: 12px; color: var(--text-muted); }
+.camp-slots-remaining { color: var(--text); }
+.camp-energy-badge {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: #3b82f6;
+  background: rgba(59,130,246,.1);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid rgba(59,130,246,.3);
+}
+
+/* Rating badge */
+.camp-rating-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 2px solid;
+  border-radius: 8px;
+  padding: 0.3rem 0.8rem;
+}
+.camp-rating-grade { font-size: 1.4rem; font-weight: 900; line-height: 1; }
+.camp-rating-mod   { font-size: 13px; font-weight: 700; }
+
+/* Session cards grid */
+.camp-sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+@media(max-width:700px){ .camp-sessions-grid { grid-template-columns: repeat(2, 1fr); } }
+@media(max-width:460px){ .camp-sessions-grid { grid-template-columns: 1fr; } }
+
+.camp-session-card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  transition: border-color 0.2s;
+}
+.camp-session-card:not(.camp-session-disabled):hover { border-color: #3b82f6; }
+.camp-session-disabled { opacity: 0.45; pointer-events: none; }
+
+.camp-session-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+.camp-session-name   { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; }
+.camp-session-energy { font-size: 12px; font-weight: 700; color: #3b82f6; white-space: nowrap; }
+.camp-session-effect { font-size: 12px; color: #22c55e; line-height: 1.35; }
+.camp-session-footer { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.camp-session-hint   { font-size: 10px; color: var(--text-muted); line-height: 1.3; }
+.camp-session-risk   { font-size: 10px; color: #f59e0b; white-space: nowrap; }
+.camp-session-btn    { margin-top: auto; font-size: 11px; width: 100%; }
+
+/* Sessions taken */
+.camp-sessions-taken { margin-bottom: 1rem; }
+.camp-sessions-taken-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+.camp-session-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 12px;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  margin-bottom: 0.25rem;
+}
+.session-matched   { background: rgba(34,197,94,.06); border-left: 3px solid #22c55e; }
+.session-unmatched { background: rgba(255,255,255,.03); border-left: 3px solid var(--border); }
+.csr-name   { flex: 1; color: var(--text); }
+.csr-status { color: var(--text-muted); font-size: 11px; }
+.csr-dr     { font-size: 10px; font-weight: 400; opacity: 0.7; }
+
+/* Camp actions */
+.camp-v2-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.camp-skip-btn { color: var(--text-muted); font-size: 12px; }
+.camp-finalised-notice {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(34,197,94,.07);
+  border: 1px solid rgba(34,197,94,.2);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #22c55e;
+}
+
+/* Injury pushed-through banner */
+.camp-injury-pushed {
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: rgba(245,158,11,.08);
+  border: 1px solid rgba(245,158,11,.3);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #f59e0b;
+}
+
+/* ── CampInjury panel ────────────────────────────────────────── */
+.camp-injury-banner {
+  background: rgba(227,24,55,.06);
+  border: 2px solid #e31837;
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.camp-injury-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+.camp-injury-icon  { font-size: 1.2rem; }
+.camp-injury-title { font-size: 1rem; font-weight: 800; color: #e31837; }
+.camp-injury-desc  { font-size: 13px; color: var(--text); margin: 0 0 1rem; line-height: 1.5; }
+
+.camp-injury-options { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media(max-width:520px){ .camp-injury-options { grid-template-columns: 1fr; } }
+.camp-injury-option {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.cio-heading { font-size: 13px; font-weight: 700; color: var(--text); }
+.cio-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  flex: 1;
+}
+
+.camp-injury-stop { border-color: rgba(34,197,94,.3); }
+.camp-injury-push { border-color: rgba(227,24,55,.3); }
+
+/* ── CampSummary overlay ─────────────────────────────────────── */
+.cs-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.cs-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 92vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,.35);
+}
+
+/* Banner */
+.cs-banner {
+  padding: 1.25rem 1.5rem 1.5rem;
+  flex-shrink: 0;
+}
+.cs-banner-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.45);
+  margin-bottom: 1rem;
+}
+.cs-banner-body { display: flex; align-items: center; gap: 1.25rem; }
+.cs-grade-circle {
+  font-size: 3.5rem;
+  font-weight: 900;
+  line-height: 1;
+  border: 3px solid;
+  border-radius: 14px;
+  padding: 0.2rem 0.85rem;
+  flex-shrink: 0;
+}
+.cs-banner-info { display: flex; flex-direction: column; gap: 0.4rem; }
+.cs-grade-name  { font-size: 1rem; font-weight: 800; }
+.cs-modifier-row { display: flex; align-items: baseline; gap: 0.4rem; }
+.cs-modifier-label { font-size: 12px; color: rgba(255,255,255,.45); }
+.cs-modifier-value { font-size: 15px; font-weight: 800; }
+.cs-skipped-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,.1);
+  color: rgba(255,255,255,.5);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+
+/* Body (scrollable) */
+.cs-body {
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.cs-breakdown { display: flex; flex-direction: column; gap: 0.3rem; }
+.cs-breakdown-title {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #777779;
+  margin-bottom: 0.3rem;
+}
+.cs-breakdown-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 12px;
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+}
+.csd-matched   { background: #f0fdf4; border-color: #16a34a; }
+.csd-unmatched { background: #f8f8f9; border-color: #d8d8da; }
+.csb-icon   { width: 16px; text-align: center; font-weight: 700; }
+.csd-matched .csb-icon   { color: #16a34a; }
+.csd-unmatched .csb-icon { color: #777779; }
+.csb-name   { flex: 1; color: var(--text); }
+.csb-status { font-size: 11px; color: #777779; }
+
+.cs-injury-penalty {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #92400e;
+  line-height: 1.5;
+}
+.cs-injury-icon { font-size: 1rem; }
+
+.cs-actions { display: flex; justify-content: flex-end; }
+.cs-fight-btn { min-width: 160px; font-size: 1rem; padding: 0.75rem 2rem; }
+
