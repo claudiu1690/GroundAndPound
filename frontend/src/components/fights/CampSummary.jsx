@@ -1,10 +1,18 @@
 import { memo } from "react";
-import { CAMP_SESSIONS, getRatingConfig, modifierToGradeLabel } from "../../constants/campConfig";
+import {
+    CAMP_SESSIONS,
+    getRatingConfig,
+    MATCH_STATUS_LABELS,
+    MATCH_STATUS_COLORS,
+} from "../../constants/campConfig";
 
-const MATCH_ICON = { matched: "✓", not_a_match: "✕" };
-const MATCH_CLASS = { matched: "csd-matched", not_a_match: "csd-unmatched" };
+const MATCH_ICON = {
+    MATCHED: "\u2713",
+    PARTIAL: "\u2248",
+    UNMATCHED: "\u2715",
+    WRONG: "\u26A0",
+};
 
-// Dark banner background per grade
 const GRADE_BANNER_BG = {
     S: "#1a2e1a",
     A: "#1a2e1a",
@@ -19,7 +27,6 @@ export const CampSummary = memo(function CampSummary({ summaryData, onBeginFight
 
     const {
         campRating,
-        campModifier,
         campBreakdown = [],
         wasSkipped,
         injuryChoice,
@@ -27,20 +34,17 @@ export const CampSummary = memo(function CampSummary({ summaryData, onBeginFight
     } = summaryData;
 
     const ratingCfg = getRatingConfig(campRating);
-    const modLabel = modifierToGradeLabel(campModifier);
     const hasPenalty = injuryChoice === "PUSH_THROUGH" && injuryPenalty;
     const bannerBg = GRADE_BANNER_BG[campRating] ?? "#2a2a2c";
-    const isPositive = campModifier >= 0;
 
     return (
         <div className="cs-overlay" role="dialog" aria-modal="true" aria-label="Camp Summary">
             <div className="cs-card">
 
-                {/* ── Banner ── */}
+                {/* Banner */}
                 <div className="cs-banner" style={{ background: bannerBg }}>
                     <div className="cs-banner-label">PRE-FIGHT CAMP SUMMARY</div>
                     <div className="cs-banner-body">
-                        {/* Big grade circle */}
                         <div className="cs-grade-circle" style={{ borderColor: ratingCfg.color, color: ratingCfg.color }}>
                             {campRating}
                         </div>
@@ -49,12 +53,8 @@ export const CampSummary = memo(function CampSummary({ summaryData, onBeginFight
                                 {ratingCfg.label}
                             </div>
                             <div className="cs-modifier-row">
-                                <span className="cs-modifier-label">Camp bonus:</span>
-                                <span
-                                    className="cs-modifier-value"
-                                    style={{ color: isPositive ? "#4ade80" : "#f87171" }}
-                                >
-                                    {modLabel} to all stats
+                                <span className="cs-modifier-label" style={{ color: "#94a3b8" }}>
+                                    Bonuses activate during fight when conditions are met
                                 </span>
                             </div>
                             {wasSkipped && (
@@ -64,21 +64,23 @@ export const CampSummary = memo(function CampSummary({ summaryData, onBeginFight
                     </div>
                 </div>
 
-                {/* ── Body ── */}
+                {/* Body */}
                 <div className="cs-body">
 
-                    {/* Session breakdown */}
                     {campBreakdown.length > 0 && (
                         <div className="cs-breakdown">
                             <div className="cs-breakdown-title">Session Breakdown</div>
                             {campBreakdown.map((item, i) => {
                                 const cfg = CAMP_SESSIONS[item.sessionType];
+                                const statusColor = MATCH_STATUS_COLORS[item.matchStatus] ?? "#94a3b8";
                                 return (
-                                    <div key={i} className={`cs-breakdown-row ${MATCH_CLASS[item.matchStatus] ?? ""}`}>
-                                        <span className="csb-icon">{MATCH_ICON[item.matchStatus] ?? "·"}</span>
+                                    <div key={i} className="cs-breakdown-row">
+                                        <span className="csb-icon" style={{ color: statusColor }}>
+                                            {MATCH_ICON[item.matchStatus] ?? "\u00B7"}
+                                        </span>
                                         <span className="csb-name">{cfg?.label ?? item.sessionType}</span>
-                                        <span className="csb-status">
-                                            {item.matchStatus === "matched" ? "matched" : "unmatched"}
+                                        <span className="csb-status" style={{ color: statusColor }}>
+                                            {MATCH_STATUS_LABELS[item.matchStatus] ?? item.matchStatus}
                                         </span>
                                     </div>
                                 );
@@ -86,10 +88,9 @@ export const CampSummary = memo(function CampSummary({ summaryData, onBeginFight
                         </div>
                     )}
 
-                    {/* Injury penalty notice */}
                     {hasPenalty && (
                         <div className="cs-injury-penalty">
-                            <span className="cs-injury-icon">⚠</span>
+                            <span className="cs-injury-icon">{"\u26A0"}</span>
                             <span>
                                 Pushed through camp injury — fight penalties:{" "}
                                 {Object.entries(injuryPenalty)
@@ -105,7 +106,7 @@ export const CampSummary = memo(function CampSummary({ summaryData, onBeginFight
                             onClick={onBeginFight}
                             disabled={resolving}
                         >
-                            {resolving ? "Fight night…" : "⚔ Begin Fight"}
+                            {resolving ? "Fight night\u2026" : "\u2694 Begin Fight"}
                         </button>
                     </div>
                 </div>
