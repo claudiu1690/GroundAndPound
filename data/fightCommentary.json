@@ -110,5 +110,53 @@
     "Draw: {{playerName}} vs {{opponentName}} ends in a majority draw.",
     "Result: Draw. {{playerName}} and {{opponentName}} — majority draw.",
     "Official result: Majority draw — {{playerName}} vs {{opponentName}}."
+  ],
+  "campTakedownDefence": [
+    "Great sprawl! The takedown defence drilling in camp paid off.",
+    "{{playerName}} stuffs the takedown — camp preparation showing.",
+    "Excellent hips! {{playerName}}'s camp sprawl work is on point.",
+    "The takedown is denied! That camp work on defence is paying dividends."
+  ],
+  "campSubmissionEscape": [
+    "{{playerName}} slips out of the submission — escape training working!",
+    "Close call! {{playerName}} escapes the hold. Camp drilling saves the day.",
+    "{{playerName}} finds space and escapes! Submission defence camp work showing.",
+    "Almost caught! But {{playerName}} wriggles free — great camp preparation."
+  ],
+  "campBodyShot": [
+    "Heavy body shot! The body work in camp is paying dividends.",
+    "{{playerName}} digs to the body. That body shot focus in camp is working.",
+    "Punishing body attack from {{playerName}}! Camp preparation showing.",
+    "A vicious shot to the midsection! {{opponentName}} feels that one."
+  ],
+  "campGnpPosture": [
+    "Devastating ground and pound! Camp posture work showing from the top.",
+    "{{playerName}} is raining down shots from an improved position — camp work!",
+    "Heavy elbows from the mount. The GnP drilling in camp is paying off.",
+    "Brutal top control. {{playerName}}'s camp posture work is making a difference."
+  ],
+  "campClinchControl": [
+    "{{playerName}} wins the clinch battle and lands in close!",
+    "Dominant clinch work from {{playerName}} — camp preparation showing.",
+    "{{playerName}} controls the clinch and lands short shots.",
+    "Inside control by {{playerName}}! The clinch drilling is paying off."
+  ],
+  "campCardio": [
+    "{{playerName}}'s conditioning kicks in as fatigue sets in.",
+    "Still fresh! The cardio camp work is keeping {{playerName}} in the fight.",
+    "{{playerName}} pushes the pace — camp conditioning making a difference.",
+    "The tank isn't empty yet. Camp cardio work keeping {{playerName}} sharp."
+  ],
+  "wildcardReveal": [
+    "{{opponentName}} shows something unexpected — a surprise technique!",
+    "Where did that come from? {{opponentName}} catches {{playerName}} off guard!",
+    "{{opponentName}} unveils a new weapon! {{playerName}} had no answer for that.",
+    "A new wrinkle from {{opponentName}}! {{playerName}} wasn't prepared for this."
+  ],
+  "wildcardCountered": [
+    "{{opponentName}} tries something new, but {{playerName}}'s camp work covers it!",
+    "Surprise! But {{playerName}} was ready — camp preparation paid off unexpectedly.",
+    "{{opponentName}}'s hidden weapon is neutralised by {{playerName}}'s training.",
+    "That could have been trouble, but {{playerName}}'s preparation handles it."
   ]
 }

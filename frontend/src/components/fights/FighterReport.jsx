@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { RELIABILITY_LABELS, RELIABILITY_COLORS } from "../../constants/campConfig";
 
 const STYLE_COLORS = {
     Wrestler:              { bg: "#1e3a5f", label: "#60a5fa" },
@@ -13,6 +14,41 @@ const STYLE_COLORS = {
 
 const DEFAULT_STYLE_COLOR = { bg: "#2a2a2c", label: "#94a3b8" };
 
+function ReliabilityTag({ tier }) {
+    const label = RELIABILITY_LABELS[tier] ?? tier;
+    const color = RELIABILITY_COLORS[tier] ?? "#94a3b8";
+    return (
+        <span className="fr-reliability-tag" style={{ color, borderColor: color }}>
+            {label}
+        </span>
+    );
+}
+
+function IntelSection({ title, items, colorClass, emptyText }) {
+    if (!items || items.length === 0) {
+        return (
+            <div className="fr-intel-section">
+                <div className={`fr-intel-heading ${colorClass}`}>{title}</div>
+                <div className="fr-intel-item fr-intel-muted">{emptyText}</div>
+            </div>
+        );
+    }
+    return (
+        <div className="fr-intel-section">
+            <div className={`fr-intel-heading ${colorClass}`}>{title}</div>
+            <ul className="fr-intel-list">
+                {items.map((item, i) => (
+                    <li key={i} className={`fr-intel-item ${colorClass}-item`}>
+                        <span className="fr-arrow">&rarr;</span>
+                        <span className="fr-intel-text">{item.label}</span>
+                        <ReliabilityTag tier={item.reliability} />
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 export const FighterReport = memo(function FighterReport({ report, onStartCamp, onClose }) {
     if (!report) return null;
 
@@ -22,17 +58,15 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
         <div className="fr-overlay" role="dialog" aria-modal="true" aria-label="Fighter Report">
             <div className="fr-card">
 
-                {/* ── Coloured header banner ── */}
+                {/* Coloured header banner */}
                 <div className="fr-banner" style={{ background: styleColor.bg }}>
                     <div className="fr-banner-top">
                         <span className="fr-banner-label">FIGHTER REPORT</span>
-                        <button className="fr-close" onClick={onClose} title="Close">✕</button>
+                        <button className="fr-close" onClick={onClose} title="Close">&times;</button>
                     </div>
 
                     <div className="fr-identity">
-                        <div className="fr-identity-name">
-                            {report.name}
-                        </div>
+                        <div className="fr-identity-name">{report.name}</div>
                         {report.nickname && (
                             <div className="fr-identity-nickname">&ldquo;{report.nickname}&rdquo;</div>
                         )}
@@ -52,38 +86,45 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
                     </div>
                 </div>
 
-                {/* ── Body ── */}
+                {/* Body */}
                 <div className="fr-body">
 
-                    {/* Intel grid */}
-                    <div className="fr-intel">
-                        <div className="fr-intel-col">
-                            <div className="fr-intel-heading fr-intel-danger">Known Strengths</div>
-                            <ul className="fr-intel-list">
-                                {report.knownStrengths.map((s, i) => (
-                                    <li key={i} className="fr-intel-item fr-intel-item-danger">
-                                        <span className="fr-arrow">→</span> {s}
-                                    </li>
-                                ))}
-                                {report.knownStrengths.length === 0 && (
-                                    <li className="fr-intel-item fr-intel-muted">No standout strengths identified</li>
-                                )}
-                            </ul>
-                        </div>
-                        <div className="fr-intel-col">
-                            <div className="fr-intel-heading fr-intel-safe">Suspected Weaknesses</div>
-                            <ul className="fr-intel-list">
-                                {report.suspectedWeaknesses.map((w, i) => (
-                                    <li key={i} className="fr-intel-item fr-intel-item-safe">
-                                        <span className="fr-arrow">→</span> {w}
-                                    </li>
-                                ))}
-                                {report.suspectedWeaknesses.length === 0 && (
-                                    <li className="fr-intel-item fr-intel-muted">No clear weaknesses identified</li>
-                                )}
-                            </ul>
-                        </div>
+                    {/* Intel sections with reliability tiers */}
+                    <div className="fr-intel-grid">
+                        <IntelSection
+                            title="Confirmed Strengths"
+                            items={report.confirmedStrengths}
+                            colorClass="fr-intel-danger"
+                            emptyText="No confirmed strengths identified"
+                        />
+                        <IntelSection
+                            title="Suspected Weaknesses"
+                            items={report.suspectedWeaknesses}
+                            colorClass="fr-intel-safe"
+                            emptyText="No suspected weaknesses identified"
+                        />
                     </div>
+
+                    {(report.unverifiedAreas?.length > 0 || report.unknownAreas?.length > 0) && (
+                        <div className="fr-intel-grid fr-intel-grid-secondary">
+                            {report.unverifiedAreas?.length > 0 && (
+                                <IntelSection
+                                    title="Unverified"
+                                    items={report.unverifiedAreas}
+                                    colorClass="fr-intel-neutral"
+                                    emptyText=""
+                                />
+                            )}
+                            {report.unknownAreas?.length > 0 && (
+                                <IntelSection
+                                    title="Unknown"
+                                    items={report.unknownAreas}
+                                    colorClass="fr-intel-unknown"
+                                    emptyText=""
+                                />
+                            )}
+                        </div>
+                    )}
 
                     {/* Tendency + warning */}
                     <div className="fr-tendency">

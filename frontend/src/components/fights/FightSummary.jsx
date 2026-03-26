@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { tierLabel } from "../../constants/fame";
+import { getRatingConfig, MATCH_STATUS_LABELS, MATCH_STATUS_COLORS } from "../../constants/campConfig";
 
 /**
  * Post-fight summary: health/stamina lost, XP gained, fame, iron, injuries, comeback, weight miss, etc.
@@ -34,6 +35,7 @@ export const FightSummary = memo(function FightSummary({ summary }) {
     notorietyBreakdown: fameBreakdown,
     notorietyTierUp: fameTierUp,
     milestoneNotoriety: milestoneFame,
+    campBreakdown,
   } = summary;
 
   const hasXp = xpGained && typeof xpGained === "object" && Object.keys(xpGained).length > 0;
@@ -177,6 +179,57 @@ export const FightSummary = memo(function FightSummary({ summary }) {
         {completedQuests?.length > 0 && (
           <div className="fight-summary-quests">
             Quest completed: {completedQuests.join(", ")}!
+          </div>
+        )}
+
+        {/* Post-fight camp breakdown (v2) */}
+        {campBreakdown && (
+          <div className="fight-summary-camp">
+            <div className="fight-summary-camp-header">
+              <span className="fight-summary-camp-title">Camp Breakdown</span>
+              {campBreakdown.rating && (
+                <span
+                  className="fight-summary-camp-grade"
+                  style={{ color: getRatingConfig(campBreakdown.rating).color }}
+                >
+                  {campBreakdown.rating}
+                </span>
+              )}
+              <span className="fight-summary-camp-note">(preparation quality — no fight modifier)</span>
+            </div>
+            {campBreakdown.sessions?.length > 0 && (
+              <div className="fight-summary-camp-sessions">
+                {campBreakdown.sessions.map((s, i) => {
+                  const statusColor = MATCH_STATUS_COLORS[s.matchStatus] ?? "#94a3b8";
+                  return (
+                    <div key={i} className="fight-summary-camp-row">
+                      <span className="fscs-name">{s.label}</span>
+                      <span className="fscs-match" style={{ color: statusColor }}>
+                        {MATCH_STATUS_LABELS[s.matchStatus] ?? s.matchStatus}
+                      </span>
+                      <span className={`fscs-trigger ${s.triggered ? "fscs-triggered" : "fscs-not-triggered"}`}>
+                        {s.triggered
+                          ? `TRIGGERED x${s.triggerCount}`
+                          : "NOT TRIGGERED"}
+                      </span>
+                      {s.triggered && s.description && (
+                        <span className="fscs-desc">{s.description}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {campBreakdown.wildcard && (
+              <div className={`fight-summary-camp-wildcard ${campBreakdown.wildcard.wasCountered ? "fscs-wc-countered" : "fscs-wc-uncountered"}`}>
+                <span className="fscs-wc-label">Wildcard:</span>
+                <span className="fscs-wc-text">
+                  {campBreakdown.wildcard.wasCountered
+                    ? `Opponent ${campBreakdown.wildcard.description} — your camp work countered it!`
+                    : `Opponent ${campBreakdown.wildcard.description} — you had no answer for this.`}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>

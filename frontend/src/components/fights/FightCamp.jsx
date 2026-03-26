@@ -1,16 +1,12 @@
 import { memo } from "react";
-import { CAMP_SESSIONS, CAMP_SESSION_KEYS, getRatingConfig, modifierToGradeLabel } from "../../constants/campConfig";
+import {
+    CAMP_SESSIONS,
+    CAMP_SESSION_KEYS,
+    getRatingConfig,
+    MATCH_STATUS_LABELS,
+    MATCH_STATUS_COLORS,
+} from "../../constants/campConfig";
 import { CampInjury } from "./CampInjury";
-
-const MATCH_STATUS_CLASS = {
-    matched:     "session-matched",
-    not_a_match: "session-unmatched",
-};
-
-const MATCH_STATUS_LABEL = {
-    matched:     "Recommended",
-    not_a_match: "Not a match",
-};
 
 function SlotGrid({ maxSlots, slotsUsed }) {
     return (
@@ -26,17 +22,12 @@ function SlotGrid({ maxSlots, slotsUsed }) {
     );
 }
 
-function RatingBadge({ grade, modifier }) {
+function RatingBadge({ grade }) {
     if (!grade) return null;
     const cfg = getRatingConfig(grade);
     return (
         <div className="camp-rating-badge" style={{ borderColor: cfg.color, color: cfg.color }}>
             <span className="camp-rating-grade">{grade}</span>
-            {modifier != null && (
-                <span className="camp-rating-mod" style={{ color: modifier >= 0 ? "var(--green-bright)" : "var(--red-bright)" }}>
-                    {modifierToGradeLabel(modifier)}
-                </span>
-            )}
         </div>
     );
 }
@@ -62,7 +53,7 @@ function SessionCard({ sessionKey, energyAvailable, isInjuredPending, onAddSessi
             <div className="camp-session-footer">
                 <span className="camp-session-hint">{session.recommendedAgainst}</span>
                 {session.injuryRisk && (
-                    <span className="camp-session-risk">⚠ Injury risk</span>
+                    <span className="camp-session-risk">{"\u26A0"} Injury risk</span>
                 )}
             </div>
             <button
@@ -71,7 +62,7 @@ function SessionCard({ sessionKey, energyAvailable, isInjuredPending, onAddSessi
                 title={tooltip || undefined}
                 onClick={() => !blocked && onAddSession(sessionKey)}
             >
-                {loading ? "Adding…" : "Add to camp"}
+                {loading ? "Adding\u2026" : "Add to camp"}
             </button>
         </div>
     );
@@ -98,7 +89,6 @@ export const FightCamp = memo(function FightCamp({
         slotsRemaining = 0,
         previewRating,
         campRating,
-        campModifier,
         isInjured,
         injuryChoice,
         injuryType,
@@ -110,7 +100,6 @@ export const FightCamp = memo(function FightCamp({
     const isInjuredPending = isInjured && !injuryChoice;
     const isFinalised = !!finalisedAt;
     const displayGrade = isFinalised ? campRating : previewRating?.grade;
-    const displayModifier = isFinalised ? campModifier : previewRating?.campModifier;
     const canFinalise = !isFinalised && slotsUsed >= 1 && !isInjuredPending;
     const energyAvailable = fighter.energy?.current ?? fighter.energy ?? 0;
 
@@ -127,7 +116,7 @@ export const FightCamp = memo(function FightCamp({
                 </div>
                 <div className="camp-v2-header-right">
                     {(displayGrade || slotsUsed > 0) && (
-                        <RatingBadge grade={displayGrade} modifier={displayModifier} />
+                        <RatingBadge grade={displayGrade} />
                     )}
                 </div>
             </div>
@@ -138,7 +127,7 @@ export const FightCamp = memo(function FightCamp({
                     <span className="camp-slots-label">
                         {slotsUsed}/{maxSlots} slots used
                         {slotsRemaining > 0 && !isFinalised && (
-                            <span className="camp-slots-remaining"> · {slotsRemaining} remaining</span>
+                            <span className="camp-slots-remaining"> &middot; {slotsRemaining} remaining</span>
                         )}
                     </span>
                     <span className="camp-energy-badge">{energyAvailable}E available</span>
@@ -156,7 +145,7 @@ export const FightCamp = memo(function FightCamp({
 
                 {injuryChoice === "PUSH_THROUGH" && injuryPenalty && (
                     <div className="camp-injury-pushed">
-                        ⚠ Pushing through injury — fight penalties active:{" "}
+                        {"\u26A0"} Pushing through injury — fight penalties active:{" "}
                         {Object.entries(injuryPenalty)
                             .map(([k, v]) => `${k.toUpperCase()} ${Math.round(v * 100)}%`)
                             .join(", ")}
@@ -183,13 +172,14 @@ export const FightCamp = memo(function FightCamp({
                         <div className="camp-sessions-taken-title">Sessions logged</div>
                         {sessions.map((s, i) => {
                             const cfg = CAMP_SESSIONS[s.sessionType];
+                            const statusColor = MATCH_STATUS_COLORS[s.matchStatus] ?? "#94a3b8";
                             return (
-                                <div key={i} className={`camp-session-row ${MATCH_STATUS_CLASS[s.matchStatus] ?? ""}`}>
+                                <div key={i} className="camp-session-row" style={{ borderLeftColor: statusColor }}>
                                     <span className="csr-name">{cfg?.label ?? s.sessionType}</span>
-                                    <span className="csr-status">
-                                        {MATCH_STATUS_LABEL[s.matchStatus]}
+                                    <span className="csr-status" style={{ color: statusColor }}>
+                                        {MATCH_STATUS_LABELS[s.matchStatus] ?? s.matchStatus}
                                         {s.diminishingFactor < 1 && (
-                                            <span className="csr-dr"> · repeat ×{s.diminishingFactor}</span>
+                                            <span className="csr-dr"> &middot; repeat &times;{s.diminishingFactor}</span>
                                         )}
                                     </span>
                                 </div>
@@ -206,7 +196,7 @@ export const FightCamp = memo(function FightCamp({
                             disabled={!canFinalise || finalising}
                             title={!canFinalise ? "Add at least one session before finalising" : undefined}
                         >
-                            {finalising ? "Finalising…" : "Finalise Camp"}
+                            {finalising ? "Finalising\u2026" : "Finalise Camp"}
                         </button>
                         <button
                             className="btn btn-ghost camp-skip-btn"

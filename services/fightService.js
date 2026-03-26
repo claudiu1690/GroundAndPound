@@ -269,15 +269,11 @@ async function resolveFightAndApply(fighterId) {
     const fightCamp = await FightCamp.findOne({ fightId: fight._id });
 
     if (fightCamp?.finalisedAt) {
-        // ── New camp system ──────────────────────────────────────────────────
-        // STEP 1: aggregate camp stat modifier (replaces old TCA penalty)
-        const campMod = fightCamp.campModifier ?? 0;
-        STAT_KEYS.forEach((k) => {
-            if (typeof fightPlayer[k] === "number")
-                fightPlayer[k] = Math.max(1, Math.round(fightPlayer[k] * (1 + campMod)));
-        });
+        // ── Camp v2: NO flat stat modifier ───────────────────────────────────
+        // Session bonuses are conditional and applied during fight resolution.
+        // Only injury penalties still modify stats pre-fight.
 
-        // STEP 2: camp injury penalty (only if fighter pushed through sparring injury)
+        // Camp injury penalty (only if fighter pushed through sparring injury)
         if (fightCamp.injuryChoice === "PUSH_THROUGH" && fightCamp.injuryPenalty) {
             const pen = fightCamp.injuryPenalty;
             STAT_KEYS.forEach((k) => {
@@ -317,14 +313,23 @@ async function resolveFightAndApply(fighterId) {
 
     // GDD 7.4: Iron Will perk → pass flag to reduce KO probability
     const ironWillPerk = !!(fighter.activePerks && fighter.activePerks.ironWill);
-    const campBonuses = fightCamp?.campBonuses ?? {};
+    // v2: pass conditional session bonuses and wildcard instead of flat campBonuses
+    const sessionBonuses = fightCamp?.sessionBonuses ? [...fightCamp.sessionBonuses.map(b => ({ ...b }))] : [];
+    const wildcard = fightCamp?.wildcard ?? null;
     const result = resolveFight(fightPlayer, opponent, {
         playerStrategy: fight.playerStrategy || undefined,
         playerName,
         opponentName,
         ironWillPerk,
-        campBonuses,
+        sessionBonuses,
+        wildcard,
     });
+
+    // v2: save triggered session bonuses back to FightCamp for post-fight display
+    if (fightCamp && result.sessionBonuses) {
+        fightCamp.sessionBonuses = result.sessionBonuses;
+        await fightCamp.save();
+    }
 
     logFightResolve({
         fighter,
@@ -333,8 +338,8 @@ async function resolveFightAndApply(fighterId) {
         opponent,
         result,
         campRating: fightCamp?.campRating ?? null,
-        campModifier: fightCamp?.campModifier ?? null,
-        campBonuses,
+        sessionBonuses: result.sessionBonuses ?? [],
+        wildcard: result.wildcard ?? null,
         weightCut,
         weightMissed,
         ironWillPerk,
@@ -590,6 +595,22 @@ async function resolveFightAndApply(fighterId) {
         mentalResetRequired: !!fighter.mentalResetRequired,
         completedQuests: completedQuests.map((q) => q.title),
         promoted,
+        // v2: post-fight camp breakdown
+        campBreakdown: fightCamp ? {
+            rating: fightCamp.campRating,
+            sessions: (result.sessionBonuses || []).map(b => ({
+                label: b.label,
+                sessionType: b.sessionType,
+                matchStatus: b.matchStatus,
+                triggered: b.triggered,
+                triggerCount: b.triggerCount || 0,
+                description: b.description,
+            })),
+            wildcard: result.wildcard ? {
+                description: result.wildcard.description,
+                wasCountered: result.wildcard.countered ?? false,
+            } : null,
+        } : null,
     };
 
     return { fight, fighter: fighterService.toPublicFighter(fighter), result, summary };
