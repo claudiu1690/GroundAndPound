@@ -1874,8 +1874,10 @@ code {
 }
 
 /* Intel columns */
-.fr-intel { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-@media(max-width:480px){ .fr-intel { grid-template-columns: 1fr; } }
+.fr-intel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media(max-width:480px){ .fr-intel-grid { grid-template-columns: 1fr; } }
+.fr-intel-grid-secondary { margin-top: -0.25rem; }
+.fr-intel-section { display: flex; flex-direction: column; }
 .fr-intel-heading {
   font-size: 10px;
   font-weight: 800;
@@ -1883,21 +1885,43 @@ code {
   letter-spacing: 0.14em;
   margin-bottom: 0.5rem;
 }
-.fr-intel-danger { color: #dc2626; }
-.fr-intel-safe   { color: #16a34a; }
+.fr-intel-danger  { color: #dc2626; }
+.fr-intel-safe    { color: #16a34a; }
+.fr-intel-neutral { color: #64748b; }
+.fr-intel-unknown { color: #94a3b8; }
 .fr-intel-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.35rem; }
 .fr-intel-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.4;
   padding: 0.45rem 0.65rem;
   border-radius: 6px;
   border-left: 3px solid transparent;
   color: var(--text);
 }
-.fr-intel-item-danger { background: #fef2f2; border-color: #dc2626; }
-.fr-intel-item-safe   { background: #f0fdf4; border-color: #16a34a; }
+.fr-intel-danger-item  { background: #fef2f2; border-color: #dc2626; }
+.fr-intel-safe-item    { background: #f0fdf4; border-color: #16a34a; }
+.fr-intel-neutral-item { background: #f8fafc; border-color: #94a3b8; }
+.fr-intel-unknown-item { background: #f1f5f9; border-color: #cbd5e1; }
 .fr-intel-muted { color: var(--text-muted); padding: 0.3rem 0; }
-.fr-arrow { margin-right: 0.35rem; opacity: 0.5; }
+.fr-arrow { flex-shrink: 0; opacity: 0.4; }
+.fr-intel-text { flex: 1; min-width: 0; }
+.fr-reliability-tag {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  line-height: 1;
+  white-space: nowrap;
+}
 
 /* Tendency + warning */
 .fr-tendency {

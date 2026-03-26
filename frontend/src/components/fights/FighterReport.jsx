@@ -18,7 +18,14 @@ function ReliabilityTag({ tier }) {
     const label = RELIABILITY_LABELS[tier] ?? tier;
     const color = RELIABILITY_COLORS[tier] ?? "#94a3b8";
     return (
-        <span className="fr-reliability-tag" style={{ color, borderColor: color }}>
+        <span
+            className="fr-reliability-tag"
+            style={{
+                color,
+                background: `${color}22`,
+                border: `1px solid ${color}55`,
+            }}
+        >
             {label}
         </span>
     );
