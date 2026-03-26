@@ -1222,6 +1222,112 @@ code {
 .fight-summary-injury   { background: rgba(245,158,11,0.12); border-color: #b45309;            color: #92400e; }
 .fight-summary-comeback-tag { font-size: 9px; color: #60a5fa; margin-left: 0.3rem; }
 .fight-summary-quests { margin-top: 0.35rem; font-size: 11px; color: var(--green-bright); font-weight: 600; }
+
+/* Post-fight camp breakdown */
+.fight-summary-camp {
+  margin-top: 0.6rem;
+  padding: 0.65rem 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.fight-summary-camp-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.fight-summary-camp-title {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-sec);
+}
+.fight-summary-camp-grade {
+  font-size: 14px;
+  font-weight: 900;
+}
+.fight-summary-camp-note {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+.fight-summary-camp-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.fight-summary-camp-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 11px;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  border-left: 3px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.fscs-name {
+  flex: 1;
+  color: var(--text);
+  font-weight: 600;
+}
+.fscs-match {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.fscs-trigger {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+.fscs-triggered {
+  color: var(--green-bright);
+  background: rgba(74,222,128,0.12);
+}
+.fscs-not-triggered {
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.04);
+}
+.fscs-desc {
+  font-size: 9px;
+  color: var(--text-sec);
+  font-style: italic;
+}
+.fight-summary-camp-wildcard {
+  margin-top: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  font-size: 11px;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  border-left: 3px solid;
+}
+.fscs-wc-countered {
+  background: rgba(74,222,128,0.08);
+  border-color: var(--green-bright);
+}
+.fscs-wc-uncountered {
+  background: rgba(248,113,113,0.08);
+  border-color: var(--red-bright);
+}
+.fscs-wc-label {
+  font-weight: 700;
+  color: var(--text-sec);
+}
+.fscs-wc-text {
+  color: var(--text-sec);
+}
+.fscs-wc-countered .fscs-wc-text { color: var(--green-bright); }
+.fscs-wc-uncountered .fscs-wc-text { color: var(--red-bright); }
+
 .fight-summary-delta { color: var(--text-muted); font-size: 10px; }
 .fight-summary-xp { display: inline-flex; flex-wrap: wrap; gap: 0.2rem; }
 .fight-summary-xp-stat { font-size: 9px; color: #bfdbfe; background: var(--blue-dim); padding: 0.1rem 0.3rem; border-radius: 2px; font-weight: 600; }
