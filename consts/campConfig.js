@@ -1,92 +1,214 @@
 /**
- * Ground & Pound — Fight Camp v1.1 configuration.
+ * Ground & Pound — Fight Camp v2 configuration (Section 2B).
  * Single source of truth for all camp-related constants.
  * Mirrored in frontend/src/constants/campConfig.js for UI use.
+ *
+ * v2 changes:
+ * - Removed flat campModifier on all stats (was too powerful)
+ * - Session bonuses are now conditional — fire only when trigger occurs
+ * - Match status expanded: MATCHED / PARTIAL / UNMATCHED / WRONG
+ * - Fighter Report now has reliability tiers
+ * - One hidden wildcard per opponent
  */
 
-// ── Camp session definitions ──────────────────────────────────────────────────
-// modifierContribution: raw points added to campModifier×100 when this session
-//   is "matched" to the opponent (scaled by diminishing returns).
-// campBonuses: extra resolution hooks passed to resolveFight (only CARDIO_PUSH).
-// alwaysContributes: earns points regardless of opponent style match.
-// injuryRisk: probability of a camp injury (only SPARRING_GENERAL).
-// modifierContribution: percentage points (0–100 scale) added directly to
-// campModifier when this session is matched. campModifier = sum / 100.
-// Scaled so a perfect Amateur camp (2 slots) gives ~+5%, a perfect GCS camp
-// (10 slots, with diminishing returns) tops out around +16%.
+// ── Match status classifications ────────────────────────────────────────────
+const MATCH_STATUSES = {
+    MATCHED:   'MATCHED',    // Directly targets opponent's known strength/weakness → 100% bonus
+    PARTIAL:   'PARTIAL',    // Generally useful but not specifically targeted → 50% bonus
+    UNMATCHED: 'UNMATCHED',  // Nothing in opponent profile justifies this → 0% bonus
+    WRONG:     'WRONG',      // Session contradicts opponent profile → 0% bonus + penalty (future: stance)
+};
+
+// Effective bonus multiplier per match status
+const MATCH_STATUS_MULTIPLIERS = {
+    [MATCH_STATUSES.MATCHED]:   1.0,
+    [MATCH_STATUSES.PARTIAL]:   0.5,
+    [MATCH_STATUSES.UNMATCHED]: 0,
+    [MATCH_STATUSES.WRONG]:     0,
+};
+
+// ── Reliability tiers for Fighter Report ────────────────────────────────────
+const RELIABILITY_TIERS = {
+    CONFIRMED:  'CONFIRMED',   // Seen in 3+ of last 5 fights — reliable
+    SUSPECTED:  'SUSPECTED',   // Seen in 1-2 fights — might apply
+    UNVERIFIED: 'UNVERIFIED',  // Inferred from limited data
+    UNKNOWN:    'UNKNOWN',     // No data at all
+};
+
+// ── Camp session definitions ────────────────────────────────────────────────
+// modifierContribution: points earned for rating calculation (visual only).
+// alwaysContributes: SPARRING earns full points, GAME_PLAN earns partial.
+// partialContributor: special flag for GAME_PLAN_STUDY (always PARTIAL match).
 const CAMP_SESSIONS = {
     TAKEDOWN_DEFENCE: {
         label: 'Takedown Defence Drilling',
         energy: 6,
-        effectLabel: 'Sprawl success rate +25%',
+        effectLabel: 'Sprawl success +25% when opponent shoots',
         modifierContribution: 3,
         recommendedAgainst: 'Wrestlers, Judoka, Sambo',
     },
     SUBMISSION_ESCAPES: {
         label: 'Submission Escapes',
         energy: 6,
-        effectLabel: 'Submission escape probability +20%',
+        effectLabel: 'Escape probability +20% when caught',
         modifierContribution: 3,
         recommendedAgainst: 'BJJ, Sambo, Submission Hunters',
     },
     STRIKING_ACCURACY: {
         label: 'Striking Accuracy',
         energy: 5,
-        effectLabel: 'Hit rate +15%; combo damage +10%',
+        effectLabel: 'Strike damage +15% in exchanges',
         modifierContribution: 2,
         recommendedAgainst: 'Defensive fighters, Counter Strikers',
     },
     CARDIO_PUSH: {
         label: 'Cardio Push',
         energy: 5,
-        effectLabel: 'Stamina drain -20% per round',
+        effectLabel: 'Stamina drain −20% when below 70%',
         modifierContribution: 2,
-        campBonuses: { playerStaminaDrainMult: 0.80 }, // passed to resolveRound
         recommendedAgainst: 'Pressure Fighters, high-volume opponents',
     },
     GAME_PLAN_STUDY: {
         label: 'Game Plan Study',
         energy: 4,
-        effectLabel: 'Opponent strategy modifier -15%',
+        effectLabel: 'Opponent damage −6% (partial — always active)',
         modifierContribution: 2,
-        alwaysContributes: true, // always matched — general purpose
-        recommendedAgainst: 'Any opponent — lowest cost general purpose',
+        partialContributor: true, // always PARTIAL match — never MATCHED, never wasted
+        recommendedAgainst: 'Any opponent — safe general purpose',
     },
     BODY_SHOT_FOCUS: {
         label: 'Body Shot Focus',
         energy: 5,
-        effectLabel: 'Body damage +30%; opponent Stamina drain +15%',
+        effectLabel: 'Body damage +30%; opp Stamina drain +15%',
         modifierContribution: 2,
         recommendedAgainst: 'High-CHN fighters, weak-conditioning opponents',
     },
     CLINCH_CONTROL: {
         label: 'Clinch Control',
         energy: 5,
-        effectLabel: 'Clinch win rate +25%',
+        effectLabel: 'Clinch damage +25% when clinch occurs',
         modifierContribution: 2,
         recommendedAgainst: 'Kickboxers, Muay Thai, Clinch Bullies',
     },
     GROUND_AND_POUND_POSTURE: {
         label: 'Ground & Pound Posture',
         energy: 6,
-        effectLabel: 'GnP damage from top position +20%',
+        effectLabel: 'GnP damage +20% from top position',
         modifierContribution: 2,
         recommendedAgainst: 'Guard players, submission-light opponents',
     },
     SPARRING_GENERAL: {
         label: 'Sparring (general)',
         energy: 8,
-        effectLabel: '+5% all stats; 3% camp injury risk',
+        effectLabel: '+3% all stats (always active); 3% injury risk',
         modifierContribution: 1,
-        alwaysContributes: true, // earns points regardless of match status
+        alwaysContributes: true, // unconditional bonus — always MATCHED
         injuryRisk: 0.03,
         recommendedAgainst: 'Generic fallback — expensive and risky',
     },
 };
 
+// ── Session bonus definitions (v2 conditional triggers) ─────────────────────
+// Each session maps to a trigger condition and bonus that fires during fight
+// resolution ONLY when that condition occurs.
+const SESSION_BONUSES = {
+    TAKEDOWN_DEFENCE: {
+        triggerCondition: 'OPPONENT_SHOOTS_TAKEDOWN',
+        bonusType:        'SPRAWL_SUCCESS',
+        bonusValue:       0.25,
+        description:      'Sprawl success +25%',
+    },
+    SUBMISSION_ESCAPES: {
+        triggerCondition: 'OPPONENT_ATTEMPTS_SUBMISSION',
+        bonusType:        'ESCAPE_PROBABILITY',
+        bonusValue:       0.20,
+        description:      'Submission escape +20%',
+    },
+    STRIKING_ACCURACY: {
+        triggerCondition: 'STRIKING_EXCHANGE',
+        bonusType:        'STRIKE_DAMAGE',
+        bonusValue:       0.15,
+        description:      'Strike damage +15%',
+    },
+    CARDIO_PUSH: {
+        triggerCondition: 'PLAYER_STAMINA_BELOW_70',
+        bonusType:        'STAMINA_DRAIN',
+        bonusValue:       0.20,
+        description:      'Stamina drain −20%',
+    },
+    GAME_PLAN_STUDY: {
+        triggerCondition: 'ALWAYS',
+        bonusType:        'OPPONENT_DAMAGE_REDUCTION',
+        bonusValue:       0.06,
+        description:      'Opponent damage −6%',
+    },
+    BODY_SHOT_FOCUS: {
+        triggerCondition: 'STRIKING_EXCHANGE',
+        bonusType:        'BODY_DAMAGE',
+        bonusValue:       0.30,
+        bodyStaminaDrain: 0.15,
+        description:      'Body damage +30%, opp stamina drain +15%',
+    },
+    CLINCH_CONTROL: {
+        triggerCondition: 'STRIKING_EXCHANGE',
+        bonusType:        'CLINCH_DAMAGE',
+        bonusValue:       0.25,
+        clinchChance:     0.30, // 30% chance a striking round includes a clinch
+        description:      'Clinch damage +25%',
+    },
+    GROUND_AND_POUND_POSTURE: {
+        triggerCondition: 'PLAYER_TOP_POSITION',
+        bonusType:        'GNP_DAMAGE',
+        bonusValue:       0.20,
+        description:      'GnP damage +20%',
+    },
+    SPARRING_GENERAL: {
+        triggerCondition: 'ALWAYS',
+        bonusType:        'ALL_STATS',
+        bonusValue:       0.03,
+        description:      '+3% all stats',
+    },
+};
+
+// ── Stat → session counter mapping (for wildcard system) ────────────────────
+// Maps a stat key to which camp session would counter an opponent strong in it.
+const STAT_COUNTER_SESSION = {
+    str: 'STRIKING_ACCURACY',
+    spd: 'STRIKING_ACCURACY',
+    leg: 'CLINCH_CONTROL',
+    wre: 'TAKEDOWN_DEFENCE',
+    gnd: 'GROUND_AND_POUND_POSTURE',
+    sub: 'SUBMISSION_ESCAPES',
+    chn: 'BODY_SHOT_FOCUS',
+    fiq: 'GAME_PLAN_STUDY',
+};
+
+// ── Stat → fight domain mapping (for Fighter Report) ────────────────────────
+// Maps stat keys to fight situations for determining UNKNOWN areas.
+const STAT_FIGHT_DOMAIN = {
+    str: { domain: 'striking',   methods: ['KO/TKO'] },
+    spd: { domain: 'striking',   methods: ['KO/TKO'] },
+    leg: { domain: 'striking',   methods: ['KO/TKO'] },
+    wre: { domain: 'grappling',  methods: ['KO/TKO', 'Submission'] }, // takedowns appear in both
+    gnd: { domain: 'grappling',  methods: ['KO/TKO'] },              // GnP finishes as KO/TKO
+    sub: { domain: 'submission', methods: ['Submission'] },
+    chn: { domain: 'durability', methods: [] },                       // inferred from losses
+    fiq: { domain: 'tactical',   methods: ['Decision'] },
+};
+
+// ── Wildcard descriptions ───────────────────────────────────────────────────
+const WILDCARD_DESCRIPTIONS = {
+    str: 'has been developing knockout power in training',
+    spd: 'has been drilling speed combinations with a new coach',
+    leg: 'has added a dangerous kicking game recently',
+    wre: 'has been working takedowns with a new wrestling coach',
+    gnd: 'has been drilling ground and pound from new positions',
+    sub: 'has been studying submission chains with a BJJ specialist',
+    chn: 'has improved durability through strength and conditioning',
+    fiq: 'has been studying film and improving fight IQ',
+};
+
 // ── Style → recommended sessions mapping ─────────────────────────────────────
-// Used to compute matchStatus for each CampSession and the camp score.
-// GAME_PLAN_STUDY and SPARRING_GENERAL are excluded — they're handled by alwaysContributes.
 const STYLE_SESSION_MAP = {
     Wrestler:              ['TAKEDOWN_DEFENCE', 'SUBMISSION_ESCAPES', 'CARDIO_PUSH'],
     'Brazilian Jiu-Jitsu': ['SUBMISSION_ESCAPES', 'TAKEDOWN_DEFENCE', 'GROUND_AND_POUND_POSTURE'],
@@ -98,8 +220,7 @@ const STYLE_SESSION_MAP = {
     Capoeira:              ['STRIKING_ACCURACY', 'CLINCH_CONTROL', 'CARDIO_PUSH'],
 };
 
-// ── Camp slots per promotion tier ─────────────────────────────────────────────
-// shortNoticeSlots is scaffolded for future short-notice fight feature.
+// ── Camp slots per promotion tier ───────────────────────────────────────────
 const CAMP_SLOT_CONFIG = {
     Amateur:         { normalSlots: 2,  shortNoticeSlots: 1 },
     'Regional Pro':  { normalSlots: 3,  shortNoticeSlots: 1 },
@@ -108,10 +229,8 @@ const CAMP_SLOT_CONFIG = {
     GCS:             { normalSlots: 10, shortNoticeSlots: 4 },
 };
 
-// ── Camp rating thresholds ─────────────────────────────────────────────────────
-// Score = (earnedPoints / maxPossiblePoints) × 100.
-// campModifier (the float applied to stats) = sum(pointsEarned) / 100.
-// The grade is display-only — the actual fight modifier is the raw computed float.
+// ── Camp rating thresholds ──────────────────────────────────────────────────
+// Grade is visual reference only — no flat fight modifier applied.
 const CAMP_RATING_CONFIG = [
     { grade: 'S', min: 90, label: 'Elite preparation' },
     { grade: 'A', min: 75, label: 'Strong preparation' },
@@ -121,21 +240,13 @@ const CAMP_RATING_CONFIG = [
     { grade: 'F', min: 0,  label: 'Poor preparation' },
 ];
 
-// ── Diminishing returns for repeated sessions ─────────────────────────────────
-// Index = 0-based occurrence count (0 = first use, 1 = second, 2+ = third+).
+// ── Diminishing returns for repeated sessions ───────────────────────────────
 const DIMINISHING_RETURNS = [1.0, 0.6, 0.3];
 
-// ── Skip-camp modifier ────────────────────────────────────────────────────────
-// Small penalty for skipping camp entirely ("Fight Now").
-// Kept intentionally mild — not doing camp should hurt a little, not be catastrophic.
+// ── Skip-camp penalty ───────────────────────────────────────────────────────
 const SKIP_CAMP_MODIFIER = -0.05;
 
-// ── Camp injury types ─────────────────────────────────────────────────────────
-// probability: relative weight among all camp injury outcomes (must sum to 1).
-// gradeDrops: how many grade brackets the campRating drops if player chooses STOP.
-// fightPenalty: stat multiplier penalties applied to fightPlayer if PUSH_THROUGH.
-//   Keys match the fighter stat keys (str, spd, leg, wre, gnd, sub, chn, fiq)
-//   plus 'maxStamina'. All values are negative (e.g. -0.10 = -10%).
+// ── Camp injury types ───────────────────────────────────────────────────────
 const CAMP_INJURY_CONFIG = {
     BRUISED_KNUCKLE: {
         label: 'Bruised Knuckle',
@@ -179,9 +290,7 @@ const CAMP_INJURY_CONFIG = {
     },
 };
 
-// ── Fighter Report — style-based tendencies ───────────────────────────────────
-// Used when generating the Fighter Report from the opponent's data.
-// Each style has a fixed tendency line and a primary-finish warning.
+// ── Fighter Report — style-based tendencies ─────────────────────────────────
 const STYLE_TENDENCY = {
     Wrestler: {
         tendency: 'Shoots for takedown within first 30 seconds of every round.',
@@ -217,8 +326,7 @@ const STYLE_TENDENCY = {
     },
 };
 
-// ── Stat → readable strength label ───────────────────────────────────────────
-// Used in Fighter Report to convert top/bottom stats to human-readable intel.
+// ── Stat → readable labels ──────────────────────────────────────────────────
 const STAT_STRENGTH_LABELS = {
     STR: 'Striking power — heavy hands, punishing shots',
     SPD: 'Hand speed — fast combinations, hard to time',
@@ -243,6 +351,13 @@ const STAT_WEAKNESS_LABELS = {
 
 module.exports = {
     CAMP_SESSIONS,
+    SESSION_BONUSES,
+    MATCH_STATUSES,
+    MATCH_STATUS_MULTIPLIERS,
+    RELIABILITY_TIERS,
+    STAT_COUNTER_SESSION,
+    STAT_FIGHT_DOMAIN,
+    WILDCARD_DESCRIPTIONS,
     STYLE_SESSION_MAP,
     CAMP_SLOT_CONFIG,
     CAMP_RATING_CONFIG,

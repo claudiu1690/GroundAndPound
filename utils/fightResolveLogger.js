@@ -48,8 +48,8 @@ function loggingEnabled() {
  * @param {object} ctx.opponent
  * @param {object} ctx.result - resolveFight return value
  * @param {string|null} ctx.campRating - e.g. "A" or null for legacy fights
- * @param {number|null} ctx.campModifier - e.g. 0.30 or null
- * @param {object} ctx.campBonuses - e.g. { playerStaminaDrainMult: 0.80 }
+ * @param {Array} ctx.sessionBonuses - v2 conditional session bonuses
+ * @param {object|null} ctx.wildcard - v2 wildcard data
  * @param {string} ctx.weightCut
  * @param {boolean} ctx.weightMissed
  * @param {boolean} ctx.ironWillPerk
@@ -75,8 +75,8 @@ function logFightResolve(ctx) {
         playerStrategy: fight.playerStrategy || null,
         camp: {
             campRating: ctx.campRating ?? null,
-            campModifier: ctx.campModifier ?? null,
-            campBonuses: ctx.campBonuses ?? {},
+            sessionBonuses: ctx.sessionBonuses ?? [],
+            wildcard: ctx.wildcard ?? null,
         },
         weightCut: {
             mode: ctx.weightCut,
