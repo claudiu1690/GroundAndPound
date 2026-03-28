@@ -69,6 +69,19 @@ async function addSession(req, res) {
     }
 }
 
+async function removeSession(req, res) {
+    try {
+        const { fightId } = req.params;
+        const { fighterId, slotIndex } = req.body;
+        if (!fighterId || slotIndex === undefined)
+            return res.status(400).json({ message: "fighterId and slotIndex are required" });
+        const result = await campService.removeSession(fightId, fighterId, slotIndex);
+        res.json(result);
+    } catch (err) {
+        handleError(err, res);
+    }
+}
+
 async function resolveInjury(req, res) {
     try {
         const { fightId } = req.params;
@@ -95,4 +108,4 @@ async function finaliseCamp(req, res) {
     }
 }
 
-module.exports = { getReport, getCampState, addSession, resolveInjury, finaliseCamp };
+module.exports = { getReport, getCampState, addSession, removeSession, resolveInjury, finaliseCamp };

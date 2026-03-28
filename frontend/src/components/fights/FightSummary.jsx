@@ -43,7 +43,7 @@ export const FightSummary = memo(function FightSummary({ summary }) {
 
   return (
     <section className="panel fight-summary">
-      <h2 className="panel-title">Fight Summary</h2>
+      <h2 className="panel-title">Last Fight Summary</h2>
       <div className="panel-body">
         <div className="fight-summary-outcome">
           <span className={`fight-summary-result fight-summary-result-${recordChange?.toLowerCase()}`}>

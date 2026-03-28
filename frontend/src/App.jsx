@@ -399,6 +399,7 @@ function App() {
   // ── Camp v1.1 state ────────────────────────────────────────
   const [campReport, setCampReport]           = useState(null);
   const [showFighterReport, setShowFighterReport] = useState(false);
+  const [reportFromCamp, setReportFromCamp]       = useState(false);
   const [campState, setCampState]             = useState(null);
   const [addingSession, setAddingSession]     = useState(null); // sessionType key while loading
   const [showCampSummary, setShowCampSummary] = useState(false);
@@ -607,6 +608,7 @@ function App() {
         ]);
         setCampReport(report);
         setCampState(state);
+        setReportFromCamp(false);
         setShowFighterReport(true);
         setMessage("Fight accepted — review your opponent before camp.");
         loadFighter(fighter._id, { clearMessage: false });
@@ -645,6 +647,19 @@ function App() {
       setMessage(e.message || "Failed to add session");
     }
     setAddingSession(null);
+  }, [fighter?._id, fighter?.acceptedFightId, loadFighter]);
+
+  const handleRemoveCampSession = useCallback(async (slotIndex) => {
+    const fightId = fighter?.acceptedFightId;
+    if (!fightId || !fighter?._id) return;
+    try {
+      const result = await api.removeCampSession(fightId, fighter._id, slotIndex);
+      setCampState(result.camp ? { ...result.camp, slotsUsed: result.slotsUsed, slotsRemaining: result.slotsRemaining, previewRating: result.previewRating } : null);
+      setMessage("Session removed — energy refunded.");
+      loadFighter(fighter._id, { clearMessage: false });
+    } catch (e) {
+      setMessage(e.message || "Failed to remove session");
+    }
   }, [fighter?._id, fighter?.acceptedFightId, loadFighter]);
 
   const handleResolveCampInjury = useCallback(async (choice) => {
@@ -816,6 +831,7 @@ function App() {
           report={campReport}
           onStartCamp={() => setShowFighterReport(false)}
           onClose={() => setShowFighterReport(false)}
+          hideStartButton={reportFromCamp}
         />
       )}
 
@@ -936,35 +952,28 @@ function App() {
                   campState={campState}
                   campReport={campReport}
                   onAddSession={handleAddCampSession}
+                  onRemoveSession={handleRemoveCampSession}
                   onResolveInjury={handleResolveCampInjury}
                   onFinalise={() => handleFinaliseCamp(false)}
                   onSkip={() => handleFinaliseCamp(true)}
-                  onViewReport={() => setShowFighterReport(true)}
+                  onViewReport={() => { setReportFromCamp(true); setShowFighterReport(true); }}
                   addingSession={addingSession}
                   finalising={resolving}
                   onMessage={setMessage}
                 />
               )}
 
-              {lastFightSummary && (
+              {!fighter?.acceptedFightId && lastFightSummary && (
                 <div className="page-two-col">
                   <FightSummary summary={lastFightSummary} />
                   <FightDescription commentary={lastFightCommentary} />
                 </div>
               )}
 
-              {!lastFightSummary && lastFightCommentary.length > 0 && (
+              {!fighter?.acceptedFightId && !lastFightSummary && lastFightCommentary.length > 0 && (
                 <FightDescription commentary={lastFightCommentary} />
               )}
 
-              {fighter?.acceptedFightId && offers.length === 0 && (
-                <FightOffers
-                  fighter={fighter}
-                  offers={[]}
-                  onGetOffers={handleGetOffers}
-                  onAcceptOffer={handleAcceptOffer}
-                />
-              )}
             </div>
           )}
 
