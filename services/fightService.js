@@ -77,6 +77,25 @@ function incrementFightsTodayForTier(fighter, tier) {
  * Generate 3 fight offers for the fighter (Easy, Even, Hard).
  * Uses opponents in DB for same weight class and promotion tier.
  */
+function computeStreak(fightHistory) {
+    if (!fightHistory || fightHistory.length < 2) return null;
+    const last = fightHistory[fightHistory.length - 1];
+    let count = 0;
+    for (let i = fightHistory.length - 1; i >= 0; i--) {
+        if (fightHistory[i].result === last.result) count++;
+        else break;
+    }
+    if (count < 2) return null;
+    return { result: last.result, count };
+}
+
+function buildOfferContext(opp) {
+    return {
+        streak:    computeStreak(opp.fightHistory),
+        lastThree: (opp.fightHistory ?? []).slice(-3).reverse(),
+    };
+}
+
 async function generateOffers(fighterId) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
@@ -112,9 +131,9 @@ async function generateOffers(fighterId) {
     ]);
 
     const offers = [];
-    if (easyOpp[0]) offers.push({ type: "Easy", opponent: easyOpp[0] });
-    if (evenOpp[0]) offers.push({ type: "Even", opponent: evenOpp[0] });
-    if (hardOpp[0]) offers.push({ type: "Hard", opponent: hardOpp[0] });
+    if (easyOpp[0]) offers.push({ type: "Easy", opponent: easyOpp[0], context: buildOfferContext(easyOpp[0]) });
+    if (evenOpp[0]) offers.push({ type: "Even", opponent: evenOpp[0], context: buildOfferContext(evenOpp[0]) });
+    if (hardOpp[0]) offers.push({ type: "Hard", opponent: hardOpp[0], context: buildOfferContext(hardOpp[0]) });
 
     return offers;
 }
