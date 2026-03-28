@@ -111,24 +111,19 @@ async function generateOffers(fighterId) {
     const overall = fighter.overallRating || 14;
     const weightClass = fighter.weightClass;
 
-    const [easyOpp, evenOpp, hardOpp] = await Promise.all([
-        Opponent.find({
-            weightClass,
-            promotionTier: tier,
-            overallRating: { $gte: Math.max(12, overall - 5), $lte: overall - 3 },
-            _id: { $ne: fighter.acceptedFightId }
-        }).limit(1).lean(),
-        Opponent.find({
-            weightClass,
-            promotionTier: tier,
-            overallRating: { $gte: overall - 3, $lte: overall + 3 }
-        }).limit(1).lean(),
-        Opponent.find({
-            weightClass,
-            promotionTier: tier,
-            overallRating: { $gte: overall + 2, $lte: Math.min(95, overall + 5) }
-        }).limit(1).lean()
-    ]);
+    const randomOpp = (match) =>
+        Opponent.aggregate([{ $match: match }, { $sample: { size: 1 } }]);
+
+    const base = { weightClass, promotionTier: tier };
+    const exclude = [];
+
+    const easyOpp = await randomOpp({ ...base, overallRating: { $gte: Math.max(12, overall - 5), $lte: overall - 3 } });
+    if (easyOpp[0]) exclude.push(easyOpp[0]._id);
+
+    const evenOpp = await randomOpp({ ...base, overallRating: { $gte: overall - 3, $lte: overall + 3 }, _id: { $nin: exclude } });
+    if (evenOpp[0]) exclude.push(evenOpp[0]._id);
+
+    const hardOpp = await randomOpp({ ...base, overallRating: { $gte: overall + 2, $lte: Math.min(95, overall + 5) }, _id: { $nin: exclude } });
 
     const offers = [];
     if (easyOpp[0]) offers.push({ type: "Easy", opponent: easyOpp[0], context: buildOfferContext(easyOpp[0]) });
