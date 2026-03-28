@@ -478,6 +478,38 @@ async function addCampSession(fightId, fighterId, sessionType) {
     };
 }
 
+async function removeSession(fightId, fighterId, slotIndex) {
+    const camp = await FightCamp.findOne({ fightId });
+    if (!camp) throw new Error("Camp not found");
+    assertCampOwnership(camp, fighterId);
+
+    if (camp.finalisedAt) throw new Error("Camp is already finalised");
+    if (camp.isInjured && !camp.injuryChoice) throw new Error("Resolve camp injury before removing sessions");
+    if (slotIndex < 0 || slotIndex >= camp.sessions.length) throw new Error("Invalid slot index");
+
+    const removed = camp.sessions.splice(slotIndex, 1)[0];
+
+    // Refund energy spent on that session
+    await energyService.addEnergy(String(fighterId), removed.energySpent);
+
+    // Re-index remaining sessions
+    camp.sessions.forEach((s, i) => { s.slotIndex = i; });
+
+    await camp.save();
+
+    const slotsRemaining = Math.max(0, camp.maxSlots - camp.sessions.length);
+    const preview = camp.sessions.length > 0
+        ? { grade: computeCampRating(camp.sessions, camp.maxSlots).grade }
+        : null;
+
+    return {
+        camp: camp.toObject(),
+        slotsUsed: camp.sessions.length,
+        slotsRemaining,
+        previewRating: preview,
+    };
+}
+
 async function resolveInjury(fightId, fighterId, choice) {
     if (!["STOP", "PUSH_THROUGH"].includes(choice)) throw new Error("Invalid choice — must be STOP or PUSH_THROUGH");
 
@@ -566,6 +598,7 @@ module.exports = {
     getFighterReport,
     getCampState,
     addCampSession,
+    removeSession,
     resolveInjury,
     finaliseCamp,
     // Exported for fight resolution and testing

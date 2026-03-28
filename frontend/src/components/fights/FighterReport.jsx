@@ -56,7 +56,7 @@ function IntelSection({ title, items, colorClass, emptyText }) {
     );
 }
 
-export const FighterReport = memo(function FighterReport({ report, onStartCamp, onClose }) {
+export const FighterReport = memo(function FighterReport({ report, onStartCamp, onClose, hideStartButton }) {
     if (!report) return null;
 
     const styleColor = STYLE_COLORS[report.style] ?? DEFAULT_STYLE_COLOR;
@@ -145,11 +145,13 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
                         </div>
                     </div>
 
-                    <div className="fr-actions">
-                        <button className="btn btn-primary fr-start-btn" onClick={onStartCamp}>
-                            Start Camp
-                        </button>
-                    </div>
+                    {!hideStartButton && (
+                        <div className="fr-actions">
+                            <button className="btn btn-primary fr-start-btn" onClick={onStartCamp}>
+                                Start Camp
+                            </button>
+                        </div>
+                    )}
                 </div>
 
             </div>

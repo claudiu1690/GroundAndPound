@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
 
 const TYPE_CLASS = { Easy: "offer-card-easy", Even: "offer-card-even", Hard: "offer-card-hard" };
 const BADGE_CLASS = { Easy: "badge-easy", Even: "badge-even", Hard: "badge-hard" };
@@ -11,6 +12,7 @@ const TYPE_META = {
 
 export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOffers, onAcceptOffer }) {
   if (!fighter) return null;
+  const energyCost = FIGHT_ENERGY_COST[fighter.promotionTier] ?? 10;
 
   return (
     <section className="panel fight-offers">
@@ -48,13 +50,16 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                         <span style={{ color: "var(--text-muted)" }}>{meta.desc}</span>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm"
-                      onClick={() => onAcceptOffer(o.opponent._id, o.type)}
-                    >
-                      Accept
-                    </button>
+                    <div className="offer-accept-col">
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={() => onAcceptOffer(o.opponent._id, o.type)}
+                      >
+                        Accept
+                      </button>
+                      <span className="offer-energy-cost">{energyCost} energy</span>
+                    </div>
                   </li>
                 );
               })}

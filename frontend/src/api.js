@@ -91,6 +91,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ fighterId, sessionType }),
     }),
+  removeCampSession: (fightId, fighterId, slotIndex) =>
+    request(`/fights/camp/${fightId}/remove-session`, {
+      method: "POST",
+      body: JSON.stringify({ fighterId, slotIndex }),
+    }),
   resolveCampInjury: (fightId, fighterId, choice) =>
     request(`/fights/camp/${fightId}/injury-choice`, {
       method: "POST",

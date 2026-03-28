@@ -8,16 +8,21 @@ import {
 } from "../../constants/campConfig";
 import { CampInjury } from "./CampInjury";
 
-function SlotGrid({ maxSlots, slotsUsed }) {
+function SlotGrid({ maxSlots, slotsUsed, canRemove, onRemove }) {
     return (
         <div className="camp-slot-grid">
-            {Array.from({ length: maxSlots }, (_, i) => (
-                <div
-                    key={i}
-                    className={`camp-slot-dot ${i < slotsUsed ? "camp-slot-filled" : "camp-slot-empty"}`}
-                    title={i < slotsUsed ? `Slot ${i + 1} used` : `Slot ${i + 1} available`}
-                />
-            ))}
+            {Array.from({ length: maxSlots }, (_, i) => {
+                const filled = i < slotsUsed;
+                const clickable = filled && canRemove;
+                return (
+                    <div
+                        key={i}
+                        className={`camp-slot-dot ${filled ? "camp-slot-filled" : "camp-slot-empty"} ${clickable ? "camp-slot-removable" : ""}`}
+                        title={clickable ? `Click to remove session ${i + 1}` : filled ? `Slot ${i + 1} used` : `Slot ${i + 1} available`}
+                        onClick={clickable ? () => onRemove(i) : undefined}
+                    />
+                );
+            })}
         </div>
     );
 }
@@ -73,6 +78,7 @@ export const FightCamp = memo(function FightCamp({
     campState,
     campReport,
     onAddSession,
+    onRemoveSession,
     onResolveInjury,
     onFinalise,
     onSkip,
@@ -123,7 +129,7 @@ export const FightCamp = memo(function FightCamp({
 
             <div className="panel-body">
                 <div className="camp-slots-row">
-                    <SlotGrid maxSlots={maxSlots} slotsUsed={slotsUsed} />
+                    <SlotGrid maxSlots={maxSlots} slotsUsed={slotsUsed} canRemove={!isFinalised && !isInjuredPending} onRemove={onRemoveSession} />
                     <span className="camp-slots-label">
                         {slotsUsed}/{maxSlots} slots used
                         {slotsRemaining > 0 && !isFinalised && (
@@ -201,7 +207,7 @@ export const FightCamp = memo(function FightCamp({
                         <button
                             className="btn btn-ghost camp-skip-btn"
                             onClick={onSkip}
-                            disabled={finalising}
+                            disabled={finalising || slotsRemaining === 0}
                         >
                             Fight Now (skip camp)
                         </button>

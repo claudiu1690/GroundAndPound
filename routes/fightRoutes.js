@@ -95,6 +95,7 @@ router.post("/accept/:fighterId/:fightId", fightController.acceptOffer);
 router.get("/camp/:fightId/report",        campController.getReport);
 router.get("/camp/:fightId",               campController.getCampState);
 router.post("/camp/:fightId/session",      campController.addSession);
+router.post("/camp/:fightId/remove-session", campController.removeSession);
 router.post("/camp/:fightId/injury-choice",campController.resolveInjury);
 router.post("/camp/:fightId/finalise",     campController.finaliseCamp);
 

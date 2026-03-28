@@ -42,3 +42,11 @@ export const PROMOTION_TIERS = [
   "GCS",
 ];
 
+export const FIGHT_ENERGY_COST = {
+  Amateur:          10,
+  "Regional Pro":   15,
+  National:         18,
+  "GCS Contender":  20,
+  GCS:              20,
+};
+
