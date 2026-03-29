@@ -2,7 +2,18 @@ const Fighter = require("../models/fighterModel");
 const Opponent = require("../models/opponentModel");
 const Fight = require("../models/fightModel");
 const FightCamp = require("../models/fightCampModel");
-const { PROMOTION_TIERS } = require("../consts/gameConstants");
+const { PROMOTION_TIERS, FIGHT_OUTCOMES } = require("../consts/gameConstants");
+
+const [
+    OUT_KO_TKO,       // "KO/TKO"
+    OUT_SUB,          // "Submission"
+    OUT_DEC_UNAN,     // "Decision (unanimous)"
+    OUT_DEC_SPLIT,    // "Decision (split)"
+    OUT_DRAW,         // "Draw"
+    OUT_LOSS_DEC,     // "Loss (decision)"
+    OUT_LOSS_KO,      // "Loss (KO/TKO)"
+    OUT_LOSS_SUB,     // "Loss (submission)"
+] = FIGHT_OUTCOMES;
 const campService = require("./campService");
 
 /**
@@ -11,6 +22,11 @@ const campService = require("./campService");
  * This keeps promotion logic and tier config aligned in one source of truth.
  */
 const TIER_ORDER = Object.keys(PROMOTION_TIERS);
+
+const MIN_STREAK_LENGTH    = 2;  // minimum consecutive results to show a streak badge
+const LAST_RESULTS_COUNT   = 3;  // number of recent results shown on the offer card
+const MAX_FIGHT_HISTORY    = 20; // max fightHistory entries kept per opponent
+
 const TIER_LADDER = TIER_ORDER.slice(0, -1).map((fromTier, idx) => {
     const nextTier = TIER_ORDER[idx + 1];
     const minOverall = PROMOTION_TIERS[nextTier]?.minOverall ?? Infinity;
@@ -78,21 +94,34 @@ function incrementFightsTodayForTier(fighter, tier) {
  * Uses opponents in DB for same weight class and promotion tier.
  */
 function computeStreak(fightHistory) {
-    if (!fightHistory || fightHistory.length < 2) return null;
+    if (!fightHistory || fightHistory.length < MIN_STREAK_LENGTH) return null;
     const last = fightHistory[fightHistory.length - 1];
     let count = 0;
     for (let i = fightHistory.length - 1; i >= 0; i--) {
         if (fightHistory[i].result === last.result) count++;
         else break;
     }
-    if (count < 2) return null;
+    if (count < MIN_STREAK_LENGTH) return null;
     return { result: last.result, count };
 }
 
 function buildOfferContext(opp) {
+    const history = opp.fightHistory ?? [];
+    // Derive record from fightHistory so it always reflects actual fights played.
+    // Static opponent.record is seeded flavour only — never used for display.
+    const record = history.reduce(
+        (acc, f) => {
+            if (f.result === "win")  acc.wins++;
+            else if (f.result === "loss") acc.losses++;
+            else acc.draws++;
+            return acc;
+        },
+        { wins: 0, losses: 0, draws: 0 }
+    );
     return {
-        streak:    computeStreak(opp.fightHistory),
-        lastThree: (opp.fightHistory ?? []).slice(-3).reverse(),
+        record,
+        streak:    computeStreak(history),
+        lastThree: history.slice(-LAST_RESULTS_COUNT).reverse(),
     };
 }
 
@@ -359,20 +388,20 @@ async function resolveFightAndApply(fighterId) {
         ironWillPerk,
     });
 
-    const isWin = ["KO/TKO", "Submission", "Decision (unanimous)", "Decision (split)"].includes(result.outcome);
-    const isDraw = result.outcome === "Draw";
+    const isWin = [OUT_KO_TKO, OUT_SUB, OUT_DEC_UNAN, OUT_DEC_SPLIT].includes(result.outcome);
+    const isDraw = result.outcome === OUT_DRAW;
     const isLoss = !isWin && !isDraw;
-    const isKoLoss = result.outcome === "Loss (KO/TKO)" || result.outcome === "Loss (submission)";
+    const isKoLoss = result.outcome === OUT_LOSS_KO || result.outcome === OUT_LOSS_SUB;
 
     // GDD 8.5 XP multipliers (corrected)
     let xpMult;
-    if (result.outcome === "KO/TKO")               xpMult = 1.3;
-    else if (result.outcome === "Submission")       xpMult = 1.25;
-    else if (result.outcome === "Decision (unanimous)") xpMult = 1.1;
-    else if (result.outcome === "Decision (split)") xpMult = 1.05;
-    else if (result.outcome === "Draw")             xpMult = 1.0;
-    else if (result.outcome === "Loss (decision)")  xpMult = 0.8;
-    else                                            xpMult = 0.7; // Loss by KO/TKO or submission
+    if (result.outcome === OUT_KO_TKO)      xpMult = 1.3;
+    else if (result.outcome === OUT_SUB)      xpMult = 1.25;
+    else if (result.outcome === OUT_DEC_UNAN) xpMult = 1.1;
+    else if (result.outcome === OUT_DEC_SPLIT) xpMult = 1.05;
+    else if (result.outcome === OUT_DRAW)     xpMult = 1.0;
+    else if (result.outcome === OUT_LOSS_DEC) xpMult = 0.8;
+    else                                      xpMult = 0.7; // Loss by KO/TKO or submission
 
     // GDD 8.6: Comeback Mode → 1.5× XP multiplier on comeback fight
     const isComeback = !!fighter.comebackMode;
@@ -398,22 +427,22 @@ async function resolveFightAndApply(fighterId) {
     const opponentOvr = opponent.overallRating ?? 14;
     const fighterOvr = fighter.overallRating ?? 14;
     const healthEnd = result.playerHealthAfter ?? 100;
-    const isFinishWin = isWin && (result.outcome === "KO/TKO" || result.outcome === "Submission");
+    const isFinishWin = isWin && (result.outcome === OUT_KO_TKO || result.outcome === OUT_SUB);
     const promoTier = fight.promotionTier;
     const firstFinishInThisPromotion =
         isFinishWin &&
         !(fighter.notoriety.firstFinishPromoTiers || []).includes(promoTier);
     const fightOfTheNight =
         isWin &&
-        (result.outcome === "Decision (unanimous)" || result.outcome === "Decision (split)") &&
+        (result.outcome === OUT_DEC_UNAN || result.outcome === OUT_DEC_SPLIT) &&
         healthEnd < 50;
     const giantKiller = isWin && opponentOvr >= fighterOvr + 10;
 
     // Build fight XP totals
     const fightXp = {};
-    if (isWin && result.outcome === "KO/TKO") {
+    if (isWin && result.outcome === OUT_KO_TKO) {
         fightXp.STR = 30; fightXp.CHN = 15; fightXp.SPD = 10;
-    } else if (isWin && result.outcome === "Submission") {
+    } else if (isWin && result.outcome === OUT_SUB) {
         fightXp.SUB = 30; fightXp.GND = 20; fightXp.WRE = 10;
     } else if (isWin) {
         ["STR", "SPD", "LEG", "WRE", "GND", "SUB", "CHN", "FIQ"].forEach(s => { fightXp[s] = 15; });
@@ -465,8 +494,8 @@ async function resolveFightAndApply(fighterId) {
 
     if (isWin) {
         fighter.record.wins += 1;
-        if (result.outcome === "KO/TKO") fighter.record.koWins += 1;
-        else if (result.outcome === "Submission") fighter.record.subWins += 1;
+        if (result.outcome === OUT_KO_TKO) fighter.record.koWins += 1;
+        else if (result.outcome === OUT_SUB) fighter.record.subWins += 1;
         else fighter.record.decisionWins += 1;
         fighter.consecutiveLosses = 0;
         fighter.mentalResetRequired = false;
@@ -499,6 +528,23 @@ async function resolveFightAndApply(fighterId) {
     }
 
     fighter.iron += ironEarned;
+
+    // ── Update opponent fightHistory only (record stays seeded — avoids inflation) ──
+    const oppResult = isWin ? "loss" : isDraw ? "draw" : "win";
+    const oppMethod = (() => {
+        if (result.outcome === OUT_KO_TKO || result.outcome === OUT_LOSS_KO)  return OUT_KO_TKO;
+        if (result.outcome === OUT_SUB     || result.outcome === OUT_LOSS_SUB) return OUT_SUB;
+        return "Decision";
+    })();
+    const oppRound = result.rounds?.length ?? 1;
+
+    opponent.fightHistory = opponent.fightHistory || [];
+    opponent.fightHistory.push({ result: oppResult, method: oppMethod, round: oppRound });
+    if (opponent.fightHistory.length > MAX_FIGHT_HISTORY) {
+        opponent.fightHistory.splice(0, opponent.fightHistory.length - MAX_FIGHT_HISTORY);
+    }
+    await opponent.save();
+    // ─────────────────────────────────────────────────────────────────────
 
     const winStreakAfterWin = isWin ? (fighter.winStreak || 0) : 0;
     const awardCtx = {
