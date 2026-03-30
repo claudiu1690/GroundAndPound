@@ -1089,11 +1089,6 @@ code {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 0.3rem;
-  overflow-y: auto;
-  max-height: 260px;
-  padding-right: 2px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-bright) transparent;
 }
 
 .gym-training .panel-body { display: flex; flex-direction: column; padding: 0; }
