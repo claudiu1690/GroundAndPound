@@ -23,9 +23,44 @@ const campService = require("./campService");
  */
 const TIER_ORDER = Object.keys(PROMOTION_TIERS);
 
-const MIN_STREAK_LENGTH    = 2;  // minimum consecutive results to show a streak badge
-const LAST_RESULTS_COUNT   = 3;  // number of recent results shown on the offer card
-const MAX_FIGHT_HISTORY    = 20; // max fightHistory entries kept per opponent
+const MIN_STREAK_LENGTH    = 2;   // minimum consecutive results to show a streak badge
+const LAST_RESULTS_COUNT   = 3;   // number of recent results shown on the offer card
+const MAX_FIGHT_HISTORY    = 20;  // max fightHistory entries kept per opponent
+const NEMESIS_WIN_BONUS    = 150; // notoriety awarded for defeating your nemesis
+
+const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard" };
+
+// ── Nemesis helpers ───────────────────────────────────────────────────────────
+const emptyNemesis = () => ({ opponentId: null, opponentName: null, lossCount: 0, setAt: null });
+
+function getNemesisOpponentId(fighter) {
+    return fighter.nemesis?.opponentId?.toString() ?? null;
+}
+
+function resolveNemesisOnWin(fighter, opponentId) {
+    if (getNemesisOpponentId(fighter) !== opponentId.toString()) return false;
+    fighter.nemesis.opponentId   = null;
+    fighter.nemesis.opponentName = null;
+    fighter.nemesis.lossCount    = 0;
+    fighter.nemesis.setAt        = null;
+    fighter.markModified("nemesis");
+    return true;
+}
+
+function resolveNemesisOnLoss(fighter, opponentId, opponentName) {
+    if (getNemesisOpponentId(fighter) === opponentId.toString()) {
+        fighter.nemesis.lossCount = (fighter.nemesis.lossCount || 0) + 1;
+        fighter.markModified("nemesis");
+        return { wasNew: false };
+    }
+    fighter.nemesis.opponentId   = opponentId;
+    fighter.nemesis.opponentName = opponentName;
+    fighter.nemesis.lossCount    = 1;
+    fighter.nemesis.setAt        = new Date();
+    fighter.markModified("nemesis");
+    return { wasNew: true };
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 const TIER_LADDER = TIER_ORDER.slice(0, -1).map((fromTier, idx) => {
     const nextTier = TIER_ORDER[idx + 1];
@@ -105,6 +140,13 @@ function computeStreak(fightHistory) {
     return { result: last.result, count };
 }
 
+function classifyOfferType(nemesisOvr, fighterOvr) {
+    const diff = nemesisOvr - fighterOvr;
+    if (diff <= -3) return OFFER_TYPE.EASY;
+    if (diff >= 2)  return OFFER_TYPE.HARD;
+    return OFFER_TYPE.EVEN;
+}
+
 function buildOfferContext(opp) {
     const history = opp.fightHistory ?? [];
     // Derive record from fightHistory so it always reflects actual fights played.
@@ -143,10 +185,28 @@ async function generateOffers(fighterId) {
     const randomOpp = (match) =>
         Opponent.aggregate([{ $match: match }, { $sample: { size: 1 } }]);
 
-    const base = { weightClass, promotionTier: tier };
-    const exclude = [];
+    // Resolve nemesis first so we can force them into the correct slot
+    let nemesisMeta = null;
+    let nemesisOpp  = null;
+    if (fighter.nemesis?.opponentId) {
+        const found = await Opponent.findById(fighter.nemesis.opponentId).lean();
+        if (!found || found.promotionTier !== fighter.promotionTier) {
+            fighter.nemesis = emptyNemesis();
+            await fighter.save();
+        } else {
+            nemesisOpp  = found;
+            nemesisMeta = { lossCount: fighter.nemesis.lossCount, setAt: fighter.nemesis.setAt };
+        }
+    }
 
-    const easyOpp = await randomOpp({ ...base, overallRating: { $gte: Math.max(12, overall - 5), $lte: overall - 3 } });
+    // Determine which slot the nemesis belongs to based on OVR distance
+    const nemesisType = nemesisOpp ? classifyOfferType(nemesisOpp.overallRating, overall) : null;
+
+    const base    = { weightClass, promotionTier: tier };
+    const exclude = [];
+    if (nemesisOpp) exclude.push(nemesisOpp._id); // never double-pick the nemesis
+
+    const easyOpp = await randomOpp({ ...base, overallRating: { $gte: Math.max(12, overall - 5), $lte: overall - 3 }, _id: { $nin: exclude } });
     if (easyOpp[0]) exclude.push(easyOpp[0]._id);
 
     const evenOpp = await randomOpp({ ...base, overallRating: { $gte: overall - 3, $lte: overall + 3 }, _id: { $nin: exclude } });
@@ -154,12 +214,17 @@ async function generateOffers(fighterId) {
 
     const hardOpp = await randomOpp({ ...base, overallRating: { $gte: overall + 2, $lte: Math.min(95, overall + 5) }, _id: { $nin: exclude } });
 
-    const offers = [];
-    if (easyOpp[0]) offers.push({ type: "Easy", opponent: easyOpp[0], context: buildOfferContext(easyOpp[0]) });
-    if (evenOpp[0]) offers.push({ type: "Even", opponent: evenOpp[0], context: buildOfferContext(evenOpp[0]) });
-    if (hardOpp[0]) offers.push({ type: "Hard", opponent: hardOpp[0], context: buildOfferContext(hardOpp[0]) });
+    // Build slot map; nemesis replaces whichever slot they belong to
+    const slots = {
+        [OFFER_TYPE.EASY]: easyOpp[0] ? { type: OFFER_TYPE.EASY, opponent: easyOpp[0], context: buildOfferContext(easyOpp[0]) } : null,
+        [OFFER_TYPE.EVEN]: evenOpp[0] ? { type: OFFER_TYPE.EVEN, opponent: evenOpp[0], context: buildOfferContext(evenOpp[0]) } : null,
+        [OFFER_TYPE.HARD]: hardOpp[0] ? { type: OFFER_TYPE.HARD, opponent: hardOpp[0], context: buildOfferContext(hardOpp[0]) } : null,
+    };
+    if (nemesisOpp && nemesisType) {
+        slots[nemesisType] = { type: nemesisType, opponent: nemesisOpp, context: buildOfferContext(nemesisOpp), nemesisMeta };
+    }
 
-    return offers;
+    return Object.values(OFFER_TYPE).filter(t => slots[t]).map(t => slots[t]);
 }
 
 /**
@@ -492,6 +557,10 @@ async function resolveFightAndApply(fighterId) {
         }
     }
 
+    let nemesisCleared = false;
+    let nemesisSet     = false;
+    let nemesisName    = null;
+
     if (isWin) {
         fighter.record.wins += 1;
         if (result.outcome === OUT_KO_TKO) fighter.record.koWins += 1;
@@ -510,6 +579,11 @@ async function resolveFightAndApply(fighterId) {
             }
         }
         fighter.comebackMode = false;
+
+        // Nemesis: defeat your nemesis → clear + record their name for summary
+        const prevNemesisName = fighter.nemesis?.opponentName ?? null;
+        nemesisCleared = resolveNemesisOnWin(fighter, opponent._id);
+        if (nemesisCleared) nemesisName = prevNemesisName;
     } else if (isLoss) {
         fighter.record.losses += 1;
         const newConsecLosses = (fighter.consecutiveLosses || 0) + 1;
@@ -522,6 +596,10 @@ async function resolveFightAndApply(fighterId) {
             fighter.mentalResetRequired = true;
             fighter.notoriety.isFrozen = true;
         }
+
+        // Nemesis: the NPC that just beat us becomes (or stays) the nemesis
+        const nemesisResult = resolveNemesisOnLoss(fighter, opponent._id, opponent.name);
+        if (nemesisResult.wasNew) { nemesisSet = true; nemesisName = opponent.name; }
     } else {
         fighter.record.draws += 1;
         fighter.winStreak = 0;
@@ -572,6 +650,14 @@ async function resolveFightAndApply(fighterId) {
     if (notorietyGain !== 0) {
         notorietyService.applyNotorietyDelta(fighter, notorietyGain, {});
     }
+
+    // Nemesis win bonus — awarded even if notoriety is frozen (skip freeze block)
+    if (nemesisCleared) {
+        notorietyBreakdown.push({ code: "NEMESIS_WIN", amount: NEMESIS_WIN_BONUS, note: "Nemesis defeated" });
+        notorietyGain += NEMESIS_WIN_BONUS;
+        notorietyService.applyNotorietyDelta(fighter, NEMESIS_WIN_BONUS, { skipFreezeBlock: true });
+    }
+
     if (firstFinishInThisPromotion && isFinishWin) {
         notorietyService.registerFirstFinishInPromotion(fighter, promoTier);
     }
@@ -655,6 +741,9 @@ async function resolveFightAndApply(fighterId) {
         mentalResetRequired: !!fighter.mentalResetRequired,
         completedQuests: completedQuests.map((q) => q.title),
         promoted,
+        nemesisCleared,
+        nemesisSet,
+        nemesisName,
         // v2: post-fight camp breakdown
         campBreakdown: fightCamp ? {
             rating: fightCamp.campRating,

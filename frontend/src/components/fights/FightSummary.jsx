@@ -36,6 +36,9 @@ export const FightSummary = memo(function FightSummary({ summary }) {
     notorietyTierUp: fameTierUp,
     milestoneNotoriety: milestoneFame,
     campBreakdown,
+    nemesisCleared,
+    nemesisSet,
+    nemesisName,
   } = summary;
 
   const hasXp = xpGained && typeof xpGained === "object" && Object.keys(xpGained).length > 0;
@@ -75,6 +78,18 @@ export const FightSummary = memo(function FightSummary({ summary }) {
         {mentalResetRequired && (
           <div className="fight-summary-note fight-summary-danger">
             Mental Reset required — complete it in your fighter profile before your next fight.
+          </div>
+        )}
+
+        {nemesisCleared && (
+          <div className="fight-summary-note fight-summary-nemesis-cleared">
+            ★ Nemesis defeated — you&apos;ve settled the score with <strong>{nemesisName}</strong>! (+{150} Notoriety)
+          </div>
+        )}
+
+        {nemesisSet && (
+          <div className="fight-summary-note fight-summary-nemesis-set">
+            ☠ <strong>{nemesisName}</strong> is now your Nemesis — the rematch will be available in fight offers.
           </div>
         )}
 

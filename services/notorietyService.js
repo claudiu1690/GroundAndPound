@@ -185,7 +185,7 @@ function computeFightNotorietyAward(ctx) {
     if (key && BASE_FIGHT_NOTORIETY[key]) {
         base = BASE_FIGHT_NOTORIETY[key][col] ?? 0;
     }
-    breakdown.push({ code: "BASE", amount: base, note: key || outcome });
+    breakdown.push({ code: "BASE", amount: base, note: outcome });
 
     if (weightMissed) {
         breakdown.push({ code: "WEIGHT_MISS", amount: WEIGHT_MISS_NOTORIETY, note: "Missed weight" });

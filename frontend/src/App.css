@@ -1177,20 +1177,33 @@ code {
 }
 
 .offer-card:hover { background: var(--bg-hover); }
-.offer-card-easy { border-left-color: var(--green); }
-.offer-card-even { border-left-color: var(--blue-bright); }
-.offer-card-hard { border-left-color: var(--red); }
+.offer-card-easy    { border-left-color: var(--green); }
+.offer-card-even    { border-left-color: var(--blue-bright); }
+.offer-card-hard    { border-left-color: var(--red); }
+.offer-card-nemesis { border-left-color: #dc2626; background: rgba(220,38,38,0.05); }
 
 .offer-card-info { flex: 1; min-width: 0; }
 
+.offer-badge-row { display: flex; gap: 0.3rem; align-items: center; margin-bottom: 0.2rem; }
 .offer-type-badge {
   display: inline-block; font-size: 8px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: 0.08em; padding: 0.1rem 0.35rem; border-radius: 2px; margin-bottom: 0.2rem;
+  letter-spacing: 0.08em; padding: 0.1rem 0.35rem; border-radius: 2px;
 }
 
-.badge-easy { background: var(--green-dim); color: #86efac; }
-.badge-even { background: var(--blue-dim);  color: #93c5fd; }
-.badge-hard { background: var(--red-dim);   color: #fca5a5; }
+.badge-easy    { background: var(--green-dim); color: #86efac; }
+.badge-even    { background: var(--blue-dim);  color: #93c5fd; }
+.badge-hard    { background: var(--red-dim);   color: #fca5a5; }
+.badge-nemesis { background: rgba(220,38,38,0.15); color: #f87171; border: 1px solid rgba(220,38,38,0.3); }
+
+.offer-nemesis-meta {
+  display: flex; flex-direction: column; gap: 0.15rem; margin-top: 0.25rem;
+}
+.offer-nemesis-losses {
+  font-size: 10px; font-weight: 700; color: #f87171;
+}
+.offer-nemesis-bonus {
+  font-size: 9px; font-weight: 700; color: var(--gold-bright); text-transform: uppercase; letter-spacing: 0.06em;
+}
 
 .offer-opponent-name { font-size: 12px; font-weight: 800; color: var(--text); }
 .offer-opponent-nickname { color: var(--text-sec); font-weight: 400; }
@@ -1266,7 +1279,9 @@ code {
 .fight-summary-warning  { background: rgba(245,158,11,0.15); border-color: #b45309;            color: #92400e; }
 .fight-summary-danger   { background: rgba(227,24,55,0.12);  border-color: var(--red);         color: var(--red-dim); }
 .fight-summary-badge    { background: rgba(22,163,74,0.12);  border-color: var(--green-bright); color: var(--green-dim); }
-.fight-summary-injury   { background: rgba(245,158,11,0.12); border-color: #b45309;            color: #92400e; }
+.fight-summary-injury          { background: rgba(245,158,11,0.12); border-color: #b45309; color: #92400e; }
+.fight-summary-nemesis-set     { background: rgba(220,38,38,0.10);  border-color: #dc2626; color: #f87171; }
+.fight-summary-nemesis-cleared { background: rgba(250,204,21,0.10); border-color: #ca8a04; color: #fbbf24; }
 .fight-summary-comeback-tag { font-size: 9px; color: #60a5fa; margin-left: 0.3rem; }
 .fight-summary-quests { margin-top: 0.35rem; font-size: 11px; color: var(--green-bright); font-weight: 600; }
 
