@@ -123,6 +123,13 @@ const fighterSchema = new mongoose.Schema({
     badges: [{ type: String }],
     // GDD 8.5: Mental Reset required after 3 consecutive losses (blocks next fight)
     mentalResetRequired: { type: Boolean, default: false },
+    // Nemesis: the most recent NPC to beat the player (cleared on revenge win)
+    nemesis: {
+        opponentId:   { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", default: null },
+        opponentName: { type: String, default: null },
+        lossCount:    { type: Number, default: 0 },
+        setAt:        { type: Date,   default: null },
+    },
     // GDD 8.9: Active injuries
     injuries: [{
         type:               { type: String },

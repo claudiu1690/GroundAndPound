@@ -1,13 +1,22 @@
 import { memo } from "react";
 import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
 
-const TYPE_CLASS = { Easy: "offer-card-easy", Even: "offer-card-even", Hard: "offer-card-hard" };
-const BADGE_CLASS = { Easy: "badge-easy", Even: "badge-even", Hard: "badge-hard" };
+const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard" };
 
+const TYPE_CLASS = {
+  [OFFER_TYPE.EASY]: "offer-card-easy",
+  [OFFER_TYPE.EVEN]: "offer-card-even",
+  [OFFER_TYPE.HARD]: "offer-card-hard",
+};
+const BADGE_CLASS = {
+  [OFFER_TYPE.EASY]: "badge-easy",
+  [OFFER_TYPE.EVEN]: "badge-even",
+  [OFFER_TYPE.HARD]: "badge-hard",
+};
 const TYPE_META = {
-  Easy:  { desc: "3–5 OVR below you · Low risk, low reward" },
-  Even:  { desc: "Within 3 OVR · Competitive" },
-  Hard:  { desc: "2–5 OVR above you · High risk, high reward" },
+  [OFFER_TYPE.EASY]: { desc: "3–5 OVR below you · Low risk, low reward" },
+  [OFFER_TYPE.EVEN]: { desc: "Within 3 OVR · Competitive" },
+  [OFFER_TYPE.HARD]: { desc: "2–5 OVR above you · High risk, high reward" },
 };
 
 const RESULT_STYLE = {
@@ -85,10 +94,13 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                 const meta = TYPE_META[typeKey] ?? {};
                 const ctx = o.context ?? {};
                 return (
-                  <li key={o.opponent?._id ?? typeKey} className={`offer-card ${TYPE_CLASS[typeKey] ?? ""}`}>
+                  <li key={o.opponent?._id ?? typeKey} className={`offer-card ${TYPE_CLASS[typeKey] ?? ""}${o.nemesisMeta ? " offer-card-nemesis" : ""}`}>
                     <div className="offer-card-info">
-                      <div>
+                      <div className="offer-badge-row">
                         <span className={`offer-type-badge ${BADGE_CLASS[typeKey] ?? ""}`}>{typeKey}</span>
+                        {o.nemesisMeta && (
+                          <span className="offer-type-badge badge-nemesis">☠ Nemesis</span>
+                        )}
                       </div>
                       <div className="offer-opponent-name">
                         {o.opponent?.name}
@@ -99,9 +111,16 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                       <div className="offer-opponent-meta">
                         <span className="offer-opponent-ovr">OVR {o.opponent?.overallRating}</span>
                         {o.opponent?.style ? ` · ${o.opponent.style}` : ""}
-                        {" · "}
-                        <span className="offer-meta-desc">{meta.desc}</span>
+                        {meta.desc && <>{" · "}<span className="offer-meta-desc">{meta.desc}</span></>}
                       </div>
+                      {o.nemesisMeta && (
+                        <div className="offer-nemesis-meta">
+                          <span className="offer-nemesis-losses">
+                            {o.nemesisMeta.lossCount} loss{o.nemesisMeta.lossCount !== 1 ? "es" : ""} against this fighter — settle the score
+                          </span>
+                          <span className="offer-nemesis-bonus">Win bonus: +150 Notoriety</span>
+                        </div>
+                      )}
                       <div className="offer-context">
                         <RecordLine record={o.opponent?.record} />
                         {ctx.lastThree?.length > 0 && (
