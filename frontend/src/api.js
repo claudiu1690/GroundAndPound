@@ -107,6 +107,10 @@ export const api = {
       body: JSON.stringify({ fighterId, skip }),
     }),
 
+  // ── Career Feed ─────────────────────────────────────────
+  getActivity: (fighterId) =>
+    request(`/fighters/${fighterId}/activity`),
+
   // ── Training / Recovery ─────────────────────────────────
   train: (fighterId, gymId, sessionType) =>
     request(`/fighters/${fighterId}/train`, {
