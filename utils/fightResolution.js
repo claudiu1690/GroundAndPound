@@ -600,9 +600,11 @@ function resolveFight(player, opponent, options = {}) {
             else if (result.outcome && result.outcome.startsWith("Loss")) winner = "opponent";
             const resultLine = getResultLine(winner, result.outcome, playerName, opponentName);
             if (resultLine) commentary.push(resultLine);
+            // KO/TKO loss — health should be 0 regardless of soft-KO threshold
+            const playerHealthAfter = result.outcome === "Loss (KO/TKO)" ? 0 : p.health;
             return {
                 outcome: result.outcome, rounds, winner,
-                playerHealthAfter: p.health, playerStaminaAfter: p.stamina,
+                playerHealthAfter, playerStaminaAfter: p.stamina,
                 commentary, sessionBonuses, wildcard: wildcard ? { ...wildcard, countered: wildcardCountered } : null,
             };
         }
