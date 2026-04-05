@@ -181,6 +181,7 @@ router.post("/:id/rest", fighterController.rest);
 router.post("/:id/doctor-visit", fighterController.doctorVisit);
 router.post("/:id/mental-reset", fighterController.mentalReset);
 router.post("/:id/pay-membership", fighterController.payGymMembership);
+router.get("/:id/activity", fighterController.getActivity);
 /** Reserved for media events (notoriety) — returns 501 until implemented */
 router.post("/:id/media-event", fighterController.mediaEventStub);
 

@@ -90,6 +90,7 @@ const { applyXpToStat, roundStatXp, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require(
 const notorietyService = require("./notorietyService");
 const { tierRank } = require("../consts/notorietyConfig");
 const { logFightResolve } = require("../utils/fightResolveLogger");
+const activityLogService = require("./activityLogService");
 
 /**
  * Daily fight caps are per promotion tier. Legacy `fightsToday` was one global counter, so Amateur
@@ -367,6 +368,7 @@ async function resolveFightAndApply(fighterId) {
     }
 
     const tierConfig = PROMOTION_TIERS[fight.promotionTier];
+    const wasAlreadyMentalReset = fighter.mentalResetRequired ?? false;
     const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
 
     // Build a mutable copy of the fighter's stats for the fight simulation.
@@ -718,6 +720,35 @@ async function resolveFightAndApply(fighterId) {
     const maxStaminaVal = fighter.maxStamina ?? 100;
     const staminaEnd = result.playerStaminaAfter ?? maxStaminaVal;
     const promoted = newTier ? { from: oldTier, to: newTier } : null;
+
+    // ── Activity log entries (fire-and-forget, never throw) ──────────────
+    const _tier = fighter.promotionTier;
+    if (isWin)  activityLogService.log(fighterId, "FIGHT_WIN",
+        `Beat ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
+        { opponentName: opponent.name, outcome: result.outcome, tier: _tier });
+    if (isLoss) activityLogService.log(fighterId, "FIGHT_LOSS",
+        `Lost to ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
+        { opponentName: opponent.name, outcome: result.outcome, tier: _tier });
+    if (isDraw) activityLogService.log(fighterId, "FIGHT_DRAW",
+        `Drew with ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
+        { opponentName: opponent.name, outcome: result.outcome, tier: _tier });
+    if (nemesisSet) activityLogService.log(fighterId, "NEMESIS_SET",
+        `${nemesisName} is now your nemesis`,
+        { opponentName: nemesisName, tier: _tier });
+    if (nemesisCleared) activityLogService.log(fighterId, "NEMESIS_CLEARED",
+        `Settled the score with ${nemesisName}`,
+        { opponentName: nemesisName, tier: _tier });
+    if (promoted) activityLogService.log(fighterId, "TIER_PROMOTION",
+        `Promoted to ${promoted.to}`,
+        { from: promoted.from, to: promoted.to, tier: promoted.from });
+    const newBadges = (isWin && isComeback) ? ["Resilience"] : [];
+    for (const badge of newBadges)
+        activityLogService.log(fighterId, "BADGE_EARNED",
+            `Earned badge: ${badge}`, { badge, tier: _tier });
+    if (fighter.mentalResetRequired && !wasAlreadyMentalReset)
+        activityLogService.log(fighterId, "MENTAL_RESET",
+            `3 consecutive losses - mental reset required`, { tier: _tier });
+
     const summary = {
         outcome: result.outcome,
         recordChange: isWin ? "W" : isLoss ? "L" : "D",
@@ -742,7 +773,7 @@ async function resolveFightAndApply(fighterId) {
         weightCutRoll,
         weightMissed,
         injuriesSustained,
-        newBadges: (isWin && isComeback) ? ["Resilience"] : [],
+        newBadges,
         mentalResetRequired: !!fighter.mentalResetRequired,
         completedQuests: completedQuests.map((q) => q.title),
         promoted,

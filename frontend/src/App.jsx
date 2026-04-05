@@ -14,6 +14,7 @@ import { FightDescription } from "./components/fights/FightDescription";
 import { FightSummary } from "./components/fights/FightSummary";
 import { GymQuests } from "./components/gym/GymQuests";
 import { OctagonBackground } from "./components/layout/OctagonBackground";
+import { CareerFeed } from "./components/CareerFeed";
 import { AuthPage } from "./components/auth/AuthPage";
 import { FightLimitPopup } from "./components/fights/FightLimitPopup";
 
@@ -21,6 +22,7 @@ import { FightLimitPopup } from "./components/fights/FightLimitPopup";
 const NAV_ITEMS = [
   { id: "gym",     label: "Training",   icon: "⬡", active: true },
   { id: "fights",  label: "Fight",      icon: "✕", active: true },
+  { id: "career",  label: "Career",     icon: "◆", active: true },
   { id: null,      label: "Rankings",   icon: "▲", active: false },
   { id: null,      label: "Contracts",  icon: "▣", active: false },
   { id: null,      label: "Shop",       icon: "⊕", active: false },
@@ -160,42 +162,6 @@ const QuickActions = memo(function QuickActions({ onNavigate, onRest, fighter })
         </button>
       </div>
     </div>
-  );
-});
-
-// ── Fight history from record data ──────────────────────────
-const FightHistoryPanel = memo(function FightHistoryPanel({ fighter, lastFightSummary }) {
-  const rec = fighter?.record ?? {};
-  const items = [];
-
-  if (lastFightSummary) {
-    const isWin = ["KO/TKO","Submission","Decision (unanimous)","Decision (split)"].includes(lastFightSummary.outcome);
-    items.push({ type: isWin ? "win" : "loss", text: lastFightSummary.outcome, sub: `Record: ${lastFightSummary.recordAfter}` });
-  }
-  if ((rec.koWins ?? 0) > 0)       items.push({ type: "win",  text: "KO/TKO Wins",       sub: `${rec.koWins} career finishes` });
-  if ((rec.subWins ?? 0) > 0)      items.push({ type: "win",  text: "Submission Wins",    sub: `${rec.subWins} career submissions` });
-  if ((rec.decisionWins ?? 0) > 0) items.push({ type: "win",  text: "Decision Wins",      sub: `${rec.decisionWins} decisions` });
-  if ((rec.losses ?? 0) > 0)       items.push({ type: "loss", text: "Career Losses",      sub: `${rec.losses} total` });
-
-  return (
-    <section className="fight-history-panel">
-      <h3 className="panel-section-title">Fight History</h3>
-      {items.length === 0 ? (
-        <p className="panel-hint" style={{ padding: "0.75rem 1rem" }}>No fights yet. Hit the cage!</p>
-      ) : (
-        <ul className="fight-history-list">
-          {items.slice(0, 6).map((item, i) => (
-            <li key={i} className={`fh-item fh-${item.type}`}>
-              <span className="fh-dot" />
-              <div>
-                <span className="fh-text">{item.text}</span>
-                <span className="fh-sub">{item.sub}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
   );
 });
 
@@ -389,6 +355,7 @@ function App() {
   const [resolving, setResolving]               = useState(false);
   const [lastFightCommentary, setLastFightCommentary] = useState([]);
   const [lastFightSummary, setLastFightSummary] = useState(null);
+  const [feedRefreshKey, setFeedRefreshKey]     = useState(0);
   const [activeTab, setActiveTab]               = useState("gym");
   const [trainingResultPopup, setTrainingResultPopup] = useState({ open: false, sessionLabel: "", xpGained: {}, statLevelUps: [] });
   const [tierUpModal, setTierUpModal] = useState(null);
@@ -709,6 +676,7 @@ function App() {
       const rec = result.fighter?.record;
       setMessage(`${out} — +${iron} ⊗${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}`);
       loadFighter(fighter._id);
+      setFeedRefreshKey((k) => k + 1);
       // Clean up camp state after fight
       setCampState(null);
       setCampReport(null);
@@ -908,10 +876,6 @@ function App() {
                   onRest={handleRest}
                 />
 
-                <FightHistoryPanel
-                  fighter={fighter}
-                  lastFightSummary={lastFightSummary}
-                />
               </div>
 
               <div className="dashboard-right">
@@ -943,6 +907,16 @@ function App() {
                 onTrain={handleTrain}
                 onPayMembership={handlePayMembership}
                 questRefreshKey={gymQuestRefresh}
+              />
+            </div>
+          )}
+
+          {/* ── CAREER FEED ── */}
+          {activeTab === "career" && (
+            <div className="page-layout">
+              <CareerFeed
+                fighterId={fighter?._id}
+                refreshKey={feedRefreshKey}
               />
             </div>
           )}

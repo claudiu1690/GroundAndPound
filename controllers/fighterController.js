@@ -191,6 +191,21 @@ async function notorietyLeaderboard(req, res) {
     }
 }
 
+async function getActivity(req, res) {
+    try {
+        const ActivityLog = require("../models/activityLogModel");
+        const logs = await ActivityLog
+            .find({ fighterId: req.params.id })
+            .sort({ createdAt: -1 })
+            .limit(30)
+            .lean();
+        res.json({ activity: logs });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 async function mediaEventStub(req, res) {
     res.status(501).json({
         message: "Media events are not implemented yet. (Post-fight interview, weigh-in, podcast, etc.)",
@@ -210,5 +225,6 @@ module.exports = {
     mentalReset,
     payGymMembership,
     notorietyLeaderboard,
+    getActivity,
     mediaEventStub,
 };
