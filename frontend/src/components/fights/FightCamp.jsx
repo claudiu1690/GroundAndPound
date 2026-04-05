@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useCallback, useState } from "react";
 import {
     CAMP_SESSIONS,
     CAMP_SESSION_KEYS,
@@ -81,7 +81,6 @@ export const FightCamp = memo(function FightCamp({
     onRemoveSession,
     onResolveInjury,
     onFinalise,
-    onSkip,
     onViewReport,
     addingSession,
     finalising,
@@ -105,8 +104,17 @@ export const FightCamp = memo(function FightCamp({
 
     const isInjuredPending = isInjured && !injuryChoice;
     const isFinalised = !!finalisedAt;
-    const displayGrade = isFinalised ? campRating : previewRating?.grade;
-    const canFinalise = !isFinalised && slotsUsed >= 1 && !isInjuredPending;
+    const displayGrade = isFinalised ? campRating : null;
+    const canFinalise = !isFinalised && !isInjuredPending;
+    const [showEmptyConfirm, setShowEmptyConfirm] = useState(false);
+
+    const handleFinaliseClick = useCallback(() => {
+        if (slotsUsed === 0) {
+            setShowEmptyConfirm(true);
+        } else {
+            onFinalise();
+        }
+    }, [slotsUsed, onFinalise]);
     const energyAvailable = fighter.energy?.current ?? fighter.energy ?? 0;
 
     return (
@@ -196,21 +204,36 @@ export const FightCamp = memo(function FightCamp({
 
                 {!isFinalised && (
                     <div className="camp-v2-actions">
-                        <button
-                            className="btn btn-primary"
-                            onClick={onFinalise}
-                            disabled={!canFinalise || finalising}
-                            title={!canFinalise ? "Add at least one session before finalising" : undefined}
-                        >
-                            {finalising ? "Finalising\u2026" : "Finalise Camp"}
-                        </button>
-                        <button
-                            className="btn btn-ghost camp-skip-btn"
-                            onClick={onSkip}
-                            disabled={finalising || slotsRemaining === 0}
-                        >
-                            Fight Now (skip camp)
-                        </button>
+                        {showEmptyConfirm ? (
+                            <div className="camp-empty-confirm">
+                                <span className="camp-empty-confirm-msg">
+                                    Are you sure you want to finalise camp without any sessions?
+                                </span>
+                                <div className="camp-empty-confirm-btns">
+                                    <button
+                                        className="btn btn-danger btn-sm"
+                                        onClick={() => { setShowEmptyConfirm(false); onFinalise(); }}
+                                        disabled={finalising}
+                                    >
+                                        {finalising ? "Finalising\u2026" : "Yes, finalise empty"}
+                                    </button>
+                                    <button
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={() => setShowEmptyConfirm(false)}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleFinaliseClick}
+                                disabled={!canFinalise || finalising}
+                            >
+                                {finalising ? "Finalising\u2026" : "Finalise Camp"}
+                            </button>
+                        )}
                     </div>
                 )}
 

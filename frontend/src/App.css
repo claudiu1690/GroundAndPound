@@ -2225,19 +2225,23 @@ code {
   gap: 0.75rem;
   margin-top: 1rem;
 }
-.camp-skip-btn {
-  font-size: 12px;
-  color: var(--text-sec);
-  border: 1px solid var(--border);
-  padding: 0.4rem 1rem;
-  border-radius: 6px;
-  background: transparent;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+.camp-empty-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #2e1a1a;
+  border: 1px solid #7f1d1d;
+  border-radius: 8px;
 }
-.camp-skip-btn:hover {
-  background: rgba(255,255,255,0.06);
-  color: var(--text);
+.camp-empty-confirm-msg {
+  font-size: 12px;
+  color: #fca5a5;
+  line-height: 1.4;
+}
+.camp-empty-confirm-btns {
+  display: flex;
+  gap: 0.5rem;
 }
 .camp-finalised-notice {
   margin-top: 1rem;
@@ -2417,6 +2421,57 @@ code {
   line-height: 1.5;
 }
 .cs-injury-icon { font-size: 1rem; }
+
+/* ── Weight Cut Selector ── */
+.cs-wc { margin-top: 0.25rem; }
+.cs-wc-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cs-wc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+.cs-wc-card {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.65rem 0.75rem;
+  border: 1.5px solid #334155;
+  border-radius: 8px;
+  background: #1e293b;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cs-wc-card:hover:not(:disabled) { border-color: #64748b; }
+.cs-wc-card:disabled { opacity: 0.5; cursor: default; }
+.cs-wc-card--selected { border-width: 2px; }
+.cs-wc-label { font-size: 13px; font-weight: 700; }
+.cs-wc-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 11px;
+  color: #94a3b8;
+}
+.cs-wc-desc { font-size: 10px; color: #64748b; margin-top: 0.15rem; }
+.cs-wc-hint {
+  font-size: 11px;
+  color: #f59e0b;
+  margin-top: 0.4rem;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .cs-wc-grid { grid-template-columns: 1fr; }
+}
 
 .cs-actions { display: flex; justify-content: flex-end; }
 .cs-fight-btn { min-width: 160px; font-size: 1rem; padding: 0.75rem 2rem; }

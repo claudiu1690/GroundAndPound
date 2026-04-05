@@ -25,6 +25,7 @@ export const FightSummary = memo(function FightSummary({ summary }) {
     xpMultiplier,
     isComeback,
     weightCut,
+    weightCutRoll,
     weightMissed,
     injuriesSustained,
     newBadges,
@@ -63,9 +64,16 @@ export const FightSummary = memo(function FightSummary({ summary }) {
           </div>
         )}
 
+        {weightCut && weightCut !== "easy" && (
+          <div className={`fight-summary-note ${weightCutRoll >= 0 ? "fight-summary-comeback" : "fight-summary-warning"}`}>
+            Weight cut ({weightCut}): {weightCutRoll > 0 ? `+${weightCutRoll}` : weightCutRoll} stamina
+            {weightCutRoll >= 0 ? " — cut went well" : " — cut went badly"}
+          </div>
+        )}
+
         {weightMissed && (
           <div className="fight-summary-note fight-summary-warning">
-            ⚠ Missed weight ({weightCut} cut) — purse reduced by 20% and Fame penalised.
+            Missed weight ({weightCut} cut) — purse reduced by 20% and Fame penalised.
           </div>
         )}
 

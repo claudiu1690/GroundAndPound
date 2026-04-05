@@ -80,6 +80,7 @@ function logFightResolve(ctx) {
         },
         weightCut: {
             mode: ctx.weightCut,
+            roll: ctx.weightCutRoll ?? 0,
             missed: ctx.weightMissed,
         },
         player: {

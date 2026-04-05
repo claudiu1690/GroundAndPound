@@ -22,7 +22,40 @@ const GRADE_BANNER_BG = {
     F: "#2e1a1a",
 };
 
-export const CampSummary = memo(function CampSummary({ summaryData, onBeginFight, resolving }) {
+const WEIGHT_CUT_OPTIONS = [
+    {
+        key: "easy",
+        label: "Easy Cut",
+        staminaRange: "+0",
+        missRisk: "0%",
+        description: "No gamble — enter the fight at full stamina",
+        color: "#4ade80",
+    },
+    {
+        key: "moderate",
+        label: "Moderate Cut",
+        staminaRange: "-5 to +10",
+        missRisk: "5%",
+        description: "Small gamble — could gain an edge or lose a little",
+        color: "#facc15",
+    },
+    {
+        key: "aggressive",
+        label: "Aggressive Cut",
+        staminaRange: "-12 to +18",
+        missRisk: "20%",
+        description: "High stakes — big upside, real downside",
+        color: "#f87171",
+    },
+];
+
+export const CampSummary = memo(function CampSummary({
+    summaryData,
+    onBeginFight,
+    resolving,
+    weightCut,
+    onWeightCutChange,
+}) {
     if (!summaryData) return null;
 
     const {
@@ -36,6 +69,7 @@ export const CampSummary = memo(function CampSummary({ summaryData, onBeginFight
     const ratingCfg = getRatingConfig(campRating);
     const hasPenalty = injuryChoice === "PUSH_THROUGH" && injuryPenalty;
     const bannerBg = GRADE_BANNER_BG[campRating] ?? "#2a2a2c";
+    const canFight = !!weightCut && !resolving;
 
     return (
         <div className="cs-overlay" role="dialog" aria-modal="true" aria-label="Camp Summary">
@@ -100,11 +134,46 @@ export const CampSummary = memo(function CampSummary({ summaryData, onBeginFight
                         </div>
                     )}
 
+                    {/* Weight Cut Selector */}
+                    <div className="cs-wc">
+                        <div className="cs-wc-title">Weight Cut Strategy</div>
+                        <div className="cs-wc-grid">
+                            {WEIGHT_CUT_OPTIONS.map((opt) => {
+                                const selected = weightCut === opt.key;
+                                return (
+                                    <button
+                                        key={opt.key}
+                                        type="button"
+                                        className={`cs-wc-card${selected ? " cs-wc-card--selected" : ""}`}
+                                        style={{
+                                            borderColor: selected ? opt.color : undefined,
+                                            background: selected ? `${opt.color}11` : undefined,
+                                        }}
+                                        onClick={() => onWeightCutChange(opt.key)}
+                                        disabled={resolving}
+                                    >
+                                        <div className="cs-wc-label" style={{ color: selected ? opt.color : "#e2e8f0" }}>
+                                            {opt.label}
+                                        </div>
+                                        <div className="cs-wc-stats">
+                                            <span>Stamina roll: <strong>{opt.staminaRange}</strong></span>
+                                            <span>Miss risk: <strong style={{ color: opt.missRisk === "0%" ? "#4ade80" : opt.color }}>{opt.missRisk}</strong></span>
+                                        </div>
+                                        <div className="cs-wc-desc">{opt.description}</div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        {!weightCut && (
+                            <div className="cs-wc-hint">Select a weight cut strategy to continue</div>
+                        )}
+                    </div>
+
                     <div className="cs-actions">
                         <button
                             className="btn btn-primary cs-fight-btn"
                             onClick={onBeginFight}
-                            disabled={resolving}
+                            disabled={!canFight}
                         >
                             {resolving ? "Fight night\u2026" : "\u2694 Begin Fight"}
                         </button>

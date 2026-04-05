@@ -8,6 +8,7 @@ const fightSchema = new mongoose.Schema({
     promotionTier: { type: String, required: true },
     playerStrategy: { type: String, default: null }, // GDD 8.3: Pressure Fighter, Counter Striker, etc.
     weightCut: { type: String, enum: ["easy", "moderate", "aggressive"], default: "easy" }, // GDD 8.8
+    weightCutRoll: { type: Number, default: null }, // stamina bonus/penalty from the cut
     status: {
         type: String,
         enum: ["offered", "accepted", "completed", "cancelled"],

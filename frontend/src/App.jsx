@@ -404,6 +404,7 @@ function App() {
   const [addingSession, setAddingSession]     = useState(null); // sessionType key while loading
   const [showCampSummary, setShowCampSummary] = useState(false);
   const [campSummaryData, setCampSummaryData] = useState(null);
+  const [weightCut, setWeightCut]             = useState(null);
 
   const maybeShowBlockPopup = useCallback((rawMessage, errorCode) => {
     const blockingCodes = new Set([
@@ -680,6 +681,7 @@ function App() {
     try {
       const summary = await api.finaliseCamp(fightId, fighter._id, skip);
       setCampSummaryData(summary);
+      setWeightCut(null);
       await loadCampState(fightId);
       setShowCampSummary(true);
       setMessage(skip ? "Camp skipped — entering fight underprepared." : `Camp finalised — Rating: ${summary.campRating}`);
@@ -720,10 +722,17 @@ function App() {
     setResolving(false);
   }, [fighter?._id, loadFighter, maybeShowBlockPopup]);
 
-  const handleBeginFight = useCallback(() => {
+  const handleBeginFight = useCallback(async () => {
+    if (!weightCut || !fighter?._id || !fighter?.acceptedFightId) return;
+    try {
+      await api.setWeightCut(fighter._id, fighter.acceptedFightId, weightCut);
+    } catch (e) {
+      setMessage(e.message || "Failed to set weight cut");
+      return;
+    }
     setShowCampSummary(false);
     handleResolve();
-  }, [handleResolve]);
+  }, [weightCut, fighter?._id, fighter?.acceptedFightId, handleResolve]);
 
   const closeTrainingPopup = useCallback(() => {
     setTrainingResultPopup((p) => ({ ...p, open: false }));
@@ -841,6 +850,8 @@ function App() {
           summaryData={campSummaryData}
           onBeginFight={handleBeginFight}
           resolving={resolving}
+          weightCut={weightCut}
+          onWeightCutChange={setWeightCut}
         />
       )}
 
@@ -955,7 +966,6 @@ function App() {
                   onRemoveSession={handleRemoveCampSession}
                   onResolveInjury={handleResolveCampInjury}
                   onFinalise={() => handleFinaliseCamp(false)}
-                  onSkip={() => handleFinaliseCamp(true)}
                   onViewReport={() => { setReportFromCamp(true); setShowFighterReport(true); }}
                   addingSession={addingSession}
                   finalising={resolving}

@@ -399,18 +399,21 @@ async function resolveFightAndApply(fighterId) {
         applyLegacyTcaPenalty(fightPlayer, fighter, tierConfig);
     }
 
-    // GDD 8.8: Apply weight cut modifier to fight player stats
+    // GDD 8.8 (revised): Weight cut — stamina gamble with miss risk
+    // Easy: no change. Moderate/Aggressive: random stamina roll (can be negative).
     const weightCut = fight.weightCut || "easy";
     const WEIGHT_CUT_CONFIG = {
-        easy:       { staminaPct: 1.0,  missPct: 0,    maxStaminaBonus: 0  },
-        moderate:   { staminaPct: 0.9,  missPct: 0.05, maxStaminaBonus: 5  },
-        aggressive: { staminaPct: 0.75, missPct: 0.20, maxStaminaBonus: 12 },
+        easy:       { min: 0,  max: 0,  missPct: 0    },
+        moderate:   { min: -5, max: 10, missPct: 0.05 },
+        aggressive: { min: -12, max: 18, missPct: 0.20 },
     };
     const wcConfig = WEIGHT_CUT_CONFIG[weightCut];
-    const baseFightMaxStamina = fightPlayer.maxStamina ?? 100;
-    fightPlayer.maxStamina = Math.round(baseFightMaxStamina + wcConfig.maxStaminaBonus);
-    fightPlayer.stamina = Math.round((fightPlayer.stamina ?? baseFightMaxStamina) * wcConfig.staminaPct);
+    const weightCutRoll = wcConfig.min === 0 && wcConfig.max === 0
+        ? 0
+        : wcConfig.min + Math.floor(Math.random() * (wcConfig.max - wcConfig.min + 1));
+    fightPlayer.stamina = Math.max(1, (fightPlayer.stamina ?? 100) + weightCutRoll);
     const weightMissed = wcConfig.missPct > 0 && Math.random() < wcConfig.missPct;
+    fight.weightCutRoll = weightCutRoll;
 
     const playerName = fighter.nickname
         ? `${fighter.firstName} "${fighter.nickname}" ${fighter.lastName}`
@@ -449,6 +452,7 @@ async function resolveFightAndApply(fighterId) {
         sessionBonuses: result.sessionBonuses ?? [],
         wildcard: result.wildcard ?? null,
         weightCut,
+        weightCutRoll,
         weightMissed,
         ironWillPerk,
     });
@@ -735,6 +739,7 @@ async function resolveFightAndApply(fighterId) {
         xpMultiplier: xpMult,
         isComeback,
         weightCut,
+        weightCutRoll,
         weightMissed,
         injuriesSustained,
         newBadges: (isWin && isComeback) ? ["Resilience"] : [],
