@@ -1271,6 +1271,131 @@ code {
 .offer-streak-win  { background: rgba(74,222,128,0.15); color: var(--green-bright); }
 .offer-streak-loss { background: rgba(248,113,113,0.15); color: var(--red-bright); }
 
+/* ── Fight Hub (empty state) ───────────────────────────────── */
+.fight-hub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.fight-hub-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+}
+.fight-hub-ovr {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--red-bright);
+  line-height: 1;
+  text-shadow: 0 0 20px rgba(227,24,55,0.3);
+}
+.fight-hub-ovr-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+.fight-hub-tier {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+.fight-hub-record {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-sec);
+}
+
+.fight-hub-readiness {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+.fight-hub-stat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 11px;
+  color: var(--text-sec);
+  padding: 0.35rem 0.5rem;
+  background: var(--bg-surface);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.fight-hub-stat--warn {
+  border-color: rgba(245,158,11,0.3);
+  color: #fbbf24;
+}
+.fight-hub-stat-label {
+  font-weight: 700;
+  min-width: 48px;
+}
+.fight-hub-stat-value {
+  color: var(--text);
+  font-weight: 600;
+}
+.fight-hub-stat--warn .fight-hub-stat-value { color: #fbbf24; }
+
+.fight-hub-alert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border-left: 3px solid;
+  width: 100%;
+  text-align: center;
+}
+.fight-hub-alert--danger {
+  background: rgba(227,24,55,0.08);
+  border-color: var(--red);
+  color: #fca5a5;
+}
+.fight-hub-alert--warn {
+  background: rgba(245,158,11,0.08);
+  border-color: #b45309;
+  color: #fbbf24;
+}
+.fight-hub-alert--info {
+  background: rgba(59,130,246,0.08);
+  border-color: var(--blue-bright);
+  color: #93c5fd;
+}
+
+.fight-hub-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding-top: 0.35rem;
+}
+.fight-hub-btn {
+  font-size: 13px;
+  padding: 0.6rem 2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.fight-hub-cost {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
 /* ============================================================
    FIGHT SUMMARY
    ============================================================ */

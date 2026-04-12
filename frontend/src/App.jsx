@@ -924,14 +924,7 @@ function App() {
           {/* ── FIGHTS ── */}
           {activeTab === "fights" && (
             <div className="page-layout">
-              {!fighter?.acceptedFightId ? (
-                <FightOffers
-                  fighter={fighter}
-                  offers={offers}
-                  onGetOffers={handleGetOffers}
-                  onAcceptOffer={handleAcceptOffer}
-                />
-              ) : (
+              {fighter?.acceptedFightId ? (
                 <FightCamp
                   fighter={fighter}
                   campState={campState}
@@ -945,17 +938,25 @@ function App() {
                   finalising={resolving}
                   onMessage={setMessage}
                 />
-              )}
-
-              {!fighter?.acceptedFightId && lastFightSummary && (
-                <div className="page-two-col">
-                  <FightSummary summary={lastFightSummary} />
-                  <FightDescription commentary={lastFightCommentary} />
-                </div>
-              )}
-
-              {!fighter?.acceptedFightId && !lastFightSummary && lastFightCommentary.length > 0 && (
-                <FightDescription commentary={lastFightCommentary} />
+              ) : lastFightSummary ? (
+                <>
+                  <div className="page-two-col">
+                    <FightSummary summary={lastFightSummary} />
+                    <FightDescription commentary={lastFightCommentary} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "center", marginTop: "0.5rem" }}>
+                    <button type="button" className="btn btn-primary" onClick={() => setLastFightSummary(null)}>
+                      Continue
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <FightOffers
+                  fighter={fighter}
+                  offers={offers}
+                  onGetOffers={handleGetOffers}
+                  onAcceptOffer={handleAcceptOffer}
+                />
               )}
 
             </div>

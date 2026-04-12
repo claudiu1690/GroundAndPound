@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
+import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords } from "lucide-react";
 
 const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard" };
 
@@ -69,6 +70,82 @@ function StreakBadge({ streak }) {
   );
 }
 
+function FightHub({ fighter, energyCost, onGetOffers }) {
+  const rec = fighter.record ?? {};
+  const energy = fighter.energy?.current ?? fighter.energy ?? 0;
+  const health = fighter.health ?? 100;
+  const hasEnergy = energy >= energyCost;
+  const winStreak = fighter.winStreak ?? 0;
+  const loseStreak = fighter.consecutiveLosses ?? 0;
+  const blockingInjury = (fighter.injuries ?? []).find((inj) => inj.cannotFight);
+  const blocked = fighter.mentalResetRequired || !!blockingInjury;
+
+  return (
+    <div className="fight-hub">
+      <div className="fight-hub-header">
+        <div className="fight-hub-ovr">{fighter.overallRating ?? 0}</div>
+        <div className="fight-hub-ovr-label">OVERALL</div>
+        <div className="fight-hub-tier">{fighter.promotionTier ?? "Amateur"}</div>
+        <div className="fight-hub-record">
+          {rec.wins ?? 0}W – {rec.losses ?? 0}L{(rec.draws ?? 0) > 0 ? ` – ${rec.draws}D` : ""}
+        </div>
+      </div>
+
+      <div className="fight-hub-readiness">
+        <div className={`fight-hub-stat ${hasEnergy ? "" : "fight-hub-stat--warn"}`}>
+          <Zap size={12} />
+          <span className="fight-hub-stat-label">Energy</span>
+          <span className="fight-hub-stat-value">{energy} / {energyCost} needed</span>
+        </div>
+        <div className={`fight-hub-stat ${health >= 50 ? "" : "fight-hub-stat--warn"}`}>
+          <Heart size={12} />
+          <span className="fight-hub-stat-label">Health</span>
+          <span className="fight-hub-stat-value">{health} / 100</span>
+        </div>
+        <div className="fight-hub-stat">
+          {winStreak > 0 ? <TrendingUp size={12} /> : loseStreak > 0 ? <TrendingDown size={12} /> : <Swords size={12} />}
+          <span className="fight-hub-stat-label">Streak</span>
+          <span className="fight-hub-stat-value">
+            {winStreak > 0
+              ? <span style={{ color: "var(--green-bright)" }}>{winStreak}-fight win streak</span>
+              : loseStreak > 0
+              ? <span style={{ color: "var(--red-bright)" }}>{loseStreak}-fight losing streak</span>
+              : "\u2014"}
+          </span>
+        </div>
+      </div>
+
+      {fighter.mentalResetRequired && (
+        <div className="fight-hub-alert fight-hub-alert--danger">
+          <AlertTriangle size={12} /> Mental reset required before next fight
+        </div>
+      )}
+      {blockingInjury && (
+        <div className="fight-hub-alert fight-hub-alert--danger">
+          <AlertTriangle size={12} /> Doctor visit required: {blockingInjury.label}
+        </div>
+      )}
+      {health < 30 && !blocked && (
+        <div className="fight-hub-alert fight-hub-alert--warn">
+          <AlertTriangle size={12} /> Low health — consider resting before your next fight
+        </div>
+      )}
+      {fighter.comebackMode && (
+        <div className="fight-hub-alert fight-hub-alert--info">
+          Comeback mode active — x1.5 XP on next win
+        </div>
+      )}
+
+      <div className="fight-hub-cta">
+        <button type="button" className="btn btn-primary fight-hub-btn" onClick={onGetOffers} disabled={blocked}>
+          <Swords size={14} /> Request Offers
+        </button>
+        <span className="fight-hub-cost">{energyCost} energy per fight</span>
+      </div>
+    </div>
+  );
+}
+
 export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOffers, onAcceptOffer }) {
   if (!fighter) return null;
   const energyCost = FIGHT_ENERGY_COST[fighter.promotionTier] ?? 10;
@@ -78,14 +155,7 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
       <h2 className="panel-title">Fight Offers</h2>
       <div className="panel-body">
         {offers.length === 0 ? (
-          <>
-            <p className="panel-hint" style={{ marginBottom: "0.75rem" }}>
-              The promoter generates 3 offers (Easy, Even, Hard). Pick your next challenge wisely.
-            </p>
-            <button type="button" className="btn btn-primary" onClick={onGetOffers}>
-              Request offers
-            </button>
-          </>
+          <FightHub fighter={fighter} energyCost={energyCost} onGetOffers={onGetOffers} />
         ) : (
           <>
             <ul className="offers-list">
