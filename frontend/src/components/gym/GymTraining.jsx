@@ -1,5 +1,6 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { formatSessionXpHint } from "../../utils/trainingXpDisplay";
+import { Zap, AlertTriangle, Check, Coins } from "lucide-react";
 
 // Full session metadata matching backend TRAINING_SESSIONS constants (exported for TrainingResultPopup / App)
 export const SESSION_META = {
@@ -116,6 +117,15 @@ const STAT_CHIP_CLASS = {
   FIQ: "stat-chip-fiq",
 };
 
+const CATEGORIES = [
+  { id: "striking",  label: "Striking",  color: "#ef4444" },
+  { id: "grappling", label: "Grappling", color: "#3b82f6" },
+  { id: "sparring",  label: "Sparring",  color: "#f97316" },
+  { id: "mental",    label: "Mental",    color: "#a855f7" },
+  { id: "physical",  label: "Physical",  color: "#22c55e" },
+  { id: "recovery",  label: "Recovery",  color: "#06b6d4" },
+];
+
 const SESSION_KEYS = Object.keys(SESSION_META);
 
 function isMembershipValid(fighter, gymId) {
@@ -129,161 +139,166 @@ export const GymTraining = memo(function GymTraining({
   fighter,
   gyms,
   trainGym,
-  trainSession,
   onGymChange,
-  onSessionChange,
   onTrain,
   onPayMembership,
 }) {
+  const [activeCategory, setActiveCategory] = useState("striking");
   if (!fighter) return null;
-  const injuryLocked = new Set(fighter?.injuryLockedStats || []);
 
+  const injuryLocked = new Set(fighter?.injuryLockedStats || []);
+  const energy = fighter.energy?.current ?? fighter.energy ?? 0;
   const selectedGym = trainGym && gyms?.length ? gyms.find((g) => g._id === trainGym) : null;
-  const selected = SESSION_META[trainSession] ?? SESSION_META.bag_work;
   const needsMembership = selectedGym && selectedGym.monthlyIron > 0;
   const membershipPaid = needsMembership ? isMembershipValid(fighter, trainGym) : true;
   const isSessionInjuryLocked = (meta) => (meta.stats || []).some((s) => injuryLocked.has(s));
-  const selectedSessionLocked = isSessionInjuryLocked(selected);
+  const membershipBlocked = needsMembership && !membershipPaid;
 
   let membershipExpiresLabel = null;
   if (needsMembership && membershipPaid) {
     const m = fighter.gymMemberships?.find((x) => String(x.gymId) === String(trainGym));
-    if (m) {
-      membershipExpiresLabel = new Date(m.paidUntil).toLocaleDateString();
-    }
+    if (m) membershipExpiresLabel = new Date(m.paidUntil).toLocaleDateString();
   }
 
+  const categorySessions = SESSION_KEYS.filter(
+    (key) => SESSION_META[key].category === activeCategory
+  );
+
   return (
-    <section className="panel gym-training">
-      <h2 className="panel-title">Training</h2>
+    <div className="training-hub">
+      {/* ── Gym Bar ── */}
+      <div className="th-gym-bar">
+        <div className="th-gym-select-wrap">
+          <select
+            className="th-gym-select"
+            value={trainGym}
+            onChange={(e) => onGymChange(e.target.value)}
+          >
+            {gyms.map((g) => (
+              <option key={g._id} value={g._id}>
+                {g.name} ({g.tier})
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <div className="panel-body" style={{ display: "flex", flexDirection: "column", padding: 0 }}>
-        {/* ── top controls (always visible) ── */}
-        <div className="gym-training-top">
-          <div className="form-row">
-            <label>Active Gym</label>
-            <select value={trainGym} onChange={(e) => onGymChange(e.target.value)}>
-              {gyms.map((g) => (
-                <option key={g._id} value={g._id}>
-                  {g.name} ({g.tier})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {selectedGym && (
-            <div className="gym-info">
-              <span className="gym-info-tier">{selectedGym.tier}</span>
-              {selectedGym.specialtyStats?.length > 0 && (
-                <span>Specialty: <strong>{selectedGym.specialtyStats.join(", ")}</strong></span>
-              )}
-              {selectedGym.monthlyIron > 0 ? (
-                membershipPaid ? (
-                  <span style={{ color: "var(--green-bright)" }}>
-                    ✓ Membership until {membershipExpiresLabel}
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn btn-warning btn-sm"
-                    onClick={() => onPayMembership && onPayMembership(trainGym, selectedGym.monthlyIron)}
-                  >
-                    Pay {selectedGym.monthlyIron} ⊗ Membership
-                  </button>
-                )
+        {selectedGym && (
+          <div className="th-gym-meta">
+            <span className="th-gym-tier">{selectedGym.tier}</span>
+            {selectedGym.specialtyStats?.length > 0 && (
+              <span className="th-gym-specialty">
+                Specialty: <strong>{selectedGym.specialtyStats.join(", ")}</strong>
+              </span>
+            )}
+            {selectedGym.monthlyIron > 0 ? (
+              membershipPaid ? (
+                <span className="th-gym-membership th-gym-membership--active">
+                  <Check size={10} /> Until {membershipExpiresLabel}
+                </span>
               ) : (
-                <span style={{ color: "var(--text-muted)" }}>Free gym</span>
-              )}
-            </div>
-          )}
-
-          {/* Locked notice */}
-          {needsMembership && !membershipPaid && (
-            <div className="status-banner status-banner-danger" style={{ marginBottom: "0.5rem", fontSize: "11px" }}>
-              Membership required to train here. Pay {selectedGym.monthlyIron} ⊗ to unlock.
-            </div>
-          )}
-
-          <div className="gym-training-sessions-label">Choose Session</div>
-        </div>
-
-        {/* ── scrollable session grid ── */}
-        <div className="gym-training-sessions">
-          <div className="session-grid">
-            {SESSION_KEYS.map((key) => {
-              const m = SESSION_META[key];
-              const isActive = trainSession === key;
-              const isLocked = isSessionInjuryLocked(m);
-              return (
                 <button
-                  key={key}
                   type="button"
-                  className={`session-card cat-${m.category}${isActive ? " active" : ""}${isLocked ? " session-card-disabled" : ""}`}
-                  onClick={() => { if (!isLocked) onSessionChange(key); }}
-                  disabled={isLocked}
-                  title={isLocked ? "This session trains an injury-penalized stat and is locked until healed." : undefined}
+                  className="btn btn-warning btn-sm"
+                  onClick={() => onPayMembership && onPayMembership(trainGym, selectedGym.monthlyIron)}
                 >
-                  <div className="session-card-header">
-                    <span className="session-card-name">{m.label}</span>
-                    <span className="session-card-energy">{m.cost}E</span>
-                  </div>
-
-                  <p className="session-card-desc">{m.desc}</p>
-
-                  <div className="session-card-stats">
-                    {m.stats.length > 0 ? (
-                      m.stats.map((s) => (
-                        <span
-                          key={s}
-                          className={`stat-chip ${STAT_CHIP_CLASS[s] ?? ""}${injuryLocked.has(s) ? " stat-chip-disabled" : ""}`}
-                          title={injuryLocked.has(s) ? `${s} is injury-limited and cannot gain XP until healed.` : undefined}
-                        >
-                          {s}
-                        </span>
-                      ))
-                    ) : m.special ? (
-                      <span className="stat-chip stat-chip-special">{m.special}</span>
-                    ) : null}
-                  </div>
-
-                  {m.stats.length > 0 && m.xpBase > 0 && (
-                    <div className="session-card-xp" title="Approximate XP per trained stat at this gym (tier, backstory, perks, specialty).">
-                      {formatSessionXpHint(m, selectedGym, fighter) ?? `~${m.xpBase} XP`}
-                    </div>
-                  )}
-
-                  {m.warn && (
-                    <div className="session-card-warn">⚠ {m.warn}</div>
-                  )}
+                  <Coins size={10} /> Pay {selectedGym.monthlyIron} Membership
                 </button>
-              );
-            })}
+              )
+            ) : (
+              <span className="th-gym-membership">Free</span>
+            )}
           </div>
-        </div>
+        )}
 
-        {/* ── always-visible Train button ── */}
-        <div className="gym-training-bottom">
-          {needsMembership && !membershipPaid ? (
-            <button type="button" className="btn btn-secondary" disabled style={{ width: "100%" }}>
-              Pay Membership to Train
-            </button>
-          ) : selectedSessionLocked ? (
-            <button type="button" className="btn btn-secondary" disabled style={{ width: "100%" }}>
-              Session locked by injury
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={onTrain}
-              style={{ width: "100%", padding: "0.6rem", fontSize: "12px" }}
-            >
-              Train — {selected.label} · {selected.cost} Energy
-              {selected.stats.length > 0 && ` → ${selected.stats.join(", ")}`}
-            </button>
-          )}
+        <div className="th-energy">
+          <Zap size={12} /> {energy}E
         </div>
       </div>
-    </section>
+
+      {/* ── Membership Block ── */}
+      {membershipBlocked && (
+        <div className="th-membership-block">
+          <AlertTriangle size={12} /> Membership required to train here.
+        </div>
+      )}
+
+      {/* ── Category Tabs ── */}
+      <div className="th-category-tabs">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.id}
+            type="button"
+            className={`th-cat-tab${activeCategory === cat.id ? " th-cat-tab--active" : ""}`}
+            style={activeCategory === cat.id ? { borderColor: cat.color, color: cat.color } : undefined}
+            onClick={() => setActiveCategory(cat.id)}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Session Cards ── */}
+      <div className="th-sessions">
+        {categorySessions.map((key) => {
+          const m = SESSION_META[key];
+          const isLocked = isSessionInjuryLocked(m);
+          const notEnoughEnergy = energy < m.cost;
+          const blocked = isLocked || membershipBlocked || notEnoughEnergy;
+
+          return (
+            <div
+              key={key}
+              className={`th-session-card${isLocked ? " th-session-card--locked" : ""}`}
+            >
+              <div className="th-sc-header">
+                <span className="th-sc-name">{m.label}</span>
+                <span className="th-sc-cost">{m.cost}E</span>
+              </div>
+
+              <p className="th-sc-desc">{m.desc}</p>
+
+              <div className="th-sc-stats">
+                {m.stats.length > 0 ? (
+                  m.stats.map((s) => (
+                    <span
+                      key={s}
+                      className={`stat-chip ${STAT_CHIP_CLASS[s] ?? ""}${injuryLocked.has(s) ? " stat-chip-disabled" : ""}`}
+                    >
+                      {s}
+                    </span>
+                  ))
+                ) : m.special ? (
+                  <span className="stat-chip stat-chip-special">{m.special}</span>
+                ) : null}
+
+                {m.stats.length > 0 && m.xpBase > 0 && (
+                  <span className="th-sc-xp">
+                    {formatSessionXpHint(m, selectedGym, fighter) ?? `~${m.xpBase} XP`}
+                  </span>
+                )}
+              </div>
+
+              {m.warn && (
+                <div className="th-sc-warn"><AlertTriangle size={9} /> {m.warn}</div>
+              )}
+
+              <button
+                type="button"
+                className="btn btn-primary btn-sm th-sc-train-btn"
+                disabled={blocked}
+                title={
+                  isLocked ? "Session locked by injury" :
+                  membershipBlocked ? "Pay membership first" :
+                  notEnoughEnergy ? `Need ${m.cost}E (have ${energy}E)` : undefined
+                }
+                onClick={() => onTrain(key)}
+              >
+                {isLocked ? "Injury locked" : notEnoughEnergy ? `Need ${m.cost}E` : "Train"}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 });

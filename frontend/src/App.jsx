@@ -298,7 +298,7 @@ function pickDefaultGymId(fighter, gyms) {
  */
 const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, onPayMembership, questRefreshKey }) {
   const [trainGym, setTrainGym] = useState("");
-  const [trainSession, setTrainSession] = useState("bag_work");
+  const [questsOpen, setQuestsOpen] = useState(false);
 
   useEffect(() => {
     if (!gyms?.length) return;
@@ -320,24 +320,33 @@ const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, on
     }
   }, [gyms, trainGym, fighter]);
 
-  const handleTrainClick = useCallback(() => {
-    onTrain(trainGym, trainSession);
-  }, [onTrain, trainGym, trainSession]);
+  const handleTrain = useCallback((sessionKey) => {
+    onTrain(trainGym, sessionKey);
+  }, [onTrain, trainGym]);
 
   return (
-    <div className="page-two-col">
+    <>
       <GymTraining
         fighter={fighter}
         gyms={gyms}
         trainGym={trainGym}
-        trainSession={trainSession}
         onGymChange={setTrainGym}
-        onSessionChange={setTrainSession}
-        onTrain={handleTrainClick}
+        onTrain={handleTrain}
         onPayMembership={onPayMembership}
       />
-      <GymQuests fighter={fighter} gymId={trainGym} refreshKey={questRefreshKey} />
-    </div>
+      <div className="th-quests-section">
+        <button
+          type="button"
+          className="th-quests-toggle"
+          onClick={() => setQuestsOpen((o) => !o)}
+        >
+          <span>{questsOpen ? "\u25BE" : "\u25B8"} Gym Quests</span>
+        </button>
+        {questsOpen && (
+          <GymQuests fighter={fighter} gymId={trainGym} refreshKey={questRefreshKey} />
+        )}
+      </div>
+    </>
   );
 });
 

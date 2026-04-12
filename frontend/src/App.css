@@ -1095,7 +1095,212 @@ code {
 .btn-sm { padding: 0.2rem 0.45rem; font-size: 9px; }
 
 /* ============================================================
-   GYM & TRAINING
+   TRAINING HUB (redesigned)
+   ============================================================ */
+.training-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ── Gym Bar ── */
+.th-gym-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  flex-wrap: wrap;
+}
+.th-gym-select-wrap { flex-shrink: 0; }
+.th-gym-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 11px;
+  padding: 0.3rem 0.5rem;
+  font-family: inherit;
+}
+.th-gym-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 10px;
+  color: var(--text-sec);
+  flex-wrap: wrap;
+}
+.th-gym-tier {
+  font-weight: 800;
+  color: var(--red);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.th-gym-specialty { color: var(--text-sec); }
+.th-gym-membership { color: var(--text-muted); }
+.th-gym-membership--active {
+  color: var(--green-bright);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.th-energy {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue-bright);
+  background: rgba(59,130,246,0.08);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid rgba(59,130,246,0.2);
+}
+
+.th-membership-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fca5a5;
+  background: rgba(227,24,55,0.08);
+  border: 1px solid var(--red-dim);
+  border-radius: 6px;
+}
+
+/* ── Category Tabs ── */
+.th-category-tabs {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+.th-cat-tab {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  padding: 0.4rem 0.75rem;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-surface);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.th-cat-tab:hover { color: var(--text); border-color: var(--border-bright); }
+.th-cat-tab--active {
+  background: rgba(255,255,255,0.03);
+  border-width: 2px;
+}
+
+/* ── Session Cards ── */
+.th-sessions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.65rem;
+}
+
+.th-session-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.th-session-card:hover { border-color: var(--border-bright); box-shadow: 0 0 16px rgba(227,24,55,0.05); }
+.th-session-card--locked { opacity: 0.45; }
+
+.th-sc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.th-sc-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.th-sc-cost {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue-bright);
+  background: rgba(59,130,246,0.08);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.th-sc-desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-sec);
+  line-height: 1.4;
+}
+.th-sc-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+.th-sc-xp {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 0.25rem;
+}
+.th-sc-warn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fbbf24;
+}
+.th-sc-train-btn {
+  margin-top: auto;
+  width: 100%;
+}
+
+/* ── Quests Collapsible ── */
+.th-quests-section {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+.th-quests-toggle {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-sec);
+  background: var(--bg-surface);
+  border-bottom: 1px solid transparent;
+  transition: background 0.15s;
+}
+.th-quests-toggle:hover { background: var(--bg-hover); }
+
+/* ============================================================
+   GYM & TRAINING (legacy session card styles kept for stat chips)
    ============================================================ */
 .gym-info {
   display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem;
