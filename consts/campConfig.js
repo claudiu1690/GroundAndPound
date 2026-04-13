@@ -224,9 +224,10 @@ const STYLE_SESSION_MAP = {
 const CAMP_SLOT_CONFIG = {
     Amateur:         { normalSlots: 2,  shortNoticeSlots: 1 },
     'Regional Pro':  { normalSlots: 3,  shortNoticeSlots: 1 },
-    National:        { normalSlots: 5,  shortNoticeSlots: 2 },
-    'GCS Contender': { normalSlots: 8,  shortNoticeSlots: 3 },
-    GCS:             { normalSlots: 10, shortNoticeSlots: 4 },
+    National:        { normalSlots: 3,  shortNoticeSlots: 1 },
+    'GCS Contender': { normalSlots: 5,  shortNoticeSlots: 2 },
+    GCS:             { normalSlots: 3,  shortNoticeSlots: 1 },
+    'Title Fight':   { normalSlots: 5,  shortNoticeSlots: 2 },
 };
 
 // ── Camp rating thresholds ──────────────────────────────────────────────────

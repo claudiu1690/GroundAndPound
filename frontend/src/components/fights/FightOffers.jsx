@@ -1,23 +1,26 @@
 import { memo } from "react";
 import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
-import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords } from "lucide-react";
+import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Trophy, Lock } from "lucide-react";
 
-const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard" };
+const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard", TITLE: "TitleShot" };
 
 const TYPE_CLASS = {
   [OFFER_TYPE.EASY]: "offer-card-easy",
   [OFFER_TYPE.EVEN]: "offer-card-even",
   [OFFER_TYPE.HARD]: "offer-card-hard",
+  [OFFER_TYPE.TITLE]: "offer-card-title",
 };
 const BADGE_CLASS = {
   [OFFER_TYPE.EASY]: "badge-easy",
   [OFFER_TYPE.EVEN]: "badge-even",
   [OFFER_TYPE.HARD]: "badge-hard",
+  [OFFER_TYPE.TITLE]: "badge-title",
 };
 const TYPE_META = {
   [OFFER_TYPE.EASY]: { desc: "3–5 OVR below you · Low risk, low reward" },
   [OFFER_TYPE.EVEN]: { desc: "Within 3 OVR · Competitive" },
   [OFFER_TYPE.HARD]: { desc: "2–5 OVR above you · High risk, high reward" },
+  [OFFER_TYPE.TITLE]: { desc: "Championship bout · Fight for the belt" },
 };
 
 const RESULT_STYLE = {
@@ -163,13 +166,17 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                 const typeKey = o.type ?? "Even";
                 const meta = TYPE_META[typeKey] ?? {};
                 const ctx = o.context ?? {};
+                const isTitle = typeKey === "TitleShot";
+                const isLocked = !!o.locked;
+                const badgeLabel = isTitle ? "Title Shot" : typeKey;
                 return (
-                  <li key={o.opponent?._id ?? typeKey} className={`offer-card ${TYPE_CLASS[typeKey] ?? ""}${o.nemesisMeta ? " offer-card-nemesis" : ""}`}>
+                  <li key={o.opponent?._id ?? typeKey} className={`offer-card ${TYPE_CLASS[typeKey] ?? ""}${o.nemesisMeta ? " offer-card-nemesis" : ""}${isLocked ? " offer-card-locked" : ""}`}>
                     <div className="offer-card-info">
                       <div className="offer-badge-row">
-                        <span className={`offer-type-badge ${BADGE_CLASS[typeKey] ?? ""}`}>{typeKey}</span>
+                        {isTitle && <Trophy size={12} style={{ color: "#d4a012" }} />}
+                        <span className={`offer-type-badge ${BADGE_CLASS[typeKey] ?? ""}`}>{badgeLabel}</span>
                         {o.nemesisMeta && (
-                          <span className="offer-type-badge badge-nemesis">☠ Nemesis</span>
+                          <span className="offer-type-badge badge-nemesis">{"\u2620"} Nemesis</span>
                         )}
                       </div>
                       <div className="offer-opponent-name">
@@ -177,12 +184,18 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                         {o.opponent?.nickname && (
                           <span className="offer-opponent-nickname"> &quot;{o.opponent.nickname}&quot;</span>
                         )}
+                        {isTitle && <span className="offer-champ-tag">CHAMPION</span>}
                       </div>
                       <div className="offer-opponent-meta">
                         <span className="offer-opponent-ovr">OVR {o.opponent?.overallRating}</span>
                         {o.opponent?.style ? ` · ${o.opponent.style}` : ""}
                         {meta.desc && <>{" · "}<span className="offer-meta-desc">{meta.desc}</span></>}
                       </div>
+                      {isTitle && o.titleShotMeta && (
+                        <div className="offer-title-meta">
+                          Win this fight to promote to <strong>{o.titleShotMeta.targetTier}</strong>
+                        </div>
+                      )}
                       {o.nemesisMeta && (
                         <div className="offer-nemesis-meta">
                           <span className="offer-nemesis-losses">
@@ -203,14 +216,27 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                       </div>
                     </div>
                     <div className="offer-accept-col">
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-sm"
-                        onClick={() => onAcceptOffer(o.opponent._id, o.type)}
-                      >
-                        Accept
-                      </button>
-                      <span className="offer-energy-cost">{energyCost} energy</span>
+                      {isLocked ? (
+                        <>
+                          <Lock size={14} style={{ color: "var(--text-muted)" }} />
+                          <span className="offer-locked-text">
+                            {o.cooldownRemaining > 0
+                              ? `${o.cooldownRemaining} win${o.cooldownRemaining !== 1 ? "s" : ""} to retry`
+                              : `${o.winsNeeded} win${o.winsNeeded !== 1 ? "s" : ""} needed`}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className={`btn ${isTitle ? "btn-title" : "btn-primary"} btn-sm`}
+                            onClick={() => onAcceptOffer(o.opponent._id, o.type)}
+                          >
+                            {isTitle ? "Accept Title Shot" : "Accept"}
+                          </button>
+                          <span className="offer-energy-cost">{energyCost} energy</span>
+                        </>
+                      )}
                     </div>
                   </li>
                 );

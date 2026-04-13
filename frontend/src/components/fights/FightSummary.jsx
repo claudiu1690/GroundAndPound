@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { tierLabel } from "../../constants/fame";
 import { getRatingConfig, MATCH_STATUS_LABELS, MATCH_STATUS_COLORS } from "../../constants/campConfig";
+import { ArrowUpCircle, Trophy } from "lucide-react";
 
 /**
  * Post-fight summary: health/stamina lost, XP gained, fame, iron, injuries, comeback, weight miss, etc.
@@ -40,15 +41,21 @@ export const FightSummary = memo(function FightSummary({ summary }) {
     nemesisCleared,
     nemesisSet,
     nemesisName,
+    beltWon,
   } = summary;
 
   const hasXp = xpGained && typeof xpGained === "object" && Object.keys(xpGained).length > 0;
   const recordLabel = recordChange === "W" ? "Win" : recordChange === "L" ? "Loss" : "Draw";
 
   return (
-    <section className="panel fight-summary">
-      <h2 className="panel-title">Last Fight Summary</h2>
+    <section className={`panel fight-summary${beltWon ? " fight-summary--belt" : ""}`}>
+      <h2 className="panel-title">{beltWon ? "Championship Result" : "Last Fight Summary"}</h2>
       <div className="panel-body">
+        {beltWon && (
+          <div className="fight-summary-belt-header">
+            <Trophy size={18} /> NEW CHAMPION <Trophy size={18} />
+          </div>
+        )}
         <div className="fight-summary-outcome">
           <span className={`fight-summary-result fight-summary-result-${recordChange?.toLowerCase()}`}>
             {outcome}

@@ -55,6 +55,7 @@ export const CampSummary = memo(function CampSummary({
     resolving,
     weightCut,
     onWeightCutChange,
+    isTitleFight,
 }) {
     if (!summaryData) return null;
 
@@ -68,16 +69,16 @@ export const CampSummary = memo(function CampSummary({
 
     const ratingCfg = getRatingConfig(campRating);
     const hasPenalty = injuryChoice === "PUSH_THROUGH" && injuryPenalty;
-    const bannerBg = GRADE_BANNER_BG[campRating] ?? "#2a2a2c";
+    const bannerBg = isTitleFight ? "#2a1f0a" : (GRADE_BANNER_BG[campRating] ?? "#2a2a2c");
     const canFight = !!weightCut && !resolving;
 
     return (
         <div className="cs-overlay" role="dialog" aria-modal="true" aria-label="Camp Summary">
-            <div className="cs-card">
+            <div className={`cs-card${isTitleFight ? " cs-card--title" : ""}`}>
 
                 {/* Banner */}
                 <div className="cs-banner" style={{ background: bannerBg }}>
-                    <div className="cs-banner-label">PRE-FIGHT CAMP SUMMARY</div>
+                    <div className="cs-banner-label">{isTitleFight ? "CHAMPIONSHIP BOUT" : "PRE-FIGHT CAMP SUMMARY"}</div>
                     <div className="cs-banner-body">
                         <div className="cs-grade-circle" style={{ borderColor: ratingCfg.color, color: ratingCfg.color }}>
                             {campRating}

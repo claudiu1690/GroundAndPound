@@ -191,6 +191,25 @@ async function notorietyLeaderboard(req, res) {
     }
 }
 
+async function getChampions(req, res) {
+    try {
+        const Fighter = require("../models/fighterModel");
+        const Opponent = require("../models/opponentModel");
+        const fighter = await Fighter.findById(req.params.id).lean();
+        if (!fighter) return res.status(404).json({ message: "Fighter not found" });
+        const { CHAMPION_TIERS } = require("../services/championService");
+        const champions = await Opponent.find({
+            isChampion: true,
+            weightClass: fighter.weightClass,
+            championTier: { $in: CHAMPION_TIERS },
+        }).select("name nickname overallRating style championTier record").lean();
+        res.json({ champions });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 async function getActivity(req, res) {
     try {
         const ActivityLog = require("../models/activityLogModel");
@@ -225,6 +244,7 @@ module.exports = {
     mentalReset,
     payGymMembership,
     notorietyLeaderboard,
+    getChampions,
     getActivity,
     mediaEventStub,
 };

@@ -160,8 +160,8 @@ const STAT_KEYS_UPPER = ['STR', 'SPD', 'LEG', 'WRE', 'GND', 'SUB', 'CHN', 'FIQ']
  * Returns { domain: count } where count = number of last-5 fights
  * that feature that domain.
  */
-function analyseFightHistory(fightHistory) {
-    const last5 = (fightHistory || []).slice(-5);
+function analyseFightHistory(fightHistory, maxLogs = 5) {
+    const last5 = (fightHistory || []).slice(-maxLogs);
     const domainCounts = {
         striking: 0,
         grappling: 0,
@@ -280,8 +280,10 @@ function buildWildcardEntry(statKey, statValue) {
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
-async function createCamp(fightId, fighterId, promotionTier, isShortNotice = false) {
-    const slotCfg = CAMP_SLOT_CONFIG[promotionTier] || CAMP_SLOT_CONFIG["Amateur"];
+async function createCamp(fightId, fighterId, promotionTier, isShortNotice = false, offerType = null) {
+    // Title fights get maximum camp slots regardless of tier
+    const slotKey = offerType === "TitleShot" ? "Title Fight" : promotionTier;
+    const slotCfg = CAMP_SLOT_CONFIG[slotKey] || CAMP_SLOT_CONFIG["Amateur"];
     const maxSlots = isShortNotice ? slotCfg.shortNoticeSlots : slotCfg.normalSlots;
 
     const camp = new FightCamp({
@@ -314,8 +316,10 @@ async function getFighterReport(fightId) {
     const statRanks = {};
     sorted.forEach(([key], i) => { statRanks[key] = i + 1; }); // 1-based rank
 
+    // Champions have limited public tape — fewer visible fight logs
+    const reportLogLimit = opp.isChampion ? 2 : 5;
     // Analyse fight history for domain evidence
-    const { domainCounts, totalFights } = analyseFightHistory(opp.fightHistory);
+    const { domainCounts, totalFights } = analyseFightHistory(opp.fightHistory, reportLogLimit);
 
     // Classify each stat
     const confirmedStrengths = [];
@@ -396,6 +400,7 @@ async function getCampState(fightId, fighterId) {
     if (!camp) throw new Error("Camp not found");
     assertCampOwnership(camp, fighterId);
 
+    const fight = await Fight.findById(fightId).lean();
     const slotsUsed = camp.sessions.length;
     const slotsRemaining = Math.max(0, camp.maxSlots - slotsUsed);
 
@@ -410,6 +415,7 @@ async function getCampState(fightId, fighterId) {
         slotsUsed,
         slotsRemaining,
         previewRating: camp.finalisedAt ? null : preview,
+        isTitleFight: fight?.offerType === "TitleShot",
     };
 }
 

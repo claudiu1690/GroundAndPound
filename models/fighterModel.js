@@ -123,6 +123,10 @@ const fighterSchema = new mongoose.Schema({
     badges: [{ type: String }],
     // GDD 8.5: Mental Reset required after 3 consecutive losses (blocks next fight)
     mentalResetRequired: { type: Boolean, default: false },
+    // Champion system: title shot progression
+    pendingPromotion:  { type: String, default: null },   // next tier name when OVR gate met
+    winsInCurrentTier: { type: Number, default: 0 },      // reset on promotion
+    titleShotCooldown: { type: Number, default: 0 },      // set to 2 on title loss, decremented on wins
     // Nemesis: the most recent NPC to beat the player (cleared on revenge win)
     nemesis: {
         opponentId:   { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", default: null },

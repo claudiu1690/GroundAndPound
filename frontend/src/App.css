@@ -845,6 +845,33 @@ code {
   transition: width 0.4s;
 }
 
+.tier-title-status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  border-left: 3px solid;
+}
+.tier-title-ready {
+  background: rgba(212,160,18,0.1);
+  border-color: #d4a012;
+  color: #fbbf24;
+}
+.tier-title-cooldown {
+  background: rgba(227,24,55,0.08);
+  border-color: var(--red);
+  color: #fca5a5;
+}
+.tier-title-wins {
+  background: rgba(59,130,246,0.08);
+  border-color: var(--blue-bright);
+  color: #93c5fd;
+}
+
 /* ============================================================
    GENERIC PANELS (gym, fights pages)
    ============================================================ */
@@ -1401,6 +1428,50 @@ code {
 .offer-card-even    { border-left-color: var(--blue-bright); }
 .offer-card-hard    { border-left-color: var(--red); }
 .offer-card-nemesis { border-left-color: #dc2626; background: rgba(220,38,38,0.05); }
+.offer-card-title {
+  border-left-color: #d4a012;
+  background: rgba(212,160,18,0.06);
+  border: 1px solid rgba(212,160,18,0.25);
+  box-shadow: 0 0 16px rgba(212,160,18,0.08);
+}
+.offer-card-locked { opacity: 0.5; }
+.badge-title {
+  background: rgba(212,160,18,0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(212,160,18,0.35);
+}
+.btn-title {
+  background: #b8860b;
+  color: #fff;
+  border-color: #8b6914;
+}
+.btn-title:hover:not(:disabled) {
+  background: #d4a012;
+  box-shadow: 0 0 16px rgba(212,160,18,0.35);
+}
+.offer-champ-tag {
+  display: inline-block;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #fbbf24;
+  background: rgba(212,160,18,0.15);
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+.offer-title-meta {
+  font-size: 11px;
+  color: #fbbf24;
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+.offer-locked-text {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+}
 
 .offer-card-info { flex: 1; min-width: 0; }
 
@@ -2287,11 +2358,12 @@ code {
   padding: 1rem;
 }
 .fr-card {
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 14px;
   width: 100%;
   max-width: 600px;
+  max-height: 92vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -2382,6 +2454,8 @@ code {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 /* Intel columns */
@@ -2450,7 +2524,13 @@ code {
 .fr-warning-label  { color: #b45309; }
 .fr-warning-text   { color: #92400e; font-style: italic; line-height: 1.5; }
 
-.fr-actions { display: flex; justify-content: flex-end; }
+.fr-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
 .fr-start-btn { min-width: 140px; }
 
 /* ── Fight camp (pre-fight sessions) ─────────────────────────── */
@@ -2465,6 +2545,48 @@ code {
 .camp-v2-header-left { display: flex; align-items: center; gap: 0.75rem; }
 .camp-v2-header-right { display: flex; align-items: center; }
 .camp-view-report { font-size: 12px; padding: 0.3rem 0.75rem; }
+
+/* ── Title Fight gold theme modifiers ── */
+.fight-camp--title .panel-title { border-top-color: #b8860b; color: #fbbf24; }
+.fight-camp--title .camp-slot-filled { background: #d4a012; border-color: #d4a012; }
+.fight-camp--title .camp-session-card:not(.camp-session-disabled):hover {
+  border-color: #d4a012; box-shadow: 0 0 12px rgba(212,160,18,0.15);
+}
+.fight-camp--title .camp-v2-header { border-bottom: 1px solid rgba(212,160,18,0.2); }
+
+.fr-card--title { border-color: rgba(212,160,18,0.3); box-shadow: 0 24px 64px rgba(0,0,0,.35), 0 0 24px rgba(212,160,18,0.1); }
+.fr-card--title .fr-banner { border-bottom: 2px solid rgba(212,160,18,0.3); }
+.fr-card--title .fr-banner-label { color: #fbbf24; letter-spacing: 0.12em; }
+.fr-card--title .fr-actions { border-top-color: rgba(212,160,18,0.2); }
+
+.fr-champ-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #fbbf24;
+  background: rgba(212,160,18,0.15);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  border: 1px solid rgba(212,160,18,0.3);
+}
+
+.cs-card--title .cs-banner { border-bottom: 2px solid rgba(212,160,18,0.3); }
+.cs-card--title .cs-banner-label { color: #fbbf24; }
+
+.fight-summary--belt { border: 1px solid rgba(212,160,18,0.3); box-shadow: 0 0 20px rgba(212,160,18,0.08); }
+.fight-summary-belt-header {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 900;
+  color: #fbbf24;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 16px rgba(212,160,18,0.3);
+}
 
 /* Slot grid */
 .camp-slots-row {

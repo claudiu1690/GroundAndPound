@@ -127,6 +127,8 @@ mongoose.connect(config.database.url, config.database.options)
         await migrateLegacyNotorietyNumber();
         await backfillFighterGymFromQuestProgress();
         await scheduler.startEnergyIncrementScheduler();
+        const { ensureChampionsExist } = require("./services/championService");
+        await ensureChampionsExist();
         app.listen(config.port, () => {
             console.log(`Ground & Pound API running on port ${config.port}`);
             console.log(`Swagger UI: http://localhost:${config.port}/api-docs`);

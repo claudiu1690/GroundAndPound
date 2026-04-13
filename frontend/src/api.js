@@ -110,6 +110,8 @@ export const api = {
   // ── Career Feed ─────────────────────────────────────────
   getActivity: (fighterId) =>
     request(`/fighters/${fighterId}/activity`),
+  getChampions: (fighterId) =>
+    request(`/fighters/${fighterId}/champions`),
 
   // ── Training / Recovery ─────────────────────────────────
   train: (fighterId, gymId, sessionType) =>

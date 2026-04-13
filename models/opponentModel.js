@@ -12,6 +12,9 @@ const opponentSchema = new mongoose.Schema({
     str: statSchema, spd: statSchema, leg: statSchema, wre: statSchema,
     gnd: statSchema, sub: statSchema, chn: statSchema, fiq: statSchema,
     overallRating: { type: Number, required: true },
+    // Champion system
+    isChampion:   { type: Boolean, default: false },
+    championTier: { type: String, default: null },
     record: {
         wins: { type: Number, default: 0 },
         losses: { type: Number, default: 0 },

@@ -56,24 +56,28 @@ function IntelSection({ title, items, colorClass, emptyText }) {
     );
 }
 
-export const FighterReport = memo(function FighterReport({ report, onStartCamp, onClose, hideStartButton }) {
+export const FighterReport = memo(function FighterReport({ report, onStartCamp, onClose, hideStartButton, isTitleFight }) {
     if (!report) return null;
 
     const styleColor = STYLE_COLORS[report.style] ?? DEFAULT_STYLE_COLOR;
+    const bannerBg = isTitleFight ? "#2a1f0a" : styleColor.bg;
 
     return (
         <div className="fr-overlay" role="dialog" aria-modal="true" aria-label="Fighter Report">
-            <div className="fr-card">
+            <div className={`fr-card${isTitleFight ? " fr-card--title" : ""}`}>
 
                 {/* Coloured header banner */}
-                <div className="fr-banner" style={{ background: styleColor.bg }}>
+                <div className="fr-banner" style={{ background: bannerBg }}>
                     <div className="fr-banner-top">
-                        <span className="fr-banner-label">FIGHTER REPORT</span>
+                        <span className="fr-banner-label">{isTitleFight ? "CHAMPIONSHIP BOUT \u2014 FIGHTER REPORT" : "FIGHTER REPORT"}</span>
                         <button className="fr-close" onClick={onClose} title="Close">&times;</button>
                     </div>
 
                     <div className="fr-identity">
-                        <div className="fr-identity-name">{report.name}</div>
+                        <div className="fr-identity-name">
+                            {report.name}
+                            {isTitleFight && <span className="fr-champ-tag">CHAMPION</span>}
+                        </div>
                         {report.nickname && (
                             <div className="fr-identity-nickname">&ldquo;{report.nickname}&rdquo;</div>
                         )}
@@ -145,14 +149,15 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
                         </div>
                     </div>
 
-                    {!hideStartButton && (
-                        <div className="fr-actions">
-                            <button className="btn btn-primary fr-start-btn" onClick={onStartCamp}>
-                                Start Camp
-                            </button>
-                        </div>
-                    )}
                 </div>
+
+                {!hideStartButton && (
+                    <div className="fr-actions">
+                        <button className="btn btn-primary fr-start-btn" onClick={onStartCamp}>
+                            Start Camp
+                        </button>
+                    </div>
+                )}
 
             </div>
         </div>

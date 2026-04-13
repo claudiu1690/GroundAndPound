@@ -68,13 +68,25 @@ const TIER_LADDER = TIER_ORDER.slice(0, -1).map((fromTier, idx) => {
     return { from: fromTier, to: nextTier, minOverall };
 });
 
+const NO_CHAMPION_TIERS = ["Amateur", "GCS Contender"];
+const MIN_WINS_FOR_TITLE_SHOT = 3;
+
 /**
- * Check if a fighter qualifies for a tier promotion. Returns the new tier name or null.
+ * Check if a fighter qualifies for a tier promotion.
+ * For gated tiers (Regional Pro, National, GCS): sets pendingPromotion instead of promoting.
+ * For non-gated tiers (Amateur, GCS Contender): returns new tier name for immediate promotion.
  */
 function checkPromotion(fighter) {
+    if (fighter.pendingPromotion) return null; // already waiting for title shot
     const entry = TIER_LADDER.find((t) => t.from === fighter.promotionTier);
     if (!entry) return null;
-    if ((fighter.overallRating || 0) >= entry.minOverall) return entry.to;
+    if ((fighter.overallRating || 0) < entry.minOverall) return null;
+
+    // Non-gated tiers promote immediately
+    if (NO_CHAMPION_TIERS.includes(fighter.promotionTier)) return entry.to;
+
+    // Gated tiers: set pending flag, don't promote yet
+    fighter.pendingPromotion = entry.to;
     return null;
 }
 const fighterService = require("./fighterService");
@@ -91,6 +103,7 @@ const notorietyService = require("./notorietyService");
 const { tierRank } = require("../consts/notorietyConfig");
 const { logFightResolve } = require("../utils/fightResolveLogger");
 const activityLogService = require("./activityLogService");
+const championService = require("./championService");
 
 /**
  * Daily fight caps are per promotion tier. Legacy `fightsToday` was one global counter, so Amateur
@@ -194,6 +207,9 @@ async function generateOffers(fighterId) {
         if (!found || found.promotionTier !== fighter.promotionTier) {
             fighter.nemesis = emptyNemesis();
             await fighter.save();
+        } else if (found.isChampion) {
+            // Nemesis is the champion — don't add as regular offer; will show on title shot card
+            nemesisOpp = null;
         } else {
             nemesisOpp  = found;
             nemesisMeta = { lossCount: fighter.nemesis.lossCount, setAt: fighter.nemesis.setAt };
@@ -203,7 +219,7 @@ async function generateOffers(fighterId) {
     // Determine which slot the nemesis belongs to based on OVR distance
     const nemesisType = nemesisOpp ? classifyOfferType(nemesisOpp.overallRating, overall) : null;
 
-    const base    = { weightClass, promotionTier: tier };
+    const base    = { weightClass, promotionTier: tier, isChampion: { $ne: true } };
     const exclude = [];
     if (nemesisOpp) exclude.push(nemesisOpp._id); // never double-pick the nemesis
 
@@ -225,7 +241,41 @@ async function generateOffers(fighterId) {
         slots[nemesisType] = { type: nemesisType, opponent: nemesisOpp, context: buildOfferContext(nemesisOpp), nemesisMeta };
     }
 
-    return Object.values(OFFER_TYPE).filter(t => slots[t]).map(t => slots[t]);
+    const offers = Object.values(OFFER_TYPE).filter(t => slots[t]).map(t => slots[t]);
+
+    // ── Title shot offer (4th card) ──────────────────────────────
+    // Guard: clear pendingPromotion if OVR dropped below threshold
+    if (fighter.pendingPromotion) {
+        const entry = TIER_LADDER.find((t) => t.from === fighter.promotionTier);
+        if (entry && (fighter.overallRating || 0) < entry.minOverall) {
+            fighter.pendingPromotion = null;
+            await fighter.save();
+        }
+    }
+
+    if (fighter.pendingPromotion) {
+        const champion = await championService.getChampion(fighter.promotionTier, weightClass);
+        if (champion) {
+            // Show boosted OVR on the card so the player knows the real challenge
+            const displayChampion = { ...champion, overallRating: Math.round(champion.overallRating * 1.05) };
+            const eligible = (fighter.winsInCurrentTier ?? 0) >= MIN_WINS_FOR_TITLE_SHOT
+                && (fighter.titleShotCooldown ?? 0) <= 0;
+            offers.push({
+                type: "TitleShot",
+                opponent: displayChampion,
+                context: buildOfferContext(champion),
+                titleShotMeta: { targetTier: fighter.pendingPromotion },
+                locked: !eligible,
+                cooldownRemaining: fighter.titleShotCooldown ?? 0,
+                winsNeeded: Math.max(0, MIN_WINS_FOR_TITLE_SHOT - (fighter.winsInCurrentTier ?? 0)),
+                nemesisMeta: fighter.nemesis?.opponentId?.toString() === champion._id.toString()
+                    ? { lossCount: fighter.nemesis.lossCount, setAt: fighter.nemesis.setAt }
+                    : null,
+            });
+        }
+    }
+
+    return offers;
 }
 
 /**
@@ -281,8 +331,8 @@ async function acceptOffer(fighterId, fightId) {
         trainingCampActions: 0,
     });
 
-    // Create the FightCamp document for this fight
-    await campService.createCamp(fight._id, fighterId, fight.promotionTier, false);
+    // Create the FightCamp document for this fight (title shots always get full camp, never short notice)
+    await campService.createCamp(fight._id, fighterId, fight.promotionTier, false, fight.offerType);
 
     return fight;
 }
@@ -424,12 +474,24 @@ async function resolveFightAndApply(fighterId) {
         ? `${opponent.name} "${opponent.nickname}"`
         : opponent.name;
 
+    // Champion boost: +5% all stats for title shot opponents
+    const fightOpponent = fight.offerType === "TitleShot"
+        ? (() => {
+            const boosted = { ...opponent.toObject ? opponent.toObject() : opponent };
+            const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
+            STAT_KEYS.forEach((k) => {
+                if (typeof boosted[k] === "number") boosted[k] = Math.round(boosted[k] * 1.05);
+            });
+            return boosted;
+        })()
+        : opponent;
+
     // GDD 7.4: Iron Will perk → pass flag to reduce KO probability
     const ironWillPerk = !!(fighter.activePerks && fighter.activePerks.ironWill);
     // v2: pass conditional session bonuses and wildcard instead of flat campBonuses
     const sessionBonuses = fightCamp?.sessionBonuses ? [...fightCamp.sessionBonuses.map(b => ({ ...b }))] : [];
     const wildcard = fightCamp?.wildcard ?? null;
-    const result = resolveFight(fightPlayer, opponent, {
+    const result = resolveFight(fightPlayer, fightOpponent, {
         playerStrategy: fight.playerStrategy || undefined,
         playerName,
         opponentName,
@@ -586,6 +648,13 @@ async function resolveFightAndApply(fighterId) {
         }
         fighter.comebackMode = false;
 
+        // Title shot cooldown: decrement on any win
+        if ((fighter.titleShotCooldown ?? 0) > 0) {
+            fighter.titleShotCooldown -= 1;
+        }
+        // Track wins in current tier
+        fighter.winsInCurrentTier = (fighter.winsInCurrentTier || 0) + 1;
+
         // Nemesis: defeat your nemesis → clear + record their name for summary
         const prevNemesisName = fighter.nemesis?.opponentName ?? null;
         nemesisCleared = resolveNemesisOnWin(fighter, opponent._id);
@@ -601,6 +670,11 @@ async function resolveFightAndApply(fighterId) {
         if (newConsecLosses >= 3) {
             fighter.mentalResetRequired = true;
             fighter.notoriety.isFrozen = true;
+        }
+
+        // Title shot loss: set cooldown
+        if (fight.offerType === "TitleShot") {
+            fighter.titleShotCooldown = 2;
         }
 
         // Nemesis: the NPC that just beat us becomes (or stays) the nemesis
@@ -708,9 +782,38 @@ async function resolveFightAndApply(fighterId) {
 
     // Tier promotion check — happens after overall is updated
     const oldTier = fighter.promotionTier;
-    const newTier = checkPromotion(fighter);
-    if (newTier) {
-        fighter.promotionTier = newTier;
+    let promoted = null;
+    let beltWon = false;
+
+    // Title shot WIN: dethrone champion, promote, seed replacement
+    if (fight.offerType === "TitleShot" && isWin) {
+        await Opponent.findByIdAndUpdate(fight.opponentId, {
+            isChampion: false, championTier: null,
+        });
+        const targetTier = fighter.pendingPromotion;
+        fighter.promotionTier = targetTier;
+        fighter.pendingPromotion = null;
+        fighter.winsInCurrentTier = 0;
+        fighter.titleShotCooldown = 0;
+        beltWon = true;
+        promoted = { from: oldTier, to: targetTier, viaTitleShot: true };
+        // Seed new champion in the OLD tier (player just left it)
+        await championService.seedNewChampion(oldTier, fighter.weightClass);
+        // Fame spike for winning the belt
+        fighter.notoriety.score = (fighter.notoriety.score ?? 0) + 200;
+        // Champion badge
+        fighter.badges = fighter.badges || [];
+        if (!fighter.badges.includes("Champion")) {
+            fighter.badges.push("Champion");
+        }
+    } else {
+        // Normal promotion check (non-gated auto-promote)
+        const newTier = checkPromotion(fighter);
+        if (newTier) {
+            fighter.promotionTier = newTier;
+            fighter.winsInCurrentTier = 0;
+            promoted = { from: oldTier, to: newTier };
+        }
     }
     await fighter.save();
 
@@ -719,7 +822,6 @@ async function resolveFightAndApply(fighterId) {
 
     const maxStaminaVal = fighter.maxStamina ?? 100;
     const staminaEnd = result.playerStaminaAfter ?? maxStaminaVal;
-    const promoted = newTier ? { from: oldTier, to: newTier } : null;
 
     // ── Activity log entries (fire-and-forget, never throw) ──────────────
     const _tier = fighter.promotionTier;
@@ -738,10 +840,22 @@ async function resolveFightAndApply(fighterId) {
     if (nemesisCleared) activityLogService.log(fighterId, "NEMESIS_CLEARED",
         `Settled the score with ${nemesisName}`,
         { opponentName: nemesisName, tier: _tier });
-    if (promoted) activityLogService.log(fighterId, "TIER_PROMOTION",
+    if (promoted && !beltWon) activityLogService.log(fighterId, "TIER_PROMOTION",
         `Promoted to ${promoted.to}`,
         { from: promoted.from, to: promoted.to, tier: promoted.from });
+    if (beltWon) activityLogService.log(fighterId, "TITLE_WON",
+        `Won ${promoted.from} ${fighter.weightClass} Title \u2014 promoted to ${promoted.to}`,
+        { from: promoted.from, to: promoted.to, weightClass: fighter.weightClass, tier: promoted.from });
+    // Title shot eligible: fires when wins threshold is first met
+    if (isWin && fighter.pendingPromotion
+        && (fighter.winsInCurrentTier ?? 0) === MIN_WINS_FOR_TITLE_SHOT
+        && (fighter.titleShotCooldown ?? 0) <= 0) {
+        activityLogService.log(fighterId, "TITLE_SHOT_ELIGIBLE",
+            `Title shot available \u2014 fight for the ${fighter.promotionTier} belt`,
+            { tier: fighter.promotionTier, targetTier: fighter.pendingPromotion });
+    }
     const newBadges = (isWin && isComeback) ? ["Resilience"] : [];
+    if (beltWon && !newBadges.includes("Champion")) newBadges.push("Champion");
     for (const badge of newBadges)
         activityLogService.log(fighterId, "BADGE_EARNED",
             `Earned badge: ${badge}`, { badge, tier: _tier });
@@ -777,6 +891,7 @@ async function resolveFightAndApply(fighterId) {
         mentalResetRequired: !!fighter.mentalResetRequired,
         completedQuests: completedQuests.map((q) => q.title),
         promoted,
+        beltWon,
         nemesisCleared,
         nemesisSet,
         nemesisName,

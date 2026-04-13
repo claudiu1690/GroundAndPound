@@ -100,6 +100,7 @@ export const FightCamp = memo(function FightCamp({
         injuryPenalty,
         finalisedAt,
         sessions = [],
+        isTitleFight = false,
     } = campState;
 
     const isInjuredPending = isInjured && !injuryChoice;
@@ -118,10 +119,10 @@ export const FightCamp = memo(function FightCamp({
     const energyAvailable = fighter.energy?.current ?? fighter.energy ?? 0;
 
     return (
-        <section className="panel fight-camp">
+        <section className={`panel fight-camp${isTitleFight ? " fight-camp--title" : ""}`}>
             <div className="camp-v2-header">
                 <div className="camp-v2-header-left">
-                    <h2 className="panel-title">Fight Camp</h2>
+                    <h2 className="panel-title">{isTitleFight ? "Title Fight Camp" : "Fight Camp"}</h2>
                     {campReport && (
                         <button className="btn btn-ghost btn-sm camp-view-report" onClick={onViewReport}>
                             View Report

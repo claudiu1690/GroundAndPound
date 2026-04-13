@@ -5,7 +5,7 @@ import { MessageBar } from "./components/layout/MessageBar";
 import { FighterProfile } from "./components/fighterProfile/FighterProfile";
 import { GymTraining, SESSION_META } from "./components/gym/GymTraining";
 import { TrainingResultPopup } from "./components/gym/TrainingResultPopup";
-import { TierUpOverlay } from "./components/fights/TierUpOverlay";
+import { TierUpOverlay, BeltWonOverlay } from "./components/fights/TierUpOverlay";
 import { FightOffers } from "./components/fights/FightOffers";
 import { FightCamp } from "./components/fights/FightCamp";
 import { FighterReport } from "./components/fights/FighterReport";
@@ -166,7 +166,9 @@ const QuickActions = memo(function QuickActions({ onNavigate, onRest, fighter })
 });
 
 // ── Tier progress (right panel) ─────────────────────────────
-const TierProgress = memo(function TierProgress({ fighter }) {
+const GATED_TIERS = new Set(["Regional Pro", "National", "GCS"]);
+
+const TierProgress = memo(function TierProgress({ fighter, champions }) {
   if (!fighter) return null;
   const currentTier = fighter.promotionTier ?? "Amateur";
   const ovr = fighter.overallRating ?? 0;
@@ -177,6 +179,16 @@ const TierProgress = memo(function TierProgress({ fighter }) {
     ? Math.min(100, Math.round(((ovr - current.minOvr) / (next.minOvr - current.minOvr)) * 100))
     : 100;
 
+  const pending = fighter.pendingPromotion;
+  const wins = fighter.winsInCurrentTier ?? 0;
+  const cooldown = fighter.titleShotCooldown ?? 0;
+  const titleReady = pending && wins >= 3 && cooldown <= 0;
+  const titleCooldown = pending && cooldown > 0;
+  const titleWinsNeeded = pending && wins < 3;
+
+  // Find champion for the current gated tier
+  const currentChamp = (champions ?? []).find((c) => c.championTier === currentTier);
+
   return (
     <section className="rp-panel">
       <h3 className="panel-title">Tier Competition</h3>
@@ -185,36 +197,61 @@ const TierProgress = memo(function TierProgress({ fighter }) {
           {TIER_LADDER_DISPLAY.map((t, i) => {
             const done   = i < currentIdx;
             const active = t.id === currentTier;
+            const champ = (champions ?? []).find((c) => c.championTier === t.id);
             return (
               <div key={t.id} className={`tier-step ${active ? "tier-active" : done ? "tier-done" : "tier-locked"}`}>
-                {done ? "✓" : active ? "►" : "○"} {t.label}
+                {done ? <CheckCircle2 size={10} /> : active ? <ChevronRight size={10} /> : <Circle size={10} />} {t.label}
                 {!done && !active && t.minOvr > 0 && <span style={{ color: "var(--text-muted)", marginLeft: "0.3rem", fontSize: "9px" }}>OVR {t.minOvr}+</span>}
+                {GATED_TIERS.has(t.id) && champ && !done && (
+                  <span style={{ color: "var(--gold-bright)", marginLeft: "0.3rem", fontSize: "9px" }}>
+                    Champ: {champ.name} ({champ.overallRating})
+                  </span>
+                )}
               </div>
             );
           })}
         </div>
-        {next ? (
+
+        {/* Title shot status messages */}
+        {titleReady && (
+          <div className="tier-title-status tier-title-ready">
+            <Trophy size={12} /> Title shot available — fight for the belt!
+          </div>
+        )}
+        {titleCooldown && (
+          <div className="tier-title-status tier-title-cooldown">
+            Title shot lost — {cooldown} more win{cooldown !== 1 ? "s" : ""} to retry
+          </div>
+        )}
+        {titleWinsNeeded && (
+          <div className="tier-title-status tier-title-wins">
+            OVR reached — {3 - wins} more win{3 - wins !== 1 ? "s" : ""} to earn title shot
+          </div>
+        )}
+
+        {/* Standard OVR progress (only when no pending promotion) */}
+        {!pending && next ? (
           <div className="tier-progress-wrap">
             <div className="tier-progress-label">
-              <span>→ {next.label}</span>
+              <span>{"\u2192"} {next.label}</span>
               <span>OVR {ovr} / {next.minOvr}</span>
             </div>
             <div className="tier-progress-bar">
               <div className="tier-progress-fill" style={{ width: `${pct}%` }} />
             </div>
           </div>
-        ) : (
+        ) : !pending && !next ? (
           <div style={{ fontSize: "12px", color: "var(--gold-bright)", fontWeight: 700, marginTop: "0.5rem" }}>
             GCS Champion — top tier reached.
           </div>
-        )}
+        ) : null}
       </div>
     </section>
   );
 });
 
 // ── Right column panels ─────────────────────────────────────
-const RightPanels = memo(function RightPanels({ fighter, lastFightSummary, campSlotsUsed }) {
+const RightPanels = memo(function RightPanels({ fighter, lastFightSummary, campSlotsUsed, champions }) {
   const hasInjuries = fighter?.injuries?.length > 0;
   const inCamp = !!fighter?.acceptedFightId;
   const campSessions = campSlotsUsed ?? fighter?.trainingCampActions ?? 0;
@@ -273,7 +310,7 @@ const RightPanels = memo(function RightPanels({ fighter, lastFightSummary, campS
       </section>
 
       {/* Tier competition */}
-      <TierProgress fighter={fighter} />
+      <TierProgress fighter={fighter} champions={champions} />
     </>
   );
 });
@@ -365,9 +402,11 @@ function App() {
   const [lastFightCommentary, setLastFightCommentary] = useState([]);
   const [lastFightSummary, setLastFightSummary] = useState(null);
   const [feedRefreshKey, setFeedRefreshKey]     = useState(0);
+  const [champions, setChampions]               = useState([]);
   const [activeTab, setActiveTab]               = useState("gym");
   const [trainingResultPopup, setTrainingResultPopup] = useState({ open: false, sessionLabel: "", xpGained: {}, statLevelUps: [] });
   const [tierUpModal, setTierUpModal] = useState(null);
+  const [beltWonModal, setBeltWonModal] = useState(null);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
   /** Bumps after train / membership pay so gym quest panel refetches without a full page reload. */
   const [gymQuestRefresh, setGymQuestRefresh] = useState(0);
@@ -416,6 +455,8 @@ function App() {
       const f = await api.getFighter(id);
       setFighter(f);
       if (options.clearMessage !== false) setMessage("");
+      // Fetch champions for tier progress display
+      api.getChampions(id).then((data) => setChampions(data.champions ?? [])).catch(() => {});
     } catch (e) {
       setMessage(e.message || "Failed to load fighter");
     }
@@ -680,10 +721,20 @@ function App() {
       if (result.summary?.notorietyTierUp) {
         setTierUpModal(result.summary.notorietyTierUp);
       }
+      if (result.summary?.beltWon && result.summary?.promoted) {
+        setBeltWonModal({
+          from: result.summary.promoted.from,
+          to: result.summary.promoted.to,
+          weightClass: result.fighter?.weightClass,
+        });
+      }
       const out = result.fight?.outcome || "—";
       const iron = result.fight?.ironEarned ?? 0;
       const rec = result.fighter?.record;
-      setMessage(`${out} — +${iron} ⊗${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}`);
+      // First-fight hint: show once after first career win
+      const isFirstWin = rec && rec.wins === 1 && result.summary?.recordChange === "W";
+      const firstWinHint = isFirstWin ? " | Build your record and raise your OVR to earn a title shot. Win the belt to move up." : "";
+      setMessage(`${out} — +${iron} ⊗${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}${firstWinHint}`);
       loadFighter(fighter._id);
       setFeedRefreshKey((k) => k + 1);
       // Clean up camp state after fight
@@ -805,6 +856,14 @@ function App() {
         onClose={() => setTierUpModal(null)}
       />
 
+      <BeltWonOverlay
+        open={!!beltWonModal}
+        fromTier={beltWonModal?.from}
+        toTier={beltWonModal?.to}
+        weightClass={beltWonModal?.weightClass}
+        onClose={() => setBeltWonModal(null)}
+      />
+
       <FightLimitPopup
         open={!!fightLimitPopup.open}
         message={fightLimitPopup.message}
@@ -818,6 +877,7 @@ function App() {
           onStartCamp={() => setShowFighterReport(false)}
           onClose={() => setShowFighterReport(false)}
           hideStartButton={reportFromCamp}
+          isTitleFight={campState?.isTitleFight}
         />
       )}
 
@@ -829,6 +889,7 @@ function App() {
           resolving={resolving}
           weightCut={weightCut}
           onWeightCutChange={setWeightCut}
+          isTitleFight={campState?.isTitleFight}
         />
       )}
 
@@ -894,6 +955,7 @@ function App() {
                     fighter={fighter}
                     lastFightSummary={lastFightSummary}
                     campSlotsUsed={campState?.slotsUsed}
+                    champions={champions}
                   />
                 </div>
               </div>
