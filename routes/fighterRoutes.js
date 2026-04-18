@@ -180,7 +180,8 @@ router.post("/:id/train", fighterController.train);
 router.post("/:id/rest", fighterController.rest);
 router.post("/:id/doctor-visit", fighterController.doctorVisit);
 router.post("/:id/mental-reset", fighterController.mentalReset);
-router.post("/:id/pay-membership", fighterController.payGymMembership);
+router.post("/:id/switch-gym", fighterController.switchGym);
+router.post("/:id/rank-up-gym", fighterController.rankUpGym);
 router.get("/:id/champions", fighterController.getChampions);
 router.get("/:id/activity", fighterController.getActivity);
 /** Reserved for media events (notoriety) — returns 501 until implemented */

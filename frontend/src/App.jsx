@@ -4,6 +4,7 @@ import "./App.css";
 import { MessageBar } from "./components/layout/MessageBar";
 import { FighterProfile } from "./components/fighterProfile/FighterProfile";
 import { GymTraining, SESSION_META } from "./components/gym/GymTraining";
+import { GymSelector } from "./components/gym/GymSelector";
 import { TrainingResultPopup } from "./components/gym/TrainingResultPopup";
 import { TierUpOverlay, BeltWonOverlay } from "./components/fights/TierUpOverlay";
 import { FightOffers } from "./components/fights/FightOffers";
@@ -12,7 +13,6 @@ import { FighterReport } from "./components/fights/FighterReport";
 import { CampSummary } from "./components/fights/CampSummary";
 import { FightDescription } from "./components/fights/FightDescription";
 import { FightSummary } from "./components/fights/FightSummary";
-import { GymQuests } from "./components/gym/GymQuests";
 import { OctagonBackground } from "./components/layout/OctagonBackground";
 import { CareerFeed } from "./components/CareerFeed";
 import { AuthPage } from "./components/auth/AuthPage";
@@ -315,75 +315,52 @@ const RightPanels = memo(function RightPanels({ fighter, lastFightSummary, campS
   );
 });
 
-/** Default gym: home (`fighter.gymId`), else first gym with valid paid membership, else first listed gym. */
-function pickDefaultGymId(fighter, gyms) {
-  if (!gyms?.length) return "";
-  const homeId = fighter?.gymId?._id ?? fighter?.gymId;
-  if (homeId != null && homeId !== "" && gyms.some((g) => String(g._id) === String(homeId))) {
-    return String(homeId);
-  }
-  const now = Date.now();
-  for (const m of fighter?.gymMemberships || []) {
-    if (!m?.paidUntil || new Date(m.paidUntil).getTime() <= now) continue;
-    if (gyms.some((g) => String(g._id) === String(m.gymId))) return String(m.gymId);
-  }
-  return String(gyms[0]._id);
-}
-
 /**
- * Gym + session selection lives here so changing gym/session does not re-render all of App.
+ * Two-view gym system: selector grid → training view inside gym.
  */
-const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, onPayMembership, questRefreshKey }) {
-  const [trainGym, setTrainGym] = useState("");
-  const [questsOpen, setQuestsOpen] = useState(false);
+const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, onSwitchGym, onRankUp }) {
+  // Default to the fighter's active gym (if membership is active), otherwise show gym selector
+  const activeGymFromMembership = gyms?.find((g) => g.membership?.isActive);
+  const freeGym = gyms?.find((g) => g.isFreeGym);
+  const defaultGymId = activeGymFromMembership?._id ?? freeGym?._id ?? null;
 
-  useEffect(() => {
-    if (!gyms?.length) return;
-    const preferred = pickDefaultGymId(fighter, gyms);
-    if (!trainGym) {
-      setTrainGym(preferred);
-      return;
-    }
-    const naiveFirst = String(gyms[0]._id);
-    if (String(trainGym) === naiveFirst && preferred !== naiveFirst) {
-      setTrainGym(preferred);
-    }
-  }, [gyms, trainGym, fighter]);
+  const [selectedGymId, setSelectedGymId] = useState(defaultGymId);
+  const [showSelector, setShowSelector] = useState(false);
 
+  // Update default when gyms/fighter change (e.g., after switching gym)
   useEffect(() => {
-    if (!gyms?.length || !trainGym) return;
-    if (!gyms.some((g) => String(g._id) === String(trainGym))) {
-      setTrainGym(pickDefaultGymId(fighter, gyms));
-    }
-  }, [gyms, trainGym, fighter]);
+    if (showSelector) return; // don't override if user is browsing gyms
+    const active = gyms?.find((g) => g.membership?.isActive);
+    if (active) setSelectedGymId(active._id);
+  }, [gyms, fighter?.activeGymId]);
+
+  const selectedGym = selectedGymId ? gyms?.find((g) => String(g._id) === String(selectedGymId)) : null;
 
   const handleTrain = useCallback((sessionKey) => {
-    onTrain(trainGym, sessionKey);
-  }, [onTrain, trainGym]);
+    if (!selectedGymId) return;
+    onTrain(selectedGymId, sessionKey);
+  }, [onTrain, selectedGymId]);
+
+  if (showSelector || !selectedGym) {
+    return (
+      <GymSelector
+        gyms={gyms}
+        fighter={fighter}
+        onSelectGym={(id) => { setSelectedGymId(id); setShowSelector(false); }}
+      />
+    );
+  }
 
   return (
-    <>
-      <GymTraining
-        fighter={fighter}
-        gyms={gyms}
-        trainGym={trainGym}
-        onGymChange={setTrainGym}
-        onTrain={handleTrain}
-        onPayMembership={onPayMembership}
-      />
-      <div className="th-quests-section">
-        <button
-          type="button"
-          className="th-quests-toggle"
-          onClick={() => setQuestsOpen((o) => !o)}
-        >
-          <span>{questsOpen ? "\u25BE" : "\u25B8"} Gym Quests</span>
-        </button>
-        {questsOpen && (
-          <GymQuests fighter={fighter} gymId={trainGym} refreshKey={questRefreshKey} />
-        )}
-      </div>
-    </>
+    <GymTraining
+      gym={selectedGym}
+      fighter={fighter}
+      allGyms={gyms}
+      onTrain={handleTrain}
+      onBack={() => setShowSelector(true)}
+      onSwitchGym={onSwitchGym}
+      onRankUp={onRankUp}
+    />
   );
 });
 
@@ -409,7 +386,6 @@ function App() {
   const [beltWonModal, setBeltWonModal] = useState(null);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
   /** Bumps after train / membership pay so gym quest panel refetches without a full page reload. */
-  const [gymQuestRefresh, setGymQuestRefresh] = useState(0);
 
   // ── Camp v1.1 state ────────────────────────────────────────
   const [campReport, setCampReport]           = useState(null);
@@ -476,12 +452,14 @@ function App() {
     }
   }, []);
 
-  const loadGyms = useCallback(async () => {
+  const loadGyms = useCallback(async (fId) => {
     try {
-      const list = await api.listGyms();
+      const id = fId || fighter?._id;
+      if (!id) return;
+      const list = await api.listGymsForFighter(id);
       setGyms(Array.isArray(list) ? list : []);
     } catch (_) {}
-  }, []);
+  }, [fighter?._id]);
 
   // Load initial data once authenticated
   useEffect(() => {
@@ -489,10 +467,10 @@ function App() {
     const fighterId = authStorage.getFighterId();
     (async () => {
       setLoading(true);
-      await Promise.all([
-        fighterId ? loadFighter(fighterId) : Promise.resolve(),
-        loadGyms(),
-      ]);
+      if (fighterId) {
+        await loadFighter(fighterId);
+        await loadGyms(fighterId);
+      }
       setLoading(false);
     })();
   }, [authed, loadFighter, loadGyms]);
@@ -514,7 +492,7 @@ function App() {
     (fighterId) => {
       setAuthed(true);
       loadFighter(fighterId);
-      loadGyms();
+      loadGyms(fighterId);
     },
     [loadFighter, loadGyms]
   );
@@ -559,7 +537,7 @@ function App() {
           statLevelUps: result.statLevelUps ?? [],
         });
         loadFighter(fighter._id, { clearMessage: false });
-        setGymQuestRefresh((k) => k + 1);
+        loadGyms();
       } catch (e) {
         setMessage(e.message || "Train failed");
       }
@@ -567,20 +545,35 @@ function App() {
     [fighter?._id, loadFighter]
   );
 
-  const handlePayMembership = useCallback(
-    async (gymId, cost) => {
+  const handleSwitchGym = useCallback(
+    async (gymId) => {
       if (!fighter?._id) return;
-      setMessage(`Paying gym membership (${cost} ⊗)…`);
+      setMessage("Joining gym...");
       try {
-        const result = await api.payGymMembership(fighter._id, gymId);
-        setMessage(result.message || "Membership paid.");
+        const result = await api.switchGym(fighter._id, gymId);
+        setMessage(result.message || "Gym membership activated.");
         loadFighter(fighter._id, { clearMessage: false });
-        setGymQuestRefresh((k) => k + 1);
+        loadGyms();
       } catch (e) {
-        setMessage(e.message || "Payment failed");
+        setMessage(e.message || "Failed to join gym");
       }
     },
-    [fighter?._id, loadFighter]
+    [fighter?._id, loadFighter, loadGyms]
+  );
+
+  const handleRankUp = useCallback(
+    async (gymId) => {
+      if (!fighter?._id) return;
+      try {
+        const result = await api.rankUpGym(fighter._id, gymId);
+        setMessage(result.rankUp?.unlockDescription || "Ranked up!");
+        loadFighter(fighter._id, { clearMessage: false });
+        loadGyms();
+      } catch (e) {
+        setMessage(e.message || "Rank up failed");
+      }
+    },
+    [fighter?._id, loadFighter, loadGyms]
   );
 
   const handleRest = useCallback(async () => {
@@ -976,8 +969,8 @@ function App() {
                 fighter={fighter}
                 gyms={gyms}
                 onTrain={handleTrain}
-                onPayMembership={handlePayMembership}
-                questRefreshKey={gymQuestRefresh}
+                onSwitchGym={handleSwitchGym}
+                onRankUp={handleRankUp}
               />
             </div>
           )}

@@ -1122,7 +1122,160 @@ code {
 .btn-sm { padding: 0.2rem 0.45rem; font-size: 9px; }
 
 /* ============================================================
-   TRAINING HUB (redesigned)
+   GYM SELECTOR (View 1)
+   ============================================================ */
+.gym-selector { display: flex; flex-direction: column; gap: 0.75rem; }
+.gym-selector-header { display: flex; flex-direction: column; gap: 0.25rem; }
+.gym-selector-title { margin: 0; font-size: 18px; font-weight: 800; color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; }
+.gym-selector-hint { font-size: 11px; color: var(--text-muted); }
+
+.gym-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.65rem;
+}
+
+.gs-card {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.gs-card:hover:not(:disabled) { border-color: var(--border-bright); box-shadow: 0 0 16px rgba(227,24,55,0.05); }
+.gs-card--active { border-color: var(--red); box-shadow: 0 0 12px var(--red-glow); }
+.gs-card--free { border-color: var(--border); }
+.gs-card--free:hover { border-color: var(--border-bright); }
+.gs-card--locked { cursor: not-allowed; }
+
+.gs-lock-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  z-index: 2;
+  font-size: 12px;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  border-radius: 8px;
+}
+
+.gs-card-top { display: flex; justify-content: space-between; align-items: center; }
+.gs-card-icon { color: var(--red-bright); }
+.gs-card-cost { font-size: 11px; font-weight: 800; color: var(--gold-bright); }
+.gs-card--free .gs-card-cost { color: var(--green-bright); }
+
+.gs-card-name { font-size: 14px; font-weight: 800; color: var(--text); text-transform: uppercase; letter-spacing: 0.03em; }
+.gs-card-tagline { font-size: 10px; color: var(--text-muted); font-style: italic; margin-top: -0.2rem; }
+
+.gs-card-stats { display: flex; flex-wrap: wrap; gap: 0.2rem; }
+.gs-card-all-stats { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+
+.gs-card-rank { display: flex; align-items: center; gap: 0.25rem; font-size: 10px; color: var(--gold-bright); font-weight: 600; }
+
+.gs-card-membership { font-size: 10px; font-weight: 700; padding: 0.15rem 0.4rem; border-radius: 4px; display: inline-block; width: fit-content; }
+.gs-card-membership--active { background: rgba(34,197,94,0.1); color: var(--green-bright); }
+.gs-card-membership--expired { background: rgba(148,163,184,0.1); color: var(--text-muted); }
+
+/* ============================================================
+   GYM TRAINING VIEW (View 2)
+   ============================================================ */
+.gym-training-v2 { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.gt-header {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+  padding: 0.6rem 0.75rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;
+}
+.gt-back { flex-shrink: 0; }
+.gt-header-info { display: flex; align-items: center; gap: 0.5rem; }
+.gt-header-name { font-size: 14px; font-weight: 800; color: var(--text); text-transform: uppercase; }
+.gt-header-rank { display: flex; align-items: center; gap: 0.2rem; font-size: 10px; color: var(--gold-bright); font-weight: 600; }
+.gt-header-right { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
+.gt-energy {
+  display: flex; align-items: center; gap: 0.25rem;
+  font-size: 12px; font-weight: 700; color: var(--blue-bright);
+  background: rgba(59,130,246,0.08); padding: 0.25rem 0.6rem; border-radius: 6px;
+  border: 1px solid rgba(59,130,246,0.2);
+}
+.gt-membership-badge { display: flex; align-items: center; gap: 0.2rem; font-size: 10px; font-weight: 700; color: var(--green-bright); }
+.gt-description {
+  font-size: 12px; color: var(--text); line-height: 1.55; font-style: italic;
+  padding: 0.65rem 0.85rem; background: rgba(227,24,55,0.04); border: 1px solid var(--border-bright);
+  border-radius: 6px; border-left: 3px solid var(--red);
+}
+.gt-membership-block {
+  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  padding: 0.6rem; font-size: 12px; font-weight: 700; color: #fff;
+  background: rgba(227,24,55,0.2); border: 1px solid var(--red); border-radius: 6px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+/* Rank 2 session lock text */
+.th-session-card--rank2 { border-color: rgba(212,160,18,0.25); }
+.th-sc-rank2-lock { display: flex; align-items: center; gap: 0.3rem; font-size: 10px; color: var(--text-muted); font-weight: 600; margin-top: auto; }
+
+/* Other sessions (greyed) */
+.gt-other-sessions { margin-top: 0.5rem; }
+.gt-other-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-sec); margin-bottom: 0.4rem; }
+.gt-other-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.4rem; }
+.gt-other-card {
+  display: flex; flex-direction: column; gap: 0.15rem;
+  padding: 0.5rem 0.65rem; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 6px;
+}
+.gt-other-name { font-size: 11px; font-weight: 700; color: var(--text-sec); }
+.gt-other-stats { font-size: 10px; color: var(--text-muted); }
+.gt-other-gym { font-size: 9px; color: var(--red-bright); font-weight: 600; }
+
+/* Rank progress */
+.gt-rank-progress {
+  padding: 0.75rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;
+}
+.gt-rank-header { display: flex; justify-content: space-between; align-items: center; }
+.gt-rank-title { font-size: 12px; font-weight: 800; color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; }
+.gt-rank-next { margin-top: 0.5rem; }
+.gt-rank-next-title { display: flex; align-items: center; gap: 0.3rem; font-size: 11px; font-weight: 700; color: var(--gold-bright); margin-bottom: 0.4rem; }
+.gt-rank-reqs { display: flex; flex-direction: column; gap: 0.2rem; }
+.gt-rank-req { font-size: 10px; color: var(--text-sec); }
+.gt-rank-req--done { color: var(--green-bright); }
+.gt-rank-unlock-preview { font-size: 10px; color: var(--text-muted); margin-top: 0.3rem; font-style: italic; }
+.gt-rankup-btn { margin-top: 0.4rem; }
+.gt-rank-maxed { display: flex; align-items: center; gap: 0.4rem; font-size: 12px; color: var(--gold-bright); font-weight: 700; margin-top: 0.5rem; }
+.gt-rank-current-desc { font-size: 11px; color: var(--text-sec); line-height: 1.45; font-style: italic; margin: 0.35rem 0 0.5rem; }
+
+.gt-rank-roadmap { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; }
+.gt-rank-step {
+  padding: 0.5rem 0.65rem; border: 1px solid var(--border); border-radius: 6px;
+  border-left: 3px solid var(--border); background: var(--bg-surface);
+}
+.gt-rank-step--done { border-left-color: var(--green-bright); opacity: 0.65; }
+.gt-rank-step--next { border-left-color: var(--gold-bright); background: rgba(212,160,18,0.04); }
+.gt-rank-step-header { display: flex; justify-content: space-between; align-items: center; }
+.gt-rank-step-name { font-size: 11px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 0.25rem; }
+.gt-rank-step--done .gt-rank-step-name { color: var(--green-bright); }
+.gt-rank-step--next .gt-rank-step-name { color: var(--gold-bright); }
+.gt-rank-step-num { font-size: 9px; color: var(--text-muted); }
+.gt-rank-step-desc { font-size: 10px; color: var(--text-muted); line-height: 1.4; margin-top: 0.2rem; font-style: italic; }
+.gt-rank-step--next .gt-rank-step-desc { color: var(--text-sec); }
+.gt-rank-step-reward { font-size: 10px; font-weight: 700; color: var(--gold-bright); margin-top: 0.2rem; }
+.gt-rank-step--done .gt-rank-step-reward { color: var(--green-bright); }
+.gt-rank-step-reqs { display: flex; gap: 0.75rem; font-size: 10px; color: var(--text-sec); margin-top: 0.3rem; }
+.gt-rank2-preview { display: flex; align-items: center; gap: 0.3rem; font-size: 11px; color: var(--text-muted); padding: 0.4rem 0.5rem; background: var(--bg-surface); border-radius: 6px; margin-top: 0.25rem; }
+
+/* ============================================================
+   TRAINING HUB (legacy — kept for session card styles)
    ============================================================ */
 .training-hub {
   display: flex;
@@ -1216,16 +1369,19 @@ code {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--text-muted);
-  border: 1.5px solid var(--border);
+  color: var(--text-sec);
+  border: 1.5px solid var(--border-bright);
   border-radius: 6px;
-  background: var(--bg-surface);
+  background: var(--bg-hover);
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
-.th-cat-tab:hover { color: var(--text); border-color: var(--border-bright); }
+.th-cat-tab:hover { color: #fff; border-color: var(--text-muted); background: rgba(255,255,255,0.06); }
 .th-cat-tab--active {
-  background: rgba(255,255,255,0.03);
+  background: var(--red);
+  border-color: var(--red-bright);
+  color: #fff;
   border-width: 2px;
+  box-shadow: 0 0 12px rgba(227,24,55,0.4);
 }
 
 /* ── Session Cards ── */
