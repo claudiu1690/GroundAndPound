@@ -14,6 +14,8 @@ const rankSchema = new mongoose.Schema({
         sessionKey: { type: String, default: null },
         xpBonusPct: { type: Number, default: null },
         perkId: { type: String, default: null },
+        perkName: { type: String, default: null },
+        perkEffect: { type: String, default: null },
         badge: { type: String, default: null },
     },
 }, { _id: false });
