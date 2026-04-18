@@ -267,8 +267,13 @@ export const GymTraining = memo(function GymTraining({
                                         <div className="gt-rank-step-reward">
                                             {r.unlock.type === "access" && "Unlocks gym training sessions"}
                                             {r.unlock.type === "session" && `Unlocks: ${SESSION_META[r.unlock.sessionKey]?.label ?? r.unlock.sessionKey}`}
-                                            {r.unlock.type === "xpBonus" && `Reward: +${r.unlock.xpBonusPct}% XP to focus stats permanently`}
-                                            {r.unlock.type === "perk" && `Reward: ${r.unlock.badge ?? r.unlock.perkId} (perk + badge)`}
+                                            {r.unlock.type === "xpBonus" && `+${r.unlock.xpBonusPct}% XP to focus stats permanently`}
+                                            {r.unlock.type === "perk" && (
+                                                <>
+                                                    <div><strong>{r.unlock.perkName ?? r.unlock.perkId}</strong> perk + <strong>{r.unlock.badge}</strong> badge</div>
+                                                    {r.unlock.perkEffect && <div className="gt-rank-step-perk-effect">{r.unlock.perkEffect}</div>}
+                                                </>
+                                            )}
                                         </div>
                                     )}
                                     {isNext && gym.progress?.hasJoined && (

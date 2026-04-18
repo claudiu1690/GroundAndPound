@@ -1269,8 +1269,9 @@ code {
 .gt-rank-step-num { font-size: 9px; color: var(--text-muted); }
 .gt-rank-step-desc { font-size: 10px; color: var(--text-muted); line-height: 1.4; margin-top: 0.2rem; font-style: italic; }
 .gt-rank-step--next .gt-rank-step-desc { color: var(--text-sec); }
-.gt-rank-step-reward { font-size: 10px; font-weight: 700; color: var(--gold-bright); margin-top: 0.2rem; }
+.gt-rank-step-reward { font-size: 10px; font-weight: 700; color: var(--gold-bright); margin-top: 0.2rem; line-height: 1.45; }
 .gt-rank-step--done .gt-rank-step-reward { color: var(--green-bright); }
+.gt-rank-step-perk-effect { font-size: 10px; font-weight: 400; color: var(--text-sec); font-style: italic; margin-top: 0.1rem; }
 .gt-rank-step-reqs { display: flex; gap: 0.75rem; font-size: 10px; color: var(--text-sec); margin-top: 0.3rem; }
 .gt-rank2-preview { display: flex; align-items: center; gap: 0.3rem; font-size: 11px; color: var(--text-muted); padding: 0.4rem 0.5rem; background: var(--bg-surface); border-radius: 6px; margin-top: 0.25rem; }
 

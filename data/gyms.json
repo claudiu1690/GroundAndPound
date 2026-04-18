@@ -49,7 +49,7 @@
         "rank": 4, "name": "Champion",
         "description": "Your name is on the wall next to the greats. Coach trusts your corner instincts — you read strikers like an open book.",
         "requirements": { "trainingSessions": 50, "relevantWins": 10, "ironCost": 8000 },
-        "unlock": { "type": "perk", "perkId": "corner_confidence", "badge": "Champion Boxer" }
+        "unlock": { "type": "perk", "perkId": "corner_confidence", "perkName": "Corner Confidence", "perkEffect": "+1 camp slot when fighting a striker-style opponent", "badge": "Champion Boxer" }
       }
     ],
     "sessions": ["bag_work", "footwork", "pad_work", "sparring"],
@@ -90,7 +90,7 @@
         "rank": 4, "name": "Grand Master",
         "description": "You move like water and strike like thunder. Your body knows how to conserve energy mid-fight — an instinct that can't be taught.",
         "requirements": { "trainingSessions": 50, "relevantWins": 10, "ironCost": 8000 },
-        "unlock": { "type": "perk", "perkId": "low_kick_instinct", "badge": "Grand Master Kickboxer" }
+        "unlock": { "type": "perk", "perkId": "low_kick_instinct", "perkName": "Low Kick Instinct", "perkEffect": "Cardio Push camp session costs 1 less energy", "badge": "Grand Master Kickboxer" }
       }
     ],
     "sessions": ["bag_work", "kick_drills", "footwork", "sparring"],
@@ -131,7 +131,7 @@
         "rank": 4, "name": "Olympic",
         "description": "Nobody takes you down anymore — and your sprawl timing is so refined that even your camp preparation for wrestlers becomes second nature.",
         "requirements": { "trainingSessions": 50, "relevantWins": 12, "ironCost": 10000 },
-        "unlock": { "type": "perk", "perkId": "mat_returns", "badge": "Olympic Wrestler" }
+        "unlock": { "type": "perk", "perkId": "mat_returns", "perkName": "Mat Returns", "perkEffect": "Takedown Defence camp session always at least PARTIAL match", "badge": "Olympic Wrestler" }
       }
     ],
     "sessions": ["wrestling", "clinch", "bag_work", "sparring"],
@@ -172,7 +172,7 @@
         "rank": 4, "name": "Black Belt",
         "description": "You see submissions three moves ahead. When someone locks a hold on you, your body knows the escape before your mind catches up.",
         "requirements": { "trainingSessions": 50, "relevantWins": 10, "ironCost": 10000 },
-        "unlock": { "type": "perk", "perkId": "submission_awareness", "badge": "BJJ Black Belt" }
+        "unlock": { "type": "perk", "perkId": "submission_awareness", "perkName": "Submission Awareness", "perkEffect": "Submission Escapes camp session gives +5% extra bonus", "badge": "BJJ Black Belt" }
       }
     ],
     "sessions": ["bjj", "submission", "sparring"],
@@ -213,7 +213,7 @@
         "rank": 4, "name": "Grand Kru",
         "description": "Kru calls you brother. Your body recovers from war differently now — the iron shins and conditioned frame bounce back faster between fights.",
         "requirements": { "trainingSessions": 50, "relevantWins": 10, "ironCost": 8000 },
-        "unlock": { "type": "perk", "perkId": "iron_shins", "badge": "Grand Kru" }
+        "unlock": { "type": "perk", "perkId": "iron_shins", "perkName": "Iron Shins", "perkEffect": "Recovery session restores +1 extra max stamina", "badge": "Grand Kru" }
       }
     ],
     "sessions": ["kick_drills", "bag_work", "clinch", "sparring"],
@@ -254,7 +254,7 @@
         "rank": 4, "name": "Black Belt",
         "description": "The film room is yours. You can study any opponent's tape and extract details invisible to others — your preparation goes one layer deeper.",
         "requirements": { "trainingSessions": 50, "relevantWins": 15, "ironCost": 15000 },
-        "unlock": { "type": "perk", "perkId": "film_room_access", "badge": "Submission Master" }
+        "unlock": { "type": "perk", "perkId": "film_room_access", "perkName": "Film Room Access", "perkEffect": "Fighter Report shows 1 extra fight log on every opponent", "badge": "Submission Master" }
       }
     ],
     "sessions": ["submission", "wrestling", "film_study", "sparring"],
@@ -295,7 +295,7 @@
         "rank": 4, "name": "Master",
         "description": "You've cracked the code. Your game plan preparation is so precise that even general study sessions yield maximum insight — patterns reveal themselves effortlessly.",
         "requirements": { "trainingSessions": 50, "relevantWins": 15, "ironCost": 15000 },
-        "unlock": { "type": "perk", "perkId": "pattern_recognition", "badge": "Fight Scientist" }
+        "unlock": { "type": "perk", "perkId": "pattern_recognition", "perkName": "Pattern Recognition", "perkEffect": "Game Plan Study becomes MATCHED instead of PARTIAL", "badge": "Fight Scientist" }
       }
     ],
     "sessions": ["footwork", "film_study", "pad_work", "sparring"],
@@ -336,7 +336,7 @@
         "rank": 4, "name": "Olympic",
         "description": "Your body holds reserves others don't have. Even a bad weight cut can't drain what you've built here — your physical foundation is unshakable.",
         "requirements": { "trainingSessions": 50, "relevantWins": 15, "ironCost": 20000 },
-        "unlock": { "type": "perk", "perkId": "strength_reserve", "badge": "Titan" }
+        "unlock": { "type": "perk", "perkId": "strength_reserve", "perkName": "Strength Reserve", "perkEffect": "Weight cut bad roll floor raised by 3 \u2014 less downside when the cut goes wrong", "badge": "Titan" }
       }
     ],
     "sessions": ["bag_work", "wrestling", "strength_conditioning", "sparring"],
@@ -377,7 +377,7 @@
         "rank": 4, "name": "Master",
         "description": "Your tactical eye is so sharp that sometimes — just sometimes — you catch a glimpse of what your opponent has been hiding. The wildcard doesn't always stay hidden from you.",
         "requirements": { "trainingSessions": 50, "relevantWins": 15, "ironCost": 20000 },
-        "unlock": { "type": "perk", "perkId": "tactical_edge", "badge": "Tactician" }
+        "unlock": { "type": "perk", "perkId": "tactical_edge", "perkName": "Tactical Edge", "perkEffect": "30% chance the opponent's hidden wildcard is revealed in the Fighter Report", "badge": "Tactician" }
       }
     ],
     "sessions": ["film_study", "bjj", "submission", "sparring"],
@@ -418,7 +418,7 @@
         "rank": 4, "name": "Master",
         "description": "You're the fighter other fighters talk about. Your name carries weight — promoters, fans, and media all pay attention. The championship pedigree follows you into every cage.",
         "requirements": { "trainingSessions": 50, "relevantWins": 15, "ironCost": 30000 },
-        "unlock": { "type": "perk", "perkId": "championship_pedigree", "badge": "Elite Master" }
+        "unlock": { "type": "perk", "perkId": "championship_pedigree", "perkName": "Championship Pedigree", "perkEffect": "+10% fame from all fights", "badge": "Elite Master" }
       }
     ],
     "sessions": ["bag_work", "footwork", "kick_drills", "pad_work", "wrestling", "clinch", "bjj", "submission", "sparring", "film_study", "strength_conditioning", "recovery"],
