@@ -486,8 +486,8 @@ async function resolveFightAndApply(fighterId) {
         })()
         : opponent;
 
-    // GDD 7.4: Iron Will perk → pass flag to reduce KO probability
-    const ironWillPerk = !!(fighter.activePerks && fighter.activePerks.ironWill);
+    // Iron Will perk (legacy — kept for fight resolution compatibility, no longer granted by quests)
+    const ironWillPerk = false;
     // v2: pass conditional session bonuses and wildcard instead of flat campBonuses
     const sessionBonuses = fightCamp?.sessionBonuses ? [...fightCamp.sessionBonuses.map(b => ({ ...b }))] : [];
     const wildcard = fightCamp?.wildcard ?? null;
@@ -543,14 +543,12 @@ async function resolveFightAndApply(fighterId) {
     // GDD 8.8: Weight miss → -20% iron purse + notoriety penalty
     const basePurse = tierConfig && fight.promotionTier !== "Amateur" ? Math.max(0, tierConfig.signingFee || 0) : 0;
     const outcomeIronMult = isWin ? 1 : (isDraw ? 0.5 : 0.7);
-    // GDD 7.4: The Grind perk → +500 iron per fight while enrolled at that gym
-    const grindBonus = (fighter.activePerks?.theGrindGymId &&
-        String(fighter.activePerks.theGrindGymId) === String(fighter.gymId)) ? 500 : 0;
+    // Championship Pedigree perk: +10% fame from fights (handled in notoriety section below)
     const notorietyPurseFrac = notorietyService.getNotorietyPurseFraction(fighter.notoriety.peakTier);
     const comebackPurseFrac = isComeback ? 0.3 : 0;
     let ironEarned = Math.round(
         basePurse * outcomeIronMult * (1 + notorietyPurseFrac + comebackPurseFrac)
-    ) + grindBonus;
+    );
     if (weightMissed) ironEarned = Math.round(ironEarned * 0.8);
 
     const wasFrozenBeforeFight = !!fighter.notoriety.isFrozen;
@@ -822,6 +820,21 @@ async function resolveFightAndApply(fighterId) {
 
     const maxStaminaVal = fighter.maxStamina ?? 100;
     const staminaEnd = result.playerStaminaAfter ?? maxStaminaVal;
+
+    // ── Gym rank: increment relevant wins on fight win ──────────────────
+    if (isWin) {
+        try {
+            const gymRankService = require("./gymRankService");
+            const gymRankUps = await gymRankService.onFightWin(fighter, result.outcome);
+            // Always save — onFightWin mutates fighter.gymRanks whether or not a rank-up occurred
+            await fighter.save();
+            if (gymRankUps.length > 0) {
+                console.log(`[gymRank] Rank-ups: ${gymRankUps.map(u => u.gym + " → " + u.rankName).join(", ")}`);
+            }
+        } catch (e) {
+            console.error("[gymRank] Failed to update fight wins:", e.message);
+        }
+    }
 
     // ── Activity log entries (fire-and-forget, never throw) ──────────────
     const _tier = fighter.promotionTier;

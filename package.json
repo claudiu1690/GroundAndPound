@@ -11,6 +11,8 @@
     "seed:reset": "node scripts/seed.js --reset",
     "seed:opponents": "node scripts/seedOpponents.js",
     "seed:opponents:reset": "node scripts/seedOpponents.js --reset",
+    "seed:gyms": "node scripts/seedGyms.js",
+    "seed:gyms:reset": "node scripts/seedGyms.js --reset",
     "debug:energy": "node scripts/debugRechargeEnergy.js",
     "debug:reset-fight-cap": "node scripts/debugResetDailyFightCap.js",
     "debug:title-shot": "node scripts/debugTitleShot.js"

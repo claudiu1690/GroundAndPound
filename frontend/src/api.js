@@ -129,11 +129,16 @@ export const api = {
   mentalReset: (fighterId) =>
     request(`/fighters/${fighterId}/mental-reset`, { method: "POST" }),
 
-  // ── Quests / Membership ──────────────────────────────────
-  getGymQuests: (fighterId, gymId) =>
-    request(`/quests/${fighterId}/${gymId}`),
-  payGymMembership: (fighterId, gymId) =>
-    request(`/fighters/${fighterId}/pay-membership`, {
+  // ── Gyms ────────────────────────────────────────────────
+  listGymsForFighter: (fighterId) =>
+    request(`/gyms/for-fighter/${fighterId}`),
+  switchGym: (fighterId, gymId) =>
+    request(`/fighters/${fighterId}/switch-gym`, {
+      method: "POST",
+      body: JSON.stringify({ gymId }),
+    }),
+  rankUpGym: (fighterId, gymId) =>
+    request(`/fighters/${fighterId}/rank-up-gym`, {
       method: "POST",
       body: JSON.stringify({ gymId }),
     }),

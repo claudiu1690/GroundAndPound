@@ -150,10 +150,29 @@ async function mentalReset(req, res) {
     }
 }
 
-async function payGymMembership(req, res) {
+async function switchGym(req, res) {
     try {
-        const fighter = await fighterService.payGymMembership(req.params.id, req.body.gymId);
-        res.json({ fighter, message: "Membership paid successfully." });
+        const fighter = await fighterService.switchGym(req.params.id, req.body.gymId);
+        res.json({ fighter, message: "Gym membership activated." });
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+}
+
+async function rankUpGym(req, res) {
+    try {
+        const Gym = require("../models/gymModel");
+        const Fighter = require("../models/fighterModel");
+        const gymRankService = require("../services/gymRankService");
+
+        const fighter = await Fighter.findById(req.params.id);
+        if (!fighter) return res.status(404).json({ message: "Fighter not found" });
+        const gym = await Gym.findById(req.body.gymId);
+        if (!gym) return res.status(404).json({ message: "Gym not found" });
+
+        const result = gymRankService.attemptManualRankUp(fighter, gym);
+        await fighter.save();
+        res.json({ fighter: fighterService.toPublicFighter(fighter), rankUp: result });
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
@@ -242,7 +261,8 @@ module.exports = {
     rest,
     doctorVisit,
     mentalReset,
-    payGymMembership,
+    switchGym,
+    rankUpGym,
     notorietyLeaderboard,
     getChampions,
     getActivity,

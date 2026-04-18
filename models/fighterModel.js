@@ -111,14 +111,13 @@ const fighterSchema = new mongoose.Schema({
     // Comeback mode after loss
     comebackMode: { type: Boolean, default: false },
     consecutiveLosses: { type: Number, default: 0 },
-    // GDD 7.4: Gym quest perks (applied permanently when quest is completed)
-    activePerks: {
-        ironWill:          { type: Boolean, default: false },  // −5% KO probability
-        specialistStat:    { type: String, default: null },    // this stat trains 10% faster
-        theGrindGymId:     { type: mongoose.Schema.Types.ObjectId, default: null }, // +500 iron/fight when enrolled here
-        apexRegimen:       { type: Boolean, default: false },  // +20% XP all sessions
-    },
-    completedQuests: [{ type: String }],   // list of completed questIds
+    // Gym rank progression: persistent per gym, keyed by gym slug
+    gymRanks: { type: mongoose.Schema.Types.Mixed, default: {} },
+    // Active gym membership
+    activeGymId: { type: mongoose.Schema.Types.ObjectId, ref: "Gym", default: null },
+    activeGymPaidUntil: { type: Date, default: null },
+    // Gym perks earned at Rank 4 (perkId strings, e.g. "corner_confidence")
+    gymPerks: [{ type: String }],
     // GDD 8.6: Badges earned (e.g. "Resilience" for winning a comeback fight)
     badges: [{ type: String }],
     // GDD 8.5: Mental Reset required after 3 consecutive losses (blocks next fight)
@@ -163,11 +162,6 @@ const fighterSchema = new mongoose.Schema({
     }],
     // GDD 8.8: Weight cut strategy for the current accepted fight
     weightCut: { type: String, enum: ["easy", "moderate", "aggressive"], default: "easy" },
-    // Gym membership tracking: paidUntil per gym
-    gymMemberships: [{
-        gymId:     { type: mongoose.Schema.Types.ObjectId, ref: "Gym" },
-        paidUntil: { type: Date },
-    }],
 }, { timestamps: true });
 
 fighterSchema.index({ promotionTier: 1, weightClass: 1, overallRating: -1 });

@@ -25,6 +25,7 @@ const gymController = require("../controllers/gymController");
  *         description: Internal server error
  */
 router.get("/", gymController.list);
+router.get("/for-fighter/:fighterId", gymController.listWithProgress);
 
 /**
  * @swagger
@@ -49,5 +50,6 @@ router.get("/", gymController.list);
  *         description: Internal server error
  */
 router.get("/:id", gymController.getById);
+router.get("/:id/progress/:fighterId", gymController.getProgress);
 
 module.exports = router;

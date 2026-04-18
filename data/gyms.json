@@ -1,0 +1,427 @@
+[
+  {
+    "name": "Community MMA Center",
+    "slug": "community-mma",
+    "tagline": "Where every fighter starts",
+    "description": "A no-frills warehouse gym with duct-taped heavy bags and mats that have seen better days. The coaches here won't hold your hand, but they'll teach you the basics of every discipline. It's not pretty, it's not fancy — but it's free, it's open, and it's where legends quietly begin.",
+    "focusStats": [],
+    "availableFrom": "Amateur",
+    "weeklyCost": 0,
+    "xpMultiplier": 0.6,
+    "focusXpMultiplier": 0.6,
+    "isFreeGym": true,
+    "rankNames": [],
+    "ranks": [],
+    "sessions": ["bag_work", "footwork", "kick_drills", "pad_work", "wrestling", "clinch", "bjj", "submission", "sparring", "film_study", "strength_conditioning", "recovery"]
+  },
+  {
+    "name": "Iron Fist Boxing",
+    "slug": "iron-fist-boxing",
+    "tagline": "Hands of stone, chin of iron",
+    "description": "Old-school boxing gym tucked under a highway overpass. The ring is stained, the speed bags are worn smooth, and Coach Reyes doesn't believe in anything that isn't a jab, cross, or hook. You'll learn to hit hard, move fast, and take a shot without flinching. Every knockout artist in the city started here.",
+    "focusStats": ["STR", "SPD", "CHN"],
+    "availableFrom": "Amateur",
+    "weeklyCost": 300,
+    "xpMultiplier": 1.0,
+    "focusXpMultiplier": 1.25,
+    "isFreeGym": false,
+    "rankNames": ["Prospect", "Contender", "Main Event", "Champion"],
+    "ranks": [
+      {
+        "rank": 1, "name": "Prospect",
+        "description": "Fresh meat. Coach lets you hit the bags and work the pads. Prove you belong.",
+        "requirements": { "trainingSessions": 0, "relevantWins": 0, "ironCost": 0 },
+        "unlock": { "type": "access" }
+      },
+      {
+        "rank": 2, "name": "Contender",
+        "description": "Coach noticed your hands. He's pulling you aside for advanced combination work — combos the prospects don't get to see.",
+        "requirements": { "trainingSessions": 15, "relevantWins": 2, "ironCost": 0 },
+        "unlock": { "type": "session", "sessionKey": "combination_drilling" }
+      },
+      {
+        "rank": 3, "name": "Main Event",
+        "description": "You're the fighter they put on the poster. Training here sharpens faster now — your hands know the way.",
+        "requirements": { "trainingSessions": 30, "relevantWins": 5, "ironCost": 2000 },
+        "unlock": { "type": "xpBonus", "xpBonusPct": 5 }
+      },
+      {
+        "rank": 4, "name": "Champion",
+        "description": "Your name is on the wall next to the greats. Coach trusts your corner instincts — you read strikers like an open book.",
+        "requirements": { "trainingSessions": 50, "relevantWins": 10, "ironCost": 8000 },
+        "unlock": { "type": "perk", "perkId": "corner_confidence", "badge": "Champion Boxer" }
+      }
+    ],
+    "sessions": ["bag_work", "footwork", "pad_work", "sparring"],
+    "relevantWinTypes": ["KO/TKO"]
+  },
+  {
+    "name": "Dragon Kickboxing",
+    "slug": "dragon-kickboxing",
+    "tagline": "Legs are weapons too",
+    "description": "Neon-lit gym above a noodle shop in Chinatown. The head kicks here are no joke — Coach Tran demands perfect form on every rep. You'll drill switch kicks until your shins are steel and your footwork is automatic. If your opponent can't check your kicks, they can't stand.",
+    "focusStats": ["STR", "LEG", "SPD"],
+    "availableFrom": "Amateur",
+    "weeklyCost": 300,
+    "xpMultiplier": 1.0,
+    "focusXpMultiplier": 1.25,
+    "isFreeGym": false,
+    "rankNames": ["Beginner", "Fighter", "Warrior", "Grand Master"],
+    "ranks": [
+      {
+        "rank": 1, "name": "Beginner",
+        "description": "You can barely throw a roundhouse without falling over. That's about to change.",
+        "requirements": { "trainingSessions": 0, "relevantWins": 0, "ironCost": 0 },
+        "unlock": { "type": "access" }
+      },
+      {
+        "rank": 2, "name": "Fighter",
+        "description": "Coach Tran unlocks the switch kick sequences. Your opponents won't know which leg is coming next.",
+        "requirements": { "trainingSessions": 15, "relevantWins": 2, "ironCost": 0 },
+        "unlock": { "type": "session", "sessionKey": "switch_kick_mastery" }
+      },
+      {
+        "rank": 3, "name": "Warrior",
+        "description": "Your kicks land with authority. Training efficiency sharpens — every session counts more.",
+        "requirements": { "trainingSessions": 30, "relevantWins": 5, "ironCost": 2000 },
+        "unlock": { "type": "xpBonus", "xpBonusPct": 5 }
+      },
+      {
+        "rank": 4, "name": "Grand Master",
+        "description": "You move like water and strike like thunder. Your body knows how to conserve energy mid-fight — an instinct that can't be taught.",
+        "requirements": { "trainingSessions": 50, "relevantWins": 10, "ironCost": 8000 },
+        "unlock": { "type": "perk", "perkId": "low_kick_instinct", "badge": "Grand Master Kickboxer" }
+      }
+    ],
+    "sessions": ["bag_work", "kick_drills", "footwork", "sparring"],
+    "relevantWinTypes": ["KO/TKO"]
+  },
+  {
+    "name": "Apex Wrestling Academy",
+    "slug": "apex-wrestling",
+    "tagline": "Control the cage, control the fight",
+    "description": "College wrestling room energy with an MMA edge. The mats smell like decades of hard work. Coach Miller was a two-time NCAA champion and he runs this place like boot camp. You'll learn to shoot doubles, chain takedowns, and grind opponents into the fence until they break.",
+    "focusStats": ["WRE", "STR", "GND"],
+    "availableFrom": "Amateur",
+    "weeklyCost": 400,
+    "xpMultiplier": 1.0,
+    "focusXpMultiplier": 1.25,
+    "isFreeGym": false,
+    "rankNames": ["Rookie", "Varsity", "All-American", "Olympic"],
+    "ranks": [
+      {
+        "rank": 1, "name": "Rookie",
+        "description": "You're getting taken down every round. Time to learn how to be the one doing the taking.",
+        "requirements": { "trainingSessions": 0, "relevantWins": 0, "ironCost": 0 },
+        "unlock": { "type": "access" }
+      },
+      {
+        "rank": 2, "name": "Varsity",
+        "description": "Coach shows you the chain wrestling sequences — relentless takedown attempts that never stop.",
+        "requirements": { "trainingSessions": 15, "relevantWins": 3, "ironCost": 0 },
+        "unlock": { "type": "session", "sessionKey": "chain_wrestling" }
+      },
+      {
+        "rank": 3, "name": "All-American",
+        "description": "Your wrestling is becoming instinctive. The mat feels like home and training here accelerates.",
+        "requirements": { "trainingSessions": 30, "relevantWins": 6, "ironCost": 2500 },
+        "unlock": { "type": "xpBonus", "xpBonusPct": 5 }
+      },
+      {
+        "rank": 4, "name": "Olympic",
+        "description": "Nobody takes you down anymore — and your sprawl timing is so refined that even your camp preparation for wrestlers becomes second nature.",
+        "requirements": { "trainingSessions": 50, "relevantWins": 12, "ironCost": 10000 },
+        "unlock": { "type": "perk", "perkId": "mat_returns", "badge": "Olympic Wrestler" }
+      }
+    ],
+    "sessions": ["wrestling", "clinch", "bag_work", "sparring"],
+    "relevantWinTypes": ["KO/TKO", "Decision (unanimous)", "Decision (split)"]
+  },
+  {
+    "name": "Gracie Ground Game",
+    "slug": "gracie-ground-game",
+    "tagline": "The ground is where fights end",
+    "description": "Quiet academy with white walls and pristine mats. No ego, no shoes on the mat, no shortcuts. The Gracie lineage runs deep here — you'll learn guard retention, sweeps, back takes, and submissions that have been refined over generations. When the fight hits the floor, you'll be the one hunting.",
+    "focusStats": ["GND", "SUB"],
+    "availableFrom": "Amateur",
+    "weeklyCost": 400,
+    "xpMultiplier": 1.0,
+    "focusXpMultiplier": 1.25,
+    "isFreeGym": false,
+    "rankNames": ["White Belt", "Blue Belt", "Purple Belt", "Black Belt"],
+    "ranks": [
+      {
+        "rank": 1, "name": "White Belt",
+        "description": "Everyone starts here. You'll learn to survive on the ground before you learn to attack.",
+        "requirements": { "trainingSessions": 0, "relevantWins": 0, "ironCost": 0 },
+        "unlock": { "type": "access" }
+      },
+      {
+        "rank": 2, "name": "Blue Belt",
+        "description": "Professor trusts you with the advanced guard systems — sweeps, transitions, and attacks from bottom position.",
+        "requirements": { "trainingSessions": 15, "relevantWins": 2, "ironCost": 0 },
+        "unlock": { "type": "session", "sessionKey": "advanced_guard_work" }
+      },
+      {
+        "rank": 3, "name": "Purple Belt",
+        "description": "Your ground game flows. Positions chain into submissions naturally and your training accelerates.",
+        "requirements": { "trainingSessions": 30, "relevantWins": 5, "ironCost": 2500 },
+        "unlock": { "type": "xpBonus", "xpBonusPct": 5 }
+      },
+      {
+        "rank": 4, "name": "Black Belt",
+        "description": "You see submissions three moves ahead. When someone locks a hold on you, your body knows the escape before your mind catches up.",
+        "requirements": { "trainingSessions": 50, "relevantWins": 10, "ironCost": 10000 },
+        "unlock": { "type": "perk", "perkId": "submission_awareness", "badge": "BJJ Black Belt" }
+      }
+    ],
+    "sessions": ["bjj", "submission", "sparring"],
+    "relevantWinTypes": ["Submission"]
+  },
+  {
+    "name": "Warrior Muay Thai",
+    "slug": "warrior-muay-thai",
+    "tagline": "Eight limbs, one purpose",
+    "description": "Sweat-soaked gym with Thai pads hanging from every hook and the sound of shin on leather echoing off concrete walls. Kru Somchai trained champions in Bangkok before opening this place. Elbows, knees, clinch work, low kicks — the art of eight limbs taught by someone who lived it.",
+    "focusStats": ["LEG", "STR", "CHN"],
+    "availableFrom": "Amateur",
+    "weeklyCost": 350,
+    "xpMultiplier": 1.0,
+    "focusXpMultiplier": 1.25,
+    "isFreeGym": false,
+    "rankNames": ["Beginner", "Fighter", "Warrior", "Grand Kru"],
+    "ranks": [
+      {
+        "rank": 1, "name": "Beginner",
+        "description": "Kru watches you from across the room. For now, you kick the bag and keep your mouth shut.",
+        "requirements": { "trainingSessions": 0, "relevantWins": 0, "ironCost": 0 },
+        "unlock": { "type": "access" }
+      },
+      {
+        "rank": 2, "name": "Fighter",
+        "description": "Kru pulls you into the clinch circle. You'll learn to weaponize knees from close range — devastating and hard to defend.",
+        "requirements": { "trainingSessions": 15, "relevantWins": 2, "ironCost": 0 },
+        "unlock": { "type": "session", "sessionKey": "clinch_knees" }
+      },
+      {
+        "rank": 3, "name": "Warrior",
+        "description": "Your shins are conditioned, your timing is sharp. Every session at this gym now cuts deeper into your muscle memory.",
+        "requirements": { "trainingSessions": 30, "relevantWins": 5, "ironCost": 2000 },
+        "unlock": { "type": "xpBonus", "xpBonusPct": 5 }
+      },
+      {
+        "rank": 4, "name": "Grand Kru",
+        "description": "Kru calls you brother. Your body recovers from war differently now — the iron shins and conditioned frame bounce back faster between fights.",
+        "requirements": { "trainingSessions": 50, "relevantWins": 10, "ironCost": 8000 },
+        "unlock": { "type": "perk", "perkId": "iron_shins", "badge": "Grand Kru" }
+      }
+    ],
+    "sessions": ["kick_drills", "bag_work", "clinch", "sparring"],
+    "relevantWinTypes": ["KO/TKO"]
+  },
+  {
+    "name": "Renzo Combat Systems",
+    "slug": "renzo-combat",
+    "tagline": "Where submission artists are forged",
+    "description": "Underground facility with film rooms, grappling dummies, and coaches who competed at the highest level. This isn't just about catching submissions — it's about understanding the chess match on the ground. Transitions, scrambles, fight IQ drilled into every roll. You don't just learn to submit people here. You learn to think three moves ahead.",
+    "focusStats": ["SUB", "WRE", "FIQ"],
+    "availableFrom": "Regional Pro",
+    "weeklyCost": 1500,
+    "xpMultiplier": 1.15,
+    "focusXpMultiplier": 1.4,
+    "isFreeGym": false,
+    "rankNames": ["White Belt", "Blue Belt", "Purple Belt", "Black Belt"],
+    "ranks": [
+      {
+        "rank": 1, "name": "White Belt",
+        "description": "The coaches test you with positions you've never seen. Time to empty your cup and relearn the ground.",
+        "requirements": { "trainingSessions": 0, "relevantWins": 0, "ironCost": 0 },
+        "unlock": { "type": "access" }
+      },
+      {
+        "rank": 2, "name": "Blue Belt",
+        "description": "You've earned access to the transition lab — fluid movement between positions that turns defence into attack instantly.",
+        "requirements": { "trainingSessions": 15, "relevantWins": 3, "ironCost": 0 },
+        "unlock": { "type": "session", "sessionKey": "transition_mastery" }
+      },
+      {
+        "rank": 3, "name": "Purple Belt",
+        "description": "Your submissions chain together without thinking. Training here accelerates — the body knows what the mind is still processing.",
+        "requirements": { "trainingSessions": 30, "relevantWins": 8, "ironCost": 5000 },
+        "unlock": { "type": "xpBonus", "xpBonusPct": 5 }
+      },
+      {
+        "rank": 4, "name": "Black Belt",
+        "description": "The film room is yours. You can study any opponent's tape and extract details invisible to others — your preparation goes one layer deeper.",
+        "requirements": { "trainingSessions": 50, "relevantWins": 15, "ironCost": 15000 },
+        "unlock": { "type": "perk", "perkId": "film_room_access", "badge": "Submission Master" }
+      }
+    ],
+    "sessions": ["submission", "wrestling", "film_study", "sparring"],
+    "relevantWinTypes": ["Submission"]
+  },
+  {
+    "name": "Precision MMA Lab",
+    "slug": "precision-mma-lab",
+    "tagline": "The science of not getting hit",
+    "description": "Sleek, modern facility that looks more like a sports science lab than a fight gym. Cameras track your movement, coaches study frame data, and every session is built around timing, angles, and fight IQ. You won't learn to brawl here — you'll learn to make your opponent miss and pay for it every time.",
+    "focusStats": ["SPD", "FIQ", "CHN"],
+    "availableFrom": "Regional Pro",
+    "weeklyCost": 1500,
+    "xpMultiplier": 1.15,
+    "focusXpMultiplier": 1.4,
+    "isFreeGym": false,
+    "rankNames": ["Novice", "Intermediate", "Advanced", "Master"],
+    "ranks": [
+      {
+        "rank": 1, "name": "Novice",
+        "description": "The coaches film your sparring and show you everything you're doing wrong. Humbling, but necessary.",
+        "requirements": { "trainingSessions": 0, "relevantWins": 0, "ironCost": 0 },
+        "unlock": { "type": "access" }
+      },
+      {
+        "rank": 2, "name": "Intermediate",
+        "description": "You've graduated to counter-timing drills — the art of reading an opponent's rhythm and punishing their patterns.",
+        "requirements": { "trainingSessions": 15, "relevantWins": 3, "ironCost": 0 },
+        "unlock": { "type": "session", "sessionKey": "counter_timing" }
+      },
+      {
+        "rank": 3, "name": "Advanced",
+        "description": "Your defensive IQ is elite. Training here compounds faster — you see openings before they appear.",
+        "requirements": { "trainingSessions": 30, "relevantWins": 8, "ironCost": 5000 },
+        "unlock": { "type": "xpBonus", "xpBonusPct": 5 }
+      },
+      {
+        "rank": 4, "name": "Master",
+        "description": "You've cracked the code. Your game plan preparation is so precise that even general study sessions yield maximum insight — patterns reveal themselves effortlessly.",
+        "requirements": { "trainingSessions": 50, "relevantWins": 15, "ironCost": 15000 },
+        "unlock": { "type": "perk", "perkId": "pattern_recognition", "badge": "Fight Scientist" }
+      }
+    ],
+    "sessions": ["footwork", "film_study", "pad_work", "sparring"],
+    "relevantWinTypes": ["Decision (unanimous)", "Decision (split)"]
+  },
+  {
+    "name": "Titan Performance Center",
+    "slug": "titan-performance",
+    "tagline": "Strength wins fights. Period.",
+    "description": "Industrial-grade training complex where the weights are heavier, the wrestling room is bigger, and the coaches have produced multiple national champions. This is where power grapplers and heavy hitters are built. You'll push sleds, flip tires, wrestle live rounds, and leave every session wondering if your legs still work.",
+    "focusStats": ["STR", "WRE", "CHN"],
+    "availableFrom": "National",
+    "weeklyCost": 4000,
+    "xpMultiplier": 1.3,
+    "focusXpMultiplier": 1.5,
+    "isFreeGym": false,
+    "rankNames": ["Rookie", "Varsity", "All-American", "Olympic"],
+    "ranks": [
+      {
+        "rank": 1, "name": "Rookie",
+        "description": "The coaches here bench more than you weigh. Time to earn their respect the hard way.",
+        "requirements": { "trainingSessions": 0, "relevantWins": 0, "ironCost": 0 },
+        "unlock": { "type": "access" }
+      },
+      {
+        "rank": 2, "name": "Varsity",
+        "description": "Power wrestling drills unlocked — explosive takedowns fuelled by raw strength that lesser wrestlers can't defend.",
+        "requirements": { "trainingSessions": 15, "relevantWins": 3, "ironCost": 0 },
+        "unlock": { "type": "session", "sessionKey": "power_wrestling" }
+      },
+      {
+        "rank": 3, "name": "All-American",
+        "description": "Your body is a machine. Training compounds here — every rep, every drill builds on a foundation of pure power.",
+        "requirements": { "trainingSessions": 30, "relevantWins": 8, "ironCost": 8000 },
+        "unlock": { "type": "xpBonus", "xpBonusPct": 5 }
+      },
+      {
+        "rank": 4, "name": "Olympic",
+        "description": "Your body holds reserves others don't have. Even a bad weight cut can't drain what you've built here — your physical foundation is unshakable.",
+        "requirements": { "trainingSessions": 50, "relevantWins": 15, "ironCost": 20000 },
+        "unlock": { "type": "perk", "perkId": "strength_reserve", "badge": "Titan" }
+      }
+    ],
+    "sessions": ["bag_work", "wrestling", "strength_conditioning", "sparring"],
+    "relevantWinTypes": ["KO/TKO"]
+  },
+  {
+    "name": "The War Room",
+    "slug": "the-war-room",
+    "tagline": "Outthink them before you outfight them",
+    "description": "Invite-only facility run by retired fighters who transitioned into coaching. The whiteboards are covered in fight breakdowns. Every sparring session has a tactical objective. You'll watch more tape than you throw punches some days — but when fight night comes, you'll know your opponent better than they know themselves.",
+    "focusStats": ["FIQ", "GND", "SUB"],
+    "availableFrom": "National",
+    "weeklyCost": 4000,
+    "xpMultiplier": 1.3,
+    "focusXpMultiplier": 1.5,
+    "isFreeGym": false,
+    "rankNames": ["Novice", "Intermediate", "Advanced", "Master"],
+    "ranks": [
+      {
+        "rank": 1, "name": "Novice",
+        "description": "You sit in on film sessions and realise how little you actually understood about fighting until now.",
+        "requirements": { "trainingSessions": 0, "relevantWins": 0, "ironCost": 0 },
+        "unlock": { "type": "access" }
+      },
+      {
+        "rank": 2, "name": "Intermediate",
+        "description": "Strategic sparring unlocked — live rounds with specific tactical constraints that sharpen your fight IQ.",
+        "requirements": { "trainingSessions": 15, "relevantWins": 3, "ironCost": 0 },
+        "unlock": { "type": "session", "sessionKey": "strategic_sparring" }
+      },
+      {
+        "rank": 3, "name": "Advanced",
+        "description": "You think in systems now. Training compounds — every session builds tactical layers that stack in the cage.",
+        "requirements": { "trainingSessions": 30, "relevantWins": 8, "ironCost": 8000 },
+        "unlock": { "type": "xpBonus", "xpBonusPct": 5 }
+      },
+      {
+        "rank": 4, "name": "Master",
+        "description": "Your tactical eye is so sharp that sometimes — just sometimes — you catch a glimpse of what your opponent has been hiding. The wildcard doesn't always stay hidden from you.",
+        "requirements": { "trainingSessions": 50, "relevantWins": 15, "ironCost": 20000 },
+        "unlock": { "type": "perk", "perkId": "tactical_edge", "badge": "Tactician" }
+      }
+    ],
+    "sessions": ["film_study", "bjj", "submission", "sparring"],
+    "relevantWinTypes": ["Submission", "Decision (unanimous)", "Decision (split)"]
+  },
+  {
+    "name": "Elite Fight Academy",
+    "slug": "elite-fight-academy",
+    "tagline": "Where champions train",
+    "description": "The best facility money can buy. World-class coaches in every discipline, cutting-edge recovery equipment, private training rooms, and a roster of fighters who have all held belts. This is where you come when good isn't good enough. Every session is premium. Every sparring partner is dangerous. Every week here costs a fortune — but you get what you pay for.",
+    "focusStats": ["STR", "SPD", "LEG", "WRE", "GND", "SUB", "CHN", "FIQ"],
+    "availableFrom": "GCS Contender",
+    "weeklyCost": 10000,
+    "xpMultiplier": 1.5,
+    "focusXpMultiplier": 1.5,
+    "isFreeGym": false,
+    "rankNames": ["Novice", "Intermediate", "Advanced", "Master"],
+    "ranks": [
+      {
+        "rank": 1, "name": "Novice",
+        "description": "The other fighters here have all held titles. You're the new kid — but you're in the room where it happens.",
+        "requirements": { "trainingSessions": 0, "relevantWins": 0, "ironCost": 0 },
+        "unlock": { "type": "access" }
+      },
+      {
+        "rank": 2, "name": "Intermediate",
+        "description": "Championship round drills — five-round war simulations that separate contenders from pretenders.",
+        "requirements": { "trainingSessions": 15, "relevantWins": 3, "ironCost": 0 },
+        "unlock": { "type": "session", "sessionKey": "championship_rounds" }
+      },
+      {
+        "rank": 3, "name": "Advanced",
+        "description": "You belong here now. The elite coaches give you their full attention and every session hits different.",
+        "requirements": { "trainingSessions": 30, "relevantWins": 8, "ironCost": 12000 },
+        "unlock": { "type": "xpBonus", "xpBonusPct": 5 }
+      },
+      {
+        "rank": 4, "name": "Master",
+        "description": "You're the fighter other fighters talk about. Your name carries weight — promoters, fans, and media all pay attention. The championship pedigree follows you into every cage.",
+        "requirements": { "trainingSessions": 50, "relevantWins": 15, "ironCost": 30000 },
+        "unlock": { "type": "perk", "perkId": "championship_pedigree", "badge": "Elite Master" }
+      }
+    ],
+    "sessions": ["bag_work", "footwork", "kick_drills", "pad_work", "wrestling", "clinch", "bjj", "submission", "sparring", "film_study", "strength_conditioning", "recovery"],
+    "relevantWinTypes": ["KO/TKO", "Submission", "Decision (unanimous)", "Decision (split)"]
+  }
+]

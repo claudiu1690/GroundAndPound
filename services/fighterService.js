@@ -321,32 +321,40 @@ async function mentalReset(fighterId) {
  * Pay monthly membership fee for a gym.
  * Sets paidUntil = now + 30 days for that gym in the fighter's gymMemberships array.
  */
-async function payGymMembership(fighterId, gymId) {
+/**
+ * Switch active gym membership. Deducts weekly iron cost, cancels old membership.
+ * Initializes gym rank progress if first time at this gym.
+ */
+async function switchGym(fighterId, gymId) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
 
+    const Gym = require("../models/gymModel");
     const gym = await Gym.findById(gymId);
     if (!gym) throw new Error("Gym not found");
 
-    if (!gym.monthlyIron || gym.monthlyIron === 0) {
-        throw new Error("This gym has no membership fee");
-    }
-    if (fighter.iron < gym.monthlyIron) {
-        throw new Error(`Not enough Iron — need ${gym.monthlyIron} ⊗`);
+    if (gym.isFreeGym) throw new Error("Community gym is always free — no membership needed");
+
+    // Tier gate check
+    const { PROMOTION_TIERS } = require("../consts/gameConstants");
+    const TIER_ORDER = Object.keys(PROMOTION_TIERS);
+    if (TIER_ORDER.indexOf(fighter.promotionTier ?? "Amateur") < TIER_ORDER.indexOf(gym.availableFrom)) {
+        throw new Error(`This gym requires ${gym.availableFrom} tier or higher`);
     }
 
-    fighter.iron -= gym.monthlyIron;
-
-    const paidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-    if (!fighter.gymMemberships) fighter.gymMemberships = [];
-    const idx = fighter.gymMemberships.findIndex((m) => String(m.gymId) === String(gymId));
-    if (idx >= 0) {
-        fighter.gymMemberships[idx].paidUntil = paidUntil;
-    } else {
-        fighter.gymMemberships.push({ gymId, paidUntil });
+    if ((fighter.iron ?? 0) < gym.weeklyCost) {
+        throw new Error(`Not enough Iron — need ${gym.weeklyCost}`);
     }
-    // Paid membership sets this gym as the fighter's default / home gym.
-    fighter.gymId = gym._id;
+
+    fighter.iron -= gym.weeklyCost;
+    fighter.activeGymId = gym._id;
+    fighter.activeGymPaidUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    fighter.gymId = gym._id; // also set as home gym for display
+
+    // Initialize rank progress if first time
+    const gymRankService = require("./gymRankService");
+    gymRankService.getOrInitRank(fighter, gym.slug);
+
     await fighter.save();
     return toPublicFighter(fighter);
 }
@@ -393,7 +401,7 @@ module.exports = {
     rest,
     doctorVisit,
     mentalReset,
-    payGymMembership,
+    switchGym,
     buildStatProgress,
     getInjuryLockedStats
 };
