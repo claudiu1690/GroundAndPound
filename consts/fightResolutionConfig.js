@@ -27,19 +27,22 @@ const FIGHT_RESOLUTION_CONFIG = {
         maxMod: 0.07,
     },
     strikeDamage: {
-        attackWeight: 0.5,
-        speedWeight: 0.2,
-        chinWeight: 0.3,
+        // Balanced attack/defense weights — softened from the original to reduce OVR cliff.
+        attackWeight: 0.45,
+        speedWeight: 0.18,
+        chinWeight: 0.35,
         varianceMin: 0.85,
         varianceRange: 0.3,
     },
     takedown: {
-        baseSuccessChance: 0.4,
-        wreDiffDivisor: 250,
+        // Higher base gives grapplers a fair shot; WRE gap scales with a tighter divisor.
+        baseSuccessChance: 0.5,
+        wreDiffDivisor: 150,
+        // Shooter (propensity) base is now style-driven; these values bound the result.
         shooterBaseChance: 0.5,
         shooterDiffDivisor: 100,
-        shooterChanceMin: 0.25,
-        shooterChanceMax: 0.75,
+        shooterChanceMin: 0.15,
+        shooterChanceMax: 0.85,
     },
     submission: {
         baseChance: 0.18,
@@ -112,7 +115,8 @@ const FIGHT_RESOLUTION_CONFIG = {
     round: {
         staminaDrainBase: 8,
         staminaDrainRandom: 6,
-        takedownRoundsLimit: 2,
+        // Takedowns can be attempted every round — grapplers no longer lose all offense after round 2.
+        takedownRoundsLimit: 5,
         healthZero: 0,
     },
     flashKo: {
@@ -126,8 +130,10 @@ const FIGHT_RESOLUTION_CONFIG = {
     judging: {
         biases: ["striker", "grappler", "balanced"],
         controlWeights: {
-            grappler: 2.5,
-            striker: -1.0,
+            // Grappler-biased judges reward takedowns + control heavily.
+            grappler: 4,
+            // Striker-biased judges still acknowledge control but weight it less than damage.
+            striker: 1.5,
         },
         dominantRoundThreshold: 8,
         dominantRound10_8Threshold: 18,

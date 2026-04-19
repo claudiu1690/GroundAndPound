@@ -63,11 +63,21 @@ function takedownSuccess(attacker, defender) {
     return roll < CFG.takedown.baseSuccessChance + (aWre - dWre) / CFG.takedown.wreDiffDivisor;
 }
 
+/**
+ * A fighter's takedown propensity is driven primarily by how grappling-oriented they are.
+ * Strikers (Boxers, Kickboxers) rarely shoot even if capable. Wrestlers and BJJ
+ * fighters prefer the ground. The result is then modulated by the WRE differential
+ * — a weak wrestler thinks twice before shooting on a strong one.
+ */
 function playerShootsTakedown(player, opponent) {
-    const pWre = getStat(player, "wre");
-    const oWre = getStat(opponent, "wre");
+    const grappleAvg = (getStat(player, "wre") + getStat(player, "gnd") + getStat(player, "sub")) / 3;
+    const strikeAvg  = (getStat(player, "str") + getStat(player, "spd") + getStat(player, "leg")) / 3;
+    // Stronger style bias: a clear grappler wants the ground, a clear striker wants distance.
+    const styleBias = (grappleAvg - strikeAvg) / 30; // range roughly -1.0 .. +1.0
+    const wreGap = (getStat(player, "wre") - getStat(opponent, "wre")) / CFG.takedown.shooterDiffDivisor;
+
     const chance = clamp(
-        CFG.takedown.shooterBaseChance + (pWre - oWre) / CFG.takedown.shooterDiffDivisor,
+        CFG.takedown.shooterBaseChance + styleBias + wreGap * 0.5,
         CFG.takedown.shooterChanceMin,
         CFG.takedown.shooterChanceMax
     );
@@ -247,8 +257,10 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     const opponentGoesFirst = opponentWillShoot && !playerGoesFirst;
 
     if (playerGoesFirst && takedownSuccess(player, opponent)) {
-        // Player gets top position
-        let gnpDamage = Math.round((getStat(player, "gnd") * 0.4) * pStaminaMod);
+        // Player gets top position. GnP uses GND + a fraction of STR for raw power, partially
+        // mitigated by the defender's chin — similar structure to striking but from top control.
+        const base = getStat(player, "gnd") * 0.55 + getStat(player, "str") * 0.15 - getStat(opponent, "chn") * 0.2;
+        let gnpDamage = Math.round(Math.max(2, base) * pStaminaMod);
 
         // GROUND_AND_POUND_POSTURE: +20% GnP damage from top
         const gnpBonus = triggerBonus(sessionBonuses, 'GNP_DAMAGE');
@@ -292,7 +304,8 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         }
 
         if (tdSucceeded) {
-            playerDamage = Math.round((getStat(opponent, "gnd") * 0.4) * oStaminaMod);
+            const base = getStat(opponent, "gnd") * 0.55 + getStat(opponent, "str") * 0.15 - getStat(player, "chn") * 0.2;
+            playerDamage = Math.round(Math.max(2, base) * oStaminaMod);
             event = "Opponent took you down.";
             grapplingControl = -1;
 
@@ -444,10 +457,15 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
 function scoreRoundForJudge(round, judgeBias) {
     const pd = round.playerDamage ?? 0;
     const od = round.opponentDamage ?? 0;
+    // Base: net damage dealt by the player (positive = player wins round).
     let net = od - pd;
+    // Grappling control counts for all judges — real MMA scoring heavily rewards cage/ground control.
+    // Bias shifts how much weight it gets.
     const control = round.grapplingControl ?? 0;
+    const baseControlWeight = 3;
     if (judgeBias === "grappler") net += control * CFG.judging.controlWeights.grappler;
-    if (judgeBias === "striker") net += control * CFG.judging.controlWeights.striker;
+    else if (judgeBias === "striker") net += control * CFG.judging.controlWeights.striker;
+    else net += control * baseControlWeight;
     let playerRound = 9;
     let oppRound = 9;
     if (net > CFG.judging.dominantRoundThreshold) {
