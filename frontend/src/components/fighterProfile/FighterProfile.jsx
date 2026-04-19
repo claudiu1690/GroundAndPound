@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from "react";
-import { badgesForDisplay, resourceRowsFromFighter, restButtonState, statMeterRows } from "./profileModel";
+import { badgesForDisplay, resourceRowsFromFighter, statMeterRows } from "./profileModel";
 import { FighterBadgeRow } from "./FighterBadgeRow";
 import { FighterInjuriesPanel } from "./FighterInjuriesPanel";
 import { FighterMetaPanel } from "./FighterMetaPanel";
@@ -52,8 +52,6 @@ export const FighterProfile = memo(function FighterProfile({
     return <FighterProfileLoading />;
   }
 
-  const rest = restButtonState(fighter);
-
   return (
     <section className="panel fighter-profile">
       <h2 className="panel-title">Fighter</h2>
@@ -74,8 +72,6 @@ export const FighterProfile = memo(function FighterProfile({
         setEditGymId={setEditGymId}
         onRefreshFighter={onRefreshFighter}
         onMessage={onMessage}
-        restDisabled={rest.disabled}
-        restTitle={rest.title}
         onSaveProfile={saveProfile}
       />
 

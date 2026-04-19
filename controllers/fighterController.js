@@ -108,18 +108,6 @@ async function train(req, res) {
     }
 }
 
-async function rest(req, res) {
-    try {
-        const fighter = await fighterService.rest(req.params.id);
-        res.json(fighter);
-    } catch (err) {
-        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
-        if (err.message === "Not enough energy") return res.status(400).json({ message: err.message });
-        console.error(err);
-        res.status(500).json({ message: "Internal server error" });
-    }
-}
-
 async function doctorVisit(req, res) {
     try {
         const { injuryType } = req.body;
@@ -258,7 +246,6 @@ module.exports = {
     deductEnergy,
     debugRechargeEnergy,
     train,
-    rest,
     doctorVisit,
     mentalReset,
     switchGym,

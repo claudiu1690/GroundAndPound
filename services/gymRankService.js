@@ -107,7 +107,11 @@ function applyRankUp(fighter, gym, rankDef) {
                         fighter.badges.push(unlock.badge);
                     }
                 }
-                unlockDescription += ` — earned perk: ${unlock.perkId} and badge: ${unlock.badge}`;
+                // Iron Shins grants a one-time permanent +1 Max Stamina on unlock.
+                if (unlock.perkId === "iron_shins") {
+                    fighter.maxStamina = (fighter.maxStamina || 100) + 1;
+                }
+                unlockDescription += ` — earned perk: ${unlock.perkName || unlock.perkId} and badge: ${unlock.badge}`;
                 break;
         }
     }

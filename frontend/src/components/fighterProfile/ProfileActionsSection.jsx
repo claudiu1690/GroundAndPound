@@ -2,7 +2,8 @@ import { memo } from "react";
 import { api } from "../../api";
 
 /**
- * Nickname / gym editor, Rest, and Mental Reset.
+ * Nickname / gym editor, plus the Mental Reset action when required.
+ * Rest was removed — health now regenerates passively over real time.
  */
 export const ProfileActionsSection = memo(function ProfileActionsSection({
   fighter,
@@ -15,8 +16,6 @@ export const ProfileActionsSection = memo(function ProfileActionsSection({
   setEditGymId,
   onRefreshFighter,
   onMessage,
-  restDisabled,
-  restTitle,
   onSaveProfile,
 }) {
   if (editing) {
@@ -63,52 +62,16 @@ export const ProfileActionsSection = memo(function ProfileActionsSection({
     );
   }
 
+  if (!fighter.mentalResetRequired) return null;
+
   return (
     <div className="profile-actions-row">
-      <RestButton
+      <MentalResetButton
         fighterId={fighter._id}
-        disabled={restDisabled}
-        title={restTitle}
         onRefreshFighter={onRefreshFighter}
         onMessage={onMessage}
       />
-      {fighter.mentalResetRequired && (
-        <MentalResetButton
-          fighterId={fighter._id}
-          onRefreshFighter={onRefreshFighter}
-          onMessage={onMessage}
-        />
-      )}
     </div>
-  );
-});
-
-const RestButton = memo(function RestButton({
-  fighterId,
-  disabled,
-  title,
-  onRefreshFighter,
-  onMessage,
-}) {
-  async function handleRest() {
-    try {
-      await api.rest(fighterId);
-      if (onRefreshFighter) await onRefreshFighter(fighterId);
-    } catch (e) {
-      onMessage?.(e.message || "Rest failed");
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      className="btn btn-secondary btn-sm"
-      disabled={disabled}
-      title={title}
-      onClick={handleRest}
-    >
-      Rest (3E)
-    </button>
   );
 });
 

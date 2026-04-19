@@ -119,8 +119,6 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ gymId, sessionType }),
     }),
-  rest: (fighterId) =>
-    request(`/fighters/${fighterId}/rest`, { method: "POST" }),
   doctorVisit: (fighterId, injuryType) =>
     request(`/fighters/${fighterId}/doctor-visit`, {
       method: "POST",

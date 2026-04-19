@@ -213,7 +213,7 @@
         "rank": 4, "name": "Grand Kru",
         "description": "Kru calls you brother. Your body recovers from war differently now — the iron shins and conditioned frame bounce back faster between fights.",
         "requirements": { "trainingSessions": 50, "relevantWins": 10, "ironCost": 8000 },
-        "unlock": { "type": "perk", "perkId": "iron_shins", "perkName": "Iron Shins", "perkEffect": "Recovery session restores +1 extra max stamina", "badge": "Grand Kru" }
+        "unlock": { "type": "perk", "perkId": "iron_shins", "perkName": "Iron Shins", "perkEffect": "Permanently grants +1 Max Stamina when unlocked", "badge": "Grand Kru" }
       }
     ],
     "sessions": ["kick_drills", "bag_work", "clinch", "sparring"],

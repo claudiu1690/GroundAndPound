@@ -86,7 +86,6 @@ function applyInjuryToFighter(fighter, injury) {
     }
     if (e.maxStamina) {
         fighter.maxStamina = Math.max(50, (fighter.maxStamina || 100) + e.maxStamina);
-        fighter.stamina = Math.min(fighter.maxStamina, fighter.stamina || fighter.maxStamina);
     }
 }
 

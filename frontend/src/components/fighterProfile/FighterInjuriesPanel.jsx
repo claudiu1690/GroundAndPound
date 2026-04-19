@@ -22,7 +22,7 @@ export const FighterInjuriesPanel = memo(function FighterInjuriesPanel({
       <h3 className="injuries-title">Active Injuries</h3>
       {injuries.map((inj, index) => (
         <InjuryCard
-          key={inj.type ?? `${inj.label}-${index}`}
+          key={`${inj.type ?? inj.label ?? "injury"}-${index}`}
           fighterId={fighterId}
           injury={inj}
           onRefreshFighter={onRefreshFighter}

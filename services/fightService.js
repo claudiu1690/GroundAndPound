@@ -424,6 +424,8 @@ async function resolveFightAndApply(fighterId) {
     // Build a mutable copy of the fighter's stats for the fight simulation.
     // All modifiers are applied to this copy — the real fighter document is never mutated.
     const fightPlayer = { ...fighter.toObject() };
+    // Stamina is fight-time only — always start at maxStamina. Persistent stamina has been removed.
+    fightPlayer.stamina = fightPlayer.maxStamina ?? 100;
 
     // Load the FightCamp for this fight (created on accept; may be absent for old fights)
     const fightCamp = await FightCamp.findOne({ fightId: fight._id });
@@ -593,10 +595,10 @@ async function resolveFightAndApply(fighterId) {
     fight.completedAt = new Date();
     await fight.save();
 
-    // GDD: post-fight health and stamina reflect fight outcome; recover via Rest/Recovery.
-    const maxStamina = fighter.maxStamina ?? 100;
+    // Post-fight: only health is persisted — stamina is fight-time only and resets next fight.
+    // Reset the health regen timestamp so passive regen starts fresh after the fight.
     fighter.health = Math.min(100, result.playerHealthAfter ?? 100);
-    fighter.stamina = Math.min(maxStamina, result.playerStaminaAfter ?? maxStamina);
+    fighter.healthLastRegenAt = new Date();
     fighter.acceptedFightId = null;
     fighter.trainingCampActions = 0;
     fighter.weightCut = "easy"; // reset for next fight

@@ -51,9 +51,11 @@ const fighterSchema = new mongoose.Schema({
     // Single progression number (computed from stats + style weight)
     overallRating: { type: Number, default: 14 },
     // Resource pools
-    stamina: { type: Number, default: 100 },
+    // Stamina is fight-time only — reset to maxStamina before every fight, not persisted.
     maxStamina: { type: Number, default: 100 },
     health: { type: Number, default: 100 },
+    // Passive health regen: +1 per 30 minutes since last regen timestamp.
+    healthLastRegenAt: { type: Date, default: Date.now },
     energy: {
         current: { type: Number, default: 100, min: 0 },
         max: { type: Number, default: 100, min: 1 },

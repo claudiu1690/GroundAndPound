@@ -201,6 +201,11 @@ async function getFighterById(id) {
     if (!fighter) throw new Error("Fighter not found");
     await reconcileStatXpBanks(fighter);
     await reconcileEnergy(fighter);
+    const healthBefore = fighter.health;
+    reconcileHealth(fighter);
+    if (fighter.health !== healthBefore) {
+        await fighter.save();
+    }
     return toPublicFighter(fighter);
 }
 
@@ -226,6 +231,37 @@ async function updateFighter(id, data) {
 async function reconcileEnergy(fighter) {
     const snap = await energyService.getEnergy(String(fighter._id));
     setEnergySnapshot(fighter, snap);
+    return fighter;
+}
+
+/**
+ * Passively regenerate health based on elapsed real time.
+ * Gains +1 health per 30 minutes since `healthLastRegenAt`, capped at 100.
+ * Only advances the timestamp by the amount of time actually consumed — partial
+ * intervals are preserved so players don't lose progress between loads.
+ */
+const HEALTH_REGEN_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes per +1 health
+const HEALTH_MAX = 100;
+
+function reconcileHealth(fighter) {
+    if (!fighter) return fighter;
+    const currentHealth = fighter.health ?? HEALTH_MAX;
+    if (currentHealth >= HEALTH_MAX) {
+        // Keep timestamp fresh so we don't accrue backdated regen after damage.
+        fighter.healthLastRegenAt = new Date();
+        return fighter;
+    }
+
+    const lastRegenAt = fighter.healthLastRegenAt ? new Date(fighter.healthLastRegenAt).getTime() : Date.now();
+    const elapsedMs = Math.max(0, Date.now() - lastRegenAt);
+    const pointsEarned = Math.floor(elapsedMs / HEALTH_REGEN_INTERVAL_MS);
+    if (pointsEarned <= 0) return fighter;
+
+    const capacity = HEALTH_MAX - currentHealth;
+    const pointsApplied = Math.min(pointsEarned, capacity);
+    fighter.health = currentHealth + pointsApplied;
+    // Advance timestamp by exactly the consumed time — preserve partial progress.
+    fighter.healthLastRegenAt = new Date(lastRegenAt + pointsApplied * HEALTH_REGEN_INTERVAL_MS);
     return fighter;
 }
 
@@ -359,36 +395,6 @@ async function switchGym(fighterId, gymId) {
     return toPublicFighter(fighter);
 }
 
-/** GDD: Rest/Recovery — spend 3 Energy to restore 25 Health and 25 Stamina (capped at max). */
-const REST_ENERGY_COST = 3;
-const REST_HEALTH = 25;
-const REST_STAMINA = 25;
-
-/**
- * Spend energy to restore health and stamina.
- * @param {string} fighterId
- * @returns {Promise<Object>}
- */
-async function rest(fighterId) {
-    const fighter = await Fighter.findById(fighterId);
-    if (!fighter) throw new Error("Fighter not found");
-    await reconcileEnergy(fighter);
-    const currentEnergy = energySnapshot(fighter).current;
-    if (currentEnergy < REST_ENERGY_COST) throw new Error("Not enough energy (Rest costs 3)");
-    const maxStamina = fighter.maxStamina ?? 100;
-    const healthNow = fighter.health ?? 100;
-    const staminaNow = fighter.stamina ?? maxStamina;
-    if (healthNow >= 100 && staminaNow >= maxStamina) {
-        throw new Error("Health and stamina are already full.");
-    }
-    const updatedEnergy = await energyService.deductEnergy(fighterId, REST_ENERGY_COST);
-    setEnergySnapshot(fighter, updatedEnergy);
-    fighter.health = Math.min(100, (fighter.health ?? 100) + REST_HEALTH);
-    fighter.stamina = Math.min(maxStamina, (fighter.stamina ?? maxStamina) + REST_STAMINA);
-    await fighter.save();
-    return toPublicFighter(fighter);
-}
-
 module.exports = {
     createFighter,
     listFighters,
@@ -396,9 +402,9 @@ module.exports = {
     toPublicFighter,
     updateFighter,
     reconcileEnergy,
+    reconcileHealth,
     deductEnergy,
     debugRefillEnergyToMax,
-    rest,
     doctorVisit,
     mentalReset,
     switchGym,

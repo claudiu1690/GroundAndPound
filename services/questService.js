@@ -143,7 +143,6 @@ async function applyReward(fighter, gym, quest) {
         case "stat_bonus":
             if (reward.stat === "maxStamina") {
                 fighter.maxStamina = Math.min(150, (fighter.maxStamina || 100) + reward.value);
-                fighter.stamina = Math.min(fighter.maxStamina, (fighter.stamina || 100) + reward.value);
             } else if (typeof fighter[reward.stat] === "number") {
                 fighter[reward.stat] = Math.min(100, fighter[reward.stat] + reward.value);
                 const xpKey = `${reward.stat}Xp`;

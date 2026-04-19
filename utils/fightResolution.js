@@ -233,101 +233,107 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     }
 
     // ── Takedown attempt phase ──────────────────────────────────────────
-    const takedownChance = getTakedownAttemptChance(playerStrategy);
-    if (roundNum <= CFG.round.takedownRoundsLimit && Math.random() < takedownChance) {
-        const playerShoots = playerShootsTakedown(player, opponent);
+    // Each fighter independently decides whether to shoot this round. If both
+    // do, order is randomised so neither gets a free first-mover advantage.
+    const withinTdWindow = roundNum <= CFG.round.takedownRoundsLimit;
+    const playerTdChance = getTakedownAttemptChance(playerStrategy);
+    const opponentTdChance = getTakedownAttemptChance(null); // opponents use default attempt rate
 
-        if (playerShoots && takedownSuccess(player, opponent)) {
-            // Player gets top position
-            let gnpDamage = Math.round((getStat(player, "gnd") * 0.4) * pStaminaMod);
+    const playerWillShoot = withinTdWindow && Math.random() < playerTdChance && playerShootsTakedown(player, opponent);
+    const opponentWillShoot = withinTdWindow && Math.random() < opponentTdChance && playerShootsTakedown(opponent, player);
 
-            // GROUND_AND_POUND_POSTURE: +20% GnP damage from top
-            const gnpBonus = triggerBonus(sessionBonuses, 'GNP_DAMAGE');
-            if (gnpBonus > 0) {
-                gnpDamage = Math.round(gnpDamage * (1 + gnpBonus));
-                campCommentary.push('campGnpPosture');
+    // Decide turn order: if both want the TD, coin-flip who acts first.
+    const playerGoesFirst = playerWillShoot && (!opponentWillShoot || Math.random() < 0.5);
+    const opponentGoesFirst = opponentWillShoot && !playerGoesFirst;
+
+    if (playerGoesFirst && takedownSuccess(player, opponent)) {
+        // Player gets top position
+        let gnpDamage = Math.round((getStat(player, "gnd") * 0.4) * pStaminaMod);
+
+        // GROUND_AND_POUND_POSTURE: +20% GnP damage from top
+        const gnpBonus = triggerBonus(sessionBonuses, 'GNP_DAMAGE');
+        if (gnpBonus > 0) {
+            gnpDamage = Math.round(gnpDamage * (1 + gnpBonus));
+            campCommentary.push('campGnpPosture');
+        }
+
+        opponentDamage = gnpDamage;
+        event = "Takedown; ground and pound.";
+        grapplingControl = 1;
+
+        const subChance = clamp(
+            (getSubAttemptChance(playerStrategy) + grapplingProfileMod(player)) * submissionDefenseMod(opponent),
+            CFG.submission.attemptMin,
+            CFG.submission.attemptMax
+        );
+        if (Math.random() < subChance) {
+            if (submissionSuccess(player, opponent)) {
+                finished = true;
+                outcome = "Submission";
             }
+        }
+    } else if (opponentGoesFirst || (playerGoesFirst && opponentWillShoot)) {
+        // Opponent shoots — either they had initiative, or they picked up after the player's failed TD.
+        const sprawlBonus = getBonusValue(sessionBonuses, 'SPRAWL_SUCCESS');
+        let tdSucceeded = false;
 
-            opponentDamage = gnpDamage;
-            event = "Takedown; ground and pound.";
-            grapplingControl = 1;
+        if (sprawlBonus > 0) {
+            // TAKEDOWN_DEFENCE bonus reduces opponent's success chance
+            const aWre = getStat(opponent, "wre");
+            const dWre = getStat(player, "wre");
+            const adjustedChance = CFG.takedown.baseSuccessChance + (aWre - dWre) / CFG.takedown.wreDiffDivisor - sprawlBonus;
+            tdSucceeded = Math.random() < adjustedChance;
+            triggerBonus(sessionBonuses, 'SPRAWL_SUCCESS');
+            if (!tdSucceeded) {
+                campCommentary.push('campTakedownDefence');
+            }
+        } else {
+            tdSucceeded = takedownSuccess(opponent, player);
+        }
 
-            const subChance = clamp(
-                (getSubAttemptChance(playerStrategy) + grapplingProfileMod(player)) * submissionDefenseMod(opponent),
+        if (tdSucceeded) {
+            playerDamage = Math.round((getStat(opponent, "gnd") * 0.4) * oStaminaMod);
+            event = "Opponent took you down.";
+            grapplingControl = -1;
+
+            // Opponent submission attempt
+            const oppSubChance = clamp(
+                (0.25 + grapplingProfileMod(opponent)) * submissionDefenseMod(player),
                 CFG.submission.attemptMin,
                 CFG.submission.attemptMax
             );
-            if (Math.random() < subChance) {
-                if (submissionSuccess(player, opponent)) {
+            if (Math.random() < oppSubChance) {
+                // SUBMISSION_ESCAPES: reduce opponent's submission success
+                const escapeBonus = getBonusValue(sessionBonuses, 'ESCAPE_PROBABILITY');
+                let subSucceeded;
+                if (escapeBonus > 0) {
+                    const aSub = getStat(opponent, "sub");
+                    const dSub = getStat(player, "sub");
+                    const aWre = getStat(opponent, "wre");
+                    const dWre = getStat(player, "wre");
+                    const aGnd = getStat(opponent, "gnd");
+                    const dGnd = getStat(player, "gnd");
+                    const baseChance = clamp(
+                        CFG.submission.baseChance +
+                        (aSub - dSub) / CFG.submission.subDiffDivisor +
+                        (aWre - dWre) / CFG.submission.wreDiffDivisor +
+                        (aGnd - dGnd) / CFG.submission.gndDiffDivisor +
+                        grapplingProfileMod(opponent),
+                        CFG.submission.chanceMin,
+                        CFG.submission.chanceMax
+                    );
+                    subSucceeded = Math.random() < (baseChance * (1 - escapeBonus));
+                    triggerBonus(sessionBonuses, 'ESCAPE_PROBABILITY');
+                    if (!subSucceeded) {
+                        campCommentary.push('campSubmissionEscape');
+                    }
+                } else {
+                    subSucceeded = submissionSuccess(opponent, player);
+                }
+
+                if (subSucceeded) {
                     finished = true;
-                    outcome = "Submission";
-                }
-            }
-
-        } else if (!playerShoots) {
-            // Opponent shoots — TAKEDOWN_DEFENCE may fire
-            const sprawlBonus = getBonusValue(sessionBonuses, 'SPRAWL_SUCCESS');
-            let tdSucceeded = false;
-
-            if (sprawlBonus > 0) {
-                // Reduce opponent's takedown success by the bonus
-                const aWre = getStat(opponent, "wre");
-                const dWre = getStat(player, "wre");
-                const adjustedChance = CFG.takedown.baseSuccessChance + (aWre - dWre) / CFG.takedown.wreDiffDivisor - sprawlBonus;
-                tdSucceeded = Math.random() < adjustedChance;
-                triggerBonus(sessionBonuses, 'SPRAWL_SUCCESS');
-                if (!tdSucceeded) {
-                    campCommentary.push('campTakedownDefence');
-                }
-            } else {
-                tdSucceeded = takedownSuccess(opponent, player);
-            }
-
-            if (tdSucceeded) {
-                playerDamage = Math.round((getStat(opponent, "gnd") * 0.4) * oStaminaMod);
-                event = "Opponent took you down.";
-                grapplingControl = -1;
-
-                // Opponent submission attempt
-                const oppSubChance = clamp(
-                    (0.25 + grapplingProfileMod(opponent)) * submissionDefenseMod(player),
-                    CFG.submission.attemptMin,
-                    CFG.submission.attemptMax
-                );
-                if (Math.random() < oppSubChance) {
-                    // SUBMISSION_ESCAPES: reduce opponent's submission success
-                    const escapeBonus = getBonusValue(sessionBonuses, 'ESCAPE_PROBABILITY');
-                    let subSucceeded;
-                    if (escapeBonus > 0) {
-                        // Reduce success chance
-                        const aSub = getStat(opponent, "sub");
-                        const dSub = getStat(player, "sub");
-                        const aWre = getStat(opponent, "wre");
-                        const dWre = getStat(player, "wre");
-                        const aGnd = getStat(opponent, "gnd");
-                        const dGnd = getStat(player, "gnd");
-                        const baseChance = clamp(
-                            CFG.submission.baseChance +
-                            (aSub - dSub) / CFG.submission.subDiffDivisor +
-                            (aWre - dWre) / CFG.submission.wreDiffDivisor +
-                            (aGnd - dGnd) / CFG.submission.gndDiffDivisor +
-                            grapplingProfileMod(opponent),
-                            CFG.submission.chanceMin,
-                            CFG.submission.chanceMax
-                        );
-                        subSucceeded = Math.random() < (baseChance * (1 - escapeBonus));
-                        triggerBonus(sessionBonuses, 'ESCAPE_PROBABILITY');
-                        if (!subSucceeded) {
-                            campCommentary.push('campSubmissionEscape');
-                        }
-                    } else {
-                        subSucceeded = submissionSuccess(opponent, player);
-                    }
-
-                    if (subSucceeded) {
-                        finished = true;
-                        outcome = "Loss (submission)";
-                    }
+                    outcome = "Loss (submission)";
                 }
             }
         }

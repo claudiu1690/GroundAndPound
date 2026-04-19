@@ -3061,6 +3061,23 @@ code {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+.cs-wc-explainer {
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background: rgba(227, 24, 55, 0.04);
+  border: 1px solid var(--border-bright);
+  border-left: 3px solid var(--red);
+  border-radius: 6px;
+}
+.cs-wc-explainer p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-sec);
+}
+.cs-wc-explainer p + p {
+  margin-top: 0.45rem;
+}
 .cs-wc-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

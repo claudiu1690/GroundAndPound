@@ -107,9 +107,8 @@ function FighterCard({ fighter }) {
 
         <div className="fighter-card-bars">
           {[
-            { label: "Energy",  val: fighter?.energy ?? 100,  max: 100,                        color: "#3b82f6" },
-            { label: "Health",  val: fighter?.health ?? 100,  max: 100,                        color: "#e31837" },
-            { label: "Stamina", val: fighter?.stamina ?? 100, max: fighter?.maxStamina ?? 100, color: "#22c55e" },
+            { label: "Energy", val: fighter?.energy ?? 100, max: 100, color: "#3b82f6" },
+            { label: "Health", val: fighter?.health ?? 100, max: 100, color: "#e31837" },
           ].map(({ label, val, max, color }) => {
             const pct = Math.min(100, Math.round((val / max) * 100));
             return (
@@ -139,27 +138,13 @@ function FighterCard({ fighter }) {
 }
 
 // ── Quick actions ────────────────────────────────────────────
-const QuickActions = memo(function QuickActions({ onNavigate, onRest, fighter }) {
-  const maxSt = fighter?.maxStamina ?? 100;
-  const healthFull = (fighter?.health ?? 100) >= 100;
-  const staminaFull = (fighter?.stamina ?? maxSt) >= maxSt;
-  const restDisabled = !fighter || (healthFull && staminaFull);
-
+const QuickActions = memo(function QuickActions({ onNavigate }) {
   return (
     <div className="quick-actions-section">
       <div className="quick-actions-title">Quick Actions</div>
       <div className="quick-actions">
-        <button className="qa-btn qa-train"   onClick={() => onNavigate("gym")}>Train</button>
-        <button className="qa-btn qa-fight"   onClick={() => onNavigate("fights")}>Fight</button>
-        <button
-          type="button"
-          className="qa-btn qa-recover"
-          disabled={restDisabled}
-          title={restDisabled ? "Health and stamina are already full" : "Rest — 3 energy, +25 Health & Stamina (same as profile)"}
-          onClick={onRest}
-        >
-          Recover
-        </button>
+        <button className="qa-btn qa-train" onClick={() => onNavigate("gym")}>Train</button>
+        <button className="qa-btn qa-fight" onClick={() => onNavigate("fights")}>Fight</button>
       </div>
     </div>
   );
@@ -576,19 +561,7 @@ function App() {
     [fighter?._id, loadFighter, loadGyms]
   );
 
-  const handleRest = useCallback(async () => {
-    if (!fighter?._id) return;
-    setMessage("Resting…");
-    try {
-      await api.rest(fighter._id);
-      setMessage("Rest complete. Health and Stamina restored.");
-      loadFighter(fighter._id, { clearMessage: false });
-    } catch (e) {
-      setMessage(e.message || "Rest failed");
-    }
-  }, [fighter?._id, loadFighter]);
-
-  const handleGetOffers = useCallback(async () => {
+const handleGetOffers = useCallback(async () => {
     if (!fighter?._id) return;
     setMessage("Loading offers…");
     try {
@@ -807,9 +780,8 @@ function App() {
           <div className="hdr-resources">
             {fighter && (
               <>
-                <HdrResource icon="⚡" label="Energy"  value={fighter.energy?.current ?? fighter.energy ?? 0} max={fighter.energy?.max ?? 100} barColor="#3b82f6" />
-                <HdrResource icon="❤" label="Health"  value={fighter.health ?? 100}  max={100}                    barColor="#e31837" />
-                <HdrResource icon="◎" label="Stamina" value={fighter.stamina ?? 100} max={fighter.maxStamina ?? 100} barColor="#22c55e" />
+                <HdrResource icon="⚡" label="Energy" value={fighter.energy?.current ?? fighter.energy ?? 0} max={fighter.energy?.max ?? 100} barColor="#3b82f6" />
+                <HdrResource icon="❤" label="Health" value={fighter.health ?? 100} max={100} barColor="#e31837" />
               </>
             )}
           </div>
@@ -933,11 +905,7 @@ function App() {
           {activeTab === "home" && (
             <div className="dashboard">
               <div className="dashboard-left">
-                <QuickActions
-                  fighter={fighter}
-                  onNavigate={setActiveTab}
-                  onRest={handleRest}
-                />
+                <QuickActions onNavigate={setActiveTab} />
 
               </div>
 

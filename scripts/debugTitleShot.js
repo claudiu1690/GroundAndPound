@@ -83,9 +83,9 @@ async function main() {
             fighter.record.losses = 2;
         }
 
-        // Full health, stamina, energy
+        // Full health + energy (stamina resets per-fight)
         fighter.health = 100;
-        fighter.stamina = fighter.maxStamina ?? 100;
+        fighter.healthLastRegenAt = new Date();
         fighter.energy = { current: 100, max: 100, lastSyncedAt: new Date() };
 
         // Clear blocking states

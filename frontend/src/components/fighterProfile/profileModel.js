@@ -2,7 +2,8 @@ import { STAT_TOOLTIPS } from "../../constants/statTooltips";
 import { STAT_ORDER } from "./constants";
 
 /**
- * Earned `badges` plus derived perk labels (e.g. Iron Will after Resilience when both apply).
+ * Badges displayed on the fighter profile. Legacy `activePerks` (old quest perks) are
+ * no longer granted but kept for backwards display of legacy accounts.
  */
 export function badgesForDisplay(badges, activePerks) {
   const list = [...(badges || [])];
@@ -30,28 +31,7 @@ export function resourceRowsFromFighter(fighter) {
       max: 100,
       barClass: "resource-bar-health",
     },
-    {
-      key: "stamina",
-      label: "Stamina",
-      value: fighter.stamina ?? 100,
-      max: fighter.maxStamina ?? 100,
-      barClass: "resource-bar-stamina",
-    },
   ];
-}
-
-/** Rest button: disabled when health and stamina are already full. */
-export function restButtonState(fighter) {
-  const maxStamina = fighter.maxStamina ?? 100;
-  const healthFull = (fighter.health ?? 100) >= 100;
-  const staminaFull = (fighter.stamina ?? maxStamina) >= maxStamina;
-  const disabled = healthFull && staminaFull;
-  return {
-    disabled,
-    title: disabled
-      ? "Health and stamina are already full"
-      : "3 Energy → +25 Health, +25 Stamina",
-  };
 }
 
 /**

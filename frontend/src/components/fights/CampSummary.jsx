@@ -138,6 +138,17 @@ export const CampSummary = memo(function CampSummary({
                     {/* Weight Cut Selector */}
                     <div className="cs-wc">
                         <div className="cs-wc-title">Weight Cut Strategy</div>
+                        <div className="cs-wc-explainer">
+                            <p>
+                                Stamina is your cardio in the cage — it drains every round from strikes, takedowns, and scrambles.
+                                Low stamina means weaker strikes, a softer chin, and a higher chance of being stopped by exhaustion.
+                            </p>
+                            <p>
+                                Cutting weight makes you bigger than your opponent on fight night, but draining your body is a gamble.
+                                Each cut rolls a random stamina bonus or penalty when the cage door closes — aggressive cuts offer the biggest rewards and the worst crashes.
+                                Miss weight and you lose 20% of your purse.
+                            </p>
+                        </div>
                         <div className="cs-wc-grid">
                             {WEIGHT_CUT_OPTIONS.map((opt) => {
                                 const selected = weightCut === opt.key;

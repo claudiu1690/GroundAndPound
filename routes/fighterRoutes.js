@@ -170,14 +170,6 @@ router.post("/:id/debug/recharge-energy", fighterController.debugRechargeEnergy)
  */
 router.post("/:id/train", fighterController.train);
 
-/**
- * @swagger
- * /fighters/{id}/rest:
- *   post:
- *     summary: Rest / Recovery — spend 3 Energy to restore 25 Health and 25 Stamina (GDD)
- *     tags: [Fighters]
- */
-router.post("/:id/rest", fighterController.rest);
 router.post("/:id/doctor-visit", fighterController.doctorVisit);
 router.post("/:id/mental-reset", fighterController.mentalReset);
 router.post("/:id/switch-gym", fighterController.switchGym);
