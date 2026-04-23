@@ -13,6 +13,38 @@ function relativeTime(d) {
     return `in ${days}d`;
 }
 
+/**
+ * Calendar-aware cooldown text.
+ * - Past    → "ready"
+ * - Today   → "in 3h" / "in 42m"
+ * - Tomorrow (next calendar day) → "Tomorrow"
+ * - Later   → "in Nd"  (shouldn't happen for 1-day cooldowns, just defensive)
+ */
+function formatCooldown(d) {
+    if (!d) return "";
+    const now = new Date();
+    const t = new Date(d);
+    const diff = t.getTime() - now.getTime();
+    if (diff <= 0) return "ready";
+
+    const isSameDay = (a, b) =>
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+
+    if (isSameDay(now, t)) {
+        const m = Math.floor(diff / 60000);
+        if (m < 60) return `in ${m}m`;
+        return `in ${Math.floor(m / 60)}h`;
+    }
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (isSameDay(tomorrow, t)) return "Tomorrow";
+
+    const days = Math.ceil(diff / 86400000);
+    return `in ${days}d`;
+}
+
 function recordStr(r) {
     if (!r) return "—";
     return `${r.wins ?? 0}-${r.losses ?? 0}${r.draws ? `-${r.draws}` : ""}`;
@@ -103,7 +135,7 @@ export function MediaTab({ fighter, onMessage, onRefreshFighter }) {
                     title="Podcast"
                     sub={state.podcast.canPodcast
                         ? `${state.podcast.energyCost} energy · ready`
-                        : `Next in ${relativeTime(state.podcast.cooldownEndsAt)}`}
+                        : `Next: ${formatCooldown(state.podcast.cooldownEndsAt)}`}
                     desc="Recap your last fight, talk about the division, or log a main-event prediction."
                     primary={state.podcast.canPodcast ? "Record" : "On cooldown"}
                     disabled={!state.podcast.canPodcast}
@@ -262,7 +294,7 @@ function PodcastView({ fighter, state, onBack, onMessage, onRefreshFighter, onRe
                         </div>
                     )}
                     <div className="podcast-result-cooldown">
-                        Next podcast available {relativeTime(result.cooldownEndsAt)}.
+                        Next podcast: {formatCooldown(result.cooldownEndsAt)}.
                     </div>
                 </div>
             </section>
@@ -275,7 +307,7 @@ function PodcastView({ fighter, state, onBack, onMessage, onRefreshFighter, onRe
 
             {!canPodcast && (
                 <div className="media-cooldown">
-                    On cooldown — next podcast {relativeTime(state.podcast.cooldownEndsAt)}.
+                    On cooldown — next podcast: {formatCooldown(state.podcast.cooldownEndsAt)}.
                 </div>
             )}
 

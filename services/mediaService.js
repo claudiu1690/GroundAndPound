@@ -6,12 +6,30 @@ const energyService = require("./energyService");
 const mainEventService = require("./mainEventService");
 const { tierRank } = require("../consts/notorietyConfig");
 const {
-    PODCAST_COOLDOWN_MS,
     PODCAST_ENERGY_COST,
     PODCAST_SEGMENTS,
     DOCUMENTARY,
     DIVISION_ROSTER_LIMIT_PER_TIER,
 } = require("../consts/mediaConfig");
+
+// ─────────────────────────────────────────────────────────────
+// Calendar-day helpers for the podcast cooldown
+// ─────────────────────────────────────────────────────────────
+
+function isSameCalendarDay(a, b) {
+    const x = new Date(a);
+    const y = new Date(b);
+    return x.getFullYear() === y.getFullYear()
+        && x.getMonth() === y.getMonth()
+        && x.getDate() === y.getDate();
+}
+
+/** Next midnight after a given date (defaults to now). */
+function nextMidnight(after = new Date()) {
+    const d = new Date(after);
+    d.setHours(24, 0, 0, 0); // rolls into next day at 00:00
+    return d;
+}
 
 // ─────────────────────────────────────────────────────────────
 // State
@@ -22,10 +40,9 @@ async function getMediaState(fighterId) {
     if (!fighter) throw new Error("Fighter not found");
 
     const lastPodcastAt = fighter.media?.lastPodcastAt || null;
-    const podcastReadyAt = lastPodcastAt
-        ? new Date(new Date(lastPodcastAt).getTime() + PODCAST_COOLDOWN_MS)
-        : null;
-    const canPodcast = !lastPodcastAt || (podcastReadyAt && podcastReadyAt.getTime() <= Date.now());
+    const podcastedToday = lastPodcastAt ? isSameCalendarDay(lastPodcastAt, new Date()) : false;
+    const canPodcast = !podcastedToday;
+    const podcastReadyAt = podcastedToday ? nextMidnight() : null;
 
     const lastFight = await Fight.findOne({ fighterId, status: "completed" })
         .sort({ completedAt: -1, updatedAt: -1 })
@@ -105,10 +122,9 @@ async function doPodcast(fighterId, { segment, tone, targetOpponentId, mainEvent
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
 
-    // Cooldown gate.
-    if (fighter.media?.lastPodcastAt) {
-        const next = new Date(fighter.media.lastPodcastAt).getTime() + PODCAST_COOLDOWN_MS;
-        if (next > Date.now()) throw new Error("Podcast is on cooldown — check back soon");
+    // Cooldown gate — one podcast per calendar day (resets at midnight).
+    if (fighter.media?.lastPodcastAt && isSameCalendarDay(fighter.media.lastPodcastAt, new Date())) {
+        throw new Error("Podcast is on cooldown — next one unlocks at midnight");
     }
     // Energy gate — deductEnergy throws "Not enough energy" if insufficient;
     // it also writes the new energy value to Redis + Mongo itself.
@@ -205,7 +221,7 @@ async function doPodcast(fighterId, { segment, tone, targetOpponentId, mainEvent
         ironDelta,
         fameReason,
         extra,
-        cooldownEndsAt: new Date(fighter.media.lastPodcastAt.getTime() + PODCAST_COOLDOWN_MS),
+        cooldownEndsAt: nextMidnight(fighter.media.lastPodcastAt),
     };
 }
 

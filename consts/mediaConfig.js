@@ -2,7 +2,7 @@
  * Media Hub (Phase 6).
  *
  * Three media actions:
- *   1. Podcast — weekly, 5 energy. Three segments:
+ *   1. Podcast — once per calendar day, 5 energy. Three segments:
  *        a) Recap last fight  → small fame, small iron, always available (if you have a last fight).
  *        b) Division talk     → pick a roster fighter + tone (Respectful / Trash / Cryptic).
  *             Respectful: small fame + respect flag (on a win vs that fighter: +15% iron).
@@ -17,7 +17,11 @@
  *   3. Interview archive — read-only. Lists past post-fight interviews.
  */
 
-const PODCAST_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // once per week
+/**
+ * Podcast cooldown is CALENDAR-DAY based (not a rolling N-hour window).
+ * Once you record, the next podcast unlocks at the next midnight (server local time).
+ * Effectively: one podcast per calendar day.
+ */
 const PODCAST_ENERGY_COST = 5;
 
 /** Segment definitions drive rewards + UI. */
@@ -83,7 +87,6 @@ const RESPECT_WIN_IRON_MULT = 1.15;
 const DIVISION_ROSTER_LIMIT_PER_TIER = 8;
 
 module.exports = {
-    PODCAST_COOLDOWN_MS,
     PODCAST_ENERGY_COST,
     PODCAST_SEGMENTS,
     DOCUMENTARY,

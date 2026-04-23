@@ -31,7 +31,7 @@ async function postPodcast(req, res) {
             return res.status(404).json({ message: err.message });
         }
         const client = [
-            "Podcast is on cooldown — check back soon",
+            "Podcast is on cooldown — next one unlocks at midnight",
             "Not enough energy",
             "Unknown podcast segment",
             "No completed fight to recap",
