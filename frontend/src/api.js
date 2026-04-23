@@ -143,4 +143,67 @@ export const api = {
 
   /** Top fighters by fame score (backend route name unchanged) */
   fameLeaderboard: () => request("/fighters/leaderboard/notoriety"),
+
+  /** Recent fame events for a fighter — feeds the Fame drawer */
+  getFameEvents: (fighterId, limit = 10) =>
+    request(`/fighters/${fighterId}/fame-events?limit=${limit}`),
+
+  // ── Post-fight interview (Phase 1) ──────────────────────
+  getCalloutCandidates: (fighterId, excludeOpponentId) => {
+    const qs = new URLSearchParams({ fighterId });
+    if (excludeOpponentId) qs.set("excludeOpponentId", excludeOpponentId);
+    return request(`/fights/interview/candidates?${qs.toString()}`);
+  },
+  postInterview: (fightId, body) =>
+    request(`/fights/${fightId}/interview`, { method: "POST", body: JSON.stringify(body) }),
+
+  // ── Banner customizer (Phase 2) ─────────────────────────
+  getBannerCatalog: (fighterId) =>
+    request(`/fighters/${fighterId}/banner/catalog`),
+  saveBanner: (fighterId, banner) =>
+    request(`/fighters/${fighterId}/banner`, {
+      method: "PUT",
+      body: JSON.stringify(banner),
+    }),
+
+  // ── Sponsorships (Phase 3) ──────────────────────────────
+  getSponsorships: (fighterId) => request(`/sponsorships/${fighterId}`),
+  acceptSponsor: (fighterId, sponsorId) =>
+    request(`/sponsorships/${fighterId}/accept`, {
+      method: "POST",
+      body: JSON.stringify({ sponsorId }),
+    }),
+  dropSponsor: (fighterId, sponsorshipId) =>
+    request(`/sponsorships/${fighterId}/drop/${sponsorshipId}`, {
+      method: "POST",
+    }),
+
+  // ── Callouts (Phase 4) ──────────────────────────────────
+  getCalloutRoster: (fighterId) =>
+    request(`/fighters/${fighterId}/callouts/roster`),
+  createCallout: (fighterId, opponentId) =>
+    request(`/fighters/${fighterId}/callouts`, {
+      method: "POST",
+      body: JSON.stringify({ opponentId }),
+    }),
+  cancelCallout: (fighterId) =>
+    request(`/fighters/${fighterId}/callouts`, { method: "DELETE" }),
+
+  // ── Main Event / predictions (Phase 5) ──────────────────
+  getMainEvent: (fighterId) =>
+    request(`/events/current?fighterId=${encodeURIComponent(fighterId || "")}`),
+  submitPrediction: (eventId, body) =>
+    request(`/events/${eventId}/predict`, { method: "POST", body: JSON.stringify(body) }),
+  getPredictionHistory: (fighterId, limit = 10) =>
+    request(`/events/history?fighterId=${encodeURIComponent(fighterId)}&limit=${limit}`),
+
+  // ── Media Hub (Phase 6) ─────────────────────────────────
+  getMediaState: (fighterId) => request(`/media/${fighterId}`),
+  getDivisionRoster: (fighterId) => request(`/media/${fighterId}/division-roster`),
+  getInterviewArchive: (fighterId, limit = 20) =>
+    request(`/media/${fighterId}/archive?limit=${limit}`),
+  doPodcast: (fighterId, body) =>
+    request(`/media/${fighterId}/podcast`, { method: "POST", body: JSON.stringify(body) }),
+  doDocumentary: (fighterId) =>
+    request(`/media/${fighterId}/documentary`, { method: "POST" }),
 };

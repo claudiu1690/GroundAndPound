@@ -1,6 +1,7 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
-import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Trophy, Lock } from "lucide-react";
+import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Trophy, Lock, Megaphone } from "lucide-react";
+import { CalloutModal } from "./CalloutModal";
 
 const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard", TITLE: "TitleShot" };
 
@@ -73,7 +74,7 @@ function StreakBadge({ streak }) {
   );
 }
 
-function FightHub({ fighter, energyCost, onGetOffers }) {
+function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
   const rec = fighter.record ?? {};
   const energy = fighter.energy?.current ?? fighter.energy ?? 0;
   const health = fighter.health ?? 100;
@@ -143,22 +144,64 @@ function FightHub({ fighter, energyCost, onGetOffers }) {
         <button type="button" className="btn btn-primary fight-hub-btn" onClick={onGetOffers} disabled={blocked}>
           <Swords size={14} /> Request Offers
         </button>
+        <button
+          type="button"
+          className="btn btn-secondary fight-hub-btn fight-hub-btn-secondary"
+          onClick={onOpenCallout}
+          disabled={blocked}
+          title="Spend fame to force a specific opponent into your next Hard offer"
+        >
+          <Megaphone size={14} /> Call Out
+        </button>
         <span className="fight-hub-cost">{energyCost} energy per fight</span>
       </div>
     </div>
   );
 }
 
-export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOffers, onAcceptOffer }) {
+function ActiveCalloutBanner({ activeCallout, onOpenCallout }) {
+  if (!activeCallout?.opponentId) return null;
+  return (
+    <div className="active-callout-banner" role="status">
+      <Megaphone size={14} />
+      <span>
+        Callout active: <strong>{activeCallout.opponentName}</strong> will appear in your next Hard offer with full intel.
+      </span>
+      <button type="button" className="btn btn-secondary btn-sm" onClick={onOpenCallout}>
+        Manage
+      </button>
+    </div>
+  );
+}
+
+export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOffers, onAcceptOffer, onRefreshFighter, onMessage }) {
+  const [calloutOpen, setCalloutOpen] = useState(false);
   if (!fighter) return null;
   const energyCost = FIGHT_ENERGY_COST[fighter.promotionTier] ?? 10;
+  const activeCallout = fighter.activeCallout?.opponentId ? fighter.activeCallout : null;
 
   return (
     <section className="panel fight-offers">
       <h2 className="panel-title">Fight Offers</h2>
       <div className="panel-body">
+        <ActiveCalloutBanner activeCallout={activeCallout} onOpenCallout={() => setCalloutOpen(true)} />
+
+        <CalloutModal
+          open={calloutOpen}
+          fighter={fighter}
+          onClose={() => setCalloutOpen(false)}
+          onCalledOut={() => { if (onRefreshFighter) onRefreshFighter(fighter._id); }}
+          onCancelled={() => { if (onRefreshFighter) onRefreshFighter(fighter._id); }}
+          onMessage={onMessage}
+        />
+
         {offers.length === 0 ? (
-          <FightHub fighter={fighter} energyCost={energyCost} onGetOffers={onGetOffers} />
+          <FightHub
+            fighter={fighter}
+            energyCost={energyCost}
+            onGetOffers={onGetOffers}
+            onOpenCallout={() => setCalloutOpen(true)}
+          />
         ) : (
           <>
             <ul className="offers-list">
@@ -170,11 +213,14 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                 const isLocked = !!o.locked;
                 const badgeLabel = isTitle ? "Title Shot" : typeKey;
                 return (
-                  <li key={o.opponent?._id ?? typeKey} className={`offer-card ${TYPE_CLASS[typeKey] ?? ""}${o.nemesisMeta ? " offer-card-nemesis" : ""}${isLocked ? " offer-card-locked" : ""}`}>
+                  <li key={o.opponent?._id ?? typeKey} className={`offer-card ${TYPE_CLASS[typeKey] ?? ""}${o.nemesisMeta ? " offer-card-nemesis" : ""}${o.isCallout ? " offer-card-callout" : ""}${isLocked ? " offer-card-locked" : ""}`}>
                     <div className="offer-card-info">
                       <div className="offer-badge-row">
                         {isTitle && <Trophy size={12} style={{ color: "#d4a012" }} />}
                         <span className={`offer-type-badge ${BADGE_CLASS[typeKey] ?? ""}`}>{badgeLabel}</span>
+                        {o.isCallout && (
+                          <span className="offer-type-badge badge-callout">📣 Called out</span>
+                        )}
                         {o.nemesisMeta && (
                           <span className="offer-type-badge badge-nemesis">{"\u2620"} Nemesis</span>
                         )}

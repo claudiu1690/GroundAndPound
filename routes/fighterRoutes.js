@@ -176,6 +176,14 @@ router.post("/:id/switch-gym", fighterController.switchGym);
 router.post("/:id/rank-up-gym", fighterController.rankUpGym);
 router.get("/:id/champions", fighterController.getChampions);
 router.get("/:id/activity", fighterController.getActivity);
+router.get("/:id/fame-events", fighterController.getFameEvents);
+router.get("/:id/banner/catalog", fighterController.getBannerCatalog);
+router.put("/:id/banner", fighterController.saveBanner);
+
+// ── Phase 4: Callouts ──────────────────────────────────────
+router.get("/:id/callouts/roster", fighterController.getCalloutRoster);
+router.post("/:id/callouts", fighterController.createCallout);
+router.delete("/:id/callouts", fighterController.cancelCallout);
 /** Reserved for media events (notoriety) — returns 501 until implemented */
 router.post("/:id/media-event", fighterController.mediaEventStub);
 

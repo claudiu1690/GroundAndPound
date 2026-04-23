@@ -321,6 +321,9 @@ async function getFighterReport(fightId) {
     // Analyse fight history for domain evidence
     const { domainCounts, totalFights } = analyseFightHistory(opp.fightHistory, reportLogLimit);
 
+    // Phase 4: Called-out opponents reveal full intel regardless of tape.
+    const fullIntel = !!fight.isCallout;
+
     // Classify each stat
     const confirmedStrengths = [];
     const suspectedWeaknesses = [];
@@ -329,7 +332,9 @@ async function getFighterReport(fightId) {
 
     for (const [statKey, statValue] of sorted) {
         const rank = statRanks[statKey];
-        const tier = classifyStat(statKey, statValue, rank, domainCounts, totalFights);
+        const tier = fullIntel
+            ? RELIABILITY_TIERS.CONFIRMED
+            : classifyStat(statKey, statValue, rank, domainCounts, totalFights);
         const isStrength = rank <= 2;
         const isWeakness = rank >= 7;
 
@@ -343,6 +348,15 @@ async function getFighterReport(fightId) {
                     ? STAT_WEAKNESS_LABELS[statKey]
                     : STAT_STRENGTH_LABELS[statKey], // neutral label for middle
         };
+
+        // Phase 4: Callout full-intel — bucket by rank so middle-ranked stats don't
+        // pile into "Confirmed Strengths". Every entry still reads CONFIRMED reliability.
+        if (fullIntel) {
+            if (isStrength)      confirmedStrengths.push(entry);
+            else if (isWeakness) suspectedWeaknesses.push(entry);
+            else                 unverifiedAreas.push(entry);
+            continue;
+        }
 
         switch (tier) {
             case RELIABILITY_TIERS.CONFIRMED:
@@ -392,6 +406,9 @@ async function getFighterReport(fightId) {
         unknownAreas,
         tendency: tendencyData.tendency,
         warning: tendencyData.warning,
+        // Phase 4: flagged so the UI can render "Callout Intel" branding.
+        fullIntel,
+        isCallout: !!fight.isCallout,
     };
 }
 

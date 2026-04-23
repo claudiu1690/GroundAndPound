@@ -147,4 +147,8 @@ router.put("/strategy", fightController.setStrategy);
  */
 router.post("/resolve/:fighterId", fightController.resolveFight);
 
+// ── Post-fight interview (Phase 1) ─────────────────────────────────────────
+router.get("/interview/candidates", fightController.getInterviewCandidates);
+router.post("/:fightId/interview", fightController.postInterview);
+
 module.exports = router;

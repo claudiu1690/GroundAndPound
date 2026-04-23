@@ -1,4 +1,5 @@
 const fightService = require("../services/fightService");
+const interviewService = require("../services/interviewService");
 
 const FIGHT_ERROR_CODES = {
     DOCTOR_VISIT_REQUIRED: "FIGHT_DOCTOR_VISIT_REQUIRED",
@@ -116,4 +117,58 @@ async function resolveFight(req, res) {
     }
 }
 
-module.exports = { getOffers, createOffer, acceptOffer, setWeightCut, setStrategy, resolveFight };
+async function getInterviewCandidates(req, res) {
+    try {
+        const { fighterId, excludeOpponentId } = req.query;
+        if (!fighterId) return res.status(400).json({ message: "fighterId is required" });
+        const candidates = await interviewService.listCalloutCandidates(fighterId, excludeOpponentId || null);
+        res.json({ candidates });
+    } catch (err) {
+        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+async function postInterview(req, res) {
+    try {
+        const { fightId } = req.params;
+        const { fighterId, choice, targetOpponentId } = req.body;
+        if (!fighterId || !choice) {
+            return res.status(400).json({ message: "fighterId and choice are required" });
+        }
+        const result = await interviewService.resolveInterview({
+            fighterId, fightId, choice, targetOpponentId: targetOpponentId || null,
+        });
+        res.json(result);
+    } catch (err) {
+        if (err.message === "Fight not found" || err.message === "Fighter not found" || err.message === "Target opponent not found") {
+            return res.status(404).json({ message: err.message });
+        }
+        const clientErrors = [
+            "Invalid interview choice",
+            "Fight does not belong to this fighter",
+            "Fight is not completed",
+            "Target opponent required for call-out",
+            "Cannot call out the fighter you just beat — pick someone new",
+            "Target must share your weight class",
+            "Target is outside your callable tier range",
+        ];
+        if (clientErrors.includes(err.message)) {
+            return res.status(400).json({ message: err.message });
+        }
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+module.exports = {
+    getOffers,
+    createOffer,
+    acceptOffer,
+    setWeightCut,
+    setStrategy,
+    resolveFight,
+    getInterviewCandidates,
+    postInterview,
+};

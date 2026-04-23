@@ -5,6 +5,9 @@ const gymRoutes = require("./routes/gymRoutes");
 const fightRoutes = require("./routes/fightRoutes");
 const questRoutes = require("./routes/questRoutes");
 const authRoutes = require("./routes/authRoutes");
+const sponsorshipRoutes = require("./routes/sponsorshipRoutes");
+const mainEventRoutes = require("./routes/mainEventRoutes");
+const mediaRoutes = require("./routes/mediaRoutes");
 const authMiddleware = require("./middleware/authMiddleware");
 const mongoose = require("mongoose");
 const config = require("./config");
@@ -25,6 +28,9 @@ app.use("/fighters", authMiddleware, fighterRoutes);
 app.use("/gyms", authMiddleware, gymRoutes);
 app.use("/fights", authMiddleware, fightRoutes);
 app.use("/quests", authMiddleware, questRoutes);
+app.use("/sponsorships", authMiddleware, sponsorshipRoutes);
+app.use("/events", authMiddleware, mainEventRoutes);
+app.use("/media", authMiddleware, mediaRoutes);
 
 swagger(app);
 

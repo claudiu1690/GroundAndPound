@@ -241,7 +241,19 @@ async function generateOffers(fighterId) {
         slots[nemesisType] = { type: nemesisType, opponent: nemesisOpp, context: buildOfferContext(nemesisOpp), nemesisMeta };
     }
 
-    const offers = Object.values(OFFER_TYPE).filter(t => slots[t]).map(t => slots[t]);
+    let offers = Object.values(OFFER_TYPE).filter(t => slots[t]).map(t => slots[t]);
+
+    // ── Phase 4: Inject active callout into Hard slot ────────────
+    if (fighter.activeCallout?.opponentId) {
+        const calloutService = require("./calloutService");
+        offers = await calloutService.injectIntoOffers(fighter, offers);
+        // buildOfferContext for the injected opponent if context was not carried over.
+        for (const o of offers) {
+            if (o.isCallout && !o.context) {
+                o.context = buildOfferContext(o.opponent);
+            }
+        }
+    }
 
     // ── Title shot offer (4th card) ──────────────────────────────
     // Guard: clear pendingPromotion if OVR dropped below threshold
@@ -287,14 +299,24 @@ async function createOffer(fighterId, opponentId, offerType) {
     const opponent = await Opponent.findById(opponentId);
     if (!opponent) throw new Error("Opponent not found");
     if (opponent.weightClass !== fighter.weightClass) throw new Error("Weight class mismatch");
-    if (opponent.promotionTier !== fighter.promotionTier) throw new Error("Promotion tier mismatch");
+
+    // Phase 4: if this opponent matches the fighter's active callout, allow the
+    // stretch tier (one above the fighter's tier) and stamp the fight as a callout.
+    const isCallout =
+        fighter.activeCallout?.opponentId &&
+        String(fighter.activeCallout.opponentId) === String(opponent._id);
+
+    if (!isCallout && opponent.promotionTier !== fighter.promotionTier) {
+        throw new Error("Promotion tier mismatch");
+    }
 
     const fight = new Fight({
         fighterId,
         opponentId: opponent._id,
         offerType: offerType || "Even",
         promotionTier: fighter.promotionTier,
-        status: "offered"
+        status: "offered",
+        isCallout: !!isCallout,
     });
     await fight.save();
     return fight;
@@ -553,6 +575,21 @@ async function resolveFightAndApply(fighterId) {
     );
     if (weightMissed) ironEarned = Math.round(ironEarned * 0.8);
 
+    // Phase 4: callout purse bump (+25%) only on a WIN. Losing a callout just loses the fame spend.
+    const isCalloutFight = !!fight.isCallout;
+    if (isCalloutFight && isWin) {
+        const { CALLOUT_PURSE_MULT } = require("../consts/calloutConfig");
+        ironEarned = Math.round(ironEarned * CALLOUT_PURSE_MULT);
+    }
+
+    // Phase 6: Beef/respect flag matchup. Check BEFORE decrementing other flags.
+    const beefMatch    = (fighter.beefFlags    || []).find((f) => String(f.opponentId) === String(opponent._id));
+    const respectMatch = (fighter.respectFlags || []).find((f) => String(f.opponentId) === String(opponent._id));
+    if (isWin && respectMatch) {
+        const { RESPECT_WIN_IRON_MULT } = require("../consts/mediaConfig");
+        ironEarned = Math.round(ironEarned * RESPECT_WIN_IRON_MULT);
+    }
+
     const wasFrozenBeforeFight = !!fighter.notoriety.isFrozen;
     const prevConsecutiveLosses = fighter.consecutiveLosses || 0;
     const prevWinStreak = fighter.winStreak || 0;
@@ -718,7 +755,7 @@ async function resolveFightAndApply(fighterId) {
         firstFinishInThisPromotion,
         fightOfTheNight,
         giantKiller,
-        grudgeMatchWin: false,
+        grudgeMatchWin: isWin && (isCalloutFight || !!beefMatch), // Phase 4/6: callout or beef win grants grudge +30%
         titleFightWin: false,
         titleDefenceWin: false,
         finishedHigherRanked: false,
@@ -728,14 +765,25 @@ async function resolveFightAndApply(fighterId) {
     const notorietyBreakdown = fightNotoriety.breakdown;
 
     if (notorietyGain !== 0) {
-        notorietyService.applyNotorietyDelta(fighter, notorietyGain, {});
+        const fameCode = isWin ? "FIGHT_WIN" : (isDraw ? "FIGHT_DRAW" : "FIGHT_LOSS");
+        const fameReason = `${result.outcome} vs ${opponent.name}`;
+        notorietyService.applyNotorietyDelta(fighter, notorietyGain, {
+            code: fameCode,
+            reason: fameReason,
+            meta: { fightId: fight._id, opponentId: opponent._id },
+        });
     }
 
     // Nemesis win bonus — awarded even if notoriety is frozen (skip freeze block)
     if (nemesisCleared) {
         notorietyBreakdown.push({ code: "NEMESIS_WIN", amount: NEMESIS_WIN_BONUS, note: "Nemesis defeated" });
         notorietyGain += NEMESIS_WIN_BONUS;
-        notorietyService.applyNotorietyDelta(fighter, NEMESIS_WIN_BONUS, { skipFreezeBlock: true });
+        notorietyService.applyNotorietyDelta(fighter, NEMESIS_WIN_BONUS, {
+            skipFreezeBlock: true,
+            code: "NEMESIS_WIN",
+            reason: `Nemesis defeated: ${opponent.name}`,
+            meta: { fightId: fight._id, opponentId: opponent._id },
+        });
     }
 
     if (firstFinishInThisPromotion && isFinishWin) {
@@ -800,7 +848,12 @@ async function resolveFightAndApply(fighterId) {
         // Seed new champion in the OLD tier (player just left it)
         await championService.seedNewChampion(oldTier, fighter.weightClass);
         // Fame spike for winning the belt
-        fighter.notoriety.score = (fighter.notoriety.score ?? 0) + 200;
+        notorietyService.applyNotorietyDelta(fighter, 200, {
+            skipFreezeBlock: true,
+            code: "BELT_WON",
+            reason: `Won the ${targetTier} belt`,
+            meta: { fightId: fight._id, tier: targetTier },
+        });
         // Champion badge
         fighter.badges = fighter.badges || [];
         if (!fighter.badges.includes("Champion")) {
@@ -815,6 +868,74 @@ async function resolveFightAndApply(fighterId) {
             promoted = { from: oldTier, to: newTier };
         }
     }
+
+    // Phase 6: Beef/respect flag lifecycle.
+    //   - Matched opponent (fight) consumes the flag: remove from array, no penalty.
+    //   - Unmatched flags decrement expiresAfterFights by 1 per completed fight.
+    //   - When a beef flag hits 0, apply -150 fame (BEEF_LAPSE_PENALTY_FAME) and remove.
+    //   - Respect flags expire silently at 0.
+    const lapsedBeefOpponents = [];
+    try {
+        const { BEEF_LAPSE_PENALTY_FAME } = require("../consts/mediaConfig");
+        const oppIdStr = String(opponent._id);
+        // Beef
+        fighter.beefFlags = (fighter.beefFlags || []).map((f) => {
+            const match = String(f.opponentId) === oppIdStr;
+            if (match) return { ...f.toObject ? f.toObject() : f, _consume: true };
+            const next = (f.expiresAfterFights || 0) - 1;
+            return { ...(f.toObject ? f.toObject() : f), expiresAfterFights: next };
+        }).filter((f) => {
+            if (f._consume) return false;
+            if ((f.expiresAfterFights || 0) <= 0) {
+                lapsedBeefOpponents.push(f.opponentName || "a rival");
+                return false;
+            }
+            return true;
+        });
+        // Respect
+        fighter.respectFlags = (fighter.respectFlags || []).map((f) => {
+            const match = String(f.opponentId) === oppIdStr;
+            if (match) return { ...(f.toObject ? f.toObject() : f), _consume: true };
+            const next = (f.expiresAfterFights || 0) - 1;
+            return { ...(f.toObject ? f.toObject() : f), expiresAfterFights: next };
+        }).filter((f) => {
+            if (f._consume) return false;
+            if ((f.expiresAfterFights || 0) <= 0) return false;
+            return true;
+        });
+        // Apply lapse penalties (one per lapsed beef flag).
+        for (const name of lapsedBeefOpponents) {
+            notorietyService.applyNotorietyDelta(fighter, -BEEF_LAPSE_PENALTY_FAME, {
+                code: "BEEF_LAPSED",
+                reason: `Couldn't back it up — ${name}`,
+            });
+        }
+    } catch (e) {
+        console.error("[media] flag lifecycle error:", e.message);
+    }
+
+    // Phase 4: Resolve active callout when the fight was flagged as a callout.
+    // Award "Callout Win" badge on a win (unlocks BADGE_CALLOUT banner piece).
+    let calloutBadgeAwarded = false;
+    if (isCalloutFight) {
+        if (isWin) {
+            const { CALLOUT_BADGE } = require("../consts/calloutConfig");
+            fighter.badges = fighter.badges || [];
+            if (!fighter.badges.includes(CALLOUT_BADGE)) {
+                fighter.badges.push(CALLOUT_BADGE);
+                calloutBadgeAwarded = true;
+            }
+        }
+        try {
+            const calloutService = require("./calloutService");
+            await calloutService.clearActiveCallout(fighter);
+        } catch (_) {
+            fighter.activeCallout = {
+                opponentId: null, opponentName: null, cost: 0, isStretch: false, calledAt: null,
+            };
+        }
+    }
+
     await fighter.save();
 
     // GDD 7.4: update quest progress after fight
@@ -836,6 +957,24 @@ async function resolveFightAndApply(fighterId) {
         } catch (e) {
             console.error("[gymRank] Failed to update fight wins:", e.message);
         }
+    }
+
+    // ── Phase 3: Sponsorship clauses resolve after every fight ──────────
+    let sponsorshipEvents = [];
+    let sponsorshipIronDelta = 0;
+    try {
+        const sponsorshipService = require("./sponsorshipService");
+        // Attach weightMissed so sponsorshipService.resolveAfterFight can read it without
+        // a schema change — the fight record itself does not persist weightMissed today.
+        fight.weightMissed = weightMissed;
+        const result = await sponsorshipService.resolveAfterFight(fighter, fight);
+        sponsorshipEvents = result.events || [];
+        sponsorshipIronDelta = result.ironDelta || 0;
+        if (sponsorshipEvents.length > 0 || sponsorshipIronDelta !== 0) {
+            await fighter.save();
+        }
+    } catch (e) {
+        console.error("[sponsorship] resolveAfterFight failed:", e.message);
     }
 
     // ── Activity log entries (fire-and-forget, never throw) ──────────────
@@ -910,6 +1049,23 @@ async function resolveFightAndApply(fighterId) {
         nemesisCleared,
         nemesisSet,
         nemesisName,
+        // Phase 1: fightId + opponent info for the post-fight interview UI.
+        fightId: String(fight._id),
+        opponentId: opponent?._id ? String(opponent._id) : null,
+        opponentName: opponent?.name || null,
+        interviewDone: !!fight.interview?.done,
+        // Phase 3: sponsorship payouts/events from this fight.
+        sponsorship: {
+            events: sponsorshipEvents,
+            ironDelta: sponsorshipIronDelta,
+        },
+        // Phase 4: callout flag + whether the new banner-unlock badge was just earned.
+        isCallout: isCalloutFight,
+        calloutBadgeAwarded,
+        // Phase 6: beef/respect matchup info + flags that lapsed this fight.
+        beefMatched:    !!beefMatch,
+        respectMatched: !!respectMatch,
+        lapsedBeef:     lapsedBeefOpponents,
         // v2: post-fight camp breakdown
         campBreakdown: fightCamp ? {
             rating: fightCamp.campRating,

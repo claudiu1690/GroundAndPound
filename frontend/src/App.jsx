@@ -17,17 +17,22 @@ import { OctagonBackground } from "./components/layout/OctagonBackground";
 import { CareerFeed } from "./components/CareerFeed";
 import { AuthPage } from "./components/auth/AuthPage";
 import { FightLimitPopup } from "./components/fights/FightLimitPopup";
+import { FameDrawer } from "./components/fame/FameDrawer";
+import { ContractsTab } from "./components/contracts/ContractsTab";
+import { MediaTab } from "./components/media/MediaTab";
+import { EventsTab } from "./components/events/EventsTab";
+import { PostFightInterview } from "./components/fights/PostFightInterview";
 
 // ── Navigation definition ──────────────────────────────────
 const NAV_ITEMS = [
-  { id: "gym",     label: "Training",   icon: "⬡", active: true },
-  { id: "fights",  label: "Fight",      icon: "✕", active: true },
-  { id: "career",  label: "Career",     icon: "◆", active: true },
-  { id: null,      label: "Rankings",   icon: "▲", active: false },
-  { id: null,      label: "Contracts",  icon: "▣", active: false },
-  { id: null,      label: "Shop",       icon: "⊕", active: false },
-  { id: null,      label: "Events",     icon: "◷", active: false },
-  { id: null,      label: "Messages",   icon: "✉", active: false },
+  { id: "gym",       label: "Training",  icon: "⬡", active: true },
+  { id: "fights",    label: "Fight",     icon: "✕", active: true },
+  { id: "career",    label: "Career",    icon: "◆", active: true },
+  { id: null,        label: "Rankings",  icon: "▲", active: false },
+  { id: "contracts", label: "Contracts", icon: "▣", active: true },
+  { id: null,        label: "Shop",      icon: "⊕", active: false },
+  { id: "events",    label: "Events",    icon: "◷", active: true },
+  { id: "media",     label: "Media",     icon: "✉", active: true },
 ];
 
 // ── Tier ladder for display ────────────────────────────────
@@ -370,6 +375,7 @@ function App() {
   const [tierUpModal, setTierUpModal] = useState(null);
   const [beltWonModal, setBeltWonModal] = useState(null);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
+  const [fameDrawerOpen, setFameDrawerOpen] = useState(false);
   /** Bumps after train / membership pay so gym quest panel refetches without a full page reload. */
 
   // ── Camp v1.1 state ────────────────────────────────────────
@@ -763,13 +769,18 @@ const handleGetOffers = useCallback(async () => {
 
           {fighter && (
             <>
-              <div className="hdr-fame-block" title={fighter.notoriety?.isFrozen ? "Fame frozen — win to resume growth" : "Fame — affects fight purses"}>
+              <button
+                type="button"
+                className="hdr-fame-block"
+                onClick={() => setFameDrawerOpen(true)}
+                title={fighter.notoriety?.isFrozen ? "Fame frozen — click for details" : "Click to view fame details"}
+              >
                 <span className={`hdr-fame-tier hdr-tier-${fighter.notoriety?.peakTier ?? "UNKNOWN"}`}>
                   {fighter.notoriety?.tierLabel ?? "Unknown"}
                 </span>
                 <span className="hdr-fame-score">{(fighter.notoriety?.score ?? 0).toLocaleString()}</span>
                 {fighter.notoriety?.isFrozen && <span className="hdr-fame-freeze" title="Frozen">❄</span>}
-              </div>
+              </button>
               <span className="hdr-iron">
                 <span className="hdr-iron-icon">⊗</span>
                 {fighter.iron ?? 0}
@@ -833,6 +844,13 @@ const handleGetOffers = useCallback(async () => {
         open={!!fightLimitPopup.open}
         message={fightLimitPopup.message}
         onClose={() => setFightLimitPopup({ open: false, message: "" })}
+      />
+
+      <FameDrawer
+        open={fameDrawerOpen}
+        fighter={fighter}
+        onClose={() => setFameDrawerOpen(false)}
+        onNavigate={handleNavTab}
       />
 
       {/* ── FIGHTER REPORT MODAL ── */}
@@ -953,6 +971,39 @@ const handleGetOffers = useCallback(async () => {
             </div>
           )}
 
+          {/* ── CONTRACTS ── */}
+          {activeTab === "contracts" && (
+            <div className="page-layout">
+              <ContractsTab
+                fighter={fighter}
+                onMessage={setMessage}
+                onRefreshFighter={loadFighter}
+              />
+            </div>
+          )}
+
+          {/* ── MEDIA ── */}
+          {activeTab === "media" && (
+            <div className="page-layout">
+              <MediaTab
+                fighter={fighter}
+                onMessage={setMessage}
+                onRefreshFighter={loadFighter}
+              />
+            </div>
+          )}
+
+          {/* ── EVENTS ── */}
+          {activeTab === "events" && (
+            <div className="page-layout">
+              <EventsTab
+                fighter={fighter}
+                onMessage={setMessage}
+                onRefreshFighter={loadFighter}
+              />
+            </div>
+          )}
+
           {/* ── FIGHTS ── */}
           {activeTab === "fights" && (
             <div className="page-layout">
@@ -976,6 +1027,21 @@ const handleGetOffers = useCallback(async () => {
                     <FightSummary summary={lastFightSummary} />
                     <FightDescription commentary={lastFightCommentary} />
                   </div>
+                  {lastFightSummary.fightId && !lastFightSummary.interviewDone && (
+                    <PostFightInterview
+                      fighterId={fighter?._id}
+                      fightId={lastFightSummary.fightId}
+                      opponentId={lastFightSummary.opponentId}
+                      opponentName={lastFightSummary.opponentName}
+                      onResolved={(res) => {
+                        // Mark interview done so the UI collapses to the "done" state,
+                        // then refresh fighter to pick up fame delta + new flags.
+                        setLastFightSummary((prev) => prev ? { ...prev, interviewDone: true, interviewResult: res } : prev);
+                        if (fighter?._id) loadFighter(fighter._id, { clearMessage: false });
+                      }}
+                      onMessage={setMessage}
+                    />
+                  )}
                   <div style={{ display: "flex", justifyContent: "center", marginTop: "0.5rem" }}>
                     <button type="button" className="btn btn-primary" onClick={() => setLastFightSummary(null)}>
                       Continue
@@ -988,6 +1054,8 @@ const handleGetOffers = useCallback(async () => {
                   offers={offers}
                   onGetOffers={handleGetOffers}
                   onAcceptOffer={handleAcceptOffer}
+                  onRefreshFighter={loadFighter}
+                  onMessage={setMessage}
                 />
               )}
 

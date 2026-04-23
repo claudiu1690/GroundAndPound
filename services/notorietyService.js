@@ -16,6 +16,25 @@ const {
 const MS_PER_DAY = 86400000;
 
 /**
+ * Fire-and-forget fame event log. Never throws — logging must not break gameplay.
+ * Called from applyNotorietyDelta when a code is supplied, and from the decay job.
+ * @param {string|object} fighterId
+ * @param {number} delta
+ * @param {string} code
+ * @param {string} [reason]
+ * @param {object} [meta]
+ */
+function logFameEvent(fighterId, delta, code, reason = "", meta = {}) {
+    if (!fighterId || !code || delta === 0) return;
+    try {
+        const FameEvent = require("../models/fameEventModel");
+        FameEvent.create({ fighterId, delta, code, reason, meta }).catch(() => {});
+    } catch (_) {
+        // model not registered yet — safe to ignore
+    }
+}
+
+/**
  * Ensure fighter has notoriety subdocument (in-memory). Call after load.
  * @param {import("mongoose").Document} fighter
  */
@@ -127,7 +146,7 @@ function shouldShowInactivityDecayWarning(fighter) {
  * Apply a signed notoriety delta with floor rules. Does not save.
  * @param {import("mongoose").Document} fighter
  * @param {number} delta
- * @param {{ skipFloor?: boolean, skipFreezeBlock?: boolean }} [options]
+ * @param {{ skipFloor?: boolean, skipFreezeBlock?: boolean, code?: string, reason?: string, meta?: object }} [options]
  * @returns {{ applied: number, blocked: boolean }}
  */
 function applyNotorietyDelta(fighter, delta, options = {}) {
@@ -135,7 +154,8 @@ function applyNotorietyDelta(fighter, delta, options = {}) {
     if (!options.skipFreezeBlock && fighter.notoriety.isFrozen && delta !== 0) {
         return { applied: 0, blocked: true };
     }
-    let next = fighter.notoriety.score + delta;
+    const before = fighter.notoriety.score;
+    let next = before + delta;
     if (delta < 0 && !options.skipFloor) {
         const floor = tierFloor(fighter.notoriety.peakTier);
         next = Math.max(next, floor);
@@ -144,6 +164,10 @@ function applyNotorietyDelta(fighter, delta, options = {}) {
     fighter.notoriety.score = next;
     syncPeakTier(fighter);
     applyPeakTierFloor(fighter);
+    const actualDelta = fighter.notoriety.score - before;
+    if (options.code && actualDelta !== 0 && fighter._id) {
+        logFameEvent(fighter._id, actualDelta, options.code, options.reason || "", options.meta || {});
+    }
     return { applied: delta, blocked: false };
 }
 
@@ -259,7 +283,11 @@ function applyWinMilestoneBonuses(fighter) {
     }
     fighter.notoriety.milestones = m;
     if (bonus > 0) {
-        applyNotorietyDelta(fighter, bonus, { skipFreezeBlock: true });
+        applyNotorietyDelta(fighter, bonus, {
+            skipFreezeBlock: true,
+            code: "MILESTONE",
+            reason: notes.join(" + ") || "Career milestone",
+        });
         touchLastEvent(fighter);
     }
     return { bonus, notes };
@@ -298,6 +326,9 @@ function applyInactivityDecayOnce(fighter) {
     const applied = score - newScore;
     if (applied <= 0) return 0;
     fighter.notoriety.score = newScore;
+    if (fighter._id) {
+        logFameEvent(fighter._id, -applied, "DECAY", `Inactivity decay (${daysSince} days idle)`);
+    }
     return applied;
 }
 
@@ -324,6 +355,33 @@ async function runNotorietyDecayBatch() {
     return updated;
 }
 
+/**
+ * Fetch the latest fame events for a fighter (most recent first).
+ * @param {string|object} fighterId
+ * @param {number} [limit=10]
+ * @returns {Promise<Array>}
+ */
+async function listRecentFameEvents(fighterId, limit = 10) {
+    if (!fighterId) return [];
+    try {
+        const FameEvent = require("../models/fameEventModel");
+        const rows = await FameEvent.find({ fighterId })
+            .sort({ createdAt: -1 })
+            .limit(Math.max(1, Math.min(50, limit)))
+            .lean();
+        return rows.map((r) => ({
+            id: String(r._id),
+            delta: r.delta,
+            code: r.code,
+            reason: r.reason || "",
+            meta: r.meta || {},
+            createdAt: r.createdAt,
+        }));
+    } catch (_) {
+        return [];
+    }
+}
+
 module.exports = {
     ensureNotorietyShape,
     syncPeakTier,
@@ -338,4 +396,6 @@ module.exports = {
     applyInactivityDecayOnce,
     shouldShowInactivityDecayWarning,
     runNotorietyDecayBatch,
+    logFameEvent,
+    listRecentFameEvents,
 };

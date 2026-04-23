@@ -20,6 +20,16 @@ const fightSchema = new mongoose.Schema({
     rounds: [{ type: String }],
     commentary: [{ type: String }],
     completedAt: { type: Date, default: null },
+    /** Phase 4 — flagged true when this fight was created against the fighter's active callout. */
+    isCallout: { type: Boolean, default: false },
+    // Post-fight interview (Phase 1). Written once after fight resolution.
+    interview: {
+        done: { type: Boolean, default: false },
+        choice: { type: String, enum: ["HUMBLE", "CONFIDENT", "CALLOUT", "SKIPPED", null], default: null },
+        targetOpponentId: { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", default: null },
+        fameGained: { type: Number, default: 0 },
+        resolvedAt: { type: Date, default: null },
+    },
 }, { timestamps: true });
 
 fightSchema.index({ fighterId: 1, status: 1 });

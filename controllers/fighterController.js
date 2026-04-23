@@ -238,6 +238,98 @@ async function mediaEventStub(req, res) {
     });
 }
 
+async function getFameEvents(req, res) {
+    try {
+        const notorietyService = require("../services/notorietyService");
+        const limit = Math.max(1, Math.min(50, parseInt(req.query.limit, 10) || 10));
+        const events = await notorietyService.listRecentFameEvents(req.params.id, limit);
+        res.json({ events });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+async function getBannerCatalog(req, res) {
+    try {
+        const Fighter = require("../models/fighterModel");
+        const bannerService = require("../services/bannerService");
+        const fighter = await Fighter.findById(req.params.id).lean();
+        if (!fighter) return res.status(404).json({ message: "Fighter not found" });
+        res.json(bannerService.buildCatalogFor(fighter));
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+async function getCalloutRoster(req, res) {
+    try {
+        const calloutService = require("../services/calloutService");
+        const data = await calloutService.listRoster(req.params.id);
+        res.json(data);
+    } catch (err) {
+        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+async function createCallout(req, res) {
+    try {
+        const calloutService = require("../services/calloutService");
+        const { opponentId } = req.body || {};
+        if (!opponentId) return res.status(400).json({ message: "opponentId is required" });
+        const result = await calloutService.createCallout(req.params.id, opponentId);
+        res.status(201).json(result);
+    } catch (err) {
+        if (err.message === "Fighter not found" || err.message === "Opponent not found") {
+            return res.status(404).json({ message: err.message });
+        }
+        const clientErrors = [
+            "You already have an active callout — cancel it first",
+            "Wrong weight class",
+            "Cannot call out a champion",
+            "Opponent is outside your callable tier range",
+        ];
+        if (clientErrors.includes(err.message) || (err.message && err.message.startsWith("Not enough fame"))) {
+            return res.status(400).json({ message: err.message });
+        }
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+async function cancelCallout(req, res) {
+    try {
+        const calloutService = require("../services/calloutService");
+        const result = await calloutService.cancelCallout(req.params.id);
+        res.json(result);
+    } catch (err) {
+        if (err.message === "Fighter not found" || err.message === "No active callout") {
+            return res.status(404).json({ message: err.message });
+        }
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+async function saveBanner(req, res) {
+    try {
+        const bannerService = require("../services/bannerService");
+        const banner = await bannerService.saveBanner(req.params.id, req.body || {});
+        res.json({ banner });
+    } catch (err) {
+        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
+        if (err.message?.startsWith("Unknown banner piece")
+            || err.message?.startsWith("Piece ")) {
+            return res.status(400).json({ message: err.message });
+        }
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 module.exports = {
     list,
     create,
@@ -254,4 +346,10 @@ module.exports = {
     getChampions,
     getActivity,
     mediaEventStub,
+    getFameEvents,
+    getBannerCatalog,
+    saveBanner,
+    getCalloutRoster,
+    createCallout,
+    cancelCallout,
 };

@@ -7,6 +7,8 @@ import { FighterNameplate } from "./FighterNameplate";
 import { FighterResourceBars } from "./FighterResourceBars";
 import { FighterStatMeters } from "./FighterStatMeters";
 import { ProfileActionsSection } from "./ProfileActionsSection";
+import { BannerPreview } from "../banner/BannerPreview";
+import { BannerEditor } from "../banner/BannerEditor";
 
 function FighterProfileLoading() {
   return (
@@ -34,6 +36,7 @@ export const FighterProfile = memo(function FighterProfile({
   const [editing, setEditing] = useState(false);
   const [editNickname, setEditNickname] = useState("");
   const [editGymId, setEditGymId] = useState("");
+  const [bannerEditorOpen, setBannerEditorOpen] = useState(false);
 
   const saveProfile = useCallback(async () => {
     if (!fighter?._id || !onUpdateFighter) return;
@@ -55,6 +58,31 @@ export const FighterProfile = memo(function FighterProfile({
   return (
     <section className="panel fighter-profile">
       <h2 className="panel-title">Fighter</h2>
+
+      <div className="fighter-profile-banner-wrap">
+        <BannerPreview
+          fighter={fighter}
+          size="compact"
+          onClick={() => setBannerEditorOpen(true)}
+          title="Click to customize your banner"
+        />
+        <button
+          type="button"
+          className="banner-customize-btn"
+          onClick={() => setBannerEditorOpen(true)}
+          title="Customize banner"
+        >
+          ✎ Customize
+        </button>
+      </div>
+
+      <BannerEditor
+        open={bannerEditorOpen}
+        fighter={fighter}
+        onClose={() => setBannerEditorOpen(false)}
+        onSaved={() => { if (onRefreshFighter) onRefreshFighter(fighter._id); }}
+        onMessage={onMessage}
+      />
 
       <FighterNameplate fighter={fighter} />
       <FighterResourceBars rows={resourceRowsFromFighter(fighter)} />

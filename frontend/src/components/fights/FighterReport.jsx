@@ -61,15 +61,27 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
 
     const styleColor = STYLE_COLORS[report.style] ?? DEFAULT_STYLE_COLOR;
     const bannerBg = isTitleFight ? "#2a1f0a" : styleColor.bg;
+    const isCallout = !!report.isCallout;
+    const bannerLabel = isTitleFight
+        ? "CHAMPIONSHIP BOUT \u2014 FIGHTER REPORT"
+        : isCallout
+            ? "CALLOUT INTEL \u2014 FULL FIGHTER REPORT"
+            : "FIGHTER REPORT";
 
     return (
         <div className="fr-overlay" role="dialog" aria-modal="true" aria-label="Fighter Report">
             <div className={`fr-card${isTitleFight ? " fr-card--title" : ""}`}>
 
+                {isCallout && (
+                    <div className="report-callout-banner">
+                        📣 <strong>Callout intel:</strong> you called this fighter out — every stat revealed, no fog of war.
+                    </div>
+                )}
+
                 {/* Coloured header banner */}
                 <div className="fr-banner" style={{ background: bannerBg }}>
                     <div className="fr-banner-top">
-                        <span className="fr-banner-label">{isTitleFight ? "CHAMPIONSHIP BOUT \u2014 FIGHTER REPORT" : "FIGHTER REPORT"}</span>
+                        <span className="fr-banner-label">{bannerLabel}</span>
                         <button className="fr-close" onClick={onClose} title="Close">&times;</button>
                     </div>
 

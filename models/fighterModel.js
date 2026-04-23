@@ -135,6 +135,61 @@ const fighterSchema = new mongoose.Schema({
         lossCount:    { type: Number, default: 0 },
         setAt:        { type: Date,   default: null },
     },
+    /**
+     * Phase 6 — Media Hub state. Tracks podcast cooldown + simple activity counts
+     * for the Media tab + a cached cooldown end.
+     */
+    media: {
+        lastPodcastAt: { type: Date, default: null },
+        podcastCount:  { type: Number, default: 0 },
+        interviewCount:{ type: Number, default: 0 },
+    },
+    /**
+     * Phase 4 — Active callout. Cleared when the called-out opponent is fought
+     * (win or loss) or when the player manually cancels (refunded).
+     */
+    activeCallout: {
+        opponentId:   { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", default: null },
+        opponentName: { type: String, default: null },
+        cost:         { type: Number, default: 0 },
+        isStretch:    { type: Boolean, default: false },
+        calledAt:     { type: Date, default: null },
+    },
+    /**
+     * Phase 2 — Banner customizer.
+     * Unlocks are computed at read time from fighter state (tier, milestones, badges)
+     * rather than stored as an inventory, so future catalog additions just work.
+     */
+    banner: {
+        backgroundId: { type: String, default: "BG_SLATE" },
+        frameId:      { type: String, default: "FRAME_NONE" },
+        accentColor:  { type: String, default: "ACC_RED" },
+        /** Up to 3 badge slots; nullable array entries are allowed so order is stable. */
+        badgeSlots:   { type: [String], default: [] },
+    },
+    /**
+     * Beef / Respect flags — created by interviews and podcasts.
+     * Beef: if you meet this opponent within the window, fight counts as Grudge (+30% fame on win).
+     *       If the window expires without a fight, the flag lapses with a small fame penalty.
+     * Respect: if you meet this opponent within the window, you earn an iron bonus on the win.
+     * `expiresAfterFights` counts down on every completed fight.
+     */
+    beefFlags: [{
+        opponentId:         { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", required: true },
+        opponentName:       { type: String, default: "" },
+        source:             { type: String, enum: ["INTERVIEW", "PODCAST"], default: "INTERVIEW" },
+        expiresAfterFights: { type: Number, default: 4 },
+        createdAt:          { type: Date, default: Date.now },
+        _id: false,
+    }],
+    respectFlags: [{
+        opponentId:         { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", required: true },
+        opponentName:       { type: String, default: "" },
+        source:             { type: String, enum: ["INTERVIEW", "PODCAST"], default: "INTERVIEW" },
+        expiresAfterFights: { type: Number, default: 4 },
+        createdAt:          { type: Date, default: Date.now },
+        _id: false,
+    }],
     // GDD 8.9: Active injuries
     injuries: [{
         type:               { type: String },
