@@ -213,13 +213,23 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                 const isLocked = !!o.locked;
                 const badgeLabel = isTitle ? "Title Shot" : typeKey;
                 return (
-                  <li key={o.opponent?._id ?? typeKey} className={`offer-card ${TYPE_CLASS[typeKey] ?? ""}${o.nemesisMeta ? " offer-card-nemesis" : ""}${o.isCallout ? " offer-card-callout" : ""}${isLocked ? " offer-card-locked" : ""}`}>
+                  <li key={o.opponent?._id ?? typeKey} className={`offer-card ${TYPE_CLASS[typeKey] ?? ""}${o.nemesisMeta ? " offer-card-nemesis" : ""}${o.isCallout ? " offer-card-callout" : ""}${o.beefMatch ? " offer-card-beef" : ""}${o.respectMatch ? " offer-card-respect" : ""}${isLocked ? " offer-card-locked" : ""}`}>
                     <div className="offer-card-info">
                       <div className="offer-badge-row">
                         {isTitle && <Trophy size={12} style={{ color: "#d4a012" }} />}
                         <span className={`offer-type-badge ${BADGE_CLASS[typeKey] ?? ""}`}>{badgeLabel}</span>
                         {o.isCallout && (
                           <span className="offer-type-badge badge-callout">📣 Called out</span>
+                        )}
+                        {o.beefMatch && !o.isCallout && (
+                          <span className="offer-type-badge badge-beef" title={`Beef flag (${o.beefMatch.expiresAfterFights} fights left) — +30% fame on the win`}>
+                            🔥 Beef · +30% fame
+                          </span>
+                        )}
+                        {o.respectMatch && (
+                          <span className="offer-type-badge badge-respect" title={`Respect flag (${o.respectMatch.expiresAfterFights} fights left) — +15% iron on the win`}>
+                            🙇 Respect · +15% iron
+                          </span>
                         )}
                         {o.nemesisMeta && (
                           <span className="offer-type-badge badge-nemesis">{"\u2620"} Nemesis</span>

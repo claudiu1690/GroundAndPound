@@ -1,11 +1,15 @@
 const Fighter = require("../models/fighterModel");
 const Fight = require("../models/fightModel");
 const Opponent = require("../models/opponentModel");
+
+/** Fight outcomes that count as a win for the player (excluded from callout roster below). */
+const WIN_OUTCOMES = ["KO/TKO", "Submission", "Decision (unanimous)", "Decision (split)"];
 const notorietyService = require("./notorietyService");
 const {
     INTERVIEW_CHOICES,
     INTERVIEW_CHOICE_KEYS,
     CALLOUT_CANDIDATE_LIMIT,
+    CALLOUT_OVR_WINDOW,
 } = require("../consts/interviewConfig");
 
 /**
@@ -20,8 +24,13 @@ function tierAbove(tier) {
 }
 
 /**
- * Candidate opponents for the callout tone — same weight class, same or +1 tier,
- * excluding the opponent just fought.
+ * Candidate opponents for the post-fight interview callout tone.
+ * Restricted to:
+ *   - same weight class
+ *   - same promotion tier (no stretch — those live in the formal Callout system)
+ *   - OVR within ±CALLOUT_OVR_WINDOW of the fighter (so the beef flag can realistically cash in)
+ *   - excludes the just-fought opponent
+ *
  * @param {string} fighterId
  * @param {string} excludeOpponentId
  */
@@ -29,15 +38,28 @@ async function listCalloutCandidates(fighterId, excludeOpponentId) {
     const fighter = await Fighter.findById(fighterId).lean();
     if (!fighter) throw new Error("Fighter not found");
 
-    const tiers = [fighter.promotionTier];
-    const stretchTier = tierAbove(fighter.promotionTier);
-    if (stretchTier) tiers.push(stretchTier);
+    // Opponents the fighter has already beaten — excluded so you can't call out
+    // someone you've already finished. Respects career-long history.
+    const beatenIds = await Fight.find({
+        fighterId,
+        status: "completed",
+        outcome: { $in: WIN_OUTCOMES },
+    }).distinct("opponentId");
 
+    const excludeIds = [...beatenIds];
+    if (excludeOpponentId) excludeIds.push(excludeOpponentId);
+
+    const ovr = fighter.overallRating || 14;
     const query = {
         weightClass: fighter.weightClass,
-        promotionTier: { $in: tiers },
+        promotionTier: fighter.promotionTier,
+        overallRating: {
+            $gte: Math.max(1, ovr - CALLOUT_OVR_WINDOW),
+            $lte: Math.min(100, ovr + CALLOUT_OVR_WINDOW),
+        },
+        isChampion: { $ne: true },
     };
-    if (excludeOpponentId) query._id = { $ne: excludeOpponentId };
+    if (excludeIds.length) query._id = { $nin: excludeIds };
 
     const list = await Opponent
         .find(query)
@@ -54,7 +76,6 @@ async function listCalloutCandidates(fighterId, excludeOpponentId) {
         style: o.style,
         promotionTier: o.promotionTier,
         record: o.record || { wins: 0, losses: 0, draws: 0 },
-        isStretch: o.promotionTier !== fighter.promotionTier,
     }));
 }
 
@@ -109,7 +130,8 @@ async function resolveInterview({ fighterId, fightId, choice, targetOpponentId }
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
 
-    // CALLOUT needs a valid target opponent (same weight class, same or +1 tier, not the just-fought one).
+    // CALLOUT — must be a realistic matchup so the beef flag can actually cash in:
+    // same weight class, same tier, OVR within ±CALLOUT_OVR_WINDOW, not the just-fought one.
     let targetOpponent = null;
     if (def.requiresTarget) {
         if (!targetOpponentId) throw new Error("Target opponent required for call-out");
@@ -121,11 +143,22 @@ async function resolveInterview({ fighterId, fightId, choice, targetOpponentId }
         if (targetOpponent.weightClass !== fighter.weightClass) {
             throw new Error("Target must share your weight class");
         }
-        const allowedTiers = [fighter.promotionTier];
-        const stretch = tierAbove(fighter.promotionTier);
-        if (stretch) allowedTiers.push(stretch);
-        if (!allowedTiers.includes(targetOpponent.promotionTier)) {
-            throw new Error("Target is outside your callable tier range");
+        if (targetOpponent.promotionTier !== fighter.promotionTier) {
+            throw new Error("Target is outside your callable range — use the Callout tab for stretch-tier targets");
+        }
+        const gap = Math.abs((targetOpponent.overallRating || 0) - (fighter.overallRating || 0));
+        if (gap > CALLOUT_OVR_WINDOW) {
+            throw new Error("Target is too far out of your OVR range — pick someone you can realistically face");
+        }
+        // Already-beaten guard: can't call out someone you've already finished.
+        const alreadyBeaten = await Fight.findOne({
+            fighterId,
+            opponentId: targetOpponent._id,
+            status: "completed",
+            outcome: { $in: WIN_OUTCOMES },
+        });
+        if (alreadyBeaten) {
+            throw new Error("You've already beaten this fighter — pick a fresh opponent");
         }
     }
 
@@ -158,22 +191,21 @@ async function resolveInterview({ fighterId, fightId, choice, targetOpponentId }
             });
         }
     }
-    if (def.emitRespectFlag) {
-        // Only write respect for a win; losing and saying "good fight" is just humble filler with no reward hook.
-        const isWin = ["KO/TKO", "Submission", "Decision (unanimous)", "Decision (split)"].includes(fight.outcome);
-        if (isWin && fight.opponentId) {
-            const opp = await Opponent.findById(fight.opponentId).lean();
-            fighter.respectFlags = fighter.respectFlags || [];
-            const existing = fighter.respectFlags.find((f) => String(f.opponentId) === String(fight.opponentId));
-            if (!existing) {
-                fighter.respectFlags.push({
-                    opponentId: fight.opponentId,
-                    opponentName: opp?.name || "",
-                    source: "INTERVIEW",
-                    expiresAfterFights: 6,
-                    createdAt: new Date(),
-                });
-            }
+    if (def.emitRespectFlag && fight.opponentId) {
+        // Write a respect flag on the just-fought opponent regardless of outcome —
+        // the rematch bonus (+15% iron) only triggers if you later WIN against them,
+        // so writing it after a loss just sets up a future revenge-with-respect story.
+        const opp = await Opponent.findById(fight.opponentId).lean();
+        fighter.respectFlags = fighter.respectFlags || [];
+        const existing = fighter.respectFlags.find((f) => String(f.opponentId) === String(fight.opponentId));
+        if (!existing) {
+            fighter.respectFlags.push({
+                opponentId: fight.opponentId,
+                opponentName: opp?.name || "",
+                source: "INTERVIEW",
+                expiresAfterFights: 6,
+                createdAt: new Date(),
+            });
         }
     }
 

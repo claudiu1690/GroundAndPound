@@ -153,6 +153,9 @@ async function postInterview(req, res) {
             "Cannot call out the fighter you just beat — pick someone new",
             "Target must share your weight class",
             "Target is outside your callable tier range",
+            "Target is outside your callable range — use the Callout tab for stretch-tier targets",
+            "Target is too far out of your OVR range — pick someone you can realistically face",
+            "You've already beaten this fighter — pick a fresh opponent",
         ];
         if (clientErrors.includes(err.message)) {
             return res.status(400).json({ message: err.message });

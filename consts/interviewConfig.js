@@ -17,7 +17,7 @@ const INTERVIEW_CHOICES = {
         key: "HUMBLE",
         label: "Humble",
         tagline: "Pay respect, take the high road.",
-        fameReward: 75,
+        fameReward: 100,
         emitRespectFlag: true,
         fameCode: "INTERVIEW",
         reasonTemplate: "Post-fight interview: respectful",
@@ -32,14 +32,14 @@ const INTERVIEW_CHOICES = {
     },
     CALLOUT: {
         key: "CALLOUT",
-        label: "Call Out",
-        tagline: "Name someone. Put them on notice.",
+        label: "Trash Talk",
+        tagline: "Name a rival on the mic. Put them on notice.",
         fameReward: 200,
         requiresTarget: true,
         emitBeefFlag: true,
         beefExpiresAfterFights: 4,
         fameCode: "INTERVIEW",
-        reasonTemplate: "Called out: {name}",
+        reasonTemplate: "Trash talked: {name}",
     },
 };
 
@@ -48,8 +48,17 @@ const INTERVIEW_CHOICE_KEYS = Object.keys(INTERVIEW_CHOICES);
 /** Max roster size shown on the Call-Out picker (keeps UI tidy) */
 const CALLOUT_CANDIDATE_LIMIT = 6;
 
+/**
+ * OVR window for post-fight interview callouts. We want only opponents the player
+ * could realistically face through natural offer generation within the beef-flag
+ * window — otherwise every callout becomes a guaranteed fame penalty at lapse.
+ * Natural offers roll within ±5 OVR; we use ±6 to give a little drift slack.
+ */
+const CALLOUT_OVR_WINDOW = 6;
+
 module.exports = {
     INTERVIEW_CHOICES,
     INTERVIEW_CHOICE_KEYS,
     CALLOUT_CANDIDATE_LIMIT,
+    CALLOUT_OVR_WINDOW,
 };

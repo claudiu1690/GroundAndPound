@@ -77,7 +77,7 @@ export function PostFightInterview({
         const text = choice === "SKIPPED"
             ? "You skipped the media."
             : choice === "CALLOUT" && targetName
-                ? `You called out ${targetName}.`
+                ? `You trash talked ${targetName}.`
                 : choice === "HUMBLE"
                     ? "You took the humble route."
                     : choice === "CONFIDENT"
@@ -97,7 +97,7 @@ export function PostFightInterview({
         return (
             <section className="pfi-wrap">
                 <header className="pfi-header">
-                    <h3 className="pfi-title">Who are you calling out?</h3>
+                    <h3 className="pfi-title">Who are you trash talking?</h3>
                     <button
                         type="button"
                         className="pfi-back"
@@ -107,11 +107,18 @@ export function PostFightInterview({
                     </button>
                 </header>
 
+                <p className="pfi-hint">
+                    Only fighters you could realistically face in your next few offers are shown.
+                    For stretch-tier targets, use the <strong>Call Out</strong> button in the Fight tab (spends fame).
+                </p>
+
                 {candidatesLoading && (
                     <div className="pfi-empty">Loading roster…</div>
                 )}
                 {!candidatesLoading && candidates.length === 0 && (
-                    <div className="pfi-empty">No valid callout targets right now.</div>
+                    <div className="pfi-empty">
+                        No callout targets in your OVR range right now. Skip this interview or pick a different tone.
+                    </div>
                 )}
 
                 {!candidatesLoading && candidates.length > 0 && (
@@ -129,7 +136,6 @@ export function PostFightInterview({
                                         <span className="pfi-candidate-name">
                                             {c.name}{c.nickname ? ` "${c.nickname}"` : ""}
                                         </span>
-                                        {c.isStretch && <span className="pfi-stretch-badge">Tier up</span>}
                                     </div>
                                     <div className="pfi-candidate-meta">
                                         <span>{c.style}</span>
@@ -149,7 +155,7 @@ export function PostFightInterview({
                         disabled={!selectedTarget || submitting}
                         onClick={() => submit("CALLOUT", selectedTarget.id)}
                     >
-                        {submitting ? "Calling out…" : selectedTarget ? `Call out ${selectedTarget.name}` : "Select a fighter"}
+                        {submitting ? "Going on air…" : selectedTarget ? `Trash talk ${selectedTarget.name}` : "Select a fighter"}
                     </button>
                 </div>
             </section>
@@ -179,7 +185,10 @@ export function PostFightInterview({
                     <div className="pfi-tone-icon">🙇</div>
                     <div className="pfi-tone-label">Humble</div>
                     <div className="pfi-tone-desc">Pay respect. Take the high road.</div>
-                    <div className="pfi-tone-reward">+75 fame</div>
+                    <div className="pfi-tone-reward">+100 fame</div>
+                    <div className="pfi-tone-bonus">
+                        🙇 Respect flag — <strong>+15% iron</strong> on your rematch win <span className="pfi-tone-window">(6-fight window)</span>.
+                    </div>
                 </button>
 
                 <button
@@ -192,6 +201,9 @@ export function PostFightInterview({
                     <div className="pfi-tone-label">Confident</div>
                     <div className="pfi-tone-desc">Take credit. Let the division hear you.</div>
                     <div className="pfi-tone-reward">+150 fame</div>
+                    <div className="pfi-tone-bonus pfi-tone-bonus-muted">
+                        Pure fame. No flags, no strings.
+                    </div>
                 </button>
 
                 <button
@@ -201,9 +213,12 @@ export function PostFightInterview({
                     disabled={submitting}
                 >
                     <div className="pfi-tone-icon">📣</div>
-                    <div className="pfi-tone-label">Call Out</div>
+                    <div className="pfi-tone-label">Trash Talk</div>
                     <div className="pfi-tone-desc">Name a rival. Put them on notice.</div>
-                    <div className="pfi-tone-reward">+200 fame · Beef flag</div>
+                    <div className="pfi-tone-reward">+200 fame</div>
+                    <div className="pfi-tone-bonus">
+                        🔥 Beef flag — <strong>+30% fame</strong> on the win, <strong className="neg">−150 fame</strong> if you never face them <span className="pfi-tone-window">(4-fight window)</span>.
+                    </div>
                 </button>
             </div>
         </section>

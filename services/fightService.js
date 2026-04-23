@@ -287,6 +287,29 @@ async function generateOffers(fighterId) {
         }
     }
 
+    // Phase 6: Decorate every offer with active beef/respect flag matches so the UI
+    // can badge "this is your grudge match" / "this is the respect rematch".
+    const beefIds    = new Set((fighter.beefFlags    || []).map((f) => String(f.opponentId)));
+    const respectIds = new Set((fighter.respectFlags || []).map((f) => String(f.opponentId)));
+    for (const o of offers) {
+        const oppId = o.opponent?._id ? String(o.opponent._id) : null;
+        if (!oppId) continue;
+        if (beefIds.has(oppId)) {
+            const flag = (fighter.beefFlags || []).find((f) => String(f.opponentId) === oppId);
+            o.beefMatch = {
+                source: flag?.source || "INTERVIEW",
+                expiresAfterFights: flag?.expiresAfterFights ?? 0,
+            };
+        }
+        if (respectIds.has(oppId)) {
+            const flag = (fighter.respectFlags || []).find((f) => String(f.opponentId) === oppId);
+            o.respectMatch = {
+                source: flag?.source || "INTERVIEW",
+                expiresAfterFights: flag?.expiresAfterFights ?? 0,
+            };
+        }
+    }
+
     return offers;
 }
 
