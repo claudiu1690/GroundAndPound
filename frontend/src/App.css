@@ -4199,6 +4199,139 @@ code {
   .contracts-cols { grid-template-columns: 1fr; }
 }
 
+/* ── Drop-contract confirmation modal ── */
+.drop-confirm-root {
+  position: fixed;
+  inset: 0;
+  z-index: 960;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fame-backdrop-in 0.18s ease-out;
+}
+.drop-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+.drop-confirm-shell {
+  position: relative;
+  width: min(440px, 94vw);
+  max-height: 92vh;
+  background: var(--content-bg);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--red);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: drop-confirm-in 0.18s ease-out;
+}
+@keyframes drop-confirm-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.drop-confirm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.drop-confirm-header h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.drop-confirm-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.drop-confirm-close:hover { color: var(--text); background: var(--bg-hover); }
+
+.drop-confirm-body {
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.drop-confirm-brand {
+  padding: 0.55rem 0.7rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.drop-confirm-brand-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+}
+.drop-confirm-brand-tagline {
+  font-size: 10.5px;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+.drop-confirm-clause {
+  font-size: 11.5px;
+  color: var(--text-sec);
+  line-height: 1.4;
+  padding: 0.3rem 0.1rem;
+}
+
+.drop-confirm-penalty {
+  padding: 0.65rem 0.8rem;
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid var(--red);
+  border-radius: 4px;
+}
+.drop-confirm-penalty-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.drop-confirm-penalty-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--red);
+  margin: 0.1rem 0 0.3rem;
+}
+.drop-confirm-penalty-hint {
+  font-size: 10.5px;
+  color: var(--text-sec);
+  line-height: 1.4;
+}
+
+.drop-confirm-earned {
+  font-size: 11px;
+  color: var(--text-sec);
+  text-align: center;
+}
+.drop-confirm-earned strong { color: var(--gold-bright); }
+
+.drop-confirm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+}
+
 /* ============================================================
    Callouts (Phase 4)
    ============================================================ */

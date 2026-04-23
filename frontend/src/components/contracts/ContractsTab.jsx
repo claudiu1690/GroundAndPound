@@ -19,6 +19,21 @@ function formatRelative(d) {
     return `${Math.floor(h / 24)}d ago`;
 }
 
+/** Future-facing countdown — "in 3d", "in 5h", "in 12m", or "any moment". */
+function formatCountdown(d) {
+    if (!d) return "";
+    const target = new Date(d).getTime();
+    if (!Number.isFinite(target)) return "";
+    const diff = target - Date.now();
+    if (diff <= 0) return "any moment";
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return "in <1m";
+    if (m < 60) return `in ${m}m`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `in ${h}h`;
+    return `in ${Math.floor(h / 24)}d`;
+}
+
 function statusTone(status) {
     if (status === "completed") return "pos";
     if (status === "broken" || status === "dropped") return "neg";
@@ -34,6 +49,8 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [busyId, setBusyId] = useState(null);
+    /** Contract currently queued for drop confirmation (full object, or null). */
+    const [dropCandidate, setDropCandidate] = useState(null);
 
     const fighterId = fighter?._id;
 
@@ -66,10 +83,19 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
         setBusyId(null);
     }, [fighterId, load, onMessage, onRefreshFighter]);
 
-    const handleDrop = useCallback(async (sponsorshipId) => {
-        if (!fighterId) return;
-        if (!window.confirm("Drop this contract? You'll take a fame hit (half the break penalty).")) return;
+    const requestDrop = useCallback((contract) => {
+        setDropCandidate(contract);
+    }, []);
+
+    const cancelDrop = useCallback(() => {
+        setDropCandidate(null);
+    }, []);
+
+    const confirmDrop = useCallback(async () => {
+        if (!fighterId || !dropCandidate) return;
+        const sponsorshipId = dropCandidate.id;
         setBusyId(sponsorshipId);
+        setDropCandidate(null);
         try {
             await api.dropSponsor(fighterId, sponsorshipId);
             onMessage?.("Contract dropped.");
@@ -79,7 +105,7 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
             onMessage?.(e.message || "Could not drop contract");
         }
         setBusyId(null);
-    }, [fighterId, load, onMessage, onRefreshFighter]);
+    }, [fighterId, dropCandidate, load, onMessage, onRefreshFighter]);
 
     if (loading || !data) {
         return (
@@ -117,7 +143,7 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
                         <ActiveCard
                             key={c.id}
                             contract={c}
-                            onDrop={() => handleDrop(c.id)}
+                            onDrop={() => requestDrop(c)}
                             busy={busyId === c.id}
                         />
                     ))}
@@ -129,7 +155,7 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
                         Available
                         <span className="contracts-col-sub">
                             {available?.rotationEndsAt
-                                ? ` · refreshes ${formatRelative(new Date(Date.now() - (Date.now() - new Date(available.rotationEndsAt).getTime())))}`
+                                ? ` · new offers ${formatCountdown(available.rotationEndsAt)}`
                                 : ""}
                         </span>
                     </h3>
@@ -142,7 +168,11 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
 
                     {fameTier !== "UNKNOWN" && available.offers.length === 0 && (
                         <div className="contracts-empty">
-                            No offers right now. Fresh pool arrives next rotation.
+                            No new offers right now. Sponsors you've already signed, dropped,
+                            or broken this week won't re-appear until the pool refreshes
+                            {available?.rotationEndsAt
+                                ? ` ${formatCountdown(available.rotationEndsAt)}.`
+                                : " next week."}
                         </div>
                     )}
 
@@ -168,11 +198,79 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
                     ))}
                 </section>
             </div>
+
+            <DropContractConfirm
+                contract={dropCandidate}
+                onCancel={cancelDrop}
+                onConfirm={confirmDrop}
+            />
         </section>
     );
 }
 
 // ───────────────────────────────────────────────────────────────
+// Drop-contract confirmation modal
+// ───────────────────────────────────────────────────────────────
+
+function DropContractConfirm({ contract, onCancel, onConfirm }) {
+    // Close on Escape
+    useEffect(() => {
+        if (!contract) return;
+        const onKey = (e) => { if (e.key === "Escape") onCancel?.(); };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [contract, onCancel]);
+
+    if (!contract) return null;
+
+    // Backend applies Math.round(famePenaltyOnBreak / 2) on a manual drop.
+    const penalty = Math.round((contract.famePenaltyOnBreak || 0) / 2);
+
+    return (
+        <div className="drop-confirm-root" role="dialog" aria-modal="true" aria-label="Drop contract">
+            <div className="drop-confirm-backdrop" onClick={onCancel} />
+            <div className="drop-confirm-shell">
+                <header className="drop-confirm-header">
+                    <h3>Drop this contract?</h3>
+                    <button type="button" className="drop-confirm-close" onClick={onCancel} aria-label="Close">✕</button>
+                </header>
+
+                <div className="drop-confirm-body">
+                    <div className="drop-confirm-brand">
+                        <div className="drop-confirm-brand-name">{contract.brand}</div>
+                        <div className="drop-confirm-brand-tagline">{contract.tagline}</div>
+                    </div>
+
+                    <div className="drop-confirm-clause">{contract.clauseText}</div>
+
+                    <div className="drop-confirm-penalty">
+                        <div className="drop-confirm-penalty-label">Fame penalty</div>
+                        <div className="drop-confirm-penalty-value">−{penalty.toLocaleString()} fame</div>
+                        <div className="drop-confirm-penalty-hint">
+                            Half of the break penalty ({contract.famePenaltyOnBreak} fame). You'll still
+                            keep any iron already earned on this contract.
+                        </div>
+                    </div>
+
+                    {contract.totals?.ironEarned > 0 && (
+                        <div className="drop-confirm-earned">
+                            Earned so far: <strong>+{(contract.totals.ironEarned || 0).toLocaleString()} ⊗</strong>
+                        </div>
+                    )}
+                </div>
+
+                <footer className="drop-confirm-footer">
+                    <button type="button" className="btn btn-secondary" onClick={onCancel}>
+                        Keep contract
+                    </button>
+                    <button type="button" className="btn btn-danger" onClick={onConfirm}>
+                        Drop — lose {penalty.toLocaleString()} fame
+                    </button>
+                </footer>
+            </div>
+        </div>
+    );
+}
 
 function ActiveCard({ contract, onDrop, busy }) {
     return (
