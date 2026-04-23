@@ -32,6 +32,7 @@ async function acceptOffer(req, res) {
             "No sponsor slots available — drop a contract or raise your fame tier",
             "Already have this sponsor",
             "Recently broken — this sponsor won't re-sign until next rotation",
+            "Already fulfilled this week — this sponsor won't re-sign until next rotation",
         ];
         if (clientErrors.includes(err.message)) {
             return res.status(400).json({ message: err.message });

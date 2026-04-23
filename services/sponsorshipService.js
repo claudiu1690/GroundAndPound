@@ -81,13 +81,15 @@ async function listAvailableOffers(fighterId) {
         status: "active",
     }).distinct("sponsorId");
 
-    const recentBroken = await Sponsorship.find({
+    // Anti-farm: a sponsor that was completed, broken, or dropped THIS rotation
+    // should not re-appear in the pool until the weekly refresh.
+    const recentlyResolved = await Sponsorship.find({
         fighterId: fighter._id,
-        status: { $in: ["broken", "dropped"] },
+        status: { $in: ["completed", "broken", "dropped"] },
         resolvedAt: { $gte: new Date(rotation * OFFER_ROTATION_MS) },
     }).distinct("sponsorId");
 
-    const excluded = new Set([...activeIds, ...recentBroken]);
+    const excluded = new Set([...activeIds, ...recentlyResolved]);
     const eligible = SPONSOR_OFFERS.filter((s) => offerMeetsFighter(fighter, s) && !excluded.has(s.id));
 
     const seed = hashSeed(`${fighter._id}:${rotation}`);
@@ -147,16 +149,22 @@ async function acceptOffer(fighterId, sponsorId) {
         throw new Error("Already have this sponsor");
     }
 
-    // Block accepting a sponsor that was broken/dropped this rotation (prevents re-farming).
+    // Block accepting a sponsor that was completed, broken, or dropped this rotation.
+    // Prevents the sign → complete → sign again farm loop.
     const rotation = currentRotation();
     const rotationStart = new Date(rotation * OFFER_ROTATION_MS);
     const recent = await Sponsorship.findOne({
         fighterId,
         sponsorId,
-        status: { $in: ["broken", "dropped"] },
+        status: { $in: ["completed", "broken", "dropped"] },
         resolvedAt: { $gte: rotationStart },
     });
-    if (recent) throw new Error("Recently broken — this sponsor won't re-sign until next rotation");
+    if (recent) {
+        const msg = recent.status === "completed"
+            ? "Already fulfilled this week — this sponsor won't re-sign until next rotation"
+            : "Recently broken — this sponsor won't re-sign until next rotation";
+        throw new Error(msg);
+    }
 
     const contract = await Sponsorship.create({
         fighterId,
