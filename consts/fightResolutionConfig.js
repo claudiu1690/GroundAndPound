@@ -61,6 +61,20 @@ const FIGHT_RESOLUTION_CONFIG = {
         minMod: 0.65,
         maxMod: 1.05,
     },
+    // Ground position carries between rounds. The bottom fighter rolls to escape
+    // back to the feet; if they fail, the top fighter delivers GnP and a sub attempt,
+    // and the bottom fighter gets a reduced sub-from-guard attempt.
+    groundHold: {
+        // Bottom fighter rolls to escape each round. Base of 0.42 means even a low-WRE
+        // striker escapes a strong wrestler ~25–30% of the time, so they're not glued
+        // to the canvas for five rounds. Tighter divisor lets grapplers still dominate.
+        escapeBase: 0.42,
+        escapeStatDivisor: 180,
+        escapeMin: 0.18,
+        escapeMax: 0.75,
+        guardSubAttemptMult: 0.7,   // bottom attempts subs less often than from top
+        guardSubSuccessMult: 0.6,   // and they succeed less often
+    },
     koCheck: {
         healthWindow: {
             lowStaminaThreshold: 10,

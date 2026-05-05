@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { WEIGHT_CLASSES, STYLES } = require("../consts/gameConstants");
+const { WEIGHT_CLASSES, STYLES, FIGHT_STRATEGIES } = require("../consts/gameConstants");
 
 const statSchema = { type: Number, min: 1, max: 100, default: 10 };
 
@@ -8,6 +8,7 @@ const opponentSchema = new mongoose.Schema({
     nickname: { type: String, default: null },
     weightClass: { type: String, enum: WEIGHT_CLASSES, required: true },
     style: { type: String, enum: Object.keys(STYLES), required: true },
+    strategy: { type: String, enum: Object.keys(FIGHT_STRATEGIES), default: null },
     promotionTier: { type: String, required: true },
     str: statSchema, spd: statSchema, leg: statSchema, wre: statSchema,
     gnd: statSchema, sub: statSchema, chn: statSchema, fiq: statSchema,

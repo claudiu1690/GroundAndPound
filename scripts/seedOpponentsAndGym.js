@@ -9,8 +9,7 @@ const Gym = require("../models/gymModel");
 const Opponent = require("../models/opponentModel");
 const { WEIGHT_CLASSES, STYLES } = require("../consts/gameConstants");
 const { generateOpponentName } = require("../utils/opponentNames");
-const { buildOpponentStatsFromStyle } = require("../utils/opponentStats");
-const { calculateOverall } = require("../utils/overallRating");
+const { buildOpponentStatsFromStyle, buildScaledOpponentStats, strategyForStyle } = require("../utils/opponentStats");
 const { generateFightHistory } = require("./migrateCampHistory");
 
 const OPPONENTS_PER_WEIGHT_CLASS = 10;
@@ -81,6 +80,7 @@ async function run() {
                 nickname,
                 weightClass: wc,
                 style,
+                strategy: strategyForStyle(style),
                 promotionTier: "Amateur",
                 overallRating: stats.overallRating,
                 str: stats.str,
@@ -110,14 +110,8 @@ async function run() {
             for (let i = 0; i < toCreate; i++) {
                 const { name, nickname } = generateOpponentName(true);
                 const style = pickRandom(styleKeys);
-                const base = buildOpponentStatsFromStyle(style);
                 const targetOvr = 28 + Math.floor(Math.random() * 21);
-                const scale = targetOvr / Math.max(1, base.overallRating);
-                const scaled = { ...base };
-                ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"].forEach((k) => {
-                    scaled[k] = Math.min(100, Math.max(1, Math.round(scaled[k] * scale)));
-                });
-                scaled.overallRating = calculateOverall({ ...scaled, style });
+                const scaled = buildScaledOpponentStats(style, targetOvr);
                 const record = generateRecord(promoTier);
                 const fightHistory = generateFightHistory({ style, chn: scaled.chn, record });
                 await Opponent.create({
@@ -125,6 +119,7 @@ async function run() {
                     nickname,
                     weightClass: wc,
                     style,
+                    strategy: strategyForStyle(style),
                     promotionTier: promoTier,
                     overallRating: scaled.overallRating,
                     str: scaled.str,

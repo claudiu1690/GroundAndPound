@@ -209,7 +209,7 @@ function getBonus(sessionBonuses, bonusType) {
 
 // ── Resolve round (v2 with conditional bonuses) ─────────────────────────────
 
-function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk = false, sessionBonuses = []) {
+function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk = false, sessionBonuses = [], opponentStrategy = null, groundPosition = 0) {
     const staminaDrain = CFG.round.staminaDrainBase + Math.floor(Math.random() * CFG.round.staminaDrainRandom);
     let playerDamage = 0;
     let opponentDamage = 0;
@@ -217,6 +217,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     let grapplingControl = 0;
     let finished = false;
     let outcome = null;
+    let groundContinued = false; // when true, takedown + striking phases are skipped
     const campCommentary = []; // Camp-specific commentary for this round
 
     // ── Stamina drain ───────────────────────────────────────────────────
@@ -242,15 +243,99 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         triggerBonus(sessionBonuses, 'OPPONENT_DAMAGE_REDUCTION');
     }
 
+    // ── Ground continuation ─────────────────────────────────────────────
+    // If the previous round ended with someone in top control, the round starts
+    // on the ground. Bottom rolls to escape; if they fail, top grinds out GnP +
+    // a sub attempt, and bottom gets a reduced sub-from-guard attempt.
+    if (groundPosition !== 0) {
+        const playerOnTop = groundPosition === 1;
+        const top = playerOnTop ? player : opponent;
+        const bottom = playerOnTop ? opponent : player;
+        const topStrategy = playerOnTop ? playerStrategy : opponentStrategy;
+        const bottomStrategy = playerOnTop ? opponentStrategy : playerStrategy;
+        const topStaminaMod = playerOnTop ? pStaminaMod : oStaminaMod;
+
+        const escapeChance = clamp(
+            CFG.groundHold.escapeBase
+                + (getStat(bottom, "wre") + getStat(bottom, "gnd")) / 2 / CFG.groundHold.escapeStatDivisor
+                - getStat(top, "gnd") / CFG.groundHold.escapeStatDivisor,
+            CFG.groundHold.escapeMin,
+            CFG.groundHold.escapeMax
+        );
+
+        if (Math.random() < escapeChance) {
+            // Bottom escapes — fight resets to standing for the rest of the round.
+            grapplingControl = 0;
+        } else {
+            groundContinued = true;
+            grapplingControl = groundPosition;
+
+            const base = getStat(top, "gnd") * 0.55 + getStat(top, "str") * 0.15 - getStat(bottom, "chn") * 0.2;
+            let gnpDamage = Math.round(Math.max(2, base) * topStaminaMod);
+
+            if (playerOnTop) {
+                const gnpBonus = triggerBonus(sessionBonuses, 'GNP_DAMAGE');
+                if (gnpBonus > 0) {
+                    gnpDamage = Math.round(gnpDamage * (1 + gnpBonus));
+                    campCommentary.push('campGnpPosture');
+                }
+                opponentDamage = gnpDamage;
+                event = "Holding top control; ground and pound.";
+            } else {
+                playerDamage = gnpDamage;
+                event = "Stuck on bottom; opponent grinds.";
+            }
+
+            // Top sub attempt
+            const topSubChance = clamp(
+                (getSubAttemptChance(topStrategy) + grapplingProfileMod(top)) * submissionDefenseMod(bottom),
+                CFG.submission.attemptMin,
+                CFG.submission.attemptMax
+            );
+            if (Math.random() < topSubChance) {
+                if (submissionSuccess(top, bottom)) {
+                    finished = true;
+                    outcome = playerOnTop ? "Submission" : "Loss (submission)";
+                }
+            }
+
+            // Bottom sub-from-guard — uses the same stat math but with attempt and
+            // success multipliers, since hitting a triangle off your back is harder.
+            if (!finished) {
+                const guardAttempt = clamp(
+                    (getSubAttemptChance(bottomStrategy) * CFG.groundHold.guardSubAttemptMult + grapplingProfileMod(bottom)) * submissionDefenseMod(top),
+                    CFG.submission.attemptMin,
+                    CFG.submission.attemptMax
+                );
+                if (Math.random() < guardAttempt) {
+                    const guardSuccess = clamp(
+                        (CFG.submission.baseChance
+                            + (getStat(bottom, "sub") - getStat(top, "sub")) / CFG.submission.subDiffDivisor
+                            + (getStat(bottom, "wre") - getStat(top, "wre")) / CFG.submission.wreDiffDivisor
+                            + (getStat(bottom, "gnd") - getStat(top, "gnd")) / CFG.submission.gndDiffDivisor
+                            + grapplingProfileMod(bottom)) * CFG.groundHold.guardSubSuccessMult,
+                        CFG.submission.chanceMin,
+                        CFG.submission.chanceMax
+                    );
+                    if (Math.random() < guardSuccess) {
+                        finished = true;
+                        outcome = playerOnTop ? "Loss (submission)" : "Submission";
+                    }
+                }
+            }
+        }
+    }
+
     // ── Takedown attempt phase ──────────────────────────────────────────
     // Each fighter independently decides whether to shoot this round. If both
     // do, order is randomised so neither gets a free first-mover advantage.
     const withinTdWindow = roundNum <= CFG.round.takedownRoundsLimit;
     const playerTdChance = getTakedownAttemptChance(playerStrategy);
-    const opponentTdChance = getTakedownAttemptChance(null); // opponents use default attempt rate
+    const opponentTdChance = getTakedownAttemptChance(opponentStrategy);
 
-    const playerWillShoot = withinTdWindow && Math.random() < playerTdChance && playerShootsTakedown(player, opponent);
-    const opponentWillShoot = withinTdWindow && Math.random() < opponentTdChance && playerShootsTakedown(opponent, player);
+    // If the round was already spent on the ground, neither fighter shoots from feet.
+    const playerWillShoot = !groundContinued && withinTdWindow && Math.random() < playerTdChance && playerShootsTakedown(player, opponent);
+    const opponentWillShoot = !groundContinued && withinTdWindow && Math.random() < opponentTdChance && playerShootsTakedown(opponent, player);
 
     // Decide turn order: if both want the TD, coin-flip who acts first.
     const playerGoesFirst = playerWillShoot && (!opponentWillShoot || Math.random() < 0.5);
@@ -309,9 +394,10 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             event = "Opponent took you down.";
             grapplingControl = -1;
 
-            // Opponent submission attempt
+            // Opponent submission attempt — uses opponent's strategy so a Submission Hunter
+            // chains attempts at the higher rate, not the flat default.
             const oppSubChance = clamp(
-                (0.25 + grapplingProfileMod(opponent)) * submissionDefenseMod(player),
+                (getSubAttemptChance(opponentStrategy) + grapplingProfileMod(opponent)) * submissionDefenseMod(player),
                 CFG.submission.attemptMin,
                 CFG.submission.attemptMax
             );
@@ -354,8 +440,14 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
 
     // ── Striking exchange phase ─────────────────────────────────────────
     if (!event) {
-        let oppStrike = strikeDamage(opponent, player) * getStrikeDamageMod(playerStrategy, false);
-        let plStrike = strikeDamage(player, opponent) * getStrikeDamageMod(playerStrategy, true);
+        // Each side's outgoing strikes get their own offensive mod (Pressure Fighter buff);
+        // each side's incoming strikes get the opposite side's defensive mod (Counter Striker dampens).
+        let oppStrike = strikeDamage(opponent, player)
+            * getStrikeDamageMod(opponentStrategy, true)
+            * getStrikeDamageMod(playerStrategy, false);
+        let plStrike = strikeDamage(player, opponent)
+            * getStrikeDamageMod(playerStrategy, true)
+            * getStrikeDamageMod(opponentStrategy, false);
 
         // STRIKING_ACCURACY: +15% to player's strike damage
         const strikingBonus = triggerBonus(sessionBonuses, 'STRIKE_DAMAGE');
@@ -516,6 +608,7 @@ function judgeScorecard(rounds) {
 function resolveFight(player, opponent, options = {}) {
     const maxRounds = options.maxRounds ?? CFG.defaults.maxRounds;
     const playerStrategy = options.playerStrategy || null;
+    const opponentStrategy = options.opponentStrategy || opponent?.strategy || null;
     const ironWillPerk = !!options.ironWillPerk;
     const sessionBonuses = options.sessionBonuses ?? [];
     const wildcard = options.wildcard ?? null;
@@ -561,6 +654,8 @@ function resolveFight(player, opponent, options = {}) {
         );
     }
 
+    let groundPosition = 0; // carries between rounds: 1 = player on top, -1 = opponent on top
+
     for (let r = 1; r <= maxRounds; r++) {
         // Apply wildcard on the designated round
         let wildcardApplied = false;
@@ -573,7 +668,8 @@ function resolveFight(player, opponent, options = {}) {
             }
         }
 
-        const result = resolveRound(p, o, r, playerStrategy, ironWillPerk, sessionBonuses);
+        const result = resolveRound(p, o, r, playerStrategy, ironWillPerk, sessionBonuses, opponentStrategy, groundPosition);
+        groundPosition = result.grapplingControl;
 
         // Revert wildcard stat boost after the round
         if (wildcardApplied) {
