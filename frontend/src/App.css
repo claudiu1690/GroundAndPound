@@ -5133,6 +5133,355 @@ code {
 }
 
 /* ============================================================
+   Fight Card layout (Phase 5 redesign)
+   Sections: Headliner / Main Card / Prelims, each with fight rows.
+   ============================================================ */
+
+.card-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border-bright);
+  border-radius: 6px;
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 0.85rem;
+}
+.card-section-headliner { border-left-color: var(--gold-bright); background: linear-gradient(180deg, rgba(212,160,18,0.06), var(--bg-card)); }
+.card-section-main      { border-left-color: var(--red); }
+.card-section-prelim    { border-left-color: var(--text-muted); }
+
+.card-section-title {
+  margin: 0 0 0.55rem;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.card-section-headliner .card-section-title { color: var(--gold-bright); }
+
+/* ── Fight row ── */
+.fight-row {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.55rem 0.7rem;
+  margin-bottom: 0.45rem;
+}
+.fight-row:last-child { margin-bottom: 0; }
+.fight-row-locked { opacity: 0.85; }
+
+.fight-row-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.fight-row-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+.fight-row-class { font-weight: 700; text-transform: uppercase; }
+.fight-row-odds { font-style: italic; }
+
+.fight-row-pair {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.55rem;
+}
+.fight-row-vs {
+  font-weight: 800;
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.fight-chip {
+  min-width: 0;
+}
+.fight-chip-right { text-align: right; }
+.fight-chip-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.15;
+}
+.fight-chip-nickname {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.fight-chip-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 9.5px;
+  color: var(--text-sec);
+  margin-top: 0.15rem;
+}
+.fight-chip-right .fight-chip-meta { justify-content: flex-end; }
+
+/* Locked-pick bar */
+.fight-row-locked-bar {
+  margin-top: 0.45rem;
+  padding: 0.3rem 0.55rem;
+  font-size: 11px;
+  color: var(--text-sec);
+  background: rgba(212, 160, 18, 0.08);
+  border-radius: 3px;
+  border-left: 2px solid var(--gold-bright);
+}
+.fight-row-locked-bar strong { color: var(--gold-bright); }
+
+/* Predict toggle + picker */
+.fight-row-toggle {
+  margin-top: 0.4rem;
+  background: none;
+  border: none;
+  color: var(--text-sec);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0.15rem 0;
+}
+.fight-row-toggle:hover { color: var(--text); }
+
+.fight-row-picker {
+  margin-top: 0.45rem;
+  padding-top: 0.45rem;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.fight-row-pick-row {
+  display: flex;
+  gap: 0.3rem;
+}
+.fight-row-side, .fight-row-method {
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem 0.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.fight-row-side:hover, .fight-row-method:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-bright);
+}
+.fight-row-side.selected, .fight-row-method.selected {
+  border-color: var(--gold-bright);
+  background: rgba(212, 160, 18, 0.1);
+}
+.fight-row-side-draw {
+  flex: 0 0 auto;
+  min-width: 64px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.fight-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+.fight-row-reward-hint {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Just-resolved positive/negative styling */
+.events-just-positive { color: var(--green-bright); font-weight: 700; }
+.events-just-negative { color: var(--red); font-weight: 700; }
+
+/* History row slot pill */
+.events-history-slot {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border-radius: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  margin-right: 0.3rem;
+}
+.events-history-slot-prelim    { color: var(--text-muted); }
+.events-history-slot-main      { color: var(--red); border-color: var(--red); background: rgba(239,68,68,0.08); }
+.events-history-slot-headliner { color: var(--gold-bright); border-color: var(--gold-bright); background: rgba(212,160,18,0.1); }
+
+/* ============================================================
+   Card Result Overlay (multi-fight reveal)
+   ============================================================ */
+
+.card-result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10060;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: card-result-fade-in 0.2s ease-out;
+  overflow-y: auto;
+}
+@keyframes card-result-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.card-result-modal {
+  background: var(--content-bg);
+  border-radius: 10px;
+  border: 2px solid var(--gold-bright);
+  box-shadow: 0 16px 60px rgba(212, 160, 18, 0.25);
+  padding: 1.4rem 1.6rem;
+  max-width: 640px;
+  width: 100%;
+  animation: card-result-pop 0.22s ease-out;
+}
+@keyframes card-result-pop {
+  from { transform: scale(0.96); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.card-result-kicker {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 0.3rem;
+}
+.card-result-grade-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.card-result-grade {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--gold-bright);
+  letter-spacing: 0.02em;
+}
+.card-result-record {
+  font-size: 11.5px;
+  color: var(--text-sec);
+  font-weight: 600;
+}
+
+.card-result-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.card-result-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 1.3fr auto;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.5rem 0.65rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.card-result-row-pos { border-left-color: var(--green-bright); }
+.card-result-row-mid { border-left-color: #fbbf24; }
+.card-result-row-neg { border-left-color: var(--red); }
+.card-result-row-skipped { border-left-color: var(--text-muted); opacity: 0.6; }
+
+.card-result-row-slot {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.card-result-row-result strong { color: var(--text); }
+.card-result-row-method { color: var(--text-sec); }
+
+.card-result-row-mine {
+  color: var(--text-sec);
+}
+.card-result-row-mine strong { color: var(--text); }
+.card-result-row-icon {
+  display: inline-block;
+  margin-right: 0.25rem;
+  font-weight: 800;
+}
+.card-result-row-icon-pos { color: var(--green-bright); }
+.card-result-row-icon-mid { color: #fbbf24; }
+.card-result-row-icon-neg { color: var(--red); }
+
+.card-result-row-delta {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.card-result-row-delta-pos { color: var(--green-bright); }
+.card-result-row-delta-mid { color: #fbbf24; }
+.card-result-row-delta-neg { color: var(--red); }
+.card-result-row-delta.muted { color: var(--text-muted); }
+
+.card-result-totals {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: center;
+  padding: 0.65rem 0;
+  margin-bottom: 0.6rem;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.card-result-total {
+  font-size: 14px;
+  font-weight: 800;
+  padding: 0.3rem 0.85rem;
+  border-radius: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.card-result-total.pos { color: var(--gold-bright); border-color: var(--gold-bright); }
+.card-result-total.neg { color: var(--red); border-color: var(--red); }
+
+.card-result-continue {
+  display: block;
+  margin: 0 auto;
+  min-width: 200px;
+  font-size: 0.95rem;
+  padding: 0.55rem 1.4rem;
+}
+
+@media (max-width: 600px) {
+  .card-result-row { grid-template-columns: 1fr; gap: 0.2rem; }
+  .fight-row-pair { grid-template-columns: 1fr; }
+  .fight-row-vs { display: none; }
+  .fight-chip-right { text-align: left; }
+  .fight-chip-right .fight-chip-meta { justify-content: flex-start; }
+}
+
+/* ============================================================
    Media Hub (Phase 6)
    ============================================================ */
 

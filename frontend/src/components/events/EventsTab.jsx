@@ -1,11 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../api";
-import { PredictionResultOverlay } from "./PredictionResultOverlay";
+import { CardResultOverlay } from "./CardResultOverlay";
 
 const METHOD_OPTIONS = ["KO/TKO", "Submission", "Decision"];
 
-/** localStorage key for tracking which resolved events the player has already seen. */
-const SEEN_EVENT_KEY = (fighterId) => `gp_seen_resolved_event_${fighterId}`;
+const SLOT_LABEL = {
+    PRELIM: "Prelim",
+    MAIN: "Main Card",
+    HEADLINER: "Headliner",
+};
+
+const SLOT_REWARD_HINT = {
+    PRELIM: "Exact: +100 fame · +200 ⊗ · Winner only: +30 fame · Wrong: −20 fame",
+    MAIN: "Exact: +200 fame · +400 ⊗ · Winner only: +75 fame · Wrong: −40 fame",
+    HEADLINER: "Exact: +300 fame · +500 ⊗ · Winner only: +100 fame · Wrong: −50 fame",
+};
+
+const SEEN_CARD_KEY = (fighterId) => `gp_seen_resolved_card_${fighterId}`;
 
 function relativeTime(d) {
     if (!d) return "";
@@ -29,10 +40,8 @@ function recordStr(r) {
 export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
-    const [pickedSide, setPickedSide] = useState(null);       // "A" | "B" | "DRAW"
-    const [pickedMethod, setPickedMethod] = useState(null);   // "KO/TKO" | "Submission" | "Decision"
-    const [resultOverlayShown, setResultOverlayShown] = useState(false);
+    const [submittingFightId, setSubmittingFightId] = useState(null);
+    const [overlayDismissed, setOverlayDismissed] = useState(false);
 
     const fighterId = fighter?._id;
 
@@ -40,18 +49,11 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
         if (!fighterId) return;
         setLoading(true);
         try {
-            const res = await api.getMainEvent(fighterId);
+            const res = await api.getFightCard(fighterId);
             setData(res);
-            // Prefill picks if already predicted.
-            if (res.myPrediction) {
-                setPickedSide(res.myPrediction.pickedSide);
-                setPickedMethod(res.myPrediction.pickedMethod);
-            } else {
-                setPickedSide(null);
-                setPickedMethod(null);
-            }
+            setOverlayDismissed(false);
         } catch (e) {
-            onMessage?.(e.message || "Could not load main event");
+            onMessage?.(e.message || "Could not load fight card");
             setData(null);
         }
         setLoading(false);
@@ -59,28 +61,25 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
 
     useEffect(() => { load(); }, [load]);
 
-    const submit = useCallback(async () => {
-        if (!data?.current?.id || !pickedSide) return;
-        if (pickedSide !== "DRAW" && !pickedMethod) {
-            onMessage?.("Pick a method (KO/Sub/Dec).");
-            return;
-        }
-        setSubmitting(true);
+    const submitFight = useCallback(async (fightIndex, pickedSide, pickedMethod) => {
+        if (!data?.current?.id) return;
+        setSubmittingFightId(fightIndex);
         try {
-            await api.submitPrediction(data.current.id, {
+            await api.submitCardPrediction(data.current.id, {
                 fighterId,
+                fightIndex,
                 pickedSide,
                 pickedMethod: pickedSide === "DRAW" ? "Draw" : pickedMethod,
             });
-            onMessage?.("Prediction locked in.");
+            onMessage?.("Prediction locked.");
             await load();
         } catch (e) {
             onMessage?.(e.message || "Could not submit prediction");
         }
-        setSubmitting(false);
-    }, [data, pickedSide, pickedMethod, fighterId, load, onMessage]);
+        setSubmittingFightId(null);
+    }, [data, fighterId, load, onMessage]);
 
-    const predictRecord = useMemo(() => {
+    const summaryStats = useMemo(() => {
         const h = data?.history || [];
         const right = h.filter((p) => p.resolution?.correctSide).length;
         const exact = h.filter((p) => p.resolution?.correctExact).length;
@@ -90,111 +89,121 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
     if (loading || !data) {
         return (
             <section className="events-tab">
-                <div className="events-loading">Loading main event…</div>
+                <div className="events-loading">Loading fight card…</div>
             </section>
         );
     }
 
-    const { current, justResolved, myPrediction, history } = data;
+    const { current, justResolved, myPredictions, history } = data;
     if (!current) {
         return (
             <section className="events-tab">
-                <div className="events-empty">No main event scheduled right now. Check back soon.</div>
+                <div className="events-empty">No fight card scheduled right now. Check back soon.</div>
             </section>
         );
     }
 
-    const { fighterA, fighterB, publicOdds, predictionCount } = current;
-    const alreadyPredicted = !!myPrediction?.resolution?.resolved || !!myPrediction;
+    // Build a map of predictions by fightIndex for quick lookup.
+    const predictionsByIndex = (myPredictions || []).reduce((acc, p) => {
+        acc[p.fightIndex] = p;
+        return acc;
+    }, {});
 
-    // Find the player's prediction for the just-resolved event (if any).
-    const justResolvedPrediction = justResolved
-        ? (history || []).find((p) => p.mainEventId === justResolved.id) || null
+    // Decide whether to show the multi-fight reveal overlay.
+    const seenKey = fighterId ? SEEN_CARD_KEY(fighterId) : null;
+    const lastSeenCardId = seenKey
+        ? (typeof localStorage !== "undefined" ? localStorage.getItem(seenKey) : null)
         : null;
-
-    // Decide whether to show the reveal overlay: there's a just-resolved event,
-    // the player had a prediction on it, and they haven't dismissed it before.
-    const seenKey = fighterId ? SEEN_EVENT_KEY(fighterId) : null;
-    const lastSeenId = seenKey ? (typeof localStorage !== "undefined" ? localStorage.getItem(seenKey) : null) : null;
+    const justResolvedPredictions = justResolved
+        ? (history || []).filter((p) => p.cardId === justResolved.id)
+        : [];
     const shouldShowOverlay = !!(
-        !resultOverlayShown
+        !overlayDismissed
         && justResolved
-        && justResolvedPrediction
-        && justResolvedPrediction.resolution?.resolved
-        && lastSeenId !== justResolved.id
+        && justResolvedPredictions.length > 0
+        && lastSeenCardId !== justResolved.id
     );
 
     const dismissOverlay = () => {
         if (seenKey && justResolved?.id) {
             try { localStorage.setItem(seenKey, justResolved.id); } catch (_) {}
         }
-        setResultOverlayShown(true);
+        setOverlayDismissed(true);
+        // Refresh fighter so the header iron/fame numbers reflect the payouts.
+        if (onRefreshFighter && fighterId) onRefreshFighter(fighterId);
     };
+
+    // Group fights by slot for layout
+    const prelims    = current.fights.filter((f) => f.slot === "PRELIM");
+    const mainCard   = current.fights.filter((f) => f.slot === "MAIN");
+    const headliner  = current.fights.filter((f) => f.slot === "HEADLINER");
 
     return (
         <section className="events-tab">
             {shouldShowOverlay && (
-                <PredictionResultOverlay
-                    event={justResolved}
-                    prediction={justResolvedPrediction}
+                <CardResultOverlay
+                    card={justResolved}
+                    predictions={justResolvedPredictions}
                     onClose={dismissOverlay}
                 />
             )}
 
             <header className="events-header">
-                <h2>Main Event of the Week</h2>
+                <h2>Fight Night #{current.cardNumber}</h2>
                 <div className="events-countdown">
                     Resolves {relativeTime(current.resolvesAt)}
                 </div>
             </header>
 
-            {justResolved && justResolved.actualOutcome?.method && (
-                <JustResolvedBanner event={justResolved} myPrediction={justResolvedPrediction} />
+            {justResolved && !shouldShowOverlay && justResolved.fights?.length > 0 && (
+                <JustResolvedSummary card={justResolved} predictions={justResolvedPredictions} />
             )}
 
-            <div className="events-card">
-                <div className="events-weight">{current.weightClass}</div>
+            {headliner.length > 0 && (
+                <CardSection
+                    title="Headliner"
+                    accent="headliner"
+                    fights={headliner}
+                    predictionsByIndex={predictionsByIndex}
+                    onSubmit={submitFight}
+                    submittingFightId={submittingFightId}
+                />
+            )}
 
-                <div className="events-matchup">
-                    <FighterSlot fighter={fighterA} side="A" odds={publicOdds?.A} picks={predictionCount?.A} total={predictionCount?.total} />
-                    <div className="events-vs">VS</div>
-                    <FighterSlot fighter={fighterB} side="B" odds={publicOdds?.B} picks={predictionCount?.B} total={predictionCount?.total} />
-                </div>
+            {mainCard.length > 0 && (
+                <CardSection
+                    title="Main Card"
+                    accent="main"
+                    fights={mainCard}
+                    predictionsByIndex={predictionsByIndex}
+                    onSubmit={submitFight}
+                    submittingFightId={submittingFightId}
+                />
+            )}
 
-                {alreadyPredicted ? (
-                    <MyPredictionPanel myPrediction={myPrediction} fighterA={fighterA} fighterB={fighterB} />
-                ) : (
-                    <PickerPanel
-                        fighterA={fighterA}
-                        fighterB={fighterB}
-                        pickedSide={pickedSide}
-                        pickedMethod={pickedMethod}
-                        setPickedSide={setPickedSide}
-                        setPickedMethod={setPickedMethod}
-                        onSubmit={submit}
-                        submitting={submitting}
-                    />
-                )}
-
-                <div className="events-rewards-hint">
-                    Exact call: <strong>+300 fame · +500 ⊗</strong> &nbsp;·&nbsp;
-                    Winner only: <strong>+100 fame</strong> &nbsp;·&nbsp;
-                    Wrong: <strong className="neg">−50 fame</strong>
-                </div>
-            </div>
+            {prelims.length > 0 && (
+                <CardSection
+                    title="Prelims"
+                    accent="prelim"
+                    fights={prelims}
+                    predictionsByIndex={predictionsByIndex}
+                    onSubmit={submitFight}
+                    submittingFightId={submittingFightId}
+                />
+            )}
 
             <section className="events-history">
                 <h3>Your Predictions</h3>
                 <div className="events-history-stats">
-                    {predictRecord.total > 0
-                        ? `${predictRecord.right} / ${predictRecord.total} winners · ${predictRecord.exact} exact calls`
+                    {summaryStats.total > 0
+                        ? `${summaryStats.right} / ${summaryStats.total} winners · ${summaryStats.exact} exact calls`
                         : "No resolved predictions yet."}
                 </div>
                 {history.length === 0 ? (
                     <div className="events-empty-hist">Your past predictions will appear here after they resolve.</div>
                 ) : (
                     <ul className="events-history-list">
-                        {history.map((p) => (
+                        {history.slice(0, 15).map((p) => (
                             <HistoryRow key={p.id} prediction={p} />
                         ))}
                     </ul>
@@ -204,122 +213,179 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
     );
 }
 
-function FighterSlot({ fighter, side, odds, picks, total }) {
-    if (!fighter) return null;
-    const pickPct = total > 0 ? Math.round((picks / total) * 100) : 0;
+// ─────────────────────────────────────────────────────────────
+// Card section (Headliner / Main Card / Prelims)
+// ─────────────────────────────────────────────────────────────
+
+function CardSection({ title, accent, fights, predictionsByIndex, onSubmit, submittingFightId }) {
     return (
-        <div className={`event-fighter event-fighter-${side}`}>
-            <div className="event-fighter-name">{fighter.name}</div>
-            {fighter.nickname && <div className="event-fighter-nickname">"{fighter.nickname}"</div>}
-            <div className="event-fighter-meta">
-                <span>OVR {fighter.overallRating}</span>
-                <span>{fighter.style}</span>
-                <span>{recordStr(fighter.record)}</span>
-            </div>
-            <div className="event-fighter-odds">
-                <div>Public odds: <strong>{odds}%</strong></div>
-                {total > 0 && <div>Players picked: {pickPct}% ({picks})</div>}
-            </div>
-        </div>
+        <section className={`card-section card-section-${accent}`}>
+            <h3 className="card-section-title">{title}</h3>
+            {fights.map((f) => (
+                <FightRow
+                    key={f.id}
+                    fight={f}
+                    prediction={predictionsByIndex[f.index] || null}
+                    onSubmit={onSubmit}
+                    submitting={submittingFightId === f.index}
+                />
+            ))}
+        </section>
     );
 }
 
-function PickerPanel({ fighterA, fighterB, pickedSide, pickedMethod, setPickedSide, setPickedMethod, onSubmit, submitting }) {
+// ─────────────────────────────────────────────────────────────
+// Per-fight row with built-in picker (collapsible)
+// ─────────────────────────────────────────────────────────────
+
+function FightRow({ fight, prediction, onSubmit, submitting }) {
+    const [open, setOpen] = useState(false);
+    const [pickedSide, setPickedSide] = useState(prediction?.pickedSide || null);
+    const [pickedMethod, setPickedMethod] = useState(prediction?.pickedMethod || null);
+
+    const locked = !!prediction;
+    const canSubmit = pickedSide && (pickedSide === "DRAW" || pickedMethod);
+
+    const submit = () => {
+        if (!canSubmit) return;
+        onSubmit(fight.index, pickedSide, pickedMethod);
+    };
+
+    const pickedName = prediction?.pickedSide === "A"
+        ? fight.fighterA.name
+        : prediction?.pickedSide === "B"
+            ? fight.fighterB.name
+            : "Draw";
+
     return (
-        <div className="events-picker">
-            <div className="events-picker-row">
-                <div className="events-picker-label">Your pick</div>
-                <div className="events-picker-sides">
-                    <button
-                        type="button"
-                        className={`events-side ${pickedSide === "A" ? "selected" : ""}`}
-                        onClick={() => setPickedSide("A")}
-                    >
-                        {fighterA.name}
-                    </button>
-                    <button
-                        type="button"
-                        className={`events-side events-side-draw ${pickedSide === "DRAW" ? "selected" : ""}`}
-                        onClick={() => { setPickedSide("DRAW"); setPickedMethod(null); }}
-                    >
-                        Draw
-                    </button>
-                    <button
-                        type="button"
-                        className={`events-side ${pickedSide === "B" ? "selected" : ""}`}
-                        onClick={() => setPickedSide("B")}
-                    >
-                        {fighterB.name}
-                    </button>
+        <article className={`fight-row ${locked ? "fight-row-locked" : ""}`}>
+            <div className="fight-row-head">
+                <div className="fight-row-meta">
+                    <span className="fight-row-class">{fight.weightClass}</span>
+                    <span className="fight-row-odds">
+                        {fight.publicOdds?.A}% / {fight.publicOdds?.B}%
+                    </span>
+                </div>
+                <div className="fight-row-pair">
+                    <FighterChip f={fight.fighterA} />
+                    <span className="fight-row-vs">vs</span>
+                    <FighterChip f={fight.fighterB} alignRight />
                 </div>
             </div>
 
-            {pickedSide && pickedSide !== "DRAW" && (
-                <div className="events-picker-row">
-                    <div className="events-picker-label">Method</div>
-                    <div className="events-picker-methods">
-                        {METHOD_OPTIONS.map((m) => (
-                            <button
-                                type="button"
-                                key={m}
-                                className={`events-method ${pickedMethod === m ? "selected" : ""}`}
-                                onClick={() => setPickedMethod(m)}
-                            >
-                                {m}
-                            </button>
-                        ))}
-                    </div>
+            {locked ? (
+                <div className="fight-row-locked-bar">
+                    <span>🔒 Locked: <strong>{pickedName}</strong>{prediction.pickedSide !== "DRAW" && prediction.pickedMethod ? ` · ${prediction.pickedMethod}` : ""}</span>
                 </div>
+            ) : (
+                <>
+                    <button
+                        type="button"
+                        className="fight-row-toggle"
+                        onClick={() => setOpen((v) => !v)}
+                    >
+                        {open ? "▾ Cancel" : "▸ Predict"}
+                    </button>
+                    {open && (
+                        <div className="fight-row-picker">
+                            <div className="fight-row-pick-row">
+                                <button
+                                    type="button"
+                                    className={`fight-row-side ${pickedSide === "A" ? "selected" : ""}`}
+                                    onClick={() => setPickedSide("A")}
+                                >
+                                    {fight.fighterA.name}
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`fight-row-side fight-row-side-draw ${pickedSide === "DRAW" ? "selected" : ""}`}
+                                    onClick={() => { setPickedSide("DRAW"); setPickedMethod(null); }}
+                                >
+                                    Draw
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`fight-row-side ${pickedSide === "B" ? "selected" : ""}`}
+                                    onClick={() => setPickedSide("B")}
+                                >
+                                    {fight.fighterB.name}
+                                </button>
+                            </div>
+
+                            {pickedSide && pickedSide !== "DRAW" && (
+                                <div className="fight-row-pick-row">
+                                    {METHOD_OPTIONS.map((m) => (
+                                        <button
+                                            type="button"
+                                            key={m}
+                                            className={`fight-row-method ${pickedMethod === m ? "selected" : ""}`}
+                                            onClick={() => setPickedMethod(m)}
+                                        >
+                                            {m}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="fight-row-actions">
+                                <span className="fight-row-reward-hint">{SLOT_REWARD_HINT[fight.slot]}</span>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    disabled={!canSubmit || submitting}
+                                    onClick={submit}
+                                >
+                                    {submitting ? "Locking…" : "Lock in"}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
-
-            <div className="events-picker-footer">
-                <button
-                    type="button"
-                    className="btn btn-primary"
-                    disabled={submitting || !pickedSide || (pickedSide !== "DRAW" && !pickedMethod)}
-                    onClick={onSubmit}
-                >
-                    {submitting ? "Submitting…" : "Lock in prediction"}
-                </button>
-                <span className="events-picker-note">Picks lock until the event resolves.</span>
-            </div>
-        </div>
+        </article>
     );
 }
 
-function MyPredictionPanel({ myPrediction, fighterA, fighterB }) {
-    const side = myPrediction.pickedSide;
-    const winnerName = side === "A" ? fighterA.name : side === "B" ? fighterB.name : "Draw";
+function FighterChip({ f, alignRight }) {
     return (
-        <div className="events-mypick">
-            <div className="events-mypick-label">Your prediction</div>
-            <div className="events-mypick-line">
-                <strong>{winnerName}</strong>
-                {side !== "DRAW" && myPrediction.pickedMethod && (
-                    <span> · {myPrediction.pickedMethod}</span>
-                )}
+        <div className={`fight-chip ${alignRight ? "fight-chip-right" : ""}`}>
+            <div className="fight-chip-name">{f.name}</div>
+            {f.nickname && <div className="fight-chip-nickname">"{f.nickname}"</div>}
+            <div className="fight-chip-meta">
+                <span>OVR {f.overallRating}</span>
+                <span>{f.style}</span>
+                <span>{recordStr(f.record)}</span>
             </div>
-            <div className="events-mypick-hint">Locked. Come back when it resolves to see your payout.</div>
         </div>
     );
 }
 
-function JustResolvedBanner({ event }) {
-    const winner = event.actualOutcome?.winnerSide;
-    const method = event.actualOutcome?.method;
-    const winnerName = winner === "A" ? event.fighterA.name
-        : winner === "B" ? event.fighterB.name
-        : "Draw";
+// ─────────────────────────────────────────────────────────────
+// Just-resolved summary (after overlay dismissal)
+// ─────────────────────────────────────────────────────────────
+
+function JustResolvedSummary({ card, predictions }) {
+    const right = predictions.filter((p) => p.resolution?.correctSide).length;
+    const exact = predictions.filter((p) => p.resolution?.correctExact).length;
+    const totalFame = predictions.reduce((s, p) => s + (p.resolution?.fameDelta || 0), 0);
     return (
         <div className="events-just-resolved">
-            <span className="events-just-label">Last Event:</span>
+            <span className="events-just-label">Last Card:</span>
             <span className="events-just-result">
-                <strong>{winnerName}</strong>{method && winner !== "DRAW" ? ` by ${method}` : ""}
-                {" — "}{event.fighterA.name} vs {event.fighterB.name}
+                Fight Night #{card.cardNumber} — {right}/{predictions.length} winners, {exact} exact
+                {totalFame !== 0 && (
+                    <span className={totalFame > 0 ? "events-just-positive" : "events-just-negative"}>
+                        {" · "}{totalFame > 0 ? `+${totalFame}` : totalFame} fame
+                    </span>
+                )}
             </span>
         </div>
     );
 }
+
+// ─────────────────────────────────────────────────────────────
+// History row (per-fight)
+// ─────────────────────────────────────────────────────────────
 
 function HistoryRow({ prediction }) {
     const r = prediction.resolution || {};
@@ -332,7 +398,10 @@ function HistoryRow({ prediction }) {
         <li className={`events-history-row events-history-${tone}`}>
             <div className="events-history-col">
                 <div className="events-history-pick">
-                    Picked <strong>{pickedWinner}</strong>
+                    <span className={`events-history-slot events-history-slot-${(prediction.fightSlot || "").toLowerCase()}`}>
+                        {SLOT_LABEL[prediction.fightSlot] || prediction.fightSlot}
+                    </span>
+                    {" "}Picked <strong>{pickedWinner}</strong>
                     {side !== "DRAW" && prediction.pickedMethod ? ` · ${prediction.pickedMethod}` : ""}
                 </div>
                 <div className="events-history-matchup">

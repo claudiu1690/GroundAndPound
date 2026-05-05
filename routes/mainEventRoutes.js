@@ -4,6 +4,6 @@ const mainEventController = require("../controllers/mainEventController");
 
 router.get("/current", mainEventController.getCurrent);
 router.get("/history", mainEventController.getHistory);
-router.post("/:eventId/predict", mainEventController.postPrediction);
+router.post("/:cardId/predict", mainEventController.postPrediction);
 
 module.exports = router;

@@ -189,12 +189,12 @@ export const api = {
   cancelCallout: (fighterId) =>
     request(`/fighters/${fighterId}/callouts`, { method: "DELETE" }),
 
-  // ── Main Event / predictions (Phase 5) ──────────────────
-  getMainEvent: (fighterId) =>
+  // ── Fight Card / predictions (Phase 5) ──────────────────
+  getFightCard: (fighterId) =>
     request(`/events/current?fighterId=${encodeURIComponent(fighterId || "")}`),
-  submitPrediction: (eventId, body) =>
-    request(`/events/${eventId}/predict`, { method: "POST", body: JSON.stringify(body) }),
-  getPredictionHistory: (fighterId, limit = 10) =>
+  submitCardPrediction: (cardId, body) =>
+    request(`/events/${cardId}/predict`, { method: "POST", body: JSON.stringify(body) }),
+  getPredictionHistory: (fighterId, limit = 20) =>
     request(`/events/history?fighterId=${encodeURIComponent(fighterId)}&limit=${limit}`),
 
   // ── Media Hub (Phase 6) ─────────────────────────────────

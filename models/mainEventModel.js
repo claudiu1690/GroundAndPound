@@ -1,12 +1,16 @@
 const mongoose = require("mongoose");
 
 /**
- * One row per weekly Main Event of the Week. Self-ticks on view — when the window
- * closes, the next fetch resolves this event and creates a new one.
+ * Weekly Fight Card. Replaces the old single-fight MainEvent.
  *
- * Lifecycle:
- *   status = "upcoming" → predictions open
- *   status = "resolved" → actualOutcome set, rewards paid, history only
+ * `fights` is an ordered list of 5 sub-fights:
+ *   index 0–1: prelim
+ *   index 2–3: main card
+ *   index 4:   headliner
+ *
+ * Self-tick lifecycle (resolve on view): once `resolvesAt` passes, the next read
+ * runs the simulator on each sub-fight, updates NPC records / fightHistory, marks
+ * the card resolved, and a fresh card is auto-created.
  */
 
 const fighterCardSchema = new mongoose.Schema({
@@ -24,33 +28,31 @@ const fighterCardSchema = new mongoose.Schema({
     },
 }, { _id: false });
 
-const mainEventSchema = new mongoose.Schema(
-    {
-        fighterA:    { type: fighterCardSchema, required: true },
-        fighterB:    { type: fighterCardSchema, required: true },
-        weightClass: { type: String, required: true },
-        status:      { type: String, enum: ["upcoming", "resolved"], default: "upcoming", index: true },
-        opensAt:     { type: Date, required: true },
-        resolvesAt:  { type: Date, required: true },
-        resolvedAt:  { type: Date, default: null },
-        /** Actual outcome after simulation. */
-        actualOutcome: {
-            winnerSide: { type: String, enum: ["A", "B", "DRAW", null], default: null },
-            method:     { type: String, enum: ["KO/TKO", "Submission", "Decision", "Draw", null], default: null },
-        },
-        /** Aggregated prediction counts — driven by the predictions collection on demand. */
-        predictionCount: {
-            total: { type: Number, default: 0 },
-            A:     { type: Number, default: 0 },
-            B:     { type: Number, default: 0 },
-            DRAW:  { type: Number, default: 0 },
-        },
+const subFightSchema = new mongoose.Schema({
+    slot:        { type: String, enum: ["PRELIM", "MAIN", "HEADLINER"], required: true },
+    weightClass: { type: String, required: true },
+    fighterA:    { type: fighterCardSchema, required: true },
+    fighterB:    { type: fighterCardSchema, required: true },
+    actualOutcome: {
+        winnerSide: { type: String, enum: ["A", "B", "DRAW", null], default: null },
+        method:     { type: String, enum: ["KO/TKO", "Submission", "Decision", "Draw", null], default: null },
     },
-    { timestamps: true }
+}, { _id: true });
+
+const fightCardSchema = new mongoose.Schema(
+    {
+        cardNumber: { type: Number, default: 1 },
+        status:     { type: String, enum: ["upcoming", "resolved"], default: "upcoming", index: true },
+        opensAt:    { type: Date, required: true },
+        resolvesAt: { type: Date, required: true },
+        resolvedAt: { type: Date, default: null },
+        fights:     { type: [subFightSchema], default: [] },
+    },
+    { timestamps: true, collection: "fightcards" }
 );
 
-mainEventSchema.index({ status: 1, resolvesAt: 1 });
-mainEventSchema.index({ createdAt: -1 });
+fightCardSchema.index({ status: 1, resolvesAt: 1 });
+fightCardSchema.index({ createdAt: -1 });
 
-const MainEvent = mongoose.model("MainEvent", mainEventSchema);
-module.exports = MainEvent;
+const FightCard = mongoose.model("FightCard", fightCardSchema);
+module.exports = FightCard;

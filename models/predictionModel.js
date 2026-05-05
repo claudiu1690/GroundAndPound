@@ -1,19 +1,22 @@
 const mongoose = require("mongoose");
 
 /**
- * One prediction per fighter per main event. Created when the player submits, updated
- * with `resolution` when the event resolves (so we can list a history without re-joining
- * the main-event collection).
+ * One prediction per fighter per sub-fight on a card. Created when the player
+ * picks; updated with `resolution` when the card resolves so history can be
+ * rendered without a join.
+ *
+ * Unique on (fighterId, cardId, fightIndex) — one bet per fight per fighter.
  */
 const predictionSchema = new mongoose.Schema(
     {
         fighterId:   { type: mongoose.Schema.Types.ObjectId, ref: "Fighter", required: true, index: true },
-        mainEventId: { type: mongoose.Schema.Types.ObjectId, ref: "MainEvent", required: true, index: true },
+        cardId:      { type: mongoose.Schema.Types.ObjectId, ref: "FightCard", required: true, index: true },
+        fightIndex:  { type: Number, required: true },                 // 0..4 within card.fights
+        fightSlot:   { type: String, enum: ["PRELIM", "MAIN", "HEADLINER"], required: true },
         /** Side bet: "A" | "B" | "DRAW" */
         pickedSide:   { type: String, enum: ["A", "B", "DRAW"], required: true },
         /** Method bet: "KO/TKO" | "Submission" | "Decision" | "Draw". Ignored when picking Draw. */
         pickedMethod: { type: String, enum: ["KO/TKO", "Submission", "Decision", "Draw", null], default: null },
-        /** Snapshot of opponent names for the history card (so it works without a rejoin). */
         matchup: {
             aName: { type: String, default: "" },
             bName: { type: String, default: "" },
@@ -32,7 +35,7 @@ const predictionSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-predictionSchema.index({ fighterId: 1, mainEventId: 1 }, { unique: true });
+predictionSchema.index({ fighterId: 1, cardId: 1, fightIndex: 1 }, { unique: true });
 predictionSchema.index({ fighterId: 1, createdAt: -1 });
 
 const Prediction = mongoose.model("Prediction", predictionSchema);

@@ -1,16 +1,16 @@
 /**
- * DEBUG: fast-forward the current upcoming Main Event so it resolves now.
+ * DEBUG: fast-forward the current upcoming Fight Card so it resolves now.
  *
  * What it does:
- *   1. Finds the latest event with status = "upcoming".
+ *   1. Finds the latest card with status = "upcoming".
  *   2. Backdates its `resolvesAt` to one second ago.
- *   3. Calls `resolveEvent` directly — runs the simulation, pays every predictor
- *      (including the player's prediction if any), marks event resolved.
+ *   3. Calls `resolveCard` directly — runs the simulator on every sub-fight,
+ *      updates each NPC's record + fightHistory, pays every prediction.
  *   4. The next time the Events tab loads, `getCurrentEvent` will see the
- *      resolved event + spawn a fresh upcoming event automatically.
+ *      resolved card + spawn a fresh upcoming one automatically.
  *
- * After running, refresh your Events tab in the browser — the prediction-result
- * overlay should pop on the first render (assuming you predicted this one).
+ * After running, refresh your Events tab — the multi-fight result overlay should
+ * pop on the first render (assuming you predicted at least one fight).
  *
  * Flags:
  *   --list     dry-run — print what would be affected without changing anything
@@ -23,8 +23,8 @@
  */
 const mongoose = require("mongoose");
 const config = require("../config");
-const MainEvent = require("../models/mainEventModel");
-const mainEventService = require("../services/mainEventService");
+const FightCard = require("../models/mainEventModel");
+const fightCardService = require("../services/mainEventService");
 
 function isAllowed() {
     return process.env.NODE_ENV !== "production" || process.env.DEBUG_ALLOW_EVENT_RESOLVE === "1";
@@ -40,43 +40,41 @@ async function main() {
 
     await mongoose.connect(config.database.url, config.database.options);
     try {
-        const evt = await MainEvent.findOne({ status: "upcoming" }).sort({ createdAt: -1 });
-        if (!evt) {
-            console.log("No upcoming main event found. Nothing to fast-forward.");
+        const card = await FightCard.findOne({ status: "upcoming" }).sort({ createdAt: -1 });
+        if (!card) {
+            console.log("No upcoming fight card found. Nothing to fast-forward.");
             return;
         }
 
-        const aName = evt.fighterA?.name || "Fighter A";
-        const bName = evt.fighterB?.name || "Fighter B";
-        console.log(`Found upcoming event: ${aName} vs ${bName} (${evt.weightClass})`);
-        console.log(`  Original resolvesAt: ${evt.resolvesAt?.toISOString?.() || evt.resolvesAt}`);
+        console.log(`Found upcoming card: Fight Night #${card.cardNumber} (${card.fights.length} fights)`);
+        console.log(`  Original resolvesAt: ${card.resolvesAt?.toISOString?.() || card.resolvesAt}`);
+        for (const f of card.fights) {
+            console.log(`  · [${f.slot}] ${f.fighterA.name} (${f.fighterA.overallRating}) vs ${f.fighterB.name} (${f.fighterB.overallRating}) [${f.weightClass}]`);
+        }
 
         if (dryRun) {
             console.log("\n[--list] Dry run — would backdate resolvesAt and resolve. No changes made.");
             return;
         }
 
-        // Backdate so any later getCurrentEvent calls also see it as past-due,
-        // then resolve in-process so the player sees results immediately.
-        evt.resolvesAt = new Date(Date.now() - 1000);
-        await evt.save();
+        card.resolvesAt = new Date(Date.now() - 1000);
+        await card.save();
 
-        await mainEventService.resolveEvent(evt);
+        await fightCardService.resolveCard(card);
 
-        // Re-fetch to see what happened.
-        const after = await MainEvent.findById(evt._id).lean();
-        const outcome = after.actualOutcome || {};
-        const winnerName = outcome.winnerSide === "A"
-            ? aName
-            : outcome.winnerSide === "B"
-                ? bName
-                : "Draw";
-
-        console.log("\nEvent resolved.");
-        console.log(`  Winner: ${winnerName}${outcome.method && outcome.winnerSide !== "DRAW" ? ` by ${outcome.method}` : ""}`);
-        console.log(`  Status: ${after.status}`);
-        console.log(`  Resolved at: ${after.resolvedAt?.toISOString?.() || after.resolvedAt}`);
-        console.log("\nReload the Events tab — the prediction-result overlay should fire if you predicted this one.");
+        const after = await FightCard.findById(card._id).lean();
+        console.log("\nCard resolved. Outcomes:");
+        for (const f of after.fights) {
+            const winnerName = f.actualOutcome?.winnerSide === "A"
+                ? f.fighterA.name
+                : f.actualOutcome?.winnerSide === "B"
+                    ? f.fighterB.name
+                    : "Draw";
+            const method = f.actualOutcome?.method;
+            console.log(`  · [${f.slot}] ${winnerName}${method && f.actualOutcome.winnerSide !== "DRAW" ? ` by ${method}` : ""}`);
+        }
+        console.log(`\nResolved at: ${after.resolvedAt?.toISOString?.() || after.resolvedAt}`);
+        console.log("\nReload the Events tab — the multi-fight result overlay should fire if you predicted any fights.");
     } finally {
         await mongoose.disconnect();
     }

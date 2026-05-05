@@ -1,37 +1,50 @@
 /**
- * Main Event of the Week (Phase 5).
+ * Fight Card / Events config (Phase 5+).
  *
- * A weekly NPC-vs-NPC headline match. The whole playerbase predicts winner + method
- * and earns/loses fame when it resolves. Creates a "something happening in the world"
- * heartbeat without needing any live backend job — events self-tick on view.
+ * Each weekly card is a stack of 5 fights, UFC-style:
+ *   - 2 prelim fights (mid-tier GCS roster)
+ *   - 2 main card fights (top-tier GCS roster)
+ *   - 1 headliner (top of the top)
  *
- * Reward schedule:
- *   - Predict winner + method exactly → EXACT reward (fame + iron).
- *   - Predict winner only (wrong method) → WINNER reward (fame).
- *   - Predict draw correctly → EXACT reward.
- *   - Wrong winner → WRONG penalty (fame loss).
+ * All fighters are non-champion GCS opponents. Cards can MIX weight classes
+ * (each fight is intra-class, but different fights can be in different classes —
+ * exactly like a real Fight Night).
  *
- * Method odds are used both to surface "public odds" on the card and to simulate
- * the actual result at resolution. Simulator weights by:
- *   - style (striker / grappler bias)
- *   - OVR gap (higher OVR wins more often, but never fully dominates)
+ * On resolve, every prediction the player made for the card pays out based on the
+ * slot's reward tier. NPC records and fightHistory are updated so the roster feels
+ * alive over time (Tier 2 of the design).
  */
 
 const EVENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
-const REWARDS = {
-    EXACT_FAME:    300,
-    EXACT_IRON:    500,
-    WINNER_FAME:   100,
-    WRONG_FAME:   -50,
+/**
+ * Fixed slot order for every card. Drives both the assembler and the UI.
+ * `pool` selects from elite (≥ ELITE_OVR_THRESHOLD) or prelim pool.
+ */
+const CARD_FIGHT_SLOTS = [
+    { slot: "PRELIM",    pool: "prelim", index: 0 },
+    { slot: "PRELIM",    pool: "prelim", index: 1 },
+    { slot: "MAIN",      pool: "elite",  index: 2 },
+    { slot: "MAIN",      pool: "elite",  index: 3 },
+    { slot: "HEADLINER", pool: "elite",  index: 4 },
+];
+const TOTAL_FIGHTS = CARD_FIGHT_SLOTS.length;
+
+/** OVR thresholds for splitting the GCS roster into pools. */
+const ELITE_OVR_THRESHOLD = 88;   // ≥ this goes into main card / headliner pool
+const PRELIM_MIN_OVR      = 70;   // < ELITE and ≥ this goes into prelim pool
+
+/** Tiered rewards per slot — exact (winner+method), winner only, wrong winner. */
+const REWARDS_BY_SLOT = {
+    PRELIM:    { exactFame: 100, exactIron: 200, winnerFame:  30, wrongFame: -20 },
+    MAIN:      { exactFame: 200, exactIron: 400, winnerFame:  75, wrongFame: -40 },
+    HEADLINER: { exactFame: 300, exactIron: 500, winnerFame: 100, wrongFame: -50 },
 };
 
 const METHODS = ["KO/TKO", "Submission", "Decision", "Draw"];
 
 /**
- * Style → baseline win-method distribution. Summed with opponent's inverse so the bout
- * reads like a natural matchup (striker vs grappler pulls toward KO and Sub both).
- * Values are unnormalised weights; sampler normalises.
+ * Style → baseline win-method distribution. Pulled the same way as the v1 simulator.
  */
 const STYLE_METHOD_BIAS = {
     Boxer:              { "KO/TKO": 70, Submission: 5,  Decision: 25 },
@@ -44,24 +57,24 @@ const STYLE_METHOD_BIAS = {
     "Brazilian Jiu-Jitsu": { "KO/TKO": 10, Submission: 60, Decision: 30 },
 };
 
-const DRAW_CHANCE = 0.05; // 5% of events end in a draw at simulation time
+const DRAW_CHANCE = 0.05;
 
-/** Minimum OVR a fighter must have to be eligible for main event booking. */
-const MIN_OVR_FOR_MAIN_EVENT = 55;
+/** Max OVR gap between the two fighters in any single bout (matchmaking tightness). */
+const MAX_OVR_GAP_FIGHT = 5;
 
-/**
- * Max OVR gap between the two main-event fighters in a "tight" matchmaking pass.
- * Tries a tight window first, then expands twice before falling back to "closest available".
- * Keeps headline matches feeling competitive — an 88 won't end up across from a 75.
- */
-const MAX_OVR_GAP_MAIN_EVENT = 5;
+/** Cap on opponent.fightHistory length — must match the cap used by player fights. */
+const MAX_FIGHT_HISTORY = 20;
 
 module.exports = {
     EVENT_WINDOW_MS,
-    REWARDS,
+    CARD_FIGHT_SLOTS,
+    TOTAL_FIGHTS,
+    ELITE_OVR_THRESHOLD,
+    PRELIM_MIN_OVR,
+    REWARDS_BY_SLOT,
     METHODS,
     STYLE_METHOD_BIAS,
     DRAW_CHANCE,
-    MIN_OVR_FOR_MAIN_EVENT,
-    MAX_OVR_GAP_MAIN_EVENT,
+    MAX_OVR_GAP_FIGHT,
+    MAX_FIGHT_HISTORY,
 };
