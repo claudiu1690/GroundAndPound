@@ -49,6 +49,13 @@ const DRAW_CHANCE = 0.05; // 5% of events end in a draw at simulation time
 /** Minimum OVR a fighter must have to be eligible for main event booking. */
 const MIN_OVR_FOR_MAIN_EVENT = 55;
 
+/**
+ * Max OVR gap between the two main-event fighters in a "tight" matchmaking pass.
+ * Tries a tight window first, then expands twice before falling back to "closest available".
+ * Keeps headline matches feeling competitive — an 88 won't end up across from a 75.
+ */
+const MAX_OVR_GAP_MAIN_EVENT = 5;
+
 module.exports = {
     EVENT_WINDOW_MS,
     REWARDS,
@@ -56,4 +63,5 @@ module.exports = {
     STYLE_METHOD_BIAS,
     DRAW_CHANCE,
     MIN_OVR_FOR_MAIN_EVENT,
+    MAX_OVR_GAP_MAIN_EVENT,
 };

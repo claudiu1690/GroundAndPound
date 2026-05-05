@@ -10,6 +10,7 @@ const {
     STYLE_METHOD_BIAS,
     DRAW_CHANCE,
     MIN_OVR_FOR_MAIN_EVENT,
+    MAX_OVR_GAP_MAIN_EVENT,
 } = require("../consts/mainEventConfig");
 
 // ─────────────────────────────────────────────────────────────
@@ -76,18 +77,41 @@ async function createNewEvent() {
 }
 
 async function pickPair(weightClass, minOvr) {
-    // Take the top 6 by OVR then pick 2 randomly — keeps variety between weeks.
+    // Pull a slightly bigger pool so the matcher has room to find a competitive pair.
     const pool = await Opponent.find({
         weightClass,
         isChampion: { $ne: true },
         overallRating: { $gte: minOvr },
     })
         .sort({ overallRating: -1 })
-        .limit(6)
+        .limit(10)
         .lean();
     if (pool.length < 2) throw new Error("Insufficient opponents for main event");
+
+    // Pick a random anchor from the top of the pool, then find an opponent within
+    // a tight OVR window. Expand twice before falling back to "closest available".
     const shuffled = shuffle(pool);
-    return [shuffled[0], shuffled[1]];
+    const anchor = shuffled[0];
+    const candidates = shuffled.slice(1);
+
+    const within = (gap) =>
+        candidates.filter((o) => Math.abs(o.overallRating - anchor.overallRating) <= gap);
+
+    let matches = within(MAX_OVR_GAP_MAIN_EVENT);            // ±5 by default
+    if (matches.length === 0) matches = within(MAX_OVR_GAP_MAIN_EVENT * 2); // ±10
+    if (matches.length === 0) {
+        // Last resort — pick the single closest fighter, even if outside the wider window.
+        matches = candidates
+            .slice()
+            .sort((a, b) =>
+                Math.abs(a.overallRating - anchor.overallRating) -
+                Math.abs(b.overallRating - anchor.overallRating)
+            )
+            .slice(0, 1);
+    }
+
+    const opponent = matches[Math.floor(Math.random() * matches.length)];
+    return [anchor, opponent];
 }
 
 async function persistEvent(weightClass, a, b) {

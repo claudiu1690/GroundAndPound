@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../api";
+import { PredictionResultOverlay } from "./PredictionResultOverlay";
 
 const METHOD_OPTIONS = ["KO/TKO", "Submission", "Decision"];
+
+/** localStorage key for tracking which resolved events the player has already seen. */
+const SEEN_EVENT_KEY = (fighterId) => `gp_seen_resolved_event_${fighterId}`;
 
 function relativeTime(d) {
     if (!d) return "";
@@ -28,6 +32,7 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
     const [submitting, setSubmitting] = useState(false);
     const [pickedSide, setPickedSide] = useState(null);       // "A" | "B" | "DRAW"
     const [pickedMethod, setPickedMethod] = useState(null);   // "KO/TKO" | "Submission" | "Decision"
+    const [resultOverlayShown, setResultOverlayShown] = useState(false);
 
     const fighterId = fighter?._id;
 
@@ -102,8 +107,40 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
     const { fighterA, fighterB, publicOdds, predictionCount } = current;
     const alreadyPredicted = !!myPrediction?.resolution?.resolved || !!myPrediction;
 
+    // Find the player's prediction for the just-resolved event (if any).
+    const justResolvedPrediction = justResolved
+        ? (history || []).find((p) => p.mainEventId === justResolved.id) || null
+        : null;
+
+    // Decide whether to show the reveal overlay: there's a just-resolved event,
+    // the player had a prediction on it, and they haven't dismissed it before.
+    const seenKey = fighterId ? SEEN_EVENT_KEY(fighterId) : null;
+    const lastSeenId = seenKey ? (typeof localStorage !== "undefined" ? localStorage.getItem(seenKey) : null) : null;
+    const shouldShowOverlay = !!(
+        !resultOverlayShown
+        && justResolved
+        && justResolvedPrediction
+        && justResolvedPrediction.resolution?.resolved
+        && lastSeenId !== justResolved.id
+    );
+
+    const dismissOverlay = () => {
+        if (seenKey && justResolved?.id) {
+            try { localStorage.setItem(seenKey, justResolved.id); } catch (_) {}
+        }
+        setResultOverlayShown(true);
+    };
+
     return (
         <section className="events-tab">
+            {shouldShowOverlay && (
+                <PredictionResultOverlay
+                    event={justResolved}
+                    prediction={justResolvedPrediction}
+                    onClose={dismissOverlay}
+                />
+            )}
+
             <header className="events-header">
                 <h2>Main Event of the Week</h2>
                 <div className="events-countdown">
@@ -112,7 +149,7 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
             </header>
 
             {justResolved && justResolved.actualOutcome?.method && (
-                <JustResolvedBanner event={justResolved} myPrediction={history?.[0] && history[0].mainEventId === justResolved.id ? history[0] : null} />
+                <JustResolvedBanner event={justResolved} myPrediction={justResolvedPrediction} />
             )}
 
             <div className="events-card">
