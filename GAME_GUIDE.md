@@ -203,6 +203,28 @@ When you are ready to fight, you request offers from the promoter. You receive t
 
 Accepting a fight costs energy (10–20 depending on tier) and enters the training camp phase.
 
+### Callouts (Fame-Driven Matchmaking)
+
+In the Fight tab, the **📣 Call Out** button lets you spend fame to force a specific opponent into your next Hard offer slot. The roster modal shows opponents in your weight class — same tier (cheaper) and one tier above ("stretch", more expensive).
+
+**Cost formula:**
+
+| Roster | Base | + Per OVR Gap |
+|---|---|---|
+| Same Tier | 200 fame | +50 each |
+| Stretch (+1 Tier) | 800 fame | +75 each |
+
+Capped at 3,000 fame. Minimum 100. You can cancel an active callout for a full fame refund any time before fighting.
+
+**What you get:** the opponent appears in your next Hard slot with a gold border and "📣 Called out" pill, and their **Fighter Report shows full intel** — every stat marked Confirmed, no fog of war.
+
+**On a callout win:**
+- **+25% iron purse**
+- **+30% fame** (grudge bonus, stacks with all other notoriety modifiers)
+- **Callout Win** badge (unlocks the matching banner piece)
+
+Losing a callout burns the fame you spent. No additional penalty.
+
 ---
 
 ## Champions & Title Shots
@@ -405,12 +427,57 @@ Modifiers:
 - Comeback mode: +30%
 - Championship Pedigree perk (Elite Fight Academy, Rank 4): +10% fame from all fights (indirectly boosts iron via the notoriety tier)
 - Missing weight: −20%
+- Active **Respect flag** on opponent (you won): +15% iron
+- Callout fight win: +25% iron
+
+---
+
+## Post-Fight Interview
+
+After every fight (win or loss), the press interviews you. Three tones to pick, plus skip:
+
+| Tone | Fame | Side Effect |
+|---|---|---|
+| 🙇 Humble | +100 | Writes a **Respect flag** on the just-fought opponent. If you face them again within 6 fights and win, that fight pays +15% iron. |
+| 🔥 Confident | +150 | Pure fame. No flags, no strings. |
+| 📣 Trash Talk | +200 | Pick a target from the same-tier roster (within ±6 OVR, excluding fighters you've already beaten). Writes a **Beef flag** on that fighter. |
+| Skip | 0 | Move on. No reward, no consequence. |
+
+The Trash Talk picker only shows fighters you can realistically face in your next few offers. For high-OVR or stretch-tier targets, use the **Callout** system instead — it spends fame but guarantees the matchup.
+
+---
+
+## Beef & Respect Flags
+
+Flags are silent contracts you make with rivals. They're created by:
+
+- **Trash Talk** tone in post-fight interviews → Beef flag
+- **Humble** tone in post-fight interviews → Respect flag
+- **Division Talk** segments on the Podcast → Trash creates Beef, Respectful creates Respect (see Media Hub)
+
+Active flags appear on offer cards as **🔥 Beef** or **🙇 Respect** pills with a colored border. Hover for the remaining window.
+
+| Flag | Origin | Window | On Win | On Lapse |
+|---|---|---|---|---|
+| Beef | Trash Talk / Podcast | 4 fights | +30% fame (grudge bonus) | −150 fame |
+| Respect | Humble / Podcast | 6 fights | +15% iron purse | Silent expiry |
+
+Every fight you complete decrements the window for unmatched flags. Meeting the flagged opponent — win or lose — consumes the flag (without penalty even on a loss).
 
 ---
 
 ## Notoriety (Fame)
 
 Notoriety is your career fame score. It determines how much iron you earn per fight and unlocks storyline recognition. It never fully resets — a floor is set at your peak tier.
+
+### Fame Drawer
+
+The fame tier and score are always visible in the top header. **Click the fame pill** to open the Fame drawer — a side panel that shows:
+
+- Current tier with progress bar to the next threshold
+- Status chips (Frozen, Decay warning, Peak floor)
+- **Recent fame events** — every fame change you've earned with reason and timestamp (fight wins, milestones, sponsor bonuses, callout spends, prediction outcomes, etc.)
+- Deep links to the Contracts, Events, Media, and Callout features
 
 ### Notoriety Tiers
 
@@ -474,6 +541,144 @@ After 3 consecutive losses, your notoriety is frozen. The one exception is a Nem
 
 ---
 
+## Sponsorship Contracts
+
+The **Contracts tab** lets you sign sponsor deals that pay iron per fight and trigger lump-sum bonuses when you complete their clauses.
+
+### Slot Cap by Fame Tier
+
+| Fame Tier | Max Active Contracts |
+|---|---|
+| Unknown | 0 |
+| Prospect | 1 |
+| Rising Star | 2 |
+| Contender | 2 |
+| Star | 3 |
+| Legend | 4 |
+
+### How Contracts Work
+
+A pool of **4 sponsor offers refreshes every 7 days**, gated by your fame tier (Prospect sees Prospect-tier sponsors, Star sees everything up to and including Star-tier).
+
+When you sign one, it goes Active. While Active:
+
+- You earn **per-fight iron** automatically after every fight (win or lose).
+- Each contract has a **clause** — e.g. "win your next 2 fights" or "make weight for 3 fights."
+- **Clause complete** → bonus iron + fame payout, contract closes successfully.
+- **Clause broken** → contract ends with a **fame penalty**.
+- **Time-limited clauses** (e.g. "win any 2 within the duration window") expire silently if the window closes without completion.
+
+### Available Clause Types
+
+| Clause | What It Means |
+|---|---|
+| Win Next N | Win your next N fights consecutively. Any non-win breaks. |
+| Finish Next N | Win your next N by KO or Submission. Decision wins or losses break. |
+| Win Any N | Win N fights within the contract's duration window. |
+| Land One KO | Win at least one fight by KO within the duration window. |
+| No Weight Miss | Make weight for N consecutive fights. |
+| No Finish Loss | Don't get finished (lose by KO or Sub) for N fights. Decision losses are okay. |
+
+### Drop a Contract
+
+You can drop an active contract any time. Costs **half the break penalty in fame**. Useful when you realize you can't meet the clause and want to free up a slot.
+
+### Anti-Farm Rule
+
+Sponsors you completed, broke, or dropped this week won't reappear in your offer pool until the next weekly rotation.
+
+---
+
+## Events: Fight Card Predictions
+
+The **Events tab** runs a weekly NPC fight card you can bet on for fame and iron. The card resolves automatically at the end of its 7-day window.
+
+### The Card
+
+Every week, the system assembles a 5-fight card from non-champion GCS fighters. Fights can mix weight classes (each individual fight is intra-class).
+
+| Slot | Count | Pool |
+|---|---|---|
+| Prelim | 2 | Mid-tier GCS (OVR 70–87) |
+| Main Card | 2 | Top GCS (OVR 88+) |
+| Headliner | 1 | Highest combined OVR pair on the card |
+
+The Events tab presents the card UFC-poster-style: a gold headliner band with both fighters flanking the title block, then a Main Card grid below, then Prelims.
+
+### Predictions
+
+Click any fight card to open the picker:
+
+- Pick a **side** — Fighter A, Draw, or Fighter B
+- Pick a **method** — KO/TKO, Submission, or Decision (skipped if you picked Draw)
+- **Lock in** — predictions are final once submitted
+
+You can lock any subset of the 5 fights. Each prediction is independent.
+
+### Reward Tiers
+
+| Slot | Exact (Winner + Method) | Winner Only | Wrong Winner |
+|---|---|---|---|
+| Prelim | +100 fame, +200 iron | +30 fame | −20 fame |
+| Main Card | +200 fame, +400 iron | +75 fame | −40 fame |
+| Headliner | +300 fame, +500 iron | +100 fame | −50 fame |
+
+A perfect 5/5 card pays around **+1,000 fame + 1,700 iron**. Realistic averages are well below that.
+
+### Card Potential Bar
+
+While picking, the Events tab shows a **Card Potential** bar with your current best-case and worst-case fame totals from your locked picks, plus how much more is on the table from unpicked fights.
+
+### Resolution Reveal
+
+The first time you visit the Events tab after a card resolves, a **multi-fight reveal modal** pops with:
+
+- Each fight's winner + method (KO/SUB/DEC chips)
+- Your prediction verdict per fight
+- Per-fight payout
+- Total fame and iron earned across the card
+- A card-grade flavor string ("Perfect Card" / "Sharp Night" / "Rough Night" / "Brutal" etc.)
+
+After dismissal, a slim "Last Card" banner stays visible at the top of the Events tab for context.
+
+### Living Roster
+
+When a card resolves, every NPC fighter's **record and fight history are updated** with the result. Over time, the GCS roster accumulates real history — Fighter Reports for these fighters become more accurate as they fight more cards.
+
+---
+
+## Media Hub
+
+The **Media tab** has three actions, each with its own role.
+
+### Podcast (1 per calendar day, 5 energy)
+
+Podcast unlocks once per calendar day. Resets at midnight. Pick one segment:
+
+| Segment | Reward | Notes |
+|---|---|---|
+| Recap your last fight | +100 fame, +150 iron | Always available if you've completed at least one fight. Safe option. |
+| Division Talk: Respectful | +100 fame | Pick a same-tier opponent. Writes a **Respect flag** on them (6-fight window). |
+| Division Talk: Trash Talk | +300 fame | Pick a same-tier opponent. Writes a **Beef flag** (4-fight window, with the −150 lapse penalty). |
+| Division Talk: Cryptic | +40 fame | No side effects. |
+| Predict Main Event | — | Deep-links to the Events tab to lock a prediction. Rewards apply at card resolution. |
+
+### Documentary (Once per career, unlocks at Star fame tier)
+
+A one-time career retrospective. Pays:
+
+- **+1,500 fame**
+- **+2,000 iron**
+- The **Documentary** badge → unlocks the **Legacy** banner badge
+
+You'll only ever do this once. Pick the moment.
+
+### Interview Archive
+
+Read-only history of every post-fight interview you've given, color-coded by tone.
+
+---
+
 ## Health & Stamina
 
 - **Health** runs 0–100. Depleted by damage in fights. Losing by KO/TKO drops your health to 0. Recovers through Rest (3 energy, +25 health).
@@ -528,6 +733,8 @@ Badges are permanent markers earned through career achievements and gym mastery.
 |---|---|
 | Resilience | Win a fight while in comeback mode |
 | Champion | Win a championship title (any tier) |
+| Callout Win | Win a fight against an opponent you formally called out (Fight tab) |
+| Documentary | Record your career documentary in the Media tab (Star fame tier) |
 | Champion Boxer | Reach Rank 4 at Iron Fist Boxing |
 | Grand Master Kickboxer | Reach Rank 4 at Dragon Kickboxing |
 | Grand Kru | Reach Rank 4 at Warrior Muay Thai |
@@ -541,6 +748,23 @@ Badges are permanent markers earned through career achievements and gym mastery.
 
 ---
 
+## Banner Customizer
+
+Every fighter has a **customizable banner** on their profile. Click the **✎ Customize** button on the profile sidebar to open the editor.
+
+The banner has four customizable layers:
+
+| Layer | Pieces | How They Unlock |
+|---|---|---|
+| Background | 8 | Fame tier (Slate at start → Holographic at Legend) |
+| Frame | 5 | Fame tier + special (Championship frame from winning any belt) |
+| Accent Color | 7 | Fame tier (Red/White/Blue at start → Pink at Star) |
+| Pinned Badges | 13 (pin up to 3) | Career milestones — first win, 10/25/50 wins, 5/10 KOs, Champion, Resilience, Callout Win, Documentary, fame tier badges |
+
+Locked pieces show their unlock condition on hover. The banner is purely cosmetic — no fight effect — but it appears on your profile and in any future PvP/social context where other players see your fighter.
+
+---
+
 ## The Career Feed
 
 Your dashboard shows a **Career Feed** — a reverse-chronological log of everything significant that has happened in your career:
@@ -551,8 +775,13 @@ Your dashboard shows a **Career Feed** — a reverse-chronological log of everyt
 - Nemesis set / cleared
 - Badges earned
 - Mental reset events
+- Sponsor contracts signed, completed, broken, or dropped
+- Callout wins (with bonuses earned)
+- Beef flag lapses (with the −150 fame penalty)
+- Main event predictions resolved
+- Fame milestones and tier-ups
 
-This is your career story, told in real time.
+This is your career story, told in real time. The **Fame drawer** in the header offers a focused, fame-only slice of the same activity.
 
 ---
 
@@ -570,7 +799,12 @@ After every fight you see a breakdown of everything that happened:
 - Weight cut result (+X or −X stamina)
 - Nemesis set or cleared
 - Tier promotion
+- **Sponsorship payouts** (per-fight iron + clause completions/breaks)
+- **Callout bonus** (if it was a callout fight)
+- **Beef / Respect flag** matches (with their bonus applied) and any flags that lapsed
 - **If it was a title fight**: a dedicated championship victory screen with gold styling
+
+The **Post-Fight Interview** prompt appears here too — pick a tone (Humble / Confident / Trash Talk / Skip) before continuing.
 
 ---
 
@@ -580,8 +814,14 @@ You spend **energy** to train at a gym. Training earns **XP** which raises **sta
 
 Before each fight, you run a **training camp** — targeted preparation that sets up conditional bonuses. You choose a **weight cut** gamble. The fight plays out and you earn **iron**, **notoriety**, and **XP**.
 
+After every fight, the **press interview** lets you trade verbal stakes for fame — humbling yourself for a future iron rematch bonus, talking trash to set up a grudge match, or just owning the moment.
+
 At gyms, you earn **ranks** that unlock unique sessions, permanent XP bonuses, and utility perks that follow you across your career.
 
 Beating champions promotes you through the tiers. Losing creates Nemeses, triggers comeback mode, or forces mental resets.
+
+**Notoriety isn't just a meter** — it's an economy. Spend it on **callouts** to force matchups with full intel. Sign **sponsorship contracts** that pay iron per fight and bigger bonuses for clauses you fulfill. Predict the weekly **fight card** in the Events tab for fame and iron. Record podcasts to build beef and respect flags around the division. Once you're a Star, **commission your career documentary** for a permanent legacy mark.
+
+Every milestone — fights, KOs, championships, callout wins, fame tiers — unlocks a new piece for your **profile banner**, the cosmetic identity layer that follows your fighter across every screen.
 
 Every system costs something and gives something back. There are no shortcuts — only decisions.
