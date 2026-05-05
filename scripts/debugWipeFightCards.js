@@ -50,21 +50,32 @@ async function main() {
             return;
         }
 
-        const cardRes = await FightCard.deleteMany({});
-        const predRes = await Prediction.deleteMany({});
-        let legacyDeleted = 0;
-        if (legacyCount > 0) {
+        // We DROP the collections (not just deleteMany) so stale indexes from earlier
+        // schema versions are cleared too. Mongoose will recreate fresh indexes on next
+        // write. Without this, an old { fighterId, mainEventId } unique index can still
+        // enforce against new docs that have mainEventId=null, causing duplicate-key 500s.
+        const db = mongoose.connection.db;
+
+        async function dropIfExists(collName) {
             try {
-                const r = await mongoose.connection.db.collection("mainevents").deleteMany({});
-                legacyDeleted = r.deletedCount || 0;
-            } catch (_) {}
+                await db.collection(collName).drop();
+                return true;
+            } catch (err) {
+                // namespace not found = collection didn't exist; safe to ignore.
+                if (err?.codeName === "NamespaceNotFound") return false;
+                throw err;
+            }
         }
 
-        console.log(`\nDeleted:`);
-        console.log(`  ${cardRes.deletedCount} fightcard(s)`);
-        console.log(`  ${predRes.deletedCount} prediction(s)`);
-        if (legacyDeleted > 0) console.log(`  ${legacyDeleted} legacy mainevent(s)`);
-        console.log("\nReload the Events tab — a fresh card will be assembled on the next request.");
+        const droppedCards   = await dropIfExists("fightcards");
+        const droppedPreds   = await dropIfExists("predictions");
+        const droppedLegacy  = await dropIfExists("mainevents");
+
+        console.log(`\nDropped:`);
+        if (droppedCards)  console.log(`  fightcards collection (${cardCount} doc${cardCount === 1 ? "" : "s"} + indexes)`);
+        if (droppedPreds)  console.log(`  predictions collection (${predCount} doc${predCount === 1 ? "" : "s"} + indexes)`);
+        if (droppedLegacy) console.log(`  mainevents (legacy) collection (${legacyCount} doc${legacyCount === 1 ? "" : "s"} + indexes)`);
+        console.log("\nReload the Events tab — a fresh card will be assembled and Mongoose will rebuild fresh indexes on first write.");
     } finally {
         await mongoose.disconnect();
     }
