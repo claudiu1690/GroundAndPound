@@ -240,7 +240,7 @@ async function reconcileEnergy(fighter) {
  * Only advances the timestamp by the amount of time actually consumed — partial
  * intervals are preserved so players don't lose progress between loads.
  */
-const HEALTH_REGEN_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes per +1 health
+const HEALTH_REGEN_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes per +1 health
 const HEALTH_MAX = 100;
 
 function reconcileHealth(fighter) {

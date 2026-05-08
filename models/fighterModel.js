@@ -54,7 +54,7 @@ const fighterSchema = new mongoose.Schema({
     // Stamina is fight-time only — reset to maxStamina before every fight, not persisted.
     maxStamina: { type: Number, default: 100 },
     health: { type: Number, default: 100 },
-    // Passive health regen: +1 per 30 minutes since last regen timestamp.
+    // Passive health regen: +1 per 5 minutes since last regen timestamp.
     healthLastRegenAt: { type: Date, default: Date.now },
     energy: {
         current: { type: Number, default: 100, min: 0 },

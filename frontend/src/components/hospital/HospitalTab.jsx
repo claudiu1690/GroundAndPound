@@ -263,7 +263,7 @@ const ServicesSection = memo(function ServicesSection() {
                         <span className="hospital-service-name">Health Restoration</span>
                     </div>
                     <p className="hospital-service-desc">
-                        HP regenerates passively at +1 every 30 minutes. Skip the wait with three
+                        HP regenerates passively at +1 every 5 minutes. Skip the wait with three
                         packages — Quick Patch (+25), Recovery Bay (+50), Full Restoration (to 100).
                         Available at every tier.
                     </p>
