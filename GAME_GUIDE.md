@@ -55,8 +55,7 @@ Everything you do costs energy. Maximum is 100. It regenerates at 1 point per mi
 |---|---|
 | Training sessions | 3–8 (varies) |
 | Accepting a fight | 10–20 (varies by tier) |
-| Rest | 3 |
-| Doctor visit | varies by injury |
+| Hospital treatment | 10–20 (varies by injury) — also costs iron |
 | Mental Reset | 5 |
 
 ---
@@ -138,7 +137,7 @@ Reaching Rank 4 at any gym earns a permanent badge on your fighter profile and a
 |---|---|---|
 | Iron Fist Boxing | Champion Boxer | +1 camp slot when fighting a striker |
 | Dragon Kickboxing | Grand Master Kickboxer | Cardio Push session costs 1 less energy |
-| Warrior Muay Thai | Grand Kru | Recovery restores +1 extra max stamina |
+| Warrior Muay Thai | Grand Kru | Conditioning sessions raise Max Stamina by +2 instead of +1 (same 120 cap) |
 | Apex Wrestling | Olympic Wrestler | Takedown Defence always at least PARTIAL match |
 | Gracie Ground Game | BJJ Black Belt | Submission Escapes gives +5% extra bonus |
 | Renzo Combat | Submission Master | Fighter Report shows 1 extra fight log |
@@ -164,9 +163,8 @@ Base sessions available at most gyms:
 | Sparring | 8 | All 8 stats — 3% injury risk |
 | Film Study | 3 | FIQ |
 | Conditioning | 4 | Raises max stamina |
-| Recovery | 3 | Reduces injury timers |
 
-Each gym only offers sessions that train its focus stats, plus sparring. The free community gym offers everything at reduced XP.
+Each gym only offers sessions that train its focus stats, plus sparring. The free community gym offers everything at reduced XP. Injury healing happens passively over time or at the Hospital — there's no in-gym recovery session.
 
 ### How Stats Level Up
 
@@ -681,19 +679,79 @@ Read-only history of every post-fight interview you've given, color-coded by ton
 
 ## Health & Stamina
 
-- **Health** runs 0–100. Depleted by damage in fights. Losing by KO/TKO drops your health to 0. Recovers through Rest (3 energy, +25 health).
+- **Health** runs 0–100. Depleted by damage in fights. Losing by KO/TKO drops your health to 0. Regenerates passively at **+1 HP per 5 minutes** of real time — a full 0→100 takes about 8 hours, so a player who logs off after a brutal session comes back fresh. Players who want to fight sooner can buy **Health Restoration** packages at the Hospital (see below).
 - **Stamina** runs 0–100 (or higher with certain backstories or conditioning). Affected by weight cut, fight activity, and exhaustion checks.
 
 ---
 
 ## Injuries
 
-Injuries happen in camp (sparring) and in fights. They apply penalties to your stats until healed.
+Injuries happen in fights and in sparring sessions. They apply penalties to your stats until healed and may block specific actions (fighting, sparring, bag work).
 
-- **Minor injuries** heal over time through recovery sessions or rest.
-- **Major injuries** block certain training activities until you visit the doctor.
-- **Doctor visits** instantly clear an injury. They cost energy and sometimes iron.
-- **Concussions** from fight losses are mandatory doctor visits — you cannot fight again until you go.
+There are two healing paths depending on the injury type:
+
+| Injury | Source | Penalty | Heals via |
+|---|---|---|---|
+| Cut | Fight | None (blocks fighting) | Treatment (Hospital) |
+| Bruised Rib | Fight | −10 max stamina | Auto-heal in 2 days |
+| Broken Nose | Fight | −3 CHN | Treatment (Hospital) |
+| Broken Hand | Fight | −20 STR (no bag/pad work) | Auto-heal in 6 days |
+| Sprained Ankle | Sparring | −15 LEG | Auto-heal in 5 days |
+| Torn Ligament | Sparring | −10 STR, −10 LEG (blocks fighting) | Treatment (Hospital) |
+| Concussion | KO/TKO/Sub loss (always) | −2 CHN (blocks fighting + sparring) | Treatment (Hospital) |
+
+- **Auto-heal** injuries tick down once per 24h in real time. The Hospital tab shows the live countdown (e.g. `4d 12h`).
+- **Treatment-required** injuries don't auto-heal. You must visit the Hospital and pay the iron + energy cost.
+- **Concussions** from KO/TKO or submission losses are mandatory — you cannot fight again until you treat one.
+
+---
+
+## The Hospital
+
+The **Hospital tab** is your one-stop medical screen. Iron-paid services to skip recovery time, treat blocking injuries, or restore HP without waiting.
+
+### Services
+
+| Service | What it does | Cost |
+|---|---|---|
+| **Treatment** | Clears one treatment-required injury (Cut, Broken Nose, Concussion, Torn Ligament). Removes stat penalty immediately. | Energy + iron, varies by injury (see below) |
+| **Skip Recovery** | Instantly clears an auto-heal injury — no more waiting days. | Iron only, varies by injury |
+| **Health Restoration** | Three packages restore HP without waiting on passive regen. | Iron only |
+| **Full Recovery Package** | Heals every active injury in one transaction. 15% bulk discount over individual services. Available when you have 2+ injuries. | Sum of individual costs × 0.85 |
+
+### Treatment costs
+
+| Injury | Energy | Iron |
+|---|---|---|
+| Cut | 10 | 200 |
+| Broken Nose | 10 | 400 |
+| Concussion | 20 | 1,500 |
+| Torn Ligament | 20 | 2,000 |
+
+### Skip Recovery costs
+
+| Injury | Iron to skip |
+|---|---|
+| Bruised Rib | 600 |
+| Sprained Ankle | 800 |
+| Broken Hand | 1,200 |
+
+### Health Restoration packages
+
+| Package | HP delivered | Iron (full) |
+|---|---|---|
+| Quick Patch | up to +25 HP | 250 |
+| Recovery Bay | up to +50 HP | 400 |
+| Full Restoration | to 100 HP | 700 |
+
+If a package would heal more HP than you're missing, the iron cost is **pro-rated** to what you actually receive — you never overpay. When two packages would deliver the same HP at different prices, the more expensive one is greyed out so you always click the best deal. All three packages are available at every tier — no level gating.
+
+### When to use the Hospital
+
+- You have a **fight blocked** by a Cut, Concussion, or Torn Ligament and don't want to wait days.
+- You finished a war at low HP and want to fight again soon — passive regen takes hours.
+- You're stacking sponsor clauses or callouts that require you to fight quickly, and an auto-heal injury (e.g. Sprained Ankle) is dragging on.
+- You can ignore the Hospital entirely if you have time — every auto-heal injury clears for free, and HP regenerates passively.
 
 ---
 
