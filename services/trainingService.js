@@ -108,15 +108,24 @@ async function doTraining(fighterId, gymId, sessionType) {
 
     const injuryLockedStats = new Set(fighterService.getInjuryLockedStats(fighter));
 
-    // Handle special sessions (conditioning, recovery)
+    // Handle special sessions (conditioning).
+    // Iron Conditioning perk (Warrior Muay Thai Rank 4) doubles the gain to +2.
     if (config.raisesMaxStamina) {
         const currentMax = fighter.maxStamina || 100;
+        const hasIronConditioning = (fighter.gymPerks || []).includes("iron_conditioning");
+        const gain = hasIronConditioning ? 2 : 1;
+        let nextMax = currentMax;
         if (currentMax < 120) {
-            fighter.maxStamina = Math.min(120, currentMax + 1);
+            nextMax = Math.min(120, currentMax + gain);
         }
+        const actualGain = nextMax - currentMax;
+        fighter.maxStamina = nextMax;
         if (!gym.isFreeGym) gymRankService.incrementTrainingSessions(fighter, gym.slug);
         await fighter.save();
-        return { fighter: fighterService.toPublicFighter(fighter), message: "Strength & conditioning completed. Max Stamina increased.", xpGained: {}, statLevelUps: [] };
+        const msg = actualGain > 0
+            ? `Strength & conditioning completed. Max Stamina +${actualGain}.`
+            : "Strength & conditioning completed. Max Stamina already at cap.";
+        return { fighter: fighterService.toPublicFighter(fighter), message: msg, xpGained: {}, statLevelUps: [] };
     }
 
     // ── XP Calculation ──

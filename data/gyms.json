@@ -211,9 +211,9 @@
       },
       {
         "rank": 4, "name": "Grand Kru",
-        "description": "Kru calls you brother. Your body recovers from war differently now — the iron shins and conditioned frame bounce back faster between fights.",
+        "description": "Kru calls you brother. Your conditioning is on another level now — every round of strength & conditioning builds the tank twice as fast.",
         "requirements": { "trainingSessions": 50, "relevantWins": 10, "ironCost": 8000 },
-        "unlock": { "type": "perk", "perkId": "iron_shins", "perkName": "Iron Shins", "perkEffect": "Permanently grants +1 Max Stamina when unlocked", "badge": "Grand Kru" }
+        "unlock": { "type": "perk", "perkId": "iron_conditioning", "perkName": "Iron Conditioning", "perkEffect": "Strength & Conditioning sessions raise Max Stamina by +2 instead of +1 (same 120 cap)", "badge": "Grand Kru" }
       }
     ],
     "sessions": ["kick_drills", "bag_work", "clinch", "sparring"],
