@@ -305,8 +305,7 @@ async function debugRefillEnergyToMax(fighterId) {
 }
 
 /**
- * GDD 8.9: Doctor visit — spend energy to clear an injury that requires medical attention.
- * Iron cost temporarily disabled (no ⊗ check or deduction).
+ * GDD 8.9: Doctor visit — spend energy AND iron to clear an injury that requires medical attention.
  * Instantly heals the injury and reverses its stat penalties.
  */
 async function doctorVisit(fighterId, injuryType) {
@@ -322,16 +321,149 @@ async function doctorVisit(fighterId, injuryType) {
     if (idx === -1) throw new Error("Injury not found or does not require a doctor visit");
 
     const inj = fighter.injuries[idx];
-    if (currentEnergy < inj.docVisitEnergy) {
-        throw new Error(`Not enough energy (doctor visit costs ${inj.docVisitEnergy})`);
+    const energyCost = inj.docVisitEnergy || 0;
+    const ironCost = inj.docVisitIron || 0;
+
+    if (currentEnergy < energyCost) {
+        throw new Error(`Not enough energy (doctor visit costs ${energyCost})`);
+    }
+    if ((fighter.iron || 0) < ironCost) {
+        throw new Error(`Not enough iron (doctor visit costs ${ironCost})`);
     }
 
-    const updatedEnergy = await energyService.deductEnergy(fighterId, inj.docVisitEnergy);
-    setEnergySnapshot(fighter, updatedEnergy);
+    if (energyCost > 0) {
+        const updatedEnergy = await energyService.deductEnergy(fighterId, energyCost);
+        setEnergySnapshot(fighter, updatedEnergy);
+    }
+    if (ironCost > 0) fighter.iron = (fighter.iron || 0) - ironCost;
     reverseInjuryFromFighter(fighter, inj);
     fighter.injuries.splice(idx, 1);
     await fighter.save();
     return toPublicFighter(fighter);
+}
+
+/**
+ * Hospital — Skip Recovery: pay iron to instantly clear an auto-heal injury (no waiting days).
+ * Only works on injuries with requiresDoctorVisit=false and recoveryDaysLeft>0.
+ */
+async function hospitalSkipRecovery(fighterId, injuryType) {
+    const { reverseInjuryFromFighter } = require("../utils/injuryUtils");
+    const fighter = await Fighter.findById(fighterId);
+    if (!fighter) throw new Error("Fighter not found");
+
+    const idx = (fighter.injuries || []).findIndex(
+        (inj) => inj.type === injuryType && !inj.requiresDoctorVisit && (inj.recoveryDaysLeft || 0) > 0
+    );
+    if (idx === -1) throw new Error("Injury not found or not eligible for recovery skip");
+
+    const inj = fighter.injuries[idx];
+    const ironCost = inj.recoverySkipIron || 0;
+    if ((fighter.iron || 0) < ironCost) {
+        throw new Error(`Not enough iron (skip recovery costs ${ironCost})`);
+    }
+
+    if (ironCost > 0) fighter.iron = (fighter.iron || 0) - ironCost;
+    reverseInjuryFromFighter(fighter, inj);
+    fighter.injuries.splice(idx, 1);
+    await fighter.save();
+    return toPublicFighter(fighter);
+}
+
+/**
+ * Hospital — Full Recovery Package: heal every active injury in one transaction.
+ * Atomically deducts iron + energy for all of them; rejects if either is insufficient.
+ */
+async function hospitalFullRecovery(fighterId) {
+    const { reverseInjuryFromFighter, quoteFullRecovery } = require("../utils/injuryUtils");
+    const fighter = await Fighter.findById(fighterId);
+    if (!fighter) throw new Error("Fighter not found");
+    await reconcileEnergy(fighter);
+    const currentEnergy = energySnapshot(fighter).current;
+
+    const quote = quoteFullRecovery(fighter);
+    if (quote.count === 0) throw new Error("No active injuries to heal");
+    if (currentEnergy < quote.energy) {
+        throw new Error(`Not enough energy (full recovery costs ${quote.energy})`);
+    }
+    if ((fighter.iron || 0) < quote.iron) {
+        throw new Error(`Not enough iron (full recovery costs ${quote.iron})`);
+    }
+
+    if (quote.energy > 0) {
+        const updatedEnergy = await energyService.deductEnergy(fighterId, quote.energy);
+        setEnergySnapshot(fighter, updatedEnergy);
+    }
+    if (quote.iron > 0) fighter.iron = (fighter.iron || 0) - quote.iron;
+
+    // Heal every healable injury (doctor-required not yet visited, OR auto-heal in progress).
+    const healed = [];
+    const remaining = [];
+    for (const inj of fighter.injuries || []) {
+        const needsDoctor = inj.requiresDoctorVisit && !inj.doctorVisited;
+        const autoHealing = !inj.requiresDoctorVisit && (inj.recoveryDaysLeft || 0) > 0;
+        if (needsDoctor || autoHealing) {
+            reverseInjuryFromFighter(fighter, inj);
+            healed.push(inj.label);
+        } else {
+            remaining.push(inj);
+        }
+    }
+    fighter.injuries = remaining;
+    await fighter.save();
+    return { fighter: toPublicFighter(fighter), healed, ironPaid: quote.iron, energyPaid: quote.energy };
+}
+
+/**
+ * Hospital — Quote: returns the iron+energy cost the player would pay for the Full Recovery Package
+ * given their current injury state. Also returns the player's current health so the UI can render
+ * the Health Restoration buttons with accurate "actual heal" preview values.
+ */
+async function hospitalQuote(fighterId) {
+    const { quoteFullRecovery } = require("../utils/injuryUtils");
+    const fighter = await Fighter.findById(fighterId);
+    if (!fighter) throw new Error("Fighter not found");
+    reconcileHealth(fighter);
+    const fullRecovery = quoteFullRecovery(fighter);
+    return {
+        ...fullRecovery,
+        health: {
+            current: fighter.health ?? 100,
+            max: 100,
+        },
+    };
+}
+
+/**
+ * Hospital — Restore Health: pay iron to restore HP via one of the three packages.
+ * Iron cost is pro-rated when the package would be capped at 100 HP — the player only
+ * pays for the HP actually delivered. No tier gating — all packages available to every fighter.
+ */
+async function hospitalRestoreHealth(fighterId, packageKey) {
+    const { HEALTH_PACKAGES } = require("../consts/injuryDefinitions");
+    const pkg = HEALTH_PACKAGES[packageKey];
+    if (!pkg) throw new Error("Unknown health package");
+
+    const fighter = await Fighter.findById(fighterId);
+    if (!fighter) throw new Error("Fighter not found");
+    reconcileHealth(fighter);
+
+    const currentHealth = fighter.health ?? 100;
+    if (currentHealth >= 100) throw new Error("Health is already full");
+
+    const restored = Math.min(pkg.hp, 100 - currentHealth);
+    // Pro-rate the iron cost so a player at 35 HP missing pays for 35, not the full package.
+    const proRatedIron = Math.ceil((restored / pkg.hp) * pkg.iron);
+
+    if ((fighter.iron || 0) < proRatedIron) {
+        throw new Error(`Not enough iron (this ${pkg.label} costs ${proRatedIron})`);
+    }
+
+    fighter.iron = (fighter.iron || 0) - proRatedIron;
+    fighter.health = currentHealth + restored;
+    // Reset regen anchor so passive regen continues from the new HP value.
+    fighter.healthLastRegenAt = new Date();
+    await fighter.save();
+    return { fighter: toPublicFighter(fighter), restored, ironPaid: proRatedIron };
 }
 
 /**
@@ -406,6 +538,10 @@ module.exports = {
     deductEnergy,
     debugRefillEnergyToMax,
     doctorVisit,
+    hospitalSkipRecovery,
+    hospitalFullRecovery,
+    hospitalQuote,
+    hospitalRestoreHealth,
     mentalReset,
     switchGym,
     buildStatProgress,

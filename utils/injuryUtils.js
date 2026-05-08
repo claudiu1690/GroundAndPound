@@ -1,7 +1,7 @@
 /**
  * GDD 8.9 – Injury utility functions.
  * Handles rolling for injuries, building injury docs, applying/reversing stat effects,
- * blocking actions, and processing recovery sessions.
+ * blocking actions, and ticking the daily auto-heal counter.
  */
 const {
     INJURY_TYPES,
@@ -9,6 +9,7 @@ const {
     MAJOR_FIGHT_INJURIES,
     MINOR_SPARRING_INJURIES,
     MAJOR_SPARRING_INJURIES,
+    FULL_RECOVERY_DISCOUNT,
 } = require("../consts/injuryDefinitions");
 
 function pickRandom(arr) {
@@ -66,9 +67,11 @@ function buildInjury(typeKey) {
         cannotFight: !!def.cannotFight,
         cannotSpar: !!def.cannotSpar,
         cannotBagWork: !!def.cannotBagWork,
-        recoverySessionsLeft: def.recoverySessionsNeeded || 0,
+        recoveryDaysLeft: def.recoveryDaysNeeded || 0,
+        recoveryLastTickAt: def.recoveryDaysNeeded ? new Date() : null,
         docVisitEnergy: def.docVisitEnergy || 0,
         docVisitIron: def.docVisitIron || 0,
+        recoverySkipIron: def.recoverySkipIron || 0,
         appliedStatEffects: { ...def.statEffects },
         sustainedAt: new Date(),
     };
@@ -139,28 +142,65 @@ function isBagWorkBlocked(fighter) {
 }
 
 /**
- * Process one recovery session: decrement recoverySessionsLeft on all eligible injuries.
- * When an injury reaches 0 sessions left it is healed automatically (stat effects reversed).
+ * Decrement recoveryDaysLeft on all auto-heal injuries by the number of full 24h periods
+ * elapsed since the last tick. Heals injuries that hit 0 and reverses their stat penalties.
  * Mutates fighter.injuries in place. Call fighter.save() afterwards.
+ *
  * Returns array of healed injury labels.
  */
-function processRecoverySession(fighter) {
+function tickRecoveryForFighter(fighter, now = new Date()) {
     const healed = [];
     if (!fighter.injuries || !fighter.injuries.length) return healed;
     const remaining = [];
     for (const inj of fighter.injuries) {
-        if (!inj.requiresDoctorVisit && inj.recoverySessionsLeft > 0) {
-            inj.recoverySessionsLeft -= 1;
-            if (inj.recoverySessionsLeft <= 0) {
-                reverseInjuryFromFighter(fighter, inj);
-                healed.push(inj.label);
-                continue;
-            }
+        if (inj.requiresDoctorVisit || !inj.recoveryDaysLeft || inj.recoveryDaysLeft <= 0) {
+            remaining.push(inj);
+            continue;
+        }
+        const last = inj.recoveryLastTickAt ? new Date(inj.recoveryLastTickAt) : new Date(inj.sustainedAt);
+        const elapsedMs = now - last;
+        const fullDays = Math.floor(elapsedMs / 86_400_000);
+        if (fullDays <= 0) {
+            remaining.push(inj);
+            continue;
+        }
+        const newDaysLeft = Math.max(0, inj.recoveryDaysLeft - fullDays);
+        inj.recoveryDaysLeft = newDaysLeft;
+        // Advance the tick anchor by the consumed days so we don't lose fractional time.
+        inj.recoveryLastTickAt = new Date(last.getTime() + fullDays * 86_400_000);
+        if (newDaysLeft <= 0) {
+            reverseInjuryFromFighter(fighter, inj);
+            healed.push(inj.label);
+            continue; // drop from remaining
         }
         remaining.push(inj);
     }
     fighter.injuries = remaining;
     return healed;
+}
+
+/**
+ * Compute the total iron + energy cost of a Full Recovery Package for a fighter.
+ * Each active injury contributes its docVisitIron+docVisitEnergy (if doctor-required)
+ * or its recoverySkipIron (if auto-heal). The total iron is discounted by FULL_RECOVERY_DISCOUNT.
+ */
+function quoteFullRecovery(fighter) {
+    const injuries = fighter.injuries || [];
+    let iron = 0;
+    let energy = 0;
+    let count = 0;
+    for (const inj of injuries) {
+        if (inj.requiresDoctorVisit && !inj.doctorVisited) {
+            iron += inj.docVisitIron || 0;
+            energy += inj.docVisitEnergy || 0;
+            count += 1;
+        } else if (!inj.requiresDoctorVisit && inj.recoveryDaysLeft > 0) {
+            iron += inj.recoverySkipIron || 0;
+            count += 1;
+        }
+    }
+    const discountedIron = Math.round(iron * (1 - FULL_RECOVERY_DISCOUNT));
+    return { iron: discountedIron, energy, ironBeforeDiscount: iron, count };
 }
 
 module.exports = {
@@ -172,5 +212,6 @@ module.exports = {
     isFightBlocked,
     isSparringBlocked,
     isBagWorkBlocked,
-    processRecoverySession,
+    tickRecoveryForFighter,
+    quoteFullRecovery,
 };

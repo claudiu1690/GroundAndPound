@@ -124,6 +124,20 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ injuryType }),
     }),
+  hospitalSkipRecovery: (fighterId, injuryType) =>
+    request(`/fighters/${fighterId}/hospital/skip-recovery`, {
+      method: "POST",
+      body: JSON.stringify({ injuryType }),
+    }),
+  hospitalFullRecovery: (fighterId) =>
+    request(`/fighters/${fighterId}/hospital/full-recovery`, { method: "POST" }),
+  hospitalRestoreHealth: (fighterId, packageKey) =>
+    request(`/fighters/${fighterId}/hospital/restore-health`, {
+      method: "POST",
+      body: JSON.stringify({ package: packageKey }),
+    }),
+  hospitalQuote: (fighterId) =>
+    request(`/fighters/${fighterId}/hospital/quote`),
   mentalReset: (fighterId) =>
     request(`/fighters/${fighterId}/mental-reset`, { method: "POST" }),
 

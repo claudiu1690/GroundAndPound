@@ -124,6 +124,63 @@ async function doctorVisit(req, res) {
     }
 }
 
+async function hospitalSkipRecovery(req, res) {
+    try {
+        const { injuryType } = req.body;
+        if (!injuryType) return res.status(400).json({ message: "injuryType is required" });
+        const fighter = await fighterService.hospitalSkipRecovery(req.params.id, injuryType);
+        res.json(fighter);
+    } catch (err) {
+        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
+        if (err.message && (err.message.includes("Not enough") || err.message.includes("not found") || err.message.includes("not eligible"))) {
+            return res.status(400).json({ message: err.message });
+        }
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+async function hospitalFullRecovery(req, res) {
+    try {
+        const result = await fighterService.hospitalFullRecovery(req.params.id);
+        res.json(result);
+    } catch (err) {
+        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
+        if (err.message && (err.message.includes("Not enough") || err.message.includes("No active"))) {
+            return res.status(400).json({ message: err.message });
+        }
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+async function hospitalQuote(req, res) {
+    try {
+        const quote = await fighterService.hospitalQuote(req.params.id);
+        res.json(quote);
+    } catch (err) {
+        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+async function hospitalRestoreHealth(req, res) {
+    try {
+        const { package: packageKey } = req.body;
+        if (!packageKey) return res.status(400).json({ message: "package is required" });
+        const result = await fighterService.hospitalRestoreHealth(req.params.id, packageKey);
+        res.json(result);
+    } catch (err) {
+        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
+        if (err.message && (err.message.includes("Not enough") || err.message.includes("already full") || err.message.includes("Unknown"))) {
+            return res.status(400).json({ message: err.message });
+        }
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 async function mentalReset(req, res) {
     try {
         const fighter = await fighterService.mentalReset(req.params.id);
@@ -352,4 +409,8 @@ module.exports = {
     getCalloutRoster,
     createCallout,
     cancelCallout,
+    hospitalSkipRecovery,
+    hospitalFullRecovery,
+    hospitalQuote,
+    hospitalRestoreHealth,
 };

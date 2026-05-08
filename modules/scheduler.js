@@ -5,6 +5,7 @@ const {
     syncRedisEnergyToMongo,
 } = require("../services/energyService");
 const notorietyService = require("../services/notorietyService");
+const injuryHealService = require("../services/injuryHealService");
 
 const QUEUE_CONNECTION = {
     host: process.env.REDIS_HOST || "127.0.0.1",
@@ -16,6 +17,7 @@ const QUEUE_CONNECTION = {
 const energyQueue = new Queue("energy", { connection: QUEUE_CONNECTION });
 const energySyncQueue = new Queue("energy-sync", { connection: QUEUE_CONNECTION });
 const notorietyDecayQueue = new Queue("notoriety-decay", { connection: QUEUE_CONNECTION });
+const injuryHealQueue = new Queue("injury-heal", { connection: QUEUE_CONNECTION });
 
 const energyWorker = new Worker(
     "energy",
@@ -48,6 +50,17 @@ const notorietyDecayWorker = new Worker(
 
 notorietyDecayWorker.on("error", (err) => console.error("[Notoriety decay] Worker error:", err));
 
+const injuryHealWorker = new Worker(
+    "injury-heal",
+    async () => {
+        const { touched, healed } = await injuryHealService.runInjuryHealBatch();
+        if (touched > 0) console.log(`[Injury heal] Ticked ${touched} fighter(s); healed ${healed} injury(ies).`);
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+
+injuryHealWorker.on("error", (err) => console.error("[Injury heal] Worker error:", err));
+
 async function startEnergyIncrementScheduler() {
     await ensureRedisConnected();
 
@@ -69,7 +82,13 @@ async function startEnergyIncrementScheduler() {
         removeOnComplete: true,
     });
 
-    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h).");
+    await injuryHealQueue.add("heal", {}, {
+        repeat: { every: 86_400_000 },
+        jobId: "injury-daily-heal",
+        removeOnComplete: true,
+    });
+
+    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 24h).");
 }
 
 module.exports = {
@@ -77,8 +96,10 @@ module.exports = {
     energyQueue,
     energySyncQueue,
     notorietyDecayQueue,
+    injuryHealQueue,
     energyWorker,
     energySyncWorker,
     notorietyDecayWorker,
+    injuryHealWorker,
     redis,
 };

@@ -1,55 +1,35 @@
 import { memo } from "react";
-import { api } from "../../api";
 import { INJURY_SEVERITY_CLASS } from "./constants";
+import { formatRecoveryRemaining } from "../../utils/injuryDisplay";
 
 function severityClass(severity) {
   return INJURY_SEVERITY_CLASS[severity] ?? "";
 }
 
 /**
- * Active injuries with optional doctor visit or recovery copy.
+ * Active injuries — sidebar summary. Read-only.
+ *
+ * All iron-paid actions live on the dedicated Hospital tab. This panel just
+ * surfaces the at-a-glance state (label, severity, blocking flags, days remaining)
+ * with a hint pointing the player to the Hospital.
  */
-export const FighterInjuriesPanel = memo(function FighterInjuriesPanel({
-  fighterId,
-  injuries,
-  onRefreshFighter,
-  onMessage,
-}) {
+export const FighterInjuriesPanel = memo(function FighterInjuriesPanel({ injuries }) {
   if (!injuries?.length) return null;
 
   return (
     <div className="injuries-panel">
       <h3 className="injuries-title">Active Injuries</h3>
       {injuries.map((inj, index) => (
-        <InjuryCard
-          key={`${inj.type ?? inj.label ?? "injury"}-${index}`}
-          fighterId={fighterId}
-          injury={inj}
-          onRefreshFighter={onRefreshFighter}
-          onMessage={onMessage}
-        />
+        <InjuryCard key={`${inj.type ?? inj.label ?? "injury"}-${index}`} injury={inj} />
       ))}
+      <p className="injuries-hint">Visit the 🏥 Hospital tab to treat injuries.</p>
     </div>
   );
 });
 
-const InjuryCard = memo(function InjuryCard({
-  fighterId,
-  injury: inj,
-  onRefreshFighter,
-  onMessage,
-}) {
+const InjuryCard = memo(function InjuryCard({ injury: inj }) {
+  const isAutoHealing = !inj.requiresDoctorVisit && inj.recoveryDaysLeft > 0;
   const needsDoctor = inj.requiresDoctorVisit && !inj.doctorVisited;
-
-  async function handleDoctorVisit() {
-    try {
-      await api.doctorVisit(fighterId, inj.type);
-      onMessage?.(`Doctor visit complete — ${inj.label} healed.`);
-      if (onRefreshFighter) await onRefreshFighter(fighterId);
-    } catch (e) {
-      onMessage?.(e.message || "Doctor visit failed");
-    }
-  }
 
   return (
     <div className={`injury-item ${severityClass(inj.severity)}`}>
@@ -59,18 +39,11 @@ const InjuryCard = memo(function InjuryCard({
       </div>
       <p className="injury-effect">{inj.effect}</p>
       {needsDoctor && (
-        <button
-          type="button"
-          className="btn btn-warning btn-sm"
-          title={`Doctor: ${inj.docVisitEnergy} energy`}
-          onClick={handleDoctorVisit}
-        >
-          Visit doctor ({inj.docVisitEnergy}E)
-        </button>
+        <p className="injury-recovery"><strong>Treatment required</strong></p>
       )}
-      {!inj.requiresDoctorVisit && inj.recoverySessionsLeft > 0 && (
+      {isAutoHealing && (
         <p className="injury-recovery">
-          Recovery sessions left: <strong>{inj.recoverySessionsLeft}</strong>
+          Auto-heal in: <strong>{formatRecoveryRemaining(inj)}</strong>
         </p>
       )}
     </div>

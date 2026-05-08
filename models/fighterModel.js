@@ -201,9 +201,16 @@ const fighterSchema = new mongoose.Schema({
         cannotFight:        { type: Boolean, default: false },
         cannotSpar:         { type: Boolean, default: false },
         cannotBagWork:      { type: Boolean, default: false },
-        recoverySessionsLeft: { type: Number, default: 0 },
+        // Auto-heal counter — ticks down once per 24h via the daily scheduler job.
+        // When it hits 0, the injury auto-clears and stat penalties are reversed.
+        // Only used by injuries with requiresDoctorVisit=false.
+        recoveryDaysLeft:   { type: Number, default: 0 },
+        // Last day-tick timestamp; set whenever the daily scheduler decrements the counter.
+        recoveryLastTickAt: { type: Date, default: null },
         docVisitEnergy:     { type: Number, default: 0 },
         docVisitIron:       { type: Number, default: 0 },
+        // Iron cost to skip the auto-heal wait via the Hospital. Only used by auto-heal injuries.
+        recoverySkipIron:   { type: Number, default: 0 },
         appliedStatEffects: {
             str: { type: Number, default: 0 },
             spd: { type: Number, default: 0 },

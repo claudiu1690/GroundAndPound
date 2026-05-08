@@ -10,5 +10,4 @@ export const SESSION_TYPES = [
   "sparring",
   "film_study",
   "strength_conditioning",
-  "recovery",
 ];

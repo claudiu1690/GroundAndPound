@@ -96,7 +96,6 @@ exports.TRAINING_SESSIONS = {
     sparring:       { energy: 8, stats: ['STR', 'SPD', 'LEG', 'WRE', 'GND', 'SUB', 'CHN', 'FIQ'], xpBase: 12, injuryRisk: 0.03 },
     film_study:     { energy: 3, stats: ['FIQ'], xpBase: 10, minGymTier: 'T3' },
     strength_conditioning: { energy: 4, stats: [], xpBase: 0, raisesMaxStamina: true },
-    recovery:       { energy: 3, stats: [], xpBase: 0, reducesInjuryTimer: true },
 };
 
 // ----- Fight offer types -----

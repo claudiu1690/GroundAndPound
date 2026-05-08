@@ -1062,6 +1062,57 @@ code {
 .injury-item.injury-major .injury-severity-badge { background: var(--red-dim); color: #fef2f2; }
 .injury-effect { font-size: 9px; color: var(--text-sec); margin: 0 0 0.25rem; line-height: 1.35; }
 .injury-recovery { font-size: 9px; color: var(--text-muted); margin: 0.15rem 0 0; }
+.injuries-hint { font-size: 8px; color: var(--text-muted); font-style: italic; margin: 0.4rem 0 0; text-align: center; }
+
+/* ============================================================
+   HOSPITAL TAB
+   ============================================================ */
+.hospital-tab { display: flex; flex-direction: column; gap: 0.8rem; }
+.hospital-header { padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-left: 3px solid #b45309; background: var(--bg-surface); border-radius: 2px; }
+.hospital-title { font-size: 14px; font-weight: 800; margin: 0 0 0.2rem; color: var(--text); letter-spacing: 0.05em; }
+.hospital-subtitle { font-size: 10px; color: var(--text-sec); margin: 0; line-height: 1.4; }
+
+.hospital-section { padding: 0.6rem 0.8rem; border: 1px solid var(--border); background: var(--bg-surface); border-radius: 2px; }
+.hospital-section-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
+.hospital-section-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #b45309; margin: 0 0 0.5rem; }
+.hospital-section-header .hospital-section-title { margin: 0; }
+
+.hospital-services { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.5rem; }
+.hospital-service-card { padding: 0.5rem 0.6rem; border: 1px solid var(--border); background: var(--bg); border-radius: 2px; }
+.hospital-service-head { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.3rem; }
+.hospital-service-icon { font-size: 14px; }
+.hospital-service-name { font-size: 11px; font-weight: 700; color: var(--text); }
+.hospital-service-desc { font-size: 9px; color: var(--text-sec); margin: 0 0 0.3rem; line-height: 1.45; }
+.hospital-service-tag { font-size: 8px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.08em; }
+
+.hospital-empty { padding: 1rem; text-align: center; color: var(--text-muted); font-size: 10px; font-style: italic; }
+
+.hospital-injury-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.hospital-injury-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.5rem 0.6rem; border: 1px solid var(--border); background: var(--bg); border-radius: 2px; }
+.hospital-injury-row.injury-minor { border-left: 3px solid #fbbf24; }
+.hospital-injury-row.injury-major { border-left: 3px solid var(--red); }
+.hospital-injury-info { flex: 1; min-width: 0; }
+.hospital-injury-headline { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.2rem; }
+.hospital-injury-name { font-size: 11px; font-weight: 700; color: var(--text); }
+.hospital-injury-flag { font-size: 8px; color: var(--red); padding: 0 0.25rem; border: 1px solid var(--red); border-radius: 2px; text-transform: uppercase; font-weight: 700; }
+.hospital-injury-desc { font-size: 9px; color: var(--text-sec); margin: 0 0 0.2rem; line-height: 1.4; }
+.hospital-injury-meta { font-size: 9px; color: var(--text-muted); margin: 0; }
+.hospital-injury-actions { display: flex; flex-direction: column; gap: 0.25rem; flex-shrink: 0; }
+
+/* Health Restoration */
+.hospital-hp-readout { display: flex; align-items: center; gap: 0.4rem; font-size: 10px; color: var(--text); }
+.hospital-hp-readout strong { font-size: 12px; color: #ef4444; }
+.hospital-hp-bar { width: 80px; height: 6px; background: var(--bg-hover); border-radius: 2px; overflow: hidden; }
+.hospital-hp-bar-fill { height: 100%; background: linear-gradient(90deg, var(--red-dim), #ef4444); transition: width 0.2s; }
+
+.hospital-health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.5rem; }
+.hospital-health-card { padding: 0.55rem 0.7rem; border: 1px solid var(--border); background: var(--bg); border-radius: 2px; display: flex; flex-direction: column; gap: 0.25rem; transition: opacity 0.15s; }
+.hospital-health-card.is-dominated { opacity: 0.45; filter: saturate(0.4); }
+.hospital-health-name { font-size: 11px; font-weight: 700; color: var(--text); }
+.hospital-health-amount { font-size: 13px; font-weight: 800; color: #ef4444; }
+.hospital-health-cap { font-size: 8px; color: var(--text-muted); font-weight: 600; }
+.hospital-health-hint { font-size: 9px; color: var(--text-sec); flex: 1; }
+.hospital-health-btn { margin-top: 0.25rem; }
 
 /* ============================================================
    FORMS

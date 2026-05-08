@@ -97,7 +97,7 @@
  *         gymId: { type: string, format: objectId }
  *         sessionType:
  *           type: string
- *           enum: [bag_work, footwork, kick_drills, pad_work, wrestling, clinch, bjj, submission, sparring, film_study, strength_conditioning, recovery]
+ *           enum: [bag_work, footwork, kick_drills, pad_work, wrestling, clinch, bjj, submission, sparring, film_study, strength_conditioning]
  *
  *     Gym:
  *       type: object

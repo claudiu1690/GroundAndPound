@@ -107,12 +107,7 @@ export const FighterProfile = memo(function FighterProfile({
         <FighterStatMeters rows={statMeterRows(fighter.statProgress)} />
       )}
 
-      <FighterInjuriesPanel
-        fighterId={fighter._id}
-        injuries={fighter.injuries}
-        onRefreshFighter={onRefreshFighter}
-        onMessage={onMessage}
-      />
+      <FighterInjuriesPanel injuries={fighter.injuries} />
     </section>
   );
 });

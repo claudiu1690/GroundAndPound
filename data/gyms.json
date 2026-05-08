@@ -12,7 +12,7 @@
     "isFreeGym": true,
     "rankNames": [],
     "ranks": [],
-    "sessions": ["bag_work", "footwork", "kick_drills", "pad_work", "wrestling", "clinch", "bjj", "submission", "sparring", "film_study", "strength_conditioning", "recovery"]
+    "sessions": ["bag_work", "footwork", "kick_drills", "pad_work", "wrestling", "clinch", "bjj", "submission", "sparring", "film_study", "strength_conditioning"]
   },
   {
     "name": "Iron Fist Boxing",
@@ -421,7 +421,8 @@
         "unlock": { "type": "perk", "perkId": "championship_pedigree", "perkName": "Championship Pedigree", "perkEffect": "+10% fame from all fights", "badge": "Elite Master" }
       }
     ],
-    "sessions": ["bag_work", "footwork", "kick_drills", "pad_work", "wrestling", "clinch", "bjj", "submission", "sparring", "film_study", "strength_conditioning", "recovery"],
+    "sessions": ["bag_work", "footwork", "kick_drills", "pad_work", "wrestling", "clinch", "bjj", "submission", "sparring", "film_study", "strength_conditioning"],
     "relevantWinTypes": ["KO/TKO", "Submission", "Decision (unanimous)", "Decision (split)"]
+
   }
 ]

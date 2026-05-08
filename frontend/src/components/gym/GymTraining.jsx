@@ -15,7 +15,6 @@ export const SESSION_META = {
     sparring:       { label: "Sparring",       category: "sparring",  cost: 8, stats: ["STR", "SPD", "LEG", "WRE", "GND", "SUB", "CHN", "FIQ"], xpBase: 12, desc: "Full-contact rounds — highest XP, builds chin and IQ", warn: "3% injury risk" },
     film_study:     { label: "Film Study",     category: "mental",    cost: 3, stats: ["FIQ"],  xpBase: 10, desc: "Opponent breakdown — raises Fight IQ" },
     strength_conditioning: { label: "Conditioning", category: "physical", cost: 4, stats: [], xpBase: 0, desc: "+1 Max Stamina (cap 120)", special: "Max Stamina" },
-    recovery:       { label: "Recovery",       category: "recovery",  cost: 3, stats: [], xpBase: 0, desc: "Ice bath and physio — reduces injury timers", special: "Injury heal" },
     // Rank 2 unique sessions
     combination_drilling: { label: "Combination Drilling", category: "striking",  cost: 5, stats: ["STR", "SPD"], xpBase: 10, desc: "Advanced boxing combos (+15% XP)", rank2: true },
     switch_kick_mastery:  { label: "Switch Kick Mastery",  category: "striking",  cost: 5, stats: ["LEG", "SPD"], xpBase: 10, desc: "Dynamic kick switching (+15% XP)", rank2: true },
@@ -89,7 +88,7 @@ export const GymTraining = memo(function GymTraining({
     )];
     const CATEGORY_LABELS = {
         striking: "Striking", grappling: "Grappling", sparring: "Sparring",
-        mental: "Mental", physical: "Physical", recovery: "Recovery",
+        mental: "Mental", physical: "Physical",
     };
 
     const filteredSessions = availableSessions.filter(

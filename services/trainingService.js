@@ -12,7 +12,6 @@ const {
     applyInjuryToFighter,
     isSparringBlocked,
     isBagWorkBlocked,
-    processRecoverySession,
 } = require("../utils/injuryUtils");
 
 // Rank 2 unique sessions — not in base TRAINING_SESSIONS, added by gym rank unlock
@@ -118,14 +117,6 @@ async function doTraining(fighterId, gymId, sessionType) {
         if (!gym.isFreeGym) gymRankService.incrementTrainingSessions(fighter, gym.slug);
         await fighter.save();
         return { fighter: fighterService.toPublicFighter(fighter), message: "Strength & conditioning completed. Max Stamina increased.", xpGained: {}, statLevelUps: [] };
-    }
-
-    if (config.reducesInjuryTimer) {
-        const healedLabels = processRecoverySession(fighter);
-        if (!gym.isFreeGym) gymRankService.incrementTrainingSessions(fighter, gym.slug);
-        await fighter.save();
-        const healMsg = healedLabels.length ? ` Healed: ${healedLabels.join(", ")}.` : "";
-        return { fighter: fighterService.toPublicFighter(fighter), message: `Recovery session completed.${healMsg}`, xpGained: {}, statLevelUps: [] };
     }
 
     // ── XP Calculation ──

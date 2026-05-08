@@ -171,6 +171,10 @@ router.post("/:id/debug/recharge-energy", fighterController.debugRechargeEnergy)
 router.post("/:id/train", fighterController.train);
 
 router.post("/:id/doctor-visit", fighterController.doctorVisit);
+router.post("/:id/hospital/skip-recovery", fighterController.hospitalSkipRecovery);
+router.post("/:id/hospital/full-recovery", fighterController.hospitalFullRecovery);
+router.post("/:id/hospital/restore-health", fighterController.hospitalRestoreHealth);
+router.get("/:id/hospital/quote", fighterController.hospitalQuote);
 router.post("/:id/mental-reset", fighterController.mentalReset);
 router.post("/:id/switch-gym", fighterController.switchGym);
 router.post("/:id/rank-up-gym", fighterController.rankUpGym);
