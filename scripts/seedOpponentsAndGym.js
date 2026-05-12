@@ -1,19 +1,27 @@
 /**
- * Seed script: creates one T1 gym and Amateur opponents per weight class.
- * Each opponent gets a random full name (first + last, optional nickname) and a random Style with style-based stats.
+ * Seed script — Ranking System v1.0 NPC roster.
+ *
+ * Creates the fixed NPC roster for every (tier, weightClass) pair. Each roster has
+ * rosterSize + 1 fighters (rank 1 = champion, ranks 2..N = roster). OVR is distributed
+ * across the tier range so rank 1 sits at the top and rank N at the bottom.
+ * Stats are generated via buildScaledOpponentStats; strategy by style.
+ *
+ * Idempotent: if a (tier, wc) roster already has the expected number of NPCs, skipped.
+ *
+ * NOTE: Gyms are seeded via scripts/seedGyms.js — not this script.
+ *
  * Run: node scripts/seedOpponentsAndGym.js
  */
 const mongoose = require("mongoose");
 const config = require("../config");
-const Gym = require("../models/gymModel");
 const Opponent = require("../models/opponentModel");
-const { WEIGHT_CLASSES, STYLES } = require("../consts/gameConstants");
+const { WEIGHT_CLASSES, STYLES, PROMOTION_TIERS } = require("../consts/gameConstants");
 const { generateOpponentName } = require("../utils/opponentNames");
-const { buildOpponentStatsFromStyle, buildScaledOpponentStats, strategyForStyle } = require("../utils/opponentStats");
+const { buildScaledOpponentStats, strategyForStyle } = require("../utils/opponentStats");
 const { generateFightHistory } = require("./migrateCampHistory");
+const { ROSTER_SIZE } = require("../services/rankingService");
 
-const OPPONENTS_PER_WEIGHT_CLASS = 10;
-const REGIONAL_PRO_TIERS = ["Regional Pro"];
+const styleKeys = Object.keys(STYLES);
 
 function pickRandom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
@@ -42,104 +50,87 @@ function generateRecord(promotionTier) {
     return { wins, losses, draws };
 }
 
+/**
+ * OVR distribution for a given rank within a tier.
+ * Rank 1 = champion at tierMax. Rank N (last) = tierMin (clamped >= 8 so stats are fightable).
+ * Linear interpolation in between, with a tiny jitter so two rank-adjacent fighters
+ * aren't identical.
+ */
+function ovrForRank(tier, rank, totalRanks) {
+    const tierCfg = PROMOTION_TIERS[tier];
+    if (!tierCfg) return 30;
+    const top = tierCfg.maxOverall;
+    const bottom = Math.max(8, tierCfg.minOverall);
+    if (totalRanks <= 1) return top;
+    // rank 1 → top, rank totalRanks → bottom (linear).
+    const t = (rank - 1) / (totalRanks - 1);
+    const base = Math.round(top - (top - bottom) * t);
+    const jitter = randInt(-1, 1);
+    return Math.max(bottom, Math.min(top, base + jitter));
+}
+
+async function seedTierRoster(tier, wc) {
+    const expectedSize = (ROSTER_SIZE[tier] || 0) + 1; // +1 for champion
+    if (expectedSize <= 1) return; // unknown tier
+    const existing = await Opponent.countDocuments({
+        promotionTier: tier,
+        weightClass: wc,
+        fixedRank: { $ne: null },
+    });
+    if (existing >= expectedSize) {
+        console.log(`  ${tier} / ${wc}: already seeded (${existing}/${expectedSize})`);
+        return;
+    }
+    if (existing > 0 && existing < expectedSize) {
+        console.warn(`  ${tier} / ${wc}: partial roster (${existing}/${expectedSize}) — leaving alone, run migration to wipe first`);
+        return;
+    }
+
+    let created = 0;
+    for (let rank = 1; rank <= expectedSize; rank++) {
+        const isChampion = rank === 1;
+        const style = pickRandom(styleKeys);
+        const targetOvr = ovrForRank(tier, rank, expectedSize);
+        const scaled = buildScaledOpponentStats(style, targetOvr);
+        const { name, nickname } = generateOpponentName(true);
+        const record = generateRecord(tier);
+        const fightHistory = generateFightHistory({ style, chn: scaled.chn, record });
+
+        await Opponent.create({
+            name,
+            nickname,
+            weightClass: wc,
+            style,
+            strategy: strategyForStyle(style),
+            promotionTier: tier,
+            fixedRank: rank,
+            overallRating: scaled.overallRating,
+            str: scaled.str, spd: scaled.spd, leg: scaled.leg, wre: scaled.wre,
+            gnd: scaled.gnd, sub: scaled.sub, chn: scaled.chn, fiq: scaled.fiq,
+            isChampion,
+            championTier: isChampion ? tier : null,
+            record,
+            fightHistory,
+        });
+        created++;
+    }
+    console.log(`  ${tier} / ${wc}: created ${created} (rank 1 = champion)`);
+}
+
 async function run() {
     await mongoose.connect(config.database.url, config.database.options);
     console.log("Connected to MongoDB");
 
-    const existingGym = await Gym.findOne({ tier: "T1" });
-    if (!existingGym) {
-        await Gym.create({
-            name: "Local Fight Club",
-            tier: "T1",
-            specialtyStats: [],
-            monthlyIron: 0
-        });
-        console.log("Created gym: Local Fight Club (T1)");
-    } else {
-        console.log("T1 gym already exists:", existingGym.name);
-    }
-
-    const styleKeys = Object.keys(STYLES);
-
-    for (const wc of WEIGHT_CLASSES) {
-        const count = await Opponent.countDocuments({ weightClass: wc, promotionTier: "Amateur" });
-        if (count >= OPPONENTS_PER_WEIGHT_CLASS) {
-            console.log(`Amateur opponents for ${wc}: ${count} already exist`);
-            continue;
-        }
-
-        const toCreate = OPPONENTS_PER_WEIGHT_CLASS - count;
-        for (let i = 0; i < toCreate; i++) {
-            const { name, nickname } = generateOpponentName(true);
-            const style = pickRandom(styleKeys);
-            const stats = buildOpponentStatsFromStyle(style);
-            const record = generateRecord("Amateur");
-            const fightHistory = generateFightHistory({ style, chn: stats.chn, record });
-            await Opponent.create({
-                name,
-                nickname,
-                weightClass: wc,
-                style,
-                strategy: strategyForStyle(style),
-                promotionTier: "Amateur",
-                overallRating: stats.overallRating,
-                str: stats.str,
-                spd: stats.spd,
-                leg: stats.leg,
-                wre: stats.wre,
-                gnd: stats.gnd,
-                sub: stats.sub,
-                chn: stats.chn,
-                fiq: stats.fiq,
-                record,
-                fightHistory,
-            });
-        }
-        console.log(`Created ${toCreate} Amateur opponents for ${wc} (random names & styles)`);
-    }
-
-    // Regional Pro (and future tiers): fight offers require opponents with matching promotionTier.
-    for (const promoTier of REGIONAL_PRO_TIERS) {
+    // Seed all 5 tiers × 4 weight classes.
+    for (const tier of Object.keys(ROSTER_SIZE)) {
+        console.log(`\n${tier}:`);
         for (const wc of WEIGHT_CLASSES) {
-            const count = await Opponent.countDocuments({ weightClass: wc, promotionTier: promoTier });
-            if (count >= OPPONENTS_PER_WEIGHT_CLASS) {
-                console.log(`${promoTier} opponents for ${wc}: ${count} already exist`);
-                continue;
-            }
-            const toCreate = OPPONENTS_PER_WEIGHT_CLASS - count;
-            for (let i = 0; i < toCreate; i++) {
-                const { name, nickname } = generateOpponentName(true);
-                const style = pickRandom(styleKeys);
-                const targetOvr = 28 + Math.floor(Math.random() * 21);
-                const scaled = buildScaledOpponentStats(style, targetOvr);
-                const record = generateRecord(promoTier);
-                const fightHistory = generateFightHistory({ style, chn: scaled.chn, record });
-                await Opponent.create({
-                    name,
-                    nickname,
-                    weightClass: wc,
-                    style,
-                    strategy: strategyForStyle(style),
-                    promotionTier: promoTier,
-                    overallRating: scaled.overallRating,
-                    str: scaled.str,
-                    spd: scaled.spd,
-                    leg: scaled.leg,
-                    wre: scaled.wre,
-                    gnd: scaled.gnd,
-                    sub: scaled.sub,
-                    chn: scaled.chn,
-                    fiq: scaled.fiq,
-                    record,
-                    fightHistory,
-                });
-            }
-            console.log(`Created ${toCreate} ${promoTier} opponents for ${wc}`);
+            await seedTierRoster(tier, wc);
         }
     }
 
     await mongoose.disconnect();
-    console.log("Done.");
+    console.log("\nDone. (Reminder: run scripts/seedGyms.js separately if gym data is missing.)");
 }
 
 run().catch((err) => {

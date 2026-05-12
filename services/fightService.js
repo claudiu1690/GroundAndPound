@@ -104,6 +104,7 @@ const { tierRank } = require("../consts/notorietyConfig");
 const { logFightResolve } = require("../utils/fightResolveLogger");
 const activityLogService = require("./activityLogService");
 const championService = require("./championService");
+const rankingService = require("./rankingService");
 
 /**
  * Daily fight caps are per promotion tier. Legacy `fightsToday` was one global counter, so Amateur
@@ -271,7 +272,8 @@ async function generateOffers(fighterId) {
             // Show boosted OVR on the card so the player knows the real challenge
             const displayChampion = { ...champion, overallRating: Math.round(champion.overallRating * 1.05) };
             const eligible = (fighter.winsInCurrentTier ?? 0) >= MIN_WINS_FOR_TITLE_SHOT
-                && (fighter.titleShotCooldown ?? 0) <= 0;
+                && (fighter.titleShotCooldown ?? 0) <= 0
+                && rankingService.isTopFive(fighter);
             offers.push({
                 type: "TitleShot",
                 opponent: displayChampion,
@@ -822,6 +824,15 @@ async function resolveFightAndApply(fighterId) {
 
     incrementFightsTodayForTier(fighter, promoTier);
 
+    // Ranking System v1.0 — entry or movement based on this fight's result.
+    // Champion fights pass opponentRank=1; regular ranked NPCs use their fixedRank.
+    // PvP (future) will pass opponentRank=null which suppresses upset bonus/penalty.
+    {
+        const fightResult = rankingService.buildFightResultFromOutcome(result.outcome);
+        fightResult.opponentRank = (typeof opponent.fixedRank === "number") ? opponent.fixedRank : null;
+        rankingService.updatePlayerRank(fighter, fightResult);
+    }
+
     /** Same progression as training: XP banks toward the next point, then stat increases (fixes raw XP like 80/50). */
     const statLevelUps = [];
     const fightXpApplied = {};
@@ -856,20 +867,19 @@ async function resolveFightAndApply(fighterId) {
     let promoted = null;
     let beltWon = false;
 
-    // Title shot WIN: dethrone champion, promote, seed replacement
+    // Title shot WIN: promote the player. Champion stays in the roster — the player
+    // is leaving this tier permanently, so the next player in this tier still faces the
+    // same champion (Ranking System v1.0: NPC ranks are immutable).
     if (fight.offerType === "TitleShot" && isWin) {
-        await Opponent.findByIdAndUpdate(fight.opponentId, {
-            isChampion: false, championTier: null,
-        });
         const targetTier = fighter.pendingPromotion;
         fighter.promotionTier = targetTier;
         fighter.pendingPromotion = null;
         fighter.winsInCurrentTier = 0;
         fighter.titleShotCooldown = 0;
+        // Ranking System v1.0 — wipe rank, fights/wins-in-tier counters for the new tier.
+        rankingService.resetRankingForNewTier(fighter);
         beltWon = true;
         promoted = { from: oldTier, to: targetTier, viaTitleShot: true };
-        // Seed new champion in the OLD tier (player just left it)
-        await championService.seedNewChampion(oldTier, fighter.weightClass);
         // Fame spike for winning the belt
         notorietyService.applyNotorietyDelta(fighter, 200, {
             skipFreezeBlock: true,
@@ -888,6 +898,8 @@ async function resolveFightAndApply(fighterId) {
         if (newTier) {
             fighter.promotionTier = newTier;
             fighter.winsInCurrentTier = 0;
+            // Ranking System v1.0 — wipe rank for the new tier so the player starts Unranked.
+            rankingService.resetRankingForNewTier(fighter);
             promoted = { from: oldTier, to: newTier };
         }
     }

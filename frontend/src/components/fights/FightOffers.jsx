@@ -244,6 +244,11 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                       </div>
                       <div className="offer-opponent-meta">
                         <span className="offer-opponent-ovr">OVR {o.opponent?.overallRating}</span>
+                        {typeof o.opponent?.fixedRank === "number" && (
+                          <span className="offer-opponent-rank" title={`Currently ranked #${o.opponent.fixedRank} in their tier`}>
+                            {o.opponent.fixedRank === 1 ? " · 👑 #1" : ` · #${o.opponent.fixedRank}`}
+                          </span>
+                        )}
                         {o.opponent?.style ? ` · ${o.opponent.style}` : ""}
                         {meta.desc && <>{" · "}<span className="offer-meta-desc">{meta.desc}</span></>}
                       </div>

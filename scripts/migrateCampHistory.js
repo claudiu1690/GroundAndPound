@@ -148,10 +148,15 @@ async function run() {
     console.log("Done.");
 }
 
-run().catch((err) => {
-    console.error(err);
-    process.exit(1);
-});
+// Only run the migration when this script is invoked directly via CLI.
+// When required by another module (e.g. seedOpponentsAndGym for generateFightHistory),
+// we just expose the helpers without firing the migration as a side-effect.
+if (require.main === module) {
+    run().catch((err) => {
+        console.error(err);
+        process.exit(1);
+    });
+}
 
 // ── Also export the generator so the seed script can use it ──────────────────
 module.exports = { generateFightHistory };

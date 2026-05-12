@@ -128,6 +128,14 @@ const fighterSchema = new mongoose.Schema({
     pendingPromotion:  { type: String, default: null },   // next tier name when OVR gate met
     winsInCurrentTier: { type: Number, default: 0 },      // reset on promotion
     titleShotCooldown: { type: Number, default: 0 },      // set to 2 on title loss, decremented on wins
+    // Ranking System v1.0 — player's position inside the current tier's roster.
+    // rank=null → Unranked (first 2 fights in tier). After fight 3, player enters the rankings.
+    // Reset to defaults on tier promotion via rankingService.resetRankingForNewTier().
+    ranking: {
+        rank:                { type: Number, default: null },     // null = Unranked, otherwise 2..rosterSize
+        fightsInTier:        { type: Number, default: 0 },        // counts every fight in current tier
+        entryRecordAtFight3: { type: String, default: null },     // e.g. "3-0" — snapshot on entry
+    },
     // Nemesis: the most recent NPC to beat the player (cleared on revenge win)
     nemesis: {
         opponentId:   { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", default: null },
