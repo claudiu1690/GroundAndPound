@@ -271,9 +271,10 @@ async function generateOffers(fighterId) {
         if (champion) {
             // Show boosted OVR on the card so the player knows the real challenge
             const displayChampion = { ...champion, overallRating: Math.round(champion.overallRating * 1.05) };
-            const eligible = (fighter.winsInCurrentTier ?? 0) >= MIN_WINS_FOR_TITLE_SHOT
-                && (fighter.titleShotCooldown ?? 0) <= 0
-                && rankingService.isTopFive(fighter);
+            const winsMet     = (fighter.winsInCurrentTier ?? 0) >= MIN_WINS_FOR_TITLE_SHOT;
+            const cooldownOk  = (fighter.titleShotCooldown ?? 0) <= 0;
+            const rankMet     = rankingService.isTopFive(fighter);
+            const eligible    = winsMet && cooldownOk && rankMet;
             offers.push({
                 type: "TitleShot",
                 opponent: displayChampion,
@@ -282,6 +283,8 @@ async function generateOffers(fighterId) {
                 locked: !eligible,
                 cooldownRemaining: fighter.titleShotCooldown ?? 0,
                 winsNeeded: Math.max(0, MIN_WINS_FOR_TITLE_SHOT - (fighter.winsInCurrentTier ?? 0)),
+                rankNeeded: !rankMet,
+                currentRank: fighter.ranking?.rank ?? null,
                 nemesisMeta: fighter.nemesis?.opponentId?.toString() === champion._id.toString()
                     ? { lossCount: fighter.nemesis.lossCount, setAt: fighter.nemesis.setAt }
                     : null,
