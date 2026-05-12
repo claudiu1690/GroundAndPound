@@ -52,6 +52,33 @@ function FameBlock({ notoriety }) {
   );
 }
 
+function RankBlock({ ranking, tier }) {
+  const rank = ranking?.rank ?? null;
+  if (rank == null) {
+    return (
+      <span className="meta-rank meta-rank-unranked" title="Enter the rankings after 3 fights in this tier">
+        Unranked · {tier}
+      </span>
+    );
+  }
+  if (rank === 1) {
+    return (
+      <span className="meta-rank meta-rank-champion" title={`Champion of ${tier}`}>
+        <span className="meta-rank-icon">👑</span>
+        <span className="meta-rank-text">Champion · {tier}</span>
+      </span>
+    );
+  }
+  const isTopFive = rank <= 5;
+  return (
+    <span className={`meta-rank ${isTopFive ? "meta-rank-top5" : ""}`} title={isTopFive ? "Top 5 — title shot zone" : null}>
+      <span className="meta-rank-num">#{rank}</span>
+      <span className="meta-rank-text">in {tier}</span>
+      {isTopFive && <span className="meta-rank-pill">TITLE ZONE</span>}
+    </span>
+  );
+}
+
 /**
  * Iron, fame, record, optional gym / camp / comeback / backstory lines.
  */
@@ -60,6 +87,7 @@ export const FighterMetaPanel = memo(function FighterMetaPanel({ fighter, campSl
   const koWins = rec.koWins ?? 0;
   const subWins = rec.subWins ?? 0;
   const gym = fighter.gymId;
+  const tier = fighter.promotionTier ?? "Amateur";
 
   return (
     <div className="fighter-meta">
@@ -71,6 +99,10 @@ export const FighterMetaPanel = memo(function FighterMetaPanel({ fighter, campSl
         <span className="meta-label">Fame</span>
         <FameBlock notoriety={fighter.notoriety} />
       </div>
+
+      <MetaRow label="Rank">
+        <RankBlock ranking={fighter.ranking} tier={tier} />
+      </MetaRow>
 
       <MetaRow label="Record">
         <>

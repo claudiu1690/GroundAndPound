@@ -1024,6 +1024,21 @@ code {
 .meta-value-gold  { color: var(--gold-bright); }
 .meta-value-red   { color: var(--red-bright); }
 
+/* Rank display inside the meta panel */
+.meta-rank { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 10px; font-weight: 700; }
+.meta-rank-num { font-size: 13px; font-weight: 900; color: #d97706; line-height: 1; }
+.meta-rank-text { color: var(--text-sec); font-weight: 600; }
+.meta-rank-icon { font-size: 13px; }
+.meta-rank-unranked { color: var(--text-muted); font-style: italic; font-weight: 600; }
+.meta-rank-champion { color: #b45309; font-weight: 800; }
+.meta-rank-champion .meta-rank-text { color: #b45309; font-weight: 800; }
+.meta-rank-top5 .meta-rank-num { color: #fbbf24; text-shadow: 0 0 8px rgba(251,191,36,0.4); }
+.meta-rank-pill {
+    font-size: 7px; font-weight: 800; letter-spacing: 0.1em;
+    padding: 0.05rem 0.3rem; border-radius: 2px;
+    background: #b45309; color: #fffbeb;
+}
+
 .fighter-badges { display: flex; flex-wrap: wrap; gap: 0.2rem; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); }
 .fighter-badge {
   display: inline-flex; align-items: center; gap: 0.15rem;
