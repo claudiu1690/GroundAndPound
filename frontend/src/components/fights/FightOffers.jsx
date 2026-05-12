@@ -355,9 +355,20 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                         <>
                           <Lock size={14} style={{ color: "var(--text-muted)" }} />
                           <span className="offer-locked-text">
-                            {o.cooldownRemaining > 0
-                              ? `${o.cooldownRemaining} win${o.cooldownRemaining !== 1 ? "s" : ""} to retry`
-                              : `${o.winsNeeded} win${o.winsNeeded !== 1 ? "s" : ""} needed`}
+                            {(() => {
+                              if (o.cooldownRemaining > 0) {
+                                return `${o.cooldownRemaining} win${o.cooldownRemaining !== 1 ? "s" : ""} to retry`;
+                              }
+                              if (o.winsNeeded > 0) {
+                                return `${o.winsNeeded} win${o.winsNeeded !== 1 ? "s" : ""} needed`;
+                              }
+                              if (o.rankNeeded) {
+                                return o.currentRank == null
+                                  ? "Reach the rankings first"
+                                  : `Reach top 5 (currently #${o.currentRank})`;
+                              }
+                              return "Locked";
+                            })()}
                           </span>
                         </>
                       ) : (
