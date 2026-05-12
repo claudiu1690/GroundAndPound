@@ -1833,37 +1833,118 @@ code {
   gap: 0.75rem;
 }
 
-.fight-hub-header {
+/* ============================================================
+   FIGHT HUB — horizontal stat-tile dashboard
+   ============================================================ */
+
+/* Tier strip — wide bar across the top of the hub */
+.fight-hub-tier-strip {
+  width: 100%;
+  padding: 0.5rem 0.8rem;
+  background: linear-gradient(90deg, rgba(180,83,9,0.18) 0%, rgba(180,83,9,0.04) 60%, transparent 100%);
+  border-left: 3px solid #d97706;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+/* 3-tile grid: OVR / Rank / Record */
+.fight-hub-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+}
+
+/* Generic stat tile — block of value + label */
+.stat-tile {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border);
-  width: 100%;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.7rem 0.4rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  min-height: 64px;
 }
-.fight-hub-ovr {
-  font-size: 2.5rem;
+.stat-tile-value {
+  font-size: 1.8rem;
   font-weight: 900;
-  color: var(--red-bright);
   line-height: 1;
-  text-shadow: 0 0 20px rgba(227,24,55,0.3);
+  color: var(--text);
 }
-.fight-hub-ovr-label {
-  font-size: 9px;
+.stat-tile-label {
+  font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: 0.3rem;
 }
-.fight-hub-tier {
-  font-size: 13px;
-  font-weight: 800;
+
+/* Tile variants */
+.stat-tile-ovr .stat-tile-value {
+  color: var(--red-bright);
+  text-shadow: 0 0 16px rgba(227,24,55,0.3);
+}
+.stat-tile-ovr {
+  border-color: var(--red-dim);
+  background: linear-gradient(180deg, rgba(227,24,55,0.08) 0%, var(--bg-surface) 100%);
+}
+.stat-tile-rank .stat-tile-value { color: #d97706; }
+.stat-tile-rank {
+  border-color: rgba(217,119,6,0.4);
+  background: linear-gradient(180deg, rgba(217,119,6,0.08) 0%, var(--bg-surface) 100%);
+}
+.stat-tile-champion .stat-tile-value {
+  color: #fbbf24;
+  text-shadow: 0 0 16px rgba(251,191,36,0.4);
+}
+.stat-tile-champion {
+  border-color: rgba(251,191,36,0.5);
+  background: linear-gradient(180deg, rgba(251,191,36,0.1) 0%, var(--bg-surface) 100%);
+}
+.stat-tile-champion .stat-tile-label { color: #b45309; }
+.stat-tile-unranked .stat-tile-value { color: var(--text-muted); }
+.stat-tile-unranked { opacity: 0.7; }
+.stat-tile-default .stat-tile-value { color: var(--text); font-size: 1.4rem; }
+
+/* Standing banner above the offers list — same tile language, just compact */
+.offers-standing-banner {
+  display: flex;
+  align-items: stretch;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+  padding: 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+.standing-tier-tag {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  background: linear-gradient(135deg, #b45309 0%, #d97706 100%);
+  color: #fffbeb;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text);
+  border-radius: 2px;
+  flex-shrink: 0;
 }
+.standing-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  flex: 1;
+}
+.standing-stat-grid .stat-tile { min-height: 52px; padding: 0.4rem; }
+.standing-stat-grid .stat-tile-value { font-size: 1.4rem; }
+.standing-stat-grid .stat-tile-default .stat-tile-value { font-size: 1.15rem; }
 .fight-hub-record {
   font-size: 11px;
   font-weight: 700;
@@ -1871,36 +1952,96 @@ code {
 }
 
 .fight-hub-readiness {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
   width: 100%;
 }
-.fight-hub-stat {
+
+/* Readiness tile — live state (energy/health/streak). Icon-led, progress bar at bottom. */
+.readiness-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.2rem;
+  padding: 0.6rem 0.5rem 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--border);
+  border-radius: 2px;
+  min-height: 100px;
+  transition: border-color 0.15s;
+}
+.readiness-tile-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  font-size: 11px;
-  color: var(--text-sec);
-  padding: 0.35rem 0.5rem;
-  background: var(--bg-surface);
-  border-radius: 6px;
-  border: 1px solid var(--border);
+  margin-bottom: 0.1rem;
+  opacity: 0.85;
 }
-.fight-hub-stat--warn {
-  border-color: rgba(245,158,11,0.3);
-  color: #fbbf24;
-}
-.fight-hub-stat-label {
-  font-weight: 700;
-  min-width: 48px;
-}
-.fight-hub-stat-value {
+.readiness-tile-value {
+  font-size: 1.4rem;
+  font-weight: 900;
+  line-height: 1;
   color: var(--text);
-  font-weight: 600;
 }
-.fight-hub-stat--warn .fight-hub-stat-value { color: #fbbf24; }
+.readiness-tile-max {
+  font-size: 0.7em;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 1px;
+}
+.readiness-tile-label {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.readiness-tile-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--bg);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 0.3rem;
+}
+.readiness-tile-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: currentColor;
+  transition: width 0.25s;
+}
+.readiness-tile-sub {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 0.15rem;
+  line-height: 1.2;
+}
+
+/* Tone variants */
+.readiness-tile-ok       { border-top-color: #22c55e; color: #22c55e; }
+.readiness-tile-warn     { border-top-color: #fbbf24; color: #fbbf24; }
+.readiness-tile-danger   { border-top-color: var(--red); color: var(--red-bright); }
+.readiness-tile-win      { border-top-color: #22c55e; color: #22c55e; }
+.readiness-tile-loss     { border-top-color: var(--red); color: var(--red-bright); }
+.readiness-tile-neutral  { border-top-color: var(--border); color: var(--text-muted); opacity: 0.85; }
+
+.readiness-tile-ok     .readiness-tile-icon { color: #22c55e; }
+.readiness-tile-warn   .readiness-tile-icon { color: #fbbf24; }
+.readiness-tile-danger .readiness-tile-icon { color: var(--red-bright); }
+.readiness-tile-win    .readiness-tile-icon { color: #22c55e; }
+.readiness-tile-loss   .readiness-tile-icon { color: var(--red-bright); }
+.readiness-tile-neutral .readiness-tile-icon { color: var(--text-muted); }
+
+.readiness-tile-ok .readiness-tile-value     { color: #22c55e; }
+.readiness-tile-warn .readiness-tile-value   { color: #fbbf24; }
+.readiness-tile-danger .readiness-tile-value { color: var(--red-bright); }
+.readiness-tile-win .readiness-tile-value    { color: #22c55e; }
+.readiness-tile-loss .readiness-tile-value   { color: var(--red-bright); }
 
 .fight-hub-alert {
   display: flex;

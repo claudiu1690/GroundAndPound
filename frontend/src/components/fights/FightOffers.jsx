@@ -74,6 +74,50 @@ function StreakBadge({ streak }) {
   );
 }
 
+/**
+ * Format the player's rank into a {value, label, tone} triple used by the stat tile.
+ *   1     → "👑" / CHAMPION
+ *   null  → "—"  / UNRANKED
+ *   N     → "#N" / RANK
+ */
+function rankTileProps(rank) {
+  if (rank === 1) return { value: "👑", label: "CHAMPION", tone: "champion" };
+  if (rank == null) return { value: "—", label: "UNRANKED", tone: "unranked" };
+  return { value: `#${rank}`, label: "RANK", tone: "rank" };
+}
+
+function StatTile({ value, label, tone }) {
+  return (
+    <div className={`stat-tile stat-tile-${tone || "default"}`}>
+      <div className="stat-tile-value">{value}</div>
+      <div className="stat-tile-label">{label}</div>
+    </div>
+  );
+}
+
+/**
+ * Readiness tile — icon-led card with a progress bar and status sub-line.
+ * Used for live values (energy, health) that change between fights.
+ * tone: "ok" | "warn" | "danger" | "win" | "loss" | "neutral".
+ */
+function ReadinessTile({ icon, value, max, label, sub, tone = "ok" }) {
+  const pct = max ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
+  return (
+    <div className={`readiness-tile readiness-tile-${tone}`}>
+      <div className="readiness-tile-icon">{icon}</div>
+      <div className="readiness-tile-value">
+        {value}
+        {typeof max === "number" && <span className="readiness-tile-max"> / {max}</span>}
+      </div>
+      <div className="readiness-tile-label">{label}</div>
+      {typeof max === "number" && (
+        <div className="readiness-tile-bar"><div className="readiness-tile-bar-fill" style={{ width: `${pct}%` }} /></div>
+      )}
+      {sub && <div className="readiness-tile-sub">{sub}</div>}
+    </div>
+  );
+}
+
 function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
   const rec = fighter.record ?? {};
   const energy = fighter.energy?.current ?? fighter.energy ?? 0;
@@ -83,40 +127,45 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
   const loseStreak = fighter.consecutiveLosses ?? 0;
   const blockingInjury = (fighter.injuries ?? []).find((inj) => inj.cannotFight);
   const blocked = fighter.mentalResetRequired || !!blockingInjury;
+  const rank = fighter.ranking?.rank ?? null;
+  const rankTile = rankTileProps(rank);
+  const recordText = `${rec.wins ?? 0}-${rec.losses ?? 0}${(rec.draws ?? 0) > 0 ? `-${rec.draws}` : ""}`;
+  const tier = fighter.promotionTier ?? "Amateur";
 
   return (
     <div className="fight-hub">
-      <div className="fight-hub-header">
-        <div className="fight-hub-ovr">{fighter.overallRating ?? 0}</div>
-        <div className="fight-hub-ovr-label">OVERALL</div>
-        <div className="fight-hub-tier">{fighter.promotionTier ?? "Amateur"}</div>
-        <div className="fight-hub-record">
-          {rec.wins ?? 0}W – {rec.losses ?? 0}L{(rec.draws ?? 0) > 0 ? ` – ${rec.draws}D` : ""}
-        </div>
+      <div className="fight-hub-tier-strip">{tier}</div>
+
+      <div className="fight-hub-stat-grid">
+        <StatTile value={fighter.overallRating ?? 0} label="OVR" tone="ovr" />
+        <StatTile value={rankTile.value} label={rankTile.label} tone={rankTile.tone} />
+        <StatTile value={recordText} label="RECORD" tone="default" />
       </div>
 
       <div className="fight-hub-readiness">
-        <div className={`fight-hub-stat ${hasEnergy ? "" : "fight-hub-stat--warn"}`}>
-          <Zap size={12} />
-          <span className="fight-hub-stat-label">Energy</span>
-          <span className="fight-hub-stat-value">{energy} / {energyCost} needed</span>
-        </div>
-        <div className={`fight-hub-stat ${health >= 50 ? "" : "fight-hub-stat--warn"}`}>
-          <Heart size={12} />
-          <span className="fight-hub-stat-label">Health</span>
-          <span className="fight-hub-stat-value">{health} / 100</span>
-        </div>
-        <div className="fight-hub-stat">
-          {winStreak > 0 ? <TrendingUp size={12} /> : loseStreak > 0 ? <TrendingDown size={12} /> : <Swords size={12} />}
-          <span className="fight-hub-stat-label">Streak</span>
-          <span className="fight-hub-stat-value">
-            {winStreak > 0
-              ? <span style={{ color: "var(--green-bright)" }}>{winStreak}-fight win streak</span>
-              : loseStreak > 0
-              ? <span style={{ color: "var(--red-bright)" }}>{loseStreak}-fight losing streak</span>
-              : "\u2014"}
-          </span>
-        </div>
+        <ReadinessTile
+          icon={<Zap size={20} />}
+          value={energy}
+          max={100}
+          label="ENERGY"
+          sub={hasEnergy ? `Ready (${energyCost} needed)` : `Need ${energyCost - energy} more`}
+          tone={hasEnergy ? "ok" : "warn"}
+        />
+        <ReadinessTile
+          icon={<Heart size={20} />}
+          value={health}
+          max={100}
+          label="HEALTH"
+          sub={health >= 80 ? "At full strength" : health >= 50 ? "A bit beat up" : health >= 30 ? "Low \u2014 rest soon" : "Critical"}
+          tone={health >= 50 ? "ok" : health >= 30 ? "warn" : "danger"}
+        />
+        <ReadinessTile
+          icon={winStreak > 0 ? <TrendingUp size={20} /> : loseStreak > 0 ? <TrendingDown size={20} /> : <Swords size={20} />}
+          value={winStreak > 0 ? `${winStreak}W` : loseStreak > 0 ? `${loseStreak}L` : "\u2014"}
+          label="STREAK"
+          sub={winStreak > 0 ? `${winStreak}-fight win streak` : loseStreak > 0 ? `${loseStreak}-fight losing streak` : "No active streak"}
+          tone={winStreak > 0 ? "win" : loseStreak > 0 ? "loss" : "neutral"}
+        />
       </div>
 
       {fighter.mentalResetRequired && (
@@ -154,6 +203,29 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
           <Megaphone size={14} /> Call Out
         </button>
         <span className="fight-hub-cost">{energyCost} energy per fight</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Banner above the offers list — gives the player their bearings:
+ *   - Tier badge on the left
+ *   - Stat tiles for OVR / Rank / Record in a horizontal grid
+ */
+function OffersStandingBanner({ fighter }) {
+  const rank = fighter.ranking?.rank ?? null;
+  const rec = fighter.record ?? {};
+  const tier = fighter.promotionTier ?? "Amateur";
+  const rankTile = rankTileProps(rank);
+  const recordText = `${rec.wins ?? 0}-${rec.losses ?? 0}${(rec.draws ?? 0) > 0 ? `-${rec.draws}` : ""}`;
+  return (
+    <div className="offers-standing-banner">
+      <div className="standing-tier-tag">{tier}</div>
+      <div className="standing-stat-grid">
+        <StatTile value={fighter.overallRating ?? 0} label="OVR" tone="ovr" />
+        <StatTile value={rankTile.value} label={rankTile.label} tone={rankTile.tone} />
+        <StatTile value={recordText} label="RECORD" tone="default" />
       </div>
     </div>
   );
@@ -204,6 +276,8 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
           />
         ) : (
           <>
+            <OffersStandingBanner fighter={fighter} />
+
             <ul className="offers-list">
               {offers.map((o) => {
                 const typeKey = o.type ?? "Even";
