@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const fighterController = require("../controllers/fighterController");
+const rankingController = require("../controllers/rankingController");
 
 /**
  * @swagger
@@ -179,6 +180,7 @@ router.post("/:id/mental-reset", fighterController.mentalReset);
 router.post("/:id/switch-gym", fighterController.switchGym);
 router.post("/:id/rank-up-gym", fighterController.rankUpGym);
 router.get("/:id/champions", fighterController.getChampions);
+router.get("/:id/rank", rankingController.getFighterRank);
 router.get("/:id/activity", fighterController.getActivity);
 router.get("/:id/fame-events", fighterController.getFameEvents);
 router.get("/:id/banner/catalog", fighterController.getBannerCatalog);

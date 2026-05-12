@@ -1065,6 +1065,75 @@ code {
 .injuries-hint { font-size: 8px; color: var(--text-muted); font-style: italic; margin: 0.4rem 0 0; text-align: center; }
 
 /* ============================================================
+   RANKINGS TAB
+   ============================================================ */
+.rankings-tab { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.6rem; }
+.rankings-header { display: flex; align-items: center; justify-content: space-between; }
+.rankings-title { font-size: 14px; font-weight: 800; letter-spacing: 0.04em; color: var(--text); margin: 0; }
+.rankings-wc { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+.rankings-tier-tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.rankings-tier-tab {
+    padding: 0.3rem 0.6rem; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 2px;
+    color: var(--text-sec); cursor: pointer; position: relative;
+}
+.rankings-tier-tab:hover { background: var(--bg-hover); }
+.rankings-tier-tab.active { background: var(--red-dim); color: #fef2f2; border-color: var(--red); }
+.rankings-tier-tab.is-player-tier::before { content: "● "; color: #38bdf8; }
+.rankings-tier-you {
+    margin-left: 0.3rem; font-size: 7px; font-weight: 800;
+    color: #38bdf8; vertical-align: middle;
+}
+
+.rankings-title-shot-pill {
+    padding: 0.4rem 0.6rem; background: linear-gradient(90deg, #b45309 0%, #d97706 100%);
+    color: #fffbeb; font-size: 10px; font-weight: 800; text-align: center;
+    border-radius: 2px; letter-spacing: 0.04em;
+}
+
+.rankings-loading { font-size: 10px; color: var(--text-muted); padding: 0.6rem; text-align: center; }
+
+.rankings-table { display: flex; flex-direction: column; gap: 1px; background: var(--border); }
+.rankings-row {
+    display: grid; grid-template-columns: 36px 1fr 40px 80px 60px;
+    align-items: center; gap: 0.4rem;
+    padding: 0.35rem 0.5rem; background: var(--bg); font-size: 10px;
+}
+.rankings-row.rankings-head {
+    background: var(--bg-surface); color: var(--text-muted);
+    font-size: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 800;
+}
+.rankings-row .r-rank { font-weight: 800; color: var(--text); font-size: 11px; }
+.rankings-row .r-name { font-weight: 600; color: var(--text); }
+.rankings-row .r-ovr { font-weight: 700; color: var(--red); }
+.rankings-row .r-style { color: var(--text-sec); font-size: 9px; }
+.rankings-row .r-record { color: var(--text-muted); font-size: 9px; }
+
+.rankings-row.is-champion { background: #FFF8E1; color: #78350f; }
+.rankings-row.is-champion .r-rank,
+.rankings-row.is-champion .r-name { color: #78350f; }
+.rankings-row.is-champion .r-ovr { color: #b45309; }
+
+.rankings-row.is-top5 { border-left: 2px solid #d97706; }
+.rankings-row.is-player { background: #1e293b; border-left: 2px solid #38bdf8; }
+.rankings-row.is-player .r-name { color: #f1f5f9; font-weight: 800; }
+.rankings-row.is-player .r-rank { color: #38bdf8; }
+.rankings-row.is-unranked { opacity: 0.7; border-top: 1px dashed var(--border); padding-top: 0.5rem; margin-top: 0.5rem; }
+
+.rankings-badge {
+    margin-left: 0.4rem; padding: 0 0.3rem; border-radius: 2px;
+    font-size: 7px; font-weight: 800; letter-spacing: 0.08em; vertical-align: middle;
+}
+.rankings-badge-champ { background: #b45309; color: #fffbeb; }
+.rankings-badge-you   { background: #38bdf8; color: #0c1e2e; }
+
+.rankings-foreign-tier-note {
+    font-size: 9px; color: var(--text-muted); font-style: italic;
+    text-align: center; padding: 0.4rem;
+}
+
+/* ============================================================
    HOSPITAL TAB
    ============================================================ */
 .hospital-tab { display: flex; flex-direction: column; gap: 0.8rem; }
@@ -1708,6 +1777,7 @@ code {
 .offer-opponent-nickname { color: var(--text-sec); font-weight: 400; }
 .offer-opponent-meta { font-size: 10px; color: var(--text-sec); margin-top: 0.1rem; }
 .offer-opponent-ovr  { color: var(--red-bright); font-weight: 800; }
+.offer-opponent-rank { color: #d97706; font-weight: 800; }
 .offer-meta-desc { color: var(--text-muted); }
 .offer-accept-col { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; flex-shrink: 0; align-self: center; }
 .offer-energy-cost { font-size: 9px; color: var(--text-muted); }

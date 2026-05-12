@@ -22,6 +22,7 @@ import { ContractsTab } from "./components/contracts/ContractsTab";
 import { MediaTab } from "./components/media/MediaTab";
 import { EventsTab } from "./components/events/EventsTab";
 import { HospitalTab } from "./components/hospital/HospitalTab";
+import { RankingsTab } from "./components/rankings/RankingsTab";
 import { PostFightInterview } from "./components/fights/PostFightInterview";
 
 // ── Navigation definition ──────────────────────────────────
@@ -29,7 +30,7 @@ const NAV_ITEMS = [
   { id: "gym",       label: "Training",  icon: "⬡", active: true },
   { id: "fights",    label: "Fight",     icon: "✕", active: true },
   { id: "career",    label: "Career",    icon: "◆", active: true },
-  { id: null,        label: "Rankings",  icon: "▲", active: false },
+  { id: "rankings",  label: "Rankings",  icon: "▲", active: true },
   { id: "contracts", label: "Contracts", icon: "▣", active: true },
   { id: "hospital",  label: "Hospital",  icon: "✚", active: true },
   { id: null,        label: "Shop",      icon: "⊕", active: false },
@@ -1013,6 +1014,15 @@ const handleGetOffers = useCallback(async () => {
                 fighter={fighter}
                 onMessage={setMessage}
                 onRefreshFighter={loadFighter}
+              />
+            </div>
+          )}
+
+          {activeTab === "rankings" && (
+            <div className="page-layout">
+              <RankingsTab
+                fighter={fighter}
+                onMessage={setMessage}
               />
             </div>
           )}

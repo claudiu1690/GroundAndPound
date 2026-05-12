@@ -138,6 +138,15 @@ export const api = {
     }),
   hospitalQuote: (fighterId) =>
     request(`/fighters/${fighterId}/hospital/quote`),
+
+  // ── Ranking System v1.0 ─────────────────────────────────
+  getRankings: (tier, weightClass, fighterId) => {
+    const params = new URLSearchParams({ weightClass });
+    if (fighterId) params.set("fighterId", fighterId);
+    return request(`/rankings/${encodeURIComponent(tier)}?${params}`);
+  },
+  getFighterRank: (fighterId) =>
+    request(`/fighters/${fighterId}/rank`),
   mentalReset: (fighterId) =>
     request(`/fighters/${fighterId}/mental-reset`, { method: "POST" }),
 

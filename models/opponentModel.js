@@ -13,6 +13,9 @@ const opponentSchema = new mongoose.Schema({
     str: statSchema, spd: statSchema, leg: statSchema, wre: statSchema,
     gnd: statSchema, sub: statSchema, chn: statSchema, fiq: statSchema,
     overallRating: { type: Number, required: true },
+    // Ranking System v1.0 — fixedRank is the NPC's permanent position in the ranked roster
+    // for their (tier, weightClass). 1 = champion. Never changes after seed.
+    fixedRank:    { type: Number, default: null },
     // Champion system
     isChampion:   { type: Boolean, default: false },
     championTier: { type: String, default: null },
@@ -32,6 +35,12 @@ const opponentSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 opponentSchema.index({ promotionTier: 1, weightClass: 1, overallRating: 1 });
+// Ranking System v1.0 index — query the ranked roster for a (tier, weightClass) pair
+// sorted by rank. Unique to prevent two NPCs sharing a rank in the same roster.
+opponentSchema.index({ promotionTier: 1, weightClass: 1, fixedRank: 1 }, {
+    unique: true,
+    partialFilterExpression: { fixedRank: { $type: "number" } },
+});
 
 const Opponent = mongoose.model("Opponent", opponentSchema);
 module.exports = Opponent;
