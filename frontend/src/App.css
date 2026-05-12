@@ -4765,6 +4765,32 @@ code {
   color: var(--text);
 }
 
+/* Callout v1.1 — locked banner shown when player isn't top 15 */
+.callout-locked-banner {
+  padding: 0.6rem 1.1rem;
+  background: rgba(180, 83, 9, 0.15);
+  border-bottom: 1px solid #b45309;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fbbf24;
+  text-align: center;
+}
+
+/* Rank pill on callout target cards */
+.callout-rank-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.35rem;
+  background: rgba(217, 119, 6, 0.18);
+  border: 1px solid #d97706;
+  color: #fbbf24;
+  font-size: 9px;
+  font-weight: 900;
+  border-radius: 2px;
+  margin-right: 0.3rem;
+  letter-spacing: 0.04em;
+}
+
 .callout-modal-body {
   padding: 0.75rem 1.1rem;
   overflow-y: auto;

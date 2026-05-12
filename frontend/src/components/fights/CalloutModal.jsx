@@ -76,6 +76,9 @@ export function CalloutModal({ open, fighter, onClose, onCalledOut, onCancelled,
     const stretchLabel = data?.stretchLabel;
     const roster = tab === "same" ? sameTier : stretchTier;
     const canAfford = selected ? fame >= selected.cost : false;
+    const eligible = data?.eligible ?? true;       // v1.1 — rank-gated availability
+    const lockedReason = data?.lockedReason;
+    const currentRank = data?.currentRank;
 
     return (
         <div className="callout-modal-root" role="dialog" aria-modal="true">
@@ -86,10 +89,17 @@ export function CalloutModal({ open, fighter, onClose, onCalledOut, onCancelled,
                         <h2>Call Out a Fighter</h2>
                         <div className="callout-header-sub">
                             Your fame: <strong>{fame.toLocaleString()}</strong>
+                            {currentRank != null && <> · Rank <strong>#{currentRank}</strong></>}
                         </div>
                     </div>
                     <button type="button" className="callout-modal-close" onClick={onClose} aria-label="Close">✕</button>
                 </header>
+
+                {!loading && !eligible && (
+                    <div className="callout-locked-banner">
+                        🔒 {lockedReason || "Callouts locked"}
+                    </div>
+                )}
 
                 {active && (
                     <div className="callout-active-bar">
@@ -123,9 +133,13 @@ export function CalloutModal({ open, fighter, onClose, onCalledOut, onCancelled,
 
                     {!loading && roster.length === 0 && (
                         <div className="callout-empty">
-                            {tab === "stretch"
-                                ? "No stretch-tier opponents available."
-                                : "No opponents available to call out right now."}
+                            {!eligible
+                                ? "Climb the rankings to unlock callout targets."
+                                : tab === "stretch"
+                                    ? "No stretch-tier opponents available."
+                                    : currentRank === 2
+                                        ? "No same-tier targets — only the champion is ranked above you. Use a title shot."
+                                        : "No opponents available to call out right now."}
                         </div>
                     )}
 
@@ -143,6 +157,9 @@ export function CalloutModal({ open, fighter, onClose, onCalledOut, onCancelled,
                                         disabled={!!active}
                                     >
                                         <div className="callout-card-head">
+                                            {o.rank != null && (
+                                                <span className="callout-rank-pill" title={`Ranked #${o.rank} in ${o.promotionTier}`}>#{o.rank}</span>
+                                            )}
                                             <span className="callout-name">{o.name}{o.nickname ? ` "${o.nickname}"` : ""}</span>
                                             {o.isStretch && <span className="callout-stretch-badge">+1 Tier</span>}
                                         </div>

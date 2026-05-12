@@ -1,21 +1,32 @@
 const Fighter = require("../models/fighterModel");
 const Opponent = require("../models/opponentModel");
 const notorietyService = require("./notorietyService");
+const rankingService = require("./rankingService");
 const {
     computeCalloutCost,
     stretchTierFor,
 } = require("../consts/calloutConfig");
 
-const ROSTER_LIMIT_PER_TIER = 8; // show up to 8 same-tier + 8 stretch-tier
+const ROSTER_LIMIT_PER_TIER = 12; // show up to 12 callable targets per section
 
 /**
  * Build the roster of callable opponents for a fighter.
- * Returns { sameTier: [...], stretchTier: [...] } each decorated with cost + isStretch.
+ *
+ * v1.1 — Rank-gated targets:
+ *   - Player must be ranked top 15 (1-15) for callouts to be available at all.
+ *   - Same-tier targets: only NPCs ranked ABOVE the player (lower fixedRank), excluding
+ *     rank 1 (champion — handled via title shot, not callouts).
+ *   - Stretch-tier targets: all NPCs in the next tier up (no rank filter).
+ *
+ * Returns { eligible, currentRank, sameTier, stretchTier, ... }. When ineligible,
+ * sameTier and stretchTier are empty arrays.
  */
 async function listRoster(fighterId) {
     const fighter = await Fighter.findById(fighterId).lean();
     if (!fighter) throw new Error("Fighter not found");
 
+    const playerRank = fighter.ranking?.rank ?? null;
+    const eligible = rankingService.isCalloutEligible(fighter);
     const stretch = stretchTierFor(fighter.promotionTier);
     const excludeIds = [];
     if (fighter.nemesis?.opponentId) excludeIds.push(fighter.nemesis.opponentId);
@@ -27,18 +38,32 @@ async function listRoster(fighterId) {
     };
     if (excludeIds.length) baseQuery._id = { $nin: excludeIds };
 
-    const [same, stretchList] = await Promise.all([
-        Opponent.find({ ...baseQuery, promotionTier: fighter.promotionTier })
-            .sort({ overallRating: -1 })
-            .limit(ROSTER_LIMIT_PER_TIER)
-            .lean(),
-        stretch
+    let sameTierList = [];
+    let stretchList = [];
+
+    if (eligible) {
+        // Same-tier: rank above the player (lower fixedRank), excluding the champion (rank 1).
+        const sameTierQuery = {
+            ...baseQuery,
+            promotionTier: fighter.promotionTier,
+            fixedRank: { $gt: 1, $lt: playerRank },
+        };
+        const stretchPromise = stretch
             ? Opponent.find({ ...baseQuery, promotionTier: stretch })
-                .sort({ overallRating: -1 })
+                .sort({ fixedRank: 1 })
                 .limit(ROSTER_LIMIT_PER_TIER)
                 .lean()
-            : Promise.resolve([]),
-    ]);
+            : Promise.resolve([]);
+        const [same, str] = await Promise.all([
+            Opponent.find(sameTierQuery)
+                .sort({ fixedRank: 1 })
+                .limit(ROSTER_LIMIT_PER_TIER)
+                .lean(),
+            stretchPromise,
+        ]);
+        sameTierList = same;
+        stretchList = str;
+    }
 
     const shape = (o, isStretch) => ({
         id: String(o._id),
@@ -47,6 +72,11 @@ async function listRoster(fighterId) {
         style: o.style,
         overallRating: o.overallRating,
         promotionTier: o.promotionTier,
+        // Display rank: NPC at/below player's rank shifts +1; stretch tier opponents
+        // keep their own tier's fixedRank (cross-tier shift doesn't apply).
+        rank: isStretch
+            ? (o.fixedRank ?? null)
+            : rankingService.displayRankForNpc(o.fixedRank, playerRank),
         record: o.record || { wins: 0, losses: 0, draws: 0 },
         cost: computeCalloutCost(fighter, o),
         isStretch,
@@ -54,6 +84,14 @@ async function listRoster(fighterId) {
 
     return {
         fame: fighter?.notoriety?.score || 0,
+        eligible,
+        currentRank: playerRank,
+        rankThreshold: rankingService.CALLOUT_RANK_THRESHOLD,
+        lockedReason: eligible
+            ? null
+            : (playerRank == null
+                ? "Reach the rankings first (fight at least 3 fights in your tier)"
+                : `Reach top ${rankingService.CALLOUT_RANK_THRESHOLD} to unlock callouts — currently #${playerRank}`),
         active: fighter.activeCallout?.opponentId ? {
             opponentId: String(fighter.activeCallout.opponentId),
             opponentName: fighter.activeCallout.opponentName,
@@ -61,7 +99,7 @@ async function listRoster(fighterId) {
             calledAt: fighter.activeCallout.calledAt,
             isStretch: fighter.activeCallout.isStretch,
         } : null,
-        sameTier:    same.map((o) => shape(o, false)),
+        sameTier:    sameTierList.map((o) => shape(o, false)),
         stretchTier: stretchList.map((o) => shape(o, true)),
         stretchLabel: stretch,
     };
@@ -77,6 +115,16 @@ async function createCallout(fighterId, opponentId) {
         throw new Error("You already have an active callout — cancel it first");
     }
 
+    // v1.1 — rank gate. Player must be top 15 to call out anyone.
+    if (!rankingService.isCalloutEligible(fighter)) {
+        const rank = fighter.ranking?.rank;
+        throw new Error(
+            rank == null
+                ? "Callouts unlock after you enter the rankings (3 fights in your tier)"
+                : `Callouts require top ${rankingService.CALLOUT_RANK_THRESHOLD} — currently #${rank}`
+        );
+    }
+
     const opponent = await Opponent.findById(opponentId).lean();
     if (!opponent) throw new Error("Opponent not found");
     if (opponent.weightClass !== fighter.weightClass) throw new Error("Wrong weight class");
@@ -86,6 +134,16 @@ async function createCallout(fighterId, opponentId) {
     const isStretch = opponent.promotionTier !== fighter.promotionTier;
     if (isStretch) {
         if (opponent.promotionTier !== stretch) throw new Error("Opponent is outside your callable tier range");
+    } else {
+        // v1.1 — same-tier callouts must target a higher-ranked opponent.
+        const playerRank = fighter.ranking.rank;
+        const oppRank = opponent.fixedRank;
+        if (typeof oppRank !== "number" || oppRank >= playerRank) {
+            throw new Error("Same-tier callouts must target a fighter ranked above you");
+        }
+        if (oppRank === 1) {
+            throw new Error("Cannot call out the champion — use a title shot instead");
+        }
     }
 
     const cost = computeCalloutCost(fighter, opponent);
