@@ -3,7 +3,7 @@
  */
 const Opponent = require("../models/opponentModel");
 const Fighter = require("../models/fighterModel");
-const { ROSTER_SIZE } = require("../services/rankingService");
+const { ROSTER_SIZE, displayRankForNpc } = require("../services/rankingService");
 
 const PUBLIC_OPPONENT_FIELDS = "name nickname style overallRating record fixedRank isChampion weightClass promotionTier";
 
@@ -38,28 +38,17 @@ async function getRankings(req, res) {
             .sort({ fixedRank: 1 })
             .lean();
 
-        const roster = npcs.map((npc) => ({
-            id: String(npc._id),
-            rank: npc.fixedRank,
-            name: npc.name,
-            nickname: npc.nickname || null,
-            ovr: npc.overallRating,
-            style: npc.style,
-            record: npc.record
-                ? `${npc.record.wins ?? 0}-${npc.record.losses ?? 0}${(npc.record.draws ?? 0) > 0 ? `-${npc.record.draws}` : ""}`
-                : "0-0",
-            isChampion: !!npc.isChampion,
-            isPlayer: false,
-        }));
-
-        // Append the player row if they belong to this (tier, wc).
+        // Fetch player first so we know if they're in this (tier, wc) — needed to compute
+        // displaced NPC ranks (player inserts → NPCs at/below shift down by 1).
         let playerRow = null;
+        let playerRankInTier = null;
         if (fighterId) {
             const fighter = await Fighter.findById(fighterId).select(
                 "firstName lastName nickname promotionTier weightClass style overallRating record ranking"
             ).lean();
             if (fighter && fighter.promotionTier === tier && fighter.weightClass === weightClass) {
                 const r = fighter.ranking || {};
+                playerRankInTier = r.rank ?? null;
                 playerRow = {
                     id: String(fighter._id),
                     rank: r.rank ?? null,
@@ -76,6 +65,21 @@ async function getRankings(req, res) {
                 };
             }
         }
+
+        const roster = npcs.map((npc) => ({
+            id: String(npc._id),
+            rank: displayRankForNpc(npc.fixedRank, playerRankInTier),
+            fixedRank: npc.fixedRank,
+            name: npc.name,
+            nickname: npc.nickname || null,
+            ovr: npc.overallRating,
+            style: npc.style,
+            record: npc.record
+                ? `${npc.record.wins ?? 0}-${npc.record.losses ?? 0}${(npc.record.draws ?? 0) > 0 ? `-${npc.record.draws}` : ""}`
+                : "0-0",
+            isChampion: !!npc.isChampion,
+            isPlayer: false,
+        }));
 
         res.json({
             tier,

@@ -292,6 +292,11 @@ async function generateOffers(fighterId) {
         }
     }
 
+    // Ranking System v1.0 — compute displayed rank for each opponent so the offer card
+    // pill never duplicates the player's rank. Only applies to same-tier opponents.
+    // Stretch-tier (cross-tier) opponents keep their fixedRank as displayed.
+    const playerRankInTier = fighter.ranking?.rank ?? null;
+
     // Phase 6: Decorate every offer with active beef/respect flag matches so the UI
     // can badge "this is your grudge match" / "this is the respect rematch".
     const beefIds    = new Set((fighter.beefFlags    || []).map((f) => String(f.opponentId)));
@@ -299,6 +304,15 @@ async function generateOffers(fighterId) {
     for (const o of offers) {
         const oppId = o.opponent?._id ? String(o.opponent._id) : null;
         if (!oppId) continue;
+
+        // Attach displayRank if same-tier; preserve fixedRank for cross-tier opponents.
+        if (o.opponent && typeof o.opponent.fixedRank === "number") {
+            const sameTier = o.opponent.promotionTier === fighter.promotionTier;
+            o.opponent.displayRank = sameTier
+                ? rankingService.displayRankForNpc(o.opponent.fixedRank, playerRankInTier)
+                : o.opponent.fixedRank;
+        }
+
         if (beefIds.has(oppId)) {
             const flag = (fighter.beefFlags || []).find((f) => String(f.opponentId) === oppId);
             o.beefMatch = {

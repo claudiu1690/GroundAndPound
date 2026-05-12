@@ -24,9 +24,12 @@ const ROSTER_SIZE = {
     GCS:             10,
 };
 
-// Total tier roster including champion (rank 1).
+// Total tier roster including champion (rank 1). Returns 0 for unknown tiers so
+// downstream code (clampRank, etc.) can detect bad inputs instead of treating a
+// missing tier as a 1-fighter division.
 function tierSize(tier) {
-    return (ROSTER_SIZE[tier] || 0) + 1;
+    const base = ROSTER_SIZE[tier];
+    return typeof base === "number" ? base + 1 : 0;
 }
 
 // ── Entry rank (after fight 3) ──────────────────────────────────────────────
@@ -158,6 +161,38 @@ function isTopFive(fighter) {
 }
 
 /**
+ * Callout v1.1 — eligibility threshold. Player must be ranked top 15 (1-15) to call out.
+ * Locked while Unranked or ranked 16+.
+ */
+const CALLOUT_RANK_THRESHOLD = 15;
+
+function isCalloutEligible(fighter) {
+    const rank = fighter.ranking?.rank;
+    return rank != null && rank <= CALLOUT_RANK_THRESHOLD;
+}
+
+/**
+ * Compute the *displayed* rank for an NPC when the player is ranked in the same tier.
+ * The player's rank logically inserts into the roster — NPCs at the player's rank or
+ * below shift down by 1 visually, so both can't appear as the same #N.
+ *
+ * Underlying NPC fixedRank in the DB stays unchanged (spec: "NPC ranks are fixed and
+ * never change"). This function only affects display.
+ *
+ * @param {number} npcFixedRank   The NPC's permanent rank in the DB
+ * @param {number|null} playerRank The player's current rank, or null if Unranked
+ * @returns {number} the rank to render on the UI
+ */
+function displayRankForNpc(npcFixedRank, playerRank) {
+    if (typeof npcFixedRank !== "number") return npcFixedRank;
+    // Champion (rank 1) is never displaced — player ceiling is rank 2.
+    if (npcFixedRank === 1) return 1;
+    if (playerRank == null) return npcFixedRank;
+    if (npcFixedRank >= playerRank) return npcFixedRank + 1;
+    return npcFixedRank;
+}
+
+/**
  * Map an outcome string from FIGHT_OUTCOMES into the result shape used by calcDelta().
  * Used by fightService to translate its outcome strings into the ranking input.
  */
@@ -180,5 +215,8 @@ module.exports = {
     updatePlayerRank,
     resetRankingForNewTier,
     isTopFive,
+    isCalloutEligible,
+    CALLOUT_RANK_THRESHOLD,
+    displayRankForNpc,
     buildFightResultFromOutcome,
 };

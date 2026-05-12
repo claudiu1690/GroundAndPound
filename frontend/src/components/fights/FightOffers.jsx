@@ -189,21 +189,32 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
         </div>
       )}
 
-      <div className="fight-hub-cta">
-        <button type="button" className="btn btn-primary fight-hub-btn" onClick={onGetOffers} disabled={blocked}>
-          <Swords size={14} /> Request Offers
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary fight-hub-btn fight-hub-btn-secondary"
-          onClick={onOpenCallout}
-          disabled={blocked}
-          title="Spend fame to force a specific opponent into your next Hard offer"
-        >
-          <Megaphone size={14} /> Call Out
-        </button>
-        <span className="fight-hub-cost">{energyCost} energy per fight</span>
-      </div>
+      {(() => {
+        const calloutEligible = rank != null && rank <= 15;
+        const calloutTooltip = calloutEligible
+          ? "Spend fame to force a specific opponent into your next Hard offer"
+          : rank == null
+            ? "Reach the rankings first (3 fights in this tier)"
+            : `Reach top 15 to unlock callouts — currently #${rank}`;
+        return (
+          <div className="fight-hub-cta">
+            <button type="button" className="btn btn-primary fight-hub-btn" onClick={onGetOffers} disabled={blocked}>
+              <Swords size={14} /> Request Offers
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary fight-hub-btn fight-hub-btn-secondary"
+              onClick={onOpenCallout}
+              disabled={blocked || !calloutEligible}
+              title={calloutTooltip}
+            >
+              <Megaphone size={14} /> Call Out
+              {!calloutEligible && <Lock size={10} style={{ marginLeft: 4, opacity: 0.7 }} />}
+            </button>
+            <span className="fight-hub-cost">{energyCost} energy per fight</span>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -318,11 +329,16 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                       </div>
                       <div className="offer-opponent-meta">
                         <span className="offer-opponent-ovr">OVR {o.opponent?.overallRating}</span>
-                        {typeof o.opponent?.fixedRank === "number" && (
-                          <span className="offer-opponent-rank" title={`Currently ranked #${o.opponent.fixedRank} in their tier`}>
-                            {o.opponent.fixedRank === 1 ? " · 👑 #1" : ` · #${o.opponent.fixedRank}`}
-                          </span>
-                        )}
+                        {typeof o.opponent?.fixedRank === "number" && (() => {
+                          const rankToShow = typeof o.opponent.displayRank === "number"
+                            ? o.opponent.displayRank
+                            : o.opponent.fixedRank;
+                          return (
+                            <span className="offer-opponent-rank" title={`Currently ranked #${rankToShow} in their tier`}>
+                              {rankToShow === 1 ? " · 👑 #1" : ` · #${rankToShow}`}
+                            </span>
+                          );
+                        })()}
                         {o.opponent?.style ? ` · ${o.opponent.style}` : ""}
                         {meta.desc && <>{" · "}<span className="offer-meta-desc">{meta.desc}</span></>}
                       </div>
