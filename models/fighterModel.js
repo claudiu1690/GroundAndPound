@@ -136,6 +136,20 @@ const fighterSchema = new mongoose.Schema({
         fightsInTier:        { type: Number, default: 0 },        // counts every fight in current tier
         entryRecordAtFight3: { type: String, default: null },     // e.g. "3-0" — snapshot on entry
     },
+    // Octagon Gazette v1.0 — daily newspaper state.
+    // lastShownDate: YYYY-MM-DD (UTC) — gazette won't re-fire same day.
+    // lastNotorietyLogged: baseline notoriety from last dismiss, used to compute delta.
+    // rankBeforeLastFight: snapshot of ranking.rank BEFORE the most recent fight resolved,
+    //   used by the Rank Jump story. Set in fightService just before updatePlayerRank fires.
+    // promoBeforeLastLogin / fameTierBeforeLastLogin: snapshots used to detect promotion
+    //   and fame-tier-change since last gazette.
+    gazette: {
+        lastShownDate:           { type: String, default: null },
+        lastNotorietyLogged:     { type: Number, default: 0 },
+        rankBeforeLastFight:     { type: Number, default: null },
+        tierBeforeLastFight:     { type: String, default: null },
+        fameTierBeforeLastLogin: { type: String, default: null },
+    },
     // Nemesis: the most recent NPC to beat the player (cleared on revenge win)
     nemesis: {
         opponentId:   { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", default: null },

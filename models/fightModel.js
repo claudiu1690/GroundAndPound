@@ -20,6 +20,11 @@ const fightSchema = new mongoose.Schema({
     rounds: [{ type: String }],
     commentary: [{ type: String }],
     completedAt: { type: Date, default: null },
+    // Gazette v1.0 — snapshots used by the daily newspaper for accurate variable substitution.
+    // opponentRankAtFight: NPC fixedRank captured at fight-accept time (null for PvP/unranked).
+    // finishRound: round number when finish landed (null for decisions/draws).
+    opponentRankAtFight: { type: Number, default: null },
+    finishRound:         { type: Number, default: null },
     /** Phase 4 — flagged true when this fight was created against the fighter's active callout. */
     isCallout: { type: Boolean, default: false },
     // Post-fight interview (Phase 1). Written once after fight resolution.
