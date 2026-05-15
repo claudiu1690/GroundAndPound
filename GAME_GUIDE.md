@@ -843,6 +843,57 @@ This is your career story, told in real time. The **Fame drawer** in the header 
 
 ---
 
+## The Octagon Gazette
+
+The **Octagon Gazette** is a daily newspaper that opens automatically the first time you log in each day. It recaps the most relevant events from your career and the wider game world as newspaper headlines — turning the things that happened while you were away into a story.
+
+### When it appears
+
+- On your **first login of each day** (UTC date).
+- Not on subsequent logins the same day.
+- Not on a brand-new account with zero fights — there's nothing to report yet.
+
+Dismiss it with the **×** or the **Enter the Gym** button to start playing. Tapping the lead story when it's an Event result takes you straight to the Events tab.
+
+### Layout
+
+The paper has three zones, showing **5–6 stories maximum**:
+
+| Zone | Stories | Format |
+|---|---|---|
+| Lead | 1 | Large headline + short article |
+| Secondary | 2 | Medium headline + one-line blurb |
+| In Brief | up to 3 | One-line briefs |
+
+If fewer stories qualify, the paper simply shows fewer — it never pads with empty cards.
+
+### The Lead Story
+
+Exactly one story takes the lead, picked by priority — the first match wins:
+
+1. **Mental Reset Required** — you can't fight until you clear it, so it's front-page news
+2. **Event Result** — the weekly fight card's headliner, shown as a fight-result card (matchup + method)
+3. **First Loss in a Title Fight** — a composite story when your first-ever loss came with gold on the line
+4. **Title Fight Result** — won or lost
+5. **First Loss** — your perfect record just took its first blemish
+6. **Promotion** — you moved up a division
+7. **Rank Entry** — you entered the rankings after your 3rd fight in the tier
+8. **Win Streak** — you hit a 5- or 10-fight streak
+9. **Rank Jump** — you climbed 5+ spots in one fight
+10. **Last Fight Result** — the default recap of your most recent bout
+11. **Division Spotlight** — a generic lead when nothing else happened
+
+### Other Stories
+
+Beyond the lead, the Gazette surfaces: fame tier changes, notoriety swings, nemesis set/cleared, sponsorship news, record milestones, gym milestones, beef flag lapses, and losing-streak ("comeback") narratives — assigned to the Secondary and In Brief zones.
+
+### Notes
+
+- Headlines are **templated** — each story type has several pre-written variations, and the paper picks one consistently per day, so it reads identically whether you open it on phone or desktop.
+- The Gazette is purely informational. It doesn't grant rewards or change anything — it's the morning paper, not a mechanic.
+
+---
+
 ## The Fight Summary
 
 After every fight you see a breakdown of everything that happened:
