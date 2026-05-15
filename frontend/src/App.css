@@ -1016,9 +1016,33 @@ code {
 
 .resource-value { font-size: 9px; color: var(--text-sec); text-align: right; font-weight: 600; }
 
-.fighter-meta { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); }
-.meta-row { display: flex; justify-content: space-between; align-items: center; padding: 0.12rem 0; }
-.meta-label { font-size: 10px; color: var(--text-sec); }
+.fighter-meta { padding: 0.45rem 0.6rem 0.5rem; border-bottom: 1px solid var(--border); }
+.meta-row { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; padding: 0.14rem 0; }
+.meta-row-fame { align-items: flex-start; }
+.meta-label { font-size: 10px; color: var(--text-sec); flex-shrink: 0; }
+
+/* Grouped meta sections — adds scannable structure */
+.meta-section { margin-bottom: 0.55rem; }
+.meta-section:last-child { margin-bottom: 0; }
+.meta-section-title {
+  font-size: 8px; font-weight: 800; letter-spacing: 0.13em;
+  text-transform: uppercase; color: #b45309;
+  padding-bottom: 0.2rem; margin-bottom: 0.2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Comeback status chip — pulled out of the row list, shown at the top */
+.meta-comeback-chip {
+  display: inline-block;
+  font-size: 9px; font-weight: 800; letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  background: rgba(212, 160, 18, 0.12);
+  border: 1px solid var(--gold-bright);
+  border-radius: 2px;
+  padding: 0.22rem 0.5rem;
+  margin-bottom: 0.55rem;
+}
 .meta-value { font-size: 10px; font-weight: 700; color: var(--text); }
 .meta-value-green { color: var(--green-bright); }
 .meta-value-gold  { color: var(--gold-bright); }
@@ -1052,9 +1076,10 @@ code {
 .edit-actions { display: flex; gap: 0.3rem; margin-top: 0.35rem; }
 
 .stat-meters { padding: 0.5rem 0.6rem; }
-.stat-meters-title { margin: 0 0 0.4rem; font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+.stat-meters-title { margin: 0 0 0.45rem; font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+.stat-meters-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 0.7rem; }
 
-.stat-row { display: grid; grid-template-columns: 2rem 1.8rem 1fr 5rem; align-items: center; gap: 0.3rem; margin-bottom: 0.25rem; font-size: 10px; }
+.stat-row { display: grid; grid-template-columns: 1.7rem 1.4rem 1fr; align-items: center; gap: 0.3rem; font-size: 10px; }
 .stat-name { font-weight: 800; font-size: 9px; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.03em; }
 .stat-tooltip { cursor: help !important; text-decoration: underline dotted var(--text-muted); }
 .stat-value { color: var(--red-bright); font-weight: 800; text-align: right; font-size: 11px; }

@@ -9,6 +9,16 @@ function MetaRow({ label, children, rowClassName = "", valueClassName = "" }) {
   );
 }
 
+/** A labelled group of meta rows — adds scannable structure to the panel. */
+function MetaSection({ title, children }) {
+  return (
+    <div className="meta-section">
+      <div className="meta-section-title">{title}</div>
+      {children}
+    </div>
+  );
+}
+
 function FameBlock({ notoriety }) {
   const peak = notoriety?.peakTier ?? "UNKNOWN";
   return (
@@ -80,7 +90,8 @@ function RankBlock({ ranking, tier }) {
 }
 
 /**
- * Iron, fame, record, optional gym / camp / comeback / backstory lines.
+ * Grouped meta panel — Resources / Career / Profile sections.
+ * Record is intentionally omitted; it's already on the gold hero card above.
  */
 export const FighterMetaPanel = memo(function FighterMetaPanel({ fighter, campSlotsUsed }) {
   const rec = fighter.record ?? {};
@@ -88,62 +99,56 @@ export const FighterMetaPanel = memo(function FighterMetaPanel({ fighter, campSl
   const subWins = rec.subWins ?? 0;
   const gym = fighter.gymId;
   const tier = fighter.promotionTier ?? "Amateur";
+  const campSessions = campSlotsUsed ?? fighter.trainingCampActions ?? 0;
 
   return (
     <div className="fighter-meta">
-      <MetaRow label="Iron ⊗" valueClassName="meta-value-gold">
-        {fighter.iron ?? 0}
-      </MetaRow>
-
-      <div className="meta-row meta-row-fame">
-        <span className="meta-label">Fame</span>
-        <FameBlock notoriety={fighter.notoriety} />
-      </div>
-
-      <MetaRow label="Rank">
-        <RankBlock ranking={fighter.ranking} tier={tier} />
-      </MetaRow>
-
-      <MetaRow label="Record">
-        <>
-          <span className="meta-value-green">{rec.wins ?? 0}W</span>
-          {" – "}
-          <span className="meta-value-red">{rec.losses ?? 0}L</span>
-          {" – "}
-          {rec.draws ?? 0}D
-        </>
-      </MetaRow>
-
-      {(koWins > 0 || subWins > 0) && (
-        <MetaRow label="Finishes" rowClassName="meta-row-sub">
-          <>
-            KO {koWins} · Sub {subWins}
-          </>
-        </MetaRow>
-      )}
-
-      {gym && typeof gym === "object" && (
-        <MetaRow label="Home gym">{gym.name}</MetaRow>
-      )}
-
-      {fighter.acceptedFightId && (
-        <MetaRow label="Camp" valueClassName="meta-value-green">
-          <>
-            {campSlotsUsed ?? fighter.trainingCampActions ?? 0} session
-            {(campSlotsUsed ?? fighter.trainingCampActions ?? 0) === 1 ? "" : "s"}
-          </>
-        </MetaRow>
-      )}
-
       {fighter.comebackMode && (
-        <MetaRow label="Comeback" valueClassName="meta-value-gold">
-          Active
-        </MetaRow>
+        <div className="meta-comeback-chip">⚡ Comeback Mode Active</div>
       )}
 
-      {fighter.backstory && (
-        <MetaRow label="Backstory">{fighter.backstory}</MetaRow>
-      )}
+      <MetaSection title="Resources">
+        <MetaRow label="Iron ⊗" valueClassName="meta-value-gold">
+          {(fighter.iron ?? 0).toLocaleString()}
+        </MetaRow>
+        <div className="meta-row meta-row-fame">
+          <span className="meta-label">Fame</span>
+          <FameBlock notoriety={fighter.notoriety} />
+        </div>
+      </MetaSection>
+
+      <MetaSection title="Career">
+        <div className="meta-row">
+          <span className="meta-label">Rank</span>
+          <span className="meta-value">
+            <RankBlock ranking={fighter.ranking} tier={tier} />
+          </span>
+        </div>
+        {(koWins > 0 || subWins > 0) && (
+          <MetaRow label="Finishes">
+            <>KO {koWins} · Sub {subWins}</>
+          </MetaRow>
+        )}
+        {fighter.acceptedFightId && (
+          <MetaRow label="Camp" valueClassName="meta-value-green">
+            <>
+              {campSessions} session{campSessions === 1 ? "" : "s"}
+            </>
+          </MetaRow>
+        )}
+      </MetaSection>
+
+      <MetaSection title="Profile">
+        <MetaRow label="Class">
+          {fighter.weightClass} · {fighter.style}
+        </MetaRow>
+        {gym && typeof gym === "object" && (
+          <MetaRow label="Home gym">{gym.name}</MetaRow>
+        )}
+        {fighter.backstory && (
+          <MetaRow label="Backstory">{fighter.backstory}</MetaRow>
+        )}
+      </MetaSection>
     </div>
   );
 });

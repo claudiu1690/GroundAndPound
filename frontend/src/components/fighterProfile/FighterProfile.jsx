@@ -3,7 +3,6 @@ import { badgesForDisplay, resourceRowsFromFighter, statMeterRows } from "./prof
 import { FighterBadgeRow } from "./FighterBadgeRow";
 import { FighterInjuriesPanel } from "./FighterInjuriesPanel";
 import { FighterMetaPanel } from "./FighterMetaPanel";
-import { FighterNameplate } from "./FighterNameplate";
 import { FighterResourceBars } from "./FighterResourceBars";
 import { FighterStatMeters } from "./FighterStatMeters";
 import { ProfileActionsSection } from "./ProfileActionsSection";
@@ -84,7 +83,6 @@ export const FighterProfile = memo(function FighterProfile({
         onMessage={onMessage}
       />
 
-      <FighterNameplate fighter={fighter} />
       <FighterResourceBars rows={resourceRowsFromFighter(fighter)} />
       <FighterMetaPanel fighter={fighter} campSlotsUsed={campSlotsUsed} />
       <FighterBadgeRow badges={badgesForDisplay(fighter.badges, fighter.activePerks)} />
