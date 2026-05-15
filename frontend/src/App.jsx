@@ -23,6 +23,7 @@ import { MediaTab } from "./components/media/MediaTab";
 import { EventsTab } from "./components/events/EventsTab";
 import { HospitalTab } from "./components/hospital/HospitalTab";
 import { RankingsTab } from "./components/rankings/RankingsTab";
+import { GazetteModal } from "./components/gazette/GazetteModal";
 import { PostFightInterview } from "./components/fights/PostFightInterview";
 
 // ── Navigation definition ──────────────────────────────────
@@ -384,6 +385,8 @@ function App() {
   // ── Camp v1.1 state ────────────────────────────────────────
   const [campReport, setCampReport]           = useState(null);
   const [showFighterReport, setShowFighterReport] = useState(false);
+  const [showGazette, setShowGazette] = useState(false);
+  const [gazetteChecked, setGazetteChecked] = useState(false);
   const [reportFromCamp, setReportFromCamp]       = useState(false);
   const [campState, setCampState]             = useState(null);
   const [addingSession, setAddingSession]     = useState(null); // sessionType key while loading
@@ -473,6 +476,20 @@ function App() {
   useEffect(() => {
     if (fighter) syncCampState(fighter);
   }, [fighter?._id, fighter?.acceptedFightId, syncCampState]);
+
+  // Octagon Gazette — check once per session/per fighter whether to show the modal.
+  // Triggers if the fighter has fights AND lastShownDate !== today (UTC).
+  useEffect(() => {
+    if (!fighter?._id || gazetteChecked) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const last = fighter.gazette?.lastShownDate;
+    const rec = fighter.record || {};
+    const totalFights = (rec.wins || 0) + (rec.losses || 0) + (rec.draws || 0);
+    if (totalFights >= 1 && last !== today) {
+      setShowGazette(true);
+    }
+    setGazetteChecked(true);
+  }, [fighter?._id, fighter?.gazette?.lastShownDate, gazetteChecked]);
 
   // Periodic refresh every minute
   useEffect(() => {
@@ -854,6 +871,14 @@ const handleGetOffers = useCallback(async () => {
         fighter={fighter}
         onClose={() => setFameDrawerOpen(false)}
         onNavigate={handleNavTab}
+      />
+
+      {/* ── OCTAGON GAZETTE (daily newspaper) ── */}
+      <GazetteModal
+        open={showGazette}
+        fighterId={fighter?._id}
+        onDismiss={() => { setShowGazette(false); loadFighter(fighter?._id); }}
+        onNavigate={(tabId) => handleNavTab(tabId)}
       />
 
       {/* ── FIGHTER REPORT MODAL ── */}

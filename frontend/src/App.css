@@ -1080,6 +1080,156 @@ code {
 .injuries-hint { font-size: 8px; color: var(--text-muted); font-style: italic; margin: 0.4rem 0 0; text-align: center; }
 
 /* ============================================================
+   OCTAGON GAZETTE — daily newspaper modal
+   ============================================================ */
+/* Font strategy: serif masthead for identity, clean sans-serif for headlines
+   and body so long all-caps headlines stay readable. */
+.gazette-modal-root { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; }
+.gazette-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.78); }
+.gazette-modal-shell {
+    position: relative;
+    width: min(720px, 92vw);
+    max-height: 92vh;
+    overflow-y: auto;
+    background: #FAF8F2;
+    color: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-top: 5px solid #b00020;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    padding: 1.8rem 2.2rem 1.5rem;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+.gazette-close {
+    position: absolute; top: 0.6rem; right: 0.8rem;
+    background: transparent; border: none; cursor: pointer;
+    font-size: 18px; font-weight: 700; color: #1a1a1a;
+    padding: 0.2rem 0.4rem; line-height: 1;
+}
+.gazette-close:hover { color: #b00020; }
+
+.gazette-masthead { text-align: center; margin-bottom: 1.4rem; }
+.gazette-eyebrow {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.3em;
+    color: #b00020; margin-bottom: 0.4rem;
+}
+.gazette-title {
+    font-size: 40px; font-weight: 900; letter-spacing: 0.01em;
+    margin: 0; line-height: 1;
+    font-family: Georgia, "Times New Roman", serif;
+    text-transform: uppercase; color: #14110c;
+}
+/* Double rule under the masthead: heavy black + thin red accent */
+.gazette-rule {
+    height: 3px; background: #14110c; margin: 0.6rem 0 0;
+    border-bottom: 2px solid #b00020; padding-bottom: 2px;
+}
+.gazette-rule-thin { height: 1px; background: #c9c4b8; margin: 1.1rem 0 0.7rem; }
+.gazette-date {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+    color: #555; margin-top: 0.55rem;
+}
+
+.gazette-loading { text-align: center; font-style: italic; padding: 2rem 0; color: #666; }
+
+.gazette-tag {
+    display: inline-block;
+    background: #b00020; color: #fff;
+    font-size: 9px; font-weight: 800; letter-spacing: 0.18em;
+    padding: 0.2rem 0.55rem; margin-bottom: 0.6rem;
+}
+/* Lead story — red accent bar on the left */
+.gazette-lead {
+    padding: 0 0 1rem 0.9rem;
+    border-left: 4px solid #b00020;
+    border-bottom: 1px solid #c9c4b8;
+    margin-bottom: 1rem;
+}
+.gazette-lead.is-tappable { cursor: pointer; transition: background 0.15s; }
+.gazette-lead.is-tappable:hover { background: rgba(176,0,32,0.05); }
+.gazette-lead-headline {
+    font-size: 27px; line-height: 1.18; font-weight: 800;
+    text-transform: uppercase; margin: 0 0 0.55rem;
+    letter-spacing: 0.005em; color: #14110c;
+}
+.gazette-lead-body { font-size: 14.5px; line-height: 1.6; margin: 0; color: #33302a; }
+
+/* Event-result lead — structured fight-card layout instead of a wall headline */
+.gazette-event-kicker {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.16em;
+    text-transform: uppercase; color: #b00020; margin-bottom: 0.55rem;
+}
+.gazette-event-matchup {
+    display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+.gazette-event-name {
+    font-size: 25px; font-weight: 700; line-height: 1.1; color: #14110c;
+    font-family: Georgia, "Times New Roman", serif;
+}
+.gazette-event-loser { color: #6a655c; }
+.gazette-event-vs {
+    font-size: 12px; font-weight: 800; color: #b00020;
+    text-transform: uppercase; letter-spacing: 0.12em;
+}
+.gazette-event-result {
+    font-size: 12px; font-weight: 700; color: #4a463e;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding-bottom: 0.6rem; margin-bottom: 0.6rem;
+    border-bottom: 1px solid #e0dcd0;
+}
+
+.gazette-secondary {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1.3rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #c9c4b8;
+}
+.gazette-secondary-item { border-top: 3px solid #14110c; padding-top: 0.5rem; }
+.gazette-secondary-item.is-tappable { cursor: pointer; }
+.gazette-secondary-headline {
+    font-size: 16px; font-weight: 800; line-height: 1.22;
+    margin: 0 0 0.35rem; text-transform: uppercase; color: #14110c;
+}
+.gazette-secondary-body { font-size: 13px; line-height: 1.5; margin: 0; color: #4a463e; }
+
+/* In Brief — filler one-liners styled as actual news briefs, not headers */
+.gazette-filler { padding-bottom: 0.4rem; }
+.gazette-filler-title {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.22em;
+    text-transform: uppercase; margin: 0 0 0.5rem; color: #b00020;
+}
+.gazette-filler-list { list-style: none; margin: 0; padding: 0; }
+.gazette-filler-item {
+    font-size: 13px; line-height: 1.45; padding: 0.45rem 0 0.45rem 1rem;
+    border-top: 1px dotted #c2bdb0; font-weight: 400; color: #33302a;
+    position: relative;
+}
+.gazette-filler-item::before {
+    content: "▪";
+    position: absolute; left: 0; top: 0.45rem;
+    color: #b00020; font-size: 11px;
+}
+.gazette-filler-item:first-child { border-top: none; }
+
+.gazette-footer { text-align: center; padding-top: 1rem; }
+.gazette-cta {
+    background: #14110c; color: #FAF8F2;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.75rem 2rem; border: none; cursor: pointer;
+    transition: background 0.15s;
+}
+.gazette-cta:hover { background: #b00020; }
+.gazette-cta:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 600px) {
+    .gazette-modal-shell { padding: 1.2rem 1.2rem 1rem; }
+    .gazette-title { font-size: 26px; }
+    .gazette-lead-headline { font-size: 21px; }
+    .gazette-secondary { grid-template-columns: 1fr; gap: 0.8rem; }
+}
+
+/* ============================================================
    RANKINGS TAB
    ============================================================ */
 .rankings-tab { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.6rem; }

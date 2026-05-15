@@ -9,6 +9,7 @@ const sponsorshipRoutes = require("./routes/sponsorshipRoutes");
 const mainEventRoutes = require("./routes/mainEventRoutes");
 const mediaRoutes = require("./routes/mediaRoutes");
 const rankingRoutes = require("./routes/rankingRoutes");
+const gazetteRoutes = require("./routes/gazetteRoutes");
 const authMiddleware = require("./middleware/authMiddleware");
 const mongoose = require("mongoose");
 const config = require("./config");
@@ -33,6 +34,7 @@ app.use("/sponsorships", authMiddleware, sponsorshipRoutes);
 app.use("/events", authMiddleware, mainEventRoutes);
 app.use("/media", authMiddleware, mediaRoutes);
 app.use("/rankings", authMiddleware, rankingRoutes);
+app.use("/gazette", authMiddleware, gazetteRoutes);
 
 swagger(app);
 

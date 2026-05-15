@@ -841,6 +841,22 @@ async function resolveFightAndApply(fighterId) {
 
     incrementFightsTodayForTier(fighter, promoTier);
 
+    // Gazette v1.0 — snapshot pre-fight state so tomorrow's newspaper has accurate deltas.
+    // Capture rank + tier BEFORE updatePlayerRank mutates them.
+    if (!fighter.gazette) {
+        fighter.gazette = { lastShownDate: null, lastNotorietyLogged: 0, rankBeforeLastFight: null, tierBeforeLastFight: null, fameTierBeforeLastLogin: null };
+    }
+    fighter.gazette.rankBeforeLastFight = fighter.ranking?.rank ?? null;
+    fighter.gazette.tierBeforeLastFight = fighter.promotionTier;
+    fighter.markModified("gazette");
+
+    // Snapshot opponent rank + finish round to the Fight doc — used by Gazette template variables.
+    fight.opponentRankAtFight = (typeof opponent.fixedRank === "number") ? opponent.fixedRank : null;
+    fight.finishRound = (result.outcome === OUT_KO_TKO || result.outcome === OUT_SUB
+                          || result.outcome === OUT_LOSS_KO || result.outcome === OUT_LOSS_SUB)
+        ? (result.rounds?.length ?? null)
+        : null;
+
     // Ranking System v1.0 — entry or movement based on this fight's result.
     // Champion fights pass opponentRank=1; regular ranked NPCs use their fixedRank.
     // PvP (future) will pass opponentRank=null which suppresses upset bonus/penalty.
