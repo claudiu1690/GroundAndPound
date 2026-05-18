@@ -196,14 +196,27 @@ function toPublicFighter(fighter) {
  * @param {string} id
  * @returns {Promise<Object>}
  */
+/** Cheap fingerprint of injury recovery state — changes when any injury ticks or heals. */
+function injurySignature(fighter) {
+    return (fighter.injuries || [])
+        .map((i) => `${i.type}:${i.recoveryDaysLeft || 0}`)
+        .join(",");
+}
+
 async function getFighterById(id) {
+    const { tickRecoveryForFighter } = require("../utils/injuryUtils");
     const fighter = await Fighter.findById(id).populate("gymId");
     if (!fighter) throw new Error("Fighter not found");
     await reconcileStatXpBanks(fighter);
     await reconcileEnergy(fighter);
     const healthBefore = fighter.health;
     reconcileHealth(fighter);
-    if (fighter.health !== healthBefore) {
+    // Lazily heal injuries based on real elapsed time. This keeps recovery accurate
+    // even if the daily background heal job is delayed or not running.
+    const injuriesBefore = injurySignature(fighter);
+    tickRecoveryForFighter(fighter);
+    const injuriesChanged = injurySignature(fighter) !== injuriesBefore;
+    if (fighter.health !== healthBefore || injuriesChanged) {
         await fighter.save();
     }
     return toPublicFighter(fighter);

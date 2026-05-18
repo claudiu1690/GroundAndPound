@@ -97,6 +97,7 @@ const {
     buildInjury,
     applyInjuryToFighter,
     isFightBlocked,
+    injuryGraceActive,
 } = require("../utils/injuryUtils");
 const { applyXpToStat, roundStatXp, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require("../utils/statProgression");
 const notorietyService = require("./notorietyService");
@@ -557,6 +558,24 @@ async function resolveFightAndApply(fighterId) {
     // v2: pass conditional session bonuses and wildcard instead of flat campBonuses
     const sessionBonuses = fightCamp?.sessionBonuses ? [...fightCamp.sessionBonuses.map(b => ({ ...b }))] : [];
     const wildcard = fightCamp?.wildcard ?? null;
+
+    // Commentary context — drives personalised, fighter-tailored fight commentary.
+    const commentaryCtx = {
+        playerStyle: fighter.style,
+        opponentStyle: opponent.style,
+        tier: fight.promotionTier,
+        isTitle: fight.offerType === "TitleShot",
+        isCallout: !!fight.isCallout,
+        isGrudge:
+            String(fighter.nemesis?.opponentId || "") === String(opponent._id) ||
+            (fighter.beefFlags || []).some(f => String(f.opponentId) === String(opponent._id)),
+        playerIsChampion: (fighter.badges || []).includes("Champion"),
+        comeback: !!fighter.comebackMode,
+        winStreak: fighter.winStreak || 0,
+        playerOvr: fighter.overallRating || 0,
+        opponentOvr: opponent.overallRating || 0,
+    };
+
     const result = resolveFight(fightPlayer, fightOpponent, {
         playerStrategy: fight.playerStrategy || undefined,
         playerName,
@@ -564,6 +583,7 @@ async function resolveFightAndApply(fighterId) {
         ironWillPerk,
         sessionBonuses,
         wildcard,
+        ctx: commentaryCtx,
     });
 
     // v2: save triggered session bonuses back to FightCamp for post-fight display
@@ -682,21 +702,28 @@ async function resolveFightAndApply(fighterId) {
     fighter.trainingCampActions = 0;
     fighter.weightCut = "easy"; // reset for next fight
 
-    // GDD 8.9: Roll for fight injuries; always add concussion on KO/TKO/Sub loss
+    // GDD 8.9: Roll for fight injuries; a KO/TKO/Sub loss normally adds a Concussion.
+    // New-fighter grace: a fighter's first few fights never take a fight-blocking injury,
+    // so a rough debut (e.g. losing your first fight by KO) can't lock you out of the game.
+    // Evaluated before the record is updated below, so it reflects fights completed so far.
     const injuriesSustained = [];
+    const injuryGrace = injuryGraceActive(fighter);
     if (isKoLoss) {
-        const concussion = buildInjury("concussion");
-        if (concussion) {
-            applyInjuryToFighter(fighter, concussion);
-            fighter.injuries = [...(fighter.injuries || []), concussion];
-            injuriesSustained.push(concussion.label);
+        if (!injuryGrace) {
+            const concussion = buildInjury("concussion");
+            if (concussion) {
+                applyInjuryToFighter(fighter, concussion);
+                fighter.injuries = [...(fighter.injuries || []), concussion];
+                injuriesSustained.push(concussion.label);
+            }
         }
     } else {
         const injuryRiskMult = (tierConfig && tierConfig.injuryRiskMult) || 1;
         const fightInjuryType = rollForFightInjury(fighter.fiq || 10, injuryRiskMult);
         if (fightInjuryType) {
             const inj = buildInjury(fightInjuryType);
-            if (inj) {
+            // During grace, skip fight-blocking injuries (e.g. Cut); minor ones still apply.
+            if (inj && !(injuryGrace && inj.cannotFight)) {
                 applyInjuryToFighter(fighter, inj);
                 fighter.injuries = [...(fighter.injuries || []), inj];
                 injuriesSustained.push(inj.label);

@@ -30,15 +30,15 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
     const playerIron = fighter?.iron ?? 0;
     const healthFull = currentHealth >= 100;
 
-    // Tick once a minute so the auto-heal countdown stays fresh while the player
-    // is on this page. Only schedules when there are auto-heal injuries to track.
+    // Tick once a minute so the heal countdown stays fresh while the player
+    // is on this page. Only schedules when there's an injury still healing.
     const [, setTick] = useState(0);
-    const hasAutoHealing = injuries.some((inj) => !inj.requiresDoctorVisit && inj.recoveryDaysLeft > 0);
+    const hasHealingTimer = injuries.some((inj) => inj.recoveryDaysLeft > 0 && !inj.doctorVisited);
     useEffect(() => {
-        if (!hasAutoHealing) return undefined;
+        if (!hasHealingTimer) return undefined;
         const id = setInterval(() => setTick((n) => n + 1), 60_000);
         return () => clearInterval(id);
-    }, [hasAutoHealing]);
+    }, [hasHealingTimer]);
 
     const loadQuote = useCallback(async () => {
         if (!fighterId) {
@@ -239,8 +239,9 @@ const ServicesSection = memo(function ServicesSection() {
                         <span className="hospital-service-name">Treatment</span>
                     </div>
                     <p className="hospital-service-desc">
-                        Clears an injury that requires medical attention (Cut, Concussion, Broken Nose,
-                        Torn Ligament). Costs energy + iron. Restores the stat penalty immediately.
+                        Doctor-required injuries (Cut, Concussion, Broken Nose, Torn Ligament) heal on
+                        their own over a few days. Pay energy + iron to clear one instantly and skip
+                        the wait — handy when an injury is blocking your next fight.
                     </p>
                     <div className="hospital-service-tag">From 200🪙 + 10E</div>
                 </div>
@@ -294,6 +295,7 @@ const HospitalInjuryRow = memo(function HospitalInjuryRow({
 }) {
     const needsDoctor = inj.requiresDoctorVisit && !inj.doctorVisited;
     const isAutoHealing = !inj.requiresDoctorVisit && inj.recoveryDaysLeft > 0;
+    const ticking = inj.recoveryDaysLeft > 0 && !inj.doctorVisited;
     const severity = inj.severity === "major" ? "injury-major" : "injury-minor";
 
     return (
@@ -307,9 +309,10 @@ const HospitalInjuryRow = memo(function HospitalInjuryRow({
                     {inj.cannotBagWork && <span className="hospital-injury-flag">blocks bag/pad work</span>}
                 </div>
                 <p className="hospital-injury-desc">{inj.effect}</p>
-                {isAutoHealing && (
+                {ticking && (
                     <p className="hospital-injury-meta">
-                        Auto-heal in <strong>{formatRecoveryRemaining(inj)}</strong>
+                        Heals on its own in <strong>{formatRecoveryRemaining(inj)}</strong>
+                        {needsDoctor && " — or treat now to skip the wait"}
                     </p>
                 )}
             </div>

@@ -28,8 +28,7 @@ export const FighterInjuriesPanel = memo(function FighterInjuriesPanel({ injurie
 });
 
 const InjuryCard = memo(function InjuryCard({ injury: inj }) {
-  const isAutoHealing = !inj.requiresDoctorVisit && inj.recoveryDaysLeft > 0;
-  const needsDoctor = inj.requiresDoctorVisit && !inj.doctorVisited;
+  const ticking = inj.recoveryDaysLeft > 0 && !inj.doctorVisited;
 
   return (
     <div className={`injury-item ${severityClass(inj.severity)}`}>
@@ -38,12 +37,9 @@ const InjuryCard = memo(function InjuryCard({ injury: inj }) {
         <span className="injury-severity-badge">{inj.severity}</span>
       </div>
       <p className="injury-effect">{inj.effect}</p>
-      {needsDoctor && (
-        <p className="injury-recovery"><strong>Treatment required</strong></p>
-      )}
-      {isAutoHealing && (
+      {ticking && (
         <p className="injury-recovery">
-          Auto-heal in: <strong>{formatRecoveryRemaining(inj)}</strong>
+          Heals in: <strong>{formatRecoveryRemaining(inj)}</strong>
         </p>
       )}
     </div>

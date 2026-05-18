@@ -603,6 +603,55 @@ function judgeScorecard(rounds) {
     return { scorecard, playerRounds: totals.player, opponentRounds: totals.opponent };
 }
 
+// ── Commentary tag building ─────────────────────────────────────────────────
+
+const STYLE_TAG = {
+    "Boxer": "boxer",
+    "Kickboxer": "kickboxer",
+    "Muay Thai": "muaythai",
+    "Capoeira": "capoeira",
+    "Wrestler": "wrestler",
+    "Brazilian Jiu-Jitsu": "bjj",
+    "Judo": "judo",
+    "Sambo": "sambo",
+};
+const STRIKER_STYLES = new Set(["Boxer", "Kickboxer", "Muay Thai", "Capoeira"]);
+const GRAPPLER_STYLES = new Set(["Wrestler", "Brazilian Jiu-Jitsu", "Judo", "Sambo"]);
+
+/**
+ * Translate the per-fight commentary context into a tag set used to filter
+ * commentary lines. These tags are stable for the whole fight; per-round dynamic
+ * tags (early/late/hurt/repeat) are layered on top during resolution.
+ */
+function buildBaseTags(ctx) {
+    const tags = new Set();
+    if (!ctx) return tags;
+    const ps = ctx.playerStyle;
+    const os = ctx.opponentStyle;
+    if (ps && STYLE_TAG[ps]) tags.add(`player-${STYLE_TAG[ps]}`);
+    if (ps && STRIKER_STYLES.has(ps)) tags.add("player-striker");
+    if (ps && GRAPPLER_STYLES.has(ps)) tags.add("player-grappler");
+    if (os && STRIKER_STYLES.has(os)) tags.add("vs-striker");
+    if (os && GRAPPLER_STYLES.has(os)) tags.add("vs-grappler");
+    if (ps && os
+        && ((STRIKER_STYLES.has(ps) && GRAPPLER_STYLES.has(os))
+         || (GRAPPLER_STYLES.has(ps) && STRIKER_STYLES.has(os)))) {
+        tags.add("style-clash");
+    }
+    if (ctx.isTitle) tags.add("title");
+    if (ctx.isCallout) tags.add("callout");
+    if (ctx.isGrudge) tags.add("grudge");
+    if (ctx.playerIsChampion) tags.add("champion");
+    if (ctx.comeback) tags.add("comeback");
+    if ((ctx.winStreak || 0) >= 3) tags.add("streak");
+    const ovrDiff = (ctx.playerOvr || 0) - (ctx.opponentOvr || 0);
+    if (ovrDiff <= -8) tags.add("underdog");
+    else if (ovrDiff >= 8) tags.add("favourite");
+    if (ctx.tier === "Amateur") tags.add("amateur");
+    if (ctx.tier === "GCS" || ctx.tier === "GCS Contender") tags.add("gcs");
+    return tags;
+}
+
 // ── Main fight resolution (v2) ──────────────────────────────────────────────
 
 function resolveFight(player, opponent, options = {}) {
@@ -616,6 +665,23 @@ function resolveFight(player, opponent, options = {}) {
     const opponentName = options.opponentName || "Opponent";
     const rounds = [];
     const commentary = [];
+
+    // ── Commentary setup ────────────────────────────────────────────────
+    // Fight-wide tags (style, stakes, streak…) drive which lines are eligible.
+    // `recentLines` prevents a line from repeating within this fight.
+    const baseTags = buildBaseTags(options.ctx);
+    const cVars = { playerName, opponentName };
+    const recentLines = new Set();
+    let prevEvent = null;
+    const comment = (key, extraTags, extraVars) => {
+        const tags = new Set(baseTags);
+        if (extraTags) for (const t of extraTags) tags.add(t);
+        return getCommentaryLine(key, {
+            tags,
+            recent: recentLines,
+            vars: extraVars ? { ...cVars, ...extraVars } : cVars,
+        });
+    };
 
     let p = {
         health: player.health ?? CFG.defaults.health,
@@ -656,6 +722,10 @@ function resolveFight(player, opponent, options = {}) {
 
     let groundPosition = 0; // carries between rounds: 1 = player on top, -1 = opponent on top
 
+    // Scene-setting line before the action starts.
+    const openerLine = comment("fightOpener");
+    if (openerLine) commentary.push(openerLine);
+
     for (let r = 1; r <= maxRounds; r++) {
         // Apply wildcard on the designated round
         let wildcardApplied = false;
@@ -689,36 +759,45 @@ function resolveFight(player, opponent, options = {}) {
             opponentHealth: result.opponentHealth,
         });
 
+        // Per-round dynamic tags layered on top of the fight-wide tags.
+        const dynTags = [];
+        if (r === 1) dynTags.push("early");
+        if (r === maxRounds) dynTags.push("late");
+        if ((result.playerHealth ?? 100) < 35) dynTags.push("player-hurt");
+        if ((result.opponentHealth ?? 100) < 35) dynTags.push("opponent-hurt");
+        if (result.event && result.event === prevEvent) dynTags.push("repeat");
+        prevEvent = result.event;
+
         // Build commentary for this round
         const eventKey = EVENT_TO_KEY[result.event] || "strikingExchange";
-        const line = getCommentaryLine(eventKey, playerName, opponentName);
+        const line = comment(eventKey, dynTags, { round: r });
         if (line) commentary.push(`Round ${r}: ${line}`);
 
         // Add camp-specific commentary
         for (const campKey of (result.campCommentary || [])) {
-            const campLine = getCommentaryLine(campKey, playerName, opponentName);
+            const campLine = comment(campKey, dynTags, { round: r });
             if (campLine) commentary.push(campLine);
         }
 
         // Wildcard commentary
         if (wildcard && r === wildcardRound) {
-            if (wildcardCountered) {
-                const wcLine = getCommentaryLine('wildcardCountered', playerName, opponentName);
-                if (wcLine) commentary.push(wcLine);
-            } else {
-                const wcLine = getCommentaryLine('wildcardReveal', playerName, opponentName);
-                if (wcLine) commentary.push(wcLine);
-            }
+            const wcKey = wildcardCountered ? 'wildcardCountered' : 'wildcardReveal';
+            const wcLine = comment(wcKey, dynTags, { round: r });
+            if (wcLine) commentary.push(wcLine);
         }
 
         if (result.finished) {
             const outcomeKey = outcomeToCommentaryKey(result.outcome);
-            const outcomeLine = getCommentaryLine(outcomeKey, playerName, opponentName);
+            const outcomeLine = comment(outcomeKey, dynTags, { round: r });
             if (outcomeLine) commentary.push(outcomeLine);
             let winner = "draw";
             if (result.outcome === "KO/TKO" || result.outcome === "Submission") winner = "player";
             else if (result.outcome && result.outcome.startsWith("Loss")) winner = "opponent";
-            const resultLine = getResultLine(winner, result.outcome, playerName, opponentName);
+            const resultLine = getResultLine(winner, result.outcome, {
+                tags: baseTags,
+                recent: recentLines,
+                vars: { ...cVars, round: r },
+            });
             if (resultLine) commentary.push(resultLine);
             // KO/TKO loss — health should be 0 regardless of soft-KO threshold
             const playerHealthAfter = result.outcome === "Loss (KO/TKO)" ? 0 : p.health;
@@ -745,9 +824,13 @@ function resolveFight(player, opponent, options = {}) {
         winner = "draw";
     }
     const outcomeKey = outcomeToCommentaryKey(outcome);
-    const outcomeLine = getCommentaryLine(outcomeKey, playerName, opponentName);
+    const outcomeLine = comment(outcomeKey, ["late"], { round: maxRounds });
     if (outcomeLine) commentary.push(outcomeLine);
-    const resultLine = getResultLine(winner, outcome, playerName, opponentName);
+    const resultLine = getResultLine(winner, outcome, {
+        tags: baseTags,
+        recent: recentLines,
+        vars: { ...cVars, round: maxRounds },
+    });
     if (resultLine) commentary.push(resultLine);
     return {
         outcome, rounds, winner,

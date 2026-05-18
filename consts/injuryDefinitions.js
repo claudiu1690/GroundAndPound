@@ -5,18 +5,22 @@
  * statEffects: signed values applied to fighter stats when injury is sustained (negative = penalty).
  *
  * Healing model:
- *   - Doctor-required injuries: cleared via doctor visit (energy + iron). No auto-heal.
- *   - Auto-heal injuries: tick down recoveryDaysLeft once per 24h until 0, then auto-clear.
- *     Players can pay iron at the Hospital to skip the wait (recoverySkipIron).
+ *   - Every injury heals on its own by ticking down recoveryDaysLeft once per 24h
+ *     until 0, then auto-clears. No injury is ever a permanent dead end.
+ *   - Auto-heal injuries: pay iron at the Hospital to skip the wait (recoverySkipIron).
+ *   - Doctor-required injuries: also heal over time, but a doctor visit (energy + iron)
+ *     clears them instantly — the paid fast path. They still block fighting/sparring
+ *     while active, so waiting them out has a real cost.
  */
 const INJURY_TYPES = {
     cut: {
         label: "Cut",
         severity: "minor",
         cause: "fight",
-        effect: "Possible TKO if fight doctor stops bout. Requires medical clearance before next fight.",
+        effect: "Can't fight until it clears. Heals in 2 days — or see a doctor to skip the wait.",
         requiresDoctorVisit: true,
         cannotFight: true,
+        recoveryDaysNeeded: 2,
         docVisitEnergy: 10,
         docVisitIron: 200,
         statEffects: {},
@@ -45,9 +49,10 @@ const INJURY_TYPES = {
         label: "Broken Nose",
         severity: "minor",
         cause: "fight",
-        effect: "−3 CHN until treated by doctor.",
+        effect: "−3 CHN until it heals. Clears in 3 days — or see a doctor to skip the wait.",
         requiresDoctorVisit: true,
         cannotFight: false,
+        recoveryDaysNeeded: 3,
         docVisitEnergy: 10,
         docVisitIron: 400,
         statEffects: { chn: -3 },
@@ -56,10 +61,11 @@ const INJURY_TYPES = {
         label: "Concussion",
         severity: "major",
         cause: "ko_loss",
-        effect: "−2 CHN; cannot spar; mandatory medical rest. Doctor visit required.",
+        effect: "−2 CHN; can't spar or fight. Heals in 4 days — or see a doctor to skip the wait.",
         requiresDoctorVisit: true,
         cannotFight: true,
         cannotSpar: true,
+        recoveryDaysNeeded: 4,
         docVisitEnergy: 20,
         docVisitIron: 1500,
         statEffects: { chn: -2 },
@@ -68,9 +74,10 @@ const INJURY_TYPES = {
         label: "Torn Ligament",
         severity: "major",
         cause: "sparring",
-        effect: "Cannot fight; −10 STR, −10 LEG. Doctor visit required.",
+        effect: "Can't fight; −10 STR, −10 LEG. Heals in 6 days — or see a doctor to skip the wait.",
         requiresDoctorVisit: true,
         cannotFight: true,
+        recoveryDaysNeeded: 6,
         docVisitEnergy: 20,
         docVisitIron: 2000,
         statEffects: { str: -10, leg: -10 },
@@ -97,6 +104,11 @@ const MAJOR_SPARRING_INJURIES = ["torn_ligament"];
 // Hospital config: Full Recovery Package applies a 15% bulk discount over individual services.
 const FULL_RECOVERY_DISCOUNT = 0.15;
 
+// New-fighter injury grace: a fighter's first N fights never inflict a fight-blocking
+// injury (Concussion / Cut / Torn Ligament), so a rough debut can't lock a new player
+// out of the game before they've had a chance to build up resources.
+const INJURY_GRACE_FIGHTS = 3;
+
 // Health restoration packages — available to all tiers, no level gating.
 // Each package restores up to `hp` health (capped at 100); iron cost is pro-rated on
 // actual HP delivered. Volume discount across tiers — bigger packages have a better
@@ -117,5 +129,6 @@ module.exports = {
     MINOR_SPARRING_INJURIES,
     MAJOR_SPARRING_INJURIES,
     FULL_RECOVERY_DISCOUNT,
+    INJURY_GRACE_FIGHTS,
     HEALTH_PACKAGES,
 };

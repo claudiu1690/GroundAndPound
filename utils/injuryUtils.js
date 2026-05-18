@@ -10,10 +10,25 @@ const {
     MINOR_SPARRING_INJURIES,
     MAJOR_SPARRING_INJURIES,
     FULL_RECOVERY_DISCOUNT,
+    INJURY_GRACE_FIGHTS,
 } = require("../consts/injuryDefinitions");
 
 function pickRandom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/**
+ * New-fighter grace: true while a fighter is still in their first INJURY_GRACE_FIGHTS
+ * fights. During the grace window, fight-blocking injuries (Concussion, Cut, Torn
+ * Ligament) are NOT applied — a rough start can't lock a new player out of the game.
+ *
+ * Counts fights already on the record, so call this BEFORE the current fight's result
+ * is added to the record (the in-progress fight is the (count+1)-th).
+ */
+function injuryGraceActive(fighter) {
+    const r = (fighter && fighter.record) || {};
+    const total = (r.wins || 0) + (r.losses || 0) + (r.draws || 0);
+    return total < INJURY_GRACE_FIGHTS;
 }
 
 /**
@@ -142,8 +157,11 @@ function isBagWorkBlocked(fighter) {
 }
 
 /**
- * Decrement recoveryDaysLeft on all auto-heal injuries by the number of full 24h periods
- * elapsed since the last tick. Heals injuries that hit 0 and reverses their stat penalties.
+ * Decrement recoveryDaysLeft on every injury that still has a recovery timer by the
+ * number of full 24h periods elapsed since the last tick. Heals injuries that hit 0
+ * and reverses their stat penalties. This covers both auto-heal injuries and
+ * doctor-required injuries — the latter can be skipped early with a paid doctor visit,
+ * but if left alone they heal on their own here, so no injury is ever permanent.
  * Mutates fighter.injuries in place. Call fighter.save() afterwards.
  *
  * Returns array of healed injury labels.
@@ -153,7 +171,7 @@ function tickRecoveryForFighter(fighter, now = new Date()) {
     if (!fighter.injuries || !fighter.injuries.length) return healed;
     const remaining = [];
     for (const inj of fighter.injuries) {
-        if (inj.requiresDoctorVisit || !inj.recoveryDaysLeft || inj.recoveryDaysLeft <= 0) {
+        if (!inj.recoveryDaysLeft || inj.recoveryDaysLeft <= 0) {
             remaining.push(inj);
             continue;
         }
@@ -214,4 +232,5 @@ module.exports = {
     isBagWorkBlocked,
     tickRecoveryForFighter,
     quoteFullRecovery,
+    injuryGraceActive,
 };

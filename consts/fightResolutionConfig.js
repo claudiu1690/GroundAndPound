@@ -10,6 +10,9 @@ const FIGHT_RESOLUTION_CONFIG = {
         "Striking exchange.": "strikingExchange",
         "Takedown; ground and pound.": "takedownPlayer",
         "Opponent took you down.": "takedownOpponent",
+        // Ground-continuation rounds (position carried from a prior round).
+        "Holding top control; ground and pound.": "groundAndPound",
+        "Stuck on bottom; opponent grinds.": "takedownOpponent",
     },
     outcomeToCommentaryKey: {
         "KO/TKO": "koFinish",

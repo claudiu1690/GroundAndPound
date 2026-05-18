@@ -12,6 +12,7 @@ const {
     applyInjuryToFighter,
     isSparringBlocked,
     isBagWorkBlocked,
+    injuryGraceActive,
 } = require("../utils/injuryUtils");
 
 // Rank 2 unique sessions — not in base TRAINING_SESSIONS, added by gym rank unlock
@@ -174,7 +175,9 @@ async function doTraining(fighterId, gymId, sessionType) {
         const injuryType = rollForSparringInjury(fighter.fiq || 10);
         if (injuryType) {
             const inj = buildInjury(injuryType);
-            if (inj) {
+            // New-fighter grace: skip fight-blocking sparring injuries (Torn Ligament)
+            // for a fighter's first few fights; minor ones still apply.
+            if (inj && !(injuryGraceActive(fighter) && inj.cannotFight)) {
                 applyInjuryToFighter(fighter, inj);
                 fighter.injuries = [...(fighter.injuries || []), inj];
                 injurySustained.push(inj.label);
