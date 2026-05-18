@@ -10,6 +10,7 @@ const mainEventRoutes = require("./routes/mainEventRoutes");
 const mediaRoutes = require("./routes/mediaRoutes");
 const rankingRoutes = require("./routes/rankingRoutes");
 const gazetteRoutes = require("./routes/gazetteRoutes");
+const tutorialRoutes = require("./routes/tutorialRoutes");
 const authMiddleware = require("./middleware/authMiddleware");
 const mongoose = require("mongoose");
 const config = require("./config");
@@ -35,6 +36,7 @@ app.use("/events", authMiddleware, mainEventRoutes);
 app.use("/media", authMiddleware, mediaRoutes);
 app.use("/rankings", authMiddleware, rankingRoutes);
 app.use("/gazette", authMiddleware, gazetteRoutes);
+app.use("/tutorial", authMiddleware, tutorialRoutes);
 
 swagger(app);
 
@@ -130,12 +132,40 @@ async function backfillFighterGymFromQuestProgress() {
     }
 }
 
+/**
+ * Onboarding Tutorial v1.0 — fighters that predate the tutorial field have no
+ * `tutorial` subdocument. Mark them as completed so only newly-created accounts
+ * run the tutorial. New accounts get tutorial.completed=false from the schema
+ * default, so this only ever touches genuinely legacy documents.
+ */
+async function backfillTutorialForLegacyFighters() {
+    const fighters = mongoose.connection.collection("fighters");
+    const now = new Date();
+    const result = await fighters.updateMany(
+        { tutorial: { $exists: false } },
+        {
+            $set: {
+                tutorial: {
+                    completed: true,
+                    current_step: "complete",
+                    started_at: now,
+                    completed_at: now,
+                },
+            },
+        }
+    );
+    if (result.modifiedCount > 0) {
+        console.log(`[Migration] Marked tutorial complete for ${result.modifiedCount} existing fighter(s).`);
+    }
+}
+
 mongoose.connect(config.database.url, config.database.options)
     .then(async () => {
         console.log("Connected to MongoDB");
         await migrateLegacyEnergyShape();
         await migrateLegacyNotorietyNumber();
         await backfillFighterGymFromQuestProgress();
+        await backfillTutorialForLegacyFighters();
         await scheduler.startEnergyIncrementScheduler();
         const { ensureChampionsExist } = require("./services/championService");
         await ensureChampionsExist();

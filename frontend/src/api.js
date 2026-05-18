@@ -156,6 +156,17 @@ export const api = {
   mentalReset: (fighterId) =>
     request(`/fighters/${fighterId}/mental-reset`, { method: "POST" }),
 
+  // ── Onboarding Tutorial ─────────────────────────────────
+  getTutorial: (fighterId) =>
+    request(`/tutorial/${fighterId}`),
+  advanceTutorial: (fighterId, step) =>
+    request(`/tutorial/${fighterId}/advance`, {
+      method: "POST",
+      body: JSON.stringify({ step }),
+    }),
+  completeTutorial: (fighterId) =>
+    request(`/tutorial/${fighterId}/complete`, { method: "POST" }),
+
   // ── Gyms ────────────────────────────────────────────────
   listGymsForFighter: (fighterId) =>
     request(`/gyms/for-fighter/${fighterId}`),

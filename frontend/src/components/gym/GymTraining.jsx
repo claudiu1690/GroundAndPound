@@ -100,7 +100,7 @@ export const GymTraining = memo(function GymTraining({
     return (
         <div className="gym-training-v2">
             {/* Header */}
-            <div className="gt-header">
+            <div className="gt-header" data-tut="gym-info">
                 <button type="button" className="btn btn-ghost btn-sm gt-back" onClick={onBack}>
                     <ChevronLeft size={14} /> All Gyms
                 </button>
@@ -113,7 +113,7 @@ export const GymTraining = memo(function GymTraining({
                     )}
                 </div>
                 <div className="gt-header-right">
-                    <span className="gt-energy"><Zap size={12} /> {energy}E</span>
+                    <span className="gt-energy" data-tut="energy"><Zap size={12} /> {energy}E</span>
                     {!isFree && !isActive && (
                         <button type="button" className="btn btn-primary btn-sm" onClick={() => onSwitchGym(gym._id)}>
                             Join — {gym.weeklyCost} iron/wk
@@ -154,7 +154,7 @@ export const GymTraining = memo(function GymTraining({
             </div>
 
             {/* Available sessions */}
-            <div className="th-sessions">
+            <div className="th-sessions" data-tut="gym-sessions">
                 {filteredSessions.map((key) => {
                     const m = SESSION_META[key];
                     if (!m) return null;

@@ -120,7 +120,7 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
             <section className="hospital-section">
                 <div className="hospital-section-header">
                     <h3 className="hospital-section-title">Health Restoration</h3>
-                    <div className="hospital-hp-readout">
+                    <div className="hospital-hp-readout" data-tut="hospital-health">
                         HP <strong>{currentHealth}</strong> / 100
                         <div className="hospital-hp-bar">
                             <div
@@ -134,7 +134,7 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
                 {healthFull ? (
                     <div className="hospital-empty">Health is already full.</div>
                 ) : (
-                    <div className="hospital-health-grid">
+                    <div className="hospital-health-grid" data-tut="hospital-restore">
                         {(() => {
                             // Compute actual heal + prorated iron for each package.
                             const options = HEALTH_PACKAGES.map((pkg) => {
@@ -190,7 +190,7 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
             </section>
 
             {/* ── ACTIVE INJURIES ── */}
-            <section className="hospital-section">
+            <section className="hospital-section" data-tut="hospital-injuries">
                 <div className="hospital-section-header">
                     <h3 className="hospital-section-title">Active Injuries</h3>
                     {hasInjuries && quote && quote.count > 1 && (

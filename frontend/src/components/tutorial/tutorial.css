@@ -1,0 +1,238 @@
+/* ───────────────────────────────────────────────────────────
+   Onboarding tutorial — scrim, tooltips, completion modal.
+   See: GnP Onboarding & Tutorial Spec v1.0, section 5.
+   ─────────────────────────────────────────────────────────── */
+
+.tut-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50000;
+    isolation: isolate;
+    pointer-events: none;
+}
+
+/* ── Scrim ─────────────────────────────────────────────────── */
+.tut-scrim-panel {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.65);
+    pointer-events: auto;
+    z-index: 1;
+    transition: top 200ms ease, left 200ms ease, width 200ms ease,
+                height 200ms ease, right 200ms ease, bottom 200ms ease;
+}
+
+.tut-scrim-full {
+    inset: 0;
+}
+
+/* ── Focal-element highlight ring ──────────────────────────── */
+.tut-glow {
+    position: fixed;
+    z-index: 2;
+    pointer-events: none;
+    border-radius: 8px;
+    border: 2px solid #e31837;
+    box-shadow: 0 0 0 2px rgba(227, 24, 55, 0.35),
+                0 0 22px 4px rgba(227, 24, 55, 0.55);
+    animation: tut-pulse 1.5s ease-in-out infinite;
+    transition: top 200ms ease, left 200ms ease, width 200ms ease, height 200ms ease;
+}
+
+@keyframes tut-pulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(227, 24, 55, 0.30),
+                           0 0 16px 3px rgba(227, 24, 55, 0.45); }
+    50%      { box-shadow: 0 0 0 3px rgba(227, 24, 55, 0.45),
+                           0 0 28px 7px rgba(227, 24, 55, 0.70); }
+}
+
+/* ── Tooltip card ──────────────────────────────────────────── */
+.tut-tooltip {
+    position: fixed;
+    z-index: 3;
+    /* pointer-events is inherited — .tut-overlay sets `none`, so re-enable it
+       here (and for the button) or the tooltip controls are not clickable. */
+    pointer-events: auto;
+    width: 300px;
+    max-width: 320px;
+    box-sizing: border-box;
+    background: #FEFEFE;
+    color: #1a1a1a;
+    border-radius: 10px;
+    padding: 14px 16px 12px;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+    font-family: inherit;
+    animation: tut-tooltip-in 160ms ease-out;
+}
+
+@keyframes tut-tooltip-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.tut-tooltip-arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+}
+.tut-tooltip-arrow--below {
+    top: -9px;
+    border-bottom: 9px solid #FEFEFE;
+    transform: translateX(-9px);
+}
+.tut-tooltip-arrow--above {
+    bottom: -9px;
+    border-top: 9px solid #FEFEFE;
+    transform: translateX(-9px);
+}
+
+.tut-tooltip-title {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 6px;
+    color: #111;
+}
+
+.tut-tooltip-body {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #333;
+}
+
+.tut-tooltip-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.tut-tooltip-dots {
+    display: flex;
+    gap: 5px;
+}
+.tut-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #d0d0d0;
+}
+.tut-dot--on {
+    background: #e31837;
+}
+
+.tut-tooltip-btn {
+    margin-left: auto;
+    background: #e31837;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 120ms ease;
+}
+.tut-tooltip-btn:hover {
+    background: #c1142e;
+}
+
+/* ── Completion modal ──────────────────────────────────────── */
+.tut-complete-root {
+    position: fixed;
+    inset: 0;
+    z-index: 50500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.78);
+    animation: tut-fade-in 200ms ease-out;
+}
+
+@keyframes tut-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.tut-complete-card {
+    width: min(92vw, 460px);
+    background: #16181d;
+    border: 1px solid #2a2d35;
+    border-top: 4px solid #e31837;
+    border-radius: 12px;
+    padding: 34px 32px 30px;
+    text-align: center;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.7);
+}
+
+.tut-complete-headline {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: #fff;
+}
+
+.tut-complete-sub {
+    margin: 10px 0 0;
+    font-size: 14px;
+    color: #b8bcc6;
+}
+
+.tut-complete-reward {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 22px auto;
+    padding: 12px 18px;
+    width: fit-content;
+    background: rgba(227, 24, 55, 0.10);
+    border: 1px solid rgba(227, 24, 55, 0.35);
+    border-radius: 10px;
+}
+.tut-complete-reward-icon {
+    font-size: 20px;
+    color: #e31837;
+}
+.tut-complete-reward-amount {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+}
+.tut-complete-reward-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #b8bcc6;
+}
+
+.tut-complete-body {
+    margin: 0 0 24px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #c9cdd6;
+}
+
+.tut-complete-cta {
+    width: 100%;
+    background: #e31837;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: background 120ms ease;
+}
+.tut-complete-cta:hover:not(:disabled) {
+    background: #c1142e;
+}
+.tut-complete-cta:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
