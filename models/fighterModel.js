@@ -248,6 +248,16 @@ const fighterSchema = new mongoose.Schema({
     }],
     // GDD 8.8: Weight cut strategy for the current accepted fight
     weightCut: { type: String, enum: ["easy", "moderate", "aggressive"], default: "easy" },
+    // Onboarding & Tutorial Spec v1.0 — linear new-player walkthrough.
+    // `completed` is false until the completion modal is dismissed. While false,
+    // the client mounts the tutorial overlay and resumes from `current_step`.
+    // Existing fighters are backfilled to completed=true on server boot.
+    tutorial: {
+        completed:    { type: Boolean, default: false },
+        current_step: { type: String,  default: "gym_intro" },
+        started_at:   { type: Date,    default: Date.now },
+        completed_at: { type: Date,    default: null },
+    },
 }, { timestamps: true });
 
 fighterSchema.index({ promotionTier: 1, weightClass: 1, overallRating: -1 });

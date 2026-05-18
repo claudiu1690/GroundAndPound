@@ -48,7 +48,7 @@ export const FightSummary = memo(function FightSummary({ summary }) {
   const recordLabel = recordChange === "W" ? "Win" : recordChange === "L" ? "Loss" : "Draw";
 
   return (
-    <section className={`panel fight-summary${beltWon ? " fight-summary--belt" : ""}`}>
+    <section className={`panel fight-summary${beltWon ? " fight-summary--belt" : ""}`} data-tut="result">
       <h2 className="panel-title">{beltWon ? "Championship Result" : "Last Fight Summary"}</h2>
       <div className="panel-body">
         {beltWon && (
@@ -144,14 +144,14 @@ export const FightSummary = memo(function FightSummary({ summary }) {
                 {staminaLost > 0 && <span className="fight-summary-delta"> (−{staminaLost})</span>}
               </td>
             </tr>
-            <tr>
+            <tr data-tut="result-iron">
               <td className="torn-td-label">Iron earned</td>
               <td className="torn-td-value">
                 +{ironEarned ?? 0}
                 {weightMissed && <span className="fight-summary-delta"> (−20% weight miss)</span>}
               </td>
             </tr>
-            <tr>
+            <tr data-tut="result-fame">
               <td className="torn-td-label">Fame</td>
               <td className="torn-td-value">
                 {fameGained > 0 ? `+${fameGained}` : fameGained === 0 ? "—" : fameGained}

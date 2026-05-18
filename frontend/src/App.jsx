@@ -25,6 +25,8 @@ import { HospitalTab } from "./components/hospital/HospitalTab";
 import { RankingsTab } from "./components/rankings/RankingsTab";
 import { GazetteModal } from "./components/gazette/GazetteModal";
 import { PostFightInterview } from "./components/fights/PostFightInterview";
+import { TutorialOverlay } from "./components/tutorial/TutorialOverlay";
+import { tutorialBus } from "./utils/tutorialBus";
 
 // ── Navigation definition ──────────────────────────────────
 const NAV_ITEMS = [
@@ -481,6 +483,10 @@ function App() {
   // Triggers if the fighter has fights AND lastShownDate !== today (UTC).
   useEffect(() => {
     if (!fighter?._id || gazetteChecked) return;
+    // Tutorial gate: the gazette never fires until the onboarding tutorial is
+    // complete (spec §8 — a new player sees the newspaper only afterwards).
+    // Returning without setting gazetteChecked lets this re-run on completion.
+    if (fighter.tutorial && !fighter.tutorial.completed) return;
     const today = new Date().toISOString().slice(0, 10);
     const last = fighter.gazette?.lastShownDate;
     const rec = fighter.record || {};
@@ -489,7 +495,7 @@ function App() {
       setShowGazette(true);
     }
     setGazetteChecked(true);
-  }, [fighter?._id, fighter?.gazette?.lastShownDate, gazetteChecked]);
+  }, [fighter?._id, fighter?.gazette?.lastShownDate, fighter?.tutorial?.completed, gazetteChecked]);
 
   // Periodic refresh every minute
   useEffect(() => {
@@ -623,6 +629,7 @@ const handleGetOffers = useCallback(async () => {
         setMessage("Fight accepted — review your opponent before camp.");
         loadFighter(fighter._id, { clearMessage: false });
         setActiveTab("fights");
+        tutorialBus.emit("fight_accepted");
       } catch (e) {
         const errMsg = e.message || "Accept failed";
         maybeShowBlockPopup(errMsg, e.code);
@@ -734,6 +741,7 @@ const handleGetOffers = useCallback(async () => {
       setCampReport(null);
       setCampSummaryData(null);
       setShowCampSummary(false);
+      tutorialBus.emit("fight_resolved");
     } catch (e) {
       const errMsg = e.message || "Resolve failed";
       maybeShowBlockPopup(errMsg, e.code);
@@ -756,7 +764,15 @@ const handleGetOffers = useCallback(async () => {
 
   const closeTrainingPopup = useCallback(() => {
     setTrainingResultPopup((p) => ({ ...p, open: false }));
+    // Tutorial step 2 advances once the training-result popup is dismissed.
+    tutorialBus.emit("training_complete");
   }, []);
+
+  // Tutorial completion — reload the fighter so the overlay unmounts (the
+  // refreshed tutorial.completed flag) and the credited iron / gazette appear.
+  const handleTutorialComplete = useCallback(async () => {
+    if (fighter?._id) await loadFighter(fighter._id);
+  }, [fighter?._id, loadFighter]);
 
   const handleNavTab = useCallback((id) => {
     setActiveTab(id);
@@ -881,12 +897,27 @@ const handleGetOffers = useCallback(async () => {
         onNavigate={(tabId) => handleNavTab(tabId)}
       />
 
+      {/* ── ONBOARDING TUTORIAL ── */}
+      {fighter?._id && fighter.tutorial && !fighter.tutorial.completed && (
+        <TutorialOverlay
+          key="tutorial"
+          fighterId={fighter._id}
+          initialStep={fighter.tutorial.current_step}
+          lastFightOutcome={
+            lastFightSummary?.recordChange === "W" ? "win"
+              : lastFightSummary?.recordChange === "L" ? "loss"
+                : null
+          }
+          onComplete={handleTutorialComplete}
+        />
+      )}
+
       {/* ── FIGHTER REPORT MODAL ── */}
       {showFighterReport && campReport && (
         <FighterReport
           report={campReport}
-          onStartCamp={() => setShowFighterReport(false)}
-          onClose={() => setShowFighterReport(false)}
+          onStartCamp={() => { setShowFighterReport(false); tutorialBus.emit("fighter_report_closed"); }}
+          onClose={() => { setShowFighterReport(false); tutorialBus.emit("fighter_report_closed"); }}
           hideStartButton={reportFromCamp}
           isTitleFight={campState?.isTitleFight}
         />
@@ -927,6 +958,7 @@ const handleGetOffers = useCallback(async () => {
                 <a
                   key={item.id}
                   href={`#${item.id}`}
+                  data-tut={["gym", "fights", "events", "hospital"].includes(item.id) ? `nav-${item.id}` : undefined}
                   className={`nav-item ${activeTab === item.id ? "active" : ""}`}
                   onClick={(e) => { e.preventDefault(); handleNavTab(item.id); }}
                 >
@@ -1091,7 +1123,12 @@ const handleGetOffers = useCallback(async () => {
                     />
                   )}
                   <div style={{ display: "flex", justifyContent: "center", marginTop: "0.5rem" }}>
-                    <button type="button" className="btn btn-primary" onClick={() => setLastFightSummary(null)}>
+                    <button
+                      type="button"
+                      data-tut="result-continue"
+                      className="btn btn-primary"
+                      onClick={() => { setLastFightSummary(null); tutorialBus.emit("result_dismissed"); }}
+                    >
                       Continue
                     </button>
                   </div>

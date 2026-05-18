@@ -280,6 +280,7 @@ function HeadlinerBand({ fight, cardNumber, resolvesAt, prediction, onPick }) {
     return (
         <button
             type="button"
+            data-tut="event-headliner"
             className={`headliner-band ${locked ? "headliner-band-locked" : ""}`}
             onClick={locked ? undefined : onPick}
             disabled={locked}
@@ -397,7 +398,7 @@ function PotentialBar({ potential }) {
     const hasUnpicked = unpickedCount > 0;
 
     return (
-        <section className="potential-bar">
+        <section className="potential-bar" data-tut="event-potential">
             <header className="potential-header">
                 <span className="potential-title">Card Potential</span>
                 <span className="potential-progress">

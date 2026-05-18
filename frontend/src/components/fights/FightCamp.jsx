@@ -168,7 +168,7 @@ export const FightCamp = memo(function FightCamp({
                 )}
 
                 {!isFinalised && !isInjuredPending && slotsRemaining > 0 && (
-                    <div className="camp-sessions-grid">
+                    <div className="camp-sessions-grid" data-tut="camp-sessions">
                         {CAMP_SESSION_KEYS.map((key) => (
                             <SessionCard
                                 key={key}
@@ -204,7 +204,7 @@ export const FightCamp = memo(function FightCamp({
                 )}
 
                 {!isFinalised && (
-                    <div className="camp-v2-actions">
+                    <div className="camp-v2-actions" data-tut="camp-finalise">
                         {showEmptyConfirm ? (
                             <div className="camp-empty-confirm">
                                 <span className="camp-empty-confirm-msg">

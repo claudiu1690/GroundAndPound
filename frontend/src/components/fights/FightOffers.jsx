@@ -198,7 +198,7 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
             : `Reach top 15 to unlock callouts — currently #${rank}`;
         return (
           <div className="fight-hub-cta">
-            <button type="button" className="btn btn-primary fight-hub-btn" onClick={onGetOffers} disabled={blocked}>
+            <button type="button" className="btn btn-primary fight-hub-btn" onClick={onGetOffers} disabled={blocked} data-tut="request-offers">
               <Swords size={14} /> Request Offers
             </button>
             <button
@@ -290,7 +290,7 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
             <OffersStandingBanner fighter={fighter} />
 
             <ul className="offers-list">
-              {offers.map((o) => {
+              {offers.map((o, idx) => {
                 const typeKey = o.type ?? "Even";
                 const meta = TYPE_META[typeKey] ?? {};
                 const ctx = o.context ?? {};
@@ -298,7 +298,7 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                 const isLocked = !!o.locked;
                 const badgeLabel = isTitle ? "Title Shot" : typeKey;
                 return (
-                  <li key={o.opponent?._id ?? typeKey} className={`offer-card ${TYPE_CLASS[typeKey] ?? ""}${o.nemesisMeta ? " offer-card-nemesis" : ""}${o.isCallout ? " offer-card-callout" : ""}${o.beefMatch ? " offer-card-beef" : ""}${o.respectMatch ? " offer-card-respect" : ""}${isLocked ? " offer-card-locked" : ""}`}>
+                  <li key={o.opponent?._id ?? typeKey} data-tut={idx === 0 ? "offer-card" : undefined} className={`offer-card ${TYPE_CLASS[typeKey] ?? ""}${o.nemesisMeta ? " offer-card-nemesis" : ""}${o.isCallout ? " offer-card-callout" : ""}${o.beefMatch ? " offer-card-beef" : ""}${o.respectMatch ? " offer-card-respect" : ""}${isLocked ? " offer-card-locked" : ""}`}>
                     <div className="offer-card-info">
                       <div className="offer-badge-row">
                         {isTitle && <Trophy size={12} style={{ color: "#d4a012" }} />}
@@ -391,6 +391,7 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                         <>
                           <button
                             type="button"
+                            data-tut={idx === 0 ? "offer-accept" : undefined}
                             className={`btn ${isTitle ? "btn-title" : "btn-primary"} btn-sm`}
                             onClick={() => onAcceptOffer(o.opponent._id, o.type)}
                           >

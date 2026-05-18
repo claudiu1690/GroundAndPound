@@ -74,7 +74,7 @@ export const CampSummary = memo(function CampSummary({
 
     return (
         <div className="cs-overlay" role="dialog" aria-modal="true" aria-label="Camp Summary">
-            <div className={`cs-card${isTitleFight ? " cs-card--title" : ""}`}>
+            <div className={`cs-card${isTitleFight ? " cs-card--title" : ""}`} data-tut="camp-summary">
 
                 {/* Banner */}
                 <div className="cs-banner" style={{ background: bannerBg }}>

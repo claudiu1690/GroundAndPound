@@ -70,7 +70,7 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
 
     return (
         <div className="fr-overlay" role="dialog" aria-modal="true" aria-label="Fighter Report">
-            <div className={`fr-card${isTitleFight ? " fr-card--title" : ""}`}>
+            <div className={`fr-card${isTitleFight ? " fr-card--title" : ""}`} data-tut="fighter-report">
 
                 {isCallout && (
                     <div className="report-callout-banner">
