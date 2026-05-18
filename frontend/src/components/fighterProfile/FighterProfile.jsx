@@ -11,7 +11,7 @@ import { BannerEditor } from "../banner/BannerEditor";
 
 function FighterProfileLoading() {
   return (
-    <section className="panel fighter-profile">
+    <section className="panel fighter-profile" data-tut="fighter-profile">
       <h2 className="panel-title">Fighter</h2>
       <div className="panel-body">
         <p className="panel-empty">Loading fighter data…</p>
@@ -55,7 +55,7 @@ export const FighterProfile = memo(function FighterProfile({
   }
 
   return (
-    <section className="panel fighter-profile">
+    <section className="panel fighter-profile" data-tut="fighter-profile">
       <h2 className="panel-title">Fighter</h2>
 
       <div className="fighter-profile-banner-wrap">

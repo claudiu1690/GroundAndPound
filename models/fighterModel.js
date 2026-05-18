@@ -254,7 +254,7 @@ const fighterSchema = new mongoose.Schema({
     // Existing fighters are backfilled to completed=true on server boot.
     tutorial: {
         completed:    { type: Boolean, default: false },
-        current_step: { type: String,  default: "gym_intro" },
+        current_step: { type: String,  default: "profile_intro" },
         started_at:   { type: Date,    default: Date.now },
         completed_at: { type: Date,    default: null },
     },

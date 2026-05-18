@@ -28,7 +28,54 @@
  */
 
 export const TUTORIAL_STEPS = {
-    // ── STEP 1 — Gym Introduction ────────────────────────────
+    // ── STEP 1 — Fighter Profile Introduction ────────────────
+    profile_intro: {
+        next: "gym_intro",
+        phases: [
+            // One phase, five tooltips — each carries its own `focus`, so the
+            // scrim cut-out walks down the sidebar profile panel section by
+            // section as the player taps through.
+            {
+                focus: "fighter-profile",
+                advance: { type: "tooltipButton", label: "Got it" },
+                skipIfAbsent: true,
+                tooltips: [
+                    {
+                        focus: "profile-energy",
+                        anchor: "profile-energy",
+                        title: "Your Energy",
+                        body: "Energy is your daily fuel — training sessions and fights both spend it, and it refills over time. When this bar runs low, rest before you push on.",
+                    },
+                    {
+                        focus: "profile-health",
+                        anchor: "profile-health",
+                        title: "Your Health",
+                        body: "Health is how much punishment you're carrying. Fights drain it and it slowly regenerates between them. Stepping into the cage hurt makes you fight worse and get injured more easily.",
+                    },
+                    {
+                        focus: "profile-resources",
+                        anchor: "profile-resources",
+                        title: "Iron & Fame",
+                        body: "Iron is your money — earned from fights, spent on gyms, healing and more. Fame is your reputation in the division; it grows as you win and perform.",
+                    },
+                    {
+                        focus: "profile-career",
+                        anchor: "profile-career",
+                        title: "Your Career",
+                        body: "Your rank shows where you stand in your weight class. Win fights to climb — break into the top 5 and a title shot comes into reach.",
+                    },
+                    {
+                        focus: "profile-stats",
+                        anchor: "profile-stats",
+                        title: "Your Stats",
+                        body: "These eight stats define your fighter. Training raises them, and together they set your overall rating (OVR) — the single number that sums up how good you are.",
+                    },
+                ],
+            },
+        ],
+    },
+
+    // ── STEP 2 — Gym Introduction ────────────────────────────
     gym_intro: {
         next: "training_session",
         phases: [
@@ -46,7 +93,7 @@ export const TUTORIAL_STEPS = {
         ],
     },
 
-    // ── STEP 2 — First Training Session ──────────────────────
+    // ── STEP 3 — First Training Session ──────────────────────
     training_session: {
         next: "fight_offer",
         phases: [
@@ -74,7 +121,7 @@ export const TUTORIAL_STEPS = {
         ],
     },
 
-    // ── STEP 3 — Fight Offer ─────────────────────────────────
+    // ── STEP 4 — Fight Offer ─────────────────────────────────
     fight_offer: {
         next: "fight_camp",
         phases: [
@@ -119,7 +166,7 @@ export const TUTORIAL_STEPS = {
         ],
     },
 
-    // ── STEP 4 — Fight Camp ──────────────────────────────────
+    // ── STEP 5 — Fight Camp ──────────────────────────────────
     fight_camp: {
         next: "fight_result",
         phases: [
@@ -175,9 +222,9 @@ export const TUTORIAL_STEPS = {
         ],
     },
 
-    // ── STEP 5 — Fight Result & Fame ─────────────────────────
+    // ── STEP 6 — Fight Result & Fame ─────────────────────────
     fight_result: {
-        next: "events_intro",
+        next: "rankings_intro",
         phases: [
             {
                 focus: "result",
@@ -227,7 +274,37 @@ export const TUTORIAL_STEPS = {
         ],
     },
 
-    // ── STEP 6 — Events Introduction ─────────────────────────
+    // ── STEP 7 — Rankings Introduction ───────────────────────
+    rankings_intro: {
+        next: "events_intro",
+        phases: [
+            {
+                focus: "nav-rankings",
+                advance: { type: "clickFocus" },
+                tooltips: [
+                    {
+                        anchor: "nav-rankings",
+                        title: "The Rankings",
+                        body: "Time to see where you stand. Every fighter in your division sits on a ranked ladder — climbing it is your path to a title. Tap the Rankings tab.",
+                    },
+                ],
+            },
+            {
+                focus: "rankings-tab",
+                advance: { type: "tooltipButton", label: "Continue" },
+                skipIfAbsent: true,
+                tooltips: [
+                    {
+                        anchor: ["rankings-table", "rankings-tab"],
+                        title: "Your Standing",
+                        body: "This is your weight class leaderboard. After three fights in a tier you earn a rank; win to climb it. Reach the top 5 to enter the title shot zone — beat the champion and you move up a tier.",
+                    },
+                ],
+            },
+        ],
+    },
+
+    // ── STEP 8 — Events Introduction ─────────────────────────
     events_intro: {
         next: "hospital_intro",
         phases: [
@@ -262,7 +339,7 @@ export const TUTORIAL_STEPS = {
         ],
     },
 
-    // ── STEP 7 — Hospital Introduction ───────────────────────
+    // ── STEP 9 — Hospital Introduction ───────────────────────
     hospital_intro: {
         next: "complete",
         phases: [
@@ -315,11 +392,13 @@ export const TUTORIAL_COMPLETE = {
 
 /** Ordered step ids — kept in sync with the server's STEP_ORDER. */
 export const STEP_ORDER = [
+    "profile_intro",
     "gym_intro",
     "training_session",
     "fight_offer",
     "fight_camp",
     "fight_result",
+    "rankings_intro",
     "events_intro",
     "hospital_intro",
     "complete",

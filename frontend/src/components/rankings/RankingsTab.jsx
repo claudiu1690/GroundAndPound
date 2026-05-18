@@ -63,7 +63,7 @@ export function RankingsTab({ fighter, onMessage }) {
     const titleShotAvailable = playerRow && playerRow.rank != null && playerRow.rank >= 2 && playerRow.rank <= 5;
 
     return (
-        <div className="rankings-tab">
+        <div className="rankings-tab" data-tut="rankings-tab">
             <header className="rankings-header">
                 <h2 className="rankings-title">▲ Rankings</h2>
                 <div className="rankings-wc">{playerWc}</div>
@@ -92,7 +92,7 @@ export function RankingsTab({ fighter, onMessage }) {
             {loading && <div className="rankings-loading">Loading roster…</div>}
 
             {!loading && data && (
-                <div className="rankings-table">
+                <div className="rankings-table" data-tut="rankings-table">
                     <div className="rankings-row rankings-head">
                         <div className="r-rank">#</div>
                         <div className="r-name">Fighter</div>

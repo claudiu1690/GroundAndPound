@@ -6,7 +6,7 @@ import { memo } from "react";
  */
 export const FighterStatMeters = memo(function FighterStatMeters({ rows }) {
   return (
-    <div className="stat-meters">
+    <div className="stat-meters" data-tut="profile-stats">
       <h3 className="stat-meters-title">Stats &amp; XP</h3>
       <div className="stat-meters-grid">
         {rows.map(({ name, value, pct, xpLine, tooltip }) => (

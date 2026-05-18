@@ -10,9 +10,9 @@ function MetaRow({ label, children, rowClassName = "", valueClassName = "" }) {
 }
 
 /** A labelled group of meta rows — adds scannable structure to the panel. */
-function MetaSection({ title, children }) {
+function MetaSection({ title, children, dataTut }) {
   return (
-    <div className="meta-section">
+    <div className="meta-section" data-tut={dataTut}>
       <div className="meta-section-title">{title}</div>
       {children}
     </div>
@@ -107,7 +107,7 @@ export const FighterMetaPanel = memo(function FighterMetaPanel({ fighter, campSl
         <div className="meta-comeback-chip">⚡ Comeback Mode Active</div>
       )}
 
-      <MetaSection title="Resources">
+      <MetaSection title="Resources" dataTut="profile-resources">
         <MetaRow label="Iron ⊗" valueClassName="meta-value-gold">
           {(fighter.iron ?? 0).toLocaleString()}
         </MetaRow>
@@ -117,7 +117,7 @@ export const FighterMetaPanel = memo(function FighterMetaPanel({ fighter, campSl
         </div>
       </MetaSection>
 
-      <MetaSection title="Career">
+      <MetaSection title="Career" dataTut="profile-career">
         <div className="meta-row">
           <span className="meta-label">Rank</span>
           <span className="meta-value">

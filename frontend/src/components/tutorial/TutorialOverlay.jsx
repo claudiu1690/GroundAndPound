@@ -87,10 +87,12 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
     const tooltips = phase?.tooltips || [];
     const currentTooltip = phase && !tooltipsDone ? tooltips[tooltipIndex] : null;
 
-    // The cut-out follows the phase's focus; once tooltips are done it may
-    // switch to `focusAfterTooltips` (where the player must act next).
+    // The cut-out follows, in priority order: the current tooltip's own `focus`
+    // (lets a multi-tooltip step walk the cut-out element by element), then
+    // `focusAfterTooltips` once tooltips are done, then the phase's `focus`.
     const effectiveFocus = phase
-        ? (tooltipsDone && phase.focusAfterTooltips ? phase.focusAfterTooltips : phase.focus)
+        ? (currentTooltip?.focus
+            || (tooltipsDone && phase.focusAfterTooltips ? phase.focusAfterTooltips : phase.focus))
         : null;
 
     // ── Step advancement (server-validated) ──────────────────
