@@ -2429,7 +2429,9 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  /* Above the onboarding tutorial scrim (z 50000) so the result popup shows
+     normally during tutorial step 2 instead of being dimmed underneath it. */
+  z-index: 50600;
 }
 .training-result-popup {
   background: var(--content-bg);
