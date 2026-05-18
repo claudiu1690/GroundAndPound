@@ -84,7 +84,7 @@ export function PostFightInterview({
                         ? "You owned the moment."
                         : "Interview on the books.";
         return (
-            <section className="pfi-wrap pfi-done">
+            <section className="pfi-wrap pfi-done" data-tut="post-fight-interview">
                 <div className="pfi-done-line">🎙 {text}</div>
                 {result.fameDelta > 0 && (
                     <div className="pfi-done-delta">+{result.fameDelta} fame</div>
@@ -95,7 +95,7 @@ export function PostFightInterview({
 
     if (mode === "PICK_TARGET") {
         return (
-            <section className="pfi-wrap">
+            <section className="pfi-wrap" data-tut="post-fight-interview">
                 <header className="pfi-header">
                     <h3 className="pfi-title">Who are you trash talking?</h3>
                     <button
@@ -164,7 +164,7 @@ export function PostFightInterview({
 
     // PICK_TONE (default)
     return (
-        <section className="pfi-wrap">
+        <section className="pfi-wrap" data-tut="post-fight-interview">
             <header className="pfi-header">
                 <h3 className="pfi-title">Post-Fight Interview</h3>
                 <button type="button" className="pfi-skip" onClick={skip} disabled={submitting}>

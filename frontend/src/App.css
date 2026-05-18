@@ -5988,7 +5988,9 @@ code {
 .picker-modal-root {
   position: fixed;
   inset: 0;
-  z-index: 950;
+  /* Above the onboarding tutorial scrim (z 50000) so the prediction picker is
+     reachable when the player opens it from the highlighted headliner. */
+  z-index: 50600;
   display: flex;
   align-items: center;
   justify-content: center;

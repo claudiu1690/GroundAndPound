@@ -169,6 +169,32 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
         return () => clearTimeout(timer);
     }, [phase, phaseIndex, stepId, advancePhase]);
 
+    // ── Scroll the focal element into view ───────────────────
+    // The scrim blocks manual scrolling, so a focal element below the fold
+    // (e.g. the Events / Hospital nav tabs) would be unreachable. Bring it
+    // into view whenever the focus changes — retrying until it mounts.
+    useEffect(() => {
+        if (!effectiveFocus || stepId === "complete") return undefined;
+        let cancelled = false;
+        let tries = 0;
+        const attempt = () => {
+            if (cancelled) return;
+            const el = resolveEl(effectiveFocus);
+            if (el) {
+                const r = el.getBoundingClientRect();
+                const visible = r.top >= 0 && r.left >= 0
+                    && r.bottom <= window.innerHeight && r.right <= window.innerWidth;
+                if (!visible) {
+                    el.scrollIntoView({ block: "center", inline: "center" });
+                }
+                return;
+            }
+            if (tries++ < 20) setTimeout(attempt, 150);
+        };
+        attempt();
+        return () => { cancelled = true; };
+    }, [effectiveFocus, stepId]);
+
     // ── Continuous measurement of focal + anchor rects ───────
     useEffect(() => {
         if (stepId === "complete") return undefined;

@@ -135,38 +135,40 @@ export const TUTORIAL_STEPS = {
                     },
                 ],
             },
+            // Tooltips 4b–4d fire in sequence, then the whole camp panel stays
+            // open and interactive so the player can pick sessions AND finalise.
             {
-                focus: "camp-sessions",
-                advance: { type: "tooltipButton", label: "Got it" },
+                focus: ["camp-summary", "fight-camp"],
+                advance: { type: "event", name: "camp_finalised" },
                 skipIfAbsent: true,
                 tooltips: [
                     {
-                        anchor: "camp-sessions",
+                        anchor: ["camp-sessions", "fight-camp"],
                         title: "Prepare for the Fight",
                         body: "Choose your camp sessions based on what you learned from the Fighter Report. Pick sessions that counter your opponent's style. The better your preparation, the better your bonuses during the fight.",
                     },
-                ],
-            },
-            {
-                focus: "camp-sessions",
-                advance: { type: "tooltipButton", label: "Got it" },
-                skipIfAbsent: true,
-                tooltips: [
                     {
-                        anchor: "camp-sessions",
+                        anchor: ["camp-sessions", "fight-camp"],
                         title: "Your Wildcard",
                         body: "Every fighter has a wildcard — a hidden ace that can fire during the fight under the right conditions. You can't control when it fires, but it can turn the tide.",
                     },
+                    {
+                        anchor: ["camp-finalise", "fight-camp", "camp-summary"],
+                        title: "You're Ready",
+                        body: "Pick the camp sessions you want, then finalise camp. One last call waits before the cage.",
+                    },
                 ],
             },
+            // Pre-fight camp summary — explains the weight cut strategy choice.
             {
-                focus: ["camp-summary", "camp-finalise"],
+                focus: "camp-summary",
                 advance: { type: "event", name: "fight_resolved" },
+                skipIfAbsent: true,
                 tooltips: [
                     {
-                        anchor: ["camp-finalise", "camp-summary"],
-                        title: "You're Ready",
-                        body: "Camp is done. The fight simulation runs instantly — no decisions to make inside the cage. Everything you've prepared fires automatically. Trust your camp and hit Fight.",
+                        anchor: ["weight-cut", "camp-summary"],
+                        title: "Weight Cut Strategy",
+                        body: "One last call before the cage. Cutting weight makes you bigger on fight night but gambles your stamina — Easy is safe, Aggressive swings hardest. Pick a strategy, then hit Begin Fight. The simulation runs instantly — everything you prepared fires automatically.",
                     },
                 ],
             },
@@ -179,8 +181,7 @@ export const TUTORIAL_STEPS = {
         phases: [
             {
                 focus: "result",
-                focusAfterTooltips: "result-continue",
-                advance: { type: "event", name: "result_dismissed" },
+                advance: { type: "tooltipButton", label: "Got it" },
                 skipIfAbsent: true,
                 tooltips: [
                     {
@@ -196,6 +197,30 @@ export const TUTORIAL_STEPS = {
                             win: " — and a win always pays more.",
                             loss: " — even a loss puts you on the map. Get back in the gym.",
                         },
+                    },
+                ],
+            },
+            {
+                focus: "post-fight-interview",
+                advance: { type: "event", name: "interview_done" },
+                skipIfAbsent: true,
+                tooltips: [
+                    {
+                        anchor: "post-fight-interview",
+                        title: "Press Time",
+                        body: "The media catches you after every fight. Your tone earns fame — and can plant a flag on a rival. Humble shows respect, Confident plays it safe, Trash Talk starts beef for a bigger payday. Pick a tone, or skip it.",
+                    },
+                ],
+            },
+            {
+                focus: "result-continue",
+                advance: { type: "event", name: "result_dismissed" },
+                skipIfAbsent: true,
+                tooltips: [
+                    {
+                        anchor: "result-continue",
+                        title: "Onto the Next",
+                        body: "That's your first pro fight on the record. Tap Continue when you're ready to move on.",
                     },
                 ],
             },

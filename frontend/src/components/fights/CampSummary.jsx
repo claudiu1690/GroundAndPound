@@ -149,7 +149,7 @@ export const CampSummary = memo(function CampSummary({
                                 Miss weight and you lose 20% of your purse.
                             </p>
                         </div>
-                        <div className="cs-wc-grid">
+                        <div className="cs-wc-grid" data-tut="weight-cut">
                             {WEIGHT_CUT_OPTIONS.map((opt) => {
                                 const selected = weightCut === opt.key;
                                 return (
