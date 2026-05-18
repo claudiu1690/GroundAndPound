@@ -11,7 +11,9 @@
  *   training_complete      — training-result popup dismissed after a session
  *   fight_accepted         — a fight offer was accepted
  *   fighter_report_closed  — the Fighter Report modal was closed
+ *   camp_finalised         — camp finalised; the pre-fight summary modal opened
  *   fight_resolved         — a fight simulation finished
+ *   interview_done         — the post-fight interview was answered or skipped
  *   result_dismissed       — the post-fight result screen was dismissed
  */
 const listeners = new Map(); // eventName -> Set<fn>

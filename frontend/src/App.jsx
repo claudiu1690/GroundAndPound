@@ -700,6 +700,7 @@ const handleGetOffers = useCallback(async () => {
       setWeightCut(null);
       await loadCampState(fightId);
       setShowCampSummary(true);
+      tutorialBus.emit("camp_finalised");
       setMessage(skip ? "Camp skipped — entering fight underprepared." : `Camp finalised — Rating: ${summary.campRating}`);
     } catch (e) {
       setMessage(e.message || "Failed to finalise camp");
@@ -1118,6 +1119,7 @@ const handleGetOffers = useCallback(async () => {
                         // then refresh fighter to pick up fame delta + new flags.
                         setLastFightSummary((prev) => prev ? { ...prev, interviewDone: true, interviewResult: res } : prev);
                         if (fighter?._id) loadFighter(fighter._id, { clearMessage: false });
+                        tutorialBus.emit("interview_done");
                       }}
                       onMessage={setMessage}
                     />
