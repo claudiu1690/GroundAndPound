@@ -181,19 +181,6 @@ async function hospitalRestoreHealth(req, res) {
     }
 }
 
-async function mentalReset(req, res) {
-    try {
-        const fighter = await fighterService.mentalReset(req.params.id);
-        res.json(fighter);
-    } catch (err) {
-        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
-        if (err.message && (err.message.includes("Not enough") || err.message.includes("not required"))) {
-            return res.status(400).json({ message: err.message });
-        }
-        console.error(err);
-        res.status(500).json({ message: "Internal server error" });
-    }
-}
 
 async function switchGym(req, res) {
     try {
@@ -396,7 +383,6 @@ module.exports = {
     debugRechargeEnergy,
     train,
     doctorVisit,
-    mentalReset,
     switchGym,
     rankUpGym,
     notorietyLeaderboard,

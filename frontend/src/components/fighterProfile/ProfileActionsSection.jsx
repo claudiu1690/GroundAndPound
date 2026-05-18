@@ -1,10 +1,6 @@
 import { memo } from "react";
-import { api } from "../../api";
 
-/**
- * Nickname / gym editor, plus the Mental Reset action when required.
- * Rest was removed — health now regenerates passively over real time.
- */
+/** Nickname / gym editor. */
 export const ProfileActionsSection = memo(function ProfileActionsSection({
   fighter,
   gyms,
@@ -62,42 +58,5 @@ export const ProfileActionsSection = memo(function ProfileActionsSection({
     );
   }
 
-  if (!fighter.mentalResetRequired) return null;
-
-  return (
-    <div className="profile-actions-row">
-      <MentalResetButton
-        fighterId={fighter._id}
-        onRefreshFighter={onRefreshFighter}
-        onMessage={onMessage}
-      />
-    </div>
-  );
-});
-
-const MentalResetButton = memo(function MentalResetButton({
-  fighterId,
-  onRefreshFighter,
-  onMessage,
-}) {
-  async function handleMentalReset() {
-    try {
-      await api.mentalReset(fighterId);
-      onMessage?.("Mental Reset done. You're cleared to fight again.");
-      if (onRefreshFighter) await onRefreshFighter(fighterId);
-    } catch (e) {
-      onMessage?.(e.message || "Mental Reset failed");
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      className="btn btn-danger btn-sm"
-      title="5 Energy — clears mental block after 3 consecutive losses"
-      onClick={handleMentalReset}
-    >
-      Mental Reset (5E)
-    </button>
-  );
+  return null;
 });

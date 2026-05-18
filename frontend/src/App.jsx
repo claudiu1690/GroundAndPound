@@ -281,9 +281,6 @@ const RightPanels = memo(function RightPanels({ fighter, lastFightSummary, campS
             <li className={`sl-item ${hasInjuries ? "sl-danger" : ""}`}>
               ● Injuries: {hasInjuries ? fighter.injuries.map((i) => i.label).join(", ") : "None"}
             </li>
-            <li className={`sl-item ${fighter?.mentalResetRequired ? "sl-danger" : ""}`}>
-              ● Mental state: {fighter?.mentalResetRequired ? "Reset required — visit My Fighter" : "Clear"}
-            </li>
             <li className="sl-item">
               ● Energy: +1 per minute (auto-regen)
             </li>

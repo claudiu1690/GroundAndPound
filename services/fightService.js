@@ -477,13 +477,7 @@ async function resolveFightAndApply(fighterId) {
         throw new Error(`Cannot fight: ${blockingInjury.label} requires a doctor visit first.`);
     }
 
-    // GDD 8.5: Block fight if mental reset is required after 3 consecutive losses
-    if (fighter.mentalResetRequired) {
-        throw new Error("Mental Reset required before next fight. Complete the Mental Reset activity first.");
-    }
-
     const tierConfig = PROMOTION_TIERS[fight.promotionTier];
-    const wasAlreadyMentalReset = fighter.mentalResetRequired ?? false;
     const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
 
     // Build a mutable copy of the fighter's stats for the fight simulation.
@@ -742,7 +736,6 @@ async function resolveFightAndApply(fighterId) {
         else if (result.outcome === OUT_SUB) fighter.record.subWins += 1;
         else fighter.record.decisionWins += 1;
         fighter.consecutiveLosses = 0;
-        fighter.mentalResetRequired = false;
         fighter.winStreak = (fighter.winStreak || 0) + 1;
         fighter.notoriety.isFrozen = false;
 
@@ -773,9 +766,7 @@ async function resolveFightAndApply(fighterId) {
         fighter.comebackMode = true;
         fighter.winStreak = 0;
 
-        // GDD 8.5: 3 consecutive losses → Mental Reset required
         if (newConsecLosses >= 3) {
-            fighter.mentalResetRequired = true;
             fighter.notoriety.isFrozen = true;
         }
 
@@ -1109,10 +1100,6 @@ async function resolveFightAndApply(fighterId) {
     for (const badge of newBadges)
         activityLogService.log(fighterId, "BADGE_EARNED",
             `Earned badge: ${badge}`, { badge, tier: _tier });
-    if (fighter.mentalResetRequired && !wasAlreadyMentalReset)
-        activityLogService.log(fighterId, "MENTAL_RESET",
-            `3 consecutive losses - mental reset required`, { tier: _tier });
-
     const summary = {
         outcome: result.outcome,
         recordChange: isWin ? "W" : isLoss ? "L" : "D",
@@ -1138,7 +1125,6 @@ async function resolveFightAndApply(fighterId) {
         weightMissed,
         injuriesSustained,
         newBadges,
-        mentalResetRequired: !!fighter.mentalResetRequired,
         completedQuests: completedQuests.map((q) => q.title),
         promoted,
         beltWon,

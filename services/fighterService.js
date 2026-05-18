@@ -479,24 +479,6 @@ async function hospitalRestoreHealth(fighterId, packageKey) {
     return { fighter: toPublicFighter(fighter), restored, ironPaid: proRatedIron };
 }
 
-/**
- * GDD 8.5: Mental Reset — spend 5 Energy to clear mentalResetRequired after 3 consecutive losses.
- */
-const MENTAL_RESET_ENERGY = 5;
-async function mentalReset(fighterId) {
-    const fighter = await Fighter.findById(fighterId);
-    if (!fighter) throw new Error("Fighter not found");
-    await reconcileEnergy(fighter);
-    const currentEnergy = energySnapshot(fighter).current;
-    if (!fighter.mentalResetRequired) throw new Error("Mental Reset is not required");
-    if (currentEnergy < MENTAL_RESET_ENERGY) throw new Error(`Not enough energy (Mental Reset costs ${MENTAL_RESET_ENERGY})`);
-    const updatedEnergy = await energyService.deductEnergy(fighterId, MENTAL_RESET_ENERGY);
-    setEnergySnapshot(fighter, updatedEnergy);
-    fighter.mentalResetRequired = false;
-    fighter.consecutiveLosses = 0;
-    await fighter.save();
-    return toPublicFighter(fighter);
-}
 
 /**
  * Pay monthly membership fee for a gym.
@@ -555,7 +537,6 @@ module.exports = {
     hospitalFullRecovery,
     hospitalQuote,
     hospitalRestoreHealth,
-    mentalReset,
     switchGym,
     buildStatProgress,
     getInjuryLockedStats
