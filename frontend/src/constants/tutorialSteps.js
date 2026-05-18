@@ -107,7 +107,7 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: "offer-card",
                         title: "Reading a Fight Offer",
-                        body: "Each offer shows your opponent's OVR (overall rating), their fighting style, and the iron purse you'll earn. OVR is the most important number — it tells you how tough this fight will be relative to your own rating.",
+                        body: "Each offer shows your opponent's OVR (overall rating), their fighting style, and their record. OVR is the most important number — it tells you how tough this fight will be relative to your own rating.",
                     },
                     {
                         anchor: "offer-accept",
