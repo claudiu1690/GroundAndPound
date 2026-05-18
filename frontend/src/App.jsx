@@ -50,20 +50,6 @@ const TIER_LADDER_DISPLAY = [
   { id: "GCS",            label: "GCS",           minOvr: 62, nextOvr: null },
 ];
 
-// ── Header resource bar ─────────────────────────────────────
-const HdrResource = memo(function HdrResource({ icon, label, value, max, barColor }) {
-  const pct = Math.min(100, Math.round(((value ?? 0) / (max ?? 100)) * 100));
-  return (
-    <div className="hdr-resource">
-      <span className="hdr-resource-icon">{icon}</span>
-      <span className="hdr-resource-label">{label}:</span>
-      <span className="hdr-resource-val">{value ?? 0}/{max ?? 100}</span>
-      <div className="hdr-resource-bar">
-        <div className="hdr-resource-bar-fill" style={{ width: `${pct}%`, background: barColor }} />
-      </div>
-    </div>
-  );
-});
 
 // ── Fighter card (dashboard) ────────────────────────────────
 /** Derive a stable 1-20 photo index from the fighter's Mongo _id string */
@@ -798,58 +784,6 @@ const handleGetOffers = useCallback(async () => {
   return (
     <div className="app">
 
-      {/* ── TOP HEADER (centered) ── */}
-      <header className="app-header">
-        <div className="app-header-inner">
-          <h1 className="app-logo">Ground <span>&amp;</span> Pound</h1>
-          <div className="hdr-sep" />
-
-          {fighter && (
-            <>
-              <button
-                type="button"
-                className="hdr-fame-block"
-                onClick={() => setFameDrawerOpen(true)}
-                title={fighter.notoriety?.isFrozen ? "Fame frozen — click for details" : "Click to view fame details"}
-              >
-                <span className={`hdr-fame-tier hdr-tier-${fighter.notoriety?.peakTier ?? "UNKNOWN"}`}>
-                  {fighter.notoriety?.tierLabel ?? "Unknown"}
-                </span>
-                <span className="hdr-fame-score">{(fighter.notoriety?.score ?? 0).toLocaleString()}</span>
-                {fighter.notoriety?.isFrozen && <span className="hdr-fame-freeze" title="Frozen">❄</span>}
-              </button>
-              <span className="hdr-iron">
-                <span className="hdr-iron-icon">⊗</span>
-                {fighter.iron ?? 0}
-              </span>
-            </>
-          )}
-
-          <div className="hdr-resources">
-            {fighter && (
-              <>
-                <HdrResource icon="⚡" label="Energy" value={fighter.energy?.current ?? fighter.energy ?? 0} max={fighter.energy?.max ?? 100} barColor="#3b82f6" />
-                <HdrResource icon="❤" label="Health" value={fighter.health ?? 100} max={100} barColor="#e31837" />
-              </>
-            )}
-          </div>
-
-          <div className="hdr-right">
-            {injuryCount > 0 && (
-              <div className="hdr-badge-btn">
-                🩹 <span className="hdr-badge-count">{injuryCount}</span>
-              </div>
-            )}
-            {campActive && (
-              <div className="hdr-badge-btn">
-                ⛺ Camp <span className="hdr-badge-count">{campState?.slotsUsed ?? fighter.trainingCampActions ?? 0}</span>
-              </div>
-            )}
-            <button className="hdr-logout" onClick={handleLogout} title="Sign out">Sign Out</button>
-          </div>
-        </div>
-      </header>
-
       {/* ── MESSAGE BAR ── */}
       <MessageBar message={message} />
 
@@ -940,7 +874,7 @@ const handleGetOffers = useCallback(async () => {
       <div className="app-body">
         <div className="app-center-wrap">
 
-        {/* Left nav — attached to center block */}
+        {/* Left nav */}
         <nav className="app-nav">
           <div className="nav-fighter-profile">
             <FighterProfile
@@ -1154,6 +1088,31 @@ const handleGetOffers = useCallback(async () => {
 
         </div>
       </div>
+
+      {/* ── FULL-WIDTH FOOTER ── */}
+      <footer className="app-footer">
+        <div className="app-footer-inner">
+          <span className="app-footer-logo">Ground <span>&amp;</span> Pound</span>
+          <div className="app-footer-badges">
+            {injuryCount > 0 && (
+              <button type="button" className="nav-footer-badge" onClick={() => handleNavTab("hospital")}>
+                🩹 {injuryCount} injur{injuryCount === 1 ? "y" : "ies"}
+              </button>
+            )}
+            {campActive && (
+              <button type="button" className="nav-footer-badge nav-footer-badge-camp" onClick={() => handleNavTab("fights")}>
+                ⛺ Camp — {campState?.slotsUsed ?? fighter.trainingCampActions ?? 0} sessions
+              </button>
+            )}
+            {fighter && (
+              <button type="button" className="nav-footer-badge nav-footer-badge-fame" onClick={() => setFameDrawerOpen(true)}>
+                ★ Fame
+              </button>
+            )}
+          </div>
+          <button className="nav-footer-signout" onClick={handleLogout} title="Sign out">Sign Out</button>
+        </div>
+      </footer>
     </div>
   );
 }
