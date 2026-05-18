@@ -60,12 +60,13 @@ exports.GYM_TIERS = {
 
 // ----- Promotion tiers (daily fight cap, pay range, signing fee, training camp) -----
 // GDD 8.2: Recommended TCAs and penalty for under-camped (0 TCA = worst).
+// `signingFee` is the base fight purse for the tier (win pays 100%, draw 50%, loss 70%).
 exports.PROMOTION_TIERS = {
-    Amateur:        { dailyFightCap: 8,  fightEnergyCost: 10, signingFee: 0,    minOverall: 0,  maxOverall: 30, recommendedTca: 2, penaltyStatPct: 0.10, penaltyStaminaPct: 0,    injuryRiskMult: 2 },
+    Amateur:        { dailyFightCap: 8,  fightEnergyCost: 10, signingFee: 400,   minOverall: 0,  maxOverall: 30, recommendedTca: 2, penaltyStatPct: 0.10, penaltyStaminaPct: 0,    injuryRiskMult: 2 },
     'Regional Pro': { dailyFightCap: 4,  fightEnergyCost: 15, signingFee: 2000,  minOverall: 30, maxOverall: 48, recommendedTca: 3, penaltyStatPct: 0.15, penaltyStaminaPct: 0,    injuryRiskMult: 2 },
     National:       { dailyFightCap: 2,  fightEnergyCost: 18, signingFee: 10000, minOverall: 45, maxOverall: 65, recommendedTca: 5, penaltyStatPct: 0.15, penaltyStaminaPct: 0.25, injuryRiskMult: 2 },
-    'GCS Contender': { dailyFightCap: 1,  fightEnergyCost: 20, signingFee: 0,     minOverall: 60, maxOverall: 75, recommendedTca: 8, penaltyStatPct: 0.20, penaltyStaminaPct: 0.25, injuryRiskMult: 3 },
-    GCS:            { dailyFightCap: 1,  fightEnergyCost: 20, signingFee: 0,     minOverall: 62, maxOverall: 95, recommendedTca: 10, penaltyStatPct: 0.20, penaltyStaminaPct: 0.30, injuryRiskMult: 3 },
+    'GCS Contender': { dailyFightCap: 1,  fightEnergyCost: 20, signingFee: 25000, minOverall: 60, maxOverall: 75, recommendedTca: 8, penaltyStatPct: 0.20, penaltyStaminaPct: 0.25, injuryRiskMult: 3 },
+    GCS:            { dailyFightCap: 1,  fightEnergyCost: 20, signingFee: 50000, minOverall: 62, maxOverall: 95, recommendedTca: 10, penaltyStatPct: 0.20, penaltyStaminaPct: 0.30, injuryRiskMult: 3 },
 };
 
 // ----- Fight strategies (GDD 8.3) -----

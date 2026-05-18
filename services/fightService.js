@@ -627,7 +627,8 @@ async function resolveFightAndApply(fighterId) {
     if (isComeback) xpMult = +(xpMult * 1.5).toFixed(2);
 
     // GDD 8.8: Weight miss → -20% iron purse + notoriety penalty
-    const basePurse = tierConfig && fight.promotionTier !== "Amateur" ? Math.max(0, tierConfig.signingFee || 0) : 0;
+    // Base purse is the tier's signingFee — every tier pays a purse (Amateur included).
+    const basePurse = tierConfig ? Math.max(0, tierConfig.signingFee || 0) : 0;
     const outcomeIronMult = isWin ? 1 : (isDraw ? 0.5 : 0.7);
     // Championship Pedigree perk: +10% fame from fights (handled in notoriety section below)
     const notorietyPurseFrac = notorietyService.getNotorietyPurseFraction(fighter.notoriety.peakTier);
