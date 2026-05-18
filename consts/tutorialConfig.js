@@ -11,14 +11,16 @@
 
 /** Ordered list of step identifiers — progression must follow this sequence. */
 const STEP_ORDER = [
-    "gym_intro",        // Step 1 — Gym Introduction
-    "training_session", // Step 2 — First Training Session
-    "fight_offer",      // Step 3 — Fight Offer
-    "fight_camp",       // Step 4 — Fight Camp
-    "fight_result",     // Step 5 — Fight Result & Fame
-    "events_intro",     // Step 6 — Events Introduction
-    "hospital_intro",   // Step 7 — Hospital Introduction
-    "complete",         // Step 8 — Tutorial Complete
+    "profile_intro",    // Step 1  — Fighter Profile Introduction
+    "gym_intro",        // Step 2  — Gym Introduction
+    "training_session", // Step 3  — First Training Session
+    "fight_offer",      // Step 4  — Fight Offer
+    "fight_camp",       // Step 5  — Fight Camp
+    "fight_result",     // Step 6  — Fight Result & Fame
+    "rankings_intro",   // Step 7  — Rankings Introduction
+    "events_intro",     // Step 8  — Events Introduction
+    "hospital_intro",   // Step 9  — Hospital Introduction
+    "complete",         // Step 10 — Tutorial Complete
 ];
 
 /** First step a brand-new fighter starts on. */

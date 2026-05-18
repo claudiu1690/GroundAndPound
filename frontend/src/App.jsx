@@ -959,7 +959,7 @@ const handleGetOffers = useCallback(async () => {
                 <a
                   key={item.id}
                   href={`#${item.id}`}
-                  data-tut={["gym", "fights", "events", "hospital"].includes(item.id) ? `nav-${item.id}` : undefined}
+                  data-tut={["gym", "fights", "rankings", "events", "hospital"].includes(item.id) ? `nav-${item.id}` : undefined}
                   className={`nav-item ${activeTab === item.id ? "active" : ""}`}
                   onClick={(e) => { e.preventDefault(); handleNavTab(item.id); }}
                 >
