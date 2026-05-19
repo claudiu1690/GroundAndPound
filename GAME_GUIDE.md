@@ -56,7 +56,6 @@ Everything you do costs energy. Maximum is 100. It regenerates at 1 point per mi
 | Training sessions | 3–8 (varies) |
 | Accepting a fight | 10–20 (varies by tier) |
 | Hospital treatment | 10–20 (varies by injury) — also costs iron |
-| Mental Reset | 5 |
 
 ---
 
@@ -66,11 +65,11 @@ Your career moves through five tiers. Moving between tiers is no longer fully au
 
 | Tier | Overall Range | Fights Per Day | Signing Fee |
 |---|---|---|---|
-| Amateur | 0–30 | 8 | None |
+| Amateur | 0–30 | 8 | 400 |
 | Regional Pro | 30–48 | 4 | 2,000 |
 | National | 45–65 | 2 | 10,000 |
-| GCS Contender | 60–75 | 1 | None |
-| GCS | 62–95 | 1 | None |
+| GCS Contender | 60–75 | 1 | 25,000 |
+| GCS | 62–95 | 1 | 50,000 |
 
 **Promotion gates:**
 - **Amateur → Regional Pro**: Auto-promotes at OVR 30
@@ -470,7 +469,7 @@ Notoriety is your career fame score. It determines how much iron you earn per fi
 
 ### Fame Drawer
 
-The fame tier and score are always visible in the top header. **Click the fame pill** to open the Fame drawer — a side panel that shows:
+Your fame tier and score are shown in your fighter profile in the left sidebar. The **★ Fame button in the footer** opens the Fame drawer — a side panel that shows:
 
 - Current tier with progress bar to the next threshold
 - Status chips (Frozen, Decay warning, Peak floor)
@@ -688,21 +687,26 @@ Read-only history of every post-fight interview you've given, color-coded by ton
 
 Injuries happen in fights and in sparring sessions. They apply penalties to your stats until healed and may block specific actions (fighting, sparring, bag work).
 
-There are two healing paths depending on the injury type:
+**Every injury heals on its own.** Each one ticks down a recovery timer once per 24h of real time, then clears automatically — no injury is ever a permanent dead end. The Hospital tab shows the live countdown for every active injury (e.g. `3d 12h`).
 
-| Injury | Source | Penalty | Heals via |
-|---|---|---|---|
-| Cut | Fight | None (blocks fighting) | Treatment (Hospital) |
-| Bruised Rib | Fight | −10 max stamina | Auto-heal in 2 days |
-| Broken Nose | Fight | −3 CHN | Treatment (Hospital) |
-| Broken Hand | Fight | −20 STR (no bag/pad work) | Auto-heal in 6 days |
-| Sprained Ankle | Sparring | −15 LEG | Auto-heal in 5 days |
-| Torn Ligament | Sparring | −10 STR, −10 LEG (blocks fighting) | Treatment (Hospital) |
-| Concussion | KO/TKO/Sub loss (always) | −2 CHN (blocks fighting + sparring) | Treatment (Hospital) |
+| Injury | Source | Penalty | Blocks | Heals In |
+|---|---|---|---|---|
+| Cut | Fight | None | Fighting | 2 days |
+| Bruised Rib | Fight | −10 max stamina | — | 2 days |
+| Broken Nose | Fight | −3 CHN | — | 3 days |
+| Broken Hand | Fight | −20 STR | Bag/pad work | 6 days |
+| Sprained Ankle | Sparring | −15 LEG | — | 5 days |
+| Torn Ligament | Sparring | −10 STR, −10 LEG | Fighting | 6 days |
+| Concussion | KO/TKO/Sub loss (always) | −2 CHN | Fighting + sparring | 4 days |
 
-- **Auto-heal** injuries tick down once per 24h in real time. The Hospital tab shows the live countdown (e.g. `4d 12h`).
-- **Treatment-required** injuries don't auto-heal. You must visit the Hospital and pay the iron + energy cost.
-- **Concussions** from KO/TKO or submission losses are mandatory — you cannot fight again until you treat one.
+You can clear an injury early instead of waiting it out:
+
+- **Auto-heal injuries** (Bruised Rib, Sprained Ankle, Broken Hand) — pay iron at the Hospital to skip the wait.
+- **Doctor-required injuries** (Cut, Broken Nose, Concussion, Torn Ligament) — a doctor visit (energy + iron) clears them instantly. They still block fighting or sparring while active, so waiting them out has a real cost — but if you can't afford the doctor, they will still heal on their own. No injury can lock you out of the game permanently.
+
+### New-Fighter Grace
+
+During your first **3 fights**, you can never receive a fight-blocking injury (Concussion, Cut, or Torn Ligament) — in a fight or in sparring. A rough debut can't lock a brand-new fighter out of the game before they've built up resources. Non-blocking injuries (e.g. Broken Nose, Bruised Rib) can still happen. After your 3rd fight the grace expires and all injuries apply normally.
 
 ---
 
@@ -755,9 +759,7 @@ If a package would heal more HP than you're missing, the iron cost is **pro-rate
 
 ---
 
-## Comeback Mode & Mental Reset
-
-### Comeback Mode
+## Comeback Mode
 
 Any time you lose a fight, comeback mode activates. While in comeback mode:
 
@@ -765,9 +767,7 @@ Any time you lose a fight, comeback mode activates. While in comeback mode:
 - Your iron purse increases by 30%
 - If you win, you earn the **Resilience** badge (once per career) and comeback clears
 
-### Mental Reset
-
-Losing three fights in a row triggers **Mental Reset Required** — a flag that blocks your next fight. To clear it, spend 5 energy on the Mental Reset activity in your profile. Once cleared, consecutive losses reset to 0 and notoriety unfreezes.
+Losing three fights in a row also freezes your notoriety (see Notoriety Freeze above). Your fame unfreezes the next time you win. A losing streak never blocks you from fighting — you can always step back in.
 
 ---
 
@@ -832,14 +832,13 @@ Your dashboard shows a **Career Feed** — a reverse-chronological log of everyt
 - Title shot eligibility, title wins
 - Nemesis set / cleared
 - Badges earned
-- Mental reset events
 - Sponsor contracts signed, completed, broken, or dropped
 - Callout wins (with bonuses earned)
 - Beef flag lapses (with the −150 fame penalty)
 - Main event predictions resolved
 - Fame milestones and tier-ups
 
-This is your career story, told in real time. The **Fame drawer** in the header offers a focused, fame-only slice of the same activity.
+This is your career story, told in real time. The **Fame drawer** (★ Fame button in the footer) offers a focused, fame-only slice of the same activity.
 
 ---
 
@@ -871,17 +870,16 @@ If fewer stories qualify, the paper simply shows fewer — it never pads with em
 
 Exactly one story takes the lead, picked by priority — the first match wins:
 
-1. **Mental Reset Required** — you can't fight until you clear it, so it's front-page news
-2. **Event Result** — the weekly fight card's headliner, shown as a fight-result card (matchup + method)
-3. **First Loss in a Title Fight** — a composite story when your first-ever loss came with gold on the line
-4. **Title Fight Result** — won or lost
-5. **First Loss** — your perfect record just took its first blemish
-6. **Promotion** — you moved up a division
-7. **Rank Entry** — you entered the rankings after your 3rd fight in the tier
-8. **Win Streak** — you hit a 5- or 10-fight streak
-9. **Rank Jump** — you climbed 5+ spots in one fight
-10. **Last Fight Result** — the default recap of your most recent bout
-11. **Division Spotlight** — a generic lead when nothing else happened
+1. **Event Result** — the weekly fight card's headliner, shown as a fight-result card (matchup + method)
+2. **First Loss in a Title Fight** — a composite story when your first-ever loss came with gold on the line
+3. **Title Fight Result** — won or lost
+4. **First Loss** — your perfect record just took its first blemish
+5. **Promotion** — you moved up a division
+6. **Rank Entry** — you entered the rankings after your 3rd fight in the tier
+7. **Win Streak** — you hit a 5- or 10-fight streak
+8. **Rank Jump** — you climbed 5+ spots in one fight
+9. **Last Fight Result** — the default recap of your most recent bout
+10. **Division Spotlight** — a generic lead when nothing else happened
 
 ### Other Stories
 
@@ -927,7 +925,7 @@ After every fight, the **press interview** lets you trade verbal stakes for fame
 
 At gyms, you earn **ranks** that unlock unique sessions, permanent XP bonuses, and utility perks that follow you across your career.
 
-Beating champions promotes you through the tiers. Losing creates Nemeses, triggers comeback mode, or forces mental resets.
+Beating champions promotes you through the tiers. Losing creates Nemeses and triggers comeback mode.
 
 **Notoriety isn't just a meter** — it's an economy. Spend it on **callouts** to force matchups with full intel. Sign **sponsorship contracts** that pay iron per fight and bigger bonuses for clauses you fulfill. Predict the weekly **fight card** in the Events tab for fame and iron. Record podcasts to build beef and respect flags around the division. Once you're a Star, **commission your career documentary** for a permanent legacy mark.
 
