@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api, authStorage } from "../../api";
 
-const WEIGHT_CLASSES = ["Bantamweight", "Featherweight", "Lightweight", "Welterweight"];
+const WEIGHT_CLASSES = ["Featherweight", "Lightweight", "Middleweight", "Heavyweight"];
 const STYLES = ["Boxer", "Kickboxer", "Wrestler", "Brazilian Jiu-Jitsu", "Muay Thai", "Judo", "Sambo", "Capoeira"];
 const BACKSTORIES = ["Street Fighter", "College Wrestler", "Kickboxing Champion", "Army Veteran", "MMA Prodigy", "Late Bloomer"];
 

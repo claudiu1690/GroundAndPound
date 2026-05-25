@@ -25,7 +25,7 @@
  *           nullable: true
  *         weightClass:
  *           type: string
- *           enum: [Bantamweight, Featherweight, Lightweight, Welterweight]
+ *           enum: [Featherweight, Lightweight, Middleweight, Heavyweight]
  *         style:
  *           type: string
  *           enum: [Boxer, Kickboxer, Wrestler, Brazilian Jiu-Jitsu, Muay Thai, Judo, Sambo, Capoeira]
@@ -81,7 +81,7 @@
  *         nickname: { type: string }
  *         weightClass:
  *           type: string
- *           enum: [Bantamweight, Featherweight, Lightweight, Welterweight]
+ *           enum: [Featherweight, Lightweight, Middleweight, Heavyweight]
  *         style:
  *           type: string
  *           enum: [Boxer, Kickboxer, Wrestler, Brazilian Jiu-Jitsu, Muay Thai, Judo, Sambo, Capoeira]

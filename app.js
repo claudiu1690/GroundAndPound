@@ -232,11 +232,82 @@ async function backfillClearNewFighterBlockingInjuries() {
     }
 }
 
+/**
+ * Weight class rename (May 2026) — Bantamweight and Welterweight retired in favour of
+ * Middleweight and Heavyweight. Remap existing fighters and opponents to their closest
+ * surviving class so the new enum constraint accepts them and matchmaking still works:
+ *   Bantamweight (135) → Featherweight (145)
+ *   Welterweight (170) → Middleweight (185)
+ * Old champions in retired classes lose their championship flag — ensureChampionsExist
+ * will re-seed any missing belts (including all four Heavyweight champions, which are
+ * brand new). Run `node scripts/seedOpponents.js` after first boot to populate the
+ * Heavyweight opponent pool.
+ */
+async function migrateWeightClassRename() {
+    const RENAME = { Bantamweight: "Featherweight", Welterweight: "Middleweight" };
+    const fighters  = mongoose.connection.collection("fighters");
+    const opponents = mongoose.connection.collection("opponents");
+
+    // Strip championship from opponents in retired classes so ensureChampionsExist re-seeds.
+    const champStripped = await opponents.updateMany(
+        { weightClass: { $in: Object.keys(RENAME) }, isChampion: true },
+        { $set: { isChampion: false } }
+    );
+    if (champStripped.modifiedCount > 0) {
+        console.log(`[Migration] Cleared championship flag on ${champStripped.modifiedCount} opponent(s) in retired weight classes.`);
+    }
+
+    // Players (fighters) — no rank collision possible, bulk update is safe.
+    for (const [oldWc, newWc] of Object.entries(RENAME)) {
+        const r1 = await fighters.updateMany({ weightClass: oldWc }, { $set: { weightClass: newWc } });
+        if (r1.modifiedCount > 0) {
+            console.log(`[Migration] Renamed fighters ${oldWc} → ${newWc}: ${r1.modifiedCount}.`);
+        }
+    }
+
+    // Opponents — must renumber fixedRank to avoid the unique
+    // (promotionTier, weightClass, fixedRank) index colliding. The target class already
+    // has its own ranked roster; incoming opponents go to the END of each tier's roster.
+    for (const [oldWc, newWc] of Object.entries(RENAME)) {
+        const retiredOpps = await opponents
+            .find({ weightClass: oldWc })
+            .sort({ promotionTier: 1, fixedRank: 1 })
+            .toArray();
+        if (retiredOpps.length === 0) continue;
+
+        // Cache: per-tier next rank to assign. Initialised from the target class's current max.
+        const nextRankByTier = {};
+        async function nextRankFor(tier) {
+            if (nextRankByTier[tier] != null) return nextRankByTier[tier]++;
+            const maxDoc = await opponents
+                .find({ promotionTier: tier, weightClass: newWc, fixedRank: { $type: "number" } })
+                .sort({ fixedRank: -1 })
+                .limit(1)
+                .toArray();
+            const start = (maxDoc[0]?.fixedRank ?? 0) + 1;
+            nextRankByTier[tier] = start + 1;
+            return start;
+        }
+
+        let renamed = 0;
+        for (const opp of retiredOpps) {
+            const update = { weightClass: newWc };
+            if (typeof opp.fixedRank === "number") {
+                update.fixedRank = await nextRankFor(opp.promotionTier);
+            }
+            await opponents.updateOne({ _id: opp._id }, { $set: update });
+            renamed += 1;
+        }
+        console.log(`[Migration] Renamed opponents ${oldWc} → ${newWc}: ${renamed} (ranks renumbered to end of ${newWc} roster).`);
+    }
+}
+
 mongoose.connect(config.database.url, config.database.options)
     .then(async () => {
         console.log("Connected to MongoDB");
         await migrateLegacyEnergyShape();
         await migrateLegacyNotorietyNumber();
+        await migrateWeightClassRename();
         await backfillFighterGymFromQuestProgress();
         await backfillTutorialForLegacyFighters();
         await backfillDoctorInjuryTimers();

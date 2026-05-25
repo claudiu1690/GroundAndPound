@@ -345,10 +345,10 @@
     }
   ],
   "weightClasses": [
-    "Bantamweight",
     "Featherweight",
     "Lightweight",
-    "Welterweight"
+    "Middleweight",
+    "Heavyweight"
   ],
   "demoFighter": {
     "firstName": "Demo",

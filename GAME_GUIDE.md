@@ -12,7 +12,7 @@ Ground & Pound is a text-based MMA career simulation. You create a fighter, trai
 
 When you create a fighter you choose:
 
-- **Weight Class** — Bantamweight (135 lbs), Featherweight (145 lbs), Lightweight (155 lbs), or Welterweight (170 lbs). You stay in this weight class for your career.
+- **Weight Class** — Featherweight (145 lbs), Lightweight (155 lbs), Middleweight (185 lbs), or Heavyweight (265 lbs). You stay in this weight class for your career.
 - **Fighting Style** — Determines which stats start higher and how your Overall Rating is calculated. Eight styles: Boxer, Kickboxer, Muay Thai, Wrestler, Brazilian Jiu-Jitsu, Judo, Sambo, and Capoeira.
 - **Backstory** (optional) — A background that gives a small permanent bonus.
 

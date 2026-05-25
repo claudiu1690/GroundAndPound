@@ -1,9 +1,9 @@
 /** Mirror of backend game constants for forms (create fighter, etc.) */
 export const WEIGHT_CLASSES = [
-  "Bantamweight",
   "Featherweight",
   "Lightweight",
-  "Welterweight",
+  "Middleweight",
+  "Heavyweight",
 ];
 
 export const STYLES = {

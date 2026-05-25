@@ -3,8 +3,8 @@
  */
 
 // ----- Weight classes -----
-exports.WEIGHT_CLASSES = ['Bantamweight', 'Featherweight', 'Lightweight', 'Welterweight'];
-exports.WEIGHT_LIMITS = { Bantamweight: 135, Featherweight: 145, Lightweight: 155, Welterweight: 170 };
+exports.WEIGHT_CLASSES = ['Featherweight', 'Lightweight', 'Middleweight', 'Heavyweight'];
+exports.WEIGHT_LIMITS = { Featherweight: 145, Lightweight: 155, Middleweight: 185, Heavyweight: 265 };
 
 // ----- Fighting styles (primary stat weights for Overall: 1.2; secondary 1.0; off-style 0.85) -----
 exports.STYLES = {
