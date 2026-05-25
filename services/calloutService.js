@@ -73,25 +73,30 @@ async function listRoster(fighterId) {
         overallRating: o.overallRating,
         promotionTier: o.promotionTier,
         // Display rank: NPC at/below player's rank shifts +1; stretch tier opponents
-        // keep their own tier's fixedRank (cross-tier shift doesn't apply).
-        rank: isStretch
-            ? (o.fixedRank ?? null)
-            : rankingService.displayRankForNpc(o.fixedRank, playerRank),
+        // keep their own tier's fixedRank (cross-tier shift doesn't apply). Then shift
+        // to display rank (champion → null, contenders shift down by 1).
+        rank: rankingService.toDisplayRank(
+            isStretch
+                ? (o.fixedRank ?? null)
+                : rankingService.displayRankForNpc(o.fixedRank, playerRank)
+        ),
         record: o.record || { wins: 0, losses: 0, draws: 0 },
         cost: computeCalloutCost(fighter, o),
         isStretch,
     });
 
+    const displayPlayerRank = rankingService.toDisplayRank(playerRank);
+    const displayThreshold = rankingService.CALLOUT_RANK_THRESHOLD - 1;
     return {
         fame: fighter?.notoriety?.score || 0,
         eligible,
-        currentRank: playerRank,
-        rankThreshold: rankingService.CALLOUT_RANK_THRESHOLD,
+        currentRank: displayPlayerRank,
+        rankThreshold: displayThreshold,
         lockedReason: eligible
             ? null
             : (playerRank == null
                 ? "Reach the rankings first (fight at least 3 fights in your tier)"
-                : `Reach top ${rankingService.CALLOUT_RANK_THRESHOLD} to unlock callouts — currently #${playerRank}`),
+                : `Reach top ${displayThreshold} to unlock callouts — currently #${displayPlayerRank}`),
         active: fighter.activeCallout?.opponentId ? {
             opponentId: String(fighter.activeCallout.opponentId),
             opponentName: fighter.activeCallout.opponentName,
@@ -115,13 +120,14 @@ async function createCallout(fighterId, opponentId) {
         throw new Error("You already have an active callout — cancel it first");
     }
 
-    // v1.1 — rank gate. Player must be top 15 to call out anyone.
+    // v1.1 — rank gate. Player must be top 15 (DB rank ≤ 15) to call out anyone.
     if (!rankingService.isCalloutEligible(fighter)) {
         const rank = fighter.ranking?.rank;
+        const displayThreshold = rankingService.CALLOUT_RANK_THRESHOLD - 1;
         throw new Error(
             rank == null
                 ? "Callouts unlock after you enter the rankings (3 fights in your tier)"
-                : `Callouts require top ${rankingService.CALLOUT_RANK_THRESHOLD} — currently #${rank}`
+                : `Callouts require top ${displayThreshold} — currently #${rankingService.toDisplayRank(rank)}`
         );
     }
 

@@ -193,6 +193,21 @@ function displayRankForNpc(npcFixedRank, playerRank) {
 }
 
 /**
+ * Translate an internal rank (DB-side, 1 = champion, 2-N = contenders) to the rank
+ * shown in the UI. The Rankings tab renders the champion as a separate row above the
+ * contenders (with a crown), and contenders start at #1. So display rank = internal − 1
+ * for contenders, and `null` for the champion (the UI uses isChampion to render).
+ *
+ * Internal logic (movement math, title-shot gate, callout gate) keeps using DB ranks —
+ * this helper only fires when serializing to the client.
+ */
+function toDisplayRank(internalRank) {
+    if (typeof internalRank !== "number") return null;
+    if (internalRank <= 1) return null; // champion slot — handled by isChampion flag
+    return internalRank - 1;
+}
+
+/**
  * Map an outcome string from FIGHT_OUTCOMES into the result shape used by calcDelta().
  * Used by fightService to translate its outcome strings into the ranking input.
  */
@@ -218,5 +233,6 @@ module.exports = {
     isCalloutEligible,
     CALLOUT_RANK_THRESHOLD,
     displayRankForNpc,
+    toDisplayRank,
     buildFightResultFromOutcome,
 };

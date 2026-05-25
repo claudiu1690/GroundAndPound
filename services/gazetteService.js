@@ -19,7 +19,7 @@ const Fight = require("../models/fightModel");
 const FightCard = require("../models/mainEventModel");
 const { TEMPLATES } = require("../consts/gazetteTemplates");
 const { makeGazetteRng } = require("../utils/gazetteRng");
-const { ROSTER_SIZE } = require("./rankingService");
+const { ROSTER_SIZE, toDisplayRank } = require("./rankingService");
 
 const RANK_JUMP_THRESHOLD = 5;
 const NOTORIETY_DELTA_THRESHOLD = 10;
@@ -198,7 +198,7 @@ function buildRankEntryStory(fighter, lastFight) {
         type: "rank_entry",
         templateGroup: "rank_entry",
         zoneOptions: ["lead", "secondary"],
-        vars: { FIGHTER: fighterDisplayName(fighter), TIER: fighter.promotionTier, NEW_RANK: String(newRank) },
+        vars: { FIGHTER: fighterDisplayName(fighter), TIER: fighter.promotionTier, NEW_RANK: String(toDisplayRank(newRank) ?? newRank) },
     };
 }
 
@@ -225,8 +225,8 @@ function buildRankJumpStory(fighter) {
         zoneOptions: ["lead", "secondary"],
         vars: {
             FIGHTER: fighterDisplayName(fighter),
-            OLD_RANK: String(oldRank),
-            NEW_RANK: String(newRank),
+            OLD_RANK: String(toDisplayRank(oldRank) ?? oldRank),
+            NEW_RANK: String(toDisplayRank(newRank) ?? newRank),
             TIER: fighter.promotionTier,
         },
     };
@@ -257,7 +257,7 @@ function buildSpotlightStory(fighter) {
         vars: {
             FIGHTER: fighterDisplayName(fighter),
             TIER: fighter.promotionTier || "Amateur",
-            RANK: ranked ? String(fighter.ranking.rank) : "—",
+            RANK: ranked ? String(toDisplayRank(fighter.ranking.rank) ?? fighter.ranking.rank) : "—",
         },
     };
 }

@@ -188,6 +188,11 @@ function toPublicFighter(fighter) {
     const out = fighter.toObject ? fighter.toObject() : { ...fighter };
     out.notoriety = notorietyService.buildNotorietyPublicState(fighter);
     out.injuryLockedStats = getInjuryLockedStats(fighter);
+    // Shift player's rank to display rank for the UI. DB stores 2-N (1 = champion slot,
+    // never the player). UI shows champion separately and contenders as #1-#(N-1).
+    if (out.ranking && typeof out.ranking.rank === "number") {
+        out.ranking.rank = require("./rankingService").toDisplayRank(out.ranking.rank);
+    }
     return out;
 }
 

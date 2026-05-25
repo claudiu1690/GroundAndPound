@@ -3,7 +3,7 @@
  */
 const Opponent = require("../models/opponentModel");
 const Fighter = require("../models/fighterModel");
-const { ROSTER_SIZE, displayRankForNpc } = require("../services/rankingService");
+const { ROSTER_SIZE, displayRankForNpc, toDisplayRank } = require("../services/rankingService");
 
 const PUBLIC_OPPONENT_FIELDS = "name nickname style overallRating record fixedRank isChampion weightClass promotionTier";
 
@@ -51,7 +51,7 @@ async function getRankings(req, res) {
                 playerRankInTier = r.rank ?? null;
                 playerRow = {
                     id: String(fighter._id),
-                    rank: r.rank ?? null,
+                    rank: toDisplayRank(r.rank ?? null),
                     name: `${fighter.firstName} ${fighter.lastName}`.trim(),
                     nickname: fighter.nickname || null,
                     ovr: fighter.overallRating,
@@ -68,7 +68,7 @@ async function getRankings(req, res) {
 
         const roster = npcs.map((npc) => ({
             id: String(npc._id),
-            rank: displayRankForNpc(npc.fixedRank, playerRankInTier),
+            rank: toDisplayRank(displayRankForNpc(npc.fixedRank, playerRankInTier)),
             fixedRank: npc.fixedRank,
             name: npc.name,
             nickname: npc.nickname || null,

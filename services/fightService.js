@@ -285,7 +285,7 @@ async function generateOffers(fighterId) {
                 cooldownRemaining: fighter.titleShotCooldown ?? 0,
                 winsNeeded: Math.max(0, MIN_WINS_FOR_TITLE_SHOT - (fighter.winsInCurrentTier ?? 0)),
                 rankNeeded: !rankMet,
-                currentRank: fighter.ranking?.rank ?? null,
+                currentRank: require("./rankingService").toDisplayRank(fighter.ranking?.rank ?? null),
                 nemesisMeta: fighter.nemesis?.opponentId?.toString() === champion._id.toString()
                     ? { lossCount: fighter.nemesis.lossCount, setAt: fighter.nemesis.setAt }
                     : null,

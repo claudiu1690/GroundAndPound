@@ -63,6 +63,8 @@ function FameBlock({ notoriety }) {
 }
 
 function RankBlock({ ranking, tier }) {
+  // `rank` here is the player's display rank (1-N) — champion sits above the
+  // ladder and the player can never hold that slot in their own tier's rankings.
   const rank = ranking?.rank ?? null;
   if (rank == null) {
     return (
@@ -71,15 +73,8 @@ function RankBlock({ ranking, tier }) {
       </span>
     );
   }
-  if (rank === 1) {
-    return (
-      <span className="meta-rank meta-rank-champion" title={`Champion of ${tier}`}>
-        <span className="meta-rank-icon">👑</span>
-        <span className="meta-rank-text">Champion · {tier}</span>
-      </span>
-    );
-  }
-  const isTopFive = rank <= 5;
+  // Title-shot zone = top 5 in division (champion + top 4 contenders).
+  const isTopFive = rank <= 4;
   return (
     <span className={`meta-rank ${isTopFive ? "meta-rank-top5" : ""}`} title={isTopFive ? "Top 5 — title shot zone" : null}>
       <span className="meta-rank-num">#{rank}</span>

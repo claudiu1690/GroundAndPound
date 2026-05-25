@@ -81,7 +81,8 @@ function StreakBadge({ streak }) {
  *   N     → "#N" / RANK
  */
 function rankTileProps(rank) {
-  if (rank === 1) return { value: "👑", label: "CHAMPION", tone: "champion" };
+  // `rank` here is the player's display rank (1-N) — the player never sits at the
+  // champion slot in their own tier's rankings, so we don't need a champion branch.
   if (rank == null) return { value: "—", label: "UNRANKED", tone: "unranked" };
   return { value: `#${rank}`, label: "RANK", tone: "rank" };
 }
@@ -190,12 +191,13 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
       )}
 
       {(() => {
-        const calloutEligible = rank != null && rank <= 15;
+        // Callout requires top 14 displayed (= DB ranks 2-15 = top 15 fighters including champ).
+        const calloutEligible = rank != null && rank <= 14;
         const calloutTooltip = calloutEligible
           ? "Spend fame to force a specific opponent into your next Hard offer"
           : rank == null
             ? "Reach the rankings first (3 fights in this tier)"
-            : `Reach top 15 to unlock callouts — currently #${rank}`;
+            : `Reach top 14 to unlock callouts — currently #${rank}`;
         return (
           <div className="fight-hub-cta">
             <button type="button" className="btn btn-primary fight-hub-btn" onClick={onGetOffers} disabled={blocked} data-tut="request-offers">

@@ -60,7 +60,10 @@ export function RankingsTab({ fighter, onMessage }) {
         return out;
     }, [roster, playerRow]);
 
-    const titleShotAvailable = playerRow && playerRow.rank != null && playerRow.rank >= 2 && playerRow.rank <= 5;
+    // Title-shot zone = champion + top 4 contenders. Player can never be champion in
+    // their current tier's roster (becoming champion = promoting), so we just check
+    // display rank 1-4 (4 contenders directly below the champion).
+    const titleShotAvailable = playerRow && playerRow.rank != null && playerRow.rank >= 1 && playerRow.rank <= 4;
 
     return (
         <div className="rankings-tab" data-tut="rankings-tab">
@@ -103,7 +106,8 @@ export function RankingsTab({ fighter, onMessage }) {
                     {displayList.map((row, i) => {
                         const isChampion = row.isChampion;
                         const isPlayer = row.isPlayer;
-                        const isTopFive = row.rank != null && row.rank >= 2 && row.rank <= 5;
+                        // Title-shot highlight: champion + top 4 contenders = top 5 in division.
+                        const isTopFive = isChampion || (row.rank != null && row.rank >= 1 && row.rank <= 4);
                         const isUnranked = row.__unranked || row.isUnranked;
                         return (
                             <div
