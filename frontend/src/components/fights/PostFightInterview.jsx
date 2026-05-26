@@ -2,6 +2,110 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../api";
 
 /**
+ * Flavor text shown on the DONE state, with 3 variants per tone so the press
+ * conference doesn't read identically every fight. Placeholders:
+ *   {opp}    → the opponent just fought
+ *   {target} → the call-out target (CALLOUT tone only)
+ *
+ * Variants are picked deterministically from the fight ID, so refreshing or
+ * re-rendering the page shows the same line — but a different fight rolls a
+ * different one.
+ */
+const INTERVIEW_VARIANTS = {
+    HUMBLE: [
+        {
+            headline: "You took the humble route.",
+            quote: `"Respect to {opp}. Hell of a fight. I'll be back stronger next time."`,
+        },
+        {
+            headline: "You gave respect at the mic.",
+            quote: `"That was a war. {opp} brought it tonight. I'd run it back any day."`,
+        },
+        {
+            headline: "Class act on the post-fight mic.",
+            quote: `"All credit to {opp}. Tough as nails. The division's better with them in it."`,
+        },
+    ],
+    CONFIDENT: [
+        {
+            headline: "You owned the moment.",
+            quote: `"Like I told you all — I'm built for this. Bring me whoever's next."`,
+        },
+        {
+            headline: "You walked into the cameras tall.",
+            quote: `"Y'all saw it. I do this. Line them up, I'll knock them down."`,
+        },
+        {
+            headline: "You let the division hear you.",
+            quote: `"This is my house now. Anyone in the top five — pull up. The throne's coming."`,
+        },
+    ],
+    CALLOUT: [
+        {
+            headline: "You called out {target}.",
+            quote: `"{target}, you're next. I'm coming for you. Stop ducking."`,
+        },
+        {
+            headline: "You put {target} on notice.",
+            quote: `"You watching, {target}? Quit dancing around me. Sign the contract."`,
+        },
+        {
+            headline: "You aimed straight at {target}.",
+            quote: `"Everyone's been waiting for this fight. {target} — me and you. Make it happen."`,
+        },
+    ],
+    SKIPPED: [
+        {
+            headline: "You waved off the press.",
+            quote: `You walked past the mics without a word. Let the work speak.`,
+        },
+        {
+            headline: "You skipped the cameras.",
+            quote: `No statement, no soundbite — just a towel over your shoulder and out the back door.`,
+        },
+        {
+            headline: "You declined the post-fight interview.",
+            quote: `You shook the cornerman's hand, ignored the mic, and headed for the locker room.`,
+        },
+    ],
+};
+
+/**
+ * Deterministic 0..n-1 index from a string. Same fight ID → same variant index,
+ * different fights → effectively-random pick. Tiny FNV-1a-ish hash.
+ */
+function pickVariant(seed, n) {
+    if (!seed || !n) return 0;
+    let h = 0x811c9dc5;
+    for (let i = 0; i < seed.length; i++) {
+        h ^= seed.charCodeAt(i);
+        h = (h * 0x01000193) >>> 0;
+    }
+    return h % n;
+}
+
+/** Mechanical consequence text — unchanged across variants (it's flag rules, not flavor). */
+function consequenceFor(choice, opponentName, targetName) {
+    if (choice === "HUMBLE") {
+        return opponentName
+            ? `Respect flag placed on ${opponentName} — if you face them again within 6 fights and win, that purse pays +15% iron.`
+            : `Respect flag placed. Win the rematch within 6 fights for +15% iron.`;
+    }
+    if (choice === "CONFIDENT") {
+        return `Pure fame. No flags, no strings attached.`;
+    }
+    if (choice === "CALLOUT") {
+        return targetName
+            ? `Beef flag placed on ${targetName} — beat them within 4 fights for +30% fame on the win. Avoid them and you lose 150 fame.`
+            : `Beef flag placed. Beat them within 4 fights for +30% fame.`;
+    }
+    if (choice === "SKIPPED") {
+        return `No fame, no flags. Save it for next time.`;
+    }
+    return null;
+}
+
+/**
  * Post-fight interview step. Renders between FightSummary and the Continue button.
  * Three tones: Humble / Confident / Call Out. Call Out opens a target picker.
  * Skippable. Emits onResolved({ interview, fameDelta }) on success.
@@ -11,13 +115,15 @@ export function PostFightInterview({
     fightId,
     opponentId,          // just-fought opponent (excluded from callout list)
     opponentName,
+    initialResult,       // if the interview is already resolved (e.g. after a re-render),
+                         // start in DONE state with this payload instead of the tone picker.
     onResolved,          // (result) => void
     onSkipped,           // () => void
     onMessage,           // (msg) => void — show toast-style feedback
 }) {
-    const [mode, setMode] = useState("PICK_TONE"); // PICK_TONE | PICK_TARGET | DONE
+    const [mode, setMode] = useState(initialResult ? "DONE" : "PICK_TONE"); // PICK_TONE | PICK_TARGET | DONE
     const [submitting, setSubmitting] = useState(false);
-    const [result, setResult] = useState(null);
+    const [result, setResult] = useState(initialResult || null);
 
     // Callout roster
     const [candidates, setCandidates] = useState([]);
@@ -74,21 +180,29 @@ export function PostFightInterview({
     if (mode === "DONE" && result) {
         const choice = result.interview?.choice;
         const targetName = result.targetOpponent?.name;
-        const text = choice === "SKIPPED"
-            ? "You skipped the media."
-            : choice === "CALLOUT" && targetName
-                ? `You trash talked ${targetName}.`
-                : choice === "HUMBLE"
-                    ? "You took the humble route."
-                    : choice === "CONFIDENT"
-                        ? "You owned the moment."
-                        : "Interview on the books.";
+        const variant = pickVariant(fightId, INTERVIEW_VARIANTS[choice]?.length || 1);
+        const v = INTERVIEW_VARIANTS[choice]?.[variant] || {};
+
+        // Substitute names into the variant strings ({opp} → opponent, {target} → callout target).
+        const fill = (s) => s
+            ? s.replace(/\{opp\}/g, opponentName || "your opponent")
+               .replace(/\{target\}/g, targetName || "them")
+            : null;
+
+        const headline    = fill(v.headline) || "Interview on the books.";
+        const quote       = fill(v.quote);
+        const consequence = consequenceFor(choice, opponentName, targetName);
+
         return (
             <section className="pfi-wrap pfi-done" data-tut="post-fight-interview">
-                <div className="pfi-done-line">🎙 {text}</div>
-                {result.fameDelta > 0 && (
-                    <div className="pfi-done-delta">+{result.fameDelta} fame</div>
-                )}
+                <header className="pfi-done-header">
+                    <div className="pfi-done-headline">{headline}</div>
+                    {result.fameDelta > 0 && (
+                        <span className="pfi-done-delta">+{result.fameDelta} fame</span>
+                    )}
+                </header>
+                {quote && <blockquote className="pfi-done-quote">{quote}</blockquote>}
+                {consequence && <p className="pfi-done-consequence">{consequence}</p>}
             </section>
         );
     }

@@ -4229,9 +4229,12 @@ code {
 .pfi-done {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.85rem 1rem;
-  background: rgba(34, 197, 94, 0.08);
+  gap: 0.55rem;
+  padding: 0.9rem 1rem;
+  /* Neutral background — the green tint was making the lighter body and
+     consequence text hard to read. The green border-left (kept on .pfi-wrap)
+     still signals "this is the resolved state". */
+  background: var(--content-bg);
   border-left-color: var(--green-bright);
 }
 .pfi-done-header {
@@ -4240,7 +4243,7 @@ code {
   gap: 0.6rem;
 }
 .pfi-done-headline {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--text);
   letter-spacing: 0.02em;
@@ -4258,18 +4261,24 @@ code {
 }
 .pfi-done-quote {
   margin: 0;
-  padding: 0.4rem 0.75rem;
-  font-size: 11.5px;
+  padding: 0.5rem 0.85rem;
+  font-size: 12px;
   font-style: italic;
-  color: var(--text-sec);
-  border-left: 2px solid rgba(0,0,0,0.15);
-  line-height: 1.5;
+  /* Use the primary text color so quotes are properly legible (was --text-sec
+     which is too faded against the neutral panel). */
+  color: var(--text);
+  background: var(--bg-surface);
+  border-left: 3px solid var(--red);
+  border-radius: 0 3px 3px 0;
+  line-height: 1.55;
 }
 .pfi-done-consequence {
   margin: 0;
-  font-size: 11px;
-  color: var(--text-muted);
-  line-height: 1.45;
+  font-size: 11.5px;
+  /* Secondary text instead of muted — keeps it readable while still feeling
+     like supplementary game-rule info under the headline. */
+  color: var(--text-sec);
+  line-height: 1.5;
 }
 /* Old single-line variant kept for any callers still rendering it. */
 .pfi-done-line {
