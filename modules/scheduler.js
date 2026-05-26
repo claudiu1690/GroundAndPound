@@ -1,4 +1,5 @@
 const { Queue, Worker } = require("bullmq");
+const config = require("../config");
 const { redis, ensureRedisConnected } = require("../lib/redis");
 const {
     tickAllActiveEnergy,
@@ -7,12 +8,50 @@ const {
 const notorietyService = require("../services/notorietyService");
 const injuryHealService = require("../services/injuryHealService");
 
-const QUEUE_CONNECTION = {
-    host: process.env.REDIS_HOST || "127.0.0.1",
-    port: Number(process.env.REDIS_PORT || 6379),
-    password: process.env.REDIS_PASSWORD || undefined,
+/**
+ * Build the connection config BullMQ uses for every Queue and Worker.
+ *
+ * Priority:
+ *   1. REDIS_URL — single connection string (Railway, Render, Heroku, Upstash all use this).
+ *      Supports rediss:// for TLS endpoints (Railway's public proxy needs TLS;
+ *      same-project internal URLs do not).
+ *   2. REDIS_HOST / REDIS_PORT / REDIS_PASSWORD — legacy split-vars fallback.
+ *   3. 127.0.0.1:6379 — local dev default.
+ *
+ * Returning a plain config object (not an ioredis instance) lets BullMQ create a
+ * fresh connection per Queue/Worker, which is what BullMQ recommends — workers
+ * can't safely share connections that are also used for non-streaming ops.
+ *
+ * maxRetriesPerRequest: null and enableReadyCheck: false are required by BullMQ
+ * (the workers block forever on BRPOP / XREAD; otherwise ioredis will time them out).
+ */
+const BULLMQ_BASE_OPTS = {
     maxRetriesPerRequest: null,
+    enableReadyCheck: false,
 };
+
+function buildQueueConnection() {
+    // config.redis.url already honors LOCAL_MODE + REDIS_URL + REDIS_URL_LOCAL precedence.
+    const u = new URL(config.redis.url);
+    return {
+        ...BULLMQ_BASE_OPTS,
+        host: u.hostname,
+        port: Number(u.port) || 6379,
+        username: u.username ? decodeURIComponent(u.username) : undefined,
+        password: u.password ? decodeURIComponent(u.password) : undefined,
+        // rediss:// (TLS) — required by Railway's public Redis proxy and Upstash.
+        tls: u.protocol === "rediss:" ? {} : undefined,
+    };
+}
+
+const QUEUE_CONNECTION = buildQueueConnection();
+
+// Boot breadcrumb (password masked) so it's obvious where the workers point.
+console.log(
+    `[scheduler] BullMQ Redis target: ${QUEUE_CONNECTION.host}:${QUEUE_CONNECTION.port}` +
+    `${QUEUE_CONNECTION.tls ? " (TLS)" : ""}` +
+    `${QUEUE_CONNECTION.password ? " (auth)" : ""}`
+);
 
 const energyQueue = new Queue("energy", { connection: QUEUE_CONNECTION });
 const energySyncQueue = new Queue("energy-sync", { connection: QUEUE_CONNECTION });

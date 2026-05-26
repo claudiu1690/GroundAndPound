@@ -2,3 +2,8 @@
 frontend/node_modules/
 frontend/dist
 node_modules/
+
+# Secrets — never commit these
+.env
+.env.*
+!.env.example
