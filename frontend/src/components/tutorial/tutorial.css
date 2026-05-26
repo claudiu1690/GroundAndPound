@@ -139,6 +139,24 @@
     background: #c1142e;
 }
 
+/* Skip-tutorial link in the tooltip footer — quiet by default, becomes the
+   red accent on hover so it reads as "secondary action, available if needed". */
+.tut-tooltip-skip {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 120ms ease;
+}
+.tut-tooltip-skip:hover {
+    color: #e31837;
+}
+
 /* ── Completion modal ──────────────────────────────────────── */
 .tut-complete-root {
     position: fixed;

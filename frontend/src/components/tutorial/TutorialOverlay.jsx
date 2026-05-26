@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../../api";
 import { tutorialBus } from "../../utils/tutorialBus";
 import { TUTORIAL_STEPS } from "../../constants/tutorialSteps";
@@ -223,9 +224,26 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
         if (onComplete) await onComplete();
     }, [fighterId, onComplete]);
 
+    // ── Skip — jump straight to the completion (reward) modal ──
+    // Doesn't call the API yet; the player still has to click "Claim" on the
+    // completion modal which triggers handleComplete. That keeps the 500-iron
+    // reward as an explicit acknowledgement, not a silent grant.
+    const handleSkipTutorial = useCallback(() => {
+        setStepId("complete");
+        setPhaseIndex(0);
+        setTooltipIndex(0);
+        setTooltipsDone(false);
+    }, []);
+
     // ── Render ───────────────────────────────────────────────
+    // We portal to document.body so the overlay sits OUTSIDE any transformed
+    // ancestor. `.app` has a `transform: scale()` for UI scaling on wide monitors,
+    // and any `position: fixed` descendant of a transformed element is positioned
+    // relative to that element's coordinate space — which would shift the scrim
+    // and tooltip by the zoom factor. Portaling to body restores true viewport
+    // positioning so the cut-out lines up with the focal element exactly.
     if (stepId === "complete") {
-        return <TutorialCompleteModal onConfirm={handleComplete} />;
+        return createPortal(<TutorialCompleteModal onConfirm={handleComplete} />, document.body);
     }
 
     const isLastTooltip = tooltipIndex >= tooltips.length - 1;
@@ -241,7 +259,7 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
         body += currentTooltip.variantSuffix[lastFightOutcome] || ".";
     }
 
-    return (
+    return createPortal(
         <div className="tut-overlay">
             <Scrim holeRect={holeRect} />
             {holeRect && (
@@ -262,11 +280,13 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
                     body={body}
                     buttonLabel={buttonLabel}
                     onButton={handleTooltipButton}
+                    onSkip={handleSkipTutorial}
                     index={tooltipIndex}
                     total={tooltips.length}
                 />
             )}
-        </div>
+        </div>,
+        document.body
     );
 }
 

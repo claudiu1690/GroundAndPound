@@ -14,6 +14,7 @@ export function TutorialTooltip({
     body,
     buttonLabel,
     onButton,
+    onSkip,             // optional — renders a "Skip tutorial" link in the footer when provided
     index = 0,
     total = 1,
 }) {
@@ -78,6 +79,11 @@ export function TutorialTooltip({
                             <span key={i} className={`tut-dot ${i === index ? "tut-dot--on" : ""}`} />
                         ))}
                     </div>
+                )}
+                {onSkip && (
+                    <button type="button" className="tut-tooltip-skip" onClick={onSkip}>
+                        Skip tutorial
+                    </button>
                 )}
                 <button type="button" className="tut-tooltip-btn" onClick={onButton}>
                     {buttonLabel}
