@@ -101,6 +101,12 @@ async function resolveInterview({ fighterId, fightId, choice, targetOpponentId }
     if (fight.status !== "completed") {
         throw new Error("Fight is not completed");
     }
+    // Interviews are only available after wins — losses and draws skip the press
+    // conference entirely (no fame opportunity, no flag-writing). The UI hides
+    // the prompt on losses; this server check is the second line of defence.
+    if (!WIN_OUTCOMES.includes(fight.outcome)) {
+        throw new Error("Post-fight interview is only available after a win");
+    }
     if (fight.interview?.done) {
         return {
             alreadyDone: true,

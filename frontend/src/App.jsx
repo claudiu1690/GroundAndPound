@@ -1039,17 +1039,36 @@ const handleGetOffers = useCallback(async () => {
                     <FightSummary summary={lastFightSummary} />
                     <FightDescription commentary={lastFightCommentary} />
                   </div>
-                  {lastFightSummary.fightId && !lastFightSummary.interviewDone && (
+                  {/* Post-fight interview is offered only after wins. A loss skips the
+                      press conference entirely — no fame opportunity, no flag-writing.
+                      Draws don't trigger an interview either (no clear "win" to pitch).
+                      The component stays mounted after the player picks a tone so its
+                      built-in DONE state can show what they said and which flag was placed
+                      — passing `initialResult` lets it boot directly into DONE on re-renders. */}
+                  {lastFightSummary.fightId && lastFightSummary.recordChange === "W" && (
                     <PostFightInterview
                       fighterId={fighter?._id}
                       fightId={lastFightSummary.fightId}
                       opponentId={lastFightSummary.opponentId}
                       opponentName={lastFightSummary.opponentName}
+                      initialResult={lastFightSummary.interviewResult}
                       onResolved={(res) => {
-                        // Mark interview done so the UI collapses to the "done" state,
-                        // then refresh fighter to pick up fame delta + new flags.
+                        // Store the result so the component shows its DONE state on re-renders.
                         setLastFightSummary((prev) => prev ? { ...prev, interviewDone: true, interviewResult: res } : prev);
-                        if (fighter?._id) loadFighter(fighter._id, { clearMessage: false });
+                        // Apply the fame delta locally instead of refetching the full
+                        // fighter from the server — a full setFighter() replacement
+                        // changes the object reference, which re-renders the sidebar,
+                        // stat meters, badges, and fight summary in lockstep and reads
+                        // visually like a full-app refresh. Other server-side state
+                        // (flags, fight history) syncs on the next natural refresh
+                        // (60s interval, or any subsequent player action).
+                        if (res?.fameDelta) {
+                          setFighter((prev) => {
+                            if (!prev) return prev;
+                            const score = (prev.notoriety?.score || 0) + res.fameDelta;
+                            return { ...prev, notoriety: { ...prev.notoriety, score } };
+                          });
+                        }
                         tutorialBus.emit("interview_done");
                       }}
                       onMessage={setMessage}
