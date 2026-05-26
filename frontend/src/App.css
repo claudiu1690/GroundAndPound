@@ -97,11 +97,45 @@ code {
 /* ============================================================
    APP SHELL — full-viewport flex column
    ============================================================ */
+
+/* UI scale — the whole app is rendered through `transform: scale()` so text,
+   paddings, and fixed-px sidebar widths grow uniformly on wide monitors. The
+   transform pre-shrinks .app to (viewport / scale) so after scaling its visual
+   size = exactly the viewport (no overflow, no scrollbars). #root has flex
+   centering so .app stays horizontally centered at every scale.
+
+   Default is 1. Media queries below kick in on wider monitors so a 2560-wide
+   screen at 100% browser zoom doesn't look like a tiny island. Adjust to taste. */
+:root {
+  --ui-zoom: 1;
+}
+@media (min-width: 1700px) { :root { --ui-zoom: 1.15; } }
+@media (min-width: 2000px) { :root { --ui-zoom: 1.25; } }
+@media (min-width: 2400px) { :root { --ui-zoom: 1.4; } }
+@media (min-width: 3000px) { :root { --ui-zoom: 1.6; } }
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  /* Pre-shrink so visual size = viewport after scaling. Without this, the scaled
+     .app would overflow by (zoom - 1) × viewport on both axes. */
+  width: calc(100vw / var(--ui-zoom, 1));
+  height: calc(100vh / var(--ui-zoom, 1));
   overflow: hidden;
+  transform: scale(var(--ui-zoom, 1));
+  /* top center keeps the layout anchored at the top of the viewport and
+     horizontally centered, regardless of scale factor. */
+  transform-origin: top center;
+  flex-shrink: 0;
 }
 
 .app-loading {
@@ -118,6 +152,12 @@ code {
    ============================================================ */
 .app-main {
   flex: 1;
+  /* Flex centering so .app-main-center (capped at --content-max, ~960px) sits
+     in the middle of the main area instead of hugging the left edge of the
+     sidebar. Without this the content reads as "shifted left" relative to the
+     main area even though the outer block is centered on the page. */
+  display: flex;
+  justify-content: center;
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
@@ -313,11 +353,11 @@ code {
 .app-center-wrap {
   display: flex;
   width: 100%;
-  /* Caps content at 1600px on wide monitors (e.g. 1440p / 2560-wide) so the
-     layout doesn't drift into "tiny island in the middle of a vast screen"
-     territory at 100% browser zoom. On narrower viewports (<1600px) it falls
-     back to width: 100% and fills naturally. */
-  max-width: 1600px;
+  /* Centers the sidebar + main content as a single block. At zoom 1.4 on a 2560
+     viewport this yields ~440px symmetric gutter on each side. The .app element
+     fills the viewport via the scale transform; this cap shrinks the content
+     inside it back to a fixed width and centers it via .app-body flex. */
+  max-width: 1200px;
   min-height: 0;
   overflow: hidden;
   background-color: var(--page-bg);
@@ -450,7 +490,7 @@ code {
   align-items: center;
   gap: 0.75rem;
   width: 100%;
-  max-width: 1600px;
+  max-width: 1200px;
   padding: 0 0.75rem;
 }
 
@@ -4189,22 +4229,54 @@ code {
 .pfi-done {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.7rem 1rem;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
   background: rgba(34, 197, 94, 0.08);
   border-left-color: var(--green-bright);
 }
-.pfi-done-line {
-  font-size: 12px;
-  font-weight: 700;
+.pfi-done-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.pfi-done-headline {
+  font-size: 13px;
+  font-weight: 800;
   color: var(--text);
   letter-spacing: 0.02em;
+  flex: 1;
 }
 .pfi-done-delta {
   font-size: 11px;
   font-weight: 800;
   color: var(--gold-bright);
+  background: rgba(212, 160, 18, 0.12);
+  border: 1px solid rgba(212, 160, 18, 0.35);
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.pfi-done-quote {
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--text-sec);
+  border-left: 2px solid rgba(0,0,0,0.15);
+  line-height: 1.5;
+}
+.pfi-done-consequence {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+/* Old single-line variant kept for any callers still rendering it. */
+.pfi-done-line {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
 }
 
 @media (max-width: 640px) {
