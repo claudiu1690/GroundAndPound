@@ -315,7 +315,7 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: "nav-events",
                         title: "The Big Stage",
-                        body: "Events are major fight cards featuring NPC fighters competing at the highest level. You can't fight on these cards yet — but you can bet on them. Tap the Events tab.",
+                        body: "Events are weekly NPC fight cards. You can't fight on them — but you can bet iron on the outcomes. Tap the Events tab.",
                     },
                 ],
             },
@@ -326,13 +326,18 @@ export const TUTORIAL_STEPS = {
                 tooltips: [
                     {
                         anchor: "event-headliner",
-                        title: "Place Your Bets",
-                        body: "Study the fighters, check the odds, and place your iron on who you think wins. Get it right and you multiply your stake. Events run on a schedule — check back to see results.",
+                        title: "Place a Bet",
+                        body: "Click any fight to open the betting slip. You pick a side, optionally a method, and a stake amount. The card resolves automatically after 7 days — winning bets pay out at the locked odds straight to your iron balance.",
+                    },
+                    {
+                        anchor: "event-headliner",
+                        title: "Two Bet Types",
+                        body: "Winner bets are just on who wins — A, Draw, or B. Lower odds, lower risk. Exact bets are winner plus method (KO/TKO, Submission, Decision). Harder to hit, much bigger payout. The slip shows both options at the top.",
                     },
                     {
                         anchor: ["event-potential", "event-headliner"],
-                        title: "Reading the Odds",
-                        body: "The odds tell you how much you win per iron bet. Higher odds mean a bigger payout — but also means that fighter is less likely to win according to the market. Use your knowledge of styles and stats to find value.",
+                        title: "Stake & Returns",
+                        body: "Iron is debited the moment you place the bet, so spend within your means. Stake limits scale with your tier — Amateur caps out at ⊗1,000 per fight, GCS at ⊗10,000. Returns = stake × locked odds. There's a 15% house edge, so the long-run only pays off if you actually read the matchups.",
                     },
                 ],
             },

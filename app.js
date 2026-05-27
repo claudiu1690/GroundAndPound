@@ -328,12 +328,37 @@ async function migrateWeightClassRename() {
     }
 }
 
+/**
+ * Event-betting migration — the events tab changed from a free fame/iron
+ * prediction system to a real iron-staking betting system. Old Prediction docs
+ * have the legacy shape (no `betType`, no `stake`, no `lockedOdds`) and would
+ * crash the new resolve loop with "Cannot read properties of undefined".
+ *
+ * Clean cutover: delete any unresolved predictions (the player loses nothing —
+ * they paid no iron under the old model). Resolved predictions stay in the DB
+ * untouched so their fame/iron history still shows up in the History tab; the
+ * new UI tolerates missing `stake` / `lockedOdds` on those rows.
+ */
+async function migrateClearLegacyPredictions() {
+    const predictions = mongoose.connection.collection("predictions");
+    const result = await predictions.deleteMany({
+        $and: [
+            { $or: [{ "resolution.resolved": false }, { "resolution.resolved": { $exists: false } }] },
+            { $or: [{ stake: { $exists: false } }, { betType: { $exists: false } }] },
+        ],
+    });
+    if (result.deletedCount > 0) {
+        console.log(`[Migration] Cleared ${result.deletedCount} unresolved legacy prediction(s) (pre-betting model).`);
+    }
+}
+
 mongoose.connect(config.database.url, config.database.options)
     .then(async () => {
         console.log("Connected to MongoDB");
         await migrateLegacyEnergyShape();
         await migrateLegacyNotorietyNumber();
         await migrateWeightClassRename();
+        await migrateClearLegacyPredictions();
         await backfillFighterGymFromQuestProgress();
         await backfillTutorialForLegacyFighters();
         await backfillDoctorInjuryTimers();

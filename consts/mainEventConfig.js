@@ -34,12 +34,41 @@ const TOTAL_FIGHTS = CARD_FIGHT_SLOTS.length;
 const ELITE_OVR_THRESHOLD = 88;   // ≥ this goes into main card / headliner pool
 const PRELIM_MIN_OVR      = 70;   // < ELITE and ≥ this goes into prelim pool
 
-/** Tiered rewards per slot — exact (winner+method), winner only, wrong winner. */
-const REWARDS_BY_SLOT = {
-    PRELIM:    { exactFame: 100, exactIron: 200, winnerFame:  30, wrongFame: -20 },
-    MAIN:      { exactFame: 200, exactIron: 400, winnerFame:  75, wrongFame: -40 },
-    HEADLINER: { exactFame: 300, exactIron: 500, winnerFame: 100, wrongFame: -50 },
+/**
+ * BETTING SYSTEM
+ *
+ * Events are real bets now, not free predictions: the player stakes iron, gets
+ * decimal odds locked in at bet time, and either wins (stake × odds, paid in iron)
+ * or loses the stake. No fame is involved.
+ *
+ * Two bet types:
+ *   WINNER — bet on who wins (A, B, or DRAW). Lower odds, lower risk.
+ *   EXACT  — bet on winner AND method. Higher odds, harder to hit.
+ *
+ * House edge ("vig") is 15% — bets are intentionally not a viable grinding
+ * strategy. Iron from betting is a secondary income, not a primary one.
+ */
+const BET_VIG = 0.15;
+
+/** Decimal-odds floor/ceiling to keep the numbers sane. */
+const MIN_DECIMAL_ODDS = 1.10;
+const MAX_DECIMAL_ODDS = 30.0;
+
+/** Per-tier stake limits. Scales with the player's iron economy. */
+const BET_LIMITS_BY_TIER = {
+    Amateur:         { min:  50, max:  1000 },
+    "Regional Pro":  { min: 100, max:  2000 },
+    National:        { min: 200, max:  4000 },
+    "GCS Contender": { min: 300, max:  7000 },
+    GCS:             { min: 500, max: 10000 },
 };
+
+/**
+ * Base method distribution (conditional on someone winning). Used together with
+ * STYLE_METHOD_BIAS to estimate exact-method probability for odds calculation.
+ * These are weights, not probabilities — they get normalised when consumed.
+ */
+const METHOD_BASE_DISTRIBUTION = { "KO/TKO": 30, Submission: 20, Decision: 50 };
 
 const METHODS = ["KO/TKO", "Submission", "Decision", "Draw"];
 
@@ -71,10 +100,14 @@ module.exports = {
     TOTAL_FIGHTS,
     ELITE_OVR_THRESHOLD,
     PRELIM_MIN_OVR,
-    REWARDS_BY_SLOT,
     METHODS,
     STYLE_METHOD_BIAS,
     DRAW_CHANCE,
     MAX_OVR_GAP_FIGHT,
     MAX_FIGHT_HISTORY,
+    BET_VIG,
+    MIN_DECIMAL_ODDS,
+    MAX_DECIMAL_ODDS,
+    BET_LIMITS_BY_TIER,
+    METHOD_BASE_DISTRIBUTION,
 };
