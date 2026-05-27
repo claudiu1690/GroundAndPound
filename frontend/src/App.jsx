@@ -995,6 +995,15 @@ const handleGetOffers = useCallback(async () => {
                 fighter={fighter}
                 onMessage={setMessage}
                 onRefreshFighter={loadFighter}
+                /* In-place iron patch after a bet is placed — avoids the full
+                   fighter refetch + global re-render. Same pattern as the
+                   post-fight interview fame delta. */
+                onLocalIronDelta={(delta) => {
+                  setFighter((prev) => {
+                    if (!prev) return prev;
+                    return { ...prev, iron: Math.max(0, (prev.iron || 0) + delta) };
+                  });
+                }}
               />
             </div>
           )}

@@ -2,18 +2,21 @@ const FightCard = require("../models/mainEventModel");
 const Prediction = require("../models/predictionModel");
 const Opponent = require("../models/opponentModel");
 const Fighter = require("../models/fighterModel");
-const notorietyService = require("./notorietyService");
 const {
     EVENT_WINDOW_MS,
     CARD_FIGHT_SLOTS,
     ELITE_OVR_THRESHOLD,
     PRELIM_MIN_OVR,
-    REWARDS_BY_SLOT,
     METHODS,
     STYLE_METHOD_BIAS,
     DRAW_CHANCE,
     MAX_OVR_GAP_FIGHT,
     MAX_FIGHT_HISTORY,
+    BET_VIG,
+    MIN_DECIMAL_ODDS,
+    MAX_DECIMAL_ODDS,
+    BET_LIMITS_BY_TIER,
+    METHOD_BASE_DISTRIBUTION,
 } = require("../consts/mainEventConfig");
 
 // ─────────────────────────────────────────────────────────────
@@ -274,6 +277,96 @@ function publicOddsFor(a, b) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Betting odds
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Probability of a winning side picking each method. Combines the style's
+ * baseline method bias with the league-wide METHOD_BASE_DISTRIBUTION so
+ * styles still feel distinct without overfitting. Returns normalised
+ * probabilities (sum = 1).
+ */
+function methodProbabilitiesForSide(fighter) {
+    const styleBias = STYLE_METHOD_BIAS[fighter.style] || METHOD_BASE_DISTRIBUTION;
+    const blended = {
+        "KO/TKO":     (styleBias["KO/TKO"]     || 0) * 0.6 + (METHOD_BASE_DISTRIBUTION["KO/TKO"]     || 0) * 0.4,
+        Submission:   (styleBias.Submission    || 0) * 0.6 + (METHOD_BASE_DISTRIBUTION.Submission    || 0) * 0.4,
+        Decision:     (styleBias.Decision      || 0) * 0.6 + (METHOD_BASE_DISTRIBUTION.Decision      || 0) * 0.4,
+    };
+    const total = blended["KO/TKO"] + blended.Submission + blended.Decision;
+    if (total <= 0) return { "KO/TKO": 0.34, Submission: 0.33, Decision: 0.33 };
+    return {
+        "KO/TKO":   blended["KO/TKO"]   / total,
+        Submission: blended.Submission  / total,
+        Decision:   blended.Decision    / total,
+    };
+}
+
+/** Apply the house vig + clamp to the legal odds range. */
+function clampOdds(rawDecimalOdds) {
+    if (!Number.isFinite(rawDecimalOdds) || rawDecimalOdds <= 0) return MIN_DECIMAL_ODDS;
+    const withVig = rawDecimalOdds * (1 - BET_VIG);
+    const clamped = Math.max(MIN_DECIMAL_ODDS, Math.min(MAX_DECIMAL_ODDS, withVig));
+    return Math.round(clamped * 100) / 100;
+}
+
+/**
+ * Compute the full odds board for a fight. Returns:
+ *   winner: { A, B, DRAW } — decimal odds for winner-only bets
+ *   exact:  { A: { KO/TKO, Submission, Decision }, B: {...}, DRAW: { Draw } }
+ *
+ * All odds already factor in vig + bounds. Stored on the card response so the
+ * client doesn't have to recompute — and locked into each Prediction at bet time.
+ */
+function buildOddsBoard(a, b) {
+    const sidePcts = publicOddsFor(a, b); // already %, includes draw band
+    const pA = sidePcts.A / 100;
+    const pB = sidePcts.B / 100;
+    const pDraw = sidePcts.DRAW / 100;
+
+    const winner = {
+        A:    clampOdds(pA > 0 ? 1 / pA : MAX_DECIMAL_ODDS),
+        B:    clampOdds(pB > 0 ? 1 / pB : MAX_DECIMAL_ODDS),
+        DRAW: clampOdds(pDraw > 0 ? 1 / pDraw : MAX_DECIMAL_ODDS),
+    };
+
+    const methodsA = methodProbabilitiesForSide(a);
+    const methodsB = methodProbabilitiesForSide(b);
+    const exact = {
+        A: {
+            "KO/TKO":   clampOdds(pA * methodsA["KO/TKO"]   > 0 ? 1 / (pA * methodsA["KO/TKO"])   : MAX_DECIMAL_ODDS),
+            Submission: clampOdds(pA * methodsA.Submission  > 0 ? 1 / (pA * methodsA.Submission)  : MAX_DECIMAL_ODDS),
+            Decision:   clampOdds(pA * methodsA.Decision    > 0 ? 1 / (pA * methodsA.Decision)    : MAX_DECIMAL_ODDS),
+        },
+        B: {
+            "KO/TKO":   clampOdds(pB * methodsB["KO/TKO"]   > 0 ? 1 / (pB * methodsB["KO/TKO"])   : MAX_DECIMAL_ODDS),
+            Submission: clampOdds(pB * methodsB.Submission  > 0 ? 1 / (pB * methodsB.Submission)  : MAX_DECIMAL_ODDS),
+            Decision:   clampOdds(pB * methodsB.Decision    > 0 ? 1 / (pB * methodsB.Decision)    : MAX_DECIMAL_ODDS),
+        },
+        DRAW: { Draw: winner.DRAW },
+    };
+
+    return { winner, exact };
+}
+
+/**
+ * Pick the odds value relevant to a specific bet — used at bet placement (to
+ * lock the value) and at resolution (to compute payout if we needed to re-derive,
+ * though we always use the locked value for payout — fairness rule).
+ */
+function oddsForBet(board, betType, pickedSide, pickedMethod) {
+    if (betType === "WINNER") return board.winner[pickedSide] || MIN_DECIMAL_ODDS;
+    // EXACT
+    if (pickedSide === "DRAW") return board.exact.DRAW.Draw;
+    return board.exact[pickedSide]?.[pickedMethod] || MIN_DECIMAL_ODDS;
+}
+
+/** Resolve the bet limits for the player's tier, falling back to Amateur. */
+function betLimitsFor(fighter) {
+    return BET_LIMITS_BY_TIER[fighter.promotionTier] || BET_LIMITS_BY_TIER.Amateur;
+}
+
+// ─────────────────────────────────────────────────────────────
 // Resolve card
 // ─────────────────────────────────────────────────────────────
 
@@ -298,43 +391,33 @@ async function resolveCard(cardDoc) {
     cardDoc.resolvedAt = new Date();
     await cardDoc.save();
 
-    // Settle predictions
+    // Settle bets — iron payouts based on locked odds. Stake was already
+    // deducted at bet time; on a win we credit stake × lockedOdds, on a loss
+    // the player just loses the already-debited stake.
     const predictions = await Prediction.find({ cardId: cardDoc._id, "resolution.resolved": false });
     for (const p of predictions) {
         const fight = cardDoc.fights[p.fightIndex];
         if (!fight) continue;
 
         const outcome = fight.actualOutcome;
-        const rewards = REWARDS_BY_SLOT[fight.slot] || REWARDS_BY_SLOT.PRELIM;
-
         const correctSide = p.pickedSide === outcome.winnerSide;
-        const correctExact = correctSide && p.pickedMethod === outcome.method;
+        const won = p.betType === "WINNER"
+            ? correctSide
+            : (correctSide && p.pickedMethod === outcome.method);
 
-        let fameDelta = 0;
-        let ironDelta = 0;
-        if (correctExact) {
-            fameDelta = rewards.exactFame;
-            ironDelta = rewards.exactIron;
-        } else if (correctSide) {
-            fameDelta = rewards.winnerFame;
-        } else {
-            fameDelta = rewards.wrongFame;
-        }
+        const payout = won ? Math.round(p.stake * p.lockedOdds) : 0;
+        // netDelta: gain (or loss) relative to before the bet was placed.
+        // Win:  +stake×odds back, paid −stake at bet time → net = payout − stake
+        // Loss: stake gone, no payout → net = −stake
+        const netDelta = won ? (payout - p.stake) : -p.stake;
 
         try {
-            const fighter = await Fighter.findById(p.fighterId);
-            if (fighter) {
-                if (fameDelta !== 0) {
-                    notorietyService.applyNotorietyDelta(fighter, fameDelta, {
-                        skipFreezeBlock: true,
-                        code: fameDelta > 0 ? "PREDICTION_RIGHT" : "PREDICTION_WRONG",
-                        reason: `${fight.slot.toLowerCase()}: ${correctExact ? "exact call" : correctSide ? "winner only" : "wrong winner"} (${fight.fighterA.name} vs ${fight.fighterB.name})`,
-                        meta: { cardId: cardDoc._id, fightIndex: p.fightIndex, slot: fight.slot },
-                    });
-                    notorietyService.touchLastEvent(fighter);
+            if (won) {
+                const fighter = await Fighter.findById(p.fighterId);
+                if (fighter) {
+                    fighter.iron = (fighter.iron || 0) + payout;
+                    await fighter.save();
                 }
-                if (ironDelta > 0) fighter.iron = (fighter.iron || 0) + ironDelta;
-                await fighter.save();
             }
         } catch (e) {
             console.error("[fightCard] payout failed for prediction", p._id, e.message);
@@ -342,10 +425,9 @@ async function resolveCard(cardDoc) {
 
         p.resolution = {
             resolved: true,
-            correctSide,
-            correctExact,
-            fameDelta,
-            ironDelta,
+            won,
+            payout,
+            netDelta,
             actualSide: outcome.winnerSide,
             actualMethod: outcome.method,
             resolvedAt: new Date(),
@@ -385,15 +467,37 @@ async function applyResultToOpponent(opponentId, outcome, side) {
 // Predictions
 // ─────────────────────────────────────────────────────────────
 
-async function submitPrediction(fighterId, cardId, fightIndex, pickedSide, pickedMethod) {
+/**
+ * Place a bet on a fight. Validates the bet type/side/method, checks the iron
+ * stake against the player's tier limits + current balance, deducts the stake
+ * immediately, and locks in the decimal odds at the time of submission. The
+ * locked odds are used at card resolution to compute payout — even if the
+ * fighter's tier or the odds board changes between bet and resolve, the
+ * player gets the odds they signed up for.
+ */
+async function submitPrediction(fighterId, cardId, fightIndex, betType, pickedSide, pickedMethod, stake) {
+    // ── Validate inputs ───────────────────────────────────────────────
+    if (!["WINNER", "EXACT"].includes(betType)) throw new Error("Invalid bet type");
     if (!["A", "B", "DRAW"].includes(pickedSide)) throw new Error("Invalid side");
-    if (pickedSide === "DRAW") {
-        pickedMethod = "Draw";
-    } else if (!METHODS.includes(pickedMethod) || pickedMethod === "Draw") {
-        throw new Error("Invalid method");
+
+    if (betType === "EXACT") {
+        if (pickedSide === "DRAW") {
+            pickedMethod = "Draw";
+        } else if (!["KO/TKO", "Submission", "Decision"].includes(pickedMethod)) {
+            throw new Error("Invalid method");
+        }
+    } else {
+        // WINNER bets ignore method entirely.
+        pickedMethod = null;
     }
     if (!Number.isInteger(fightIndex) || fightIndex < 0) throw new Error("Invalid fight index");
 
+    const stakeNum = Number(stake);
+    if (!Number.isFinite(stakeNum) || stakeNum <= 0 || !Number.isInteger(stakeNum)) {
+        throw new Error("Stake must be a positive integer");
+    }
+
+    // ── Load card / fight / fighter ──────────────────────────────────
     const card = await FightCard.findById(cardId);
     if (!card) throw new Error("Card not found");
     if (card.status !== "upcoming") throw new Error("Card already resolved");
@@ -402,16 +506,43 @@ async function submitPrediction(fighterId, cardId, fightIndex, pickedSide, picke
     const fight = card.fights[fightIndex];
     if (!fight) throw new Error("Invalid fight index");
 
+    const fighter = await Fighter.findById(fighterId);
+    if (!fighter) throw new Error("Fighter not found");
+
     const existing = await Prediction.findOne({ fighterId, cardId, fightIndex });
-    if (existing) throw new Error("You have already predicted this fight");
+    if (existing) throw new Error("You have already bet on this fight");
+
+    // ── Validate stake against tier limits + iron balance ────────────
+    const limits = betLimitsFor(fighter);
+    if (stakeNum < limits.min) {
+        throw new Error(`Minimum bet at this tier is ${limits.min} iron`);
+    }
+    if (stakeNum > limits.max) {
+        throw new Error(`Maximum bet at this tier is ${limits.max} iron`);
+    }
+    const currentIron = fighter.iron || 0;
+    if (stakeNum > currentIron) {
+        throw new Error(`Not enough iron — you have ${currentIron}, bet is ${stakeNum}`);
+    }
+
+    // ── Lock odds at bet time ────────────────────────────────────────
+    const board = buildOddsBoard(fight.fighterA, fight.fighterB);
+    const lockedOdds = oddsForBet(board, betType, pickedSide, pickedMethod);
+
+    // ── Debit stake + create prediction ──────────────────────────────
+    fighter.iron = currentIron - stakeNum;
+    await fighter.save();
 
     const pred = await Prediction.create({
         fighterId,
         cardId,
         fightIndex,
         fightSlot: fight.slot,
+        betType,
         pickedSide,
         pickedMethod,
+        stake: stakeNum,
+        lockedOdds,
         matchup: { aName: fight.fighterA.name, bName: fight.fighterB.name },
     });
     return shapePrediction(pred.toObject());
@@ -451,7 +582,10 @@ function shapeCard(card) {
             fighterA: f.fighterA,
             fighterB: f.fighterB,
             actualOutcome: f.actualOutcome,
+            // Win probability percentages (legacy display).
             publicOdds: publicOddsFor(f.fighterA, f.fighterB),
+            // Full decimal-odds board for the bet UI.
+            oddsBoard: buildOddsBoard(f.fighterA, f.fighterB),
         })),
     };
 }
@@ -463,12 +597,19 @@ function shapePrediction(p) {
         fighterId: String(p.fighterId),
         fightIndex: p.fightIndex,
         fightSlot: p.fightSlot,
+        betType: p.betType,
         pickedSide: p.pickedSide,
         pickedMethod: p.pickedMethod,
+        stake: p.stake,
+        lockedOdds: p.lockedOdds,
         matchup: p.matchup,
         resolution: p.resolution,
         createdAt: p.createdAt,
     };
+}
+
+function getBetLimitsForFighter(fighter) {
+    return betLimitsFor(fighter);
 }
 
 module.exports = {
@@ -477,4 +618,5 @@ module.exports = {
     listFighterPredictionsForCard,
     listHistory,
     resolveCard,
+    getBetLimitsForFighter,
 };

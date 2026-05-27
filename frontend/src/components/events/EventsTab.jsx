@@ -9,13 +9,6 @@ const SLOT_LABEL = {
     HEADLINER: "Headliner",
 };
 
-/** Mirrored from consts/mainEventConfig.js — used to compute the potential bar locally. */
-const REWARDS_BY_SLOT = {
-    PRELIM:    { exactFame: 100, exactIron: 200, winnerFame:  30, wrongFame: -20 },
-    MAIN:      { exactFame: 200, exactIron: 400, winnerFame:  75, wrongFame: -40 },
-    HEADLINER: { exactFame: 300, exactIron: 500, winnerFame: 100, wrongFame: -50 },
-};
-
 const SEEN_CARD_KEY = (fighterId) => `gp_seen_resolved_card_${fighterId}`;
 
 function relativeTime(d) {
@@ -43,7 +36,7 @@ function pickedNameFor(prediction, fight) {
     return "Draw";
 }
 
-export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
+export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDelta }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [pickerFight, setPickerFight] = useState(null);
@@ -51,6 +44,7 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
     const [overlayDismissed, setOverlayDismissed] = useState(false);
 
     const fighterId = fighter?._id;
+    const playerIron = fighter?.iron ?? 0;
 
     const load = useCallback(async () => {
         if (!fighterId) return;
@@ -68,30 +62,49 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
 
     useEffect(() => { load(); }, [load]);
 
-    const submitPrediction = useCallback(async (fightIndex, pickedSide, pickedMethod) => {
+    const submitBet = useCallback(async (fightIndex, betType, pickedSide, pickedMethod, stake) => {
         if (!data?.current?.id) return;
         setSubmitting(true);
         try {
-            await api.submitCardPrediction(data.current.id, {
+            const res = await api.submitCardPrediction(data.current.id, {
                 fighterId,
                 fightIndex,
+                betType,
                 pickedSide,
-                pickedMethod: pickedSide === "DRAW" ? "Draw" : pickedMethod,
+                pickedMethod: betType === "EXACT" && pickedSide !== "DRAW" ? pickedMethod : null,
+                stake,
             });
-            onMessage?.("Prediction locked.");
+            onMessage?.(`Bet locked — ${stake} iron staked.`);
             setPickerFight(null);
-            await load();
+
+            // Local state patch — no full reload. The whole app would re-render if we
+            // called load() (replaces data, predictionsByIndex, history) AND
+            // onRefreshFighter (replaces the fighter object everywhere it's read).
+            // Instead we splice the new prediction into the existing card data and
+            // ask the parent to decrement iron in-place via setFighter.
+            const newPrediction = res?.prediction;
+            if (newPrediction) {
+                setData((prev) => {
+                    if (!prev) return prev;
+                    return {
+                        ...prev,
+                        myPredictions: [...(prev.myPredictions || []), newPrediction],
+                    };
+                });
+            }
+            if (onLocalIronDelta) onLocalIronDelta(-stake);
         } catch (e) {
-            onMessage?.(e.message || "Could not submit prediction");
+            onMessage?.(e.message || "Could not place bet");
         }
         setSubmitting(false);
-    }, [data, fighterId, load, onMessage]);
+    }, [data, fighterId, onMessage, onLocalIronDelta]);
 
     const summaryStats = useMemo(() => {
         const h = data?.history || [];
-        const right = h.filter((p) => p.resolution?.correctSide).length;
-        const exact = h.filter((p) => p.resolution?.correctExact).length;
-        return { right, exact, total: h.length };
+        const won = h.filter((p) => p.resolution?.won).length;
+        const totalStake = h.reduce((s, p) => s + (p.stake || 0), 0);
+        const totalNet   = h.reduce((s, p) => s + (p.resolution?.netDelta || 0), 0);
+        return { won, total: h.length, totalStake, totalNet };
     }, [data]);
 
     if (loading || !data) {
@@ -102,7 +115,7 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
         );
     }
 
-    const { current, justResolved, myPredictions, history } = data;
+    const { current, justResolved, myPredictions, history, betLimits } = data;
     if (!current) {
         return (
             <section className="events-tab">
@@ -142,33 +155,27 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
     const mainFights   = current.fights.filter((f) => f.slot === "MAIN");
     const prelimFights = current.fights.filter((f) => f.slot === "PRELIM");
 
-    // ── Potential calculation ───────────────────────────────
-    // Locked picks contribute their full exact-vs-wrong swing to the totals.
-    // Unpicked fights are tallied separately so we can show "if you pick the rest, +X
-    // more fame is on the table" — a nudge to actually fill out the card.
+    // ── Bet potential — sum across all locked bets ───────────
     const potential = (() => {
-        let bestFame = 0, bestIron = 0, worstFame = 0;
-        let unpickedExactFame = 0, unpickedExactIron = 0, unpickedWorstFame = 0;
+        let staked = 0;
+        let potentialPayout = 0;
         let lockedCount = 0, unpickedCount = 0;
         for (const f of current.fights) {
-            const r = REWARDS_BY_SLOT[f.slot] || REWARDS_BY_SLOT.PRELIM;
             const pred = predictionsByIndex[f.index];
             if (pred) {
                 lockedCount += 1;
-                bestFame  += r.exactFame;
-                bestIron  += r.exactIron;
-                worstFame += r.wrongFame;
+                staked += pred.stake || 0;
+                potentialPayout += Math.round((pred.stake || 0) * (pred.lockedOdds || 1));
             } else {
                 unpickedCount += 1;
-                unpickedExactFame += r.exactFame;
-                unpickedExactIron += r.exactIron;
-                unpickedWorstFame += r.wrongFame;
             }
         }
         return {
-            bestFame, bestIron, worstFame,
-            unpickedExactFame, unpickedExactIron, unpickedWorstFame,
-            lockedCount, unpickedCount,
+            staked,
+            potentialPayout,
+            potentialProfit: potentialPayout - staked,
+            lockedCount,
+            unpickedCount,
             total: current.fights.length,
         };
     })();
@@ -187,8 +194,10 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
                 open={!!pickerFight}
                 fight={pickerFight}
                 onClose={() => setPickerFight(null)}
-                onSubmit={submitPrediction}
+                onSubmit={submitBet}
                 submitting={submitting}
+                betLimits={betLimits}
+                playerIron={playerIron}
             />
 
             {justResolved && !shouldShowOverlay && justResolved.fights?.length > 0 && (
@@ -242,19 +251,29 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter }) {
                 </section>
             )}
 
-            {/* ── Potential bar ── */}
+            {/* ── Card potential ── */}
             <PotentialBar potential={potential} />
 
-            {/* ── Your predictions history ── */}
+            {/* ── Your bet history ── */}
             <section className="events-history">
-                <h3>Your Predictions</h3>
+                <h3>Your Bets</h3>
                 <div className="events-history-stats">
                     {summaryStats.total > 0
-                        ? `${summaryStats.right} / ${summaryStats.total} winners · ${summaryStats.exact} exact calls`
-                        : "No resolved predictions yet."}
+                        ? (
+                            <>
+                                {summaryStats.won} / {summaryStats.total} won
+                                {" · "}
+                                <span className={summaryStats.totalNet >= 0 ? "events-stats-pos" : "events-stats-neg"}>
+                                    {summaryStats.totalNet >= 0 ? "+" : ""}{summaryStats.totalNet.toLocaleString()} ⊗
+                                </span>
+                                {" net across "}
+                                {summaryStats.totalStake.toLocaleString()} ⊗ staked
+                            </>
+                        )
+                        : "No resolved bets yet."}
                 </div>
                 {history.length === 0 ? (
-                    <div className="events-empty-hist">Your past predictions will appear here after they resolve.</div>
+                    <div className="events-empty-hist">Your past bets will appear here after they resolve.</div>
                 ) : (
                     <ul className="events-history-list">
                         {history.slice(0, 15).map((p) => (
@@ -276,6 +295,8 @@ function HeadlinerBand({ fight, cardNumber, resolvesAt, prediction, onPick }) {
     const b = fight.fighterB;
     const locked = !!prediction;
     const pickedName = pickedNameFor(prediction, fight);
+    const aOdds = fight.oddsBoard?.winner?.A;
+    const bOdds = fight.oddsBoard?.winner?.B;
 
     return (
         <button
@@ -290,6 +311,7 @@ function HeadlinerBand({ fight, cardNumber, resolvesAt, prediction, onPick }) {
                 {a.nickname && <div className="headliner-nickname">"{a.nickname.toUpperCase()}"</div>}
                 <div className="headliner-stat-row">
                     <span className="headliner-ovr">OVR {a.overallRating}</span>
+                    {aOdds != null && <span className="headliner-odds">×{aOdds.toFixed(2)}</span>}
                 </div>
                 <div className="headliner-meta">
                     <span>{a.style}</span>
@@ -311,6 +333,7 @@ function HeadlinerBand({ fight, cardNumber, resolvesAt, prediction, onPick }) {
                 {b.nickname && <div className="headliner-nickname">"{b.nickname.toUpperCase()}"</div>}
                 <div className="headliner-stat-row">
                     <span className="headliner-ovr">OVR {b.overallRating}</span>
+                    {bOdds != null && <span className="headliner-odds">×{bOdds.toFixed(2)}</span>}
                 </div>
                 <div className="headliner-meta">
                     <span>{b.style}</span>
@@ -321,13 +344,16 @@ function HeadlinerBand({ fight, cardNumber, resolvesAt, prediction, onPick }) {
 
             {locked ? (
                 <div className="headliner-cta headliner-cta-locked">
-                    🔒 LOCKED — <strong>{pickedName}</strong>
+                    LOCKED — <strong>{pickedName}</strong>
                     {prediction.pickedSide !== "DRAW" && prediction.pickedMethod && (
                         <span> · {prediction.pickedMethod}</span>
                     )}
+                    <span className="headliner-locked-meta">
+                        · {prediction.stake} ⊗ at ×{prediction.lockedOdds?.toFixed(2)}
+                    </span>
                 </div>
             ) : (
-                <div className="headliner-cta">⭐ Click to predict the headliner ⭐</div>
+                <div className="headliner-cta">★ Click to bet on the headliner ★</div>
             )}
         </button>
     );
@@ -342,6 +368,8 @@ function CompactFightCard({ fight, tone, prediction, onPick }) {
     const b = fight.fighterB;
     const locked = !!prediction;
     const pickedName = pickedNameFor(prediction, fight);
+    const aOdds = fight.oddsBoard?.winner?.A;
+    const bOdds = fight.oddsBoard?.winner?.B;
 
     return (
         <button
@@ -356,7 +384,7 @@ function CompactFightCard({ fight, tone, prediction, onPick }) {
                     <div className="compact-card-name">{a.name}</div>
                     <div className="compact-card-meta">
                         <span>OVR {a.overallRating}</span>
-                        <span>{a.style}</span>
+                        {aOdds != null && <span className="compact-card-odds">×{aOdds.toFixed(2)}</span>}
                     </div>
                 </div>
                 <div className="compact-card-vs">VS</div>
@@ -364,43 +392,44 @@ function CompactFightCard({ fight, tone, prediction, onPick }) {
                     <div className="compact-card-name">{b.name}</div>
                     <div className="compact-card-meta">
                         <span>OVR {b.overallRating}</span>
-                        <span>{b.style}</span>
+                        {bOdds != null && <span className="compact-card-odds">×{bOdds.toFixed(2)}</span>}
                     </div>
                 </div>
             </div>
 
             {locked ? (
                 <div className="compact-card-locked-bar">
-                    🔒 <strong>{pickedName}</strong>
+                    <strong>{pickedName}</strong>
                     {prediction.pickedSide !== "DRAW" && prediction.pickedMethod && (
                         <span> · {prediction.pickedMethod}</span>
                     )}
+                    <span className="compact-card-locked-stake">
+                        {prediction.stake} ⊗ at ×{prediction.lockedOdds?.toFixed(2)}
+                    </span>
                 </div>
             ) : (
-                <div className="compact-card-cta">Click to predict →</div>
+                <div className="compact-card-cta">Click to place a bet →</div>
             )}
         </button>
     );
 }
 
 // ─────────────────────────────────────────────────────────────
-// Potential bar — best/worst case from current locked picks
+// Potential bar — total stake / payout from the current locked bets
 // ─────────────────────────────────────────────────────────────
 
 function PotentialBar({ potential }) {
     const {
-        bestFame, bestIron, worstFame,
-        unpickedExactFame, unpickedExactIron,
+        staked, potentialPayout, potentialProfit,
         lockedCount, unpickedCount, total,
     } = potential;
 
     const hasLocked = lockedCount > 0;
-    const hasUnpicked = unpickedCount > 0;
 
     return (
         <section className="potential-bar" data-tut="event-potential">
             <header className="potential-header">
-                <span className="potential-title">Card Potential</span>
+                <span className="potential-title">Card Bets</span>
                 <span className="potential-progress">
                     {lockedCount} / {total} locked
                 </span>
@@ -408,38 +437,35 @@ function PotentialBar({ potential }) {
 
             {!hasLocked && (
                 <div className="potential-empty">
-                    No picks locked yet — start clicking fights to see your potential.
+                    No bets placed yet — click a fight to place one.
                 </div>
             )}
 
             {hasLocked && (
                 <div className="potential-rows">
+                    <div className="potential-row">
+                        <span className="potential-row-label">Total staked</span>
+                        <span className="potential-row-value">⊗ {staked.toLocaleString()}</span>
+                    </div>
                     <div className="potential-row potential-row-best">
-                        <span className="potential-row-label">Best case</span>
+                        <span className="potential-row-label">If all bets land</span>
                         <span className="potential-row-value pos">
-                            +{bestFame.toLocaleString()} fame
-                            {bestIron > 0 && <span className="potential-iron"> · +{bestIron.toLocaleString()} ⊗</span>}
+                            ⊗ {potentialPayout.toLocaleString()}
+                            <span className="potential-row-aside">+{potentialProfit.toLocaleString()} profit</span>
                         </span>
-                        <span className="potential-row-hint">if every pick lands exact</span>
                     </div>
                     <div className="potential-row potential-row-worst">
-                        <span className="potential-row-label">Worst case</span>
+                        <span className="potential-row-label">If all bets lose</span>
                         <span className="potential-row-value neg">
-                            {worstFame.toLocaleString()} fame
+                            −⊗ {staked.toLocaleString()}
                         </span>
-                        <span className="potential-row-hint">if every pick is wrong</span>
                     </div>
                 </div>
             )}
 
-            {hasUnpicked && (
+            {unpickedCount > 0 && (
                 <div className="potential-unpicked">
-                    {unpickedCount} fight{unpickedCount === 1 ? "" : "s"} still unpicked —
-                    <strong> up to +{unpickedExactFame.toLocaleString()} fame</strong>
-                    {unpickedExactIron > 0 && (
-                        <strong> + {unpickedExactIron.toLocaleString()} ⊗</strong>
-                    )}
-                    {" "}more on the table.
+                    {unpickedCount} fight{unpickedCount === 1 ? "" : "s"} still open.
                 </div>
             )}
         </section>
@@ -451,19 +477,16 @@ function PotentialBar({ potential }) {
 // ─────────────────────────────────────────────────────────────
 
 function JustResolvedSummary({ card, predictions }) {
-    const right = predictions.filter((p) => p.resolution?.correctSide).length;
-    const exact = predictions.filter((p) => p.resolution?.correctExact).length;
-    const totalFame = predictions.reduce((s, p) => s + (p.resolution?.fameDelta || 0), 0);
+    const won = predictions.filter((p) => p.resolution?.won).length;
+    const totalNet = predictions.reduce((s, p) => s + (p.resolution?.netDelta || 0), 0);
     return (
         <div className="events-just-resolved">
             <span className="events-just-label">Last Card:</span>
             <span className="events-just-result">
-                Fight Night #{card.cardNumber} — {right}/{predictions.length} winners, {exact} exact
-                {totalFame !== 0 && (
-                    <span className={totalFame > 0 ? "events-just-positive" : "events-just-negative"}>
-                        {" · "}{totalFame > 0 ? `+${totalFame}` : totalFame} fame
-                    </span>
-                )}
+                Fight Night #{card.cardNumber} — {won}/{predictions.length} bets won
+                <span className={totalNet >= 0 ? "events-just-positive" : "events-just-negative"}>
+                    {" · "}{totalNet >= 0 ? `+${totalNet.toLocaleString()}` : totalNet.toLocaleString()} ⊗ net
+                </span>
             </span>
         </div>
     );
@@ -478,8 +501,7 @@ function HistoryRow({ prediction }) {
     const side = prediction.pickedSide;
     const pickedWinner = side === "A" ? prediction.matchup?.aName : side === "B" ? prediction.matchup?.bName : "Draw";
     const actualWinner = r.actualSide === "A" ? prediction.matchup?.aName : r.actualSide === "B" ? prediction.matchup?.bName : "Draw";
-    const tone = r.correctExact ? "pos" : r.correctSide ? "mid" : "neg";
-    const icon = r.correctExact ? "✓✓" : r.correctSide ? "✓" : "✕";
+    const tone = r.won ? "pos" : "neg";
     return (
         <li className={`events-history-row events-history-${tone}`}>
             <div className="events-history-col">
@@ -487,8 +509,13 @@ function HistoryRow({ prediction }) {
                     <span className={`events-history-slot events-history-slot-${(prediction.fightSlot || "").toLowerCase()}`}>
                         {SLOT_LABEL[prediction.fightSlot] || prediction.fightSlot}
                     </span>
-                    {" "}Picked <strong>{pickedWinner}</strong>
-                    {side !== "DRAW" && prediction.pickedMethod ? ` · ${prediction.pickedMethod}` : ""}
+                    <span className="events-history-bet-type">
+                        {prediction.betType === "EXACT" ? "Exact" : "Winner"}
+                    </span>
+                    {" "}<strong>{pickedWinner}</strong>
+                    {prediction.betType === "EXACT" && side !== "DRAW" && prediction.pickedMethod
+                        ? ` · ${prediction.pickedMethod}` : ""}
+                    {" "}<span className="events-history-stake">({prediction.stake} ⊗ @ ×{prediction.lockedOdds?.toFixed(2)})</span>
                 </div>
                 <div className="events-history-matchup">
                     {prediction.matchup?.aName} vs {prediction.matchup?.bName}
@@ -498,9 +525,12 @@ function HistoryRow({ prediction }) {
                 <div>Actual: <strong>{actualWinner}</strong>{r.actualMethod && r.actualSide !== "DRAW" ? ` · ${r.actualMethod}` : ""}</div>
             </div>
             <div className={`events-history-delta events-history-delta-${tone}`}>
-                <span className="events-history-icon">{icon}</span>
-                <span>{r.fameDelta > 0 ? `+${r.fameDelta}` : r.fameDelta} fame</span>
-                {r.ironDelta > 0 && <span>+{r.ironDelta} ⊗</span>}
+                <span className="events-history-icon">{r.won ? "✓" : "✕"}</span>
+                {r.won ? (
+                    <span>+{(r.netDelta || 0).toLocaleString()} ⊗</span>
+                ) : (
+                    <span>{(r.netDelta || 0).toLocaleString()} ⊗</span>
+                )}
             </div>
         </li>
     );

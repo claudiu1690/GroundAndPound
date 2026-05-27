@@ -5,6 +5,9 @@ import { createPortal } from "react-dom";
  * Multi-fight reveal modal shown the first time the player visits the Events tab
  * after a card resolves. Headliner gets a hero treatment up top, then main card,
  * then prelims. Animated stagger gives each fight a moment.
+ *
+ * Now iron-only — each bet either won (paid out at locked odds) or lost (stake
+ * already gone). No fame deltas.
  */
 export const CardResultOverlay = memo(function CardResultOverlay({
     card,
@@ -15,16 +18,16 @@ export const CardResultOverlay = memo(function CardResultOverlay({
     if (!predictions?.length) return null;
 
     const totals = useMemo(() => {
-        const right = predictions.filter((p) => p.resolution?.correctSide).length;
-        const exact = predictions.filter((p) => p.resolution?.correctExact).length;
-        const fame  = predictions.reduce((s, p) => s + (p.resolution?.fameDelta || 0), 0);
-        const iron  = predictions.reduce((s, p) => s + (p.resolution?.ironDelta || 0), 0);
-        return { right, exact, fame, iron, total: predictions.length };
+        const won  = predictions.filter((p) => p.resolution?.won).length;
+        const staked  = predictions.reduce((s, p) => s + (p.stake || 0), 0);
+        const payout  = predictions.reduce((s, p) => s + (p.resolution?.payout || 0), 0);
+        const netDelta = predictions.reduce((s, p) => s + (p.resolution?.netDelta || 0), 0);
+        return { won, total: predictions.length, staked, payout, netDelta };
     }, [predictions]);
 
     const grade = (() => {
-        const ratio = totals.right / Math.max(1, totals.total);
-        if (totals.exact === totals.total) return "Perfect Card";
+        const ratio = totals.won / Math.max(1, totals.total);
+        if (totals.won === totals.total) return "Perfect Card";
         if (ratio >= 0.8) return "Sharp Night";
         if (ratio >= 0.6) return "Decent Night";
         if (ratio >= 0.4) return "Mixed Bag";
@@ -52,7 +55,7 @@ export const CardResultOverlay = memo(function CardResultOverlay({
                 <div className="card-result-kicker">Fight Night #{card.cardNumber} — Results</div>
                 <div className="card-result-grade-row">
                     <span className="card-result-grade">{grade}</span>
-                    <span className="card-result-record">{totals.right}/{totals.total} winners · {totals.exact} exact</span>
+                    <span className="card-result-record">{totals.won}/{totals.total} bets won</span>
                 </div>
 
                 {/* ── Headliner hero ── */}
@@ -97,12 +100,20 @@ export const CardResultOverlay = memo(function CardResultOverlay({
                 )}
 
                 <div className="card-result-totals">
-                    <div className={`card-result-total ${totals.fame >= 0 ? "pos" : "neg"}`}>
-                        {totals.fame > 0 ? `+${totals.fame}` : totals.fame} fame
+                    <div className="card-result-total-row">
+                        <span className="card-result-total-label">Staked</span>
+                        <span className="card-result-total-value">{totals.staked.toLocaleString()} ⊗</span>
                     </div>
-                    {totals.iron > 0 && (
-                        <div className="card-result-total pos">+{totals.iron} ⊗</div>
-                    )}
+                    <div className="card-result-total-row">
+                        <span className="card-result-total-label">Paid back</span>
+                        <span className="card-result-total-value pos">{totals.payout.toLocaleString()} ⊗</span>
+                    </div>
+                    <div className={`card-result-total-row card-result-total-row-net ${totals.netDelta >= 0 ? "pos" : "neg"}`}>
+                        <span className="card-result-total-label">Net</span>
+                        <span className="card-result-total-value">
+                            {totals.netDelta >= 0 ? "+" : ""}{totals.netDelta.toLocaleString()} ⊗
+                        </span>
+                    </div>
                 </div>
 
                 <button type="button" className="btn btn-primary card-result-continue" onClick={onClose}>
@@ -126,7 +137,7 @@ function HeadlinerHero({ fight, prediction, delay }) {
 
     return (
         <div className="card-hero-result" style={{ animationDelay: `${delay}ms` }}>
-            <div className="card-hero-tag">⭐ HEADLINER</div>
+            <div className="card-hero-tag">★ HEADLINER</div>
             {isDraw ? (
                 <div className="card-hero-headline card-hero-draw">It's a draw</div>
             ) : (
@@ -164,9 +175,7 @@ function CompactResultRow({ fight, prediction, tone, delay }) {
 
     const verdictTone = !prediction
         ? "skip"
-        : prediction.resolution?.correctExact ? "pos"
-        : prediction.resolution?.correctSide ? "mid"
-        : "neg";
+        : prediction.resolution?.won ? "pos" : "neg";
 
     return (
         <div
@@ -186,7 +195,7 @@ function CompactResultRow({ fight, prediction, tone, delay }) {
                         </span>
                     </span>
                 )}
-                <PredictionPill prediction={prediction} fight={fight} />
+                <PredictionPill prediction={prediction} />
             </div>
         </div>
     );
@@ -219,8 +228,8 @@ function PredictionLine({ prediction, fight }) {
         );
     }
     const r = prediction.resolution || {};
-    const tone = r.correctExact ? "pos" : r.correctSide ? "mid" : "neg";
-    const icon = r.correctExact ? "✓✓" : r.correctSide ? "✓" : "✕";
+    const tone = r.won ? "pos" : "neg";
+    const icon = r.won ? "✓" : "✕";
     const pickedName = prediction.pickedSide === "A" ? fight.fighterA.name
         : prediction.pickedSide === "B" ? fight.fighterB.name
         : "Draw";
@@ -228,32 +237,33 @@ function PredictionLine({ prediction, fight }) {
         <div className={`card-hero-pick card-hero-pick-${tone}`}>
             <span className={`card-hero-pick-icon card-hero-pick-icon-${tone}`}>{icon}</span>
             <span className="card-hero-pick-text">
-                Picked <strong>{pickedName}</strong>
-                {prediction.pickedSide !== "DRAW" && prediction.pickedMethod && (
+                Bet <strong>{pickedName}</strong>
+                {prediction.betType === "EXACT" && prediction.pickedSide !== "DRAW" && prediction.pickedMethod && (
                     <span className="muted"> · {prediction.pickedMethod}</span>
                 )}
+                <span className="muted"> · {prediction.stake} ⊗ at ×{prediction.lockedOdds?.toFixed(2)}</span>
             </span>
             <span className={`card-hero-pick-delta card-hero-pick-delta-${tone}`}>
-                {r.fameDelta > 0 ? `+${r.fameDelta}` : r.fameDelta} fame
-                {r.ironDelta > 0 && <span> · +{r.ironDelta} ⊗</span>}
+                {r.won
+                    ? `+${(r.netDelta || 0).toLocaleString()} ⊗`
+                    : `${(r.netDelta || 0).toLocaleString()} ⊗`}
             </span>
         </div>
     );
 }
 
-function PredictionPill({ prediction, fight }) {
+function PredictionPill({ prediction }) {
     if (!prediction) {
         return <span className="card-pred-pill card-pred-pill-skip">No bet</span>;
     }
     const r = prediction.resolution || {};
-    const tone = r.correctExact ? "pos" : r.correctSide ? "mid" : "neg";
-    const icon = r.correctExact ? "✓✓" : r.correctSide ? "✓" : "✕";
-    const delta = `${r.fameDelta > 0 ? "+" : ""}${r.fameDelta}`;
+    const tone = r.won ? "pos" : "neg";
+    const icon = r.won ? "✓" : "✕";
+    const delta = `${r.netDelta >= 0 ? "+" : ""}${(r.netDelta || 0).toLocaleString()} ⊗`;
     return (
         <span className={`card-pred-pill card-pred-pill-${tone}`}>
             <span className="card-pred-pill-icon">{icon}</span>
             {delta}
-            {r.ironDelta > 0 && <span className="muted"> · +{r.ironDelta}⊗</span>}
         </span>
     );
 }

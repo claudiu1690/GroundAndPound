@@ -1,7 +1,9 @@
 const fightCardService = require("../services/mainEventService");
+const Fighter = require("../models/fighterModel");
 
 /**
- * GET /events/current?fighterId=... — current card + your predictions on it + history.
+ * GET /events/current?fighterId=... — current card + your bets on it + history +
+ * the bet limits for your tier (so the UI can clamp the bet input).
  */
 async function getCurrent(req, res) {
     try {
@@ -11,7 +13,12 @@ async function getCurrent(req, res) {
             ? await fightCardService.listFighterPredictionsForCard(fighterId, current.id)
             : [];
         const history = fighterId ? await fightCardService.listHistory(fighterId, 20) : [];
-        res.json({ current, justResolved, myPredictions, history });
+        let betLimits = null;
+        if (fighterId) {
+            const fighter = await Fighter.findById(fighterId).select("promotionTier").lean();
+            if (fighter) betLimits = fightCardService.getBetLimitsForFighter(fighter);
+        }
+        res.json({ current, justResolved, myPredictions, history, betLimits });
     } catch (err) {
         if (err.message?.startsWith("Not enough GCS fighters")
             || err.message?.startsWith("Failed to assemble")) {
@@ -22,28 +29,39 @@ async function getCurrent(req, res) {
     }
 }
 
-/** POST /events/:cardId/predict — body: { fighterId, fightIndex, pickedSide, pickedMethod } */
+/**
+ * POST /events/:cardId/predict
+ * body: { fighterId, fightIndex, betType, pickedSide, pickedMethod, stake }
+ *   betType — "WINNER" or "EXACT"
+ *   pickedMethod required for EXACT (ignored for WINNER)
+ *   stake — iron amount, must be within tier limits + ≤ current balance
+ */
 async function postPrediction(req, res) {
     try {
         const { cardId } = req.params;
-        const { fighterId, fightIndex, pickedSide, pickedMethod } = req.body || {};
-        if (!fighterId || !pickedSide || fightIndex == null) {
-            return res.status(400).json({ message: "fighterId, fightIndex, and pickedSide are required" });
+        const { fighterId, fightIndex, betType, pickedSide, pickedMethod, stake } = req.body || {};
+        if (!fighterId || !pickedSide || fightIndex == null || !betType || stake == null) {
+            return res.status(400).json({ message: "fighterId, fightIndex, betType, pickedSide, and stake are required" });
         }
         const pred = await fightCardService.submitPrediction(
-            fighterId, cardId, Number(fightIndex), pickedSide, pickedMethod
+            fighterId, cardId, Number(fightIndex), betType, pickedSide, pickedMethod, stake
         );
         res.status(201).json({ prediction: pred });
     } catch (err) {
         if (err.message === "Card not found") return res.status(404).json({ message: err.message });
-        const client = [
-            "Invalid side",
-            "Invalid method",
-            "Invalid fight index",
-            "Card already resolved",
-            "You have already predicted this fight",
+        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
+        const clientErrPatterns = [
+            /^Invalid (side|method|bet type|fight index)$/,
+            /^Card already resolved$/,
+            /^You have already bet on this fight$/,
+            /^Stake must be /,
+            /^Minimum bet at this tier /,
+            /^Maximum bet at this tier /,
+            /^Not enough iron /,
         ];
-        if (client.includes(err.message)) return res.status(400).json({ message: err.message });
+        if (clientErrPatterns.some((re) => re.test(err.message))) {
+            return res.status(400).json({ message: err.message });
+        }
         console.error(err);
         res.status(500).json({ message: "Internal server error" });
     }
