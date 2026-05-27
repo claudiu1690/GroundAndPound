@@ -26,7 +26,9 @@ import { RankingsTab } from "./components/rankings/RankingsTab";
 import { GazetteModal } from "./components/gazette/GazetteModal";
 import { PostFightInterview } from "./components/fights/PostFightInterview";
 import { TutorialOverlay } from "./components/tutorial/TutorialOverlay";
+import { LibraryTab } from "./components/library/LibraryTab";
 import { tutorialBus } from "./utils/tutorialBus";
+import { BookOpen } from "lucide-react";
 
 // ── Navigation definition ──────────────────────────────────
 const NAV_ITEMS = [
@@ -39,6 +41,7 @@ const NAV_ITEMS = [
   { id: null,        label: "Shop",      icon: "⊕", active: false },
   { id: "events",    label: "Events",    icon: "◷", active: true },
   { id: "media",     label: "Media",     icon: "✉", active: true },
+  { id: "library",   label: "Library",   icon: <BookOpen size={12} strokeWidth={2.2} />, active: true },
 ];
 
 // ── Tier ladder for display ────────────────────────────────
@@ -1013,6 +1016,13 @@ const handleGetOffers = useCallback(async () => {
                 fighter={fighter}
                 onMessage={setMessage}
               />
+            </div>
+          )}
+
+          {/* ── LIBRARY ── */}
+          {activeTab === "library" && (
+            <div className="page-layout">
+              <LibraryTab />
             </div>
           )}
 

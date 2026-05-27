@@ -7104,3 +7104,346 @@ code {
 }
 .report-callout-banner strong { color: var(--gold-bright); }
 
+
+/* ============================================================
+   LIBRARY — in-game knowledge base
+   ============================================================ */
+.library-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  /* Tinted background so the cards inside read as foreground objects on
+     a surface — not white-on-white with no visual hierarchy. */
+  padding: 1rem 1.1rem 1.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.library-header {
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.library-header::after {
+  /* Subtle red accent stripe under the header — same flavour as panel titles. */
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 48px;
+  height: 2px;
+  background: var(--red);
+}
+.library-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.library-subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Search */
+.library-search-wrap {
+  position: relative;
+  display: flex;
+}
+.library-search-input {
+  flex: 1;
+  height: 32px;
+  padding: 0 2rem 0 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-input);
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+}
+.library-search-input::placeholder { color: var(--text-muted); }
+.library-search-input:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px rgba(227, 24, 55, 0.15);
+}
+.library-search-clear {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 2px;
+}
+.library-search-clear:hover { color: var(--text); background: var(--bg-hover); }
+
+/* Category pills */
+.library-category-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.library-category-pill {
+  padding: 0.28rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-surface);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-sec);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.library-category-pill:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+.library-category-pill--active {
+  background: var(--red);
+  border-color: var(--red-dim);
+  color: #fff;
+}
+.library-category-pill--active:hover {
+  background: var(--red-bright);
+  color: #fff;
+}
+
+/* Grid */
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.7rem;
+}
+.library-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.85rem 0.95rem 0.9rem;
+  background: var(--content-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--red);
+  border-radius: 3px;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: transform 0.15s ease, border-color 0.15s, box-shadow 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.library-card::before {
+  /* Faint gradient accent on the right edge — subtle "page corner" feel. */
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 100%;
+  background: linear-gradient(to left, rgba(227, 24, 55, 0.04), transparent);
+  pointer-events: none;
+}
+.library-card:hover {
+  border-color: var(--border-bright);
+  border-left-color: var(--red-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), 0 6px 14px rgba(227, 24, 55, 0.08);
+}
+.library-card:active { transform: translateY(0); }
+.library-card-category {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.library-card-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.3;
+}
+.library-card-summary {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-sec);
+  line-height: 1.5;
+}
+
+/* Search highlight */
+.library-highlight {
+  background: rgba(212, 160, 18, 0.35);
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* Empty state */
+.library-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  background: var(--bg-surface);
+}
+
+/* ── Article view ─────────────────────────────────────────── */
+.library-article {
+  /* The reading-page container — sits on a tinted surface like the grid view
+     does, with the article body itself a clean "printed page" on top. */
+  padding: 0.85rem 1.1rem 1.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.library-back-btn {
+  background: var(--content-bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.35rem 0.75rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-sec);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.12s;
+  margin-bottom: 1rem;
+}
+.library-back-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+  border-color: var(--text-muted);
+  transform: translateX(-2px);
+}
+.library-article-body {
+  max-width: 740px;
+  margin: 0 auto;
+  /* The "printed page" — white card with subtle shadow on the tinted backdrop. */
+  background: var(--content-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1.5rem 1.75rem 1.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+.library-article-body::before {
+  /* Subtle accent stripe on the left edge of the page — like a margin rule. */
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--red);
+  border-radius: 4px 0 0 4px;
+}
+.library-article-category {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 0.55rem;
+  padding: 0.2rem 0.55rem;
+  background: rgba(227, 24, 55, 0.08);
+  border-radius: 2px;
+}
+.library-article-title {
+  margin: 0 0 0.5rem;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.2;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.library-article-summary {
+  margin: 0 0 1.4rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--text-sec);
+  line-height: 1.55;
+}
+.library-article-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.library-article-paragraph {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text);
+}
+.library-article-table-wrap {
+  overflow-x: auto;
+  margin: 0.25rem 0;
+}
+.library-article-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.library-article-table thead {
+  background: var(--bg-nav-header);
+}
+.library-article-table th {
+  padding: 0.45rem 0.65rem;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--header-text);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.library-article-table td {
+  padding: 0.5rem 0.65rem;
+  vertical-align: top;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+.library-article-table tr:nth-child(even) td {
+  background: var(--bg-surface);
+}
+
+.library-key-takeaway {
+  margin-top: 1.5rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold-bright);
+  border-radius: 3px;
+}
+.library-key-takeaway-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  margin-bottom: 0.35rem;
+}
+.library-key-takeaway-body {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--text);
+}
