@@ -19,7 +19,33 @@ const scheduler = require("./modules/scheduler");
 const { ENERGY } = require("./consts/gameConstants");
 
 const app = express();
-app.use(cors());
+
+/**
+ * CORS allowlist. Same-origin (no Origin header — curl, server-to-server,
+ * health checks) is always allowed. Browser-origin requests must match one
+ * of the values below.
+ *
+ *   FRONTEND_URL — the deployed frontend (set on Railway → Variables).
+ *                  Comma-separated if you have multiple (e.g. preview deploys).
+ *   localhost:5173 — Vite dev server (your local frontend).
+ *   localhost:4173 — Vite preview server.
+ */
+const corsAllowlist = [
+    "http://localhost:5173",
+    "http://localhost:4173",
+    ...(process.env.FRONTEND_URL || "").split(",").map((s) => s.trim()).filter(Boolean),
+];
+app.use(cors({
+    origin: (origin, cb) => {
+        // No Origin header = same-origin or non-browser caller — always allow.
+        if (!origin) return cb(null, true);
+        if (corsAllowlist.includes(origin)) return cb(null, true);
+        return cb(new Error(`CORS: origin ${origin} not in allowlist`));
+    },
+    credentials: true,
+}));
+console.log(`[CORS] Allowlist: ${corsAllowlist.join(", ") || "(empty)"}`);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

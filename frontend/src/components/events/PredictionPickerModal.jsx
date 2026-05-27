@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 const METHOD_OPTIONS = ["KO/TKO", "Submission", "Decision"];
 
@@ -53,7 +54,7 @@ export function PredictionPickerModal({ open, fight, onClose, onSubmit, submitti
     const canSubmit = !!pickedSide && (pickedSide === "DRAW" || !!pickedMethod);
     const slotKey = fight.slot || "PRELIM";
 
-    return (
+    return createPortal(
         <div className="picker-modal-root" role="dialog" aria-modal="true" aria-label="Prediction picker">
             <div className="picker-modal-backdrop" onClick={onClose} />
             <div className={`picker-modal-shell picker-modal-${slotKey.toLowerCase()}`}>
@@ -137,7 +138,7 @@ export function PredictionPickerModal({ open, fight, onClose, onSubmit, submitti
                 </footer>
             </div>
         </div>
-    );
+    , document.body);
 }
 
 function FighterPanel({ f, side, odds, alignRight }) {

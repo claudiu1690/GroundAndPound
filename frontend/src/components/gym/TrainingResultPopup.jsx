@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Popup shown after a gym training session: "You did '[Session]'" and XP gained per stat.
@@ -28,7 +29,7 @@ export const TrainingResultPopup = memo(function TrainingResultPopup({
   const levelUps = Array.isArray(statLevelUps) ? statLevelUps : (statLevelUps && typeof statLevelUps === "object" ? Object.keys(statLevelUps) : []);
   const hasLevelUps = levelUps.length > 0;
 
-  return (
+  return createPortal(
     <div className="training-result-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Training result">
       <div className="training-result-popup" onClick={(e) => e.stopPropagation()}>
         <h3 className="training-result-title">You did &ldquo;{sessionLabel}&rdquo;</h3>
@@ -63,5 +64,5 @@ export const TrainingResultPopup = memo(function TrainingResultPopup({
         </button>
       </div>
     </div>
-  );
+  , document.body);
 });

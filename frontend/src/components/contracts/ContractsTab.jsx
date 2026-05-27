@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../../api";
 
 function formatIron(n) {
@@ -226,7 +227,7 @@ function DropContractConfirm({ contract, onCancel, onConfirm }) {
     // Backend applies Math.round(famePenaltyOnBreak / 2) on a manual drop.
     const penalty = Math.round((contract.famePenaltyOnBreak || 0) / 2);
 
-    return (
+    return createPortal(
         <div className="drop-confirm-root" role="dialog" aria-modal="true" aria-label="Drop contract">
             <div className="drop-confirm-backdrop" onClick={onCancel} />
             <div className="drop-confirm-shell">
@@ -268,7 +269,8 @@ function DropContractConfirm({ contract, onCancel, onConfirm }) {
                     </button>
                 </footer>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 

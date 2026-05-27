@@ -1,4 +1,5 @@
 import { memo, useMemo } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Multi-fight reveal modal shown the first time the player visits the Events tab
@@ -45,7 +46,7 @@ export const CardResultOverlay = memo(function CardResultOverlay({
 
     let stagger = 0;
 
-    return (
+    return createPortal(
         <div className="card-result-overlay" role="dialog" aria-modal="true" aria-label="Card results">
             <div className="card-result-modal">
                 <div className="card-result-kicker">Fight Night #{card.cardNumber} — Results</div>
@@ -109,7 +110,7 @@ export const CardResultOverlay = memo(function CardResultOverlay({
                 </button>
             </div>
         </div>
-    );
+    , document.body);
 });
 
 // ─────────────────────────────────────────────────────────────
