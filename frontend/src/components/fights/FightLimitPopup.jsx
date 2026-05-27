@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Generic modal used for fight limit/cap blocking messages.
@@ -6,7 +7,7 @@ import { memo } from "react";
 export const FightLimitPopup = memo(function FightLimitPopup({ open, message, onClose }) {
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
       className="training-result-overlay"
       role="dialog"
@@ -22,5 +23,5 @@ export const FightLimitPopup = memo(function FightLimitPopup({ open, message, on
         </button>
       </div>
     </div>
-  );
+  , document.body);
 });

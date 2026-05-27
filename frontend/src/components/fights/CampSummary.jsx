@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { createPortal } from "react-dom";
 import {
     CAMP_SESSIONS,
     getRatingConfig,
@@ -72,7 +73,7 @@ export const CampSummary = memo(function CampSummary({
     const bannerBg = isTitleFight ? "#2a1f0a" : (GRADE_BANNER_BG[campRating] ?? "#2a2a2c");
     const canFight = !!weightCut && !resolving;
 
-    return (
+    return createPortal(
         <div className="cs-overlay" role="dialog" aria-modal="true" aria-label="Camp Summary">
             <div className={`cs-card${isTitleFight ? " cs-card--title" : ""}`} data-tut="camp-summary">
 
@@ -194,5 +195,5 @@ export const CampSummary = memo(function CampSummary({
 
             </div>
         </div>
-    );
+    , document.body);
 });

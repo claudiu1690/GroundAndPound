@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../../api";
 
 /**
@@ -80,7 +81,7 @@ export function CalloutModal({ open, fighter, onClose, onCalledOut, onCancelled,
     const lockedReason = data?.lockedReason;
     const currentRank = data?.currentRank;
 
-    return (
+    return createPortal(
         <div className="callout-modal-root" role="dialog" aria-modal="true">
             <div className="callout-modal-backdrop" onClick={onClose} />
             <div className="callout-modal-shell">
@@ -201,5 +202,5 @@ export function CalloutModal({ open, fighter, onClose, onCalledOut, onCancelled,
                 </footer>
             </div>
         </div>
-    );
+    , document.body);
 }

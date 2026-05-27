@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { createPortal } from "react-dom";
 import { RELIABILITY_LABELS, RELIABILITY_COLORS } from "../../constants/campConfig";
 
 const STYLE_COLORS = {
@@ -68,7 +69,7 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
             ? "CALLOUT INTEL \u2014 FULL FIGHTER REPORT"
             : "FIGHTER REPORT";
 
-    return (
+    return createPortal(
         <div className="fr-overlay" role="dialog" aria-modal="true" aria-label="Fighter Report">
             <div className={`fr-card${isTitleFight ? " fr-card--title" : ""}`} data-tut="fighter-report">
 
@@ -173,5 +174,5 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
 
             </div>
         </div>
-    );
+    , document.body);
 });

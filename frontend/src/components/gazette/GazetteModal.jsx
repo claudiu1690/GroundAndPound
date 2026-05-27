@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../../api";
 
 /**
@@ -68,7 +69,7 @@ export function GazetteModal({ open, fighterId, onDismiss, onNavigate }) {
         return null;
     }
 
-    return (
+    return createPortal(
         <div className="gazette-modal-root" role="dialog" aria-modal="true">
             <div className="gazette-modal-backdrop" onClick={() => handleDismiss()} />
             <div className="gazette-modal-shell">
@@ -159,7 +160,7 @@ export function GazetteModal({ open, fighterId, onDismiss, onNavigate }) {
                 </footer>
             </div>
         </div>
-    );
+    , document.body);
 }
 
 export default memo(GazetteModal);

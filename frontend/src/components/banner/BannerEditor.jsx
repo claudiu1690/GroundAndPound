@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../../api";
 import { BannerPreview } from "./BannerPreview";
 import { MAX_BADGE_SLOTS } from "./bannerCatalog";
@@ -104,7 +105,7 @@ export function BannerEditor({ fighter, open, onClose, onSaved, onMessage }) {
 
     const fighterForPreview = fighter ? { ...fighter, banner: config || fighter.banner } : null;
 
-    return (
+    return createPortal(
         <div className="banner-editor-root" role="dialog" aria-modal="true" aria-label="Banner editor">
             <div className="banner-editor-backdrop" onClick={onClose} />
             <div className="banner-editor-shell">
@@ -192,7 +193,7 @@ export function BannerEditor({ fighter, open, onClose, onSaved, onMessage }) {
                 </div>
             </div>
         </div>
-    );
+    , document.body);
 }
 
 function isSelected(piece, config) {

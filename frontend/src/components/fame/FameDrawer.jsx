@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../../api";
 
 const TIER_ORDER = ["UNKNOWN", "PROSPECT", "RISING_STAR", "CONTENDER", "STAR", "LEGEND"];
@@ -106,7 +107,7 @@ export function FameDrawer({ open, fighter, onClose, onNavigate }) {
     // so it can't block clicks even if CSS fails to load (stale cache, loading order, etc).
     if (!fighter || !open) return null;
 
-    return (
+    return createPortal(
         <>
             <div
                 className="fame-drawer-backdrop open"
@@ -247,6 +248,7 @@ export function FameDrawer({ open, fighter, onClose, onNavigate }) {
                     </section>
                 </div>
             </aside>
-        </>
+        </>,
+        document.body
     );
 }

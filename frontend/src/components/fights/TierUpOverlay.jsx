@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { createPortal } from "react-dom";
 import { tierLabel } from "../../constants/fame";
 import { Trophy } from "lucide-react";
 
@@ -8,7 +9,7 @@ import { Trophy } from "lucide-react";
 export const TierUpOverlay = memo(function TierUpOverlay({ open, fromTier, toTier, onClose }) {
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="tier-up-overlay" role="dialog" aria-modal="true" aria-label="Fame tier increased">
       <div className="tier-up-modal">
         <p className="tier-up-kicker">The MMA world is paying attention</p>
@@ -26,12 +27,12 @@ export const TierUpOverlay = memo(function TierUpOverlay({ open, fromTier, toTie
         </button>
       </div>
     </div>
-  );
+  , document.body);
 });
 
 export const BeltWonOverlay = memo(function BeltWonOverlay({ open, fromTier, toTier, weightClass, onClose }) {
   if (!open) return null;
-  return (
+  return createPortal(
     <div className="tier-up-overlay" role="dialog" aria-modal="true" aria-label="Belt won">
       <div className="tier-up-modal" style={{ borderColor: "#d4a012" }}>
         <p className="tier-up-kicker" style={{ color: "#fbbf24" }}>Championship victory</p>
@@ -55,6 +56,7 @@ export const BeltWonOverlay = memo(function BeltWonOverlay({ open, fromTier, toT
           Continue
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 });
