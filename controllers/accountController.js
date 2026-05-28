@@ -98,6 +98,15 @@ async function resendEmailChange(req, res) {
         res.json({ success: true });
     } catch (err) {
         if (err.message === "Account not found") return res.status(404).json({ message: err.message });
+        // Cooldown response — surface `retryAfter` (seconds) so the client can
+        // arm its countdown without guessing. 429 is the standard rate-limit code.
+        if (err.code === "cooldown_active") {
+            return res.status(429).json({
+                message: err.message,
+                code: err.code,
+                retryAfter: err.retryAfter,
+            });
+        }
         return clientError(res, err);
     }
 }

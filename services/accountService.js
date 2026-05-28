@@ -13,6 +13,7 @@ const {
 
 const PASSWORD_RESET_TTL_MS    = 60 * 60 * 1000;        // 1 hour
 const EMAIL_CHANGE_TTL_MS      = 24 * 60 * 60 * 1000;   // 24 hours
+const EMAIL_RESEND_COOLDOWN_MS = 60 * 1000;             // 60s between resends
 const HARD_DELETE_GRACE_MS     = 30 * 24 * 60 * 60 * 1000; // 30 days
 const NICKNAME_MIN = 2;
 const NICKNAME_MAX = 20;
@@ -38,7 +39,7 @@ function hashToken(raw) {
 
 async function getAccountProfile(accountId) {
     const user = await User.findById(accountId).select(
-        "email emailPending emailConfirmed notifications deletionRequestedAt fighterId"
+        "email emailPending emailConfirmed emailChangeLastSentAt notifications deletionRequestedAt fighterId"
     ).lean();
     if (!user) throw new Error("Account not found");
     let fighter = null;
@@ -47,10 +48,20 @@ async function getAccountProfile(accountId) {
             "firstName lastName nickname weightClass style backstory"
         ).lean();
     }
+    // Compute remaining resend cooldown in seconds rather than sending the raw
+    // timestamp — clock skew between server and browser is irrelevant when we
+    // hand the client the delta directly.
+    let emailResendCooldown = 0;
+    if (user.emailPending && user.emailChangeLastSentAt) {
+        const elapsed = Date.now() - new Date(user.emailChangeLastSentAt).getTime();
+        const remaining = Math.ceil((EMAIL_RESEND_COOLDOWN_MS - elapsed) / 1000);
+        if (remaining > 0) emailResendCooldown = remaining;
+    }
     return {
         accountId: String(user._id),
         email: user.email,
         emailPending: user.emailPending || null,
+        emailResendCooldown,
         notifications: user.notifications || { emailEnabled: true },
         deletionRequestedAt: user.deletionRequestedAt || null,
         fighter: fighter
@@ -127,9 +138,10 @@ async function requestEmailChange(accountId, newEmail) {
     if (taken) throw new Error("This email is already in use");
 
     const raw = generateRawToken();
-    user.emailChangeToken   = hashToken(raw);
-    user.emailChangeExpires = new Date(Date.now() + EMAIL_CHANGE_TTL_MS);
-    user.emailPending       = normalised;
+    user.emailChangeToken      = hashToken(raw);
+    user.emailChangeExpires    = new Date(Date.now() + EMAIL_CHANGE_TTL_MS);
+    user.emailChangeLastSentAt = new Date();
+    user.emailPending          = normalised;
     await user.save();
 
     // Confirmation link points at the backend confirm endpoint, which redirects
@@ -163,6 +175,7 @@ async function confirmEmailChange(rawToken) {
         // Clear stale token so a fresh request can be issued.
         user.emailChangeToken = null;
         user.emailChangeExpires = null;
+        user.emailChangeLastSentAt = null;
         user.emailPending = null;
         await user.save();
         const err = new Error("Link expired");
@@ -183,6 +196,7 @@ async function confirmEmailChange(rawToken) {
     if (taken) {
         user.emailChangeToken = null;
         user.emailChangeExpires = null;
+        user.emailChangeLastSentAt = null;
         user.emailPending = null;
         await user.save();
         const err = new Error("Email already in use");
@@ -194,6 +208,7 @@ async function confirmEmailChange(rawToken) {
     user.emailPending = null;
     user.emailChangeToken = null;
     user.emailChangeExpires = null;
+    user.emailChangeLastSentAt = null;
     user.emailConfirmed = true;
     await user.save();
     return { email: user.email };
@@ -203,7 +218,21 @@ async function resendEmailChange(accountId) {
     const user = await User.findById(accountId);
     if (!user || user.deleted) throw new Error("Account not found");
     if (!user.emailPending) throw new Error("No pending email change");
-    // Reuse the request flow — it generates a fresh token and re-sends.
+
+    // 60-second cooldown between resends. Guards against accidental double-
+    // clicks AND deliberate spamming that would burn Resend quota. The initial
+    // request isn't gated — only re-sends after the first one are.
+    const lastSent = user.emailChangeLastSentAt ? user.emailChangeLastSentAt.getTime() : 0;
+    const elapsed  = Date.now() - lastSent;
+    if (lastSent && elapsed < EMAIL_RESEND_COOLDOWN_MS) {
+        const retryAfter = Math.ceil((EMAIL_RESEND_COOLDOWN_MS - elapsed) / 1000);
+        const err = new Error(`Please wait ${retryAfter}s before requesting another link`);
+        err.code = "cooldown_active";
+        err.retryAfter = retryAfter;
+        throw err;
+    }
+    // Reuse the request flow — it generates a fresh token, sends, and re-stamps
+    // emailChangeLastSentAt so the next call has to wait again.
     return requestEmailChange(accountId, user.emailPending);
 }
 
@@ -213,6 +242,7 @@ async function cancelEmailChange(accountId) {
     user.emailPending = null;
     user.emailChangeToken = null;
     user.emailChangeExpires = null;
+    user.emailChangeLastSentAt = null;
     await user.save();
     return { cancelled: true };
 }

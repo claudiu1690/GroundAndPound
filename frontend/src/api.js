@@ -42,6 +42,7 @@ async function request(path, options = {}) {
     // account_deleted response) are available to callers without a second hop.
     err.body = data;
     if (data.daysLeft != null) err.daysLeft = data.daysLeft;
+    if (data.retryAfter != null) err.retryAfter = data.retryAfter;
     throw err;
   }
   return data;
