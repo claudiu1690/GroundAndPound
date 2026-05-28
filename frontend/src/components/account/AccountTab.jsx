@@ -213,6 +213,9 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
     const masked = maskEmail(profile.email);
     const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim().toLowerCase());
     const dirty = valid && newEmail.trim().toLowerCase() !== profile.email;
+    // Block the form until the current email is verified. The server enforces
+    // this too (code: "email_not_verified"), this is just the UX layer.
+    const verified = profile.emailConfirmed !== false;
 
     // Tick down once a second while a cooldown is active. The interval clears
     // itself when it hits zero so we're not eating a setInterval forever.
@@ -278,7 +281,15 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
 
     return (
         <Section title="Change Email">
-            <div className="account-current">Current: <strong>{masked}</strong></div>
+            <div className="account-current">
+                Current: <strong>{masked}</strong>
+                {!verified && <span className="account-info-permanent" style={{ marginLeft: "0.4rem" }}>unverified</span>}
+            </div>
+            {!verified && !pending && (
+                <div className="account-hint-neg">
+                    Verify your current email first (use the banner at the top of the app).
+                </div>
+            )}
             {pending ? (
                 <div className="account-pending-banner">
                     <div>
@@ -304,10 +315,17 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
                         className="account-input"
                         value={newEmail}
                         onChange={(e) => setNewEmail(e.target.value)}
-                        placeholder="new@example.com"
+                        placeholder={verified ? "new@example.com" : "Verify current email first"}
                         autoComplete="email"
+                        disabled={!verified}
                     />
-                    <button type="button" className="btn btn-primary" onClick={request} disabled={!dirty || busy}>
+                    <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={request}
+                        disabled={!dirty || busy || !verified}
+                        title={!verified ? "Verify your current email before changing it" : undefined}
+                    >
                         {busy ? "Sending…" : "Save"}
                     </button>
                 </div>

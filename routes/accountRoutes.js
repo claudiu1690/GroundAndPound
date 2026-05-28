@@ -12,6 +12,7 @@ router.patch("/:id/notifications",       accountController.patchNotifications);
 router.post("/:id/email/request",        accountController.requestEmailChange);
 router.post("/:id/email/resend",         accountController.resendEmailChange);
 router.delete("/:id/email/pending",      accountController.cancelEmailChange);
+router.post("/:id/email/verify-resend",  accountController.resendVerifyEmail);
 router.post("/:id/password",             accountController.changePassword);
 router.delete("/:id",                    accountController.deleteAccount);
 

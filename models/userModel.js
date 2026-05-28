@@ -25,12 +25,24 @@ const userSchema = new mongoose.Schema({
 
     // ── Email change flow ─────────────────────────────────────────
     emailPending:       { type: String,  default: null, lowercase: true, trim: true },
-    emailConfirmed:     { type: Boolean, default: true },   // legacy accounts treated as confirmed
+    /**
+     * `true` once the user has clicked the verify link sent at registration.
+     * Schema default stays `true` so legacy accounts that pre-date this flow
+     * are grandfathered as confirmed. The register controller explicitly sets
+     * this to `false` for brand-new signups, and verifyEmail flips it back.
+     */
+    emailConfirmed:     { type: Boolean, default: true },
     emailChangeToken:   { type: String,  default: null },   // SHA-256 hex of the raw token
     emailChangeExpires: { type: Date,    default: null },
     /** Timestamp of the last email-change link we sent. Used to enforce the
      *  60s resend cooldown — see accountService.resendEmailChange. */
     emailChangeLastSentAt: { type: Date, default: null },
+
+    // ── Email verification (new signups) ──────────────────────────
+    emailVerifyToken:      { type: String, default: null },   // SHA-256 hex of the raw token
+    emailVerifyExpires:    { type: Date,   default: null },   // 24h TTL
+    /** Used by the 60s resend cooldown on the verification banner. */
+    emailVerifyLastSentAt: { type: Date,   default: null },
 
     // ── Password reset flow ───────────────────────────────────────
     passwordResetToken:   { type: String, default: null }, // SHA-256 hex of the raw token
@@ -54,5 +66,6 @@ const userSchema = new mongoose.Schema({
 // Sparse indexes so we can look up tokens fast without storing nulls forever.
 userSchema.index({ passwordResetToken: 1 }, { sparse: true });
 userSchema.index({ emailChangeToken: 1 },   { sparse: true });
+userSchema.index({ emailVerifyToken: 1 },   { sparse: true });
 
 module.exports = mongoose.model("User", userSchema);

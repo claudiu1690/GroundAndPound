@@ -17,4 +17,8 @@ router.post("/forgot-password", authController.forgotPassword);
 router.get("/reset-password",   authController.checkResetToken);   // ?token=...
 router.post("/reset-password",  authController.resetPassword);
 
+// Email verification — public link from the verification email. Redirects
+// back to the frontend with ?email_verified=true or ?email_verify_error=...
+router.get("/verify-email",     authController.verifyEmail);
+
 module.exports = router;
