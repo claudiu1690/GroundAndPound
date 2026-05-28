@@ -41,12 +41,23 @@ async function register(req, res) {
             return res.status(409).json({ message: "An account with this email already exists" });
 
         const passwordHash = await bcrypt.hash(password, 10);
-        const user = await User.create({ email, passwordHash });
+        // New signups start UNVERIFIED. The schema default is `true` so legacy
+        // accounts stay grandfathered; here we explicitly opt-in to verification
+        // for fresh accounts.
+        const user = await User.create({ email, passwordHash, emailConfirmed: false });
 
         // Create the fighter linked to this account
         const newFighter = await fighterService.createFighter({ ...fighter, userId: user._id });
         user.fighterId = newFighter._id;
         await user.save();
+
+        // Fire-and-forget the verification email. We don't block registration
+        // on the send — soft verification lets the user play right away, and
+        // the in-app banner reminds them to confirm. If the email actually
+        // fails to send, the user can hit "Resend" from the banner.
+        accountService.sendVerifyEmail(user).catch((err) => {
+            console.error("[register] sendVerifyEmail failed:", err.message);
+        });
 
         const token = signToken(user);
         res.status(201).json({ token, fighterId: newFighter._id });
@@ -250,4 +261,28 @@ async function recoverAccount(req, res) {
     }
 }
 
-module.exports = { register, login, forgotPassword, checkResetToken, resetPassword, logout, recoverAccount, signToken };
+// ──────────────────────────────────────────────────────────────────
+// Email verification (public — hit from the email link, no JWT)
+// ──────────────────────────────────────────────────────────────────
+
+/**
+ * Apply a verification token and bounce the user back to the frontend with a
+ * status query param. Same redirect pattern as /account/email/confirm so the
+ * frontend's URL-param handling stays uniform.
+ */
+async function verifyEmail(req, res) {
+    const { APP_URL } = require("../lib/email");
+    const { token } = req.query;
+    try {
+        await accountService.confirmEmailVerification(token);
+        return res.redirect(`${APP_URL}/?email_verified=true`);
+    } catch (err) {
+        const code = err.code || "invalid_token";
+        return res.redirect(`${APP_URL}/?email_verify_error=${encodeURIComponent(code)}`);
+    }
+}
+
+module.exports = {
+    register, login, forgotPassword, checkResetToken, resetPassword,
+    logout, recoverAccount, verifyEmail, signToken,
+};

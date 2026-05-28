@@ -28,6 +28,7 @@ import { PostFightInterview } from "./components/fights/PostFightInterview";
 import { TutorialOverlay } from "./components/tutorial/TutorialOverlay";
 import { LibraryTab } from "./components/library/LibraryTab";
 import { AccountTab } from "./components/account/AccountTab";
+import { EmailVerifyBanner } from "./components/account/EmailVerifyBanner";
 import { tutorialBus } from "./utils/tutorialBus";
 import { BookOpen, UserCircle2 } from "lucide-react";
 
@@ -360,6 +361,8 @@ function readBootParams() {
       resetToken:        url.searchParams.get("reset_password_token") || null,
       emailUpdated:      url.searchParams.get("email_updated") === "true",
       emailUpdateError:  url.searchParams.get("email_update_error") || null,
+      emailVerified:     url.searchParams.get("email_verified") === "true",
+      emailVerifyError:  url.searchParams.get("email_verify_error") || null,
     };
   } catch (_) {
     return {};
@@ -371,7 +374,13 @@ function clearBootParams() {
   try {
     const url = new URL(window.location.href);
     let dirty = false;
-    ["reset_password_token", "email_updated", "email_update_error"].forEach((k) => {
+    [
+      "reset_password_token",
+      "email_updated",
+      "email_update_error",
+      "email_verified",
+      "email_verify_error",
+    ].forEach((k) => {
       if (url.searchParams.has(k)) { url.searchParams.delete(k); dirty = true; }
     });
     if (dirty) {
@@ -389,6 +398,10 @@ function App() {
   const [authed, setAuthed] = useState(authStorage.isLoggedIn());
 
   // ── Game state ─────────────────────────────────────────────
+  // Account-level status surfaced to the top-bar (email verify banner).
+  // Shape: { accountId, email, emailConfirmed, emailVerifyCooldown } | null.
+  // Loaded once on auth, refreshed when the verify URL param flips it.
+  const [accountStatus, setAccountStatus] = useState(null);
   const [fighter,  setFighter]                  = useState(null);
   const [gyms,     setGyms]                     = useState([]);
   const [offers,   setOffers]                   = useState([]);
@@ -483,6 +496,26 @@ function App() {
     } catch (_) {}
   }, [fighter?._id]);
 
+  // Pull account-level status (emailConfirmed + verify-resend cooldown) for
+  // the top-of-app verify banner. Decodes the account id from the JWT so we
+  // don't have to plumb it through the auth flow.
+  const loadAccountStatus = useCallback(async () => {
+    try {
+      const token = authStorage.getToken();
+      if (!token) return;
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const accountId = payload?.id;
+      if (!accountId) return;
+      const profile = await api.getAccountProfile(accountId);
+      setAccountStatus({
+        accountId: profile.accountId,
+        email: profile.email,
+        emailConfirmed: profile.emailConfirmed !== false,
+        emailVerifyCooldown: profile.emailVerifyCooldown || 0,
+      });
+    } catch (_) { /* silent — banner just stays hidden */ }
+  }, []);
+
   // Load initial data once authenticated
   useEffect(() => {
     if (!authed) return;
@@ -493,9 +526,12 @@ function App() {
         await loadFighter(fighterId);
         await loadGyms(fighterId);
       }
+      // Account status loads in parallel — banner shows up the moment it lands,
+      // doesn't gate the rest of the boot.
+      loadAccountStatus();
       setLoading(false);
     })();
-  }, [authed, loadFighter, loadGyms]);
+  }, [authed, loadFighter, loadGyms, loadAccountStatus]);
 
   // Sync camp state whenever fighter changes
   useEffect(() => {
@@ -546,6 +582,23 @@ function App() {
     }
   }, [bootParams.emailUpdated, bootParams.emailUpdateError]);
 
+  // Email-verification redirect — same pattern. On success we also flip the
+  // local accountStatus so the banner disappears without needing a refetch.
+  useEffect(() => {
+    if (bootParams.emailVerified) {
+      setMessage("Email verified — you're all set.");
+      setAccountStatus((prev) => prev ? { ...prev, emailConfirmed: true, emailVerifyCooldown: 0 } : prev);
+      clearBootParams();
+    } else if (bootParams.emailVerifyError) {
+      const map = {
+        invalid_token: "That verification link is invalid or has already been used.",
+        expired:       "That verification link has expired — request a new one from the banner at the top of the app.",
+      };
+      setMessage(map[bootParams.emailVerifyError] || "Email verification failed.");
+      clearBootParams();
+    }
+  }, [bootParams.emailVerified, bootParams.emailVerifyError]);
+
   // Called by AuthPage after successful login/register
   const handleAuthenticated = useCallback(
     (fighterId) => {
@@ -565,6 +618,7 @@ function App() {
     setLastFightCommentary([]);
     setActiveTab("gym");
     setMessage("");
+    setAccountStatus(null);
   }, []);
 
   const handleUpdateFighter = useCallback(
@@ -844,6 +898,19 @@ const handleGetOffers = useCallback(async () => {
 
       {/* ── MESSAGE BAR ── */}
       <MessageBar message={message} />
+
+      {/* ── EMAIL-VERIFY BANNER ──
+          Soft verification: the user can keep playing while this banner is up.
+          Disappears the moment they click the link in their email (the verify
+          redirect flips accountStatus.emailConfirmed via the URL-param effect). */}
+      {accountStatus && !accountStatus.emailConfirmed && (
+        <EmailVerifyBanner
+          email={accountStatus.email}
+          accountId={accountStatus.accountId}
+          initialCooldown={accountStatus.emailVerifyCooldown}
+          onMessage={setMessage}
+        />
+      )}
 
       {/* ── TRAINING RESULT POPUP (after train, no message bar) ── */}
       <TrainingResultPopup

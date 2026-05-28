@@ -111,6 +111,32 @@ async function resendEmailChange(req, res) {
     }
 }
 
+/**
+ * Resend the email-verification link. Same 60s cooldown contract as the
+ * email-change resend — service throws `cooldown_active` with `retryAfter`
+ * which we forward as 429.
+ */
+async function resendVerifyEmail(req, res) {
+    try {
+        const id = requireSelf(req, res); if (!id) return;
+        await accountService.resendEmailVerification(id);
+        res.json({ success: true });
+    } catch (err) {
+        if (err.message === "Account not found") return res.status(404).json({ message: err.message });
+        if (err.code === "cooldown_active") {
+            return res.status(429).json({
+                message: err.message,
+                code: err.code,
+                retryAfter: err.retryAfter,
+            });
+        }
+        if (err.code === "already_verified") {
+            return res.status(400).json({ message: err.message, code: err.code });
+        }
+        return clientError(res, err);
+    }
+}
+
 async function cancelEmailChange(req, res) {
     try {
         const id = requireSelf(req, res); if (!id) return;
@@ -189,6 +215,7 @@ module.exports = {
     patchNotifications,
     requestEmailChange,
     resendEmailChange,
+    resendVerifyEmail,
     cancelEmailChange,
     confirmEmailChange,
     changePassword,

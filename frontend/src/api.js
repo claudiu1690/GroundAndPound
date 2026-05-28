@@ -267,6 +267,8 @@ export const api = {
     request(`/account/${accountId}/email/resend`, { method: "POST" }),
   cancelEmailChange: (accountId) =>
     request(`/account/${accountId}/email/pending`, { method: "DELETE" }),
+  resendVerifyEmail: (accountId) =>
+    request(`/account/${accountId}/email/verify-resend`, { method: "POST" }),
   changePassword: (accountId, currentPassword, newPassword) =>
     request(`/account/${accountId}/password`, {
       method: "POST",

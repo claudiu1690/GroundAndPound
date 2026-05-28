@@ -6,6 +6,7 @@ const {
     sendEmail,
     sendAccountEmail,
     passwordResetTemplate,
+    verifyEmailTemplate,
     emailChangeTemplate,
     accountDeletedTemplate,
     APP_URL,
@@ -13,6 +14,7 @@ const {
 
 const PASSWORD_RESET_TTL_MS    = 60 * 60 * 1000;        // 1 hour
 const EMAIL_CHANGE_TTL_MS      = 24 * 60 * 60 * 1000;   // 24 hours
+const EMAIL_VERIFY_TTL_MS      = 24 * 60 * 60 * 1000;   // 24 hours
 const EMAIL_RESEND_COOLDOWN_MS = 60 * 1000;             // 60s between resends
 const HARD_DELETE_GRACE_MS     = 30 * 24 * 60 * 60 * 1000; // 30 days
 const NICKNAME_MIN = 2;
@@ -39,7 +41,7 @@ function hashToken(raw) {
 
 async function getAccountProfile(accountId) {
     const user = await User.findById(accountId).select(
-        "email emailPending emailConfirmed emailChangeLastSentAt notifications deletionRequestedAt fighterId"
+        "email emailPending emailConfirmed emailChangeLastSentAt emailVerifyLastSentAt notifications deletionRequestedAt fighterId"
     ).lean();
     if (!user) throw new Error("Account not found");
     let fighter = null;
@@ -48,8 +50,8 @@ async function getAccountProfile(accountId) {
             "firstName lastName nickname weightClass style backstory"
         ).lean();
     }
-    // Compute remaining resend cooldown in seconds rather than sending the raw
-    // timestamp — clock skew between server and browser is irrelevant when we
+    // Compute remaining resend cooldowns in seconds rather than sending raw
+    // timestamps — clock skew between server and browser is irrelevant when we
     // hand the client the delta directly.
     let emailResendCooldown = 0;
     if (user.emailPending && user.emailChangeLastSentAt) {
@@ -57,11 +59,19 @@ async function getAccountProfile(accountId) {
         const remaining = Math.ceil((EMAIL_RESEND_COOLDOWN_MS - elapsed) / 1000);
         if (remaining > 0) emailResendCooldown = remaining;
     }
+    let emailVerifyCooldown = 0;
+    if (!user.emailConfirmed && user.emailVerifyLastSentAt) {
+        const elapsed = Date.now() - new Date(user.emailVerifyLastSentAt).getTime();
+        const remaining = Math.ceil((EMAIL_RESEND_COOLDOWN_MS - elapsed) / 1000);
+        if (remaining > 0) emailVerifyCooldown = remaining;
+    }
     return {
         accountId: String(user._id),
         email: user.email,
         emailPending: user.emailPending || null,
+        emailConfirmed: user.emailConfirmed !== false,
         emailResendCooldown,
+        emailVerifyCooldown,
         notifications: user.notifications || { emailEnabled: true },
         deletionRequestedAt: user.deletionRequestedAt || null,
         fighter: fighter
@@ -128,6 +138,15 @@ async function requestEmailChange(accountId, newEmail) {
     const user = await User.findById(accountId);
     if (!user || user.deleted) throw new Error("Account not found");
     if (normalised === user.email) throw new Error("That's already your email");
+
+    // Block email changes until the current email is verified. Without this,
+    // a user could chain email-changes through unverified addresses and we'd
+    // never know they had a working inbox.
+    if (user.emailConfirmed === false) {
+        const err = new Error("Please verify your current email before changing it");
+        err.code = "email_not_verified";
+        throw err;
+    }
 
     // Check it's not already in use by another (non-deleted) account.
     const taken = await User.findOne({
@@ -234,6 +253,96 @@ async function resendEmailChange(accountId) {
     // Reuse the request flow — it generates a fresh token, sends, and re-stamps
     // emailChangeLastSentAt so the next call has to wait again.
     return requestEmailChange(accountId, user.emailPending);
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Email verification (new signups — see authController.register)
+// ──────────────────────────────────────────────────────────────────
+
+/**
+ * Generate a verify token, stamp the cooldown timestamp, and send the email.
+ * Called once at register and again on each successful resend. Skips silently
+ * if the account is already confirmed — verifying twice is a no-op.
+ */
+async function sendVerifyEmail(user) {
+    if (user.emailConfirmed) return { skipped: true, reason: "already_verified" };
+
+    const raw = generateRawToken();
+    user.emailVerifyToken      = hashToken(raw);
+    user.emailVerifyExpires    = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
+    user.emailVerifyLastSentAt = new Date();
+    await user.save();
+
+    const verifyUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${encodeURIComponent(raw)}`;
+    let fighterName = "fighter";
+    if (user.fighterId) {
+        const f = await Fighter.findById(user.fighterId).select("firstName nickname").lean();
+        if (f) fighterName = f.nickname || f.firstName || "fighter";
+    }
+    const tpl = verifyEmailTemplate({ fighterName, verifyUrl });
+    // Verification IS the security-critical email here — always send, regardless
+    // of the notifications toggle. Without it the account can't recover.
+    await sendEmail({ to: user.email, subject: tpl.subject, html: tpl.html });
+    return { sent: true };
+}
+
+async function resendEmailVerification(accountId) {
+    const user = await User.findById(accountId);
+    if (!user || user.deleted) throw new Error("Account not found");
+    if (user.emailConfirmed) {
+        const err = new Error("Email already verified");
+        err.code = "already_verified";
+        throw err;
+    }
+
+    // 60-second cooldown — same pattern as email-change resend.
+    const lastSent = user.emailVerifyLastSentAt ? user.emailVerifyLastSentAt.getTime() : 0;
+    const elapsed  = Date.now() - lastSent;
+    if (lastSent && elapsed < EMAIL_RESEND_COOLDOWN_MS) {
+        const retryAfter = Math.ceil((EMAIL_RESEND_COOLDOWN_MS - elapsed) / 1000);
+        const err = new Error(`Please wait ${retryAfter}s before requesting another link`);
+        err.code = "cooldown_active";
+        err.retryAfter = retryAfter;
+        throw err;
+    }
+    return sendVerifyEmail(user);
+}
+
+/**
+ * Apply a verification token. Hit publicly from the email link — looks up the
+ * (hashed) token, validates expiry, flips `emailConfirmed = true`, clears the
+ * token state. Throws coded errors so the controller can pick a redirect path.
+ */
+async function confirmEmailVerification(rawToken) {
+    if (!rawToken || typeof rawToken !== "string") {
+        const err = new Error("Invalid token");
+        err.code = "invalid_token";
+        throw err;
+    }
+    const hashed = hashToken(rawToken);
+    const user = await User.findOne({ emailVerifyToken: hashed, deleted: { $ne: true } });
+    if (!user) {
+        // Either the token never existed, OR the user already verified (which
+        // clears the token). Distinguish via a second lookup so we can show a
+        // friendlier message in the already-verified case.
+        const err = new Error("Invalid or already-used token");
+        err.code = "invalid_token";
+        throw err;
+    }
+    if (!user.emailVerifyExpires || user.emailVerifyExpires.getTime() < Date.now()) {
+        user.emailVerifyToken = null;
+        user.emailVerifyExpires = null;
+        await user.save();
+        const err = new Error("Verification link expired");
+        err.code = "expired";
+        throw err;
+    }
+    user.emailConfirmed = true;
+    user.emailVerifyToken = null;
+    user.emailVerifyExpires = null;
+    user.emailVerifyLastSentAt = null;
+    await user.save();
+    return { email: user.email };
 }
 
 async function cancelEmailChange(accountId) {
@@ -410,6 +519,9 @@ module.exports = {
     confirmEmailChange,
     resendEmailChange,
     cancelEmailChange,
+    sendVerifyEmail,
+    resendEmailVerification,
+    confirmEmailVerification,
     changePassword,
     requestPasswordReset,
     validateResetToken,
