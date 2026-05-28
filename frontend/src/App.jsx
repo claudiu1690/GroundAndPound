@@ -27,8 +27,9 @@ import { GazetteModal } from "./components/gazette/GazetteModal";
 import { PostFightInterview } from "./components/fights/PostFightInterview";
 import { TutorialOverlay } from "./components/tutorial/TutorialOverlay";
 import { LibraryTab } from "./components/library/LibraryTab";
+import { AccountTab } from "./components/account/AccountTab";
 import { tutorialBus } from "./utils/tutorialBus";
-import { BookOpen } from "lucide-react";
+import { BookOpen, UserCircle2 } from "lucide-react";
 
 // ── Navigation definition ──────────────────────────────────
 const NAV_ITEMS = [
@@ -346,8 +347,44 @@ const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, on
   );
 });
 
+// ── URL-param helpers ───────────────────────────────────────
+// Several account-related flows arrive via query strings — pulled once at boot:
+//   ?reset_password_token=...   → land on the forgot-password "apply" form
+//   ?email_updated=true         → user clicked the email-change confirmation link
+//   ?email_update_error=<code>  → confirmation link was invalid/expired
+function readBootParams() {
+  if (typeof window === "undefined") return {};
+  try {
+    const url = new URL(window.location.href);
+    return {
+      resetToken:        url.searchParams.get("reset_password_token") || null,
+      emailUpdated:      url.searchParams.get("email_updated") === "true",
+      emailUpdateError:  url.searchParams.get("email_update_error") || null,
+    };
+  } catch (_) {
+    return {};
+  }
+}
+
+function clearBootParams() {
+  if (typeof window === "undefined") return;
+  try {
+    const url = new URL(window.location.href);
+    let dirty = false;
+    ["reset_password_token", "email_updated", "email_update_error"].forEach((k) => {
+      if (url.searchParams.has(k)) { url.searchParams.delete(k); dirty = true; }
+    });
+    if (dirty) {
+      window.history.replaceState({}, "", url.pathname + (url.search ? `?${url.searchParams.toString()}` : ""));
+    }
+  } catch (_) {}
+}
+
 // ── Main App ────────────────────────────────────────────────
 function App() {
+  // ── Boot-time URL params (reset link, email-update redirect) ──
+  const [bootParams] = useState(readBootParams);
+
   // ── Auth state ─────────────────────────────────────────────
   const [authed, setAuthed] = useState(authStorage.isLoggedIn());
 
@@ -489,6 +526,25 @@ function App() {
     const t = setInterval(() => loadFighter(fighter._id), 60 * 1000);
     return () => clearInterval(t);
   }, [fighter?._id, loadFighter]);
+
+  // Email-change confirmation redirect — the backend bounces the user here from
+  // /account/email/confirm with one of two query params. Surface the result via
+  // the message bar, then strip the params so a refresh doesn't repeat it.
+  useEffect(() => {
+    if (bootParams.emailUpdated) {
+      setMessage("Email address confirmed and updated.");
+      clearBootParams();
+    } else if (bootParams.emailUpdateError) {
+      const map = {
+        invalid_token:     "That email-confirmation link is invalid.",
+        token_expired:     "That email-confirmation link has expired — please request a new one from your account page.",
+        email_taken:       "That email is already in use by another account.",
+        already_confirmed: "This email change has already been applied.",
+      };
+      setMessage(map[bootParams.emailUpdateError] || "Email confirmation failed.");
+      clearBootParams();
+    }
+  }, [bootParams.emailUpdated, bootParams.emailUpdateError]);
 
   // Called by AuthPage after successful login/register
   const handleAuthenticated = useCallback(
@@ -765,9 +821,11 @@ const handleGetOffers = useCallback(async () => {
     setActiveTab(id);
   }, []);
 
-  // Show auth page if not logged in
+  // Show auth page if not logged in. When the user arrived via the
+  // password-reset email link we land directly on the forgot-password "apply"
+  // form by passing the token through.
   if (!authed) {
-    return <AuthPage onAuthenticated={handleAuthenticated} />;
+    return <AuthPage onAuthenticated={handleAuthenticated} initialResetToken={bootParams.resetToken} />;
   }
 
   if (loading) {
@@ -1035,6 +1093,17 @@ const handleGetOffers = useCallback(async () => {
             </div>
           )}
 
+          {/* ── ACCOUNT SETTINGS ── */}
+          {activeTab === "account" && (
+            <div className="page-layout">
+              <AccountTab
+                onMessage={setMessage}
+                onLogout={handleLogout}
+                onFighterRefresh={loadFighter}
+              />
+            </div>
+          )}
+
           {/* ── FIGHTS ── */}
           {activeTab === "fights" && (
             <div className="page-layout">
@@ -1145,6 +1214,14 @@ const handleGetOffers = useCallback(async () => {
               </button>
             )}
           </div>
+          <button
+            type="button"
+            className={`nav-footer-account ${activeTab === "account" ? "active" : ""}`}
+            onClick={() => handleNavTab("account")}
+            title="Account settings"
+          >
+            <UserCircle2 size={12} strokeWidth={2.2} /> Account
+          </button>
           <button className="nav-footer-signout" onClick={handleLogout} title="Sign out">Sign Out</button>
         </div>
       </footer>

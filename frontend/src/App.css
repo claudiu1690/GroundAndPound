@@ -544,6 +544,40 @@ code {
 }
 .nav-footer-signout:hover { border-color: var(--red); color: var(--red); }
 
+/* Account button — sits to the LEFT of Sign Out in the footer.
+   `margin-left: auto` pushes it (and Sign Out, which loses its own auto)
+   against the right edge as a pair. Visually it mirrors Sign Out but uses a
+   green accent on hover so the destructive Sign Out button stays distinct. */
+.nav-footer-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 2px;
+  padding: 0.25rem 0.55rem;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  margin-left: auto;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+  white-space: nowrap;
+}
+.nav-footer-account:hover {
+  border-color: var(--green-bright);
+  color: var(--green-bright);
+}
+.nav-footer-account.active {
+  border-color: var(--green-bright);
+  color: var(--green-bright);
+  background: rgba(34,197,94,0.10);
+}
+
+/* When Account and Sign Out are side-by-side, Account already has the auto
+   margin, so Sign Out should just sit flush next to it. */
+.nav-footer-account + .nav-footer-signout { margin-left: 0; }
+
 
 /* ============================================================
    DASHBOARD LAYOUT — 2 columns
@@ -8182,4 +8216,467 @@ code {
   .slip-matchup { font-size: 13px; }
   .slip-stake-row { flex-direction: column; }
   .slip-stake-chips { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* ───────────────────────────────────────────────────────────
+   AUTH — helpers for the forgot-password flow
+   ─────────────────────────────────────────────────────────── */
+
+.auth-success {
+  background: rgba(34,197,94,0.10);
+  border: 1px solid rgba(34,197,94,0.35);
+  border-radius: 3px;
+  color: #4ade80;
+  font-size: 11px;
+  padding: 0.5rem 0.65rem;
+  line-height: 1.45;
+}
+
+/* Soft-deleted-account recovery banner — shown on the login form when the
+   server returns code:"account_deleted" with daysLeft. */
+.auth-recover-banner {
+  background: rgba(184,134,11,0.10);
+  border: 1px solid var(--gold);
+  border-radius: 3px;
+  padding: 0.55rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: -0.2rem;
+}
+.auth-recover-text {
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.45;
+}
+.auth-recover-text strong { color: var(--gold-bright); }
+.auth-recover-btn {
+  align-self: flex-start;
+  background: var(--gold);
+  color: #1a1a1c;
+  border: none;
+  border-radius: 3px;
+  padding: 0.35rem 0.7rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.auth-recover-btn:hover:not(:disabled) { background: var(--gold-bright); }
+.auth-recover-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.auth-show-pw {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: -0.2rem;
+}
+
+.auth-show-pw input { cursor: pointer; }
+
+/* ───────────────────────────────────────────────────────────
+   ACCOUNT SETTINGS PAGE
+   ─────────────────────────────────────────────────────────── */
+
+.account-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 1.25rem 2rem;
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.account-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.account-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0 0 0.25rem;
+}
+
+.account-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.account-loading,
+.account-error {
+  padding: 2rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Section shell ─────────────────────────────────────── */
+
+.account-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.9rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.account-section-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.45rem;
+  margin-bottom: 0.1rem;
+}
+
+.account-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0;
+}
+
+.account-section-subtitle {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin: 0.25rem 0 0;
+}
+
+.account-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+/* ── Field row (input + button) ────────────────────────── */
+
+.account-field-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.account-field-row .account-input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.account-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.4rem 0.55rem;
+  font-size: 12px;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.account-input:focus { border-color: var(--red); }
+
+.account-field-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.account-char-count.neg { color: var(--red); }
+
+.account-hint-neg {
+  color: var(--red);
+  font-size: 10.5px;
+}
+
+/* ── Fighter Info grid ─────────────────────────────────── */
+
+.account-info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.35rem;
+}
+
+.account-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 11.5px;
+}
+.account-info-row:last-child { border-bottom: none; }
+
+.account-info-label {
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.account-info-value {
+  color: var(--text);
+  text-align: right;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.account-info-permanent {
+  font-size: 8.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  padding: 0.05rem 0.3rem;
+  border-radius: 2px;
+}
+
+/* ── Email section ─────────────────────────────────────── */
+
+.account-current {
+  font-size: 11px;
+  color: var(--text-sec);
+}
+.account-current strong { color: var(--text); }
+
+.account-pending-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: rgba(184,134,11,0.10);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  padding: 0.5rem 0.65rem;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.account-pending-banner strong { color: var(--gold-bright); }
+
+.account-pending-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* ── Password section ──────────────────────────────────── */
+
+.account-pw-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+}
+
+.account-pw-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.account-pw-toggle input { cursor: pointer; }
+
+.account-pw-rule {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ── Notifications toggle switch ───────────────────────── */
+
+.account-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.account-toggle-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.account-toggle-sub {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+.account-switch {
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-bright);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.account-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  transition: transform 0.15s;
+}
+.account-switch-on {
+  background: var(--green);
+  border-color: var(--green-bright);
+}
+.account-switch-on .account-switch-thumb {
+  transform: translateX(16px);
+}
+
+/* ── Danger zone ───────────────────────────────────────── */
+
+.account-section-danger {
+  border-color: var(--red-dim);
+  background: rgba(227,24,55,0.04);
+}
+.account-section-danger .account-section-title { color: var(--red); }
+
+.account-danger-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed var(--border);
+}
+.account-danger-row:last-child { border-bottom: none; }
+
+.account-danger-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.account-danger-label.danger { color: var(--red); }
+
+.account-danger-sub {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+/* ── Delete-account modal ──────────────────────────────── */
+
+.account-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.account-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--red-dim);
+  border-radius: 6px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+  display: flex;
+  flex-direction: column;
+}
+
+.account-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.account-modal-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.account-modal-x {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+.account-modal-x:hover { color: var(--text); }
+
+.account-modal-body {
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.account-modal-warn {
+  font-size: 12px;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.45;
+}
+.account-modal-warn strong { color: var(--red); }
+
+.account-modal-warn-sub {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.account-modal-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
+}
+
+.account-modal-label {
+  font-size: 11px;
+  color: var(--text-sec);
+}
+.account-modal-label strong { color: var(--text); }
+
+.account-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  padding: 0.65rem 0.85rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
 }

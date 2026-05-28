@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api, authStorage } from "../../api";
+import { ForgotPasswordFlow } from "./ForgotPasswordFlow";
 
 const WEIGHT_CLASSES = ["Featherweight", "Lightweight", "Middleweight", "Heavyweight"];
 const STYLES = ["Boxer", "Kickboxer", "Wrestler", "Brazilian Jiu-Jitsu", "Muay Thai", "Judo", "Sambo", "Capoeira"];
@@ -25,9 +26,14 @@ const BACKSTORY_DESC = {
   "Late Bloomer":          "+25% training XP — A slow start, explosive ceiling.",
 };
 
-export function AuthPage({ onAuthenticated }) {
-  const [tab, setTab] = useState("login"); // "login" | "register"
+export function AuthPage({ onAuthenticated, initialResetToken = null }) {
+  const [tab, setTab] = useState(initialResetToken ? "forgot" : "login"); // "login" | "register" | "forgot"
   const [step, setStep] = useState(1);     // register step 1=account, 2=fighter
+  // `initialResetToken` is set when the user arrived via the reset email link
+  // (?reset_password_token=... in the URL). The ForgotPasswordFlow detects the
+  // token and switches into "apply" mode; clearing this state in switchTab lets
+  // the user navigate away.
+  const [resetToken, setResetToken] = useState(initialResetToken);
 
   // Account fields
   const [email, setEmail] = useState("");
@@ -44,20 +50,27 @@ export function AuthPage({ onAuthenticated }) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
+  // When login hits a soft-deleted account inside the 30-day grace window the
+  // server returns code:"account_deleted" + a days-remaining hint. We capture
+  // that state so the login form can render an inline "Recover account" button
+  // using the same email+password already typed.
+  const [recoverInfo, setRecoverInfo] = useState(null); // { daysLeft } | null
+  const [recovering, setRecovering]   = useState(false);
 
   function resetForm() {
     setEmail(""); setPassword(""); setConfirmPw("");
     setFirstName(""); setLastName(""); setNickname("");
     setWeightClass(WEIGHT_CLASSES[2]); setStyle(STYLES[0]); setBackstory(BACKSTORIES[0]);
-    setError(""); setStep(1);
+    setError(""); setStep(1); setRecoverInfo(null);
   }
 
-  function switchTab(t) { setTab(t); resetForm(); }
+  function switchTab(t) { setTab(t); setResetToken(null); resetForm(); }
 
   // ── Login ────────────────────────────────────────────────
   async function handleLogin(e) {
     e.preventDefault();
     setError("");
+    setRecoverInfo(null);
     setLoading(true);
     try {
       const { token, fighterId } = await api.login({ email, password });
@@ -65,8 +78,35 @@ export function AuthPage({ onAuthenticated }) {
       onAuthenticated(fighterId);
     } catch (err) {
       setError(err.message);
+      // Soft-deleted-but-recoverable accounts → surface the inline button.
+      // The server includes a `code: "account_deleted"` and the days remaining
+      // in the response body, which the api helper attaches to the Error.
+      if (err.code === "account_deleted") {
+        setRecoverInfo({ daysLeft: err.daysLeft || null });
+      }
     } finally {
       setLoading(false);
+    }
+  }
+
+  // ── Recover ──────────────────────────────────────────────
+  async function handleRecover() {
+    if (recovering) return;
+    setError("");
+    setRecovering(true);
+    try {
+      const { token, fighterId } = await api.recoverAccount(email, password);
+      authStorage.save(token, fighterId);
+      onAuthenticated(fighterId);
+    } catch (err) {
+      setError(err.message || "Could not recover account.");
+      // If the grace window expired between login and recover (race), don't
+      // keep showing the recovery button — the account is gone now.
+      if (err.code === "grace_expired" || err.code === "account_deleted_expired") {
+        setRecoverInfo(null);
+      }
+    } finally {
+      setRecovering(false);
     }
   }
 
@@ -140,9 +180,31 @@ export function AuthPage({ onAuthenticated }) {
                 placeholder="••••••••" required autoComplete="current-password" />
             </div>
             {error && <div className="auth-error">{error}</div>}
+            {recoverInfo && (
+              <div className="auth-recover-banner">
+                <div className="auth-recover-text">
+                  Your account is scheduled for deletion
+                  {recoverInfo.daysLeft ? <> — <strong>{recoverInfo.daysLeft} day{recoverInfo.daysLeft === 1 ? "" : "s"} left</strong></> : null}.
+                  Recover it now to keep your fighter and progress.
+                </div>
+                <button
+                  type="button"
+                  className="auth-recover-btn"
+                  onClick={handleRecover}
+                  disabled={recovering || !email || !password}
+                >
+                  {recovering ? "Recovering…" : "Recover account"}
+                </button>
+              </div>
+            )}
             <button className="auth-submit" type="submit" disabled={loading}>
               {loading ? "Signing in…" : "Enter the Cage"}
             </button>
+            <p className="auth-switch">
+              <button type="button" className="auth-link" onClick={() => switchTab("forgot")}>
+                Forgot password?
+              </button>
+            </p>
             <p className="auth-switch">
               No account?{" "}
               <button type="button" className="auth-link" onClick={() => switchTab("register")}>
@@ -150,6 +212,23 @@ export function AuthPage({ onAuthenticated }) {
               </button>
             </p>
           </form>
+        )}
+
+        {/* ── FORGOT PASSWORD ── */}
+        {tab === "forgot" && (
+          <ForgotPasswordFlow
+            token={resetToken}
+            onCancel={() => switchTab("login")}
+            onResetSuccess={() => {
+              // Clean the URL so the token doesn't get re-applied if the user reloads.
+              try {
+                const url = new URL(window.location.href);
+                url.searchParams.delete("reset_password_token");
+                window.history.replaceState({}, "", url.pathname + (url.search ? `?${url.searchParams.toString()}` : ""));
+              } catch (_) {}
+              switchTab("login");
+            }}
+          />
         )}
 
         {/* ── REGISTER step 1: Account ── */}
