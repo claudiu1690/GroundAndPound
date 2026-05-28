@@ -10,6 +10,7 @@ const {
     emailChangeTemplate,
     accountDeletedTemplate,
     APP_URL,
+    BACKEND_URL,
 } = require("../lib/email");
 
 const PASSWORD_RESET_TTL_MS    = 60 * 60 * 1000;        // 1 hour
@@ -165,7 +166,10 @@ async function requestEmailChange(accountId, newEmail) {
 
     // Confirmation link points at the backend confirm endpoint, which redirects
     // back to the frontend account page with a query param on success.
-    const confirmUrl = `${APP_URL}/?account_email_token=${encodeURIComponent(raw)}`;
+    // Click-once link — must hit the BACKEND route /account/email/confirm,
+    // which redirects to ${APP_URL}/?email_updated=true on success. APP_URL
+    // would land on the SPA which doesn't have a handler for this token.
+    const confirmUrl = `${BACKEND_URL.replace(/\/$/, "")}/account/email/confirm?token=${encodeURIComponent(raw)}`;
     let fighterName = "fighter";
     if (user.fighterId) {
         const f = await Fighter.findById(user.fighterId).select("firstName nickname").lean();
@@ -273,7 +277,11 @@ async function sendVerifyEmail(user) {
     user.emailVerifyLastSentAt = new Date();
     await user.save();
 
-    const verifyUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${encodeURIComponent(raw)}`;
+    // Click-once link — must hit the BACKEND route, which then redirects to
+    // the frontend with ?email_verified=true. Using APP_URL here would land on
+    // the SPA, which has no route for /auth/verify-email — the controller would
+    // never run.
+    const verifyUrl = `${BACKEND_URL.replace(/\/$/, "")}/auth/verify-email?token=${encodeURIComponent(raw)}`;
     let fighterName = "fighter";
     if (user.fighterId) {
         const f = await Fighter.findById(user.fighterId).select("firstName nickname").lean();
