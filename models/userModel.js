@@ -28,6 +28,9 @@ const userSchema = new mongoose.Schema({
     emailConfirmed:     { type: Boolean, default: true },   // legacy accounts treated as confirmed
     emailChangeToken:   { type: String,  default: null },   // SHA-256 hex of the raw token
     emailChangeExpires: { type: Date,    default: null },
+    /** Timestamp of the last email-change link we sent. Used to enforce the
+     *  60s resend cooldown — see accountService.resendEmailChange. */
+    emailChangeLastSentAt: { type: Date, default: null },
 
     // ── Password reset flow ───────────────────────────────────────
     passwordResetToken:   { type: String, default: null }, // SHA-256 hex of the raw token

@@ -203,10 +203,32 @@ function ChangeNickname({ profile, accountId, onSaved, onMessage }) {
 function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
     const [newEmail, setNewEmail] = useState("");
     const [busy, setBusy] = useState(false);
+    // Cooldown countdown for the Resend button (in seconds remaining).
+    //   • Seeded from `profile.emailResendCooldown` so reloading the page keeps
+    //     the timer accurate based on when the server last sent.
+    //   • Bumped to 60 after each successful initial-request or resend.
+    //   • Bumped to `err.retryAfter` if the server says we're still cooling.
+    const [resendIn, setResendIn] = useState(profile.emailResendCooldown || 0);
     const pending = profile.emailPending;
     const masked = maskEmail(profile.email);
     const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim().toLowerCase());
     const dirty = valid && newEmail.trim().toLowerCase() !== profile.email;
+
+    // Tick down once a second while a cooldown is active. The interval clears
+    // itself when it hits zero so we're not eating a setInterval forever.
+    useEffect(() => {
+        if (resendIn <= 0) return;
+        const t = setInterval(() => {
+            setResendIn((n) => (n <= 1 ? 0 : n - 1));
+        }, 1000);
+        return () => clearInterval(t);
+    }, [resendIn]);
+
+    // When the parent reload swaps in a fresh profile (e.g. after cancel), pick
+    // up the new server-side cooldown value (usually 0).
+    useEffect(() => {
+        setResendIn(profile.emailResendCooldown || 0);
+    }, [profile.emailResendCooldown, profile.emailPending]);
 
     const request = async () => {
         if (!dirty) return;
@@ -215,6 +237,7 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
             await api.requestEmailChange(accountId, newEmail.trim().toLowerCase());
             onMessage?.(`A confirmation link has been sent to ${newEmail.trim().toLowerCase()}.`);
             setNewEmail("");
+            setResendIn(60); // arm cooldown immediately — server stamps the same
             await onChanged?.();
         } catch (e) {
             onMessage?.(e.message || "Could not request email change");
@@ -222,12 +245,21 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
         setBusy(false);
     };
     const resend = async () => {
+        if (resendIn > 0) return;
         setBusy(true);
         try {
             await api.resendEmailChange(accountId);
             onMessage?.("Confirmation link sent again.");
+            setResendIn(60);
         } catch (e) {
-            onMessage?.(e.message || "Could not resend");
+            // Race: clicked the moment the local timer ran out but the server
+            // hasn't ticked over yet. Honour the server's authoritative wait.
+            if (e.code === "cooldown_active" && e.retryAfter) {
+                setResendIn(e.retryAfter);
+                onMessage?.(`Please wait ${e.retryAfter}s before requesting another link.`);
+            } else {
+                onMessage?.(e.message || "Could not resend");
+            }
         }
         setBusy(false);
     };
@@ -236,6 +268,7 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
         try {
             await api.cancelEmailChange(accountId);
             onMessage?.("Email change cancelled.");
+            setResendIn(0);
             await onChanged?.();
         } catch (e) {
             onMessage?.(e.message || "Could not cancel");
@@ -252,7 +285,15 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
                         Pending confirmation at <strong>{pending}</strong>. Check that inbox for the link.
                     </div>
                     <div className="account-pending-actions">
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={resend} disabled={busy}>Resend link</button>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={resend}
+                            disabled={busy || resendIn > 0}
+                            title={resendIn > 0 ? `Wait ${resendIn}s before sending another link` : undefined}
+                        >
+                            {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend link"}
+                        </button>
                         <button type="button" className="btn btn-secondary btn-sm" onClick={cancel} disabled={busy}>Cancel</button>
                     </div>
                 </div>
