@@ -892,6 +892,44 @@ Beyond the lead, the Gazette surfaces: fame tier changes, notoriety swings, neme
 
 ---
 
+## Account
+
+The **Account** button lives in the footer next to **Sign Out**. It opens a single-page settings screen with six sections.
+
+### What You Can Change
+
+| Section | What it does |
+|---|---|
+| **Fighter Info** | Read-only display of your fighter's full name, weight class, style and backstory. These are **permanent** — they can't be changed after creation. |
+| **Change Nickname** | Update the quote-marks name shown on your fighter card ("Conor *The Notorious* McGregor"). 2–20 characters; letters, numbers, spaces, hyphens and apostrophes only. |
+| **Change Email** | Move your account to a new email address. The new address gets a confirmation link valid for 24 hours — the change isn't applied until you click it. While pending, you can **Resend** the link or **Cancel** the request. The old address stays active until confirmation. |
+| **Change Password** | Requires your current password. New password needs ≥8 characters and at least one number. After saving, your other devices are logged out — the device you used stays signed in with a fresh session. |
+| **Notifications** | Toggle email notifications on/off. Security-critical emails (password reset, deletion confirmation) **always** go out regardless of this toggle. |
+| **Danger Zone** | Log out (this device only) or permanently delete the account. |
+
+### Forgot Password
+
+If you can't log in, click **Forgot password?** on the login page and enter your email. You'll get a reset link valid for **1 hour**. The link takes you to a form where you set a new password and then log in.
+
+For your security, the system never confirms or denies whether an email is registered — the success message looks the same either way. Forgot-password requests are rate-limited to 3 per hour per email address.
+
+### Deleting Your Account
+
+When you click **Delete Account** in the Danger Zone, a confirmation modal asks you to type your fighter's full name exactly (e.g. *Conor McGregor*). The button stays disabled until the name matches.
+
+Deletion is a **30-day soft delete**, not an immediate purge:
+
+- Your fighter, iron, career history, rankings, banner and sponsorships are all marked deleted but not destroyed.
+- You're logged out immediately.
+- If you change your mind, log in within 30 days using the same email + password. The login screen shows a golden **"Recover account"** banner with days remaining. One click restores everything.
+- After 30 days, a daily background job permanently purges the data. It cannot be recovered after that.
+
+### What You **Cannot** Change
+
+Your **fighter name**, **weight class**, **fighting style** and **backstory** are locked at creation and can't be changed afterwards. The career is the career — you can rename the fighter you walked in with, but you can't swap them out for a new one. Want a different build? Delete the account and create a new one.
+
+---
+
 ## The Fight Summary
 
 After every fight you see a breakdown of everything that happened:
