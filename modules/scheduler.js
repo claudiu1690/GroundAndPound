@@ -7,6 +7,7 @@ const {
 } = require("../services/energyService");
 const notorietyService = require("../services/notorietyService");
 const injuryHealService = require("../services/injuryHealService");
+const accountService = require("../services/accountService");
 
 /**
  * Build the connection config BullMQ uses for every Queue and Worker.
@@ -100,6 +101,18 @@ const injuryHealWorker = new Worker(
 
 injuryHealWorker.on("error", (err) => console.error("[Injury heal] Worker error:", err));
 
+// ── Hard-delete sweep — purges soft-deleted accounts past their 30-day grace ─
+const hardDeleteQueue = new Queue("hard-delete", { connection: QUEUE_CONNECTION });
+const hardDeleteWorker = new Worker(
+    "hard-delete",
+    async () => {
+        const { purged } = await accountService.runHardDeleteSweep();
+        if (purged > 0) console.log(`[Hard delete] Permanently purged ${purged} account(s) past the 30-day grace window.`);
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+hardDeleteWorker.on("error", (err) => console.error("[Hard delete] Worker error:", err));
+
 async function startEnergyIncrementScheduler() {
     await ensureRedisConnected();
 
@@ -127,7 +140,13 @@ async function startEnergyIncrementScheduler() {
         removeOnComplete: true,
     });
 
-    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 24h).");
+    await hardDeleteQueue.add("sweep", {}, {
+        repeat: { every: 86_400_000 },
+        jobId: "account-hard-delete",
+        removeOnComplete: true,
+    });
+
+    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 24h, hard delete: 24h).");
 }
 
 module.exports = {
@@ -136,9 +155,11 @@ module.exports = {
     energySyncQueue,
     notorietyDecayQueue,
     injuryHealQueue,
+    hardDeleteQueue,
     energyWorker,
     energySyncWorker,
     notorietyDecayWorker,
     injuryHealWorker,
+    hardDeleteWorker,
     redis,
 };

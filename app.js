@@ -11,6 +11,8 @@ const mediaRoutes = require("./routes/mediaRoutes");
 const rankingRoutes = require("./routes/rankingRoutes");
 const gazetteRoutes = require("./routes/gazetteRoutes");
 const tutorialRoutes = require("./routes/tutorialRoutes");
+const accountRoutes = require("./routes/accountRoutes");
+const accountController = require("./controllers/accountController");
 const authMiddleware = require("./middleware/authMiddleware");
 const mongoose = require("mongoose");
 const config = require("./config");
@@ -52,6 +54,10 @@ app.use(express.urlencoded({ extended: true }));
 // Public — no auth required
 app.use("/auth", authRoutes);
 
+// Public — hit from an email link, no JWT. Mounted before the protected
+// /account routes so it doesn't get caught by the auth middleware.
+app.get("/account/email/confirm", accountController.confirmEmailChange);
+
 // Protected — JWT required for all game routes
 app.use("/fighters", authMiddleware, fighterRoutes);
 app.use("/gyms", authMiddleware, gymRoutes);
@@ -63,6 +69,7 @@ app.use("/media", authMiddleware, mediaRoutes);
 app.use("/rankings", authMiddleware, rankingRoutes);
 app.use("/gazette", authMiddleware, gazetteRoutes);
 app.use("/tutorial", authMiddleware, tutorialRoutes);
+app.use("/account", authMiddleware, accountRoutes);
 
 swagger(app);
 

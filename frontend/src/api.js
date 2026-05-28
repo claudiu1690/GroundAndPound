@@ -26,8 +26,10 @@ async function request(path, options = {}) {
   const res = await fetch(url, { ...options, headers });
   const data = await res.json().catch(() => ({}));
 
-  if (res.status === 401) {
-    // Token expired or invalid — force logout
+  // Force-logout on 401 only when we actually had a token — otherwise this is
+  // just bad credentials on /auth/login or /auth/recover, and reloading would
+  // clobber the form state and the error message.
+  if (res.status === 401 && token) {
     authStorage.clear();
     window.location.reload();
   }
@@ -36,6 +38,10 @@ async function request(path, options = {}) {
     const err = new Error(data.message || res.statusText || "Request failed");
     err.code = data.code || null;
     err.status = res.status;
+    // Stash the full body so flow-specific fields (e.g. daysLeft on the
+    // account_deleted response) are available to callers without a second hop.
+    err.body = data;
+    if (data.daysLeft != null) err.daysLeft = data.daysLeft;
     throw err;
   }
   return data;
@@ -246,4 +252,46 @@ export const api = {
     request(`/media/${fighterId}/podcast`, { method: "POST", body: JSON.stringify(body) }),
   doDocumentary: (fighterId) =>
     request(`/media/${fighterId}/documentary`, { method: "POST" }),
+
+  // ── Account settings ────────────────────────────────────
+  getAccountProfile: (accountId) =>
+    request(`/account/${accountId}`),
+  changeNickname: (accountId, nickname) =>
+    request(`/account/${accountId}/nickname`, { method: "PATCH", body: JSON.stringify({ nickname }) }),
+  setEmailNotifications: (accountId, emailEnabled) =>
+    request(`/account/${accountId}/notifications`, { method: "PATCH", body: JSON.stringify({ email_enabled: emailEnabled }) }),
+  requestEmailChange: (accountId, newEmail) =>
+    request(`/account/${accountId}/email/request`, { method: "POST", body: JSON.stringify({ new_email: newEmail }) }),
+  resendEmailChange: (accountId) =>
+    request(`/account/${accountId}/email/resend`, { method: "POST" }),
+  cancelEmailChange: (accountId) =>
+    request(`/account/${accountId}/email/pending`, { method: "DELETE" }),
+  changePassword: (accountId, currentPassword, newPassword) =>
+    request(`/account/${accountId}/password`, {
+      method: "POST",
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    }),
+  deleteAccount: (accountId, fighterName) =>
+    request(`/account/${accountId}`, {
+      method: "DELETE",
+      body: JSON.stringify({ fighter_name: fighterName }),
+    }),
+
+  // ── Forgot password / reset (unauthenticated) ───────────
+  forgotPassword: (email) =>
+    request("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),
+  checkResetToken: (token) =>
+    request(`/auth/reset-password?token=${encodeURIComponent(token)}`),
+  resetPassword: (token, newPassword) =>
+    request("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, new_password: newPassword }),
+    }),
+  logout: () =>
+    request("/auth/logout", { method: "POST" }),
+
+  // Restore a soft-deleted account within the 30-day grace window. Same
+  // response shape as login on success (token + fighterId).
+  recoverAccount: (email, password) =>
+    request("/auth/recover", { method: "POST", body: JSON.stringify({ email, password }) }),
 };
