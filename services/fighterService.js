@@ -204,26 +204,52 @@ function toPublicFighter(fighter) {
 /** Cheap fingerprint of injury recovery state — changes when any injury ticks or heals. */
 function injurySignature(fighter) {
     return (fighter.injuries || [])
-        .map((i) => `${i.type}:${i.recoveryDaysLeft || 0}`)
+        .map((i) => `${i.type}:${i.recoveryHoursLeft || (i.recoveryDaysLeft || 0) * 24}`)
         .join(",");
 }
 
 async function getFighterById(id) {
     const { tickRecoveryForFighter } = require("../utils/injuryUtils");
-    const fighter = await Fighter.findById(id).populate("gymId");
-    if (!fighter) throw new Error("Fighter not found");
-    await reconcileStatXpBanks(fighter);
+    const saveWithVersionRetry = require("../utils/saveWithVersionRetry");
+
+    // reconcileStatXpBanks may persist; it has no overlap with the injury/health
+    // tick window the background heal job touches, so keep it as-is.
+    const pre = await Fighter.findById(id);
+    if (!pre) throw new Error("Fighter not found");
+    await reconcileStatXpBanks(pre);
+
+    // The persistent injury-tick + health write races the background heal job, so
+    // route it through optimistic-concurrency retry. The mutate fn re-loads fresh,
+    // re-runs reconcileHealth + tickRecoveryForFighter on the winner's state, and
+    // saves only when something actually changed. tickRecoveryForFighter is
+    // time-based off recoveryLastTickAt, so re-running on a fresh doc that the heal
+    // job already advanced is a no-op (no double-reverse).
+    const saved = await saveWithVersionRetry(
+        () => Fighter.findById(id).populate("gymId"),
+        (f) => {
+            // Preserve the original no-op-read semantics: reconcileHealth bumps
+            // healthLastRegenAt to "now" even when health is unchanged, which would
+            // otherwise mark the doc dirty and bump __v on every plain read (making
+            // the background heal job lose every race). Capture the prior anchor and
+            // restore it when neither health nor injuries actually changed, so an
+            // unchanged read produces no modified paths and save() is a true no-op.
+            const healthBefore = f.health;
+            const regenAnchorBefore = f.healthLastRegenAt;
+            const injuriesBefore = injurySignature(f);
+            reconcileHealth(f);
+            tickRecoveryForFighter(f);
+            const changed = f.health !== healthBefore || injurySignature(f) !== injuriesBefore;
+            if (!changed) {
+                f.healthLastRegenAt = regenAnchorBefore;
+            }
+        }
+    );
+    // saved is non-null (we already confirmed the doc exists above).
+    const fighter = saved;
+
+    // Energy lives in Redis (authoritative) + in-memory snapshot; no version guard
+    // needed. Reconcile on the final winning doc before serializing.
     await reconcileEnergy(fighter);
-    const healthBefore = fighter.health;
-    reconcileHealth(fighter);
-    // Lazily heal injuries based on real elapsed time. This keeps recovery accurate
-    // even if the daily background heal job is delayed or not running.
-    const injuriesBefore = injurySignature(fighter);
-    tickRecoveryForFighter(fighter);
-    const injuriesChanged = injurySignature(fighter) !== injuriesBefore;
-    if (fighter.health !== healthBefore || injuriesChanged) {
-        await fighter.save();
-    }
     return toPublicFighter(fighter);
 }
 
@@ -328,19 +354,23 @@ async function debugRefillEnergyToMax(fighterId) {
  */
 async function doctorVisit(fighterId, injuryType) {
     const { reverseInjuryFromFighter } = require("../utils/injuryUtils");
+    const saveWithVersionRetry = require("../utils/saveWithVersionRetry");
+
+    // ── Validation + side effects ONCE, before the retry loop ──────────────
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
     await reconcileEnergy(fighter);
     const currentEnergy = energySnapshot(fighter).current;
 
-    const idx = (fighter.injuries || []).findIndex(
+    const target = (fighter.injuries || []).find(
         (inj) => inj.type === injuryType && inj.requiresDoctorVisit && !inj.doctorVisited
     );
-    if (idx === -1) throw new Error("Injury not found or does not require a doctor visit");
+    if (!target) throw new Error("Injury not found or does not require a doctor visit");
 
-    const inj = fighter.injuries[idx];
-    const energyCost = inj.docVisitEnergy || 0;
-    const ironCost = inj.docVisitIron || 0;
+    // Capture the stable subdoc _id — array index is not safe across reloads.
+    const injuryId = String(target._id);
+    const energyCost = target.docVisitEnergy || 0;
+    const ironCost = target.docVisitIron || 0;
 
     if (currentEnergy < energyCost) {
         throw new Error(`Not enough energy (doctor visit costs ${energyCost})`);
@@ -349,42 +379,86 @@ async function doctorVisit(fighterId, injuryType) {
         throw new Error(`Not enough iron (doctor visit costs ${ironCost})`);
     }
 
+    // Energy is a Redis side effect — deduct exactly once, here.
     if (energyCost > 0) {
-        const updatedEnergy = await energyService.deductEnergy(fighterId, energyCost);
-        setEnergySnapshot(fighter, updatedEnergy);
+        await energyService.deductEnergy(fighterId, energyCost);
     }
-    if (ironCost > 0) fighter.iron = (fighter.iron || 0) - ironCost;
-    reverseInjuryFromFighter(fighter, inj);
-    fighter.injuries.splice(idx, 1);
-    await fighter.save();
-    return toPublicFighter(fighter);
+
+    // ── Pure-document mutation, retried on version conflict ────────────────
+    let energyRefunded = false;
+    const saved = await saveWithVersionRetry(
+        () => Fighter.findById(fighterId),
+        (f) => {
+            const inj = (f.injuries || []).id(injuryId);
+            if (!inj) {
+                // Heal job won the race: the injury already healed/reversed on a fresh
+                // load. Deterministic clean no-op — do NOT reverse again, do NOT charge
+                // iron. Refund the already-deducted energy exactly once.
+                if (energyCost > 0 && !energyRefunded) {
+                    energyRefunded = true;
+                }
+                return;
+            }
+            // Iron decrement happens on the fresh (un-charged) doc → applied exactly once.
+            if (ironCost > 0) f.iron = (f.iron || 0) - ironCost;
+            reverseInjuryFromFighter(f, inj);
+            f.injuries.pull(injuryId);
+        }
+    );
+
+    // Refund outside the (idempotent) mutate fn so the Redis write happens once,
+    // regardless of how many version retries ran.
+    if (energyRefunded && energyCost > 0) {
+        const refunded = await energyService.addEnergy(fighterId, energyCost);
+        setEnergySnapshot(saved, refunded);
+    } else {
+        await reconcileEnergy(saved);
+    }
+    return toPublicFighter(saved);
 }
 
 /**
- * Hospital — Skip Recovery: pay iron to instantly clear an auto-heal injury (no waiting days).
- * Only works on injuries with requiresDoctorVisit=false and recoveryDaysLeft>0.
+ * Hospital — Skip Recovery: pay iron to instantly clear an auto-heal injury (no waiting hours).
+ * Only works on injuries with requiresDoctorVisit=false and an active recovery timer.
  */
 async function hospitalSkipRecovery(fighterId, injuryType) {
     const { reverseInjuryFromFighter } = require("../utils/injuryUtils");
+    const saveWithVersionRetry = require("../utils/saveWithVersionRetry");
+
+    // ── Validation ONCE, before the retry loop ─────────────────────────────
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
 
-    const idx = (fighter.injuries || []).findIndex(
-        (inj) => inj.type === injuryType && !inj.requiresDoctorVisit && (inj.recoveryDaysLeft || 0) > 0
+    const isHealing = (inj) =>
+        (inj.recoveryHoursLeft || 0) > 0 || (inj.recoveryDaysLeft || 0) > 0;
+    const target = (fighter.injuries || []).find(
+        (inj) => inj.type === injuryType && !inj.requiresDoctorVisit && isHealing(inj)
     );
-    if (idx === -1) throw new Error("Injury not found or not eligible for recovery skip");
+    if (!target) throw new Error("Injury not found or not eligible for recovery skip");
 
-    const inj = fighter.injuries[idx];
-    const ironCost = inj.recoverySkipIron || 0;
+    const injuryId = String(target._id);
+    const ironCost = target.recoverySkipIron || 0;
     if ((fighter.iron || 0) < ironCost) {
         throw new Error(`Not enough iron (skip recovery costs ${ironCost})`);
     }
 
-    if (ironCost > 0) fighter.iron = (fighter.iron || 0) - ironCost;
-    reverseInjuryFromFighter(fighter, inj);
-    fighter.injuries.splice(idx, 1);
-    await fighter.save();
-    return toPublicFighter(fighter);
+    // No energy cost here, so no refund concern. Iron is decremented inside the
+    // retried mutate on a fresh doc → applied exactly once on the winning save.
+    const saved = await saveWithVersionRetry(
+        () => Fighter.findById(fighterId),
+        (f) => {
+            const inj = (f.injuries || []).id(injuryId);
+            if (!inj) {
+                // Heal job won the race: already healed. Clean no-op — no iron charged.
+                return;
+            }
+            if (ironCost > 0) f.iron = (f.iron || 0) - ironCost;
+            reverseInjuryFromFighter(f, inj);
+            f.injuries.pull(injuryId);
+        }
+    );
+    await reconcileEnergy(saved);
+    return toPublicFighter(saved);
 }
 
 /**
@@ -393,6 +467,9 @@ async function hospitalSkipRecovery(fighterId, injuryType) {
  */
 async function hospitalFullRecovery(fighterId) {
     const { reverseInjuryFromFighter, quoteFullRecovery } = require("../utils/injuryUtils");
+    const saveWithVersionRetry = require("../utils/saveWithVersionRetry");
+
+    // ── Validation + side effects ONCE, before the retry loop ──────────────
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
     await reconcileEnergy(fighter);
@@ -407,28 +484,75 @@ async function hospitalFullRecovery(fighterId) {
         throw new Error(`Not enough iron (full recovery costs ${quote.iron})`);
     }
 
-    if (quote.energy > 0) {
-        const updatedEnergy = await energyService.deductEnergy(fighterId, quote.energy);
-        setEnergySnapshot(fighter, updatedEnergy);
-    }
-    if (quote.iron > 0) fighter.iron = (fighter.iron || 0) - quote.iron;
+    // Build a per-injury cost map keyed by stable _id so we can (a) re-identify
+    // targets after a fresh reload and (b) refund/skip the share of any target the
+    // heal job removed out from under us. We store RAW iron + energy per injury; the
+    // FULL_RECOVERY_DISCOUNT is re-applied once over the survivors inside the mutate,
+    // mirroring quoteFullRecovery exactly, so the player only pays for what heals.
+    const { FULL_RECOVERY_DISCOUNT } = require("../consts/injuryDefinitions");
+    const isAutoHealing = (inj) =>
+        !inj.requiresDoctorVisit && ((inj.recoveryHoursLeft || 0) > 0 || (inj.recoveryDaysLeft || 0) > 0);
 
-    // Heal every healable injury (doctor-required not yet visited, OR auto-heal in progress).
-    const healed = [];
-    const remaining = [];
+    const targets = new Map(); // injuryId -> { rawIron, energy }
     for (const inj of fighter.injuries || []) {
-        const needsDoctor = inj.requiresDoctorVisit && !inj.doctorVisited;
-        const autoHealing = !inj.requiresDoctorVisit && (inj.recoveryDaysLeft || 0) > 0;
-        if (needsDoctor || autoHealing) {
-            reverseInjuryFromFighter(fighter, inj);
-            healed.push(inj.label);
-        } else {
-            remaining.push(inj);
+        if (inj.requiresDoctorVisit && !inj.doctorVisited) {
+            targets.set(String(inj._id), { rawIron: inj.docVisitIron || 0, energy: inj.docVisitEnergy || 0 });
+        } else if (isAutoHealing(inj)) {
+            targets.set(String(inj._id), { rawIron: inj.recoverySkipIron || 0, energy: 0 });
         }
     }
-    fighter.injuries = remaining;
-    await fighter.save();
-    return { fighter: toPublicFighter(fighter), healed, ironPaid: quote.iron, energyPaid: quote.energy };
+
+    // Energy is a Redis side effect — deduct the full quoted amount exactly once.
+    if (quote.energy > 0) {
+        await energyService.deductEnergy(fighterId, quote.energy);
+    }
+
+    // ── Pure-document mutation, retried on version conflict ────────────────
+    let healedLabels = [];
+    let ironCharged = 0;
+    let energyRefund = 0;
+    const saved = await saveWithVersionRetry(
+        () => Fighter.findById(fighterId),
+        (f) => {
+            // Reset per-attempt accumulators (mutate may re-run on a fresh doc).
+            healedLabels = [];
+            let survivorRawIron = 0;
+            energyRefund = 0;
+            const toPull = [];
+            for (const [injuryId, meta] of targets) {
+                const inj = (f.injuries || []).id(injuryId);
+                if (!inj) {
+                    // Heal job already removed this one — refund its energy share and
+                    // charge no iron for it. Deterministic clean no-op for this injury.
+                    energyRefund += meta.energy;
+                    continue;
+                }
+                reverseInjuryFromFighter(f, inj);
+                survivorRawIron += meta.rawIron;
+                healedLabels.push(inj.label);
+                toPull.push(injuryId);
+            }
+            // Apply the package discount once over the survivors' raw iron — same math
+            // as quoteFullRecovery — then decrement on the fresh (un-charged) doc.
+            ironCharged = Math.round(survivorRawIron * (1 - FULL_RECOVERY_DISCOUNT));
+            if (ironCharged > 0) f.iron = (f.iron || 0) - ironCharged;
+            for (const injuryId of toPull) f.injuries.pull(injuryId);
+        }
+    );
+
+    // Apply the energy refund (Redis) exactly once, after the doc is settled.
+    if (energyRefund > 0) {
+        const refunded = await energyService.addEnergy(fighterId, energyRefund);
+        setEnergySnapshot(saved, refunded);
+    } else {
+        await reconcileEnergy(saved);
+    }
+    return {
+        fighter: toPublicFighter(saved),
+        healed: healedLabels,
+        ironPaid: ironCharged,
+        energyPaid: Math.max(0, quote.energy - energyRefund),
+    };
 }
 
 /**

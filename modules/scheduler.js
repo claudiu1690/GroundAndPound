@@ -93,8 +93,9 @@ notorietyDecayWorker.on("error", (err) => console.error("[Notoriety decay] Worke
 const injuryHealWorker = new Worker(
     "injury-heal",
     async () => {
-        const { touched, healed } = await injuryHealService.runInjuryHealBatch();
+        const { touched, healed, failed } = await injuryHealService.runInjuryHealBatch();
         if (touched > 0) console.log(`[Injury heal] Ticked ${touched} fighter(s); healed ${healed} injury(ies).`);
+        if (failed > 0) console.error(`[Injury heal] ${failed} fighter(s) failed to tick — see prior errors.`);
     },
     { connection: QUEUE_CONNECTION, concurrency: 1 }
 );
@@ -116,6 +117,22 @@ hardDeleteWorker.on("error", (err) => console.error("[Hard delete] Worker error:
 async function startEnergyIncrementScheduler() {
     await ensureRedisConnected();
 
+    // One-shot cleanup: a previous deploy registered a 24h repeatable job under
+    // jobId "injury-daily-heal". The new hourly job uses a different jobId, so
+    // without this both would fire indefinitely. Removing the old one is safe
+    // (no-op if it doesn't exist).
+    try {
+        const repeatables = await injuryHealQueue.getRepeatableJobs();
+        for (const r of repeatables) {
+            if (r.id === "injury-daily-heal") {
+                await injuryHealQueue.removeRepeatableByKey(r.key);
+                console.log("[scheduler] Removed legacy daily injury-heal job.");
+            }
+        }
+    } catch (e) {
+        console.warn("[scheduler] Legacy injury-daily-heal cleanup failed (non-fatal):", e.message);
+    }
+
     await energyQueue.add("tick", {}, {
         repeat: { every: 60_000 },
         jobId: "energy-tick",
@@ -134,9 +151,12 @@ async function startEnergyIncrementScheduler() {
         removeOnComplete: true,
     });
 
+    // Hourly — matches the hour-resolution recovery timer (see
+    // injuryUtils.tickRecoveryForFighter). Lazy ticks on fighter load still
+    // catch active players in real time; this just keeps idle accounts in sync.
     await injuryHealQueue.add("heal", {}, {
-        repeat: { every: 86_400_000 },
-        jobId: "injury-daily-heal",
+        repeat: { every: 3_600_000 },
+        jobId: "injury-hourly-heal",
         removeOnComplete: true,
     });
 
@@ -146,7 +166,7 @@ async function startEnergyIncrementScheduler() {
         removeOnComplete: true,
     });
 
-    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 24h, hard delete: 24h).");
+    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h).");
 }
 
 module.exports = {

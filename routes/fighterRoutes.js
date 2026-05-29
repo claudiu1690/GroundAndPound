@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const fighterController = require("../controllers/fighterController");
 const rankingController = require("../controllers/rankingController");
+const ownFighter = require("../middleware/ownFighterMiddleware");
 
 /**
  * @swagger
@@ -171,11 +172,11 @@ router.post("/:id/debug/recharge-energy", fighterController.debugRechargeEnergy)
  */
 router.post("/:id/train", fighterController.train);
 
-router.post("/:id/doctor-visit", fighterController.doctorVisit);
-router.post("/:id/hospital/skip-recovery", fighterController.hospitalSkipRecovery);
-router.post("/:id/hospital/full-recovery", fighterController.hospitalFullRecovery);
-router.post("/:id/hospital/restore-health", fighterController.hospitalRestoreHealth);
-router.get("/:id/hospital/quote", fighterController.hospitalQuote);
+router.post("/:id/doctor-visit", ownFighter, fighterController.doctorVisit);
+router.post("/:id/hospital/skip-recovery", ownFighter, fighterController.hospitalSkipRecovery);
+router.post("/:id/hospital/full-recovery", ownFighter, fighterController.hospitalFullRecovery);
+router.post("/:id/hospital/restore-health", ownFighter, fighterController.hospitalRestoreHealth);
+router.get("/:id/hospital/quote", ownFighter, fighterController.hospitalQuote);
 router.post("/:id/switch-gym", fighterController.switchGym);
 router.post("/:id/rank-up-gym", fighterController.rankUpGym);
 router.get("/:id/champions", fighterController.getChampions);

@@ -5,22 +5,25 @@
  * statEffects: signed values applied to fighter stats when injury is sustained (negative = penalty).
  *
  * Healing model:
- *   - Every injury heals on its own by ticking down recoveryDaysLeft once per 24h
+ *   - Every injury heals on its own by ticking down recoveryHoursLeft once per hour
  *     until 0, then auto-clears. No injury is ever a permanent dead end.
  *   - Auto-heal injuries: pay iron at the Hospital to skip the wait (recoverySkipIron).
  *   - Doctor-required injuries: also heal over time, but a doctor visit (energy + iron)
  *     clears them instantly — the paid fast path. They still block fighting/sparring
  *     while active, so waiting them out has a real cost.
+ *
+ * Durations are tuned so the worst injury heals within 24 real hours, keeping the
+ * game playable in a single session even after a rough loss.
  */
 const INJURY_TYPES = {
     cut: {
         label: "Cut",
         severity: "minor",
         cause: "fight",
-        effect: "Can't fight until it clears. Heals in 2 days — or see a doctor to skip the wait.",
+        effect: "Can't fight until it clears. Heals in 6 hours — or see a doctor to skip the wait.",
         requiresDoctorVisit: true,
         cannotFight: true,
-        recoveryDaysNeeded: 2,
+        recoveryHoursNeeded: 6,
         docVisitEnergy: 10,
         docVisitIron: 200,
         statEffects: {},
@@ -29,9 +32,9 @@ const INJURY_TYPES = {
         label: "Bruised Rib",
         severity: "minor",
         cause: "fight",
-        effect: "−10 Max Stamina. Heals in 2 days.",
+        effect: "−10 Max Stamina. Heals in 6 hours.",
         requiresDoctorVisit: false,
-        recoveryDaysNeeded: 2,
+        recoveryHoursNeeded: 6,
         recoverySkipIron: 600,
         statEffects: { maxStamina: -10 },
     },
@@ -39,9 +42,9 @@ const INJURY_TYPES = {
         label: "Sprained Ankle",
         severity: "minor",
         cause: "sparring",
-        effect: "−15 LEG until healed. Heals in 5 days.",
+        effect: "−15 LEG until healed. Heals in 18 hours.",
         requiresDoctorVisit: false,
-        recoveryDaysNeeded: 5,
+        recoveryHoursNeeded: 18,
         recoverySkipIron: 800,
         statEffects: { leg: -15 },
     },
@@ -49,10 +52,10 @@ const INJURY_TYPES = {
         label: "Broken Nose",
         severity: "minor",
         cause: "fight",
-        effect: "−3 CHN until it heals. Clears in 3 days — or see a doctor to skip the wait.",
+        effect: "−3 CHN until it heals. Clears in 9 hours — or see a doctor to skip the wait.",
         requiresDoctorVisit: true,
         cannotFight: false,
-        recoveryDaysNeeded: 3,
+        recoveryHoursNeeded: 9,
         docVisitEnergy: 10,
         docVisitIron: 400,
         statEffects: { chn: -3 },
@@ -61,11 +64,11 @@ const INJURY_TYPES = {
         label: "Concussion",
         severity: "major",
         cause: "ko_loss",
-        effect: "−2 CHN; can't spar or fight. Heals in 4 days — or see a doctor to skip the wait.",
+        effect: "−2 CHN; can't spar or fight. Heals in 12 hours — or see a doctor to skip the wait.",
         requiresDoctorVisit: true,
         cannotFight: true,
         cannotSpar: true,
-        recoveryDaysNeeded: 4,
+        recoveryHoursNeeded: 12,
         docVisitEnergy: 20,
         docVisitIron: 1500,
         statEffects: { chn: -2 },
@@ -74,10 +77,10 @@ const INJURY_TYPES = {
         label: "Torn Ligament",
         severity: "major",
         cause: "sparring",
-        effect: "Can't fight; −10 STR, −10 LEG. Heals in 6 days — or see a doctor to skip the wait.",
+        effect: "Can't fight; −10 STR, −10 LEG. Heals in 24 hours — or see a doctor to skip the wait.",
         requiresDoctorVisit: true,
         cannotFight: true,
-        recoveryDaysNeeded: 6,
+        recoveryHoursNeeded: 24,
         docVisitEnergy: 20,
         docVisitIron: 2000,
         statEffects: { str: -10, leg: -10 },
@@ -86,10 +89,10 @@ const INJURY_TYPES = {
         label: "Broken Hand",
         severity: "major",
         cause: "fight",
-        effect: "−20 STR; no bag/pad work. Heals in 6 days.",
+        effect: "−20 STR; no bag/pad work. Heals in 24 hours.",
         requiresDoctorVisit: false,
         cannotBagWork: true,
-        recoveryDaysNeeded: 6,
+        recoveryHoursNeeded: 24,
         recoverySkipIron: 1200,
         statEffects: { str: -20 },
     },

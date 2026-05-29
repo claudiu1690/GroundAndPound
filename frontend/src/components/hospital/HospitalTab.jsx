@@ -33,7 +33,9 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
     // Tick once a minute so the heal countdown stays fresh while the player
     // is on this page. Only schedules when there's an injury still healing.
     const [, setTick] = useState(0);
-    const hasHealingTimer = injuries.some((inj) => inj.recoveryDaysLeft > 0 && !inj.doctorVisited);
+    const hasHealingTimer = injuries.some(
+        (inj) => (inj.recoveryHoursLeft > 0 || inj.recoveryDaysLeft > 0) && !inj.doctorVisited
+    );
     useEffect(() => {
         if (!hasHealingTimer) return undefined;
         const id = setInterval(() => setTick((n) => n + 1), 60_000);
@@ -240,7 +242,7 @@ const ServicesSection = memo(function ServicesSection() {
                     </div>
                     <p className="hospital-service-desc">
                         Doctor-required injuries (Cut, Concussion, Broken Nose, Torn Ligament) heal on
-                        their own over a few days. Pay energy + iron to clear one instantly and skip
+                        their own within a day. Pay energy + iron to clear one instantly and skip
                         the wait — handy when an injury is blocking your next fight.
                     </p>
                     <div className="hospital-service-tag">From 200🪙 + 10E</div>
@@ -252,8 +254,8 @@ const ServicesSection = memo(function ServicesSection() {
                         <span className="hospital-service-name">Skip Recovery</span>
                     </div>
                     <p className="hospital-service-desc">
-                        Auto-heal injuries (Bruised Rib, Sprained Ankle, Broken Hand) clear over real
-                        days. Pay iron to skip the wait and fight tomorrow at full strength.
+                        Auto-heal injuries (Bruised Rib, Sprained Ankle, Broken Hand) clear within hours.
+                        Pay iron to skip the wait and get back to training right away.
                     </p>
                     <div className="hospital-service-tag">From 600🪙</div>
                 </div>
@@ -294,8 +296,9 @@ const HospitalInjuryRow = memo(function HospitalInjuryRow({
     onSkipRecovery,
 }) {
     const needsDoctor = inj.requiresDoctorVisit && !inj.doctorVisited;
-    const isAutoHealing = !inj.requiresDoctorVisit && inj.recoveryDaysLeft > 0;
-    const ticking = inj.recoveryDaysLeft > 0 && !inj.doctorVisited;
+    const hoursLeft = inj.recoveryHoursLeft > 0 ? inj.recoveryHoursLeft : (inj.recoveryDaysLeft || 0) * 24;
+    const isAutoHealing = !inj.requiresDoctorVisit && hoursLeft > 0;
+    const ticking = hoursLeft > 0 && !inj.doctorVisited;
     const severity = inj.severity === "major" ? "injury-major" : "injury-minor";
 
     return (

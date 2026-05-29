@@ -450,12 +450,12 @@ export const LIBRARY_ARTICLES = [
         tags: ["injuries", "concussion", "cut", "sparring", "auto-heal"],
         body: [
             "Injuries happen in fights and in sparring sessions. They apply stat penalties and can block you from fighting or training certain ways until they clear. The good news: every injury heals on its own. The system never permanently locks you out of the game.",
-            "Each injury ticks down a recovery timer once every 24 hours of real time, then auto-clears. Bruised Ribs heal in 2 days with a −10 max stamina penalty. Broken Hands take 6 days and block bag work and pad work. Sprained Ankles (from sparring) take 5 days with −15 LEG. Cuts heal in 2 days but block fighting until cleared. Broken Noses heal in 3 days with −3 CHN. Torn Ligaments take 6 days and block fighting. Concussions (from KO/sub losses) heal in 4 days and block both fighting and sparring.",
-            "Doctor-required injuries (Cut, Broken Nose, Concussion, Torn Ligament) can also be cleared instantly at the Hospital for energy + iron — the paid fast path. The wait-versus-pay choice is yours. If you have a title shot waiting, paying is usually worth it. If you have a few days to spare, the free heal is just as effective.",
+            "Each injury ticks down a recovery timer once every real hour, then auto-clears. Bruised Ribs heal in 6 hours with a −10 max stamina penalty. Cuts heal in 6 hours but block fighting until cleared. Broken Noses heal in 9 hours with −3 CHN. Concussions (from KO/sub losses) heal in 12 hours and block both fighting and sparring. Sprained Ankles (from sparring) take 18 hours with −15 LEG. Torn Ligaments take 24 hours and block fighting. Broken Hands take 24 hours and block bag work and pad work.",
+            "Doctor-required injuries (Cut, Broken Nose, Concussion, Torn Ligament) can also be cleared instantly at the Hospital for energy + iron — the paid fast path. The wait-versus-pay choice is yours. If you have a title shot waiting, paying is usually worth it. If you've got time to spare, the free heal is just as effective — the worst injury in the game clears in a single day.",
             "Sparring is the most common source of new injuries. A 3% chance per session sounds small but it adds up across a full camp. If an injury occurs during camp, you choose between stopping camp (losing remaining slots, healthier fighter) or pushing through (keeping slots, carrying the injury penalty into the fight).",
             "There's a new-fighter grace period: during your first 3 fights, no fight-blocking injury (Concussion, Cut, Torn Ligament) is ever inflicted on you — in fights or in sparring. A rough debut can't lock a brand-new fighter out of the game.",
         ],
-        keyTakeaway: "Every injury heals on its own — eventually. Pay the doctor when you can't afford to wait. Plan for the heal-time, not the cost.",
+        keyTakeaway: "Every injury heals on its own within 24 hours at most. Pay the doctor when you can't even wait that long. Otherwise, the free heal is the same outcome.",
     },
     {
         id: "hospital",
@@ -465,12 +465,12 @@ export const LIBRARY_ARTICLES = [
         tags: ["hospital", "treatment", "doctor visit", "health restoration", "skip recovery"],
         body: [
             "The Hospital tab is your medical centre. It offers four services: Doctor Visit (Treatment) for the doctor-required injuries, Skip Recovery to instantly clear an auto-heal injury, Health Restoration packages, and a Full Recovery Package when you have multiple injuries at once.",
-            "Doctor Visit clears one doctor-required injury — Cut, Broken Nose, Concussion, or Torn Ligament. It costs energy and iron. Concussions are the most expensive at 20 energy and 1,500 iron. Cuts and Broken Noses are cheaper. Torn Ligaments are expensive but worth it if a title shot is waiting. Remember — these injuries will heal on their own in 2–6 days even if you don't pay; the doctor visit is just the fast path.",
-            "Skip Recovery instantly clears an auto-heal injury. Use it when an injury is dragging on and you have a fight or sponsor clause that can't wait. Bruised Ribs cost 600 iron, Sprained Ankles 800, Broken Hands 1,200. If you have time to wait, don't spend the iron.",
+            "Doctor Visit clears one doctor-required injury — Cut, Broken Nose, Concussion, or Torn Ligament. It costs energy and iron. Concussions are the most expensive at 20 energy and 1,500 iron. Cuts and Broken Noses are cheaper. Torn Ligaments are expensive but worth it if a title shot is waiting. Remember — these injuries will heal on their own within 6 to 24 hours even if you don't pay; the doctor visit is just the fast path.",
+            "Skip Recovery instantly clears an auto-heal injury. Use it when an injury is dragging on and you have a fight or sponsor clause that can't wait. Bruised Ribs cost 600 iron, Sprained Ankles 800, Broken Hands 1,200. If you can wait a few hours, don't spend the iron.",
             "Health Restoration packages restore HP without waiting. Quick Patch restores up to 25 HP for 250 iron. Recovery Bay restores up to 50 HP for 400 iron. Full Restoration brings you to 100 HP for 700 iron. The cost is pro-rated — if you only need 15 HP, Quick Patch charges you proportionally less. You never overpay for more restoration than you need.",
             "Full Recovery Package heals every active injury in one transaction, with a 15% bulk discount over the sum of individual services. Available when you have 2 or more active injuries.",
         ],
-        keyTakeaway: "Every injury heals for free given enough time. Pay the hospital when time is the resource you can't spare.",
+        keyTakeaway: "Every injury heals for free within a day at most. Pay the hospital when even that wait is too long — typically when a title shot or sponsor clause is on the line.",
     },
     {
         id: "comeback-mode",

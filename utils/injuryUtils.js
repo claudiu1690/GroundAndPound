@@ -82,8 +82,8 @@ function buildInjury(typeKey) {
         cannotFight: !!def.cannotFight,
         cannotSpar: !!def.cannotSpar,
         cannotBagWork: !!def.cannotBagWork,
-        recoveryDaysLeft: def.recoveryDaysNeeded || 0,
-        recoveryLastTickAt: def.recoveryDaysNeeded ? new Date() : null,
+        recoveryHoursLeft: def.recoveryHoursNeeded || 0,
+        recoveryLastTickAt: def.recoveryHoursNeeded ? new Date() : null,
         docVisitEnergy: def.docVisitEnergy || 0,
         docVisitIron: def.docVisitIron || 0,
         recoverySkipIron: def.recoverySkipIron || 0,
@@ -140,7 +140,7 @@ function isFightBlocked(fighter) {
 function isSparringBlocked(fighter) {
     if (!fighter.injuries || !fighter.injuries.length) return null;
     for (const inj of fighter.injuries) {
-        if (inj.cannotSpar) return inj;
+        if (inj.cannotSpar && !inj.doctorVisited) return inj;
     }
     return null;
 }
@@ -151,18 +151,22 @@ function isSparringBlocked(fighter) {
 function isBagWorkBlocked(fighter) {
     if (!fighter.injuries || !fighter.injuries.length) return null;
     for (const inj of fighter.injuries) {
-        if (inj.cannotBagWork) return inj;
+        if (inj.cannotBagWork && !inj.doctorVisited) return inj;
     }
     return null;
 }
 
 /**
- * Decrement recoveryDaysLeft on every injury that still has a recovery timer by the
- * number of full 24h periods elapsed since the last tick. Heals injuries that hit 0
+ * Decrement recoveryHoursLeft on every injury that still has a recovery timer by the
+ * number of full 1h periods elapsed since the last tick. Heals injuries that hit 0
  * and reverses their stat penalties. This covers both auto-heal injuries and
  * doctor-required injuries — the latter can be skipped early with a paid doctor visit,
  * but if left alone they heal on their own here, so no injury is ever permanent.
  * Mutates fighter.injuries in place. Call fighter.save() afterwards.
+ *
+ * Legacy support: pre-migration injuries store `recoveryDaysLeft` (24h units). On
+ * first tick we convert those to `recoveryHoursLeft` by multiplying by 24, then
+ * proceed normally. The old field is cleared so it doesn't get re-converted.
  *
  * Returns array of healed injury labels.
  */
@@ -171,22 +175,27 @@ function tickRecoveryForFighter(fighter, now = new Date()) {
     if (!fighter.injuries || !fighter.injuries.length) return healed;
     const remaining = [];
     for (const inj of fighter.injuries) {
-        if (!inj.recoveryDaysLeft || inj.recoveryDaysLeft <= 0) {
+        // Migrate legacy day-based injuries to hours on first sight.
+        if ((inj.recoveryHoursLeft == null || inj.recoveryHoursLeft === 0) && inj.recoveryDaysLeft > 0) {
+            inj.recoveryHoursLeft = inj.recoveryDaysLeft * 24;
+            inj.recoveryDaysLeft = 0;
+        }
+        if (!inj.recoveryHoursLeft || inj.recoveryHoursLeft <= 0) {
             remaining.push(inj);
             continue;
         }
         const last = inj.recoveryLastTickAt ? new Date(inj.recoveryLastTickAt) : new Date(inj.sustainedAt);
         const elapsedMs = now - last;
-        const fullDays = Math.floor(elapsedMs / 86_400_000);
-        if (fullDays <= 0) {
+        const fullHours = Math.floor(elapsedMs / 3_600_000);
+        if (fullHours <= 0) {
             remaining.push(inj);
             continue;
         }
-        const newDaysLeft = Math.max(0, inj.recoveryDaysLeft - fullDays);
-        inj.recoveryDaysLeft = newDaysLeft;
-        // Advance the tick anchor by the consumed days so we don't lose fractional time.
-        inj.recoveryLastTickAt = new Date(last.getTime() + fullDays * 86_400_000);
-        if (newDaysLeft <= 0) {
+        const newHoursLeft = Math.max(0, inj.recoveryHoursLeft - fullHours);
+        inj.recoveryHoursLeft = newHoursLeft;
+        // Advance the tick anchor by the consumed hours so sub-hour drift doesn't accumulate.
+        inj.recoveryLastTickAt = new Date(last.getTime() + fullHours * 3_600_000);
+        if (newHoursLeft <= 0) {
             reverseInjuryFromFighter(fighter, inj);
             healed.push(inj.label);
             continue; // drop from remaining
@@ -212,7 +221,7 @@ function quoteFullRecovery(fighter) {
             iron += inj.docVisitIron || 0;
             energy += inj.docVisitEnergy || 0;
             count += 1;
-        } else if (!inj.requiresDoctorVisit && inj.recoveryDaysLeft > 0) {
+        } else if (!inj.requiresDoctorVisit && ((inj.recoveryHoursLeft || 0) > 0 || (inj.recoveryDaysLeft || 0) > 0)) {
             iron += inj.recoverySkipIron || 0;
             count += 1;
         }

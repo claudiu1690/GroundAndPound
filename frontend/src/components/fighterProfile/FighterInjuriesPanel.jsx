@@ -28,7 +28,8 @@ export const FighterInjuriesPanel = memo(function FighterInjuriesPanel({ injurie
 });
 
 const InjuryCard = memo(function InjuryCard({ injury: inj }) {
-  const ticking = inj.recoveryDaysLeft > 0 && !inj.doctorVisited;
+  const hoursLeft = inj.recoveryHoursLeft > 0 ? inj.recoveryHoursLeft : (inj.recoveryDaysLeft || 0) * 24;
+  const ticking = hoursLeft > 0 && !inj.doctorVisited;
 
   return (
     <div className={`injury-item ${severityClass(inj.severity)}`}>

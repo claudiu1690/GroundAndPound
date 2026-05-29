@@ -223,11 +223,15 @@ const fighterSchema = new mongoose.Schema({
         cannotFight:        { type: Boolean, default: false },
         cannotSpar:         { type: Boolean, default: false },
         cannotBagWork:      { type: Boolean, default: false },
-        // Auto-heal counter — ticks down once per 24h via the daily scheduler job.
-        // When it hits 0, the injury auto-clears and stat penalties are reversed.
-        // Only used by injuries with requiresDoctorVisit=false.
+        // Auto-heal counter — ticks down once per real hour via the scheduler job
+        // and lazily on every fighter load. When it hits 0, the injury auto-clears
+        // and stat penalties are reversed.
+        recoveryHoursLeft:  { type: Number, default: 0 },
+        // Legacy 24h-unit counter from the pre-hourly migration. Kept on the schema
+        // so old documents read without error; the tick function converts ×24 into
+        // recoveryHoursLeft on first sight, then clears this field.
         recoveryDaysLeft:   { type: Number, default: 0 },
-        // Last day-tick timestamp; set whenever the daily scheduler decrements the counter.
+        // Last tick anchor; set whenever the scheduler / lazy tick decrements the counter.
         recoveryLastTickAt: { type: Date, default: null },
         docVisitEnergy:     { type: Number, default: 0 },
         docVisitIron:       { type: Number, default: 0 },

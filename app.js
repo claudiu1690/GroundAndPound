@@ -211,10 +211,11 @@ async function backfillDoctorInjuryTimers() {
         let touched = false;
         for (const inj of fighter.injuries) {
             if (!inj.requiresDoctorVisit || inj.doctorVisited) continue;
-            if (inj.recoveryDaysLeft && inj.recoveryDaysLeft > 0) continue; // already timed
+            if (inj.recoveryHoursLeft && inj.recoveryHoursLeft > 0) continue; // already timed
+            if (inj.recoveryDaysLeft   && inj.recoveryDaysLeft   > 0) continue; // legacy timer present
             const def = INJURY_TYPES[inj.type];
-            if (!def || !def.recoveryDaysNeeded) continue;
-            inj.recoveryDaysLeft = def.recoveryDaysNeeded;
+            if (!def || !def.recoveryHoursNeeded) continue;
+            inj.recoveryHoursLeft = def.recoveryHoursNeeded;
             inj.recoveryLastTickAt = inj.sustainedAt || new Date();
             touched = true;
         }
