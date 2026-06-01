@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Star, Check, X, Coins } from "lucide-react";
 import { api } from "../../api";
 import { CardResultOverlay } from "./CardResultOverlay";
 import { PredictionPickerModal } from "./PredictionPickerModal";
@@ -215,73 +216,80 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDel
                 />
             )}
 
-            {/* ── Main Card grid ── */}
-            {mainFights.length > 0 && (
-                <section className="card-grid-section">
-                    <h3 className="card-grid-title card-grid-title-main">Main Card</h3>
-                    <div className="card-grid">
-                        {mainFights.map((f) => (
-                            <CompactFightCard
-                                key={f.id}
-                                fight={f}
-                                tone="main"
-                                prediction={predictionsByIndex[f.index] || null}
-                                onPick={() => setPickerFight(f)}
-                            />
-                        ))}
-                    </div>
-                </section>
-            )}
-
-            {/* ── Prelims grid ── */}
-            {prelimFights.length > 0 && (
-                <section className="card-grid-section">
-                    <h3 className="card-grid-title card-grid-title-prelim">Prelims</h3>
-                    <div className="card-grid">
-                        {prelimFights.map((f) => (
-                            <CompactFightCard
-                                key={f.id}
-                                fight={f}
-                                tone="prelim"
-                                prediction={predictionsByIndex[f.index] || null}
-                                onPick={() => setPickerFight(f)}
-                            />
-                        ))}
-                    </div>
-                </section>
-            )}
-
-            {/* ── Card potential ── */}
-            <PotentialBar potential={potential} />
-
-            {/* ── Your bet history ── */}
-            <section className="events-history">
-                <h3>Your Bets</h3>
-                <div className="events-history-stats">
-                    {summaryStats.total > 0
-                        ? (
-                            <>
-                                {summaryStats.won} / {summaryStats.total} won
-                                {" · "}
-                                <span className={summaryStats.totalNet >= 0 ? "events-stats-pos" : "events-stats-neg"}>
-                                    {summaryStats.totalNet >= 0 ? "+" : ""}{summaryStats.totalNet.toLocaleString()} ⊗
-                                </span>
-                                {" net across "}
-                                {summaryStats.totalStake.toLocaleString()} ⊗ staked
-                            </>
-                        )
-                        : "No resolved bets yet."}
-                </div>
-                {history.length === 0 ? (
-                    <div className="events-empty-hist">Your past bets will appear here after they resolve.</div>
-                ) : (
-                    <ul className="events-history-list">
-                        {history.slice(0, 15).map((p) => (
-                            <HistoryRow key={p.id} prediction={p} />
-                        ))}
-                    </ul>
+            <div className="content">
+                {/* ── Main Card ── */}
+                {mainFights.length > 0 && (
+                    <section className="card-section">
+                        <div className="slbl">Main Card</div>
+                        <div className="fight-rows">
+                            {mainFights.map((f) => (
+                                <CompactFightCard
+                                    key={f.id}
+                                    fight={f}
+                                    tone="main"
+                                    prediction={predictionsByIndex[f.index] || null}
+                                    onPick={() => setPickerFight(f)}
+                                />
+                            ))}
+                        </div>
+                    </section>
                 )}
-            </section>
+
+                {/* ── Prelims ── */}
+                {prelimFights.length > 0 && (
+                    <section className="card-section">
+                        <div className="slbl">Prelims</div>
+                        <div className="fight-rows">
+                            {prelimFights.map((f) => (
+                                <CompactFightCard
+                                    key={f.id}
+                                    fight={f}
+                                    tone="prelim"
+                                    prediction={predictionsByIndex[f.index] || null}
+                                    onPick={() => setPickerFight(f)}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* ── Card potential ── */}
+                <section className="card-section">
+                    <div className="slbl">Card Bets</div>
+                    <PotentialBar potential={potential} />
+                </section>
+
+                {/* ── Your bet history ── */}
+                <section className="card-section">
+                    <div className="slbl">Your Bets</div>
+                    <div className="your-bets">
+                        <div className="your-bets-summary">
+                            {summaryStats.total > 0
+                                ? (
+                                    <>
+                                        {summaryStats.won}/{summaryStats.total} won
+                                        {" · "}
+                                        <span className={summaryStats.totalNet >= 0 ? "yb-pos" : "yb-neg"}>
+                                            {summaryStats.totalNet >= 0 ? "+" : ""}{summaryStats.totalNet.toLocaleString()} iron
+                                        </span>
+                                        {" net across "}
+                                        {summaryStats.totalStake.toLocaleString()} iron staked
+                                    </>
+                                )
+                                : "No resolved bets yet."}
+                        </div>
+                        {history.length === 0 ? (
+                            <div className="your-bets-empty">No resolved bets yet. Your past bets will appear here after they resolve.</div>
+                        ) : (
+                            <div className="yb-list">
+                                {history.slice(0, 15).map((p) => (
+                                    <HistoryRow key={p.id} prediction={p} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </section>
+            </div>
         </section>
     );
 }
@@ -302,59 +310,63 @@ function HeadlinerBand({ fight, cardNumber, resolvesAt, prediction, onPick }) {
         <button
             type="button"
             data-tut="event-headliner"
-            className={`headliner-band ${locked ? "headliner-band-locked" : ""}`}
+            className={`headliner ${locked ? "headliner-locked" : ""}`}
             onClick={locked ? undefined : onPick}
             disabled={locked}
         >
-            <div className="headliner-side headliner-side-a">
-                <div className="headliner-name">{a.name}</div>
-                {a.nickname && <div className="headliner-nickname">"{a.nickname.toUpperCase()}"</div>}
-                <div className="headliner-stat-row">
-                    <span className="headliner-ovr">OVR {a.overallRating}</span>
-                    {aOdds != null && <span className="headliner-odds">×{aOdds.toFixed(2)}</span>}
+            <div className="headliner-inner">
+                <div className="headliner-top">
+                    <div className="event-eyebrow">Fight Night</div>
+                    <div className="event-name">#{cardNumber} — {fight.weightClass}</div>
+                    <div className="event-sub">Resolves {relativeTime(resolvesAt)}</div>
                 </div>
-                <div className="headliner-meta">
-                    <span>{a.style}</span>
-                    <span>·</span>
-                    <span>{recordStr(a.record)}</span>
-                </div>
-            </div>
 
-            <div className="headliner-center">
-                <div className="headliner-kicker">FIGHT NIGHT</div>
-                <div className="headliner-cardnum">#{cardNumber}</div>
-                <div className="headliner-class">{fight.weightClass}</div>
-                <div className="headliner-resolve">Resolves {relativeTime(resolvesAt)}</div>
-                <div className="headliner-vs">VS</div>
-            </div>
+                <div className="headliner-fighters">
+                    <div className="hl-fighter">
+                        <div className="hl-name">{a.name}</div>
+                        {a.nickname && <div className="hl-nick">"{a.nickname}"</div>}
+                        <div className="hl-meta">
+                            <span className="hl-ovr">OVR {a.overallRating}</span>
+                            {aOdds != null && <span className="hl-odds">×{aOdds.toFixed(2)}</span>}
+                            <span className="hl-style">{a.style}</span>
+                            <span className="hl-record">{recordStr(a.record)}</span>
+                        </div>
+                    </div>
 
-            <div className="headliner-side headliner-side-b">
-                <div className="headliner-name">{b.name}</div>
-                {b.nickname && <div className="headliner-nickname">"{b.nickname.toUpperCase()}"</div>}
-                <div className="headliner-stat-row">
-                    <span className="headliner-ovr">OVR {b.overallRating}</span>
-                    {bOdds != null && <span className="headliner-odds">×{bOdds.toFixed(2)}</span>}
-                </div>
-                <div className="headliner-meta">
-                    <span>{b.style}</span>
-                    <span>·</span>
-                    <span>{recordStr(b.record)}</span>
-                </div>
-            </div>
+                    <div className="hl-vs">
+                        <div className="hl-vs-text">VS</div>
+                        <div className="hl-division">{fight.weightClass}</div>
+                    </div>
 
-            {locked ? (
-                <div className="headliner-cta headliner-cta-locked">
-                    LOCKED — <strong>{pickedName}</strong>
-                    {prediction.pickedSide !== "DRAW" && prediction.pickedMethod && (
-                        <span> · {prediction.pickedMethod}</span>
-                    )}
-                    <span className="headliner-locked-meta">
-                        · {prediction.stake} ⊗ at ×{prediction.lockedOdds?.toFixed(2)}
-                    </span>
+                    <div className="hl-fighter right">
+                        <div className="hl-name">{b.name}</div>
+                        {b.nickname && <div className="hl-nick">"{b.nickname}"</div>}
+                        <div className="hl-meta">
+                            <span className="hl-record">{recordStr(b.record)}</span>
+                            <span className="hl-style">{b.style}</span>
+                            {bOdds != null && <span className="hl-odds">×{bOdds.toFixed(2)}</span>}
+                            <span className="hl-ovr">OVR {b.overallRating}</span>
+                        </div>
+                    </div>
                 </div>
-            ) : (
-                <div className="headliner-cta">★ Click to bet on the headliner ★</div>
-            )}
+
+                {locked ? (
+                    <div className="headliner-locked-pick">
+                        <span className="hlp-tag">Locked</span>
+                        <span className="hlp-name">{pickedName}</span>
+                        {prediction.pickedSide !== "DRAW" && prediction.pickedMethod && (
+                            <span className="hlp-method">{prediction.pickedMethod}</span>
+                        )}
+                        <span className="hlp-stake">
+                            {prediction.stake} iron at ×{prediction.lockedOdds?.toFixed(2)}
+                        </span>
+                    </div>
+                ) : (
+                    <div className="headliner-bet-btn">
+                        <Star size={15} /> Click to Bet on the Headliner
+                    </div>
+                )}
+            </div>
         </button>
     );
 }
@@ -374,41 +386,42 @@ function CompactFightCard({ fight, tone, prediction, onPick }) {
     return (
         <button
             type="button"
-            className={`compact-card compact-card-${tone} ${locked ? "compact-card-locked" : ""}`}
+            className={`fight-row ${tone}-fight ${locked ? "fight-row-locked" : ""}`}
             onClick={locked ? undefined : onPick}
             disabled={locked}
         >
-            <div className="compact-card-class">{fight.weightClass}</div>
-            <div className="compact-card-pair">
-                <div className="compact-card-fighter">
-                    <div className="compact-card-name">{a.name}</div>
-                    <div className="compact-card-meta">
-                        <span>OVR {a.overallRating}</span>
-                        {aOdds != null && <span className="compact-card-odds">×{aOdds.toFixed(2)}</span>}
-                    </div>
-                </div>
-                <div className="compact-card-vs">VS</div>
-                <div className="compact-card-fighter compact-card-fighter-right">
-                    <div className="compact-card-name">{b.name}</div>
-                    <div className="compact-card-meta">
-                        <span>OVR {b.overallRating}</span>
-                        {bOdds != null && <span className="compact-card-odds">×{bOdds.toFixed(2)}</span>}
-                    </div>
+            <div className="fr-fighter">
+                <div className="fr-name">{a.name}</div>
+                <div className="fr-meta">
+                    <span className="fr-div">{fight.weightClass}</span>
+                    <span className="fr-ovr">OVR {a.overallRating}</span>
+                    {aOdds != null && <span className="fr-odds">×{aOdds.toFixed(2)}</span>}
                 </div>
             </div>
 
-            {locked ? (
-                <div className="compact-card-locked-bar">
+            <div className="fr-vs">
+                <span className="fr-vs-text">VS</span>
+                {!locked && <span className="fr-bet-link">Bet →</span>}
+            </div>
+
+            <div className="fr-fighter right">
+                <div className="fr-name">{b.name}</div>
+                <div className="fr-meta">
+                    {bOdds != null && <span className="fr-odds">×{bOdds.toFixed(2)}</span>}
+                    <span className="fr-ovr">OVR {b.overallRating}</span>
+                </div>
+            </div>
+
+            {locked && (
+                <div className="fr-locked-bar">
                     <strong>{pickedName}</strong>
                     {prediction.pickedSide !== "DRAW" && prediction.pickedMethod && (
-                        <span> · {prediction.pickedMethod}</span>
+                        <span>{prediction.pickedMethod}</span>
                     )}
-                    <span className="compact-card-locked-stake">
-                        {prediction.stake} ⊗ at ×{prediction.lockedOdds?.toFixed(2)}
+                    <span className="fr-locked-stake">
+                        {prediction.stake} iron at ×{prediction.lockedOdds?.toFixed(2)}
                     </span>
                 </div>
-            ) : (
-                <div className="compact-card-cta">Click to place a bet →</div>
             )}
         </button>
     );
@@ -427,44 +440,40 @@ function PotentialBar({ potential }) {
     const hasLocked = lockedCount > 0;
 
     return (
-        <section className="potential-bar" data-tut="event-potential">
-            <header className="potential-header">
-                <span className="potential-title">Card Bets</span>
-                <span className="potential-progress">
-                    {lockedCount} / {total} locked
-                </span>
-            </header>
+        <section className="bets-status" data-tut="event-potential">
+            <div className="bets-status-top">
+                <span className="bets-status-label">Bets Locked</span>
+                <span className="bets-progress">{lockedCount} / {total}</span>
+            </div>
 
-            {!hasLocked && (
-                <div className="potential-empty">
-                    No bets placed yet — click a fight to place one.
-                </div>
-            )}
+            <div className="bets-track">
+                <div className="bets-fill" style={{ width: `${total ? (lockedCount / total) * 100 : 0}%` }} />
+            </div>
 
-            {hasLocked && (
-                <div className="potential-rows">
-                    <div className="potential-row">
-                        <span className="potential-row-label">Total staked</span>
-                        <span className="potential-row-value">⊗ {staked.toLocaleString()}</span>
+            {hasLocked ? (
+                <div className="bets-rows">
+                    <div className="bets-row">
+                        <span>Total staked</span>
+                        <span className="bets-val"><Coins size={13} />{staked.toLocaleString()}</span>
                     </div>
-                    <div className="potential-row potential-row-best">
-                        <span className="potential-row-label">If all bets land</span>
-                        <span className="potential-row-value pos">
-                            ⊗ {potentialPayout.toLocaleString()}
-                            <span className="potential-row-aside">+{potentialProfit.toLocaleString()} profit</span>
+                    <div className="bets-row">
+                        <span>If all bets land</span>
+                        <span className="bets-val pos">
+                            <Coins size={13} />{potentialPayout.toLocaleString()}
+                            <em>+{potentialProfit.toLocaleString()} profit</em>
                         </span>
                     </div>
-                    <div className="potential-row potential-row-worst">
-                        <span className="potential-row-label">If all bets lose</span>
-                        <span className="potential-row-value neg">
-                            −⊗ {staked.toLocaleString()}
-                        </span>
+                    <div className="bets-row">
+                        <span>If all bets lose</span>
+                        <span className="bets-val neg">−{staked.toLocaleString()}</span>
                     </div>
                 </div>
+            ) : (
+                <div className="bets-hint">No bets placed yet — click a fight to place one.</div>
             )}
 
             {unpickedCount > 0 && (
-                <div className="potential-unpicked">
+                <div className="bets-hint bets-open">
                     {unpickedCount} fight{unpickedCount === 1 ? "" : "s"} still open.
                 </div>
             )}
@@ -480,13 +489,12 @@ function JustResolvedSummary({ card, predictions }) {
     const won = predictions.filter((p) => p.resolution?.won).length;
     const totalNet = predictions.reduce((s, p) => s + (p.resolution?.netDelta || 0), 0);
     return (
-        <div className="events-just-resolved">
-            <span className="events-just-label">Last Card:</span>
-            <span className="events-just-result">
-                Fight Night #{card.cardNumber} — {won}/{predictions.length} bets won
-                <span className={totalNet >= 0 ? "events-just-positive" : "events-just-negative"}>
-                    {" · "}{totalNet >= 0 ? `+${totalNet.toLocaleString()}` : totalNet.toLocaleString()} ⊗ net
-                </span>
+        <div className="events-just-banner">
+            <span>
+                Last Card — Fight Night #{card.cardNumber} — {won}/{predictions.length} bets won
+            </span>
+            <span className={totalNet >= 0 ? "ej-positive" : "ej-negative"}>
+                {totalNet >= 0 ? `+${totalNet.toLocaleString()}` : totalNet.toLocaleString()} iron net
             </span>
         </div>
     );
@@ -503,35 +511,33 @@ function HistoryRow({ prediction }) {
     const actualWinner = r.actualSide === "A" ? prediction.matchup?.aName : r.actualSide === "B" ? prediction.matchup?.bName : "Draw";
     const tone = r.won ? "pos" : "neg";
     return (
-        <li className={`events-history-row events-history-${tone}`}>
-            <div className="events-history-col">
-                <div className="events-history-pick">
-                    <span className={`events-history-slot events-history-slot-${(prediction.fightSlot || "").toLowerCase()}`}>
-                        {SLOT_LABEL[prediction.fightSlot] || prediction.fightSlot}
-                    </span>
-                    <span className="events-history-bet-type">
-                        {prediction.betType === "EXACT" ? "Exact" : "Winner"}
-                    </span>
-                    {" "}<strong>{pickedWinner}</strong>
-                    {prediction.betType === "EXACT" && side !== "DRAW" && prediction.pickedMethod
-                        ? ` · ${prediction.pickedMethod}` : ""}
-                    {" "}<span className="events-history-stake">({prediction.stake} ⊗ @ ×{prediction.lockedOdds?.toFixed(2)})</span>
-                </div>
-                <div className="events-history-matchup">
-                    {prediction.matchup?.aName} vs {prediction.matchup?.bName}
-                </div>
-            </div>
-            <div className="events-history-col events-history-actual">
-                <div>Actual: <strong>{actualWinner}</strong>{r.actualMethod && r.actualSide !== "DRAW" ? ` · ${r.actualMethod}` : ""}</div>
-            </div>
-            <div className={`events-history-delta events-history-delta-${tone}`}>
-                <span className="events-history-icon">{r.won ? "✓" : "✕"}</span>
+        <div className={`yb-row yb-row-${tone}`}>
+            <span className={`yb-slot yb-slot-${(prediction.fightSlot || "").toLowerCase()}`}>
+                {SLOT_LABEL[prediction.fightSlot] || prediction.fightSlot}
+            </span>
+            <span className="yb-bet-type">
+                {prediction.betType === "EXACT" ? "Exact" : "Winner"}
+            </span>
+            <span className="yb-pick">
+                <strong>{pickedWinner}</strong>
+                {prediction.betType === "EXACT" && side !== "DRAW" && prediction.pickedMethod
+                    ? ` · ${prediction.pickedMethod}` : ""}
+                {" "}<span className="yb-stake">({prediction.stake} iron @ ×{prediction.lockedOdds?.toFixed(2)})</span>
+            </span>
+            <span className="yb-matchup">
+                {prediction.matchup?.aName} vs {prediction.matchup?.bName}
+            </span>
+            <span className="yb-actual">
+                Actual: <strong>{actualWinner}</strong>{r.actualMethod && r.actualSide !== "DRAW" ? ` · ${r.actualMethod}` : ""}
+            </span>
+            <span className={`yb-delta yb-delta-${tone}`}>
+                {r.won ? <Check size={14} /> : <X size={14} />}
                 {r.won ? (
-                    <span>+{(r.netDelta || 0).toLocaleString()} ⊗</span>
+                    <span>+{(r.netDelta || 0).toLocaleString()} iron</span>
                 ) : (
-                    <span>{(r.netDelta || 0).toLocaleString()} ⊗</span>
+                    <span>{(r.netDelta || 0).toLocaleString()} iron</span>
                 )}
-            </div>
-        </li>
+            </span>
+        </div>
     );
 }

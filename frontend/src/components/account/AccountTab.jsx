@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useState } from "react";
+import { Lock, Pencil, Mail, Key, Bell, Trash2, LogOut } from "lucide-react";
 import { api, authStorage } from "../../api";
 import { DeleteAccountModal } from "./DeleteAccountModal";
 
@@ -51,50 +52,53 @@ export function AccountTab({ onMessage, onLogout, onFighterRefresh }) {
 
     return (
         <div className="account-tab">
-            <header className="account-header">
-                <h2 className="account-title">Account</h2>
-                <p className="account-subtitle">Manage your credentials, email, and account lifecycle.</p>
+            <header className="page-header">
+                <div className="page-eyebrow">Settings</div>
+                <h2 className="page-title">Account</h2>
+                <p className="page-sub">Manage your credentials, email, and account lifecycle.</p>
             </header>
 
-            <FighterInfo profile={profile} />
+            <div className="body">
+                <FighterInfo profile={profile} />
 
-            <ChangeNickname
-                profile={profile}
-                accountId={accountId}
-                onSaved={async (newNick) => {
-                    setProfile((p) => p ? { ...p, fighter: { ...p.fighter, nickname: newNick } } : p);
-                    onMessage?.("Nickname updated.");
-                    // Sync the fighter doc in the parent so the sidebar profile reflects it.
-                    if (onFighterRefresh && profile.fighter?.id) onFighterRefresh(profile.fighter.id);
-                }}
-                onMessage={onMessage}
-            />
+                <ChangeNickname
+                    profile={profile}
+                    accountId={accountId}
+                    onSaved={async (newNick) => {
+                        setProfile((p) => p ? { ...p, fighter: { ...p.fighter, nickname: newNick } } : p);
+                        onMessage?.("Nickname updated.");
+                        // Sync the fighter doc in the parent so the sidebar profile reflects it.
+                        if (onFighterRefresh && profile.fighter?.id) onFighterRefresh(profile.fighter.id);
+                    }}
+                    onMessage={onMessage}
+                />
 
-            <ChangeEmail
-                profile={profile}
-                accountId={accountId}
-                onChanged={reload}
-                onMessage={onMessage}
-            />
+                <ChangeEmail
+                    profile={profile}
+                    accountId={accountId}
+                    onChanged={reload}
+                    onMessage={onMessage}
+                />
 
-            <ChangePassword
-                accountId={accountId}
-                onMessage={onMessage}
-            />
+                <ChangePassword
+                    accountId={accountId}
+                    onMessage={onMessage}
+                />
 
-            <NotificationsSection
-                profile={profile}
-                accountId={accountId}
-                onSaved={(emailEnabled) => {
-                    setProfile((p) => p ? { ...p, notifications: { ...p.notifications, emailEnabled } } : p);
-                }}
-                onMessage={onMessage}
-            />
+                <NotificationsSection
+                    profile={profile}
+                    accountId={accountId}
+                    onSaved={(emailEnabled) => {
+                        setProfile((p) => p ? { ...p, notifications: { ...p.notifications, emailEnabled } } : p);
+                    }}
+                    onMessage={onMessage}
+                />
 
-            <DangerZone
-                onLogoutClick={onLogout}
-                onDeleteClick={() => setDeleteOpen(true)}
-            />
+                <DangerZone
+                    onLogoutClick={onLogout}
+                    onDeleteClick={() => setDeleteOpen(true)}
+                />
+            </div>
 
             <DeleteAccountModal
                 open={deleteOpen}
@@ -120,8 +124,13 @@ function FighterInfo({ profile }) {
     const f = profile.fighter;
     if (!f) return null;
     return (
-        <Section title="Fighter Info" subtitle="Fighter name, weight class and backstory are permanent and cannot be changed.">
-            <div className="account-info-grid">
+        <Section
+            title="Fighter Info"
+            subtitle="Fighter name, weight class and backstory are permanent and cannot be changed."
+            icon={Lock}
+            iconTone="lock"
+        >
+            <div className="info-rows">
                 <InfoRow label="Fighter name"  value={f.fullName}    permanent />
                 <InfoRow label="Nickname"      value={f.nickname || "—"} />
                 <InfoRow label="Weight class"  value={f.weightClass} permanent />
@@ -134,11 +143,11 @@ function FighterInfo({ profile }) {
 
 function InfoRow({ label, value, permanent }) {
     return (
-        <div className="account-info-row">
-            <span className="account-info-label">{label}</span>
-            <span className="account-info-value">
+        <div className="info-row">
+            <span className="info-label">{label}</span>
+            <span className="info-value">
                 {value}
-                {permanent && <span className="account-info-permanent">permanent</span>}
+                {permanent && <span className="permanent-badge">Permanent</span>}
             </span>
         </div>
     );
@@ -173,28 +182,31 @@ function ChangeNickname({ profile, accountId, onSaved, onMessage }) {
     else if (invalidChars) hint = "Letters, numbers, spaces, hyphens, apostrophes only.";
 
     return (
-        <Section title="Change Nickname">
-            <div className="account-field-row">
-                <input
-                    type="text"
-                    className="account-input"
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    maxLength={20}
-                    placeholder="The Surgeon"
-                />
-                <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={save}
-                    disabled={!canSave}
-                >
-                    {busy ? "Saving…" : "Save"}
-                </button>
-            </div>
-            <div className="account-field-meta">
-                <span className={`account-char-count ${tooLong ? "neg" : ""}`}>{trimmed.length} / 20</span>
-                {hint && <span className="account-hint-neg">{hint}</span>}
+        <Section title="Change Nickname" icon={Pencil} iconTone="edit">
+            <div className="form-body">
+                <div className="form-row">
+                    <div className="form-group">
+                        <label className="form-label">Nickname</label>
+                        <input
+                            type="text"
+                            className="form-input"
+                            value={value}
+                            onChange={(e) => setValue(e.target.value)}
+                            maxLength={20}
+                            placeholder="The Surgeon"
+                        />
+                        <span className="form-hint">{trimmed.length} / 20 characters</span>
+                    </div>
+                    <button
+                        type="button"
+                        className="save-btn"
+                        onClick={save}
+                        disabled={!canSave}
+                    >
+                        {busy ? "Saving…" : "Save"}
+                    </button>
+                </div>
+                {hint && <span className="form-hint neg">{hint}</span>}
             </div>
         </Section>
     );
@@ -280,56 +292,61 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
     };
 
     return (
-        <Section title="Change Email">
-            <div className="account-current">
-                Current: <strong>{masked}</strong>
-                {!verified && <span className="account-info-permanent" style={{ marginLeft: "0.4rem" }}>unverified</span>}
-            </div>
-            {!verified && !pending && (
-                <div className="account-hint-neg">
-                    Verify your current email first (use the banner at the top of the app).
+        <Section title="Change Email" icon={Mail} iconTone="email">
+            <div className="form-body">
+                <div className="form-current">
+                    Current email: <span>{masked}</span>
+                    {!verified && <span className="permanent-badge" style={{ marginLeft: "0.4rem" }}>unverified</span>}
                 </div>
-            )}
-            {pending ? (
-                <div className="account-pending-banner">
-                    <div>
-                        Pending confirmation at <strong>{pending}</strong>. Check that inbox for the link.
+                {!verified && !pending && (
+                    <span className="form-hint neg">
+                        Verify your current email first (use the banner at the top of the app).
+                    </span>
+                )}
+                {pending ? (
+                    <div className="account-pending-banner">
+                        <div>
+                            Pending confirmation at <strong>{pending}</strong>. Check that inbox for the link.
+                        </div>
+                        <div className="account-pending-actions">
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={resend}
+                                disabled={busy || resendIn > 0}
+                                title={resendIn > 0 ? `Wait ${resendIn}s before sending another link` : undefined}
+                            >
+                                {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend link"}
+                            </button>
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={cancel} disabled={busy}>Cancel</button>
+                        </div>
                     </div>
-                    <div className="account-pending-actions">
+                ) : (
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label className="form-label">New Email Address</label>
+                            <input
+                                type="email"
+                                className="form-input"
+                                value={newEmail}
+                                onChange={(e) => setNewEmail(e.target.value)}
+                                placeholder={verified ? "new@example.com" : "Verify current email first"}
+                                autoComplete="email"
+                                disabled={!verified}
+                            />
+                        </div>
                         <button
                             type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={resend}
-                            disabled={busy || resendIn > 0}
-                            title={resendIn > 0 ? `Wait ${resendIn}s before sending another link` : undefined}
+                            className="save-btn"
+                            onClick={request}
+                            disabled={!dirty || busy || !verified}
+                            title={!verified ? "Verify your current email before changing it" : undefined}
                         >
-                            {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend link"}
+                            {busy ? "Sending…" : "Save"}
                         </button>
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={cancel} disabled={busy}>Cancel</button>
                     </div>
-                </div>
-            ) : (
-                <div className="account-field-row">
-                    <input
-                        type="email"
-                        className="account-input"
-                        value={newEmail}
-                        onChange={(e) => setNewEmail(e.target.value)}
-                        placeholder={verified ? "new@example.com" : "Verify current email first"}
-                        autoComplete="email"
-                        disabled={!verified}
-                    />
-                    <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={request}
-                        disabled={!dirty || busy || !verified}
-                        title={!verified ? "Verify your current email before changing it" : undefined}
-                    >
-                        {busy ? "Sending…" : "Save"}
-                    </button>
-                </div>
-            )}
+                )}
+            </div>
         </Section>
     );
 }
@@ -373,23 +390,30 @@ function ChangePassword({ accountId, onMessage }) {
     };
 
     return (
-        <Section title="Change Password">
-            <div className="account-pw-grid">
-                <PasswordInput value={current} onChange={setCurrent} placeholder="Current password" show={showAll} />
-                <PasswordInput value={next}    onChange={setNext}    placeholder="New password"     show={showAll} />
-                <PasswordInput value={confirm} onChange={setConfirm} placeholder="Confirm new"      show={showAll} />
-            </div>
-            <div className="account-field-meta">
-                <label className="account-pw-toggle">
-                    <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
-                    Show passwords
-                </label>
-                <span className="account-pw-rule">Min 8 chars, at least one number.</span>
-            </div>
-            {inlineError && <div className="account-hint-neg">{inlineError}</div>}
-            <div className="account-field-row">
-                <button type="button" className="btn btn-primary" onClick={save} disabled={!canSave}>
-                    {busy ? "Updating…" : "Update password"}
+        <Section title="Change Password" icon={Key} iconTone="pw">
+            <div className="form-body">
+                <div className="form-group">
+                    <label className="form-label">Current Password</label>
+                    <PasswordInput value={current} onChange={setCurrent} placeholder="Current password" show={showAll} />
+                </div>
+                <div className="form-group">
+                    <label className="form-label">New Password</label>
+                    <PasswordInput value={next} onChange={setNext} placeholder="New password" show={showAll} />
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Confirm New Password</label>
+                    <PasswordInput value={confirm} onChange={setConfirm} placeholder="Confirm new" show={showAll} />
+                </div>
+                <div className="checkbox-row">
+                    <label className="checkbox-label">
+                        <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
+                        Show passwords
+                    </label>
+                    <span className="checkbox-hint">· Min 8 chars, at least one number.</span>
+                </div>
+                {inlineError && <span className="form-hint neg">{inlineError}</span>}
+                <button type="button" className="update-btn" onClick={save} disabled={!canSave}>
+                    {busy ? "Updating…" : "Update Password"}
                 </button>
             </div>
         </Section>
@@ -400,7 +424,7 @@ function PasswordInput({ value, onChange, placeholder, show }) {
     return (
         <input
             type={show ? "text" : "password"}
-            className="account-input"
+            className="form-input"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
@@ -422,7 +446,7 @@ function NotificationsSection({ profile, accountId, onSaved, onMessage }) {
         }
     };
     return (
-        <Section title="Notifications">
+        <Section title="Notifications" icon={Bell} iconTone="bell">
             <div className="account-toggle-row">
                 <div>
                     <div className="account-toggle-label">Email Notifications</div>
@@ -444,20 +468,27 @@ function NotificationsSection({ profile, accountId, onSaved, onMessage }) {
 
 function DangerZone({ onLogoutClick, onDeleteClick }) {
     return (
-        <Section title="Danger Zone" className="account-section-danger">
-            <div className="account-danger-row">
-                <div>
-                    <div className="account-danger-label">Log out of this device</div>
-                    <div className="account-danger-sub">Clears your session here. You can log back in any time.</div>
+        <Section title="Danger Zone" className="danger-card">
+            <div className="danger-section">
+                <div className="danger-header">
+                    <h4 className="danger-title">Danger Zone</h4>
                 </div>
-                <button type="button" className="btn btn-secondary" onClick={onLogoutClick}>Log Out</button>
-            </div>
-            <div className="account-danger-row">
-                <div>
-                    <div className="account-danger-label danger">Delete account</div>
-                    <div className="account-danger-sub">Permanently deletes your fighter, all progress, iron, and career history.</div>
+                <div className="danger-body">
+                    <div className="danger-desc">
+                        Log out of this device — clears your session here, you can log back in any time.
+                    </div>
+                    <button className="danger-btn neutral" onClick={onLogoutClick}>
+                        <LogOut size={14} /> Log Out
+                    </button>
                 </div>
-                <button type="button" className="btn btn-danger" onClick={onDeleteClick}>Delete Account</button>
+                <div className="danger-body">
+                    <div className="danger-desc">
+                        Permanently deletes your fighter, all progress, iron, and career history.
+                    </div>
+                    <button className="danger-btn" onClick={onDeleteClick}>
+                        <Trash2 size={14} /> Delete Account
+                    </button>
+                </div>
             </div>
         </Section>
     );
@@ -467,14 +498,21 @@ function DangerZone({ onLogoutClick, onDeleteClick }) {
 // Generic section shell
 // ─────────────────────────────────────────────────────────────
 
-function Section({ title, subtitle, children, className = "" }) {
+function Section({ title, subtitle, icon: Icon, iconTone, className, children }) {
     return (
-        <section className={`account-section ${className}`}>
-            <header className="account-section-head">
-                <h3 className="account-section-title">{title}</h3>
-                {subtitle && <p className="account-section-subtitle">{subtitle}</p>}
+        <section className={`section-card ${className || ""}`}>
+            <header className="section-header">
+                <div className="section-titles">
+                    <h3 className="section-title">{title}</h3>
+                    {subtitle && <p className="section-sub">{subtitle}</p>}
+                </div>
+                {Icon && (
+                    <div className={`section-icon ${iconTone || ""}`}>
+                        <Icon size={16} strokeWidth={2} />
+                    </div>
+                )}
             </header>
-            <div className="account-section-body">{children}</div>
+            <div className="section-body">{children}</div>
         </section>
     );
 }

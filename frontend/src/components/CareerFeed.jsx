@@ -1,18 +1,21 @@
 import { memo, useEffect, useState } from "react";
 import { api } from "../api";
+import { Trophy, X, Minus, ArrowUp, Crown, Flame, Swords, ShieldCheck, Target, AlertTriangle } from "lucide-react";
 
 const EVENT_CONFIG = {
-    FIGHT_WIN:           { icon: "\u25CF", color: "#4ade80", label: "Win" },
-    FIGHT_LOSS:          { icon: "\u25CF", color: "#f87171", label: "Loss" },
-    FIGHT_DRAW:          { icon: "\u25CF", color: "#94a3b8", label: "Draw" },
-    TIER_PROMOTION:      { icon: "\u2B06", color: "#fbbf24", label: "Promotion" },
-    TITLE_WON:           { icon: "\uD83C\uDFC6", color: "#f59e0b", label: "Title" },
-    NEMESIS_SET:          { icon: "\uD83D\uDD25", color: "#fb923c", label: "Nemesis" },
-    NEMESIS_CLEARED:      { icon: "\u2714", color: "#4ade80", label: "Nemesis" },
-    BADGE_EARNED:         { icon: "\u2605", color: "#c084fc", label: "Badge" },
-    TITLE_SHOT_ELIGIBLE:  { icon: "\uD83C\uDFC6", color: "#fbbf24", label: "Title Shot" },
-    MENTAL_RESET:         { icon: "\u26A0", color: "#fb923c", label: "Mental" },
+    FIGHT_WIN:           { tone: "win",     Icon: Trophy,        label: "Win" },
+    FIGHT_LOSS:          { tone: "loss",    Icon: X,             label: "Loss" },
+    FIGHT_DRAW:          { tone: "neutral", Icon: Minus,         label: "Draw" },
+    TIER_PROMOTION:      { tone: "special", Icon: ArrowUp,       label: "Promotion" },
+    TITLE_WON:           { tone: "badge",   Icon: Crown,         label: "Title" },
+    NEMESIS_SET:         { tone: "nemesis", Icon: Flame,         label: "Nemesis" },
+    NEMESIS_CLEARED:     { tone: "special", Icon: Swords,        label: "Nemesis" },
+    BADGE_EARNED:        { tone: "badge",   Icon: ShieldCheck,   label: "Badge" },
+    TITLE_SHOT_ELIGIBLE: { tone: "badge",   Icon: Target,        label: "Title Shot" },
+    MENTAL_RESET:        { tone: "neutral", Icon: AlertTriangle, label: "Mental" },
 };
+
+const FALLBACK = { tone: "neutral", Icon: Minus, label: "Event" };
 
 function relativeTime(dateStr) {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -25,6 +28,34 @@ function relativeTime(dateStr) {
     if (days < 30) return `${days}d ago`;
     const months = Math.floor(days / 30);
     return `${months}mo ago`;
+}
+
+function groupByDate(entries) {
+    const now = new Date();
+    const ty = now.getFullYear();
+    const tm = now.getMonth();
+    const td = now.getDate();
+    const todayUTC = Date.UTC(ty, tm, td);
+
+    const buckets = new Map();
+    for (const entry of entries) {
+        const d = new Date(entry.createdAt);
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        const day = d.getDate();
+        const key = `${y}-${m}-${day}`;
+        if (!buckets.has(key)) {
+            const dayDiff = Math.round((todayUTC - Date.UTC(y, m, day)) / 86400000);
+            let label;
+            if (dayDiff === 0) label = "Today";
+            else if (dayDiff === 1) label = "Yesterday";
+            else if (dayDiff >= 2 && dayDiff <= 6) label = `${dayDiff} days ago`;
+            else label = new Date(entry.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+            buckets.set(key, { label, items: [] });
+        }
+        buckets.get(key).items.push(entry);
+    }
+    return Array.from(buckets.values());
 }
 
 export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey }) {
@@ -48,45 +79,43 @@ export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey }) {
         return () => { cancelled = true; };
     }, [fighterId, refreshKey]);
 
-    if (loading && entries.length === 0) {
-        return (
-            <section className="career-feed">
-                <h3 className="panel-section-title">Career Feed</h3>
-                <p className="panel-hint" style={{ padding: "0.75rem 1rem" }}>Loading...</p>
-            </section>
-        );
-    }
-
     return (
         <section className="career-feed">
-            <h3 className="panel-section-title">Career Feed</h3>
-            {entries.length === 0 ? (
-                <p className="panel-hint" style={{ padding: "0.75rem 1rem" }}>
-                    No career history yet. Step into the cage.
-                </p>
-            ) : (
-                <ul className="cf-list">
-                    {entries.map((entry) => {
-                        const cfg = EVENT_CONFIG[entry.type] ?? EVENT_CONFIG.FIGHT_WIN;
-                        const isTitleWon = entry.type === "TITLE_WON";
-                        return (
-                            <li
-                                key={entry._id}
-                                className={`cf-item${isTitleWon ? " cf-item--title" : ""}`}
-                                style={isTitleWon ? { borderColor: "#f59e0b" } : undefined}
-                            >
-                                <span className="cf-icon" style={{ color: cfg.color }}>
-                                    {cfg.icon}
-                                </span>
-                                <div className="cf-body">
-                                    <span className="cf-detail">{entry.detail}</span>
-                                    <span className="cf-time">{relativeTime(entry.createdAt)}</span>
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ul>
-            )}
+            <header className="page-header">
+                <div className="page-eyebrow">Career</div>
+                <h1 className="page-title">Career Feed</h1>
+            </header>
+            <div className="feed">
+                {loading && entries.length === 0 ? (
+                    <div className="feed-empty">Loading…</div>
+                ) : entries.length === 0 ? (
+                    <div className="feed-empty">No career history yet. Step into the cage.</div>
+                ) : (
+                    groupByDate(entries).map((group) => (
+                        <div className="date-group" key={group.label}>
+                            <div className="date-label">{group.label}</div>
+                            {group.items.map((entry) => {
+                                const cfg = EVENT_CONFIG[entry.type] ?? FALLBACK;
+                                const Icon = cfg.Icon;
+                                const [first, ...rest] = (entry.detail ?? "").split(" · ");
+                                const meta = rest.join(" · ") || null;
+                                const isTitle = entry.type === "TITLE_WON";
+                                return (
+                                    <div className={`feed-item${isTitle ? " feed-item--title" : ""}`} key={entry._id}>
+                                        <span className={`feed-icon ${cfg.tone}`}><Icon size={16} strokeWidth={2} /></span>
+                                        <div className="feed-content">
+                                            <div className="feed-title">{first}</div>
+                                            {meta && <div className="feed-meta">{meta}</div>}
+                                            <div className="feed-time">{relativeTime(entry.createdAt)}</div>
+                                        </div>
+                                        <span className={`feed-type ${cfg.tone}`}>{cfg.label}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ))
+                )}
+            </div>
         </section>
     );
 });

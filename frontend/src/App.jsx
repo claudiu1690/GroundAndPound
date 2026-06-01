@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, memo } from "react";
 import { api, authStorage } from "./api";
 import "./App.css";
-import { MessageBar } from "./components/layout/MessageBar";
 import { FighterProfile } from "./components/fighterProfile/FighterProfile";
 import { GymTraining, SESSION_META } from "./components/gym/GymTraining";
 import { GymSelector } from "./components/gym/GymSelector";
@@ -30,20 +29,32 @@ import { LibraryTab } from "./components/library/LibraryTab";
 import { AccountTab } from "./components/account/AccountTab";
 import { EmailVerifyBanner } from "./components/account/EmailVerifyBanner";
 import { tutorialBus } from "./utils/tutorialBus";
-import { BookOpen, UserCircle2 } from "lucide-react";
+import {
+  BookOpen,
+  UserCircle2,
+  Dumbbell,
+  Swords,
+  FileText,
+  ListOrdered,
+  ScrollText,
+  Cross,
+  ShoppingBag,
+  CalendarDays,
+  Mic,
+} from "lucide-react";
 
 // ── Navigation definition ──────────────────────────────────
 const NAV_ITEMS = [
-  { id: "gym",       label: "Training",  icon: "⬡", active: true },
-  { id: "fights",    label: "Fight",     icon: "✕", active: true },
-  { id: "career",    label: "Career",    icon: "◆", active: true },
-  { id: "rankings",  label: "Rankings",  icon: "▲", active: true },
-  { id: "contracts", label: "Contracts", icon: "▣", active: true },
-  { id: "hospital",  label: "Hospital",  icon: "✚", active: true },
-  { id: null,        label: "Shop",      icon: "⊕", active: false },
-  { id: "events",    label: "Events",    icon: "◷", active: true },
-  { id: "media",     label: "Media",     icon: "✉", active: true },
-  { id: "library",   label: "Library",   icon: <BookOpen size={12} strokeWidth={2.2} />, active: true },
+  { id: "gym",       label: "Training",  icon: <Dumbbell size={13} strokeWidth={2.2} />,    active: true },
+  { id: "fights",    label: "Fight",     icon: <Swords size={13} strokeWidth={2.2} />,      active: true },
+  { id: "career",    label: "Career",    icon: <FileText size={13} strokeWidth={2.2} />,    active: true },
+  { id: "rankings",  label: "Rankings",  icon: <ListOrdered size={13} strokeWidth={2.2} />, active: true },
+  { id: "contracts", label: "Contracts", icon: <ScrollText size={13} strokeWidth={2.2} />,  active: true },
+  { id: "hospital",  label: "Hospital",  icon: <Cross size={13} strokeWidth={2.2} />,       active: true },
+  { id: null,        label: "Shop",      icon: <ShoppingBag size={13} strokeWidth={2.2} />, active: false },
+  { id: "events",    label: "Events",    icon: <CalendarDays size={13} strokeWidth={2.2} />,active: true },
+  { id: "media",     label: "Media",     icon: <Mic size={13} strokeWidth={2.2} />,         active: true },
+  { id: "library",   label: "Library",   icon: <BookOpen size={13} strokeWidth={2.2} />,    active: true },
 ];
 
 // ── Tier ladder for display ────────────────────────────────
@@ -896,9 +907,6 @@ const handleGetOffers = useCallback(async () => {
   return (
     <div className="app">
 
-      {/* ── MESSAGE BAR ── */}
-      <MessageBar message={message} />
-
       {/* ── EMAIL-VERIFY BANNER ──
           Soft verification: the user can keep playing while this banner is up.
           Disappears the moment they click the link in their email (the verify
@@ -995,23 +1003,47 @@ const handleGetOffers = useCallback(async () => {
         />
       )}
 
-      {/* ── BODY: centered block = nav + main ── */}
-      <div className="app-body">
-        <div className="app-center-wrap">
+      {/* ── TOP BAR ── */}
+      <header className="topbar">
+        <div className="topbar-inner">
+          <div className="tlogo">GROUND <span>&amp;</span> POUND</div>
+          <nav className="topbar-nav">
+            {NAV_ITEMS.map((item, i) => (
+              item.active ? (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`tni ${activeTab === item.id ? "act" : ""}`}
+                  onClick={() => handleNavTab(item.id)}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  {item.label}
+                </button>
+              ) : (
+                <span key={i} className="tni disabled">
+                  <span className="nav-icon">{item.icon}</span>
+                  {item.label}
+                </span>
+              )
+            ))}
+          </nav>
+        </div>
+      </header>
 
-        {/* Left nav */}
-        <nav className="app-nav">
-          <div className="nav-fighter-profile">
-            <FighterProfile
-              fighter={fighter}
-              gyms={gyms}
-              campSlotsUsed={campState?.slotsUsed}
-              onUpdateFighter={handleUpdateFighter}
-              onRefreshFighter={loadFighter}
-              onMessage={setMessage}
-            />
-          </div>
-          <div className="nav-menu">
+      {/* ── BODY: sidebar + main ── */}
+      <div className="layout">
+
+        {/* Left sidebar */}
+        <aside className="sidebar">
+          <FighterProfile
+            fighter={fighter}
+            gyms={gyms}
+            campSlotsUsed={campState?.slotsUsed}
+            onUpdateFighter={handleUpdateFighter}
+            onRefreshFighter={loadFighter}
+            onMessage={setMessage}
+          />
+          <nav className="sidebar-menu sb-menu">
             <div className="nav-section-label">Menu</div>
             {NAV_ITEMS.map((item, i) => (
               item.active ? (
@@ -1019,25 +1051,24 @@ const handleGetOffers = useCallback(async () => {
                   key={item.id}
                   href={`#${item.id}`}
                   data-tut={["gym", "fights", "rankings", "events", "hospital"].includes(item.id) ? `nav-${item.id}` : undefined}
-                  className={`nav-item ${activeTab === item.id ? "active" : ""}`}
+                  className={`sb-menu-item ${activeTab === item.id ? "active" : ""}`}
                   onClick={(e) => { e.preventDefault(); handleNavTab(item.id); }}
                 >
                   <span className="nav-icon">{item.icon}</span>
                   {item.label}
                 </a>
               ) : (
-                <div key={i} className="nav-item disabled">
+                <div key={i} className="sb-menu-item disabled">
                   <span className="nav-icon">{item.icon}</span>
                   {item.label}
                 </div>
               )
             ))}
-          </div>
-        </nav>
+          </nav>
+        </aside>
 
-        {/* Main content — centered column with left/right empty space */}
-        <main className="app-main">
-          <div className="app-main-center">
+        {/* Main content */}
+        <main className="main">
 
           {/* ── DASHBOARD ── */}
           {activeTab === "home" && (
@@ -1190,9 +1221,8 @@ const handleGetOffers = useCallback(async () => {
                 />
               ) : lastFightSummary ? (
                 <>
-                  <div className="page-two-col">
-                    <FightSummary summary={lastFightSummary} />
-                    <FightDescription commentary={lastFightCommentary} />
+                  <div className="fight-result-screen">
+                    <FightSummary summary={lastFightSummary} description={<FightDescription commentary={lastFightCommentary} />} />
                   </div>
                   {/* Post-fight interview is offered only after wins. A loss skips the
                       press conference entirely — no fame opportunity, no flag-writing.
@@ -1229,11 +1259,11 @@ const handleGetOffers = useCallback(async () => {
                       onMessage={setMessage}
                     />
                   )}
-                  <div style={{ display: "flex", justifyContent: "center", marginTop: "0.5rem" }}>
+                  <div className="continue-row">
                     <button
                       type="button"
                       data-tut="result-continue"
-                      className="btn btn-primary"
+                      className="btn btn-primary continue-btn"
                       onClick={() => { setLastFightSummary(null); tutorialBus.emit("result_dismissed"); }}
                     >
                       Continue
@@ -1254,42 +1284,40 @@ const handleGetOffers = useCallback(async () => {
             </div>
           )}
 
-          </div>
         </main>
 
-        </div>
       </div>
 
-      {/* ── FULL-WIDTH FOOTER ── */}
-      <footer className="app-footer">
-        <div className="app-footer-inner">
-          <span className="app-footer-logo">Ground <span>&amp;</span> Pound</span>
-          <div className="app-footer-badges">
-            {injuryCount > 0 && (
-              <button type="button" className="nav-footer-badge" onClick={() => handleNavTab("hospital")}>
-                🩹 {injuryCount} injur{injuryCount === 1 ? "y" : "ies"}
-              </button>
-            )}
-            {campActive && (
-              <button type="button" className="nav-footer-badge nav-footer-badge-camp" onClick={() => handleNavTab("fights")}>
-                ⛺ Camp — {campState?.slotsUsed ?? fighter.trainingCampActions ?? 0} sessions
-              </button>
-            )}
-            {fighter && (
-              <button type="button" className="nav-footer-badge nav-footer-badge-fame" onClick={() => setFameDrawerOpen(true)}>
-                ★ Fame
-              </button>
-            )}
+      {/* ── FULL-WIDTH BOTTOM BAR ── */}
+      <footer className="bottombar">
+        <div className="bottombar-inner">
+          <span className="bb-brand">GROUND <span>&amp;</span> POUND</span>
+          {injuryCount > 0 && (
+            <button type="button" className="bb-pill bb-pill-injury" onClick={() => handleNavTab("hospital")}>
+              🩹 {injuryCount} injur{injuryCount === 1 ? "y" : "ies"}
+            </button>
+          )}
+          {campActive && (
+            <button type="button" className="bb-pill bb-pill-camp" onClick={() => handleNavTab("fights")}>
+              ⛺ Camp — {campState?.slotsUsed ?? fighter.trainingCampActions ?? 0} sessions
+            </button>
+          )}
+          {fighter && (
+            <button type="button" className="bb-pill bb-pill-fame" onClick={() => setFameDrawerOpen(true)}>
+              ★ Fame
+            </button>
+          )}
+          <div className="bb-right">
+            <button
+              type="button"
+              className={`bb-btn ${activeTab === "account" ? "active" : ""}`}
+              onClick={() => handleNavTab("account")}
+              title="Account settings"
+            >
+              <UserCircle2 size={12} strokeWidth={2.2} /> Account
+            </button>
+            <button className="bb-btn" onClick={handleLogout} title="Sign out">Sign Out</button>
           </div>
-          <button
-            type="button"
-            className={`nav-footer-account ${activeTab === "account" ? "active" : ""}`}
-            onClick={() => handleNavTab("account")}
-            title="Account settings"
-          >
-            <UserCircle2 size={12} strokeWidth={2.2} /> Account
-          </button>
-          <button className="nav-footer-signout" onClick={handleLogout} title="Sign out">Sign Out</button>
         </div>
       </footer>
     </div>

@@ -1,6 +1,5 @@
-import { memo, useState } from "react";
-import { formatSessionXpHint } from "../../utils/trainingXpDisplay";
-import { Zap, AlertTriangle, Check, ChevronLeft, Lock, Star, Trophy, ArrowUp } from "lucide-react";
+import { memo } from "react";
+import { Zap, AlertTriangle, Check, ChevronLeft, Lock, Trophy } from "lucide-react";
 
 // Full session metadata matching backend TRAINING_SESSIONS + rank 2 sessions
 export const SESSION_META = {
@@ -28,13 +27,20 @@ export const SESSION_META = {
     championship_rounds:  { label: "Championship Rounds",  category: "sparring",  cost: 8, stats: ["STR", "SPD", "LEG", "WRE", "GND", "SUB", "CHN", "FIQ"], xpBase: 12, desc: "Elite full-contact (+10% XP)", rank2: true, warn: "3% injury risk" },
 };
 
-const STAT_CHIP_CLASS = {
+// Kept exported to avoid breaking any importer (TrainingResultPopup uses .stat-chip classes).
+export const STAT_CHIP_CLASS = {
     STR: "stat-chip-str", SPD: "stat-chip-spd", LEG: "stat-chip-leg",
     WRE: "stat-chip-wre", GND: "stat-chip-gnd", SUB: "stat-chip-sub",
     CHN: "stat-chip-chn", FIQ: "stat-chip-fiq",
 };
 
-const ALL_SESSION_KEYS = Object.keys(SESSION_META);
+// Accent-bar colors per stat (mockup reference).
+const STAT_COLOR = {
+    STR: "#C8102E", SPD: "#3B82F6", LEG: "#22C55E", WRE: "#F97316",
+    GND: "#EAB308", SUB: "#14B8A6", CHN: "#A855F7", FIQ: "#6366F1",
+};
+
+const GOLD = "#D4A820";
 
 export const GymTraining = memo(function GymTraining({
     gym,
@@ -45,7 +51,6 @@ export const GymTraining = memo(function GymTraining({
     onSwitchGym,
     onRankUp,
 }) {
-    const [activeCategory, setActiveCategory] = useState("striking");
     if (!fighter || !gym) return null;
 
     const energy = fighter.energy?.current ?? fighter.energy ?? 0;
@@ -54,261 +59,253 @@ export const GymTraining = memo(function GymTraining({
     const canTrain = isFree || isActive;
     const injuryLocked = new Set(fighter?.injuryLockedStats || []);
 
-    // Determine available sessions at this gym
-    const baseSessions = gym.sessions || [];
-    const rank2Key = gym.progress?.rank >= 2
-        ? (gym.ranks?.find((r) => r.rank === 2)?.unlock?.sessionKey)
-        : null;
-    const availableSessions = [...baseSessions];
-    if (rank2Key && !availableSessions.includes(rank2Key)) availableSessions.push(rank2Key);
-
-    // Get unique rank 2 session key for this gym (even if not unlocked, for display)
     const rank2SessionDef = gym.ranks?.find((r) => r.rank === 2);
     const rank2SessionKey = rank2SessionDef?.unlock?.sessionKey;
-    const rank2Unlocked = gym.progress?.rank >= 2;
+    const rank2Unlocked = (gym.progress?.rank ?? 0) >= 2;
 
-    // Sessions from other gyms (greyed out)
-    const otherSessions = ALL_SESSION_KEYS.filter((key) => {
-        if (SESSION_META[key].rank2) return false; // skip rank 2 sessions for "other" display
-        return !availableSessions.includes(key);
-    });
+    const displaySessions = [...(gym.sessions || [])];
+    if (rank2SessionKey && !displaySessions.includes(rank2SessionKey)) {
+        displaySessions.push(rank2SessionKey);
+    }
 
-    // Find which gym offers each other session
-    function findGymForSession(sessionKey) {
+    const otherSessions = Object.keys(SESSION_META).filter(
+        (k) => !SESSION_META[k].rank2 && !displaySessions.includes(k)
+    );
+
+    function findGymForSession(key) {
         for (const g of (allGyms || [])) {
             if (g._id === gym._id) continue;
-            if (g.sessions?.includes(sessionKey)) return g.name;
+            if (g.sessions?.includes(key)) return g.name;
         }
         return null;
     }
 
-    // Categories present in this gym's sessions
-    const categories = [...new Set(
-        availableSessions.map((k) => SESSION_META[k]?.category).filter(Boolean)
-    )];
-    const CATEGORY_LABELS = {
-        striking: "Striking", grappling: "Grappling", sparring: "Sparring",
-        mental: "Mental", physical: "Physical",
-    };
+    const currentRank = gym.progress?.rank ?? 0;
+    const sortedRanks = (gym.ranks || []).slice().sort((a, b) => a.rank - b.rank);
+    const next = (gym.ranks || []).find((r) => r.rank === currentRank + 1);
+    const winLabel = gym.relevantWinTypes?.length === 1
+        ? `${gym.relevantWinTypes[0]} wins`
+        : "wins";
 
-    const filteredSessions = availableSessions.filter(
-        (k) => SESSION_META[k]?.category === activeCategory
-    );
-
-    const isSessionInjuryLocked = (meta) => (meta.stats || []).some((s) => injuryLocked.has(s));
+    function rankUnlockText(r) {
+        if (!r.unlock) return null;
+        switch (r.unlock.type) {
+            case "access": return "Sessions unlocked";
+            case "session": return SESSION_META[r.unlock.sessionKey]?.label ?? r.unlock.sessionKey;
+            case "xpBonus": return `+${r.unlock.xpBonusPct}% XP bonus`;
+            case "perk": return "Corner perk + badge";
+            default: return null;
+        }
+    }
 
     return (
-        <div className="gym-training-v2">
-            {/* Header */}
-            <div className="gt-header" data-tut="gym-info">
-                <button type="button" className="btn btn-ghost btn-sm gt-back" onClick={onBack}>
-                    <ChevronLeft size={14} /> All Gyms
-                </button>
-                <div className="gt-header-info">
-                    <span className="gt-header-name">{gym.name}</span>
-                    {!isFree && gym.progress && (
-                        <span className="gt-header-rank">
-                            <Star size={10} /> {gym.progress.rankName}
-                        </span>
-                    )}
-                </div>
-                <div className="gt-header-right">
-                    <span className="gt-energy" data-tut="energy"><Zap size={12} /> {energy}E</span>
-                    {!isFree && !isActive && (
-                        <button type="button" className="btn btn-primary btn-sm" onClick={() => onSwitchGym(gym._id)}>
-                            Join — {gym.weeklyCost} iron/wk
-                        </button>
-                    )}
-                    {isActive && (
-                        <span className="gt-membership-badge">
-                            <Check size={10} /> {gym.membership.daysLeft}d left
-                        </span>
-                    )}
-                </div>
-            </div>
-
-            {/* Gym description */}
-            {gym.description && (
-                <div className="gt-description">{gym.description}</div>
-            )}
-
-            {/* Not a member warning */}
-            {!canTrain && (
-                <div className="gt-membership-block">
-                    <AlertTriangle size={12} /> Join this gym to train here ({gym.weeklyCost} iron/week)
-                </div>
-            )}
-
-            {/* Category tabs */}
-            <div className="th-category-tabs">
-                {categories.map((cat) => (
-                    <button
-                        key={cat}
-                        type="button"
-                        className={`th-cat-tab${activeCategory === cat ? " th-cat-tab--active" : ""}`}
-                        onClick={() => setActiveCategory(cat)}
-                    >
-                        {CATEGORY_LABELS[cat] || cat}
+        <div className="gym-training">
+            {/* STRIP 1 — Header */}
+            <div className="gym-header" data-tut="gym-info">
+                <div className="gym-header-row1">
+                    <button type="button" className="gym-back" onClick={onBack}>
+                        <ChevronLeft size={12} /> All Gyms
                     </button>
-                ))}
-            </div>
-
-            {/* Available sessions */}
-            <div className="th-sessions" data-tut="gym-sessions">
-                {filteredSessions.map((key) => {
-                    const m = SESSION_META[key];
-                    if (!m) return null;
-                    const isLocked = isSessionInjuryLocked(m);
-                    const notEnoughEnergy = energy < m.cost;
-                    const blocked = isLocked || !canTrain || notEnoughEnergy;
-                    const isRank2 = m.rank2;
-                    const isRank2Locked = isRank2 && !rank2Unlocked && key === rank2SessionKey;
-
-                    return (
-                        <div key={key} className={`th-session-card${isLocked ? " th-session-card--locked" : ""}${isRank2 ? " th-session-card--rank2" : ""}`}>
-                            <div className="th-sc-header">
-                                <span className="th-sc-name">{m.label}</span>
-                                <span className="th-sc-cost">{m.cost}E</span>
-                            </div>
-                            <p className="th-sc-desc">{m.desc}</p>
-                            <div className="th-sc-stats">
-                                {m.stats.length > 0 ? m.stats.map((s) => (
-                                    <span key={s} className={`stat-chip ${STAT_CHIP_CLASS[s] ?? ""}`}>{s}</span>
-                                )) : m.special ? (
-                                    <span className="stat-chip stat-chip-special">{m.special}</span>
-                                ) : null}
-                            </div>
-                            {m.warn && <div className="th-sc-warn"><AlertTriangle size={9} /> {m.warn}</div>}
-
-                            {isRank2Locked ? (
-                                <div className="th-sc-rank2-lock"><Lock size={10} /> Unlocks at Rank 2</div>
-                            ) : (
-                                <button
-                                    type="button"
-                                    className="btn btn-primary btn-sm th-sc-train-btn"
-                                    disabled={blocked}
-                                    onClick={() => onTrain(key)}
-                                >
-                                    {isLocked ? "Injury locked" : notEnoughEnergy ? `Need ${m.cost}E` : !canTrain ? "Join gym" : "Train"}
-                                </button>
-                            )}
+                </div>
+                <div className="gym-header-row2">
+                    <div className="gym-title">{gym.name}</div>
+                    <div className="gym-tags">
+                        {!isFree && gym.focusStats?.length ? (
+                            <>
+                                {gym.focusStats.map((s) => (
+                                    <span key={s} className={`gym-tag gym-tag-${s.toLowerCase()}`}>{s}</span>
+                                ))}
+                                <span className="gym-tag xp">{gym.focusXpMultiplier}× XP</span>
+                            </>
+                        ) : null}
+                        {isFree && (
+                            <span className="gym-tag gym-tag-all">All Stats · {gym.xpMultiplier}×</span>
+                        )}
+                    </div>
+                    <div className="gym-header-right">
+                        <div className="gym-energy-pill" data-tut="energy">
+                            <span className="gym-energy-lbl">Energy</span>
+                            <Zap size={12} /> {energy}
                         </div>
-                    );
-                })}
+                        {!isFree && !isActive && (
+                            <button type="button" className="gym-join-btn" onClick={() => onSwitchGym(gym._id)}>
+                                Join — {gym.weeklyCost} Iron / week
+                            </button>
+                        )}
+                        {isActive && (
+                            <span className="gym-membership-badge">
+                                <Check size={11} /> {gym.membership.daysLeft}d left
+                            </span>
+                        )}
+                    </div>
+                </div>
             </div>
 
-            {/* Rank 2 session preview (if not yet unlocked) */}
-            {rank2SessionKey && !rank2Unlocked && !filteredSessions.includes(rank2SessionKey) && SESSION_META[rank2SessionKey]?.category === activeCategory && (
-                <div className="gt-rank2-preview">
-                    <Lock size={12} /> Rank 2 unlocks: <strong>{SESSION_META[rank2SessionKey]?.label}</strong>
-                </div>
-            )}
-
-            {/* Other sessions (from other gyms, greyed out) — hide for free gym */}
-            {!isFree && otherSessions.filter((k) => SESSION_META[k]?.category === activeCategory).length > 0 && (
-                <div className="gt-other-sessions">
-                    <div className="gt-other-title">Available at other gyms</div>
-                    <div className="gt-other-grid">
-                        {otherSessions
-                            .filter((k) => SESSION_META[k]?.category === activeCategory)
-                            .map((key) => {
-                                const m = SESSION_META[key];
-                                const gymName = findGymForSession(key);
-                                return (
-                                    <div key={key} className="gt-other-card">
-                                        <span className="gt-other-name">{m.label}</span>
-                                        <span className="gt-other-stats">
-                                            {m.stats.map((s) => s).join(", ") || m.special}
-                                        </span>
-                                        {gymName && <span className="gt-other-gym">Available at {gymName}</span>}
-                                    </div>
-                                );
-                            })}
-                    </div>
-                </div>
-            )}
-
-            {/* Rank Progress */}
+            {/* STRIP 2 — Rank strip */}
             {!isFree && gym.ranks?.length > 0 && (
-                <div className="gt-rank-progress">
-                    <div className="gt-rank-header">
-                        <span className="gt-rank-title">
-                            {gym.progress?.hasJoined
-                                ? `Your Rank: ${gym.progress.rankName}`
-                                : "Gym Ranks"}
-                        </span>
-                    </div>
-
-                    {/* Current rank description */}
-                    {gym.progress?.hasJoined && (() => {
-                        const currentRankDef = gym.ranks.find((r) => r.rank === gym.progress.rank);
-                        return currentRankDef?.description ? (
-                            <div className="gt-rank-current-desc">{currentRankDef.description}</div>
-                        ) : null;
-                    })()}
-
-                    {/* All ranks roadmap */}
-                    <div className="gt-rank-roadmap">
-                        {gym.ranks.map((r) => {
-                            const currentRank = gym.progress?.rank ?? 0;
-                            const isDone = currentRank >= r.rank;
-                            const isNext = currentRank === r.rank - 1;
+                <div className="rank-strip">
+                    <div className="rank-strip-label">Gym Rank</div>
+                    <div className="rank-strip-steps">
+                        {sortedRanks.map((r, i) => {
+                            const done = currentRank > r.rank;
+                            const current = currentRank === r.rank;
+                            const isLast = i === sortedRanks.length - 1;
                             return (
-                                <div key={r.rank} className={`gt-rank-step${isDone ? " gt-rank-step--done" : ""}${isNext ? " gt-rank-step--next" : ""}`}>
-                                    <div className="gt-rank-step-header">
-                                        <span className="gt-rank-step-name">
-                                            {isDone ? <Check size={10} /> : <Star size={10} />} {r.name}
-                                        </span>
-                                        <span className="gt-rank-step-num">Rank {r.rank}</span>
+                                <div key={r.rank} className="rank-step">
+                                    <div className={`rank-step-dot ${current || done ? "current" : "locked"}`}>
+                                        {done ? <Check size={11} /> : r.rank}
                                     </div>
-                                    {r.description && <div className="gt-rank-step-desc">{r.description}</div>}
-                                    {r.unlock && (
-                                        <div className="gt-rank-step-reward">
-                                            {r.unlock.type === "access" && "Unlocks gym training sessions"}
-                                            {r.unlock.type === "session" && `Unlocks: ${SESSION_META[r.unlock.sessionKey]?.label ?? r.unlock.sessionKey}`}
-                                            {r.unlock.type === "xpBonus" && `+${r.unlock.xpBonusPct}% XP to focus stats permanently`}
-                                            {r.unlock.type === "perk" && (
-                                                <>
-                                                    <div><strong>{r.unlock.perkName ?? r.unlock.perkId}</strong> perk + <strong>{r.unlock.badge}</strong> badge</div>
-                                                    {r.unlock.perkEffect && <div className="gt-rank-step-perk-effect">{r.unlock.perkEffect}</div>}
-                                                </>
-                                            )}
-                                        </div>
-                                    )}
-                                    {isNext && gym.progress?.hasJoined && (
-                                        <div className="gt-rank-step-reqs">
-                                            <span className={gym.progress.trainingSessions >= r.requirements.trainingSessions ? "gt-rank-req--done" : ""}>
-                                                Training: {Math.min(gym.progress.trainingSessions, r.requirements.trainingSessions)}/{r.requirements.trainingSessions}
-                                            </span>
-                                            <span className={gym.progress.relevantWins >= r.requirements.relevantWins ? "gt-rank-req--done" : ""}>
-                                                {gym.relevantWinTypes?.length === 1
-                                                    ? `${gym.relevantWinTypes[0]} wins`
-                                                    : gym.relevantWinTypes?.length > 1
-                                                    ? `Wins (${gym.relevantWinTypes.join(" / ")})`
-                                                    : "Wins"}: {Math.min(gym.progress.relevantWins, r.requirements.relevantWins)}/{r.requirements.relevantWins}
-                                            </span>
-                                            {r.requirements.ironCost > 0 && (
-                                                <span>Iron: {r.requirements.ironCost}</span>
-                                            )}
-                                        </div>
-                                    )}
-                                    {isNext && gym.progress?.nextRank?.canRankUp && gym.progress.nextRank.needsIron && (
-                                        <button type="button" className="btn btn-primary btn-sm gt-rankup-btn" onClick={() => onRankUp(gym._id)}>
-                                            <Trophy size={12} /> Rank Up ({r.requirements.ironCost} iron)
-                                        </button>
-                                    )}
+                                    <div className="rank-step-info">
+                                        <div className={`rank-step-name ${current || done ? "current" : "locked"}`}>{r.name}</div>
+                                        <div className="rank-step-unlock">{rankUnlockText(r)}</div>
+                                    </div>
+                                    {!isLast && <div className="rank-step-line" />}
                                 </div>
                             );
                         })}
                     </div>
+                </div>
+            )}
 
-                    {gym.progress?.rank >= 4 && (
-                        <div className="gt-rank-maxed">
-                            <Trophy size={14} /> Maximum rank achieved — perk active!
-                        </div>
+            {/* Rank up CTA */}
+            {!isFree && gym.progress?.hasJoined && next && currentRank < 4 && (
+                <div className="rank-upcta">
+                    <span className={`rank-req${gym.progress.trainingSessions >= next.requirements.trainingSessions ? " rank-req--done" : ""}`}>
+                        Training {Math.min(gym.progress.trainingSessions, next.requirements.trainingSessions)}/{next.requirements.trainingSessions}
+                    </span>
+                    <span className={`rank-req${gym.progress.relevantWins >= next.requirements.relevantWins ? " rank-req--done" : ""}`}>
+                        Wins {Math.min(gym.progress.relevantWins, next.requirements.relevantWins)}/{next.requirements.relevantWins} {winLabel}
+                    </span>
+                    {next.requirements.ironCost > 0 && (
+                        <span className="rank-req">Iron {next.requirements.ironCost}</span>
+                    )}
+                    {gym.progress?.nextRank?.canRankUp && gym.progress.nextRank.needsIron && (
+                        <button type="button" className="rank-up-btn" onClick={() => onRankUp(gym._id)}>
+                            <Trophy size={12} /> Rank Up ({next.requirements.ironCost} iron)
+                        </button>
                     )}
                 </div>
             )}
+
+            {/* Max rank achieved */}
+            {!isFree && currentRank >= 4 && (
+                <div className="rank-maxed">
+                    <Trophy size={14} /> Maximum rank achieved — perk active!
+                </div>
+            )}
+
+            {/* STRIP 3 — Flavor */}
+            {gym.description && (
+                <div className="flavor-strip">
+                    <div className="flavor-text">{gym.description}</div>
+                </div>
+            )}
+
+            {/* STRIP 4 — Sessions */}
+            <div className="sessions-area">
+                <div className="sessions-label">Training Sessions</div>
+                <div className="session-grid" data-tut="gym-sessions">
+                    {displaySessions.map((key) => {
+                        const m = SESSION_META[key];
+                        if (!m) return null;
+                        const stats = m.stats || [];
+                        const isLocked = stats.some((s) => injuryLocked.has(s));
+                        const notEnoughEnergy = energy < m.cost;
+                        const isRank2Locked = !!m.rank2 && !rank2Unlocked && key === rank2SessionKey;
+                        const cardLocked = isRank2Locked || isLocked;
+
+                        let accentStyle;
+                        if (isRank2Locked || isLocked) {
+                            accentStyle = undefined; // class "lock" handles color
+                        } else if (stats.length > 2) {
+                            accentStyle = { background: GOLD };
+                        } else if (stats.length === 2) {
+                            const c0 = STAT_COLOR[stats[0]];
+                            const c1 = STAT_COLOR[stats[1]];
+                            accentStyle = { background: `linear-gradient(90deg, ${c0} 0%, ${c0} 50%, ${c1} 50%, ${c1} 100%)` };
+                        } else if (stats.length === 1) {
+                            accentStyle = { background: STAT_COLOR[stats[0]] };
+                        } else {
+                            accentStyle = { background: GOLD };
+                        }
+
+                        return (
+                            <div key={key} className={`session-card${cardLocked ? " locked-card" : ""}`}>
+                                <div
+                                    className={`session-card-top${isRank2Locked || isLocked ? " lock" : ""}`}
+                                    style={accentStyle}
+                                />
+                                <div className="session-card-body">
+                                    <div className="session-card-header">
+                                        <div className={`session-card-name${cardLocked ? " locked" : ""}`}>
+                                            {m.label}
+                                            {isRank2Locked && <span className="rank-badge">Rank 2</span>}
+                                        </div>
+                                        <div className="session-card-energy"><Zap size={11} /> {m.cost}E</div>
+                                    </div>
+                                    <div className="session-card-desc">{m.desc}</div>
+                                    {m.warn && (
+                                        <div className="session-card-warn"><AlertTriangle size={9} /> {m.warn}</div>
+                                    )}
+                                    <div className="session-card-footer">
+                                        <div className="session-card-tags">
+                                            {stats.length
+                                                ? stats.map((s) => (
+                                                    <span key={s} className={`s-tag gym-tag gym-tag-${s.toLowerCase()}`}>{s}</span>
+                                                ))
+                                                : m.special
+                                                ? <span className="s-tag gym-tag gym-tag-all">{m.special}</span>
+                                                : null}
+                                        </div>
+                                        {isRank2Locked ? (
+                                            <button type="button" className="session-card-btn locked-btn" disabled>
+                                                <Lock size={10} /> Rank 2
+                                            </button>
+                                        ) : !canTrain ? (
+                                            <button type="button" className="session-card-btn inactive" disabled>
+                                                Join to Train
+                                            </button>
+                                        ) : isLocked ? (
+                                            <button type="button" className="session-card-btn locked-btn" disabled>
+                                                Injury locked
+                                            </button>
+                                        ) : notEnoughEnergy ? (
+                                            <button type="button" className="session-card-btn inactive" disabled>
+                                                Need {m.cost}E
+                                            </button>
+                                        ) : (
+                                            <button type="button" className="session-card-btn" onClick={() => onTrain(key)}>
+                                                Train
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {!isFree && otherSessions.length > 0 && (
+                    <>
+                        <div className="other-section-label">Available at Other Gyms</div>
+                        {otherSessions.map((key) => {
+                            const m = SESSION_META[key];
+                            const gymName = findGymForSession(key);
+                            return (
+                                <div key={key} className="other-session">
+                                    <div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
+                                            <span className="other-session-name">{m.label}</span>
+                                            <span className="other-session-tag">{m.stats?.[0] ?? m.special}</span>
+                                        </div>
+                                        {gymName && <div className="other-session-gym">Available at {gymName}</div>}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </>
+                )}
+            </div>
         </div>
     );
 });

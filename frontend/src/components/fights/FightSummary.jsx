@@ -6,7 +6,7 @@ import { ArrowUpCircle, Trophy } from "lucide-react";
 /**
  * Post-fight summary: health/stamina lost, XP gained, fame, iron, injuries, comeback, weight miss, etc.
  */
-export const FightSummary = memo(function FightSummary({ summary }) {
+export const FightSummary = memo(function FightSummary({ summary, description }) {
   if (!summary) return null;
 
   const {
@@ -42,122 +42,175 @@ export const FightSummary = memo(function FightSummary({ summary }) {
     nemesisSet,
     nemesisName,
     beltWon,
+    opponentName,
   } = summary;
 
   const hasXp = xpGained && typeof xpGained === "object" && Object.keys(xpGained).length > 0;
   const recordLabel = recordChange === "W" ? "Win" : recordChange === "L" ? "Loss" : "Draw";
 
+  // Outcome flavor key used across hero modifier + badges.
+  const oc = recordChange === "W" ? "win" : recordChange === "L" ? "loss" : "draw";
+  const winText = recordChange === "W" ? "VICTORY" : recordChange === "L" ? "DEFEAT" : "DRAW";
+
+  // Shared fame display (used in hero stat tile + Fight Stats card).
+  const fameDisplay = fameGained > 0 ? `+${fameGained}` : fameGained === 0 ? "—" : fameGained;
+
+  const hasDescription = !!description;
+
   return (
     <section className={`panel fight-summary${beltWon ? " fight-summary--belt" : ""}`} data-tut="result">
-      <h2 className="panel-title">{beltWon ? "Championship Result" : "Last Fight Summary"}</h2>
-      <div className="panel-body">
+      <div className={`result-hero result-hero--${oc}`}>
         {beltWon && (
           <div className="fight-summary-belt-header">
             <Trophy size={18} /> NEW CHAMPION <Trophy size={18} />
           </div>
         )}
-        <div className="fight-summary-outcome">
-          <span className={`fight-summary-result fight-summary-result-${recordChange?.toLowerCase()}`}>
-            {outcome}
-          </span>
-          <span className="fight-summary-record-change">
-            ({recordLabel}) — Record: {recordAfter}
-          </span>
-        </div>
+        <div className="result-eyebrow">{beltWon ? "Championship Result" : "Last Fight Summary"}</div>
 
+        <div className="result-hero-body">
+          <div className="result-hero-left">
+            <div className="result-outcome-row">
+              <span className={`result-win result-win--${oc}`}>{winText}</span>
+              <span className={`result-method-badge result-method--${oc}`}>{outcome}</span>
+            </div>
+            <div className="result-sub">
+              {opponentName ? `vs ${opponentName} · ` : ""}Record now {recordAfter}
+            </div>
+          </div>
+
+          <div className="result-right">
+            <div className="result-stat" data-tut="result-iron">
+              <div className="result-stat-val result-stat-val--green">+{ironEarned ?? 0}</div>
+              <div className="result-stat-label">Iron Earned</div>
+            </div>
+            <div className="result-stat" data-tut="result-fame">
+              <div className="result-stat-val result-stat-val--gold">{fameDisplay}</div>
+              <div className="result-stat-label">Fame</div>
+            </div>
+            <div className="result-stat">
+              <div className="result-stat-val result-stat-val--blue">×{xpMultiplier ?? 1}</div>
+              <div className="result-stat-label">XP Mult</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="notices">
         {isComeback && (
-          <div className="fight-summary-note fight-summary-comeback">
-            Comeback fight — ×1.5 XP bonus applied!
+          <div className="notice notice--good">
+            <span className="notice-glyph">⚡</span>
+            <span>Comeback fight — ×1.5 XP bonus applied!</span>
           </div>
         )}
 
         {weightCut && weightCut !== "easy" && (
-          <div className={`fight-summary-note ${!weightMissed && weightCutRoll >= 0 ? "fight-summary-comeback" : "fight-summary-warning"}`}>
-            Weight cut ({weightCut}): {weightCutRoll > 0 ? "+" + weightCutRoll : weightCutRoll} stamina
-            {weightMissed
-              ? " — missed weight! Purse reduced by 20% and Fame penalised."
-              : weightCutRoll >= 0 ? " — cut went well" : " — cut went badly"}
+          <div className={`notice notice--${!weightMissed && weightCutRoll >= 0 ? "good" : weightMissed ? "danger" : "warn"}`}>
+            <span className="notice-glyph">⚖</span>
+            <span>
+              Weight cut ({weightCut}): {weightCutRoll > 0 ? "+" + weightCutRoll : weightCutRoll} stamina
+              {weightMissed
+                ? " — missed weight! Purse reduced by 20% and Fame penalised."
+                : weightCutRoll >= 0 ? " — cut went well" : " — cut went badly"}
+            </span>
           </div>
         )}
 
         {fameFrozen && (
-          <div className="fight-summary-note fight-summary-warning">
-            Fame frozen after 3 consecutive losses.
+          <div className="notice notice--warn">
+            <span className="notice-glyph">❄</span>
+            <span>Fame frozen after 3 consecutive losses.</span>
           </div>
         )}
 
         {mentalResetRequired && (
-          <div className="fight-summary-note fight-summary-danger">
-            Mental Reset required — complete it in your fighter profile before your next fight.
+          <div className="notice notice--danger">
+            <span className="notice-glyph">🧠</span>
+            <span>Mental Reset required — complete it in your fighter profile before your next fight.</span>
           </div>
         )}
 
         {nemesisCleared && (
-          <div className="fight-summary-note fight-summary-nemesis-cleared">
-            ★ Nemesis defeated — you&apos;ve settled the score with <strong>{nemesisName}</strong>! (+{150} Notoriety)
+          <div className="notice notice--good">
+            <span className="notice-glyph">★</span>
+            <span>Nemesis defeated — you&apos;ve settled the score with <strong>{nemesisName}</strong>! (+{150} Notoriety)</span>
           </div>
         )}
 
         {nemesisSet && (
-          <div className="fight-summary-note fight-summary-nemesis-set">
-            ☠ <strong>{nemesisName}</strong> is now your Nemesis — the rematch will be available in fight offers.
+          <div className="notice notice--danger">
+            <span className="notice-glyph">☠</span>
+            <span><strong>{nemesisName}</strong> is now your Nemesis — the rematch will be available in fight offers.</span>
           </div>
         )}
 
         {fameTierUp && (
-          <div className="fight-summary-note fight-summary-badge">
-            ⭐ Fame tier: {tierLabel(fameTierUp.from)} → <strong>{tierLabel(fameTierUp.to)}</strong>
+          <div className="notice notice--good">
+            <span className="notice-glyph">⭐</span>
+            <span>Fame tier: {tierLabel(fameTierUp.from)} → <strong>{tierLabel(fameTierUp.to)}</strong></span>
           </div>
         )}
 
         {promoted && (
-          <div className="fight-summary-note fight-summary-badge" style={{ fontSize: "13px", fontWeight: 800 }}>
-            ⬆ PROMOTED: {promoted.from} → {promoted.to}! New competition level unlocked.
+          <div className="notice notice--good">
+            <span className="notice-glyph">⬆</span>
+            <span>PROMOTED: {promoted.from} → {promoted.to}! New competition level unlocked.</span>
           </div>
         )}
 
         {newBadges?.length > 0 && (
-          <div className="fight-summary-note fight-summary-badge">
-            Badge earned: {newBadges.join(", ")}
+          <div className="notice notice--good">
+            <span className="notice-glyph">🏅</span>
+            <span>Badge earned: {newBadges.join(", ")}</span>
           </div>
         )}
 
         {injuriesSustained?.length > 0 && (
-          <div className="fight-summary-note fight-summary-injury">
-            Injuries sustained: <strong>{injuriesSustained.join(", ")}</strong> — check your fighter profile.
+          <div className="notice notice--danger">
+            <span className="notice-glyph">🩹</span>
+            <span>Injuries sustained: <strong>{injuriesSustained.join(", ")}</strong> — check your fighter profile.</span>
           </div>
         )}
 
-        <table className="torn-table fight-summary-table">
-          <tbody>
-            <tr>
-              <td className="torn-td-label">Health</td>
-              <td className="torn-td-value">
+        {completedQuests?.length > 0 && (
+          <div className="notice notice--good">
+            <span className="notice-glyph">✓</span>
+            <span>Quest completed: {completedQuests.join(", ")}!</span>
+          </div>
+        )}
+      </div>
+
+      <div className={`body-grid${hasDescription ? "" : " body-grid--single"}`}>
+        <div className="fs-left-col">
+          <div className="card">
+            <div className="card-label">Fight Stats</div>
+            <div className="stat-summary-row">
+              <span className="stat-summary-label">Health</span>
+              <span className="stat-summary-val">
                 {healthEnd} / {healthStart}
-                {healthLost > 0 && <span className="fight-summary-delta"> (−{healthLost})</span>}
-              </td>
-            </tr>
-            <tr>
-              <td className="torn-td-label">Stamina</td>
-              <td className="torn-td-value">
+                {healthLost > 0 && <span className="stat-summary-loss"> −{healthLost}</span>}
+              </span>
+            </div>
+            <div className="stat-summary-row">
+              <span className="stat-summary-label">Stamina</span>
+              <span className="stat-summary-val">
                 {staminaEnd} / {staminaStart}
-                {staminaLost > 0 && <span className="fight-summary-delta"> (−{staminaLost})</span>}
-              </td>
-            </tr>
-            <tr data-tut="result-iron">
-              <td className="torn-td-label">Iron earned</td>
-              <td className="torn-td-value">
+                {staminaLost > 0 && <span className="stat-summary-loss"> −{staminaLost}</span>}
+              </span>
+            </div>
+            <div className="stat-summary-row">
+              <span className="stat-summary-label">Iron Earned</span>
+              <span className="stat-summary-val stat-summary-val--green">
                 +{ironEarned ?? 0}
-                {weightMissed && <span className="fight-summary-delta"> (−20% weight miss)</span>}
-              </td>
-            </tr>
-            <tr data-tut="result-fame">
-              <td className="torn-td-label">Fame</td>
-              <td className="torn-td-value">
-                {fameGained > 0 ? `+${fameGained}` : fameGained === 0 ? "—" : fameGained}
-                {fameFrozen && <span className="fight-summary-delta"> (frozen)</span>}
+                {weightMissed && <span className="stat-summary-note"> (−20% weight miss)</span>}
+              </span>
+            </div>
+            <div className="stat-summary-row">
+              <span className="stat-summary-label">Fame</span>
+              <span className="stat-summary-val stat-summary-val--gold">
+                {fameDisplay}
+                {fameFrozen && <span className="stat-summary-note"> (frozen)</span>}
                 {milestoneFame?.bonus > 0 && (
-                  <span className="fight-summary-delta"> +{milestoneFame.bonus} milestone</span>
+                  <span className="stat-summary-note"> +{milestoneFame.bonus} milestone</span>
                 )}
                 {Array.isArray(fameBreakdown) && fameBreakdown.length > 1 && (
                   <ul className="fight-summary-fame-lines">
@@ -168,96 +221,84 @@ export const FightSummary = memo(function FightSummary({ summary }) {
                     ))}
                   </ul>
                 )}
-              </td>
-            </tr>
-            {xpMultiplier != null && (
-              <tr>
-                <td className="torn-td-label">XP multiplier</td>
-                <td className="torn-td-value">
-                  ×{xpMultiplier}
-                  {isComeback && <span className="fight-summary-comeback-tag"> (comeback)</span>}
-                </td>
-              </tr>
-            )}
-            {hasXp && (
-              <tr>
-                <td className="torn-td-label">XP gained</td>
-                <td className="torn-td-value">
-                  <span className="fight-summary-xp">
-                    {Object.entries(xpGained).map(([stat, xp]) => (
-                      <span key={stat} className="fight-summary-xp-stat">{stat} +{xp}</span>
-                    ))}
-                  </span>
-                </td>
-              </tr>
-            )}
-            {statLevelUps?.length > 0 && (
-              <tr>
-                <td className="torn-td-label">Stat level up</td>
-                <td className="torn-td-value">
-                  <strong>{statLevelUps.join(", ")}</strong>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-
-        {completedQuests?.length > 0 && (
-          <div className="fight-summary-quests">
-            Quest completed: {completedQuests.join(", ")}!
-          </div>
-        )}
-
-        {/* Post-fight camp breakdown (v2) */}
-        {campBreakdown && (
-          <div className="fight-summary-camp">
-            <div className="fight-summary-camp-header">
-              <span className="fight-summary-camp-title">Camp Breakdown</span>
-              {campBreakdown.rating && (
-                <span
-                  className="fight-summary-camp-grade"
-                  style={{ color: getRatingConfig(campBreakdown.rating).color }}
-                >
-                  {campBreakdown.rating}
-                </span>
-              )}
-              <span className="fight-summary-camp-note">(preparation quality — no fight modifier)</span>
+              </span>
             </div>
-            {campBreakdown.sessions?.length > 0 && (
-              <div className="fight-summary-camp-sessions">
-                {campBreakdown.sessions.map((s, i) => {
-                  const statusColor = MATCH_STATUS_COLORS[s.matchStatus] ?? "#94a3b8";
-                  return (
-                    <div key={i} className="fight-summary-camp-row">
-                      <span className="fscs-name">{s.label}</span>
-                      <span className="fscs-match" style={{ color: statusColor }}>
-                        {MATCH_STATUS_LABELS[s.matchStatus] ?? s.matchStatus}
-                      </span>
-                      <span className={`fscs-trigger ${s.triggered ? "fscs-triggered" : "fscs-not-triggered"}`}>
-                        {s.triggered
-                          ? `TRIGGERED x${s.triggerCount}`
-                          : "NOT TRIGGERED"}
-                      </span>
-                      {s.triggered && s.description && (
-                        <span className="fscs-desc">{s.description}</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            {campBreakdown.wildcard && (
-              <div className={`fight-summary-camp-wildcard ${campBreakdown.wildcard.wasCountered ? "fscs-wc-countered" : "fscs-wc-uncountered"}`}>
-                <span className="fscs-wc-label">Wildcard:</span>
-                <span className="fscs-wc-text">
-                  {campBreakdown.wildcard.wasCountered
-                    ? `Opponent ${campBreakdown.wildcard.description} — your camp work countered it!`
-                    : `Opponent ${campBreakdown.wildcard.description} — you had no answer for this.`}
+            {statLevelUps?.length > 0 && (
+              <div className="stat-summary-row">
+                <span className="stat-summary-label">Stat levels up</span>
+                <span className="stat-summary-val stat-summary-val--blue">
+                  {statLevelUps.join(", ")}
                 </span>
               </div>
             )}
           </div>
-        )}
+
+          {(hasXp || statLevelUps?.length > 0) && (
+            <div className="card">
+              <div className="card-label">XP Gained</div>
+              {hasXp && (
+                <div className="xp-grid">
+                  {Object.entries(xpGained).map(([stat, xp]) => (
+                    <span key={stat} className="xp-tag">{stat} +{xp}</span>
+                  ))}
+                </div>
+              )}
+              {statLevelUps?.length > 0 && (
+                <div className="xp-levelup-line">
+                  <ArrowUpCircle size={12} /> Levelled up:
+                  {statLevelUps.map((s) => (
+                    <span key={s} className="levelup-tag">{s}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {campBreakdown && (
+            <div className="card">
+              <div className="card-label">
+                Camp Breakdown
+                {campBreakdown.rating && (
+                  <span
+                    className="camp-grade"
+                    style={{ color: getRatingConfig(campBreakdown.rating).color }}
+                  >
+                    {campBreakdown.rating}
+                  </span>
+                )}
+              </div>
+              {campBreakdown.sessions?.length > 0 && campBreakdown.sessions.map((s, i) => {
+                const statusColor = MATCH_STATUS_COLORS[s.matchStatus] ?? "#94a3b8";
+                return (
+                  <div key={i} className="camp-row">
+                    <span className="camp-name">{s.label}</span>
+                    <span className="camp-matched" style={{ color: statusColor }}>
+                      {MATCH_STATUS_LABELS[s.matchStatus] ?? s.matchStatus}
+                    </span>
+                    <span className={s.triggered ? "camp-triggered" : "camp-not"}>
+                      {s.triggered ? `Triggered ×${s.triggerCount}` : "Not Triggered"}
+                    </span>
+                    {s.triggered && s.description && (
+                      <span className="camp-effect">{s.description}</span>
+                    )}
+                  </div>
+                );
+              })}
+              {campBreakdown.wildcard && (
+                <div className="wildcard-row">
+                  <span className="wildcard-label">Wildcard</span>
+                  <span className={`wildcard-text ${campBreakdown.wildcard.wasCountered ? "wildcard-text--countered" : "wildcard-text--uncountered"}`}>
+                    {campBreakdown.wildcard.wasCountered
+                      ? `Opponent ${campBreakdown.wildcard.description} — your camp work countered it!`
+                      : `Opponent ${campBreakdown.wildcard.description} — you had no answer for this.`}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {description}
       </div>
     </section>
   );

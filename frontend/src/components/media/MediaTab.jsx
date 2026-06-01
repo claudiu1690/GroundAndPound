@@ -1,5 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api";
+import {
+    Mic,
+    Video,
+    FileText,
+    Megaphone,
+    Sparkles,
+    Flame,
+    Handshake,
+    VenetianMask,
+    Lock,
+    Coins,
+    Star,
+    Zap,
+    ChevronLeft,
+} from "lucide-react";
 
 function relativeTime(d) {
     if (!d) return "";
@@ -15,10 +30,10 @@ function relativeTime(d) {
 
 /**
  * Calendar-aware cooldown text.
- * - Past    → "ready"
- * - Today   → "in 3h" / "in 42m"
- * - Tomorrow (next calendar day) → "Tomorrow"
- * - Later   → "in Nd"  (shouldn't happen for 1-day cooldowns, just defensive)
+ * - Past    -> "ready"
+ * - Today   -> "in 3h" / "in 42m"
+ * - Tomorrow (next calendar day) -> "Tomorrow"
+ * - Later   -> "in Nd"  (shouldn't happen for 1-day cooldowns, just defensive)
  */
 function formatCooldown(d) {
     if (!d) return "";
@@ -51,9 +66,9 @@ function recordStr(r) {
 }
 
 const TONE_DEFS = {
-    RESPECTFUL: { label: "Respectful", icon: "🙇", desc: "Pay respect. +15% iron if you later beat them." },
-    TRASH:      { label: "Trash Talk", icon: "🔥", desc: "+300 fame. Beef flag: +30% fame on grudge win. −150 if they never show." },
-    CRYPTIC:    { label: "Cryptic",    icon: "🎭", desc: "Say nothing. Say everything. +40 fame, no strings." },
+    RESPECTFUL: { label: "Respectful", Icon: Handshake, desc: "Pay respect. +15% iron if you later beat them." },
+    TRASH:      { label: "Trash Talk", Icon: Flame, desc: "+300 fame. Beef flag: +30% fame on grudge win. −150 if they never show." },
+    CRYPTIC:    { label: "Cryptic",    Icon: VenetianMask, desc: "Say nothing. Say everything. +40 fame, no strings." },
 };
 
 export function MediaTab({ fighter, onMessage, onRefreshFighter }) {
@@ -120,74 +135,133 @@ export function MediaTab({ fighter, onMessage, onRefreshFighter }) {
     }
 
     // HUB
+    const canPodcast = state.podcast.canPodcast;
+    const docUsed = state.documentary.used;
+    const docUnlocked = state.documentary.unlocked;
+    const docLocked = !docUnlocked && !docUsed;
+    const podcastCount = state.podcast.count || 0;
+
     return (
         <section className="media-tab">
-            <header className="media-header">
-                <h2>Media</h2>
-                <div className="media-header-sub">
-                    Fame: <strong>{(state.fame || 0).toLocaleString()}</strong>
+            <header className="page-header">
+                <div className="page-header-left">
+                    <div className="page-eyebrow">Press &amp; Media</div>
+                    <h1 className="page-title">Media Hub</h1>
+                </div>
+                <div className="fame-badge">
+                    <span className="fame-label">Fame</span>
+                    <span className="fame-val">{(state.fame || 0).toLocaleString()}</span>
                 </div>
             </header>
 
-            <div className="media-tiles">
-                <MediaTile
-                    icon="🎙"
-                    title="Podcast"
-                    sub={state.podcast.canPodcast
-                        ? `${state.podcast.energyCost} energy · ready`
-                        : `Next: ${formatCooldown(state.podcast.cooldownEndsAt)}`}
-                    desc="Recap your last fight, talk about the division, or log a main-event prediction."
-                    primary={state.podcast.canPodcast ? "Record" : "On cooldown"}
-                    disabled={!state.podcast.canPodcast}
-                    onClick={() => setView("PODCAST")}
-                />
-                <MediaTile
-                    icon="🎬"
-                    title="Documentary"
-                    sub={state.documentary.used
-                        ? "Already released"
-                        : state.documentary.unlocked
-                            ? "Ready to record"
-                            : `Unlocks at ${state.documentary.unlockTier.replace("_", " ").toLowerCase()} fame`}
-                    desc={`Once per career: +${state.documentary.fameReward} fame, +${state.documentary.ironReward} ⊗, Legacy badge.`}
-                    primary={state.documentary.used
-                        ? "Released"
-                        : state.documentary.unlocked
-                            ? "Record"
-                            : "Locked"}
-                    disabled={state.documentary.used || !state.documentary.unlocked}
-                    onClick={() => setView("DOCUMENTARY")}
-                />
-                <MediaTile
-                    icon="📝"
-                    title="Interview Archive"
-                    sub={`${state.podcast.count || 0} podcasts logged`}
-                    desc="Read back every post-fight interview you've given."
-                    primary="Browse"
-                    onClick={() => setView("ARCHIVE")}
-                />
-            </div>
+            <div className="body">
+                {/* Podcast card */}
+                <div className="media-card">
+                    <div className="media-card-accent podcast" />
+                    <div className="media-card-icon">
+                        <div className="media-icon tone-red"><Mic size={20} /></div>
+                    </div>
+                    <div className="media-card-body">
+                        <div className="media-card-top">
+                            <div className="media-name available">Podcast</div>
+                            {canPodcast ? (
+                                <span className="media-status ready">Ready</span>
+                            ) : (
+                                <span className="media-status cooldown">{formatCooldown(state.podcast.cooldownEndsAt)}</span>
+                            )}
+                        </div>
+                        <div className="media-desc">Recap your last fight, talk about the division, or log a main-event prediction.</div>
+                        <div className="media-meta">
+                            <Zap size={11} /> {state.podcast.energyCost} energy per episode
+                            <span className="media-dot" />
+                            {podcastCount} episodes recorded
+                        </div>
+                    </div>
+                    <div className="media-card-action">
+                        {canPodcast ? (
+                            <button className="media-action-btn record" onClick={() => setView("PODCAST")}>Record</button>
+                        ) : (
+                            <button className="media-action-btn record" disabled>On cooldown</button>
+                        )}
+                    </div>
+                </div>
 
-            <FlagsStrip state={state} />
+                {/* Documentary card */}
+                <div className={`media-card${docLocked ? " locked-card" : ""}`}>
+                    <div className="media-card-accent docu" />
+                    <div className="media-card-icon">
+                        <div className="media-icon tone-grey"><Video size={20} /></div>
+                    </div>
+                    <div className="media-card-body">
+                        <div className="media-card-top">
+                            <div className={`media-name ${docLocked ? "locked" : "available"}`}>Documentary</div>
+                            {docUsed ? (
+                                <span className="media-status locked-tag">Released</span>
+                            ) : docLocked ? (
+                                <span className="media-status locked-tag"><Lock size={11} /> Locked</span>
+                            ) : (
+                                <span className="media-status ready">Ready</span>
+                            )}
+                        </div>
+                        {docLocked ? (
+                            <div className="media-desc locked">Once per career — a full feature on your journey.</div>
+                        ) : (
+                            <div className="media-desc">A one-time broadcast of your career highlights.</div>
+                        )}
+                        {docLocked && (
+                            <div className="media-unlock">
+                                <Star size={12} /> Unlocks at {state.documentary.unlockTier.replace("_", " ").toLowerCase()} tier
+                            </div>
+                        )}
+                        {!docUsed && (
+                            <div className="rewards-strip">
+                                <span className="reward-chip gold">+{state.documentary.fameReward} Fame</span>
+                                <span className="reward-chip gold">+{state.documentary.ironReward} Iron</span>
+                                <span className="reward-chip">Legacy Badge</span>
+                            </div>
+                        )}
+                    </div>
+                    <div className="media-card-action">
+                        {docUsed ? (
+                            <button className="media-action-btn record" disabled>Released</button>
+                        ) : docLocked ? (
+                            <div className="media-action-locked"><Lock size={13} /> Locked</div>
+                        ) : (
+                            <button className="media-action-btn record" onClick={() => setView("DOCUMENTARY")}>Record</button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Archive card */}
+                <div className="media-card">
+                    <div className="media-card-accent archive" />
+                    <div className="media-card-icon">
+                        <div className="media-icon tone-blue"><FileText size={20} /></div>
+                    </div>
+                    <div className="media-card-body">
+                        <div className="media-card-top">
+                            <div className="media-name available">Interview Archive</div>
+                            <span className="media-status empty">{podcastCount} Logged</span>
+                        </div>
+                        <div className="media-desc">Read back every post-fight interview you've given.</div>
+                        <div className="media-meta">
+                            {podcastCount > 0 ? `${podcastCount} entries` : "No interviews logged yet"}
+                        </div>
+                    </div>
+                    <div className="media-card-action">
+                        <button className="media-action-btn browse" onClick={() => setView("ARCHIVE")}>Browse</button>
+                    </div>
+                </div>
+
+                <FlagsStrip state={state} />
+            </div>
         </section>
     );
 }
 
 // ─────────────────────────────────────────────────────────────
-// Tile + Flags strip
+// Flags strip
 // ─────────────────────────────────────────────────────────────
-
-function MediaTile({ icon, title, sub, desc, primary, disabled, onClick }) {
-    return (
-        <button type="button" className={`media-tile ${disabled ? "media-tile-disabled" : ""}`} onClick={onClick} disabled={disabled}>
-            <div className="media-tile-icon">{icon}</div>
-            <div className="media-tile-title">{title}</div>
-            <div className="media-tile-sub">{sub}</div>
-            <div className="media-tile-desc">{desc}</div>
-            <div className={`media-tile-cta ${disabled ? "muted" : ""}`}>{primary}</div>
-        </button>
-    );
-}
 
 function FlagsStrip({ state }) {
     const beef = state.flags?.beef || [];
@@ -200,7 +274,7 @@ function FlagsStrip({ state }) {
             <div className="media-flags-grid">
                 {beef.map((b) => (
                     <div key={`b-${b.opponentId}`} className="media-flag media-flag-beef">
-                        <span className="media-flag-icon">🔥</span>
+                        <span className="media-flag-icon"><Flame size={16} /></span>
                         <div>
                             <div className="media-flag-name">Beef: {b.opponentName}</div>
                             <div className="media-flag-meta">Expires after {b.expiresAfterFights} more fight{b.expiresAfterFights === 1 ? "" : "s"}</div>
@@ -209,7 +283,7 @@ function FlagsStrip({ state }) {
                 ))}
                 {respect.map((r) => (
                     <div key={`r-${r.opponentId}`} className="media-flag media-flag-respect">
-                        <span className="media-flag-icon">🙇</span>
+                        <span className="media-flag-icon"><Handshake size={16} /></span>
                         <div>
                             <div className="media-flag-name">Respect: {r.opponentName}</div>
                             <div className="media-flag-meta">+15% iron if you beat them next</div>
@@ -269,32 +343,34 @@ function PodcastView({ fighter, state, onBack, onMessage, onRefreshFighter, onRe
     if (result) {
         return (
             <section className="media-tab">
-                <button type="button" className="media-back" onClick={() => { setResult(null); onReload(); onBack(); }}>← Back to Media</button>
-                <div className="podcast-result">
-                    <div className="podcast-result-icon">🎙</div>
-                    <h3>Podcast aired</h3>
-                    <div className="podcast-result-line"><strong>{result.fameReason}</strong></div>
-                    <div className="podcast-result-rewards">
-                        {result.fameDelta !== 0 && <span>{result.fameDelta > 0 ? `+${result.fameDelta}` : result.fameDelta} fame</span>}
-                        {result.ironDelta > 0 && <span>+{result.ironDelta} ⊗</span>}
-                    </div>
-                    {result.extra?.flag === "beef" && (
-                        <div className="podcast-result-note">
-                            🔥 Beef flag on <strong>{result.extra.opponentName}</strong> — back it up within {result.extra.expiresAfterFights} fights or lose fame.
+                <button type="button" className="media-back" onClick={() => { setResult(null); onReload(); onBack(); }}><ChevronLeft size={14} /> Back to Media</button>
+                <div className="media-subview-body">
+                    <div className="podcast-result">
+                        <div className="podcast-result-icon"><Mic size={32} /></div>
+                        <h3>Podcast aired</h3>
+                        <div className="podcast-result-line"><strong>{result.fameReason}</strong></div>
+                        <div className="podcast-result-rewards">
+                            {result.fameDelta !== 0 && <span>{result.fameDelta > 0 ? `+${result.fameDelta}` : result.fameDelta} fame</span>}
+                            {result.ironDelta > 0 && <span>+{result.ironDelta} <Coins size={13} /></span>}
                         </div>
-                    )}
-                    {result.extra?.flag === "respect" && (
-                        <div className="podcast-result-note">
-                            🙇 Respect flag on <strong>{result.extra.opponentName}</strong> — +15% iron if you beat them.
+                        {result.extra?.flag === "beef" && (
+                            <div className="podcast-result-note">
+                                <Flame size={13} /> Beef flag on <strong>{result.extra.opponentName}</strong> — back it up within {result.extra.expiresAfterFights} fights or lose fame.
+                            </div>
+                        )}
+                        {result.extra?.flag === "respect" && (
+                            <div className="podcast-result-note">
+                                <Handshake size={13} /> Respect flag on <strong>{result.extra.opponentName}</strong> — +15% iron if you beat them.
+                            </div>
+                        )}
+                        {result.extra?.prediction && (
+                            <div className="podcast-result-note">
+                                Prediction locked on the main event — check the Events tab at resolution.
+                            </div>
+                        )}
+                        <div className="podcast-result-cooldown">
+                            Next podcast: {formatCooldown(result.cooldownEndsAt)}.
                         </div>
-                    )}
-                    {result.extra?.prediction && (
-                        <div className="podcast-result-note">
-                            Prediction locked on the main event — check the Events tab at resolution.
-                        </div>
-                    )}
-                    <div className="podcast-result-cooldown">
-                        Next podcast: {formatCooldown(result.cooldownEndsAt)}.
                     </div>
                 </div>
             </section>
@@ -303,137 +379,139 @@ function PodcastView({ fighter, state, onBack, onMessage, onRefreshFighter, onRe
 
     return (
         <section className="media-tab">
-            <button type="button" className="media-back" onClick={onBack}>← Back to Media</button>
+            <button type="button" className="media-back" onClick={onBack}><ChevronLeft size={14} /> Back to Media</button>
 
-            {!canPodcast && (
-                <div className="media-cooldown">
-                    On cooldown — next podcast: {formatCooldown(state.podcast.cooldownEndsAt)}.
-                </div>
-            )}
-
-            {!segment && (
-                <div className="podcast-segments">
-                    <SegmentCard
-                        icon="🎙"
-                        title="Recap your last fight"
-                        desc="Talk about the finish. Small fame + small iron. Safe pick."
-                        reward="+100 fame · +150 ⊗"
-                        disabled={!canPodcast || !state.podcast.hasLastFight}
-                        locked={!state.podcast.hasLastFight ? "No completed fight to recap" : null}
-                        onClick={() => setSegment("RECAP")}
-                    />
-                    <SegmentCard
-                        icon="📣"
-                        title="Talk about the division"
-                        desc="Pick a fighter, pick a tone. Trash talk creates beef, respect creates an iron bonus."
-                        reward="up to +300 fame"
-                        disabled={!canPodcast}
-                        onClick={() => setSegment("DIVISION")}
-                    />
-                    <SegmentCard
-                        icon="🔮"
-                        title="Predict the main event"
-                        desc="Log a prediction on this week's main event. Rewards paid when it resolves."
-                        reward="see Events tab"
-                        disabled={!canPodcast}
-                        onClick={() => { onMessage?.("Head to Events tab to submit a prediction — the podcast covers it when you do."); onBack(); }}
-                    />
-                </div>
-            )}
-
-            {segment === "RECAP" && (
-                <div className="podcast-confirm">
-                    <h3>Recap your last fight</h3>
-                    <p>Straightforward recap. +100 fame, +150 ⊗.</p>
-                    <div className="podcast-actions">
-                        <button type="button" className="btn btn-secondary" onClick={() => setSegment(null)} disabled={submitting}>Back</button>
-                        <button type="button" className="btn btn-primary" onClick={() => submit({ segment: "RECAP" })} disabled={submitting}>
-                            {submitting ? "Airing…" : "Air it"}
-                        </button>
+            <div className="media-subview-body">
+                {!canPodcast && (
+                    <div className="media-cooldown">
+                        On cooldown — next podcast: {formatCooldown(state.podcast.cooldownEndsAt)}.
                     </div>
-                </div>
-            )}
+                )}
 
-            {segment === "DIVISION" && (
-                <div className="podcast-division">
-                    <h3>Talk about the division</h3>
-                    <p className="podcast-sub">Pick a fighter from your weight class and tier, then choose a tone.</p>
+                {!segment && (
+                    <div className="podcast-segments">
+                        <SegmentCard
+                            Icon={Mic}
+                            title="Recap your last fight"
+                            desc="Talk about the finish. Small fame + small iron. Safe pick."
+                            reward={<>+100 fame · +150 <Coins size={12} /></>}
+                            disabled={!canPodcast || !state.podcast.hasLastFight}
+                            locked={!state.podcast.hasLastFight ? "No completed fight to recap" : null}
+                            onClick={() => setSegment("RECAP")}
+                        />
+                        <SegmentCard
+                            Icon={Megaphone}
+                            title="Talk about the division"
+                            desc="Pick a fighter, pick a tone. Trash talk creates beef, respect creates an iron bonus."
+                            reward="up to +300 fame"
+                            disabled={!canPodcast}
+                            onClick={() => setSegment("DIVISION")}
+                        />
+                        <SegmentCard
+                            Icon={Sparkles}
+                            title="Predict the main event"
+                            desc="Log a prediction on this week's main event. Rewards paid when it resolves."
+                            reward="see Events tab"
+                            disabled={!canPodcast}
+                            onClick={() => { onMessage?.("Head to Events tab to submit a prediction — the podcast covers it when you do."); onBack(); }}
+                        />
+                    </div>
+                )}
 
-                    {rosterLoading && <div className="media-loading">Loading roster…</div>}
-                    {!rosterLoading && roster.length === 0 && (
-                        <div className="media-empty">No valid targets right now.</div>
-                    )}
-                    {!rosterLoading && roster.length > 0 && (
-                        <div className="podcast-roster">
-                            {roster.map((o) => (
-                                <button
-                                    type="button"
-                                    key={o.id}
-                                    className={`podcast-roster-card ${target?.id === o.id ? "selected" : ""}`}
-                                    onClick={() => setTarget(o)}
-                                >
-                                    <div className="podcast-roster-head">
-                                        <span>{o.name}{o.nickname ? ` "${o.nickname}"` : ""}</span>
-                                        {o.hasBeef && <span className="podcast-flag-chip media-flag-beef-chip">🔥 Beef</span>}
-                                        {o.hasRespect && <span className="podcast-flag-chip media-flag-respect-chip">🙇 Respect</span>}
-                                    </div>
-                                    <div className="podcast-roster-meta">
-                                        <span>{o.style}</span>
-                                        <span>OVR {o.overallRating}</span>
-                                        <span>{recordStr(o.record)}</span>
-                                    </div>
-                                </button>
-                            ))}
+                {segment === "RECAP" && (
+                    <div className="podcast-confirm">
+                        <h3>Recap your last fight</h3>
+                        <p>Straightforward recap. +100 fame, +150 iron.</p>
+                        <div className="podcast-actions">
+                            <button type="button" className="btn btn-secondary" onClick={() => setSegment(null)} disabled={submitting}>Back</button>
+                            <button type="button" className="btn btn-primary" onClick={() => submit({ segment: "RECAP" })} disabled={submitting}>
+                                {submitting ? "Airing…" : "Air it"}
+                            </button>
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    {target && (
-                        <div className="podcast-tones">
-                            <div className="podcast-tone-label">Tone</div>
-                            <div className="podcast-tones-grid">
-                                {Object.entries(TONE_DEFS).map(([key, def]) => (
+                {segment === "DIVISION" && (
+                    <div className="podcast-division">
+                        <h3>Talk about the division</h3>
+                        <p className="podcast-sub">Pick a fighter from your weight class and tier, then choose a tone.</p>
+
+                        {rosterLoading && <div className="media-loading">Loading roster…</div>}
+                        {!rosterLoading && roster.length === 0 && (
+                            <div className="media-empty">No valid targets right now.</div>
+                        )}
+                        {!rosterLoading && roster.length > 0 && (
+                            <div className="podcast-roster">
+                                {roster.map((o) => (
                                     <button
                                         type="button"
-                                        key={key}
-                                        className={`podcast-tone ${tone === key ? "selected" : ""}`}
-                                        onClick={() => setTone(key)}
+                                        key={o.id}
+                                        className={`podcast-roster-card ${target?.id === o.id ? "selected" : ""}`}
+                                        onClick={() => setTarget(o)}
                                     >
-                                        <div className="podcast-tone-icon">{def.icon}</div>
-                                        <div className="podcast-tone-title">{def.label}</div>
-                                        <div className="podcast-tone-desc">{def.desc}</div>
+                                        <div className="podcast-roster-head">
+                                            <span>{o.name}{o.nickname ? ` "${o.nickname}"` : ""}</span>
+                                            {o.hasBeef && <span className="podcast-flag-chip media-flag-beef-chip"><Flame size={11} /> Beef</span>}
+                                            {o.hasRespect && <span className="podcast-flag-chip media-flag-respect-chip"><Handshake size={11} /> Respect</span>}
+                                        </div>
+                                        <div className="podcast-roster-meta">
+                                            <span>{o.style}</span>
+                                            <span>OVR {o.overallRating}</span>
+                                            <span>{recordStr(o.record)}</span>
+                                        </div>
                                     </button>
                                 ))}
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    <div className="podcast-actions">
-                        <button type="button" className="btn btn-secondary" onClick={() => { setSegment(null); setTarget(null); setTone(null); }} disabled={submitting}>
-                            Back
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn-primary"
-                            disabled={!target || !tone || submitting}
-                            onClick={() => submit({ segment: "DIVISION", targetOpponentId: target.id, tone })}
-                        >
-                            {submitting ? "Airing…" : tone ? `Go on air — ${TONE_DEFS[tone].label}` : "Pick a tone"}
-                        </button>
+                        {target && (
+                            <div className="podcast-tones">
+                                <div className="podcast-tone-label">Tone</div>
+                                <div className="podcast-tones-grid">
+                                    {Object.entries(TONE_DEFS).map(([key, def]) => (
+                                        <button
+                                            type="button"
+                                            key={key}
+                                            className={`podcast-tone ${tone === key ? "selected" : ""}`}
+                                            onClick={() => setTone(key)}
+                                        >
+                                            <div className="podcast-tone-icon"><def.Icon size={18} /></div>
+                                            <div className="podcast-tone-title">{def.label}</div>
+                                            <div className="podcast-tone-desc">{def.desc}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="podcast-actions">
+                            <button type="button" className="btn btn-secondary" onClick={() => { setSegment(null); setTarget(null); setTone(null); }} disabled={submitting}>
+                                Back
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                disabled={!target || !tone || submitting}
+                                onClick={() => submit({ segment: "DIVISION", targetOpponentId: target.id, tone })}
+                            >
+                                {submitting ? "Airing…" : tone ? `Go on air — ${TONE_DEFS[tone].label}` : "Pick a tone"}
+                            </button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </section>
     );
 }
 
-function SegmentCard({ icon, title, desc, reward, disabled, locked, onClick }) {
+function SegmentCard({ Icon, title, desc, reward, disabled, locked, onClick }) {
     return (
         <button type="button" className={`podcast-segment ${disabled ? "disabled" : ""}`} onClick={onClick} disabled={disabled} title={locked || undefined}>
-            <div className="podcast-segment-icon">{icon}</div>
+            <div className="podcast-segment-icon"><Icon size={20} /></div>
             <div className="podcast-segment-title">{title}</div>
             <div className="podcast-segment-desc">{desc}</div>
             <div className="podcast-segment-reward">{reward}</div>
-            {locked && <div className="podcast-segment-locked">🔒 {locked}</div>}
+            {locked && <div className="podcast-segment-locked"><Lock size={12} /> {locked}</div>}
         </button>
     );
 }
@@ -453,7 +531,7 @@ function DocumentaryView({ fighter, state, onBack, onMessage, onRefreshFighter, 
         try {
             const res = await api.doDocumentary(fighter._id);
             setResult(res);
-            onMessage?.(`Documentary released — +${res.fameDelta} fame, +${res.ironDelta} ⊗`);
+            onMessage?.(`Documentary released — +${res.fameDelta} fame, +${res.ironDelta} iron`);
             if (onRefreshFighter) onRefreshFighter(fighter._id);
         } catch (e) {
             onMessage?.(e.message || "Could not record documentary");
@@ -464,15 +542,17 @@ function DocumentaryView({ fighter, state, onBack, onMessage, onRefreshFighter, 
     if (result) {
         return (
             <section className="media-tab">
-                <button type="button" className="media-back" onClick={() => { onReload(); onBack(); }}>← Back to Media</button>
-                <div className="documentary-result">
-                    <div className="documentary-icon">🎬</div>
-                    <h3>Documentary Released</h3>
-                    <p>Your career, pressed to film. The division won't forget.</p>
-                    <div className="documentary-rewards">
-                        <div>+{result.fameDelta} fame</div>
-                        <div>+{result.ironDelta} ⊗</div>
-                        <div>Badge: <strong>{result.badge}</strong> (unlocks Legacy banner piece)</div>
+                <button type="button" className="media-back" onClick={() => { onReload(); onBack(); }}><ChevronLeft size={14} /> Back to Media</button>
+                <div className="media-subview-body">
+                    <div className="documentary-result">
+                        <div className="documentary-icon"><Video size={40} /></div>
+                        <h3>Documentary Released</h3>
+                        <p>Your career, pressed to film. The division won't forget.</p>
+                        <div className="documentary-rewards">
+                            <div>+{result.fameDelta} fame</div>
+                            <div>+{result.ironDelta} <Coins size={13} /></div>
+                            <div>Badge: <strong>{result.badge}</strong> (unlocks Legacy banner piece)</div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -481,31 +561,33 @@ function DocumentaryView({ fighter, state, onBack, onMessage, onRefreshFighter, 
 
     return (
         <section className="media-tab">
-            <button type="button" className="media-back" onClick={onBack}>← Back to Media</button>
-            <div className="documentary-panel">
-                <div className="documentary-icon">🎬</div>
-                <h3>Career Documentary</h3>
-                <p>
-                    A one-time broadcast of your career highlights. Pay the fame tax only once — the
-                    Legacy badge is permanent and will appear on your banner.
-                </p>
-                <div className="documentary-rewards">
-                    <div>+{state.documentary.fameReward} fame</div>
-                    <div>+{state.documentary.ironReward} ⊗</div>
-                    <div>Unlocks the <strong>Legacy</strong> banner badge</div>
-                </div>
-                <div className="documentary-actions">
-                    {state.documentary.used ? (
-                        <div className="documentary-already">You've already released your documentary.</div>
-                    ) : !state.documentary.unlocked ? (
-                        <div className="documentary-locked">
-                            🔒 Unlocks at <strong>{state.documentary.unlockTier.replace("_", " ")}</strong> fame tier.
-                        </div>
-                    ) : (
-                        <button type="button" className="btn btn-primary" onClick={record} disabled={submitting}>
-                            {submitting ? "Releasing…" : "Release the documentary"}
-                        </button>
-                    )}
+            <button type="button" className="media-back" onClick={onBack}><ChevronLeft size={14} /> Back to Media</button>
+            <div className="media-subview-body">
+                <div className="documentary-panel">
+                    <div className="documentary-icon"><Video size={40} /></div>
+                    <h3>Career Documentary</h3>
+                    <p>
+                        A one-time broadcast of your career highlights. Pay the fame tax only once — the
+                        Legacy badge is permanent and will appear on your banner.
+                    </p>
+                    <div className="documentary-rewards">
+                        <div>+{state.documentary.fameReward} fame</div>
+                        <div>+{state.documentary.ironReward} <Coins size={13} /></div>
+                        <div>Unlocks the <strong>Legacy</strong> banner badge</div>
+                    </div>
+                    <div className="documentary-actions">
+                        {state.documentary.used ? (
+                            <div className="documentary-already">You've already released your documentary.</div>
+                        ) : !state.documentary.unlocked ? (
+                            <div className="documentary-locked">
+                                <Lock size={13} /> Unlocks at <strong>{state.documentary.unlockTier.replace("_", " ")}</strong> fame tier.
+                            </div>
+                        ) : (
+                            <button type="button" className="btn btn-primary" onClick={record} disabled={submitting}>
+                                {submitting ? "Releasing…" : "Release the documentary"}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         </section>
@@ -538,30 +620,32 @@ function ArchiveView({ fighter, onBack, onMessage }) {
 
     return (
         <section className="media-tab">
-            <button type="button" className="media-back" onClick={onBack}>← Back to Media</button>
-            <h3 className="archive-title">Interview Archive</h3>
+            <button type="button" className="media-back" onClick={onBack}><ChevronLeft size={14} /> Back to Media</button>
+            <div className="media-subview-body">
+                <h3 className="archive-title">Interview Archive</h3>
 
-            {loading && <div className="media-loading">Loading…</div>}
-            {!loading && archive.length === 0 && (
-                <div className="media-empty">No interviews on the books yet. Post-fight interviews are logged here after every bout.</div>
-            )}
-            {!loading && archive.length > 0 && (
-                <ul className="archive-list">
-                    {archive.map((e) => (
-                        <li key={e.id} className={`archive-row archive-${(e.interview?.choice || "").toLowerCase()}`}>
-                            <div className="archive-row-main">
-                                <div className="archive-outcome">{e.outcome}</div>
-                                <div className="archive-opponent">vs {e.opponentName}{e.opponentNickname ? ` "${e.opponentNickname}"` : ""}</div>
-                                <div className="archive-tier">{e.promotionTier}</div>
-                            </div>
-                            <div className="archive-tone">
-                                {e.interview?.choice || "—"}
-                                {e.interview?.fameGained ? <span className="archive-fame"> · +{e.interview.fameGained} fame</span> : null}
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            )}
+                {loading && <div className="media-loading">Loading…</div>}
+                {!loading && archive.length === 0 && (
+                    <div className="media-empty">No interviews on the books yet. Post-fight interviews are logged here after every bout.</div>
+                )}
+                {!loading && archive.length > 0 && (
+                    <ul className="archive-list">
+                        {archive.map((e) => (
+                            <li key={e.id} className={`archive-row archive-${(e.interview?.choice || "").toLowerCase()}`}>
+                                <div className="archive-row-main">
+                                    <div className="archive-outcome">{e.outcome}</div>
+                                    <div className="archive-opponent">vs {e.opponentName}{e.opponentNickname ? ` "${e.opponentNickname}"` : ""}</div>
+                                    <div className="archive-tier">{e.promotionTier}</div>
+                                </div>
+                                <div className="archive-tone">
+                                    {e.interview?.choice || "—"}
+                                    {e.interview?.fameGained ? <span className="archive-fame"> · +{e.interview.fameGained} fame</span> : null}
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
         </section>
     );
 }

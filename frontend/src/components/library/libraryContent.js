@@ -23,6 +23,17 @@ export const LIBRARY_CATEGORIES = [
     "Events & Media",
 ];
 
+export const CATEGORY_COLOR = {
+    "Getting Started": "start",
+    "Fighting": "fight",
+    "Training & Gyms": "gym",
+    "Career": "career",
+    "Economy": "economy",
+    "Health": "health",
+    "Events & Media": "events",
+};
+export const slugFor = (cat) => CATEGORY_COLOR[cat] ?? "start";
+
 export const LIBRARY_ARTICLES = [
     // ──────────────────────────────────────────────────────────────
     // GETTING STARTED

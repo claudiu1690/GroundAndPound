@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LIBRARY_ARTICLES, LIBRARY_CATEGORIES, articleSearchText } from "./libraryContent";
+import { Search, X } from "lucide-react";
+import { LIBRARY_ARTICLES, LIBRARY_CATEGORIES, articleSearchText, slugFor } from "./libraryContent";
 import { ArticleCard } from "./ArticleCard";
 import { ArticleView } from "./ArticleView";
 
@@ -91,47 +92,57 @@ export function LibraryTab() {
 
     return (
         <div className="library-tab" ref={rootRef}>
-            <header className="library-header">
-                <h2 className="library-title">Library</h2>
-                <p className="library-subtitle">
-                    Every system in the game, explained.
-                </p>
+            <header className="lib-header">
+                <div className="lib-eyebrow">Knowledge Base</div>
+                <div className="lib-title-row">
+                    <h2 className="lib-title">Library</h2>
+                    <span className="lib-count">{LIBRARY_ARTICLES.length} articles</span>
+                </div>
+                <p className="lib-sub">Every system in the game, explained.</p>
             </header>
 
-            <div className="library-search-wrap">
-                <input
-                    type="search"
-                    className="library-search-input"
-                    placeholder="Search articles…"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    autoComplete="off"
-                />
-                {query && (
-                    <button
-                        type="button"
-                        className="library-search-clear"
-                        onClick={() => setQuery("")}
-                        aria-label="Clear search"
-                    >
-                        ✕
-                    </button>
-                )}
-            </div>
+            <div className="lib-controls">
+                <div className="search-wrap">
+                    <Search className="search-icon" size={15} aria-hidden="true" />
+                    <input
+                        type="search"
+                        className="search-input"
+                        placeholder="Search articles…"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        autoComplete="off"
+                    />
+                    {query && (
+                        <button
+                            type="button"
+                            className="search-clear"
+                            onClick={() => setQuery("")}
+                            aria-label="Clear search"
+                        >
+                            <X size={14} aria-hidden="true" />
+                        </button>
+                    )}
+                </div>
 
-            <div className="library-category-row" role="tablist" aria-label="Library categories">
-                {tabs.map((c) => (
-                    <button
-                        key={c}
-                        type="button"
-                        role="tab"
-                        aria-selected={c === category}
-                        className={`library-category-pill ${c === category ? "library-category-pill--active" : ""}`}
-                        onClick={() => setCategory(c)}
-                    >
-                        {c}
-                    </button>
-                ))}
+                <div className="filters" role="tablist" aria-label="Library categories">
+                    {tabs.map((c) => {
+                        const isAll = c === "All";
+                        const slug = isAll ? "all" : slugFor(c);
+                        const active = c === category;
+                        return (
+                            <button
+                                key={c}
+                                type="button"
+                                role="tab"
+                                aria-selected={active}
+                                className={`filter-btn cat-${slug}${active ? " is-active" : ""}${isAll && active ? " active-all" : ""}`}
+                                onClick={() => setCategory(c)}
+                            >
+                                {c}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             {filtered.length === 0 ? (
@@ -141,7 +152,7 @@ export function LibraryTab() {
                         : "No articles in this category."}
                 </div>
             ) : (
-                <div className="library-grid">
+                <div className="article-grid">
                     {filtered.map((a) => (
                         <ArticleCard
                             key={a.id}

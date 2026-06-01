@@ -144,186 +144,122 @@ export function AuthPage({ onAuthenticated, initialResetToken = null }) {
 
   return (
     <div className="auth-page">
-      {/* Background octagon */}
-      <div className="auth-bg" aria-hidden="true" />
-
-      <div className="auth-container">
-        {/* Logo */}
-        <div className="auth-logo">
-          <span className="auth-logo-gp">G&amp;P</span>
-          <div className="auth-logo-sub">GROUND &amp; POUND</div>
-        </div>
-
-        {/* Tab switcher */}
-        <div className="auth-tabs">
-          <button
-            className={`auth-tab ${tab === "login" ? "active" : ""}`}
-            onClick={() => switchTab("login")}
-          >Login</button>
-          <button
-            className={`auth-tab ${tab === "register" ? "active" : ""}`}
-            onClick={() => switchTab("register")}
-          >Create Account</button>
-        </div>
-
-        {/* ── LOGIN ── */}
-        {tab === "login" && (
-          <form className="auth-form" onSubmit={handleLogin} autoComplete="on">
-            <div className="auth-field">
-              <label>Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="fighter@example.com" required autoComplete="email" />
-            </div>
-            <div className="auth-field">
-              <label>Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••" required autoComplete="current-password" />
-            </div>
-            {error && <div className="auth-error">{error}</div>}
-            {recoverInfo && (
-              <div className="auth-recover-banner">
-                <div className="auth-recover-text">
-                  Your account is scheduled for deletion
-                  {recoverInfo.daysLeft ? <> — <strong>{recoverInfo.daysLeft} day{recoverInfo.daysLeft === 1 ? "" : "s"} left</strong></> : null}.
-                  Recover it now to keep your fighter and progress.
-                </div>
-                <button
-                  type="button"
-                  className="auth-recover-btn"
-                  onClick={handleRecover}
-                  disabled={recovering || !email || !password}
-                >
-                  {recovering ? "Recovering…" : "Recover account"}
-                </button>
-              </div>
-            )}
-            <button className="auth-submit" type="submit" disabled={loading}>
-              {loading ? "Signing in…" : "Enter the Cage"}
-            </button>
-            <p className="auth-switch">
-              <button type="button" className="auth-link" onClick={() => switchTab("forgot")}>
-                Forgot password?
-              </button>
-            </p>
-            <p className="auth-switch">
-              No account?{" "}
-              <button type="button" className="auth-link" onClick={() => switchTab("register")}>
-                Create one
-              </button>
-            </p>
-          </form>
-        )}
-
-        {/* ── FORGOT PASSWORD ── */}
-        {tab === "forgot" && (
-          <ForgotPasswordFlow
-            token={resetToken}
-            onCancel={() => switchTab("login")}
-            onResetSuccess={() => {
-              // Clean the URL so the token doesn't get re-applied if the user reloads.
-              try {
-                const url = new URL(window.location.href);
-                url.searchParams.delete("reset_password_token");
-                window.history.replaceState({}, "", url.pathname + (url.search ? `?${url.searchParams.toString()}` : ""));
-              } catch (_) {}
-              switchTab("login");
-            }}
-          />
-        )}
-
-        {/* ── REGISTER step 1: Account ── */}
-        {tab === "register" && step === 1 && (
-          <form className="auth-form" onSubmit={handleAccountNext} autoComplete="on">
-            <div className="auth-step-label">Step 1 of 2 — Create your account</div>
-            <div className="auth-field">
-              <label>Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="fighter@example.com" required autoComplete="email" />
-            </div>
-            <div className="auth-field">
-              <label>Password <span className="auth-hint">(min 6 characters)</span></label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••" required autoComplete="new-password" />
-            </div>
-            <div className="auth-field">
-              <label>Confirm Password</label>
-              <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
-                placeholder="••••••••" required autoComplete="new-password" />
-            </div>
-            {error && <div className="auth-error">{error}</div>}
-            <button className="auth-submit" type="submit">Next — Build your fighter →</button>
-            <p className="auth-switch">
-              Already have an account?{" "}
-              <button type="button" className="auth-link" onClick={() => switchTab("login")}>Sign in</button>
-            </p>
-          </form>
-        )}
-
-        {/* ── REGISTER step 2: Fighter creation ── */}
-        {tab === "register" && step === 2 && (
-          <form className="auth-form" onSubmit={handleRegister}>
-            <div className="auth-step-label">Step 2 of 2 — Build your fighter</div>
-
-            <div className="auth-row">
-              <div className="auth-field">
-                <label>First Name</label>
-                <input value={firstName} onChange={e => setFirstName(e.target.value)}
-                  placeholder="Conor" required />
-              </div>
-              <div className="auth-field">
-                <label>Last Name</label>
-                <input value={lastName} onChange={e => setLastName(e.target.value)}
-                  placeholder="McGregor" required />
-              </div>
-            </div>
-
-            <div className="auth-field">
-              <label>Nickname <span className="auth-hint">(optional)</span></label>
-              <input value={nickname} onChange={e => setNickname(e.target.value)}
-                placeholder="The Notorious" />
-            </div>
-
-            <div className="auth-row">
-              <div className="auth-field">
-                <label>Weight Class</label>
-                <select value={weightClass} onChange={e => setWeightClass(e.target.value)}>
-                  {WEIGHT_CLASSES.map(wc => <option key={wc}>{wc}</option>)}
-                </select>
-              </div>
-              <div className="auth-field">
-                <label>Fighting Style</label>
-                <select value={style} onChange={e => setStyle(e.target.value)}>
-                  {STYLES.map(s => <option key={s}>{s}</option>)}
-                </select>
-              </div>
-            </div>
-
-            {/* Style description */}
-            <div className="auth-desc">{STYLE_DESC[style]}</div>
-
-            <div className="auth-field">
-              <label>Backstory</label>
-              <select value={backstory} onChange={e => setBackstory(e.target.value)}>
-                {BACKSTORIES.map(b => <option key={b}>{b}</option>)}
-              </select>
-            </div>
-
-            {/* Backstory description */}
-            <div className="auth-desc">{BACKSTORY_DESC[backstory]}</div>
-
-            {error && <div className="auth-error">{error}</div>}
-
-            <div className="auth-row auth-row-btns">
-              <button type="button" className="auth-back" onClick={() => { setStep(1); setError(""); }}>
-                ← Back
-              </button>
-              <button className="auth-submit auth-submit-create" type="submit" disabled={loading}>
-                {loading ? "Creating…" : "Create Fighter & Start"}
-              </button>
-            </div>
-          </form>
-        )}
+      <div className="auth-bg" aria-hidden="true">
+        <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <defs><radialGradient id="auth-rad" cx="50%" cy="50%" r="70%"><stop offset="0%" stopColor="#1A0005"/><stop offset="100%" stopColor="#060606"/></radialGradient></defs>
+          <rect width="1000" height="1000" fill="url(#auth-rad)" />
+          <g fill="none" stroke="#C8102E" strokeOpacity="0.06" strokeWidth="2">
+            <polygon points="161,20 839,20 980,161 980,839 839,980 161,980 20,839 20,161" />
+            <polygon points="231,120 769,120 880,231 880,769 769,880 231,880 120,769 120,231" />
+            <polygon points="302,220 698,220 780,302 780,698 698,780 302,780 220,698 220,302" />
+            <polygon points="373,320 627,320 680,373 680,627 627,680 373,680 320,627 320,373" />
+            <polygon points="436,410 564,410 590,436 590,564 564,590 436,590 410,564 410,436" />
+          </g>
+          <g stroke="#FFFFFF" strokeOpacity="0.015" strokeWidth="1">
+            <line x1="0" y1="80" x2="1000" y2="80"/><line x1="0" y1="160" x2="1000" y2="160"/><line x1="0" y1="240" x2="1000" y2="240"/><line x1="0" y1="320" x2="1000" y2="320"/><line x1="0" y1="400" x2="1000" y2="400"/><line x1="0" y1="480" x2="1000" y2="480"/><line x1="0" y1="560" x2="1000" y2="560"/><line x1="0" y1="640" x2="1000" y2="640"/><line x1="0" y1="720" x2="1000" y2="720"/><line x1="0" y1="800" x2="1000" y2="800"/><line x1="0" y1="880" x2="1000" y2="880"/><line x1="0" y1="960" x2="1000" y2="960"/>
+          </g>
+        </svg>
       </div>
+      <div className="auth-topbar" aria-hidden="true" />
+      <div className="auth-bottombar" aria-hidden="true" />
+      <div className="auth-wordmark"><span className="auth-wordmark-text">Ground <span className="auth-amp">&amp;</span> Pound</span></div>
+      <div className="auth-center">
+        <div className="auth-title-block">
+          <div className="auth-title-eyebrow">Step into the cage</div>
+          <h1 className="auth-title-main">Ground<span className="auth-amp">&amp;</span>Pound</h1>
+          <div className="auth-title-divider" />
+        </div>
+        <div className="auth-container">
+          {tab !== "forgot" && (
+            <div className="auth-tabs">
+              <button className={`auth-tab ${tab === "login" ? "active" : ""}`} onClick={() => switchTab("login")}>Login</button>
+              <button className={`auth-tab ${tab === "register" ? "active" : ""}`} onClick={() => switchTab("register")}>Create Account</button>
+            </div>
+          )}
+          <div className="auth-form-body">
+            {/* LOGIN */}
+            {tab === "login" && (
+              <form className="auth-form" onSubmit={handleLogin} autoComplete="on">
+                <div className="auth-field"><label>Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="fighter@example.com" required autoComplete="email" /></div>
+                <div className="auth-field"><label>Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required autoComplete="current-password" /></div>
+                {error && <div className="auth-error">{error}</div>}
+                {recoverInfo && (
+                  <div className="auth-recover-banner">
+                    <div className="auth-recover-text">
+                      Your account is scheduled for deletion
+                      {recoverInfo.daysLeft ? <> — <strong>{recoverInfo.daysLeft} day{recoverInfo.daysLeft === 1 ? "" : "s"} left</strong></> : null}.
+                      Recover it now to keep your fighter and progress.
+                    </div>
+                    <button type="button" className="auth-recover-btn" onClick={handleRecover} disabled={recovering || !email || !password}>
+                      {recovering ? "Recovering…" : "Recover account"}
+                    </button>
+                  </div>
+                )}
+                <button className="auth-submit" type="submit" disabled={loading}>{loading ? "Signing in…" : "Enter the Cage"}</button>
+                <div className="auth-form-links">
+                  <button type="button" className="auth-form-link" onClick={() => switchTab("forgot")}>Forgot password?</button>
+                  <span>No account? <button type="button" className="auth-form-link" onClick={() => switchTab("register")}>Create one</button></span>
+                </div>
+              </form>
+            )}
+
+            {/* FORGOT */}
+            {tab === "forgot" && (
+              <ForgotPasswordFlow
+                token={resetToken}
+                onCancel={() => switchTab("login")}
+                onResetSuccess={() => {
+                  // Clean the URL so the token doesn't get re-applied if the user reloads.
+                  try {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("reset_password_token");
+                    window.history.replaceState({}, "", url.pathname + (url.search ? `?${url.searchParams.toString()}` : ""));
+                  } catch (_) {}
+                  switchTab("login");
+                }}
+              />
+            )}
+
+            {/* REGISTER step 1 */}
+            {tab === "register" && step === 1 && (
+              <form className="auth-form" onSubmit={handleAccountNext} autoComplete="on">
+                <div className="auth-step-label">Step 1 of 2 — Create your account</div>
+                <div className="auth-field"><label>Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="fighter@example.com" required autoComplete="email" /></div>
+                <div className="auth-field"><label>Password <span className="auth-hint">(min 6 characters)</span></label><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required autoComplete="new-password" /></div>
+                <div className="auth-field"><label>Confirm Password</label><input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="••••••••" required autoComplete="new-password" /></div>
+                {error && <div className="auth-error">{error}</div>}
+                <button className="auth-submit" type="submit">Next — Build your fighter →</button>
+                <p className="auth-switch">Already have an account? <button type="button" className="auth-link" onClick={() => switchTab("login")}>Sign in</button></p>
+              </form>
+            )}
+
+            {/* REGISTER step 2 */}
+            {tab === "register" && step === 2 && (
+              <form className="auth-form" onSubmit={handleRegister}>
+                <div className="auth-step-label">Step 2 of 2 — Build your fighter</div>
+                <div className="auth-row">
+                  <div className="auth-field"><label>First Name</label><input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Conor" required /></div>
+                  <div className="auth-field"><label>Last Name</label><input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="McGregor" required /></div>
+                </div>
+                <div className="auth-field"><label>Nickname <span className="auth-hint">(optional)</span></label><input value={nickname} onChange={e => setNickname(e.target.value)} placeholder="The Notorious" /></div>
+                <div className="auth-row">
+                  <div className="auth-field"><label>Weight Class</label><select value={weightClass} onChange={e => setWeightClass(e.target.value)}>{WEIGHT_CLASSES.map(wc => <option key={wc}>{wc}</option>)}</select></div>
+                  <div className="auth-field"><label>Fighting Style</label><select value={style} onChange={e => setStyle(e.target.value)}>{STYLES.map(s => <option key={s}>{s}</option>)}</select></div>
+                </div>
+                <div className="auth-desc">{STYLE_DESC[style]}</div>
+                <div className="auth-field"><label>Backstory</label><select value={backstory} onChange={e => setBackstory(e.target.value)}>{BACKSTORIES.map(b => <option key={b}>{b}</option>)}</select></div>
+                <div className="auth-desc">{BACKSTORY_DESC[backstory]}</div>
+                {error && <div className="auth-error">{error}</div>}
+                <div className="auth-row auth-row-btns">
+                  <button type="button" className="auth-back" onClick={() => { setStep(1); setError(""); }}>← Back</button>
+                  <button className="auth-submit auth-submit-create" type="submit" disabled={loading}>{loading ? "Creating…" : "Create Fighter & Start"}</button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="auth-beta">Beta</div>
     </div>
   );
 }

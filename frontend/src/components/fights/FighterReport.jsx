@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { createPortal } from "react-dom";
-import { RELIABILITY_LABELS, RELIABILITY_COLORS } from "../../constants/campConfig";
+import { RELIABILITY_LABELS } from "../../constants/campConfig";
 
 const STYLE_COLORS = {
     Wrestler:              { bg: "#1e3a5f", label: "#60a5fa" },
@@ -15,44 +15,43 @@ const STYLE_COLORS = {
 
 const DEFAULT_STYLE_COLOR = { bg: "#2a2a2c", label: "#94a3b8" };
 
-function ReliabilityTag({ tier }) {
-    const label = RELIABILITY_LABELS[tier] ?? tier;
-    const color = RELIABILITY_COLORS[tier] ?? "#94a3b8";
-    return (
-        <span
-            className="fr-reliability-tag"
-            style={{
-                color,
-                background: `${color}22`,
-                border: `1px solid ${color}55`,
-            }}
-        >
-            {label}
-        </span>
-    );
+function intelItemClasses(reliability, kind) {
+    const badgeLabel = RELIABILITY_LABELS[reliability] ?? reliability;
+    if (kind === "weakness") {
+        return {
+            stripeClass: reliability === "CONFIRMED" ? "fr-stripe-weak-conf" : "fr-stripe-weak-sus",
+            badgeClass: "fr-badge-weak",
+            badgeLabel,
+        };
+    }
+    // strength
+    return {
+        stripeClass: reliability === "CONFIRMED" ? "fr-stripe-confirmed" : "fr-stripe-suspected",
+        badgeClass: reliability === "CONFIRMED" ? "fr-badge-confirmed" : "fr-badge-suspected",
+        badgeLabel,
+    };
 }
 
-function IntelSection({ title, items, colorClass, emptyText }) {
-    if (!items || items.length === 0) {
-        return (
-            <div className="fr-intel-section">
-                <div className={`fr-intel-heading ${colorClass}`}>{title}</div>
-                <div className="fr-intel-item fr-intel-muted">{emptyText}</div>
-            </div>
-        );
-    }
+function IntelColumn({ label, labelClass, items, kind, emptyText }) {
     return (
-        <div className="fr-intel-section">
-            <div className={`fr-intel-heading ${colorClass}`}>{title}</div>
-            <ul className="fr-intel-list">
-                {items.map((item, i) => (
-                    <li key={i} className={`fr-intel-item ${colorClass}-item`}>
-                        <span className="fr-arrow">&rarr;</span>
-                        <span className="fr-intel-text">{item.label}</span>
-                        <ReliabilityTag tier={item.reliability} />
-                    </li>
-                ))}
-            </ul>
+        <div className="fr-intel-col">
+            <div className={`fr-section-label ${labelClass}`}>{label}</div>
+            {(!items || items.length === 0)
+                ? <div className="fr-intel-empty">{emptyText}</div>
+                : <div className="fr-intel-list">
+                    {items.map((it, i) => {
+                        const { stripeClass, badgeClass, badgeLabel } = intelItemClasses(it.reliability, kind);
+                        return (
+                            <div className="fr-intel-item" key={i}>
+                                <span className={`fr-intel-stripe ${stripeClass}`} />
+                                <div className="fr-intel-content">
+                                    <span className="fr-intel-text">{it.label}</span>
+                                    <span className={`fr-intel-badge ${badgeClass}`}>{badgeLabel}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>}
         </div>
     );
 }
@@ -61,17 +60,13 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
     if (!report) return null;
 
     const styleColor = STYLE_COLORS[report.style] ?? DEFAULT_STYLE_COLOR;
-    const bannerBg = isTitleFight ? "#2a1f0a" : styleColor.bg;
     const isCallout = !!report.isCallout;
-    const bannerLabel = isTitleFight
-        ? "CHAMPIONSHIP BOUT \u2014 FIGHTER REPORT"
-        : isCallout
-            ? "CALLOUT INTEL \u2014 FULL FIGHTER REPORT"
-            : "FIGHTER REPORT";
+    const eyebrow = isTitleFight ? "Championship Bout" : isCallout ? "Callout Intel" : "Fighter Report";
+    const unverified = [...(report.unverifiedAreas ?? []), ...(report.unknownAreas ?? [])];
 
     return createPortal(
         <div className="fr-overlay" role="dialog" aria-modal="true" aria-label="Fighter Report">
-            <div className={`fr-card${isTitleFight ? " fr-card--title" : ""}`} data-tut="fighter-report">
+            <div className={`fr-modal${isTitleFight ? " fr-modal--title" : ""}`} data-tut="fighter-report">
 
                 {isCallout && (
                     <div className="report-callout-banner">
@@ -79,96 +74,68 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
                     </div>
                 )}
 
-                {/* Coloured header banner */}
-                <div className="fr-banner" style={{ background: bannerBg }}>
-                    <div className="fr-banner-top">
-                        <span className="fr-banner-label">{bannerLabel}</span>
-                        <button className="fr-close" onClick={onClose} title="Close">&times;</button>
-                    </div>
-
-                    <div className="fr-identity">
-                        <div className="fr-identity-name">
+                <div className="fr-header">
+                    <div className="fr-header-left">
+                        <div className={`fr-eyebrow${isTitleFight ? " fr-eyebrow--gold" : ""}`}>{eyebrow}</div>
+                        <div className="fr-name">
                             {report.name}
                             {isTitleFight && <span className="fr-champ-tag">CHAMPION</span>}
                         </div>
-                        {report.nickname && (
-                            <div className="fr-identity-nickname">&ldquo;{report.nickname}&rdquo;</div>
-                        )}
-                        <div className="fr-identity-meta">
-                            <span
-                                className="fr-style-pill"
-                                style={{ background: "rgba(255,255,255,.12)", color: styleColor.label }}
-                            >
-                                {report.style}
-                            </span>
-                            <span className="fr-record-pill">{report.record}</span>
-                            <span className="fr-ovr-pill">OVR {report.overallRating}</span>
+                        {report.nickname && <div className="fr-nickname">&ldquo;{report.nickname}&rdquo;</div>}
+                        <div className="fr-meta">
+                            <span className="fr-style-pill" style={{ color: styleColor.label }}>{report.style}</span>
+                            <span className="fr-record-val">{report.record}</span>
+                            {report.recordDetail && <span className="fr-record-sub">{report.recordDetail}</span>}
                         </div>
-                        {report.recordDetail && (
-                            <div className="fr-record-detail">{report.recordDetail}</div>
-                        )}
+                    </div>
+                    <div className="fr-header-right">
+                        <button className="fr-close" onClick={onClose} aria-label="Close" title="Close">&times;</button>
+                        <div className="fr-ovr-block">
+                            <div className="fr-ovr-val">{report.overallRating}</div>
+                            <div className="fr-ovr-label">Overall</div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Body */}
                 <div className="fr-body">
-
-                    {/* Intel sections with reliability tiers */}
-                    <div className="fr-intel-grid">
-                        <IntelSection
-                            title="Confirmed Strengths"
-                            items={report.confirmedStrengths}
-                            colorClass="fr-intel-danger"
-                            emptyText="No confirmed strengths identified"
-                        />
-                        <IntelSection
-                            title="Suspected Weaknesses"
-                            items={report.suspectedWeaknesses}
-                            colorClass="fr-intel-safe"
-                            emptyText="No suspected weaknesses identified"
-                        />
+                    <div className="fr-section">
+                        <div className="fr-intel-two-col">
+                            <IntelColumn label="Strengths" labelClass="fr-label-red" items={report.confirmedStrengths} kind="strength" emptyText="No confirmed strengths" />
+                            <IntelColumn label="Weaknesses" labelClass="fr-label-green" items={report.suspectedWeaknesses} kind="weakness" emptyText="No suspected weaknesses" />
+                        </div>
                     </div>
 
-                    {(report.unverifiedAreas?.length > 0 || report.unknownAreas?.length > 0) && (
-                        <div className="fr-intel-grid fr-intel-grid-secondary">
-                            {report.unverifiedAreas?.length > 0 && (
-                                <IntelSection
-                                    title="Unverified"
-                                    items={report.unverifiedAreas}
-                                    colorClass="fr-intel-neutral"
-                                    emptyText=""
-                                />
-                            )}
-                            {report.unknownAreas?.length > 0 && (
-                                <IntelSection
-                                    title="Unknown"
-                                    items={report.unknownAreas}
-                                    colorClass="fr-intel-unknown"
-                                    emptyText=""
-                                />
-                            )}
+                    {unverified.length > 0 && (
+                        <div className="fr-section">
+                            <div className="fr-section-label fr-label-muted">Unverified Intel</div>
+                            <div className="fr-unverified-list">
+                                {unverified.map((it, i) => (
+                                    <div className="fr-unverified-item" key={i}>
+                                        <span className="fr-unverified-icon">−</span>
+                                        <span className="fr-unverified-text">{it.label}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 
-                    {/* Tendency + warning */}
-                    <div className="fr-tendency">
-                        <div className="fr-tendency-row">
-                            <span className="fr-tendency-label">Tendency:</span>
-                            <span className="fr-tendency-text">{report.tendency}</span>
-                        </div>
-                        <div className="fr-tendency-row fr-warning-row">
-                            <span className="fr-tendency-label fr-warning-label">Warning:</span>
-                            <span className="fr-warning-text">{report.warning}</span>
+                    <div className="fr-section fr-section--last">
+                        <div className="fr-info-rows">
+                            <div className="fr-info-row">
+                                <span className="fr-info-label">Tendency</span>
+                                <span className="fr-info-text">{report.tendency}</span>
+                            </div>
+                            <div className="fr-info-row">
+                                <span className="fr-info-label fr-info-label--warn">Warning</span>
+                                <span className="fr-info-text fr-info-text--warn">{report.warning}</span>
+                            </div>
                         </div>
                     </div>
-
                 </div>
 
                 {!hideStartButton && (
-                    <div className="fr-actions">
-                        <button className="btn btn-primary fr-start-btn" onClick={onStartCamp}>
-                            Start Camp
-                        </button>
+                    <div className="fr-footer">
+                        <button className="fr-start-btn" onClick={onStartCamp}>Start Camp</button>
                     </div>
                 )}
 

@@ -194,7 +194,7 @@ export function PostFightInterview({
         const consequence = consequenceFor(choice, opponentName, targetName);
 
         return (
-            <section className="pfi-wrap pfi-done" data-tut="post-fight-interview">
+            <section className="interview-section pfi-done" data-tut="post-fight-interview">
                 <header className="pfi-done-header">
                     <div className="pfi-done-headline">{headline}</div>
                     {result.fameDelta > 0 && (
@@ -209,7 +209,7 @@ export function PostFightInterview({
 
     if (mode === "PICK_TARGET") {
         return (
-            <section className="pfi-wrap" data-tut="post-fight-interview">
+            <section className="interview-section" data-tut="post-fight-interview">
                 <header className="pfi-header">
                     <h3 className="pfi-title">Who are you trash talking?</h3>
                     <button
@@ -278,60 +278,57 @@ export function PostFightInterview({
 
     // PICK_TONE (default)
     return (
-        <section className="pfi-wrap" data-tut="post-fight-interview">
-            <header className="pfi-header">
-                <h3 className="pfi-title">Post-Fight Interview</h3>
-                <button type="button" className="pfi-skip" onClick={skip} disabled={submitting}>
+        <section className="interview-section" data-tut="post-fight-interview">
+            <header className="interview-header">
+                <h3 className="interview-title">Post-Fight Interview</h3>
+                <button type="button" className="interview-skip" onClick={skip} disabled={submitting}>
                     Skip interview →
                 </button>
             </header>
-            <p className="pfi-prompt">
+            <p className="interview-sub">
                 {opponentName ? `You've just fought ${opponentName}. ` : ""}Press mic's up. What do you say?
             </p>
 
-            <div className="pfi-tones">
+            <div className="interview-grid">
                 <button
                     type="button"
-                    className="pfi-tone pfi-tone-humble"
+                    className="interview-card interview-card--humble"
                     onClick={() => submit("HUMBLE")}
                     disabled={submitting}
                 >
-                    <div className="pfi-tone-icon">🙇</div>
-                    <div className="pfi-tone-label">Humble</div>
-                    <div className="pfi-tone-desc">Pay respect. Take the high road.</div>
-                    <div className="pfi-tone-reward">+100 fame</div>
-                    <div className="pfi-tone-bonus">
-                        🙇 Respect flag — <strong>+15% iron</strong> on your rematch win <span className="pfi-tone-window">(6-fight window)</span>.
+                    <div className="interview-name">Humble</div>
+                    <div className="interview-desc">Pay respect. Take the high road.</div>
+                    <div className="interview-fame">+100 fame</div>
+                    <div className="interview-consequence">
+                        Respect flag — <strong>+15% iron</strong> on your rematch win <span className="pfi-tone-window">(6-fight window)</span>.
                     </div>
                 </button>
 
                 <button
                     type="button"
-                    className="pfi-tone pfi-tone-confident"
+                    className="interview-card interview-card--confident"
                     onClick={() => submit("CONFIDENT")}
                     disabled={submitting}
                 >
-                    <div className="pfi-tone-icon">🔥</div>
-                    <div className="pfi-tone-label">Confident</div>
-                    <div className="pfi-tone-desc">Take credit. Let the division hear you.</div>
-                    <div className="pfi-tone-reward">+150 fame</div>
-                    <div className="pfi-tone-bonus pfi-tone-bonus-muted">
+                    <div className="interview-name">Confident</div>
+                    <div className="interview-desc">Take credit. Let the division hear you.</div>
+                    <div className="interview-fame">+150 fame</div>
+                    <div className="interview-consequence interview-consequence--muted">
                         Pure fame. No flags, no strings.
                     </div>
                 </button>
 
                 <button
                     type="button"
-                    className="pfi-tone pfi-tone-callout"
+                    className="interview-card interview-card--trash"
                     onClick={() => setMode("PICK_TARGET")}
                     disabled={submitting}
                 >
-                    <div className="pfi-tone-icon">📣</div>
-                    <div className="pfi-tone-label">Trash Talk</div>
-                    <div className="pfi-tone-desc">Name a rival. Put them on notice.</div>
-                    <div className="pfi-tone-reward">+200 fame</div>
-                    <div className="pfi-tone-bonus">
-                        🔥 Beef flag — <strong>+30% fame</strong> on the win, <strong className="neg">−150 fame</strong> if you never face them <span className="pfi-tone-window">(4-fight window)</span>.
+                    <div className="interview-name">Trash Talk</div>
+                    <div className="interview-desc">Name a rival. Put them on notice.</div>
+                    <div className="interview-fame">+200 fame</div>
+                    <div className="interview-consequence">
+                        Beef flag — <strong>+30% fame</strong> on the win, <strong className="neg">−150 fame</strong> if you never face them <span className="pfi-tone-window">(4-fight window)</span>.
                     </div>
                 </button>
             </div>
