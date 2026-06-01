@@ -182,6 +182,7 @@ router.post("/:id/rank-up-gym", fighterController.rankUpGym);
 router.get("/:id/champions", fighterController.getChampions);
 router.get("/:id/rank", rankingController.getFighterRank);
 router.get("/:id/activity", fighterController.getActivity);
+router.get("/:id/dashboard", ownFighter, fighterController.getDashboard);
 router.get("/:id/fame-events", fighterController.getFameEvents);
 router.get("/:id/banner/catalog", fighterController.getBannerCatalog);
 router.put("/:id/banner", fighterController.saveBanner);

@@ -10296,3 +10296,272 @@ code {
   .picker-modal-sides,
   .picker-modal-methods { width: 100%; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD / HOME SCREEN
+   Renders without a .page-layout wrapper. Everything scoped to
+   .dashboard-tab. Landscape: F-pattern card grid. Portrait: stack.
+   ══════════════════════════════════════════════════════════════ */
+.dashboard-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 28px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Generic card (dark fight-card token + coloured top stripe) ── */
+.dashboard-tab .dash-card {
+  position: relative;
+  background: var(--c-bg-tile);
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  padding: 16px 18px;
+  overflow: hidden;
+}
+.dashboard-tab .dash-stripe::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.dashboard-tab .dash-stripe-accent::before { background: var(--c-accent); }
+.dashboard-tab .dash-stripe-gold::before   { background: var(--gold-bright); }
+.dashboard-tab .dash-stripe-amber::before  { background: var(--c-amber-bright); }
+
+.dashboard-tab .dash-card-clickable { cursor: pointer; transition: border-color .12s ease, background .12s ease; }
+.dashboard-tab .dash-card-clickable:hover { border-color: var(--c-accent); background: var(--c-bg-tile-2); }
+.dashboard-tab .dash-card-clickable:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+
+.dashboard-tab .dash-muted { color: var(--text-secondary); font-size: 12px; font-style: italic; margin: 4px 0 0; }
+
+.dashboard-tab .dash-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.dashboard-tab .dash-card-title {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  letter-spacing: 1.5px; text-transform: uppercase; color: #F0F0F0;
+}
+.dashboard-tab .dash-card-title svg { color: var(--c-accent); }
+
+.dashboard-tab .dash-card-btn {
+  margin-top: 12px;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-display); font-weight: 700; font-size: 11px;
+  letter-spacing: 1px; text-transform: uppercase;
+  background: transparent; color: var(--text-secondary);
+  border: 1px solid var(--c-border); border-radius: 4px;
+  padding: 7px 12px; min-height: 36px; cursor: pointer;
+  transition: color .12s ease, border-color .12s ease;
+}
+.dashboard-tab .dash-card-btn:hover { color: #fff; border-color: var(--c-accent); }
+
+.dashboard-tab .dash-title-badge {
+  font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--gold-bright);
+  background: rgba(212,168,32,.12); border: 1px solid rgba(212,168,32,.3);
+  border-radius: 3px; padding: 2px 7px;
+}
+.dashboard-tab .dash-warn-badge {
+  font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--c-accent);
+  background: rgba(200,16,46,.12); border: 1px solid rgba(200,16,46,.3);
+  border-radius: 3px; padding: 2px 7px;
+}
+
+/* ── HERO CTA (dominant) ── */
+.dashboard-tab .dash-hero {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 18px; padding: 22px 24px;
+}
+.dashboard-tab .dash-hero-label {
+  font-family: var(--font-display); font-weight: 800; font-size: 26px;
+  text-transform: uppercase; letter-spacing: .5px; color: var(--c-accent); line-height: 1.05;
+}
+.dashboard-tab .dash-hero-sub { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.dashboard-tab .dash-hero-btn {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-display); font-weight: 700; font-size: 14px;
+  letter-spacing: 1px; text-transform: uppercase;
+  background: var(--c-accent); color: #fff; border: none; border-radius: 5px;
+  padding: 12px 20px; min-height: 44px; cursor: pointer;
+  transition: background .12s ease;
+}
+.dashboard-tab .dash-hero-btn:hover { background: var(--c-accent-hover); }
+
+/* ── Skeletons ── */
+.dashboard-tab .dash-skel-line { height: 12px; border-radius: 4px; background: var(--c-bg-tile-2); margin: 6px 0; animation: dash-pulse 1.2s ease-in-out infinite; }
+.dashboard-tab .dash-skel-lg { height: 22px; width: 55%; }
+@keyframes dash-pulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+
+/* ── Error ── */
+.dashboard-tab .dash-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-color: rgba(200,16,46,.4); }
+.dashboard-tab .dash-error-text { display: inline-flex; align-items: center; gap: 8px; color: var(--c-accent); font-size: 13px; font-weight: 600; }
+.dashboard-tab .dash-retry-btn {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  font-family: var(--font-display); font-weight: 700; font-size: 11px; letter-spacing: 1px;
+  text-transform: uppercase; background: var(--c-accent); color: #fff; border: none;
+  border-radius: 4px; padding: 8px 14px; min-height: 36px; cursor: pointer;
+}
+
+/* ── Top band: identity + vitals (2-col) ── */
+.dashboard-tab .dash-band { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Identity strip */
+.dashboard-tab .dash-identity { display: flex; gap: 16px; align-items: center; }
+.dashboard-tab .dash-identity-info { min-width: 0; flex: 1; }
+.dashboard-tab .dash-identity-name {
+  font-family: var(--font-display); font-weight: 800; font-size: 19px; color: #fff;
+  line-height: 1.1; text-transform: uppercase; letter-spacing: .3px;
+}
+.dashboard-tab .dash-identity-nick { color: var(--c-accent); font-weight: 700; }
+.dashboard-tab .dash-identity-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
+.dashboard-tab .dash-ovr-badge {
+  font-family: var(--font-display); font-weight: 800; font-size: 12px; letter-spacing: .5px;
+  color: #fff; background: var(--c-accent); border-radius: 3px; padding: 2px 8px;
+}
+.dashboard-tab .dash-tier { font-family: var(--font-display); font-weight: 700; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-secondary); }
+.dashboard-tab .dash-fame-tier { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold-bright); }
+.dashboard-tab .dash-identity-record { font-size: 13px; font-weight: 700; color: #E0E0E0; margin-top: 6px; }
+
+/* Stats & XP */
+.dashboard-tab .dash-stats-ovr {
+  font-family: var(--font-display); font-weight: 800; font-size: 12px; letter-spacing: .5px;
+  color: var(--c-accent);
+}
+.dashboard-tab .dash-stats-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; margin-top: 4px;
+}
+.dashboard-tab .dash-stat-row {
+  display: grid; grid-template-columns: 2.4rem 1.8rem 1fr; align-items: center; gap: 8px;
+}
+.dashboard-tab .dash-stat-name {
+  font-family: var(--font-display); font-weight: 700; font-size: 12px; letter-spacing: .5px;
+  color: var(--text-secondary);
+}
+.dashboard-tab .dash-stat-value {
+  font-family: var(--font-display); font-weight: 800; font-size: 14px; color: #fff; text-align: right;
+}
+.dashboard-tab .dash-stat-bar-track {
+  height: 5px; background: var(--c-bg-tile-2); border-radius: 3px; overflow: hidden;
+  border: 1px solid var(--c-border-3);
+}
+.dashboard-tab .dash-stat-bar-fill {
+  height: 100%; border-radius: 3px; background: var(--c-accent); transition: width .25s ease;
+}
+
+/* Vitals */
+.dashboard-tab .dash-vitals { display: flex; flex-direction: column; gap: 12px; justify-content: center; }
+.dashboard-tab .dash-vital-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.dashboard-tab .dash-vital-label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #E0E0E0; }
+.dashboard-tab .dash-vital-status { font-size: 12px; font-weight: 700; color: var(--text-secondary); }
+.dashboard-tab .dash-bar-track { height: 9px; background: var(--c-bg-tile-2); border-radius: 5px; overflow: hidden; border: 1px solid var(--c-border-3); }
+.dashboard-tab .dash-bar-fill { height: 100%; border-radius: 5px; transition: width .25s ease; }
+.dashboard-tab .dash-energy { background: var(--c-blue); }
+.dashboard-tab .dash-energy.is-low { background: var(--c-amber-bright); }
+.dashboard-tab .dash-energy.is-empty { background: var(--c-accent); }
+.dashboard-tab .dash-health { background: #2FA84F; }
+.dashboard-tab .dash-health.is-hurt { background: var(--c-amber-bright); }
+.dashboard-tab .dash-health.is-critical { background: var(--c-accent); }
+.dashboard-tab .dash-vital-eta { display: block; font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+.dashboard-tab .dash-flag-chip {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--c-amber-bright);
+  background: rgba(212,168,32,.1); border: 1px solid rgba(212,168,32,.3);
+  border-radius: 4px; padding: 6px 10px; min-height: 32px; cursor: pointer;
+}
+
+/* Camp / offers / injuries bodies */
+.dashboard-tab .dash-camp-progress,
+.dashboard-tab .dash-offers-best,
+.dashboard-tab .dash-injuries-worst { font-size: 13px; color: #E0E0E0; }
+.dashboard-tab .dash-camp-grade { color: var(--gold-bright); font-weight: 700; }
+.dashboard-tab .dash-camp-final { color: var(--text-secondary); }
+
+/* ── Lower grid (feed / ranking / resources / sponsorship / nudge) ── */
+.dashboard-tab .dash-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.dashboard-tab .dash-feed { grid-column: span 2; }
+
+.dashboard-tab .dash-feed-list { list-style: none; margin: 0; padding: 0; }
+.dashboard-tab .dash-feed-row { display: flex; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--c-border-3); }
+.dashboard-tab .dash-feed-row:last-child { border-bottom: none; }
+.dashboard-tab .dash-feed-date { flex-shrink: 0; width: 76px; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; }
+.dashboard-tab .dash-feed-detail { font-size: 13px; color: #E0E0E0; }
+
+.dashboard-tab .dash-ranking-body { display: flex; align-items: baseline; gap: 8px; }
+.dashboard-tab .dash-rank-num { font-family: var(--font-display); font-weight: 800; font-size: 28px; color: var(--c-accent); line-height: 1; }
+.dashboard-tab .dash-rank-of { font-size: 13px; color: var(--text-secondary); }
+.dashboard-tab .dash-rank-delta { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; font-size: 13px; }
+.dashboard-tab .dash-rank-delta.up { color: #2FA84F; }
+.dashboard-tab .dash-rank-delta.down { color: var(--c-accent); }
+
+/* ── Money & Fame card (display-only) ── */
+.dashboard-tab .dash-money-chips { display: flex; gap: 6px; margin-left: auto; }
+.dashboard-tab .dash-money-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--font-display); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px;
+  padding: 2px 7px; border-radius: 4px;
+  color: var(--text-secondary); border: 1px solid var(--c-border);
+}
+.dashboard-tab .dash-money-chip svg { color: inherit; }
+.dashboard-tab .dash-money-chip.is-decay {
+  color: var(--c-amber-bright); background: rgba(212,168,32,.12); border: 1px solid rgba(212,168,32,.3);
+}
+.dashboard-tab .dash-money-chip.is-frozen {
+  color: var(--c-blue); background: rgba(59,130,246,.12); border: 1px solid rgba(59,130,246,.3);
+}
+
+.dashboard-tab .dash-money-iron { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.dashboard-tab .dash-money-iron svg { color: var(--gold-bright); align-self: center; }
+.dashboard-tab .dash-iron-num { font-family: var(--font-display); font-weight: 800; font-size: 28px; color: var(--gold-bright); line-height: 1; }
+.dashboard-tab .dash-iron-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); }
+
+.dashboard-tab .dash-fame-block { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.dashboard-tab .dash-fame-head { display: flex; align-items: center; gap: 8px; }
+.dashboard-tab .dash-fame-head svg { color: var(--c-amber-bright); }
+.dashboard-tab .dash-fame-tier-label { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--c-amber-bright); text-transform: uppercase; letter-spacing: .3px; }
+.dashboard-tab .dash-fame-score { font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff; margin-left: auto; }
+.dashboard-tab .dash-fame-fill { background: var(--c-amber-bright); }
+.dashboard-tab .dash-fame-context { font-size: 12px; color: var(--text-secondary); }
+.dashboard-tab .dash-fame-purse { font-size: 12px; color: var(--gold-bright); font-weight: 700; }
+
+.dashboard-tab .dash-sponsor-brand { font-family: var(--font-display); font-weight: 800; font-size: 16px; color: #fff; text-transform: uppercase; letter-spacing: .3px; }
+.dashboard-tab .dash-sponsor-progress { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.dashboard-tab .dash-sponsor-reward { font-size: 12px; color: var(--gold-bright); font-weight: 700; margin-top: 4px; }
+
+.dashboard-tab .dash-nudge { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dashboard-tab .dash-nudge-text { font-size: 13px; color: #E0E0E0; }
+.dashboard-tab .dash-nudge svg { color: var(--c-accent); flex-shrink: 0; }
+
+/* ── PORTRAIT / MOBILE: single-column stack ── */
+@media (max-width: 768px) {
+  .dashboard-tab { padding: 14px 12px; gap: 12px; }
+
+  /* Hero is rendered first in the DOM, so it naturally leads the stack. */
+  .dashboard-tab .dash-band { grid-template-columns: 1fr; gap: 12px; }
+  .dashboard-tab .dash-grid { grid-template-columns: 1fr; gap: 12px; }
+  .dashboard-tab .dash-feed { grid-column: auto; }
+
+  .dashboard-tab .dash-hero { flex-direction: column; align-items: stretch; text-align: left; }
+  .dashboard-tab .dash-hero-label { font-size: 22px; }
+  .dashboard-tab .dash-hero-btn { width: 100%; justify-content: center; }
+
+  .dashboard-tab .dash-identity-name { font-size: 17px; }
+  .dashboard-tab .dash-stats-grid { gap: 7px 14px; }
+
+  /* Keep all interactive text/targets readable & tappable on mobile. */
+  .dashboard-tab .dash-card-btn { min-height: 44px; font-size: 11px; }
+  .dashboard-tab .dash-feed-detail,
+  .dashboard-tab .dash-nudge-text { font-size: 12px; }
+  .dashboard-tab .dash-feed-date { font-size: 11px; width: 68px; }
+}
+
+/* ── Narrow screens: shrink Iron numeral so it doesn't overflow ── */
+@media (max-width: 360px) {
+  .dashboard-tab .dash-iron-num { font-size: 23px; }
+}

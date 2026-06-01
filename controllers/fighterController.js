@@ -1,4 +1,5 @@
 const fighterService = require("../services/fighterService");
+const dashboardService = require("../services/dashboardService");
 
 async function list(req, res) {
     try {
@@ -276,6 +277,19 @@ async function getActivity(req, res) {
     }
 }
 
+async function getDashboard(req, res) {
+    try {
+        const dashboard = await dashboardService.buildDashboard(req.params.id);
+        res.json(dashboard);
+    } catch (err) {
+        if (err.message === "Fighter not found") {
+            return res.status(404).json({ message: "Fighter not found" });
+        }
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 async function mediaEventStub(req, res) {
     res.status(501).json({
         message: "Media events are not implemented yet. (Post-fight interview, weigh-in, podcast, etc.)",
@@ -388,6 +402,7 @@ module.exports = {
     notorietyLeaderboard,
     getChampions,
     getActivity,
+    getDashboard,
     mediaEventStub,
     getFameEvents,
     getBannerCatalog,

@@ -28,8 +28,10 @@ import { TutorialOverlay } from "./components/tutorial/TutorialOverlay";
 import { LibraryTab } from "./components/library/LibraryTab";
 import { AccountTab } from "./components/account/AccountTab";
 import { EmailVerifyBanner } from "./components/account/EmailVerifyBanner";
+import { DashboardTab } from "./components/dashboard/DashboardTab";
 import { tutorialBus } from "./utils/tutorialBus";
 import {
+  LayoutDashboard,
   BookOpen,
   UserCircle2,
   Dumbbell,
@@ -49,6 +51,7 @@ import {
 
 // ── Navigation definition ──────────────────────────────────
 const NAV_ITEMS = [
+  { id: "home",      label: "Home",      icon: <LayoutDashboard size={13} strokeWidth={2.2} />, active: true },
   { id: "gym",       label: "Training",  icon: <Dumbbell size={13} strokeWidth={2.2} />,    active: true },
   { id: "fights",    label: "Fight",     icon: <Swords size={13} strokeWidth={2.2} />,      active: true },
   { id: "career",    label: "Career",    icon: <FileText size={13} strokeWidth={2.2} />,    active: true },
@@ -427,7 +430,7 @@ function App() {
   const [lastFightSummary, setLastFightSummary] = useState(null);
   const [feedRefreshKey, setFeedRefreshKey]     = useState(0);
   const [champions, setChampions]               = useState([]);
-  const [activeTab, setActiveTab]               = useState("gym");
+  const [activeTab, setActiveTab]               = useState("home");
   const [trainingResultPopup, setTrainingResultPopup] = useState({ open: false, sessionLabel: "", xpGained: {}, statLevelUps: [] });
   const [tierUpModal, setTierUpModal] = useState(null);
   const [beltWonModal, setBeltWonModal] = useState(null);
@@ -635,7 +638,7 @@ function App() {
     setOffers([]);
     setLastFightSummary(null);
     setLastFightCommentary([]);
-    setActiveTab("gym");
+    setActiveTab("home");
     setMessage("");
     setAccountStatus(null);
   }, []);
@@ -1121,26 +1124,14 @@ const handleGetOffers = useCallback(async () => {
         {/* Main content */}
         <main className="main">
 
-          {/* ── DASHBOARD ── */}
+          {/* ── DASHBOARD / HOME ── */}
           {activeTab === "home" && (
-            <div className="dashboard">
-              <div className="dashboard-left">
-                <QuickActions onNavigate={setActiveTab} />
-
-              </div>
-
-              <div className="dashboard-right">
-                <OctagonBackground />
-                <div className="dashboard-right-content">
-                  <RightPanels
-                    fighter={fighter}
-                    lastFightSummary={lastFightSummary}
-                    campSlotsUsed={campState?.slotsUsed}
-                    champions={champions}
-                  />
-                </div>
-              </div>
-            </div>
+            <DashboardTab
+              fighter={fighter}
+              onNavigate={handleNavTab}
+              onOpenProfile={() => setMobileDrawerOpen(true)}
+              refreshKey={feedRefreshKey}
+            />
           )}
 
           {/* ── MY FIGHTER ── (profile lives in left nav) */}
