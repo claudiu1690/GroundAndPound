@@ -9797,3 +9797,502 @@ code {
 .sidebar .injury-recovery { color: var(--text-secondary); }
 .sidebar .injury-severity-badge { color: var(--text-secondary); }
 .sidebar .injuries-hint { color: var(--text-muted); font-style: italic; }
+
+/* ============================================================
+   MOBILE / PORTRAIT SHELL — Phase 1
+   Desktop is untouched. The .m-* elements are display:none by
+   default (below) and only revealed inside the @media block.
+   ============================================================ */
+
+/* Default-hide all mobile chrome on desktop. */
+.m-topbar,
+.m-fighter-strip,
+.m-resource-strip,
+.m-bottom-nav,
+.m-drawer,
+.m-drawer-overlay { display: none; }
+
+@media (max-width: 768px) {
+  /* Hide desktop chrome, show mobile chrome. */
+  .topbar { display: none; }
+  .sidebar { display: none; }
+  .bottombar { display: none; }
+  .m-topbar { display: flex; }
+  .m-fighter-strip { display: flex; }
+  .m-resource-strip { display: flex; }
+  .m-bottom-nav { display: flex; }
+
+  /* Un-cap the desktop layout so the app fills the viewport. */
+  .layout { max-width: none; width: 100%; margin: 0; box-shadow: none; }
+  .main { padding-bottom: 56px; }
+  .page-layout { padding: 0.5rem 0.6rem; }
+
+  /* ── Mobile top bar ── */
+  .m-topbar {
+    height: 46px;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--c-bg-bar);
+    border-bottom: 1px solid var(--c-border-2);
+    padding: 0 12px;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+  .m-tlogo {
+    background: transparent;
+    padding: 0;
+    font-size: 15px;
+    color: var(--c-text);
+  }
+  .m-hamburger {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+  }
+  .m-hamburger:active { color: var(--c-text); }
+
+  /* ── Fighter strip ── */
+  .m-fighter-strip {
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: var(--c-bg-sidebar);
+    border-bottom: 1px solid var(--c-border-3);
+    flex-shrink: 0;
+  }
+  .m-fs-id {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+  }
+  .m-fs-name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: var(--c-accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .m-fs-nick {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+    white-space: nowrap;
+  }
+  .m-fs-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .m-fs-ovr {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 12px;
+    color: #fff;
+    background: var(--c-accent);
+    border-radius: 3px;
+    padding: 1px 6px;
+  }
+  .m-fs-tier {
+    font-family: var(--font-display);
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--c-bg-tile);
+    border: 1px solid var(--c-border);
+    border-radius: 3px;
+    padding: 1px 6px;
+  }
+  .m-fs-record {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Resource strip ── */
+  .m-resource-strip {
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 14px;
+    background: #0D0D0D;
+    border-bottom: 1px solid var(--c-border-3);
+    flex-shrink: 0;
+  }
+  .m-rs-left {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .m-rs-iron {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--c-amber-bright);
+  }
+  .m-rs-fame {
+    font-size: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .m-rs-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .m-rs-icon-energy { color: var(--c-blue); }
+  .m-rs-icon-health { color: var(--c-accent); }
+  .m-rs-bar {
+    width: 40px;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+  .m-rs-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+  .m-rs-energy { background: var(--c-blue); }
+  .m-rs-health { background: var(--c-accent); }
+
+  /* ── Bottom nav ── */
+  .m-bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 56px;
+    display: flex;
+    align-items: stretch;
+    background: var(--c-bg-bar);
+    border-top: 1px solid var(--c-border-2);
+    z-index: 120;
+  }
+  .m-nav-item {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+  }
+  .m-nav-item span {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .m-nav-item.act { background: rgba(200, 16, 46, 0.1); color: var(--c-accent); }
+  .m-nav-item.act svg { color: var(--c-accent); }
+
+  /* ── Right drawer ── */
+  .m-drawer-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 200;
+  }
+  .m-drawer {
+    display: flex;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 75vw;
+    max-width: 280px;
+    background: var(--c-bg-sidebar);
+    border-left: 1px solid var(--c-border);
+    z-index: 210;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.22s ease;
+    overflow-y: auto;
+  }
+  .m-drawer.open { transform: translateX(0); }
+  .m-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--c-border-2);
+    flex-shrink: 0;
+  }
+  .m-drawer-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: var(--c-text);
+  }
+  .m-drawer-title em {
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  .m-drawer-close {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+  }
+  .m-drawer-body { padding: 0; }
+  .m-drawer .fighter-profile {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+  }
+  .m-drawer .sb-menu-item { padding: 0.7rem 0.85rem; font-size: 13px; }
+  .m-drawer .sb-menu-item .nav-icon { width: 18px; }
+}
+
+/* ============================================================
+   PHASE 2 — per-screen portrait/mobile overrides (≤768px)
+   Appended LAST so it wins over all legacy lower breakpoints
+   (460/540/560/600/640/680/700/720/760/820/900/960px) for the
+   ≤768 range. Desktop (>768px) is 100% untouched: every rule
+   below is gated inside this single media query.
+   Hard rules honoured: max 2 columns, no horizontal scroll on
+   main content (only tab strips / filter pills scroll-x), 44px
+   min tap targets, text ≥ 11px, coloured card stripes preserved.
+   ============================================================ */
+@media (max-width: 768px) {
+
+  /* ── 1. FIGHT OFFERS (FightOffers.jsx) ──────────────────── */
+  .fight-hub { display: block; }
+  /* 3-col stat + readiness grids collapse to a single column. */
+  .fight-hub-stat-grid,
+  .fight-hub-readiness { grid-template-columns: 1fr; }
+  .offers-standing-banner .standing-stat-grid { grid-template-columns: 1fr 1fr; }
+  .offers-standing-banner { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  /* CTA buttons full width, easy to tap. */
+  .fight-hub-cta { width: 100%; }
+  .fight-hub .fight-hub-btn,
+  .fight-hub-btn { width: 100%; box-sizing: border-box; justify-content: center; min-height: 44px; }
+  /* Offer cards stack their accept column under the info. Coloured
+     left stripe (border-left) is preserved — only the flow changes. */
+  .offer-card { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  .offer-accept-col { align-self: stretch; align-items: stretch; }
+  .offer-accept-col .btn { width: 100%; min-height: 44px; }
+  .offer-energy-cost { text-align: center; }
+
+  /* ── 2. FIGHT CAMP (FightCamp.jsx) ──────────────────────── */
+  .camp-sessions-grid { grid-template-columns: 1fr; }
+  .camp-logged-slots { display: flex; flex-direction: column; }
+  .camp-logged-slot { width: 100%; box-sizing: border-box; }
+  .camp-finalise-row { flex-direction: column; align-items: stretch; }
+  .fight-camp .camp-finalise-btn { width: 100%; min-height: 44px; }
+  .camp-empty-confirm-btns { flex-direction: column; }
+  .camp-empty-confirm-btns .btn { width: 100%; min-height: 44px; }
+  /* Tab header is a scroll-x strip — never wraps, never widens the page. */
+  .fight-camp .camp-header {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .fight-camp .camp-header::-webkit-scrollbar { display: none; }
+  .fight-camp .camp-tab { flex-shrink: 0; }
+
+  /* ── 3. FIGHTER REPORT modal (FighterReport.jsx) ────────── */
+  .fr-overlay { padding: 0; }
+  .fr-modal {
+    /* Reset desktop zoom:1.15 / max-width:700px / max-height:80vh —
+       go full-screen so the dense intel reads at full size. */
+    zoom: 1;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .fr-body { flex: 1; overflow-y: auto; }
+  .fr-intel-two-col { grid-template-columns: 1fr; }
+
+  /* ── 4. CAMP SUMMARY modal (CampSummary.jsx) ────────────── */
+  .cs-overlay { padding: 0; }
+  .cs-card {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+    overflow-y: auto;
+  }
+  .cs-wc-grid { grid-template-columns: 1fr; }
+  .cs-card .cs-begin-btn { width: 100%; min-height: 44px; }
+
+  /* ── 5. FIGHT SUMMARY (FightSummary.jsx + interview) ────── */
+  .fight-result-screen .body-grid,
+  .fight-result-screen .body-grid--single { grid-template-columns: 1fr; }
+  .fight-result-screen .result-hero-body { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .fight-result-screen .result-right { gap: 18px; }
+  .interview-grid { grid-template-columns: 1fr; }
+  .pfi-candidates { grid-template-columns: 1fr; }
+  .interview-section .pfi-cta { width: 100%; min-height: 44px; }
+  .continue-row .continue-btn { width: 100%; min-height: 44px; }
+
+  /* ── 6. HOSPITAL (HospitalTab.jsx) ──────────────────────── */
+  /* Injury cards stack: detail over actions; coloured left border kept. */
+  .hospital-tab .injury-card { flex-direction: column; align-items: stretch; }
+  .hospital-tab .injury-card-right {
+    border-left: none;
+    border-top: 1px solid rgba(200, 16, 46, .15);
+  }
+  .hospital-tab .injury-card-right .treat-btn { width: 100%; min-height: 44px; }
+  /* Services grid: 2×2 (keep two columns, don't flatten). */
+  .hospital-tab .services-grid { grid-template-columns: 1fr 1fr; }
+  /* HP packages: single column. */
+  .hospital-tab .hp-pkgs { grid-template-columns: 1fr; }
+  .hospital-tab .full-recovery-btn { min-height: 44px; }
+
+  /* ── 7. CAREER FEED (CareerFeed.jsx) — light touch ──────── */
+  .career-feed .feed { padding-left: 0.6rem; padding-right: 0.6rem; }
+
+  /* ── 8. EVENTS (EventsTab.jsx) ──────────────────────────── */
+  .events-tab .fight-rows { grid-template-columns: 1fr; }
+  /* Headliner stacks the two fighters with the VS block between them. */
+  .events-tab .headliner-fighters { grid-template-columns: 1fr; gap: 10px; }
+  .events-tab .hl-fighter.right { text-align: left; }
+  .events-tab .hl-fighter.right .hl-meta { justify-content: flex-start; }
+  .events-tab .hl-vs { padding: 4px 0; }
+  .events-tab .headliner-bet-btn { justify-content: center; min-height: 44px; }
+  /* Bets / your-bets full width; history rows wrap instead of forcing width. */
+  .events-tab .your-bets,
+  .events-tab .yb-list { width: 100%; }
+  .events-tab .yb-row { flex-wrap: wrap; gap: 6px 12px; }
+
+  /* ── 9. RANKINGS (RankingsTab.jsx) ──────────────────────── */
+  /* Tier tabs scroll horizontally rather than wrapping. */
+  .rankings-tab .tier-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .rankings-tab .tier-tabs::-webkit-scrollbar { display: none; }
+  .rankings-tab .tier-tab { flex-shrink: 0; }
+  /* Drop the Style column (4th) so the fixed columns fit at 360px.
+     Tighter fixed widths + tabular record; transparent 3px left border
+     and my-row/top3 highlights preserved (grid template still has the
+     leading border via the existing border-left). */
+  .rankings-tab .rank-table-header,
+  .rankings-tab .rank-row { grid-template-columns: 40px 1fr 48px 78px; }
+  .rankings-tab .th:nth-child(4),
+  .rankings-tab .rank-style { display: none; }
+  .rankings-tab .th { padding: 10px 10px; }
+  .rankings-tab .rank-num { padding: 0 10px; font-size: 14px; }
+  .rankings-tab .rank-fighter { padding: 0 4px; }
+  .rankings-tab .rank-fighter-name { font-size: 12px; }
+  .rankings-tab .rank-ovr,
+  .rankings-tab .rank-record { padding: 0 10px; font-size: 12px; }
+
+  /* ── 10. LIBRARY grid (LibraryTab.jsx) ──────────────────── */
+  .library-tab .search-wrap { width: 100%; }
+  /* Filter pills scroll-x, never wrap, never widen the page. */
+  .library-tab .filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .library-tab .filters::-webkit-scrollbar { display: none; }
+  .library-tab .filter-btn { flex-shrink: 0; }
+  /* 3-col article grid → 2-col across the whole ≤768 range. */
+  .library-tab .article-grid {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 16px 14px;
+  }
+
+  /* ── 11. LIBRARY ARTICLE (ArticleView.jsx) — light touch ── */
+  .library-article .article-nav { padding: 12px 16px; }
+  .library-article .article-wrap { padding-left: 16px; padding-right: 16px; }
+  .library-article .article-inner { max-width: 100%; }
+
+  /* ── 12. CONTRACTS (ContractsTab.jsx) — CSS-only stack ──── */
+  .contracts-tab .contracts-grid { grid-template-columns: 1fr; }
+  /* Column separators become top borders, not left borders. */
+  .contracts-tab .contracts-col + .contracts-col {
+    border-left: none;
+    border-top: 1px solid var(--c-border-3);
+  }
+  .contracts-tab .sign-btn,
+  .contracts-tab .drop-btn { width: 100%; min-height: 44px; }
+
+  /* ── 13. MEDIA (MediaTab.jsx) ───────────────────────────── */
+  /* The 820px breakpoint already stacks the media-card; here we just
+     make actions full width and tighten padding. */
+  .media-tab .media-card-action { padding: 12px 16px; }
+  .media-tab .media-action-btn { width: 100%; min-height: 44px; }
+  .media-tab .podcast-actions { flex-direction: column; }
+  .media-tab .podcast-actions .btn { width: 100%; min-height: 44px; }
+  .media-flags-grid { grid-template-columns: 1fr; }
+
+  /* ── 14. ACCOUNT (AccountTab.jsx) ───────────────────────── */
+  .account-tab .form-row { flex-direction: column; align-items: stretch; }
+  .account-tab .form-group { min-width: 0; }
+  .account-tab .save-btn,
+  .account-tab .update-btn { width: 100%; min-height: 44px; }
+  .account-tab .account-toggle-row { flex-wrap: wrap; gap: 10px; }
+  .account-tab .danger-body { flex-direction: column; align-items: stretch; }
+  .account-tab .danger-btn { width: 100%; justify-content: center; min-height: 44px; }
+  .account-tab .account-pending-actions { flex-direction: column; }
+  .account-tab .account-pending-actions .btn { width: 100%; min-height: 44px; }
+
+  /* ── 15. AUTH (AuthPage.jsx) — light touch ──────────────── */
+  .auth-center { max-width: 360px; padding-left: 16px; padding-right: 16px; }
+  .auth-container { width: 100%; }
+  /* Paired name / class+style rows stack so inputs stay tappable. */
+  .auth-row { flex-direction: column; gap: 0; }
+  .auth-row.auth-row-btns { flex-direction: row; gap: 12px; }
+
+  /* ── 16. GYM (GymSelector.jsx + GymTraining.jsx) ────────── */
+  /* Selector: every tier group's row collapses to a single column. */
+  .gym-row.cols3,
+  .gym-row.cols2,
+  .gym-row.cols1 { grid-template-columns: 1fr; }
+  /* Training header wraps; energy pill + join button keep their place. */
+  .gym-header-row2 { gap: 10px; }
+  .gym-training .gym-join-btn { width: 100%; min-height: 44px; text-align: center; }
+  /* Rank stepper is a strip — scroll-x only, never widens main content. */
+  .gym-training .rank-strip { flex-wrap: wrap; }
+  .gym-training .rank-strip-steps {
+    flex: 1 1 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+  }
+  .gym-training .rank-strip-steps::-webkit-scrollbar { display: none; }
+  .gym-training .rank-step { flex: 0 0 auto; }
+  /* Sessions: keep 2 columns (fine at 2), train buttons full width. */
+  .gym-training .session-grid { grid-template-columns: 1fr 1fr; }
+  .gym-training .session-card-btn { width: 100%; min-height: 36px; justify-content: center; }
+  .gym-training .rank-up-btn { width: 100%; min-height: 44px; justify-content: center; }
+
+  /* ── 17. GENERIC MODALS / OVERLAYS — spot-check guard ───── */
+  /* All audited shells already use width:100% (capped to a padded
+     overlay) or min(_,9Nvw); none overflow at 360px. This guard only
+     flattens any 3-col grid that may live inside such a modal and
+     keeps the prediction-picker matchup single-column on small screens
+     (already handled at 540px; restated here so it starts at 768). */
+  .picker-modal-matchup { grid-template-columns: 1fr; }
+  .picker-modal-sides,
+  .picker-modal-methods { width: 100%; }
+}
