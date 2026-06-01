@@ -41,6 +41,10 @@ import {
   ShoppingBag,
   CalendarDays,
   Mic,
+  Menu,
+  X,
+  Zap,
+  Heart,
 } from "lucide-react";
 
 // ── Navigation definition ──────────────────────────────────
@@ -429,6 +433,7 @@ function App() {
   const [beltWonModal, setBeltWonModal] = useState(null);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
   const [fameDrawerOpen, setFameDrawerOpen] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   /** Bumps after train / membership pay so gym quest panel refetches without a full page reload. */
 
   // ── Camp v1.1 state ────────────────────────────────────────
@@ -442,6 +447,9 @@ function App() {
   const [showCampSummary, setShowCampSummary] = useState(false);
   const [campSummaryData, setCampSummaryData] = useState(null);
   const [weightCut, setWeightCut]             = useState(null);
+
+  // Auto-close the mobile drawer whenever the active tab changes.
+  useEffect(() => { setMobileDrawerOpen(false); }, [activeTab]);
 
   const maybeShowBlockPopup = useCallback((rawMessage, errorCode) => {
     const blockingCodes = new Set([
@@ -1003,6 +1011,49 @@ const handleGetOffers = useCallback(async () => {
         />
       )}
 
+      {/* ── MOBILE TOP BAR ── (hidden on desktop via CSS) */}
+      <header className="m-topbar">
+        <div className="tlogo m-tlogo">GROUND <span>&amp;</span> POUND</div>
+        <button type="button" className="m-hamburger" aria-label="Open menu" onClick={() => setMobileDrawerOpen(true)}>
+          <Menu size={22} strokeWidth={2.2} />
+        </button>
+      </header>
+
+      {/* ── MOBILE FIGHTER STRIP ── */}
+      <div className="m-fighter-strip">
+        <div className="m-fs-id">
+          <span className="m-fs-name">{fighter?.firstName} {fighter?.lastName}</span>
+          {fighter?.nickname && <span className="m-fs-nick">"{fighter.nickname}"</span>}
+        </div>
+        <div className="m-fs-badges">
+          <span className="m-fs-ovr">{fighter?.overallRating ?? "—"}</span>
+          <span className="m-fs-tier">{fighter?.promotionTier ?? "Amateur"}</span>
+          <span className="m-fs-record">{fighter?.record?.wins ?? 0}-{fighter?.record?.losses ?? 0}</span>
+        </div>
+      </div>
+
+      {/* ── MOBILE RESOURCE STRIP ── */}
+      {(() => {
+        const energyCur = fighter?.energy?.current ?? fighter?.energy ?? 0;
+        const energyMax = fighter?.energy?.max ?? 100;
+        const energyPct = energyMax > 0 ? Math.min(100, Math.max(0, (energyCur / energyMax) * 100)) : 0;
+        const healthPct = Math.min(100, Math.max(0, fighter?.health ?? 0));
+        return (
+          <div className="m-resource-strip">
+            <div className="m-rs-left">
+              <span className="m-rs-iron">{(fighter?.iron ?? 0).toLocaleString()}</span>
+              <span className="m-rs-fame" onClick={() => setFameDrawerOpen(true)}>{(fighter?.notoriety?.score ?? 0).toLocaleString()}</span>
+            </div>
+            <div className="m-rs-right">
+              <Zap size={12} className="m-rs-icon m-rs-icon-energy" />
+              <div className="m-rs-bar"><div className="m-rs-bar-fill m-rs-energy" style={{ width: `${energyPct}%` }} /></div>
+              <Heart size={12} className="m-rs-icon m-rs-icon-health" />
+              <div className="m-rs-bar"><div className="m-rs-bar-fill m-rs-health" style={{ width: `${healthPct}%` }} /></div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── TOP BAR ── */}
       <header className="topbar">
         <div className="topbar-inner">
@@ -1287,6 +1338,75 @@ const handleGetOffers = useCallback(async () => {
         </main>
 
       </div>
+
+      {/* ── MOBILE BOTTOM NAV ── (hidden on desktop via CSS) */}
+      <nav className="m-bottom-nav">
+        <button type="button" className={`m-nav-item ${activeTab === "gym" ? "act" : ""}`} onClick={() => handleNavTab("gym")}>
+          <Dumbbell size={17} strokeWidth={2.2} /><span>Train</span>
+        </button>
+        <button type="button" className={`m-nav-item ${activeTab === "fights" ? "act" : ""}`} onClick={() => handleNavTab("fights")}>
+          <Swords size={17} strokeWidth={2.2} /><span>Fight</span>
+        </button>
+        <button type="button" className={`m-nav-item ${activeTab === "career" ? "act" : ""}`} onClick={() => handleNavTab("career")}>
+          <FileText size={17} strokeWidth={2.2} /><span>Career</span>
+        </button>
+        <button type="button" className={`m-nav-item ${activeTab === "rankings" ? "act" : ""}`} onClick={() => handleNavTab("rankings")}>
+          <ListOrdered size={17} strokeWidth={2.2} /><span>Rank</span>
+        </button>
+        <button type="button" className={`m-nav-item ${mobileDrawerOpen ? "act" : ""}`} onClick={() => setMobileDrawerOpen(true)}>
+          <Menu size={17} strokeWidth={2.2} /><span>More</span>
+        </button>
+      </nav>
+
+      {/* ── MOBILE RIGHT DRAWER ── (render-gated, inline; hidden on desktop via CSS) */}
+      {mobileDrawerOpen && (
+        <>
+          <div className="m-drawer-overlay" onClick={() => setMobileDrawerOpen(false)} />
+          <aside className="m-drawer open">
+            <div className="m-drawer-head">
+              <span className="m-drawer-title">
+                {fighter?.firstName} {fighter?.lastName}
+                {fighter?.nickname && <em>"{fighter.nickname}"</em>}
+              </span>
+              <button type="button" className="m-drawer-close" aria-label="Close menu" onClick={() => setMobileDrawerOpen(false)}>
+                <X size={20} strokeWidth={2.2} />
+              </button>
+            </div>
+            <div className="m-drawer-body">
+              <FighterProfile
+                fighter={fighter}
+                gyms={gyms}
+                campSlotsUsed={campState?.slotsUsed}
+                onUpdateFighter={handleUpdateFighter}
+                onRefreshFighter={loadFighter}
+                onMessage={setMessage}
+              />
+              <nav className="sidebar-menu sb-menu m-drawer-menu">
+                <div className="nav-section-label">Menu</div>
+                {NAV_ITEMS.map((item, i) => (
+                  item.active ? (
+                    <a
+                      key={item.id}
+                      href={`#${item.id}`}
+                      data-tut={["gym", "fights", "rankings", "events", "hospital"].includes(item.id) ? `nav-${item.id}` : undefined}
+                      className={`sb-menu-item ${activeTab === item.id ? "active" : ""}`}
+                      onClick={(e) => { e.preventDefault(); handleNavTab(item.id); }}
+                    >
+                      <span className="nav-icon">{item.icon}</span>
+                      {item.label}
+                    </a>
+                  ) : (
+                    <div key={i} className="sb-menu-item disabled">
+                      <span className="nav-icon">{item.icon}</span>
+                      {item.label}
+                    </div>
+                  )
+                ))}
+              </nav>
+            </div>
+          </aside>
+        </>
+      )}
 
       {/* ── FULL-WIDTH BOTTOM BAR ── */}
       <footer className="bottombar">

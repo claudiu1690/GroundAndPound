@@ -14,15 +14,35 @@ const SKIP_ABSENT_MS = 3500;
 /** Polling interval (ms) for re-measuring focal/anchor element rects. */
 const MEASURE_INTERVAL_MS = 120;
 
-/** First DOM element matching any of the given data-tut id(s). */
+/** True when an element is actually laid out / visible (not display:none). */
+function isVisible(el) {
+    // offsetParent is null for display:none elements (and fixed elements, which
+    // we never tag with data-tut). getClientRects() catches the fixed-position
+    // edge case. Either signal being truthy means the element occupies layout.
+    return el.offsetParent !== null || el.getClientRects().length > 0;
+}
+
+/**
+ * First *visible* DOM element matching any of the given data-tut id(s).
+ *
+ * The mobile shell renders FighterProfile + the nav menu in BOTH the desktop
+ * sidebar and the mobile drawer, so on mobile the same data-tut id exists twice
+ * (the desktop copy is display:none but still in the DOM, earlier in document
+ * order). Plain querySelector would match the hidden copy first, so we prefer a
+ * visible match and only fall back to the first match if none are visible.
+ */
 function resolveEl(idOrArr) {
     if (!idOrArr) return null;
     const ids = Array.isArray(idOrArr) ? idOrArr : [idOrArr];
+    let fallback = null;
     for (const id of ids) {
-        const el = document.querySelector(`[data-tut="${id}"]`);
-        if (el) return el;
+        const matches = document.querySelectorAll(`[data-tut="${id}"]`);
+        for (const el of matches) {
+            if (isVisible(el)) return el;
+            if (!fallback) fallback = el;
+        }
     }
-    return null;
+    return fallback;
 }
 
 /** Viewport rect of a data-tut element, or null if absent / not laid out. */
