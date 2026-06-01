@@ -1,23 +1,35 @@
 import { memo, useCallback, useState } from "react";
+import { Zap } from "lucide-react";
 import {
     CAMP_SESSIONS,
     CAMP_SESSION_KEYS,
-    getRatingConfig,
     MATCH_STATUS_LABELS,
     MATCH_STATUS_COLORS,
 } from "../../constants/campConfig";
 import { CampInjury } from "./CampInjury";
 
-function SlotGrid({ maxSlots, slotsUsed, canRemove, onRemove }) {
+const CAMP_SESSION_COLOR = {
+    TAKEDOWN_DEFENCE: "blue",
+    SUBMISSION_ESCAPES: "purple",
+    STRIKING_ACCURACY: "red",
+    CARDIO_PUSH: "green",
+    GAME_PLAN_STUDY: "teal",
+    BODY_SHOT_FOCUS: "amber",
+    CLINCH_CONTROL: "purple",
+    GROUND_AND_POUND_POSTURE: "red",
+    SPARRING_GENERAL: "amber",
+};
+
+function CampSlotDots({ maxSlots, slotsUsed, canRemove, onRemove }) {
     return (
-        <div className="camp-slot-grid">
+        <div className="camp-slot-indicators">
             {Array.from({ length: maxSlots }, (_, i) => {
                 const filled = i < slotsUsed;
                 const clickable = filled && canRemove;
                 return (
                     <div
                         key={i}
-                        className={`camp-slot-dot ${filled ? "camp-slot-filled" : "camp-slot-empty"} ${clickable ? "camp-slot-removable" : ""}`}
+                        className={`camp-slot-dot ${filled ? "camp-slot-filled" : ""} ${clickable ? "camp-slot-removable" : ""}`}
                         title={clickable ? `Click to remove session ${i + 1}` : filled ? `Slot ${i + 1} used` : `Slot ${i + 1} available`}
                         onClick={clickable ? () => onRemove(i) : undefined}
                     />
@@ -27,20 +39,10 @@ function SlotGrid({ maxSlots, slotsUsed, canRemove, onRemove }) {
     );
 }
 
-function RatingBadge({ grade }) {
-    if (!grade) return null;
-    const cfg = getRatingConfig(grade);
-    return (
-        <div className="camp-rating-badge" style={{ borderColor: cfg.color, color: cfg.color }}>
-            <span className="camp-rating-grade">{grade}</span>
-        </div>
-    );
-}
-
-function SessionCard({ sessionKey, energyAvailable, isInjuredPending, onAddSession, loading }) {
+function CampSessionCard({ sessionKey, energyAvailable, isInjuredPending, alreadyLogged, onAddSession, loading }) {
     const session = CAMP_SESSIONS[sessionKey];
     if (!session) return null;
-
+    const color = CAMP_SESSION_COLOR[sessionKey] ?? "blue";
     const notEnoughEnergy = (energyAvailable ?? 0) < session.energy;
     const blocked = notEnoughEnergy || isInjuredPending || loading;
 
@@ -49,26 +51,27 @@ function SessionCard({ sessionKey, energyAvailable, isInjuredPending, onAddSessi
     else if (notEnoughEnergy) tooltip = `Need ${session.energy}E (have ${energyAvailable ?? 0}E)`;
 
     return (
-        <div className={`camp-session-card ${blocked ? "camp-session-disabled" : ""}`}>
-            <div className="camp-session-header">
-                <span className="camp-session-name">{session.label}</span>
-                <span className="camp-session-energy">{session.energy}E</span>
+        <div className={`camp-session-card${blocked ? " camp-session-card--disabled" : ""}`}>
+            <div className={`camp-session-stripe camp-stripe-${color}`} />
+            <div className="camp-session-body">
+                <div className="camp-session-top">
+                    <span className="camp-session-name">{session.label}</span>
+                    <span className="camp-session-energy"><Zap size={11} /> {session.energy}E</span>
+                </div>
+                <div className={`camp-session-effect camp-effect-${color}`}>{session.effectLabel}</div>
+                <div className="camp-session-targets">{session.recommendedAgainst}</div>
+                {session.injuryRisk && <div className="camp-session-risk">{"⚠"} Injury risk</div>}
+                {alreadyLogged && <span className="camp-session-added">{"✓"} Added</span>}
+                <button
+                    type="button"
+                    className="camp-add-btn"
+                    disabled={blocked}
+                    title={tooltip || undefined}
+                    onClick={() => !blocked && onAddSession(sessionKey)}
+                >
+                    {loading ? "Adding…" : "Add to Camp"}
+                </button>
             </div>
-            <div className="camp-session-effect">{session.effectLabel}</div>
-            <div className="camp-session-footer">
-                <span className="camp-session-hint">{session.recommendedAgainst}</span>
-                {session.injuryRisk && (
-                    <span className="camp-session-risk">{"\u26A0"} Injury risk</span>
-                )}
-            </div>
-            <button
-                className="btn btn-secondary btn-sm camp-session-btn"
-                disabled={blocked}
-                title={tooltip || undefined}
-                onClick={() => !blocked && onAddSession(sessionKey)}
-            >
-                {loading ? "Adding\u2026" : "Add to camp"}
-            </button>
         </div>
     );
 }
@@ -105,8 +108,8 @@ export const FightCamp = memo(function FightCamp({
 
     const isInjuredPending = isInjured && !injuryChoice;
     const isFinalised = !!finalisedAt;
-    const displayGrade = isFinalised ? campRating : null;
     const canFinalise = !isFinalised && !isInjuredPending;
+    const canRemove = !isFinalised && !isInjuredPending;
     const [showEmptyConfirm, setShowEmptyConfirm] = useState(false);
 
     const handleFinaliseClick = useCallback(() => {
@@ -116,38 +119,35 @@ export const FightCamp = memo(function FightCamp({
             onFinalise();
         }
     }, [slotsUsed, onFinalise]);
+
     const energyAvailable = fighter.energy?.current ?? fighter.energy ?? 0;
 
     return (
-        <section className={`panel fight-camp${isTitleFight ? " fight-camp--title" : ""}`} data-tut="fight-camp">
-            <div className="camp-v2-header">
-                <div className="camp-v2-header-left">
-                    <h2 className="panel-title">{isTitleFight ? "Title Fight Camp" : "Fight Camp"}</h2>
-                    {campReport && (
-                        <button className="btn btn-ghost btn-sm camp-view-report" onClick={onViewReport}>
-                            View Report
-                        </button>
-                    )}
-                </div>
-                <div className="camp-v2-header-right">
-                    {(displayGrade || slotsUsed > 0) && (
-                        <RatingBadge grade={displayGrade} />
-                    )}
-                </div>
+        <div className={`fight-camp${isTitleFight ? " fight-camp--title" : ""}`} data-tut="fight-camp">
+            <div className="camp-header">
+                <button type="button" className="camp-tab camp-tab--active">
+                    {isTitleFight ? "Title Fight Camp" : "Fight Camp"}
+                </button>
+                {campReport && (
+                    <button type="button" className="camp-tab" onClick={onViewReport}>
+                        View Report
+                    </button>
+                )}
             </div>
 
-            <div className="panel-body">
-                <div className="camp-slots-row">
-                    <SlotGrid maxSlots={maxSlots} slotsUsed={slotsUsed} canRemove={!isFinalised && !isInjuredPending} onRemove={onRemoveSession} />
-                    <span className="camp-slots-label">
-                        {slotsUsed}/{maxSlots} slots used
-                        {slotsRemaining > 0 && !isFinalised && (
-                            <span className="camp-slots-remaining"> &middot; {slotsRemaining} remaining</span>
-                        )}
-                    </span>
-                    <span className="camp-energy-badge">{energyAvailable}E available</span>
-                </div>
+            <div className="camp-status">
+                <CampSlotDots maxSlots={maxSlots} slotsUsed={slotsUsed} canRemove={canRemove} onRemove={onRemoveSession} />
+                <span className="camp-slot-text">
+                    <strong>{slotsUsed}/{maxSlots}</strong> slots used
+                    {slotsRemaining > 0 && !isFinalised ? <> &middot; <strong>{slotsRemaining}</strong> remaining</> : null}
+                </span>
+                <span className="camp-energy-pill">
+                    <span className="lbl">Energy</span>
+                    <Zap size={13} /> {energyAvailable}
+                </span>
+            </div>
 
+            <div className="camp-sessions-area">
                 {isInjuredPending && (
                     <CampInjury
                         injuryType={injuryType}
@@ -160,7 +160,7 @@ export const FightCamp = memo(function FightCamp({
 
                 {injuryChoice === "PUSH_THROUGH" && injuryPenalty && (
                     <div className="camp-injury-pushed">
-                        {"\u26A0"} Pushing through injury — fight penalties active:{" "}
+                        {"⚠"} Pushing through injury — fight penalties active:{" "}
                         {Object.entries(injuryPenalty)
                             .map(([k, v]) => `${k.toUpperCase()} ${Math.round(v * 100)}%`)
                             .join(", ")}
@@ -170,11 +170,12 @@ export const FightCamp = memo(function FightCamp({
                 {!isFinalised && !isInjuredPending && slotsRemaining > 0 && (
                     <div className="camp-sessions-grid" data-tut="camp-sessions">
                         {CAMP_SESSION_KEYS.map((key) => (
-                            <SessionCard
+                            <CampSessionCard
                                 key={key}
                                 sessionKey={key}
                                 energyAvailable={energyAvailable}
                                 isInjuredPending={isInjuredPending}
+                                alreadyLogged={sessions.some((s) => s.sessionType === key)}
                                 onAddSession={onAddSession}
                                 loading={addingSession === key}
                             />
@@ -182,29 +183,48 @@ export const FightCamp = memo(function FightCamp({
                     </div>
                 )}
 
-                {sessions.length > 0 && (
-                    <div className="camp-sessions-taken">
-                        <div className="camp-sessions-taken-title">Sessions logged</div>
-                        {sessions.map((s, i) => {
+                <div className="camp-logged-section">
+                    <div className="camp-logged-label">Sessions Logged</div>
+                    <div className="camp-logged-slots">
+                        {Array.from({ length: maxSlots }, (_, i) => {
+                            const s = sessions[i];
+                            if (!s) {
+                                return (
+                                    <div key={i} className="camp-logged-slot camp-empty-slot">
+                                        Empty — add a session above
+                                    </div>
+                                );
+                            }
                             const cfg = CAMP_SESSIONS[s.sessionType];
                             const statusColor = MATCH_STATUS_COLORS[s.matchStatus] ?? "#94a3b8";
                             return (
-                                <div key={i} className="camp-session-row" style={{ borderLeftColor: statusColor }}>
-                                    <span className="csr-name">{cfg?.label ?? s.sessionType}</span>
-                                    <span className="csr-status" style={{ color: statusColor }}>
+                                <div key={i} className="camp-logged-slot">
+                                    <span className="camp-logged-slot-num">{i + 1}</span>
+                                    <span className="camp-logged-slot-name">{cfg?.label ?? s.sessionType}</span>
+                                    {s.diminishingFactor < 1 && (
+                                        <span className="camp-logged-repeat">repeat &times;{s.diminishingFactor}</span>
+                                    )}
+                                    <span className="camp-matched-badge" style={{ color: statusColor }}>
                                         {MATCH_STATUS_LABELS[s.matchStatus] ?? s.matchStatus}
-                                        {s.diminishingFactor < 1 && (
-                                            <span className="csr-dr"> &middot; repeat &times;{s.diminishingFactor}</span>
-                                        )}
                                     </span>
+                                    {canRemove && (
+                                        <button
+                                            type="button"
+                                            className="camp-logged-remove"
+                                            title="Remove this session"
+                                            onClick={() => onRemoveSession(i)}
+                                        >
+                                            &times;
+                                        </button>
+                                    )}
                                 </div>
                             );
                         })}
                     </div>
-                )}
+                </div>
 
                 {!isFinalised && (
-                    <div className="camp-v2-actions" data-tut="camp-finalise">
+                    <div className="camp-finalise-row" data-tut="camp-finalise">
                         {showEmptyConfirm ? (
                             <div className="camp-empty-confirm">
                                 <span className="camp-empty-confirm-msg">
@@ -216,7 +236,7 @@ export const FightCamp = memo(function FightCamp({
                                         onClick={() => { setShowEmptyConfirm(false); onFinalise(); }}
                                         disabled={finalising}
                                     >
-                                        {finalising ? "Finalising\u2026" : "Yes, finalise empty"}
+                                        {finalising ? "Finalising…" : "Yes, finalise empty"}
                                     </button>
                                     <button
                                         className="btn btn-ghost btn-sm"
@@ -227,13 +247,21 @@ export const FightCamp = memo(function FightCamp({
                                 </div>
                             </div>
                         ) : (
-                            <button
-                                className="btn btn-primary"
-                                onClick={handleFinaliseClick}
-                                disabled={!canFinalise || finalising}
-                            >
-                                {finalising ? "Finalising\u2026" : "Finalise Camp"}
-                            </button>
+                            <>
+                                <button
+                                    type="button"
+                                    className="camp-finalise-btn"
+                                    onClick={handleFinaliseClick}
+                                    disabled={!canFinalise || finalising}
+                                >
+                                    {finalising ? "Finalising…" : "Finalise Camp"}
+                                </button>
+                                {slotsRemaining > 0 && (
+                                    <span className="camp-finalise-hint">
+                                        You can still add {slotsRemaining} more session{slotsRemaining !== 1 ? "s" : ""} before finalising
+                                    </span>
+                                )}
+                            </>
                         )}
                     </div>
                 )}
@@ -244,6 +272,6 @@ export const FightCamp = memo(function FightCamp({
                     </div>
                 )}
             </div>
-        </section>
+        </div>
     );
 });

@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useState } from "react";
+import { Stethoscope, Timer, HeartPulse, Package, Coins } from "lucide-react";
 import { api } from "../../api";
 import { formatRecoveryRemaining } from "../../utils/injuryDisplay";
 
@@ -6,10 +7,9 @@ import { formatRecoveryRemaining } from "../../utils/injuryDisplay";
  * Hospital tab — dedicated screen for everything iron-paid medical.
  *
  * Sections:
- *   1. Services         — short read of what the hospital can do
- *   2. Health Restoration — three packages (Quick Patch / Recovery Bay / Full Restoration)
- *   3. Active Injuries  — list with the iron-paid actions (Visit doctor / Skip recovery)
- *   4. Full Recovery Package — top-level button when 2+ active injuries
+ *   A. Active Injuries  — list with the iron-paid actions (Treat Now / Skip Recovery)
+ *   B. Services         — short read of what the hospital can do
+ *   C. Health Restoration — three packages (Quick Patch / Recovery Bay / Full Restoration)
  */
 const HEALTH_PACKAGES = [
     { key: "quick_patch",      label: "Quick Patch",      hp: 25,  iron: 250, hint: "Top-up purchase. Premium rate for a small ticket." },
@@ -98,7 +98,7 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
         setBusyHealth(packageKey);
         try {
             const result = await api.hospitalRestoreHealth(fighterId, packageKey);
-            onMessage?.(`Restored ${result.restored} HP for ${result.ironPaid}🪙.`);
+            onMessage?.(`Restored ${result.restored} HP for ${result.ironPaid} iron.`);
             if (onRefreshFighter) await onRefreshFighter(fighterId);
         } catch (e) {
             onMessage?.(e.message || "Health restoration failed");
@@ -108,181 +108,209 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
 
     return (
         <div className="hospital-tab">
-            <header className="hospital-header">
-                <h2 className="hospital-title">🏥 Hospital</h2>
-                <p className="hospital-subtitle">
-                    Iron-paid medical services. Doctor visits clear blocking injuries; recovery skips
-                    skip the wait on auto-heal injuries; health packages restore HP without waiting.
+            <header className="page-header">
+                <div className="page-eyebrow">Medical Centre</div>
+                <h1 className="page-title">Hospital</h1>
+                <p className="page-sub">
+                    Iron-paid medical services. Doctor visits clear blocking injuries instantly.
+                    Health packages restore HP without waiting.
                 </p>
             </header>
 
-            <ServicesSection />
+            <div className="body">
+                {/* ── SECTION A — ACTIVE INJURIES ── */}
+                <section data-tut="hospital-injuries">
+                    <div className="slbl-row">
+                        <div className="slbl">Active Injuries</div>
+                        {hasInjuries && quote && quote.count > 1 && (
+                            <button
+                                type="button"
+                                className="treat-btn full-recovery-btn"
+                                disabled={busyFull}
+                                title={`Heal all ${quote.count} injuries — 15% bulk discount`}
+                                onClick={handleFullRecovery}
+                            >
+                                <Package size={14} /> Full Recovery — {quote.iron} iron + {quote.energy}E
+                            </button>
+                        )}
+                    </div>
 
-            {/* ── HEALTH RESTORATION ── */}
-            <section className="hospital-section">
-                <div className="hospital-section-header">
-                    <h3 className="hospital-section-title">Health Restoration</h3>
-                    <div className="hospital-hp-readout" data-tut="hospital-health">
-                        HP <strong>{currentHealth}</strong> / 100
-                        <div className="hospital-hp-bar">
+                    {!hasInjuries && (
+                        <div className="hp-empty">No active injuries.</div>
+                    )}
+
+                    {hasInjuries && (
+                        <div className="injury-list">
+                            {injuries.map((inj, index) => (
+                                <HospitalInjuryRow
+                                    key={`${inj.type ?? inj.label ?? "injury"}-${index}`}
+                                    injury={inj}
+                                    busy={busyId === inj.type}
+                                    onDoctorVisit={() => handleDoctorVisit(inj.type)}
+                                    onSkipRecovery={() => handleSkipRecovery(inj.type)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                {/* ── SECTION B — SERVICES ── */}
+                <ServicesSection />
+
+                {/* ── SECTION C — HEALTH RESTORATION ── */}
+                <section>
+                    <div className="slbl">Health Restoration</div>
+                    <div className="hp-card" data-tut="hospital-health">
+                        <div className="hp-header">
+                            <span className="hp-lbl">Current HP</span>
+                            <div className="hp-nums">
+                                <span className="hp-big">{currentHealth}</span>
+                                <span className="hp-of">/ 100</span>
+                            </div>
+                            {!healthFull && (
+                                <span className="hp-regen">
+                                    +1 HP every 5 min passively · full in ~{Math.max(0, (100 - currentHealth) * 5)}m
+                                </span>
+                            )}
+                        </div>
+                        <div className="hp-track">
                             <div
-                                className="hospital-hp-bar-fill"
+                                className="hp-fill"
                                 style={{ width: `${Math.max(0, Math.min(100, currentHealth))}%` }}
                             />
                         </div>
+
+                        {healthFull ? (
+                            <div className="hp-empty">Health is already full.</div>
+                        ) : (
+                            <div className="hp-pkgs" data-tut="hospital-restore">
+                                {(() => {
+                                    // Compute actual heal + prorated iron for each package.
+                                    const options = HEALTH_PACKAGES.map((pkg) => {
+                                        const actualHeal = Math.min(pkg.hp, 100 - currentHealth);
+                                        const proRatedIron = Math.ceil((actualHeal / pkg.hp) * pkg.iron);
+                                        return { pkg, actualHeal, proRatedIron };
+                                    });
+                                    // A package is "dominated" if another option delivers the same HP at a
+                                    // lower price. Dominated cards render disabled so the player still sees
+                                    // the menu but can only act on the best deals at their current state.
+                                    const isDominated = (opt) => options.some(
+                                        (other) => other !== opt
+                                            && other.actualHeal === opt.actualHeal
+                                            && other.proRatedIron < opt.proRatedIron
+                                    );
+                                    return options.map(({ pkg, actualHeal, proRatedIron }) => {
+                                        const dominated = isDominated({ pkg, actualHeal, proRatedIron });
+                                        const cantAfford = playerIron < proRatedIron;
+                                        const busy = busyHealth === pkg.key;
+                                        const isPartial = actualHeal < pkg.hp;
+                                        const disabled = busy || cantAfford || dominated;
+                                        const titleText = dominated
+                                            ? "A cheaper package delivers the same HP — pick that one instead."
+                                            : cantAfford
+                                                ? `Need ${proRatedIron} iron`
+                                                : `Pay ${proRatedIron} iron for ${actualHeal} HP`;
+                                        return (
+                                            <div
+                                                key={pkg.key}
+                                                className={`hp-pkg ${pkg.key === "recovery_bay" ? "best" : ""} ${dominated ? "is-dominated" : ""}`}
+                                            >
+                                                <div className="hp-pkg-left">
+                                                    <div className="hp-pkg-name">
+                                                        {pkg.label}
+                                                        {pkg.key === "recovery_bay" && <span className="best-tag">Best</span>}
+                                                    </div>
+                                                    <div className="hp-pkg-hp">+{actualHeal} HP</div>
+                                                    <div className="hp-pkg-hplbl">{isPartial ? "partial restore" : "fills to 100"}</div>
+                                                    <div className="hp-pkg-desc">{pkg.hint}</div>
+                                                </div>
+                                                <div className="hp-pkg-right">
+                                                    <button
+                                                        type="button"
+                                                        className={`hp-buy-btn ${pkg.key === "recovery_bay" ? "best" : ""}`}
+                                                        disabled={disabled}
+                                                        title={titleText}
+                                                        onClick={() => handleRestoreHealth(pkg.key)}
+                                                    >
+                                                        <Coins size={13} /> {proRatedIron}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </div>
+                        )}
                     </div>
-                </div>
-
-                {healthFull ? (
-                    <div className="hospital-empty">Health is already full.</div>
-                ) : (
-                    <div className="hospital-health-grid" data-tut="hospital-restore">
-                        {(() => {
-                            // Compute actual heal + prorated iron for each package.
-                            const options = HEALTH_PACKAGES.map((pkg) => {
-                                const actualHeal = Math.min(pkg.hp, 100 - currentHealth);
-                                const proRatedIron = Math.ceil((actualHeal / pkg.hp) * pkg.iron);
-                                return { pkg, actualHeal, proRatedIron };
-                            });
-                            // A package is "dominated" if another option delivers the same HP at a
-                            // lower price. Dominated cards render disabled so the player still sees
-                            // the menu but can only act on the best deals at their current state.
-                            const isDominated = (opt) => options.some(
-                                (other) => other !== opt
-                                    && other.actualHeal === opt.actualHeal
-                                    && other.proRatedIron < opt.proRatedIron
-                            );
-                            return options.map(({ pkg, actualHeal, proRatedIron }) => {
-                                const dominated = isDominated({ pkg, actualHeal, proRatedIron });
-                                const cantAfford = playerIron < proRatedIron;
-                                const busy = busyHealth === pkg.key;
-                                const isPartial = actualHeal < pkg.hp;
-                                const disabled = busy || cantAfford || dominated;
-                                const titleText = dominated
-                                    ? "A cheaper package delivers the same HP — pick that one instead."
-                                    : cantAfford
-                                        ? `Need ${proRatedIron}🪙`
-                                        : `Pay ${proRatedIron}🪙 for ${actualHeal} HP`;
-                                return (
-                                    <div
-                                        key={pkg.key}
-                                        className={`hospital-health-card ${dominated ? "is-dominated" : ""}`}
-                                    >
-                                        <div className="hospital-health-name">{pkg.label}</div>
-                                        <div className="hospital-health-amount">
-                                            +{actualHeal} HP
-                                            {isPartial && <span className="hospital-health-cap"> (partial)</span>}
-                                        </div>
-                                        <div className="hospital-health-hint">{pkg.hint}</div>
-                                        <button
-                                            type="button"
-                                            className="btn btn-warning btn-sm hospital-health-btn"
-                                            disabled={disabled}
-                                            title={titleText}
-                                            onClick={() => handleRestoreHealth(pkg.key)}
-                                        >
-                                            {proRatedIron}🪙
-                                        </button>
-                                    </div>
-                                );
-                            });
-                        })()}
-                    </div>
-                )}
-            </section>
-
-            {/* ── ACTIVE INJURIES ── */}
-            <section className="hospital-section" data-tut="hospital-injuries">
-                <div className="hospital-section-header">
-                    <h3 className="hospital-section-title">Active Injuries</h3>
-                    {hasInjuries && quote && quote.count > 1 && (
-                        <button
-                            type="button"
-                            className="btn btn-warning"
-                            disabled={busyFull}
-                            title={`Heal all ${quote.count} injuries — 15% bulk discount`}
-                            onClick={handleFullRecovery}
-                        >
-                            🏥 Full Recovery — {quote.iron}🪙 + {quote.energy}E
-                        </button>
-                    )}
-                </div>
-
-                {!hasInjuries && (
-                    <div className="hospital-empty">No active injuries.</div>
-                )}
-
-                {hasInjuries && (
-                    <div className="hospital-injury-list">
-                        {injuries.map((inj, index) => (
-                            <HospitalInjuryRow
-                                key={`${inj.type ?? inj.label ?? "injury"}-${index}`}
-                                injury={inj}
-                                busy={busyId === inj.type}
-                                onDoctorVisit={() => handleDoctorVisit(inj.type)}
-                                onSkipRecovery={() => handleSkipRecovery(inj.type)}
-                            />
-                        ))}
-                    </div>
-                )}
-            </section>
+                </section>
+            </div>
         </div>
     );
 }
 
 const ServicesSection = memo(function ServicesSection() {
     return (
-        <section className="hospital-section">
-            <h3 className="hospital-section-title">Services</h3>
-            <div className="hospital-services">
-                <div className="hospital-service-card">
-                    <div className="hospital-service-head">
-                        <span className="hospital-service-icon">💊</span>
-                        <span className="hospital-service-name">Treatment</span>
+        <section>
+            <div className="slbl">Services</div>
+            <div className="services-grid">
+                <div className="svc">
+                    <div className="svc-stripe svc-stripe--red" />
+                    <div className="svc-body">
+                        <div className="svc-top">
+                            <span className="svc-icon svc-icon--red"><Stethoscope size={16} /></span>
+                            <span className="svc-name">Treatment</span>
+                        </div>
+                        <p className="svc-desc">
+                            Doctor-required injuries heal on their own within a day. Pay iron + energy to
+                            clear one instantly and skip the wait.
+                        </p>
+                        <div className="svc-price"><Coins size={12} /> From 200 iron</div>
                     </div>
-                    <p className="hospital-service-desc">
-                        Doctor-required injuries (Cut, Concussion, Broken Nose, Torn Ligament) heal on
-                        their own within a day. Pay energy + iron to clear one instantly and skip
-                        the wait — handy when an injury is blocking your next fight.
-                    </p>
-                    <div className="hospital-service-tag">From 200🪙 + 10E</div>
                 </div>
 
-                <div className="hospital-service-card">
-                    <div className="hospital-service-head">
-                        <span className="hospital-service-icon">⏱</span>
-                        <span className="hospital-service-name">Skip Recovery</span>
+                <div className="svc">
+                    <div className="svc-stripe svc-stripe--amber" />
+                    <div className="svc-body">
+                        <div className="svc-top">
+                            <span className="svc-icon svc-icon--amber"><Timer size={16} /></span>
+                            <span className="svc-name">Skip Recovery</span>
+                        </div>
+                        <p className="svc-desc">
+                            Auto-heal injuries clear within hours on their own. Pay iron to skip the wait
+                            and get back to training right away.
+                        </p>
+                        <div className="svc-price"><Coins size={12} /> From 600 iron</div>
                     </div>
-                    <p className="hospital-service-desc">
-                        Auto-heal injuries (Bruised Rib, Sprained Ankle, Broken Hand) clear within hours.
-                        Pay iron to skip the wait and get back to training right away.
-                    </p>
-                    <div className="hospital-service-tag">From 600🪙</div>
                 </div>
 
-                <div className="hospital-service-card">
-                    <div className="hospital-service-head">
-                        <span className="hospital-service-icon">❤️</span>
-                        <span className="hospital-service-name">Health Restoration</span>
+                <div className="svc">
+                    <div className="svc-stripe svc-stripe--blue" />
+                    <div className="svc-body">
+                        <div className="svc-top">
+                            <span className="svc-icon svc-icon--blue"><HeartPulse size={16} /></span>
+                            <span className="svc-name">Health Restoration</span>
+                        </div>
+                        <p className="svc-desc">
+                            HP regenerates passively at +1 every 5 minutes. Skip the wait with Quick Patch,
+                            Recovery Bay, or Full Restoration.
+                        </p>
+                        <div className="svc-price"><Coins size={12} /> From 200 iron</div>
                     </div>
-                    <p className="hospital-service-desc">
-                        HP regenerates passively at +1 every 5 minutes. Skip the wait with three
-                        packages — Quick Patch (+25), Recovery Bay (+50), Full Restoration (to 100).
-                        Available at every tier.
-                    </p>
-                    <div className="hospital-service-tag">From 200🪙</div>
                 </div>
 
-                <div className="hospital-service-card">
-                    <div className="hospital-service-head">
-                        <span className="hospital-service-icon">🏥</span>
-                        <span className="hospital-service-name">Full Recovery Package</span>
+                <div className="svc">
+                    <div className="svc-stripe svc-stripe--gold" />
+                    <div className="svc-body">
+                        <div className="svc-top">
+                            <span className="svc-icon svc-icon--gold"><Package size={16} /></span>
+                            <span className="svc-name">Full Recovery</span>
+                        </div>
+                        <p className="svc-desc">
+                            Heal every active injury in one transaction. Available with two or more active
+                            injuries.
+                        </p>
+                        <div className="svc-discount">Bulk Discount — 15%</div>
                     </div>
-                    <p className="hospital-service-desc">
-                        Heal every active injury in one transaction. 15% bulk discount over individual
-                        services. Becomes available when you have two or more active injuries.
-                    </p>
-                    <div className="hospital-service-tag">Bulk discount −15%</div>
                 </div>
             </div>
         </section>
@@ -299,47 +327,51 @@ const HospitalInjuryRow = memo(function HospitalInjuryRow({
     const hoursLeft = inj.recoveryHoursLeft > 0 ? inj.recoveryHoursLeft : (inj.recoveryDaysLeft || 0) * 24;
     const isAutoHealing = !inj.requiresDoctorVisit && hoursLeft > 0;
     const ticking = hoursLeft > 0 && !inj.doctorVisited;
-    const severity = inj.severity === "major" ? "injury-major" : "injury-minor";
 
     return (
-        <div className={`hospital-injury-row ${severity}`}>
-            <div className="hospital-injury-info">
-                <div className="hospital-injury-headline">
-                    <span className="hospital-injury-name">{inj.label}</span>
-                    <span className="injury-severity-badge">{inj.severity}</span>
-                    {inj.cannotFight && <span className="hospital-injury-flag">blocks fighting</span>}
-                    {inj.cannotSpar && <span className="hospital-injury-flag">blocks sparring</span>}
-                    {inj.cannotBagWork && <span className="hospital-injury-flag">blocks bag/pad work</span>}
+        <div className={`injury-card ${inj.severity === "major" ? "is-major" : "is-minor"}`}>
+            <div className="injury-card-left">
+                <div className="injury-name-row">
+                    <span className="injury-name">{inj.label}</span>
+                    <span className="inj-sev">{inj.severity}</span>
+                    {inj.cannotFight && <span className="inj-block">Blocks Fighting</span>}
+                    {inj.cannotSpar && <span className="inj-block">Blocks Sparring</span>}
+                    {inj.cannotBagWork && <span className="inj-block">Blocks Bag/Pad Work</span>}
                 </div>
-                <p className="hospital-injury-desc">{inj.effect}</p>
+                <p className="injury-desc">{inj.effect}</p>
                 {ticking && (
-                    <p className="hospital-injury-meta">
-                        Heals on its own in <strong>{formatRecoveryRemaining(inj)}</strong>
-                        {needsDoctor && " — or treat now to skip the wait"}
+                    <p className="injury-timer">
+                        Auto-heals in <strong>{formatRecoveryRemaining(inj)}</strong>
                     </p>
                 )}
             </div>
 
-            <div className="hospital-injury-actions">
+            <div className="injury-card-right">
                 {needsDoctor && (
-                    <button
-                        type="button"
-                        className="btn btn-warning btn-sm"
-                        disabled={busy}
-                        onClick={onDoctorVisit}
-                    >
-                        Treat — {inj.docVisitIron}🪙 + {inj.docVisitEnergy}E
-                    </button>
+                    <>
+                        <button
+                            type="button"
+                            className="treat-btn"
+                            disabled={busy}
+                            onClick={onDoctorVisit}
+                        >
+                            Treat Now
+                        </button>
+                        <div className="treat-cost">{inj.docVisitIron} iron + {inj.docVisitEnergy} energy</div>
+                    </>
                 )}
                 {isAutoHealing && inj.recoverySkipIron > 0 && (
-                    <button
-                        type="button"
-                        className="btn btn-ghost btn-sm"
-                        disabled={busy}
-                        onClick={onSkipRecovery}
-                    >
-                        Skip recovery — {inj.recoverySkipIron}🪙
-                    </button>
+                    <>
+                        <button
+                            type="button"
+                            className="treat-btn treat-btn--ghost"
+                            disabled={busy}
+                            onClick={onSkipRecovery}
+                        >
+                            Skip Recovery
+                        </button>
+                        <div className="treat-cost">{inj.recoverySkipIron} iron</div>
+                    </>
                 )}
             </div>
         </div>

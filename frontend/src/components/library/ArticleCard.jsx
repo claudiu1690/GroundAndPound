@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { slugFor } from "./libraryContent";
 
 /**
  * Article tile in the Library grid. Shows category label, title, summary.
@@ -20,18 +21,14 @@ function highlight(text, query) {
 }
 
 export const ArticleCard = memo(function ArticleCard({ article, query, onOpen }) {
+    const slug = slugFor(article.category);
     return (
-        <button
-            type="button"
-            className="library-card"
-            onClick={onOpen}
-        >
-            <div className="library-card-category">{article.category}</div>
-            <div className="library-card-title">
-                {highlight(article.title, query)}
-            </div>
-            <div className="library-card-summary">
-                {highlight(article.summary, query)}
+        <button type="button" className="article-card" onClick={onOpen}>
+            <div className={`article-top-stripe ${slug}`} />
+            <div className="article-body">
+                <div className={`article-cat ${slug}`}>{article.category}</div>
+                <div className="article-title">{highlight(article.title, query)}</div>
+                <div className="article-desc">{highlight(article.summary, query)}</div>
             </div>
         </button>
     );

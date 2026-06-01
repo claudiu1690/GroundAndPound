@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { X, AlertTriangle, Lock, FileX } from "lucide-react";
 import { api } from "../../api";
 
 function formatIron(n) {
@@ -118,29 +119,31 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
 
     const { available, active, history } = data;
     const fameTier = fighter?.notoriety?.peakTier || "UNKNOWN";
+    const slotsFull = (available.slots.used >= available.slots.max) && available.slots.max > 0;
 
     return (
         <section className="contracts-tab">
-            <header className="contracts-header">
-                <h2>Contracts</h2>
-                <div className="contracts-slots">
-                    Slots used: <strong>{available?.slots?.used ?? 0} / {available?.slots?.max ?? 0}</strong>
-                    <span className="contracts-slots-hint">
-                        {" "}— raise your fame tier to unlock more.
-                    </span>
+            <header className="page-header">
+                <div className="page-header-left">
+                    <div className="page-eyebrow">Sponsorships</div>
+                    <h1 className="page-title">Contracts</h1>
+                </div>
+                <div className="slots-badge">
+                    <span className="slots-label">Slots Used</span>
+                    <span className="slots-val">{available?.slots?.used ?? 0} / {available?.slots?.max ?? 0}</span>
+                    <span className="slots-hint">Raise your fame tier to unlock more</span>
                 </div>
             </header>
 
-            <div className="contracts-cols">
+            <div className="contracts-grid">
                 {/* ── ACTIVE ────────────────────────────────────── */}
                 <section className="contracts-col">
-                    <h3 className="contracts-col-title">Active</h3>
-                    {active.length === 0 && (
-                        <div className="contracts-empty">
-                            No active contracts. Pick one from the offers to start earning on every fight.
+                    <div className="col-label">Active</div>
+                    {active.length === 0 ? (
+                        <div className="empty-state">
+                            <span className="empty-state-text">No active contracts. Pick one from the offers to start earning on every fight.</span>
                         </div>
-                    )}
-                    {active.map((c) => (
+                    ) : active.map((c) => (
                         <ActiveCard
                             key={c.id}
                             contract={c}
@@ -152,28 +155,25 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
 
                 {/* ── AVAILABLE ─────────────────────────────────── */}
                 <section className="contracts-col">
-                    <h3 className="contracts-col-title">
+                    <div className="col-label">
                         Available
-                        <span className="contracts-col-sub">
-                            {available?.rotationEndsAt
-                                ? ` · new offers ${formatCountdown(available.rotationEndsAt)}`
-                                : ""}
-                        </span>
-                    </h3>
+                        {available?.rotationEndsAt && (
+                            <span className="col-label-sub"> · new offers {formatCountdown(available.rotationEndsAt)}</span>
+                        )}
+                    </div>
 
                     {fameTier === "UNKNOWN" && (
-                        <div className="contracts-empty">
-                            Reach <strong>Prospect</strong> fame tier to attract your first sponsors.
+                        <div className="empty-state">
+                            <span className="empty-state-text">Reach <strong>Prospect</strong> fame tier to attract your first sponsors.</span>
                         </div>
                     )}
 
                     {fameTier !== "UNKNOWN" && available.offers.length === 0 && (
-                        <div className="contracts-empty">
-                            No new offers right now. Sponsors you've already signed, dropped,
-                            or broken this week won't re-appear until the pool refreshes
-                            {available?.rotationEndsAt
-                                ? ` ${formatCountdown(available.rotationEndsAt)}.`
-                                : " next week."}
+                        <div className="empty-state">
+                            <span className="empty-state-text">
+                                No new offers right now. Sponsors you've already signed, dropped, or broken this week won't re-appear until the pool refreshes
+                                {available?.rotationEndsAt ? ` ${formatCountdown(available.rotationEndsAt)}.` : " next week."}
+                            </span>
                         </div>
                     )}
 
@@ -183,18 +183,20 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
                             offer={o}
                             onAccept={() => handleAccept(o.id)}
                             busy={busyId === o.id}
-                            slotsFull={(available.slots.used >= available.slots.max) && available.slots.max > 0}
+                            slotsFull={slotsFull}
                         />
                     ))}
                 </section>
 
                 {/* ── HISTORY ───────────────────────────────────── */}
                 <section className="contracts-col">
-                    <h3 className="contracts-col-title">History</h3>
-                    {history.length === 0 && (
-                        <div className="contracts-empty">No completed contracts yet.</div>
-                    )}
-                    {history.map((c) => (
+                    <div className="col-label">History</div>
+                    {history.length === 0 ? (
+                        <div className="empty-state">
+                            <FileX size={20} />
+                            <span className="empty-state-text">No completed contracts yet. Finish your first contract to see it here.</span>
+                        </div>
+                    ) : history.map((c) => (
                         <HistoryCard key={c.id} contract={c} />
                     ))}
                 </section>
@@ -206,6 +208,32 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
                 onConfirm={confirmDrop}
             />
         </section>
+    );
+}
+
+// ───────────────────────────────────────────────────────────────
+// Shared rewards block (Active + Offer)
+// ───────────────────────────────────────────────────────────────
+
+function RewardsBlock({ perFight, onComplete, fame, penalty }) {
+    return (
+        <>
+            <div className="contract-rewards">
+                <div className="contract-reward">
+                    <span className="contract-reward-label">Per Fight</span>
+                    <span className="contract-reward-val positive">+{formatIron(perFight)} <span>iron</span></span>
+                </div>
+                <div className="contract-reward">
+                    <span className="contract-reward-label">On Complete</span>
+                    <span className="contract-reward-val positive">+{formatIron(onComplete)} <span>iron</span></span>
+                </div>
+            </div>
+            <div className="contract-reward contract-reward-fame">
+                <span className="contract-reward-label">On Complete</span>
+                <span className="contract-reward-val positive-fame">+{fame} <span>fame</span></span>
+            </div>
+            <div className="contract-penalty"><AlertTriangle size={12} /> If broken — −{penalty} fame</div>
+        </>
     );
 }
 
@@ -233,7 +261,7 @@ function DropContractConfirm({ contract, onCancel, onConfirm }) {
             <div className="drop-confirm-shell">
                 <header className="drop-confirm-header">
                     <h3>Drop this contract?</h3>
-                    <button type="button" className="drop-confirm-close" onClick={onCancel} aria-label="Close">✕</button>
+                    <button type="button" className="drop-confirm-close" onClick={onCancel} aria-label="Close"><X size={16} /></button>
                 </header>
 
                 <div className="drop-confirm-body">
@@ -245,7 +273,7 @@ function DropContractConfirm({ contract, onCancel, onConfirm }) {
                     <div className="drop-confirm-clause">{contract.clauseText}</div>
 
                     <div className="drop-confirm-penalty">
-                        <div className="drop-confirm-penalty-label">Fame penalty</div>
+                        <div className="drop-confirm-penalty-label"><AlertTriangle size={12} /> Fame penalty</div>
                         <div className="drop-confirm-penalty-value">−{penalty.toLocaleString()} fame</div>
                         <div className="drop-confirm-penalty-hint">
                             Half of the break penalty ({contract.famePenaltyOnBreak} fame). You'll still
@@ -255,7 +283,7 @@ function DropContractConfirm({ contract, onCancel, onConfirm }) {
 
                     {contract.totals?.ironEarned > 0 && (
                         <div className="drop-confirm-earned">
-                            Earned so far: <strong>+{(contract.totals.ironEarned || 0).toLocaleString()} ⊗</strong>
+                            Earned so far: <strong>+{(contract.totals.ironEarned || 0).toLocaleString()} iron</strong>
                         </div>
                     )}
                 </div>
@@ -276,104 +304,93 @@ function DropContractConfirm({ contract, onCancel, onConfirm }) {
 
 function ActiveCard({ contract, onDrop, busy }) {
     return (
-        <article className="contract-card contract-card-active">
-            <header className="contract-head">
-                <div>
+        <article className="contract-card active-card">
+            <div className="contract-stripe active" />
+            <div className="contract-body">
+                <header className="contract-header">
                     <div className="contract-brand">{contract.brand}</div>
-                    <div className="contract-tagline">{contract.tagline}</div>
+                    <span className="contract-status-badge active">Active</span>
+                </header>
+                <div className="contract-tagline">{contract.tagline}</div>
+                <div className="contract-clause">
+                    <span className="contract-clause-text">{contract.clauseText}</span>
+                    <div className="contract-progress-track">
+                        <ProgressFill contract={contract} />
+                    </div>
+                    <span className="contract-progress-label">{contract.progressText}</span>
                 </div>
-                <span className={`contract-status status-active`}>Active</span>
-            </header>
-
-            <div className="contract-clause">{contract.clauseText}</div>
-            <div className="contract-progress">
-                <div className="contract-progress-bar">
-                    <ProgressFill contract={contract} />
+                <RewardsBlock
+                    perFight={contract.rewardPerFight}
+                    onComplete={contract.rewardBonus}
+                    fame={contract.fameBonusOnComplete}
+                    penalty={contract.famePenaltyOnBreak}
+                />
+                <div className="contract-earned">
+                    <span className="contract-earned-label">Earned so far</span>
+                    <span className="contract-earned-val">+{formatIron(contract.totals?.ironEarned || 0)} iron</span>
+                    <button className="drop-btn" onClick={onDrop} disabled={busy}>{busy ? "…" : "Drop"}</button>
                 </div>
-                <div className="contract-progress-label">{contract.progressText}</div>
             </div>
-
-            <div className="contract-rewards">
-                <div><span>Per fight</span><strong>+{formatIron(contract.rewardPerFight)} ⊗</strong></div>
-                <div><span>On complete</span><strong>+{formatIron(contract.rewardBonus)} ⊗ · +{contract.fameBonusOnComplete} fame</strong></div>
-                <div><span>If broken</span><strong className="neg">−{contract.famePenaltyOnBreak} fame</strong></div>
-            </div>
-
-            <footer className="contract-foot">
-                <div className="contract-totals">
-                    Earned so far: <strong>+{formatIron(contract.totals?.ironEarned || 0)} ⊗</strong>
-                </div>
-                <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={onDrop}
-                    disabled={busy}
-                >
-                    {busy ? "…" : "Drop"}
-                </button>
-            </footer>
         </article>
     );
 }
 
 function OfferCard({ offer, onAccept, busy, slotsFull }) {
     return (
-        <article className="contract-card contract-card-offer">
-            <header className="contract-head">
-                <div>
+        <article className={`contract-card available-card ${slotsFull ? "full-card" : ""}`}>
+            <div className="contract-stripe prospect" />
+            <div className="contract-body">
+                <header className="contract-header">
                     <div className="contract-brand">{offer.brand}</div>
-                    <div className="contract-tagline">{offer.tagline}</div>
+                    <span className="contract-status-badge prospect">{offer.unlockTier.replace("_", " ")}</span>
+                </header>
+                <div className="contract-tagline">{offer.tagline}</div>
+                <div className="contract-clause">
+                    <span className="contract-clause-text">{offer.clauseText}</span>
                 </div>
-                <span className={`contract-tier-tag tier-${offer.unlockTier}`}>
-                    {offer.unlockTier.replace("_", " ")}
-                </span>
-            </header>
-
-            <div className="contract-clause">{offer.clauseText}</div>
-
-            <div className="contract-rewards">
-                <div><span>Per fight</span><strong>+{formatIron(offer.rewardPerFight)} ⊗</strong></div>
-                <div><span>On complete</span><strong>+{formatIron(offer.rewardBonus)} ⊗ · +{offer.fameBonusOnComplete} fame</strong></div>
-                <div><span>If broken</span><strong className="neg">−{offer.famePenaltyOnBreak} fame</strong></div>
-                <div><span>Duration</span><strong>{offer.durationFights} fights</strong></div>
+                <RewardsBlock
+                    perFight={offer.rewardPerFight}
+                    onComplete={offer.rewardBonus}
+                    fame={offer.fameBonusOnComplete}
+                    penalty={offer.famePenaltyOnBreak}
+                />
+                <div className="contract-meta-row">
+                    <span className="contract-meta-label">Duration</span>
+                    <span className="contract-meta-val">{offer.durationFights} fights</span>
+                </div>
+                {slotsFull ? (
+                    <div className="slots-full-tag"><Lock size={13} /> Slots Full</div>
+                ) : (
+                    <button className="sign-btn" onClick={onAccept} disabled={busy} title={undefined}>{busy ? "…" : "Sign"}</button>
+                )}
             </div>
-
-            <footer className="contract-foot">
-                <button
-                    type="button"
-                    className="btn btn-primary btn-sm"
-                    onClick={onAccept}
-                    disabled={busy || slotsFull}
-                    title={slotsFull ? "No sponsor slots available" : undefined}
-                >
-                    {busy ? "…" : slotsFull ? "Slots full" : "Sign contract"}
-                </button>
-            </footer>
         </article>
     );
 }
 
 function HistoryCard({ contract }) {
     const tone = statusTone(contract.status);
+    const stripeClass = tone === "pos" ? "prospect" : tone === "neg" ? "active" : "locked";
     return (
-        <article className={`contract-card contract-card-history contract-history-${tone}`}>
-            <header className="contract-head">
-                <div>
+        <article className="contract-card history-card">
+            <div className={`contract-stripe ${stripeClass}`} />
+            <div className="contract-body">
+                <header className="contract-header">
                     <div className="contract-brand">{contract.brand}</div>
-                    <div className="contract-tagline">{contract.tagline}</div>
+                    <span className={`contract-status-badge ${stripeClass}`}>{statusLabel(contract.status)}</span>
+                </header>
+                <div className="contract-tagline">{contract.tagline}</div>
+                <div className="contract-clause">
+                    <span className="contract-clause-text">{contract.clauseText}</span>
                 </div>
-                <span className={`contract-status status-${contract.status}`}>
-                    {statusLabel(contract.status)}
-                </span>
-            </header>
-            <div className="contract-clause">{contract.clauseText}</div>
-            {contract.breakReason && (
-                <div className="contract-break-reason">{contract.breakReason}</div>
-            )}
-            <div className="contract-totals-row">
-                <span>+{formatIron(contract.totals?.ironEarned || 0)} ⊗ earned</span>
-                {contract.totals?.fameEarned ? <span>+{contract.totals.fameEarned} fame</span> : null}
-                {contract.resolvedAt && <span className="muted">{formatRelative(contract.resolvedAt)}</span>}
+                {contract.breakReason && (
+                    <div className="contract-break-reason">{contract.breakReason}</div>
+                )}
+                <div className="contract-totals-row">
+                    <span>+{formatIron(contract.totals?.ironEarned || 0)} iron earned</span>
+                    {contract.totals?.fameEarned ? <span>+{contract.totals.fameEarned} fame</span> : null}
+                    {contract.resolvedAt && <span className="muted">{formatRelative(contract.resolvedAt)}</span>}
+                </div>
             </div>
         </article>
     );

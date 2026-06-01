@@ -1,4 +1,6 @@
 import { memo } from "react";
+import { ArrowLeft, Lightbulb } from "lucide-react";
+import { slugFor } from "./libraryContent";
 
 /**
  * Full article view — category label, title, italic summary, body (paragraphs
@@ -8,63 +10,65 @@ import { memo } from "react";
  * scroll-container ancestor when transitioning from grid → article).
  */
 export const ArticleView = memo(function ArticleView({ article, onBack }) {
+    const slug = slugFor(article.category);
+
     return (
         <div className="library-article">
-            <button
-                type="button"
-                className="library-back-btn"
-                onClick={onBack}
-            >
-                ← Back to Library
-            </button>
+            <nav className="article-nav">
+                <button type="button" className="back-btn" onClick={onBack}>
+                    <ArrowLeft size={14} /> Back to Library
+                </button>
+                <span className={`article-nav-cat cat-${slug}`}>{article.category}</span>
+            </nav>
 
-            <article className="library-article-body">
-                <div className="library-article-category">{article.category}</div>
-                <h1 className="library-article-title">{article.title}</h1>
-                <p className="library-article-summary">{article.summary}</p>
+            <div className="article-wrap">
+                <div className="article-inner">
+                    <span className={`article-cat-pill cat-${slug}`}>{article.category}</span>
+                    <h1 className="article-title">{article.title}</h1>
+                    <p className="article-subtitle">{article.summary}</p>
+                    <div className="article-divider" />
 
-                <div className="library-article-content">
-                    {article.body.map((block, i) => {
-                        if (typeof block === "string") {
-                            return <p key={i} className="library-article-paragraph">{block}</p>;
-                        }
-                        if (block && block.type === "table") {
-                            return (
-                                <div key={i} className="library-article-table-wrap">
-                                    <table className="library-article-table">
-                                        <thead>
-                                            <tr>
-                                                {block.headers.map((h, j) => (
-                                                    <th key={j}>{h}</th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {block.rows.map((row, ri) => (
-                                                <tr key={ri}>
-                                                    {row.map((cell, ci) => (
-                                                        <td key={ci}>{cell}</td>
+                    <div className="article-body">
+                        {article.body.map((block, i) => {
+                            if (typeof block === "string") {
+                                return <p key={i} className="article-p">{block}</p>;
+                            }
+                            if (block && block.type === "table") {
+                                return (
+                                    <div key={i} className="article-table-wrap">
+                                        <table className="article-table">
+                                            <thead>
+                                                <tr>
+                                                    {block.headers.map((h, j) => (
+                                                        <th key={j}>{h}</th>
                                                     ))}
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            );
-                        }
-                        return null;
-                    })}
-                </div>
-
-                {article.keyTakeaway && (
-                    <div className="library-key-takeaway">
-                        <div className="library-key-takeaway-label">Key Takeaway</div>
-                        <div className="library-key-takeaway-body">
-                            {article.keyTakeaway}
-                        </div>
+                                            </thead>
+                                            <tbody>
+                                                {block.rows.map((row, ri) => (
+                                                    <tr key={ri}>
+                                                        {row.map((cell, ci) => (
+                                                            <td key={ci}>{cell}</td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                );
+                            }
+                            return null;
+                        })}
                     </div>
-                )}
-            </article>
+
+                    {article.keyTakeaway && (
+                        <div className="key-takeaway">
+                            <div className="key-takeaway-label"><Lightbulb size={12} /> Key Takeaway</div>
+                            <div className="key-takeaway-text">{article.keyTakeaway}</div>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 });

@@ -1,6 +1,6 @@
 import { memo, useState } from "react";
 import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
-import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Trophy, Lock, Megaphone } from "lucide-react";
+import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Trophy, Lock, Megaphone, ShieldCheck } from "lucide-react";
 import { CalloutModal } from "./CalloutModal";
 
 const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard", TITLE: "TitleShot" };
@@ -119,6 +119,25 @@ function ReadinessTile({ icon, value, max, label, sub, tone = "ok" }) {
   );
 }
 
+/**
+ * Streak tile — third readiness slot. No progress bar; tone-coloured value/icon.
+ * tone: "win" | "loss" | "neutral".
+ */
+function StreakTile({ winStreak, loseStreak }) {
+  const tone = winStreak > 0 ? "win" : loseStreak > 0 ? "loss" : "neutral";
+  const icon = winStreak > 0 ? <TrendingUp size={22} /> : loseStreak > 0 ? <TrendingDown size={22} /> : <Swords size={22} />;
+  const value = winStreak > 0 ? `${winStreak}W` : loseStreak > 0 ? `${loseStreak}L` : "—";
+  const sub = winStreak > 0 ? `${winStreak}-fight win streak` : loseStreak > 0 ? `${loseStreak}-fight losing streak` : "No active streak";
+  return (
+    <div className={`readiness-tile readiness-tile-streak readiness-tile-${tone}`}>
+      <div className="readiness-tile-icon">{icon}</div>
+      <div className="readiness-tile-value">{value}</div>
+      <div className="readiness-tile-label">STREAK</div>
+      <div className="readiness-tile-sub">{sub}</div>
+    </div>
+  );
+}
+
 function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
   const rec = fighter.record ?? {};
   const energy = fighter.energy?.current ?? fighter.energy ?? 0;
@@ -135,12 +154,13 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
 
   return (
     <div className="fight-hub">
-      <div className="fight-hub-tier-strip">{tier}</div>
+      <div className="page-title">Fight Offers</div>
+      <div className="tier-label fight-hub-tier-strip">{tier}</div>
 
       <div className="fight-hub-stat-grid">
-        <StatTile value={fighter.overallRating ?? 0} label="OVR" tone="ovr" />
-        <StatTile value={rankTile.value} label={rankTile.label} tone={rankTile.tone} />
-        <StatTile value={recordText} label="RECORD" tone="default" />
+        <StatTile value={fighter.overallRating ?? 0} label="Overall Rating" tone="ovr" />
+        <StatTile value={rankTile.value} label="Division Rank" tone={rankTile.tone} />
+        <StatTile value={recordText} label="Record" tone="default" />
       </div>
 
       <div className="fight-hub-readiness">
@@ -149,7 +169,7 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
           value={energy}
           max={100}
           label="ENERGY"
-          sub={hasEnergy ? `Ready (${energyCost} needed)` : `Need ${energyCost - energy} more`}
+          sub={hasEnergy ? `Ready · ${energyCost} energy per fight` : `Need ${energyCost - energy} more`}
           tone={hasEnergy ? "ok" : "warn"}
         />
         <ReadinessTile
@@ -160,14 +180,16 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
           sub={health >= 80 ? "At full strength" : health >= 50 ? "A bit beat up" : health >= 30 ? "Low \u2014 rest soon" : "Critical"}
           tone={health >= 50 ? "ok" : health >= 30 ? "warn" : "danger"}
         />
-        <ReadinessTile
-          icon={winStreak > 0 ? <TrendingUp size={20} /> : loseStreak > 0 ? <TrendingDown size={20} /> : <Swords size={20} />}
-          value={winStreak > 0 ? `${winStreak}W` : loseStreak > 0 ? `${loseStreak}L` : "\u2014"}
-          label="STREAK"
-          sub={winStreak > 0 ? `${winStreak}-fight win streak` : loseStreak > 0 ? `${loseStreak}-fight losing streak` : "No active streak"}
-          tone={winStreak > 0 ? "win" : loseStreak > 0 ? "loss" : "neutral"}
-        />
+        <StreakTile winStreak={winStreak} loseStreak={loseStreak} />
       </div>
+
+      {fighter.badges?.length > 0 && (
+        <div className="badge-row">
+          {fighter.badges.map((b) => (
+            <span className="earned-badge" key={b}><ShieldCheck size={12} /> {b} Badge Earned</span>
+          ))}
+        </div>
+      )}
 
       {fighter.mentalResetRequired && (
         <div className="fight-hub-alert fight-hub-alert--danger">
