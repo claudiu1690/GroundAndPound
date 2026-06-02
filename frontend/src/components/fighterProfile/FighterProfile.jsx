@@ -1,6 +1,5 @@
 import { memo, useCallback, useState } from "react";
-import { badgesForDisplay, resourceRowsFromFighter, statMeterRows } from "./profileModel";
-import { FighterBadgeRow } from "./FighterBadgeRow";
+import { resourceRowsFromFighter, statMeterRows } from "./profileModel";
 import { FighterInjuriesPanel } from "./FighterInjuriesPanel";
 import { FighterMetaPanel } from "./FighterMetaPanel";
 import { FighterResourceBars } from "./FighterResourceBars";
@@ -85,7 +84,8 @@ export const FighterProfile = memo(function FighterProfile({
 
       <FighterResourceBars rows={resourceRowsFromFighter(fighter)} />
       <FighterMetaPanel fighter={fighter} campSlotsUsed={campSlotsUsed} />
-      <FighterBadgeRow badges={badgesForDisplay(fighter.badges, fighter.activePerks)} />
+      {/* Badge display removed — badges still earned/stored; will return as achievements.
+          Re-enable: render <FighterBadgeRow badges={badgesForDisplay(fighter.badges, fighter.activePerks)} /> */}
 
       <ProfileActionsSection
         fighter={fighter}

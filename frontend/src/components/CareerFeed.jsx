@@ -68,7 +68,8 @@ export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey }) {
         setLoading(true);
         api.getActivity(fighterId)
             .then((data) => {
-                if (!cancelled) setEntries(data.activity ?? []);
+                // Badge events hidden from the feed — still logged server-side; will return as achievements.
+                if (!cancelled) setEntries((data.activity ?? []).filter((e) => e.type !== "BADGE_EARNED"));
             })
             .catch(() => {
                 if (!cancelled) setEntries([]);

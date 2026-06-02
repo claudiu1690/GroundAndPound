@@ -18,9 +18,7 @@ export const BannerPreview = memo(function BannerPreview({
     const bg     = PIECES_BY_ID[cfg.backgroundId] || PIECES_BY_ID[DEFAULT_BANNER.backgroundId];
     const frame  = PIECES_BY_ID[cfg.frameId]      || PIECES_BY_ID[DEFAULT_BANNER.frameId];
     const accent = PIECES_BY_ID[cfg.accentColor]  || PIECES_BY_ID[DEFAULT_BANNER.accentColor];
-    const badges = (cfg.badgeSlots || [])
-        .map((id) => PIECES_BY_ID[id])
-        .filter(Boolean);
+    // Badge decorations hidden — badgeSlots still saved; will return as achievements.
 
     const record = fighter.record || {};
     const nickname = fighter.nickname;
@@ -60,15 +58,7 @@ export const BannerPreview = memo(function BannerPreview({
                         <span className="banner-tag">{record.wins ?? 0}-{record.losses ?? 0}-{record.draws ?? 0}</span>
                     </div>
                 </div>
-                {badges.length > 0 && (
-                    <div className="banner-badges">
-                        {badges.map((b) => (
-                            <span key={b.id} className="banner-badge" title={b.label}>
-                                {b.icon}
-                            </span>
-                        ))}
-                    </div>
-                )}
+                {/* Badge decorations hidden — will return as achievements. */}
             </div>
         </div>
     );

@@ -8,7 +8,7 @@ const KIND_TABS = [
     { key: "background", label: "Background" },
     { key: "frame",      label: "Frame" },
     { key: "accent",     label: "Accent" },
-    { key: "badge",      label: "Badges" },
+    // "Badges" tab hidden — badge-pinning logic remains; will return as achievements.
 ];
 
 /**

@@ -1,6 +1,6 @@
 import { memo, useState } from "react";
 import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
-import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Trophy, Lock, Megaphone, ShieldCheck } from "lucide-react";
+import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Trophy, Lock, Megaphone } from "lucide-react";
 import { CalloutModal } from "./CalloutModal";
 
 const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard", TITLE: "TitleShot" };
@@ -183,13 +183,7 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
         <StreakTile winStreak={winStreak} loseStreak={loseStreak} />
       </div>
 
-      {fighter.badges?.length > 0 && (
-        <div className="badge-row">
-          {fighter.badges.map((b) => (
-            <span className="earned-badge" key={b}><ShieldCheck size={12} /> {b} Badge Earned</span>
-          ))}
-        </div>
-      )}
+      {/* Badge display removed — badges still earned/stored; will return as achievements. */}
 
       {fighter.mentalResetRequired && (
         <div className="fight-hub-alert fight-hub-alert--danger">
