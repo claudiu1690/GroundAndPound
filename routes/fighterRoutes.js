@@ -170,7 +170,7 @@ router.post("/:id/debug/recharge-energy", fighterController.debugRechargeEnergy)
  *       500:
  *         description: Internal server error
  */
-router.post("/:id/train", fighterController.train);
+router.post("/:id/train", ownFighter, fighterController.train);
 
 router.post("/:id/doctor-visit", ownFighter, fighterController.doctorVisit);
 router.post("/:id/hospital/skip-recovery", ownFighter, fighterController.hospitalSkipRecovery);

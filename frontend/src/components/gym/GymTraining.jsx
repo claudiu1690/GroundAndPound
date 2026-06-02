@@ -1,5 +1,6 @@
-import { memo } from "react";
-import { Zap, AlertTriangle, Check, ChevronLeft, Lock, Trophy } from "lucide-react";
+import { memo, useState, useEffect } from "react";
+import { Zap, AlertTriangle, Check, ChevronLeft, Lock, Trophy, Minus, Plus } from "lucide-react";
+import { gymImageUrl } from "./gymImage";
 
 // Full session metadata matching backend TRAINING_SESSIONS + rank 2 sessions
 export const SESSION_META = {
@@ -42,15 +43,116 @@ const STAT_COLOR = {
 
 const GOLD = "#D4A820";
 
+const SPARRING_KEYS = new Set(["sparring", "strategic_sparring", "championship_rounds"]);
+const PRESETS = [1, 5, 10];
+const MAX_BATCH = 25;
+
+/**
+ * Per-card quantity control: stepper + presets + Max + live cost line + dynamic
+ * Train button. Holds its own N (clamped to [1, cardMax]). cardMax derives from
+ * the energy/cost passed in each render; when energy drops post-batch we clamp
+ * N down. cardMax is guaranteed >= 1 by the caller (cardMax===0 falls through to
+ * the "Need {cost}E" branch instead of rendering this control).
+ */
+function SessionTrainControl({ sessionKey, cost, energy, cardMax, isSparring, busy, onTrain }) {
+    const [n, setN] = useState(1);
+
+    // Clamp N down when cardMax shrinks (e.g. energy spent by a prior batch).
+    useEffect(() => {
+        setN((prev) => Math.min(Math.max(1, prev), cardMax));
+    }, [cardMax]);
+
+    const safeN = Math.min(Math.max(1, n), cardMax);
+    const totalCost = safeN * cost;
+    const after = energy - totalCost;
+    const injuryPct = Math.round((1 - (1 - 0.03) ** safeN) * 100);
+
+    return (
+        <div className="session-train-control">
+            {isSparring && (
+                <div className="session-card-warn session-injury-hint">
+                    <AlertTriangle size={9} /> ~{injuryPct}% chance of injury over {safeN} round{safeN > 1 ? "s" : ""}
+                </div>
+            )}
+            <div className="session-qty-row">
+                <div className="session-stepper" role="group" aria-label="Sessions">
+                    <button
+                        type="button"
+                        className="session-stepper-btn"
+                        aria-label="One fewer session"
+                        disabled={safeN <= 1 || busy}
+                        onClick={() => setN((p) => Math.max(1, Math.min(p, cardMax) - 1))}
+                    >
+                        <Minus size={12} />
+                    </button>
+                    <span className="session-stepper-n">{safeN}</span>
+                    <button
+                        type="button"
+                        className="session-stepper-btn"
+                        aria-label="One more session"
+                        disabled={safeN >= cardMax || busy}
+                        onClick={() => setN((p) => Math.min(cardMax, Math.min(p, cardMax) + 1))}
+                    >
+                        <Plus size={12} />
+                    </button>
+                </div>
+                <div className="session-presets">
+                    {PRESETS.map((preset) => (
+                        <button
+                            key={preset}
+                            type="button"
+                            className={`session-preset${safeN === preset ? " active" : ""}`}
+                            disabled={preset > cardMax || busy}
+                            onClick={() => setN(Math.min(preset, cardMax))}
+                        >
+                            {preset}
+                        </button>
+                    ))}
+                    <button
+                        type="button"
+                        className={`session-preset${safeN === cardMax ? " active" : ""}`}
+                        disabled={busy}
+                        onClick={() => setN(cardMax)}
+                    >
+                        Max
+                    </button>
+                </div>
+            </div>
+            <div className="session-live-line">
+                {safeN} session{safeN > 1 ? "s" : ""} · {totalCost}E · {after}E after
+            </div>
+            <button
+                type="button"
+                className="session-card-btn session-train-btn"
+                disabled={busy}
+                onClick={() => onTrain(sessionKey, safeN)}
+            >
+                {safeN > 1 ? `Train ×${safeN}` : "Train"}
+            </button>
+        </div>
+    );
+}
+
 export const GymTraining = memo(function GymTraining({
     gym,
     fighter,
     allGyms,
     onTrain,
+    training,
     onBack,
     onSwitchGym,
     onRankUp,
 }) {
+    const heroUrl = gymImageUrl(gym?.name);
+
+    // Preload the hero so the header paints without a flash on click-resolve.
+    useEffect(() => {
+        if (heroUrl) {
+            const img = new Image();
+            img.src = heroUrl;
+        }
+    }, [heroUrl]);
+
     if (!fighter || !gym) return null;
 
     const energy = fighter.energy?.current ?? fighter.energy ?? 0;
@@ -101,7 +203,12 @@ export const GymTraining = memo(function GymTraining({
     return (
         <div className="gym-training">
             {/* STRIP 1 — Header */}
-            <div className="gym-header" data-tut="gym-info">
+            <div
+                className="gym-header gym-header-hero"
+                data-tut="gym-info"
+                style={{ backgroundImage: heroUrl ? `url(${heroUrl})` : undefined }}
+            >
+                <div className="gym-header-overlay" aria-hidden="true" />
                 <div className="gym-header-row1">
                     <button type="button" className="gym-back" onClick={onBack}>
                         <ChevronLeft size={12} /> All Gyms
@@ -213,6 +320,12 @@ export const GymTraining = memo(function GymTraining({
                         const notEnoughEnergy = energy < m.cost;
                         const isRank2Locked = !!m.rank2 && !rank2Unlocked && key === rank2SessionKey;
                         const cardLocked = isRank2Locked || isLocked;
+                        // Active "Train" branch: the only state that gets the
+                        // quantity control. cardMax floor>=1 here because
+                        // notEnoughEnergy already covers floor===0.
+                        const showQtyControl = !isRank2Locked && canTrain && !isLocked && !notEnoughEnergy;
+                        const cardMax = Math.min(Math.floor(energy / m.cost), MAX_BATCH);
+                        const isSparring = SPARRING_KEYS.has(key);
 
                         let accentStyle;
                         if (isRank2Locked || isLocked) {
@@ -244,7 +357,7 @@ export const GymTraining = memo(function GymTraining({
                                         <div className="session-card-energy"><Zap size={11} /> {m.cost}E</div>
                                     </div>
                                     <div className="session-card-desc">{m.desc}</div>
-                                    {m.warn && (
+                                    {m.warn && !showQtyControl && (
                                         <div className="session-card-warn"><AlertTriangle size={9} /> {m.warn}</div>
                                     )}
                                     <div className="session-card-footer">
@@ -274,9 +387,15 @@ export const GymTraining = memo(function GymTraining({
                                                 Need {m.cost}E
                                             </button>
                                         ) : (
-                                            <button type="button" className="session-card-btn" onClick={() => onTrain(key)}>
-                                                Train
-                                            </button>
+                                            <SessionTrainControl
+                                                sessionKey={key}
+                                                cost={m.cost}
+                                                energy={energy}
+                                                cardMax={cardMax}
+                                                isSparring={isSparring}
+                                                busy={!!training}
+                                                onTrain={onTrain}
+                                            />
                                         )}
                                     </div>
                                 </div>

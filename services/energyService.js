@@ -71,6 +71,101 @@ async function deductEnergy(characterId, amount) {
     return { current: newValue, max };
 }
 
+// ── Atomic batch deduction (Lua) ──────────────────────────────
+// Registered once at module load. Operates on a single `energy:<id>` hash so the
+// HGETALL → compute affordable-k → HSET sequence cannot interleave with the regen
+// tick or another concurrent train request. Keeps energy from going negative and
+// guarantees the funded count matches what was actually subtracted.
+//
+// KEYS[1] = energy:<id> hash
+// ARGV[1] = costPerSession (>0)  ARGV[2] = maxSessions (>=0)
+// Returns: {-1} when the hash is cold (caller seeds from Mongo + retries once),
+//          otherwise {funded, current, max}.
+const DEDUCT_BATCH_LUA = `
+local data = redis.call('HGETALL', KEYS[1])
+if #data == 0 then
+  return {-1}
+end
+local cur, max
+for i = 1, #data, 2 do
+  if data[i] == 'current' then cur = tonumber(data[i+1]) end
+  if data[i] == 'max' then max = tonumber(data[i+1]) end
+end
+if cur == nil or max == nil then
+  return {-1}
+end
+local cost = tonumber(ARGV[1])
+local maxSessions = tonumber(ARGV[2])
+local affordable = math.floor(cur / cost)
+local k = affordable
+if maxSessions < k then k = maxSessions end
+if k < 0 then k = 0 end
+if k <= 0 then
+  return {0, cur, max}
+end
+local newCur = cur - k * cost
+redis.call('HSET', KEYS[1], 'current', newCur)
+return {k, newCur, max}
+`;
+
+let deductBatchCommandReady = false;
+function ensureDeductBatchCommand() {
+    if (deductBatchCommandReady) return;
+    // Register as a custom command so ioredis manages SHA caching/reloads.
+    redis.defineCommand("gpDeductBatchEnergy", { numberOfKeys: 1, lua: DEDUCT_BATCH_LUA });
+    deductBatchCommandReady = true;
+}
+
+/**
+ * Atomically deduct energy for up to `maxSessions` sessions in one shot.
+ * Funds as many whole sessions as live energy allows, never going below zero.
+ *
+ * Cold-start: if the Redis hash is missing, seed it from Mongo via getEnergy()
+ * (the existing populate path) and retry the script exactly once.
+ *
+ * Mirrors the post-deduct snapshot to Mongo fire-and-forget, matching deductEnergy.
+ *
+ * @param {string} characterId
+ * @param {number} costPerSession - energy cost of a single session (>0)
+ * @param {number} maxSessions - upper bound on sessions to fund (>=0)
+ * @returns {Promise<{ funded: number, current: number, max: number }>}
+ */
+async function deductBatchEnergy(characterId, costPerSession, maxSessions) {
+    if (!(costPerSession > 0)) throw new Error("costPerSession must be > 0");
+    const cap = Math.max(0, Math.floor(maxSessions) || 0);
+
+    await ensureRedisConnected();
+    ensureDeductBatchCommand();
+
+    const key = ENERGY_KEY(characterId);
+    let res = await redis.gpDeductBatchEnergy(key, costPerSession, cap);
+
+    // Cold hash → seed from Mongo (getEnergy HSETs current+max), retry once.
+    if (Array.isArray(res) && res.length === 1 && Number(res[0]) === -1) {
+        await getEnergy(characterId);
+        res = await redis.gpDeductBatchEnergy(key, costPerSession, cap);
+        if (Array.isArray(res) && res.length === 1 && Number(res[0]) === -1) {
+            // Still cold (e.g. fighter vanished mid-flight) — treat as unfunded.
+            const snap = await getEnergy(characterId);
+            return { funded: 0, current: snap.current, max: snap.max };
+        }
+    }
+
+    const funded = Number(res[0]);
+    const current = Number(res[1]);
+    const max = Number(res[2]);
+
+    if (funded > 0) {
+        Fighter.findByIdAndUpdate(characterId, {
+            "energy.current": current,
+            "energy.max": max,
+            "energy.lastSyncedAt": new Date(),
+        }).catch((err) => console.error("Energy MongoDB sync error:", err));
+    }
+
+    return { funded, current, max };
+}
+
 /**
  * Add energy (capped at max) and persist snapshot to Mongo backup.
  * @param {string} characterId
@@ -195,6 +290,7 @@ module.exports = {
     ENERGY_KEY,
     getEnergy,
     deductEnergy,
+    deductBatchEnergy,
     addEnergy,
     setEnergyMax,
     tickAllActiveEnergy,
