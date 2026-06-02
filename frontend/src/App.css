@@ -10421,6 +10421,9 @@ code {
   .gym-training .session-stepper-btn { width: 44px; height: 44px; }
   .gym-training .session-preset { min-height: 44px; min-width: 40px; padding: 8px 10px; display: inline-flex; align-items: center; justify-content: center; }
   .gym-training .session-qty-row { justify-content: flex-start; }
+  /* Presets must wrap — at narrow card widths the 1/5/10/Max row would
+     otherwise overflow the card and force a sideways scroll to reach Max. */
+  .gym-training .session-presets { flex-wrap: wrap; }
   .gym-training .rank-up-btn { width: 100%; min-height: 44px; justify-content: center; }
 
   /* ── 17. GENERIC MODALS / OVERLAYS — spot-check guard ───── */
@@ -10432,6 +10435,19 @@ code {
   .picker-modal-matchup { grid-template-columns: 1fr; }
   .picker-modal-sides,
   .picker-modal-methods { width: 100%; }
+}
+
+/* ── Portrait phones: training sessions as a single-column list ──────
+   At 2 columns the cards shrink to ~165px-wide tiles that read as big
+   squares, and the batch preset row (1/5/10/Max) overflows the card —
+   forcing a sideways scroll to reach "Max". One full-width column per
+   card gives the controls room and reads as a compact list, not tiles. */
+@media (max-width: 560px) {
+  .gym-training .sessions-area { padding: 16px; }
+  .gym-training .session-grid { grid-template-columns: 1fr; gap: 10px; }
+  .gym-training .session-card-body { padding: 14px; }
+  .gym-training .session-card-name { font-size: 16px; }
+  .gym-training .session-card-desc { font-size: 12px; line-height: 1.5; margin-bottom: 10px; }
 }
 
 /* ══════════════════════════════════════════════════════════════
