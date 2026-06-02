@@ -142,6 +142,7 @@ export const GymTraining = memo(function GymTraining({
     onBack,
     onSwitchGym,
     onRankUp,
+    flashSessionKey,
 }) {
     const heroUrl = gymImageUrl(gym?.name);
 
@@ -343,7 +344,7 @@ export const GymTraining = memo(function GymTraining({
                         }
 
                         return (
-                            <div key={key} className={`session-card${cardLocked ? " locked-card" : ""}`}>
+                            <div key={key} className={`session-card${cardLocked ? " locked-card" : ""}${flashSessionKey === key ? " session-card--flash" : ""}`}>
                                 <div
                                     className={`session-card-top${isRank2Locked || isLocked ? " lock" : ""}`}
                                     style={accentStyle}
