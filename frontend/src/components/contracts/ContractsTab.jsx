@@ -221,11 +221,11 @@ function RewardsBlock({ perFight, onComplete, fame, penalty }) {
             <div className="contract-rewards">
                 <div className="contract-reward">
                     <span className="contract-reward-label">Per Fight</span>
-                    <span className="contract-reward-val positive">+{formatIron(perFight)} <span>iron</span></span>
+                    <span className="contract-reward-val positive">+${formatIron(perFight)}</span>
                 </div>
                 <div className="contract-reward">
                     <span className="contract-reward-label">On Complete</span>
-                    <span className="contract-reward-val positive">+{formatIron(onComplete)} <span>iron</span></span>
+                    <span className="contract-reward-val positive">+${formatIron(onComplete)}</span>
                 </div>
             </div>
             <div className="contract-reward contract-reward-fame">
@@ -277,13 +277,13 @@ function DropContractConfirm({ contract, onCancel, onConfirm }) {
                         <div className="drop-confirm-penalty-value">−{penalty.toLocaleString()} fame</div>
                         <div className="drop-confirm-penalty-hint">
                             Half of the break penalty ({contract.famePenaltyOnBreak} fame). You'll still
-                            keep any iron already earned on this contract.
+                            keep any cash already earned on this contract.
                         </div>
                     </div>
 
                     {contract.totals?.ironEarned > 0 && (
                         <div className="drop-confirm-earned">
-                            Earned so far: <strong>+{(contract.totals.ironEarned || 0).toLocaleString()} iron</strong>
+                            Earned so far: <strong>+${(contract.totals.ironEarned || 0).toLocaleString()}</strong>
                         </div>
                     )}
                 </div>
@@ -327,7 +327,7 @@ function ActiveCard({ contract, onDrop, busy }) {
                 />
                 <div className="contract-earned">
                     <span className="contract-earned-label">Earned so far</span>
-                    <span className="contract-earned-val">+{formatIron(contract.totals?.ironEarned || 0)} iron</span>
+                    <span className="contract-earned-val">+${formatIron(contract.totals?.ironEarned || 0)}</span>
                     <button className="drop-btn" onClick={onDrop} disabled={busy}>{busy ? "…" : "Drop"}</button>
                 </div>
             </div>
@@ -387,7 +387,7 @@ function HistoryCard({ contract }) {
                     <div className="contract-break-reason">{contract.breakReason}</div>
                 )}
                 <div className="contract-totals-row">
-                    <span>+{formatIron(contract.totals?.ironEarned || 0)} iron earned</span>
+                    <span>+${formatIron(contract.totals?.ironEarned || 0)} earned</span>
                     {contract.totals?.fameEarned ? <span>+{contract.totals.fameEarned} fame</span> : null}
                     {contract.resolvedAt && <span className="muted">{formatRelative(contract.resolvedAt)}</span>}
                 </div>

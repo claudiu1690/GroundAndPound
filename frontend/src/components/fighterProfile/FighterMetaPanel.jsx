@@ -103,7 +103,7 @@ export const FighterMetaPanel = memo(function FighterMetaPanel({ fighter, campSl
       )}
 
       <MetaSection title="Resources" dataTut="profile-resources">
-        <MetaRow label="Iron ⊗" valueClassName="meta-value-gold">
+        <MetaRow label="Cash" valueClassName="meta-value-gold">
           {(fighter.iron ?? 0).toLocaleString()}
         </MetaRow>
         <div className="meta-row meta-row-fame">

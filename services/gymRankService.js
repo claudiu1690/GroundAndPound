@@ -64,7 +64,7 @@ function attemptManualRankUp(fighter, gym) {
         throw new Error(`Need ${req.relevantWins} relevant wins (have ${progress.relevantWins})`);
     }
     if (req.ironCost > 0 && (fighter.iron ?? 0) < req.ironCost) {
-        throw new Error(`Need ${req.ironCost} iron (have ${fighter.iron ?? 0})`);
+        throw new Error(`Need $${req.ironCost} (have $${fighter.iron ?? 0})`);
     }
 
     // Deduct iron

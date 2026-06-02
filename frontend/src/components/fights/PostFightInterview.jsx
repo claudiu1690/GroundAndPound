@@ -88,8 +88,8 @@ function pickVariant(seed, n) {
 function consequenceFor(choice, opponentName, targetName) {
     if (choice === "HUMBLE") {
         return opponentName
-            ? `Respect flag placed on ${opponentName} — if you face them again within 6 fights and win, that purse pays +15% iron.`
-            : `Respect flag placed. Win the rematch within 6 fights for +15% iron.`;
+            ? `Respect flag placed on ${opponentName} — if you face them again within 6 fights and win, that purse pays +15% cash.`
+            : `Respect flag placed. Win the rematch within 6 fights for +15% cash.`;
     }
     if (choice === "CONFIDENT") {
         return `Pure fame. No flags, no strings attached.`;
@@ -300,7 +300,7 @@ export function PostFightInterview({
                     <div className="interview-desc">Pay respect. Take the high road.</div>
                     <div className="interview-fame">+100 fame</div>
                     <div className="interview-consequence">
-                        Respect flag — <strong>+15% iron</strong> on your rematch win <span className="pfi-tone-window">(6-fight window)</span>.
+                        Respect flag — <strong>+15% cash</strong> on your rematch win <span className="pfi-tone-window">(6-fight window)</span>.
                     </div>
                 </button>
 

@@ -330,8 +330,8 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                           </span>
                         )}
                         {o.respectMatch && (
-                          <span className="offer-type-badge badge-respect" title={`Respect flag (${o.respectMatch.expiresAfterFights} fights left) — +15% iron on the win`}>
-                            🙇 Respect · +15% iron
+                          <span className="offer-type-badge badge-respect" title={`Respect flag (${o.respectMatch.expiresAfterFights} fights left) — +15% cash on the win`}>
+                            🙇 Respect · +15% cash
                           </span>
                         )}
                         {o.nemesisMeta && (

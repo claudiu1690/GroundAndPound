@@ -55,8 +55,8 @@ export const TUTORIAL_STEPS = {
                     {
                         focus: "profile-resources",
                         anchor: "profile-resources",
-                        title: "Iron & Fame",
-                        body: "Iron is your money — earned from fights, spent on gyms, healing and more. Fame is your reputation in the division; it grows as you win and perform.",
+                        title: "Cash & Fame",
+                        body: "Cash is your money — earned from fights, spent on gyms, healing and more. Fame is your reputation in the division; it grows as you win and perform.",
                     },
                     {
                         focus: "profile-career",
@@ -114,7 +114,7 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: "gym-info",
                         title: "Your Gym",
-                        body: "You're training at the common gym. As you earn iron from fights you can upgrade to better gyms with stronger training bonuses and perks.",
+                        body: "You're training at the common gym. As you earn cash from fights you can upgrade to better gyms with stronger training bonuses and perks.",
                     },
                 ],
             },
@@ -233,8 +233,8 @@ export const TUTORIAL_STEPS = {
                 tooltips: [
                     {
                         anchor: "result-iron",
-                        title: "Iron — Your Currency",
-                        body: "Iron is the currency of your career. You earn it from every fight. Use it to upgrade your gym, manage sponsorships, and eventually call out opponents. The better you perform, the more you earn.",
+                        title: "Cash — Your Currency",
+                        body: "Cash is the currency of your career. You earn it from every fight. Use it to upgrade your gym, manage sponsorships, and eventually call out opponents. The better you perform, the more you earn.",
                     },
                     {
                         anchor: "result-fame",
@@ -315,7 +315,7 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: "nav-events",
                         title: "The Big Stage",
-                        body: "Events are weekly NPC fight cards. You can't fight on them — but you can bet iron on the outcomes. Tap the Events tab.",
+                        body: "Events are weekly NPC fight cards. You can't fight on them — but you can bet cash on the outcomes. Tap the Events tab.",
                     },
                 ],
             },
@@ -327,7 +327,7 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: "event-headliner",
                         title: "Place a Bet",
-                        body: "Click any fight to open the betting slip. You pick a side, optionally a method, and a stake amount. The card resolves automatically after 7 days — winning bets pay out at the locked odds straight to your iron balance.",
+                        body: "Click any fight to open the betting slip. You pick a side, optionally a method, and a stake amount. The card resolves automatically after 7 days — winning bets pay out at the locked odds straight to your cash balance.",
                     },
                     {
                         anchor: "event-headliner",
@@ -337,7 +337,7 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: ["event-potential", "event-headliner"],
                         title: "Stake & Returns",
-                        body: "Iron is debited the moment you place the bet, so spend within your means. Stake limits scale with your tier — Amateur caps out at ⊗1,000 per fight, GCS at ⊗10,000. Returns = stake × locked odds. There's a 15% house edge, so the long-run only pays off if you actually read the matchups.",
+                        body: "Cash is debited the moment you place the bet, so spend within your means. Stake limits scale with your tier — Amateur caps out at $1,000 per fight, GCS at $10,000. Returns = stake × locked odds. There's a 15% house edge, so the long-run only pays off if you actually read the matchups.",
                     },
                 ],
             },
@@ -372,12 +372,12 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: ["hospital-injuries", "hospital-health"],
                         title: "Injuries",
-                        body: "Hard fights can leave you injured. Injuries take time to heal and can affect specific stats until they clear. You can speed up recovery — but it costs iron. Sometimes rest is the right call.",
+                        body: "Hard fights can leave you injured. Injuries take time to heal and can affect specific stats until they clear. You can speed up recovery — but it costs cash. Sometimes rest is the right call.",
                     },
                     {
                         anchor: ["hospital-restore", "hospital-health"],
                         title: "Restoring Health",
-                        body: "You can spend iron to restore health between fights. Don't show up to a title shot at 60%. Manage your health like you manage your training — it's part of the strategy.",
+                        body: "You can spend cash to restore health between fights. Don't show up to a title shot at 60%. Manage your health like you manage your training — it's part of the strategy.",
                     },
                 ],
             },

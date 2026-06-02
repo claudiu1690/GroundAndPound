@@ -376,7 +376,7 @@ async function doctorVisit(fighterId, injuryType) {
         throw new Error(`Not enough energy (doctor visit costs ${energyCost})`);
     }
     if ((fighter.iron || 0) < ironCost) {
-        throw new Error(`Not enough iron (doctor visit costs ${ironCost})`);
+        throw new Error(`Not enough cash (doctor visit costs $${ironCost})`);
     }
 
     // Energy is a Redis side effect — deduct exactly once, here.
@@ -439,7 +439,7 @@ async function hospitalSkipRecovery(fighterId, injuryType) {
     const injuryId = String(target._id);
     const ironCost = target.recoverySkipIron || 0;
     if ((fighter.iron || 0) < ironCost) {
-        throw new Error(`Not enough iron (skip recovery costs ${ironCost})`);
+        throw new Error(`Not enough cash (skip recovery costs $${ironCost})`);
     }
 
     // No energy cost here, so no refund concern. Iron is decremented inside the
@@ -481,7 +481,7 @@ async function hospitalFullRecovery(fighterId) {
         throw new Error(`Not enough energy (full recovery costs ${quote.energy})`);
     }
     if ((fighter.iron || 0) < quote.iron) {
-        throw new Error(`Not enough iron (full recovery costs ${quote.iron})`);
+        throw new Error(`Not enough cash (full recovery costs $${quote.iron})`);
     }
 
     // Build a per-injury cost map keyed by stable _id so we can (a) re-identify
@@ -597,7 +597,7 @@ async function hospitalRestoreHealth(fighterId, packageKey) {
     const proRatedIron = Math.ceil((restored / pkg.hp) * pkg.iron);
 
     if ((fighter.iron || 0) < proRatedIron) {
-        throw new Error(`Not enough iron (this ${pkg.label} costs ${proRatedIron})`);
+        throw new Error(`Not enough cash (this ${pkg.label} costs $${proRatedIron})`);
     }
 
     fighter.iron = (fighter.iron || 0) - proRatedIron;
@@ -635,7 +635,7 @@ async function switchGym(fighterId, gymId) {
     }
 
     if ((fighter.iron ?? 0) < gym.weeklyCost) {
-        throw new Error(`Not enough Iron — need ${gym.weeklyCost}`);
+        throw new Error(`Not enough cash — need $${gym.weeklyCost}`);
     }
 
     fighter.iron -= gym.weeklyCost;

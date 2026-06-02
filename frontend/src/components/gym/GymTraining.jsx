@@ -237,7 +237,7 @@ export const GymTraining = memo(function GymTraining({
                         </div>
                         {!isFree && !isActive && (
                             <button type="button" className="gym-join-btn" onClick={() => onSwitchGym(gym._id)}>
-                                Join — {gym.weeklyCost} Iron / week
+                                Join — ${gym.weeklyCost} / week
                             </button>
                         )}
                         {isActive && (
@@ -285,11 +285,11 @@ export const GymTraining = memo(function GymTraining({
                         Wins {Math.min(gym.progress.relevantWins, next.requirements.relevantWins)}/{next.requirements.relevantWins} {winLabel}
                     </span>
                     {next.requirements.ironCost > 0 && (
-                        <span className="rank-req">Iron {next.requirements.ironCost}</span>
+                        <span className="rank-req">${next.requirements.ironCost}</span>
                     )}
                     {gym.progress?.nextRank?.canRankUp && gym.progress.nextRank.needsIron && (
                         <button type="button" className="rank-up-btn" onClick={() => onRankUp(gym._id)}>
-                            <Trophy size={12} /> Rank Up ({next.requirements.ironCost} iron)
+                            <Trophy size={12} /> Rank Up (${next.requirements.ironCost})
                         </button>
                     )}
                 </div>

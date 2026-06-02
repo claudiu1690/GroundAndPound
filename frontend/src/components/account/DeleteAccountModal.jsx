@@ -52,7 +52,7 @@ export function DeleteAccountModal({ open, accountId, fighterFullName, onClose, 
                 </header>
                 <div className="account-modal-body">
                     <p className="account-modal-warn">
-                        This will <strong>permanently delete</strong> your account, fighter, iron, career history,
+                        This will <strong>permanently delete</strong> your account, fighter, cash, career history,
                         rankings, and saved progress. This action is <strong>final after 30 days</strong>.
                     </p>
                     <p className="account-modal-warn-sub">

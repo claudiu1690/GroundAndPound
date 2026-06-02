@@ -488,7 +488,7 @@ export const DashboardTab = memo(function DashboardTab({
           <div className="dash-money-iron">
             <Coins size={16} strokeWidth={2.2} />
             <span className="dash-iron-num">{Number(ironVal).toLocaleString()}</span>
-            <span className="dash-iron-label">Iron</span>
+            <span className="dash-iron-label">Cash</span>
           </div>
 
           <div className="dash-fame-block">

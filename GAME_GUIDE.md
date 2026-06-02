@@ -55,7 +55,7 @@ Everything you do costs energy. Maximum is 100. It regenerates at 1 point per mi
 |---|---|
 | Training sessions | 3–8 (varies) |
 | Accepting a fight | 10–20 (varies by tier) |
-| Hospital treatment | 10–20 (varies by injury) — also costs iron |
+| Hospital treatment | 10–20 (varies by injury) — also costs cash |
 
 ---
 
@@ -84,7 +84,7 @@ Your career moves through five tiers. Moving between tiers is no longer fully au
 
 ### How It Works
 
-Training happens at gyms. There is **one free community gym** always available, plus **ten specialty gyms** that require a **weekly iron membership**. You can have only one paid membership active at a time — paying a new gym cancels your previous one. Ranks you earn at a gym persist forever, even if you switch away.
+Training happens at gyms. There is **one free community gym** always available, plus **ten specialty gyms** that require a **weekly cash membership**. You can have only one paid membership active at a time — paying a new gym cancels your previous one. Ranks you earn at a gym persist forever, even if you switch away.
 
 ### The Free Gym
 
@@ -96,16 +96,16 @@ Each specialty gym focuses on 2–3 stats and offers faster XP in those areas. T
 
 | Gym | Focus Stats | Unlocks At | Weekly Cost |
 |---|---|---|---|
-| Iron Fist Boxing | STR, SPD, CHN | Amateur | 300 |
-| Dragon Kickboxing | STR, LEG, SPD | Amateur | 300 |
-| Warrior Muay Thai | LEG, STR, CHN | Amateur | 350 |
-| Apex Wrestling Academy | WRE, STR, GND | Amateur | 400 |
-| Gracie Ground Game | GND, SUB | Amateur | 400 |
-| Renzo Combat Systems | SUB, WRE, FIQ | Regional Pro | 1,500 |
-| Precision MMA Lab | SPD, FIQ, CHN | Regional Pro | 1,500 |
-| Titan Performance Center | STR, WRE, CHN | National | 4,000 |
-| The War Room | FIQ, GND, SUB | National | 4,000 |
-| Elite Fight Academy | All stats | GCS Contender | 10,000 |
+| Iron Fist Boxing | STR, SPD, CHN | Amateur | $300 |
+| Dragon Kickboxing | STR, LEG, SPD | Amateur | $300 |
+| Warrior Muay Thai | LEG, STR, CHN | Amateur | $350 |
+| Apex Wrestling Academy | WRE, STR, GND | Amateur | $400 |
+| Gracie Ground Game | GND, SUB | Amateur | $400 |
+| Renzo Combat Systems | SUB, WRE, FIQ | Regional Pro | $1,500 |
+| Precision MMA Lab | SPD, FIQ, CHN | Regional Pro | $1,500 |
+| Titan Performance Center | STR, WRE, CHN | National | $4,000 |
+| The War Room | FIQ, GND, SUB | National | $4,000 |
+| Elite Fight Academy | All stats | GCS Contender | $10,000 |
 
 **XP multipliers** are tiered:
 - Amateur-tier gyms: 1.0× base, 1.25× on focus stats
@@ -126,7 +126,7 @@ Each specialty gym has 4 ranks. You earn them by training sessions and scoring s
 | 3 | +5% XP to focus stats permanently |
 | 4 | A utility perk + permanent badge for your fighter profile |
 
-Wins only count at your **currently active paid gym**, and only if the win type matches the gym's discipline (KO/TKO for striking gyms, Submission for BJJ, Decision for tactical gyms, etc.). Rank 3 and 4 require an iron payment in addition to the training and win thresholds.
+Wins only count at your **currently active paid gym**, and only if the win type matches the gym's discipline (KO/TKO for striking gyms, Submission for BJJ, Decision for tactical gyms, etc.). Rank 3 and 4 require a cash payment in addition to the training and win thresholds.
 
 ### Rank 4 Perks & Badges
 
@@ -218,7 +218,7 @@ Capped at 3,000 fame. Minimum 100. You can cancel an active callout for a full f
 **What you get:** the opponent appears in your next Hard slot with a gold border and "📣 Called out" pill, and their **Fighter Report shows full intel** — every stat marked Confirmed, no fog of war.
 
 **On a callout win:**
-- **+25% iron purse**
+- **+25% cash purse**
 - **+30% fame** (grudge bonus, stacks with all other notoriety modifiers)
 - **Callout Win** badge (unlocks the matching banner piece)
 
@@ -372,7 +372,7 @@ Before every fight you choose a weight cut strategy. The result is a gamble — 
 | Moderate | −5 to +10 (random) | 5% |
 | Aggressive | −12 to +18 (random) | 20% |
 
-A good aggressive cut gives you a big stamina boost; a bad one leaves you drained before the fight starts. Missing weight costs 20% of your iron purse. The **Titan** perk (Rank 4 at Titan Performance Center) raises the bad roll floor by 3.
+A good aggressive cut gives you a big stamina boost; a bad one leaves you drained before the fight starts. Missing weight costs 20% of your cash purse. The **Titan** perk (Rank 4 at Titan Performance Center) raises the bad roll floor by 3.
 
 ### Fight Outcomes
 
@@ -413,9 +413,9 @@ XP is multiplied by an outcome modifier:
 
 If you are in **comeback mode** when you win, all fight XP is additionally multiplied by 1.5×.
 
-### Iron Earnings
+### Cash Earnings
 
-Iron is the game's currency. The base purse is your tier's signing fee. On top of that:
+Cash is the game's currency. The base purse is your tier's signing fee. On top of that:
 
 - Win: 100% of purse
 - Draw: 50% of purse
@@ -424,10 +424,10 @@ Iron is the game's currency. The base purse is your tier's signing fee. On top o
 Modifiers:
 - Higher notoriety tier: +5% to +50% depending on fame
 - Comeback mode: +30%
-- Championship Pedigree perk (Elite Fight Academy, Rank 4): +10% fame from all fights (indirectly boosts iron via the notoriety tier)
+- Championship Pedigree perk (Elite Fight Academy, Rank 4): +10% fame from all fights (indirectly boosts cash via the notoriety tier)
 - Missing weight: −20%
-- Active **Respect flag** on opponent (you won): +15% iron
-- Callout fight win: +25% iron
+- Active **Respect flag** on opponent (you won): +15% cash
+- Callout fight win: +25% cash
 
 ---
 
@@ -437,7 +437,7 @@ After every fight (win or loss), the press interviews you. Three tones to pick, 
 
 | Tone | Fame | Side Effect |
 |---|---|---|
-| 🙇 Humble | +100 | Writes a **Respect flag** on the just-fought opponent. If you face them again within 6 fights and win, that fight pays +15% iron. |
+| 🙇 Humble | +100 | Writes a **Respect flag** on the just-fought opponent. If you face them again within 6 fights and win, that fight pays +15% cash. |
 | 🔥 Confident | +150 | Pure fame. No flags, no strings. |
 | 📣 Trash Talk | +200 | Pick a target from the same-tier roster (within ±6 OVR, excluding fighters you've already beaten). Writes a **Beef flag** on that fighter. |
 | Skip | 0 | Move on. No reward, no consequence. |
@@ -459,7 +459,7 @@ Active flags appear on offer cards as **🔥 Beef** or **🙇 Respect** pills wi
 | Flag | Origin | Window | On Win | On Lapse |
 |---|---|---|---|---|
 | Beef | Trash Talk / Podcast | 4 fights | +30% fame (grudge bonus) | −150 fame |
-| Respect | Humble / Podcast | 6 fights | +15% iron purse | Silent expiry |
+| Respect | Humble / Podcast | 6 fights | +15% cash purse | Silent expiry |
 
 Every fight you complete decrements the window for unmatched flags. Meeting the flagged opponent — win or lose — consumes the flag (without penalty even on a loss).
 
@@ -467,7 +467,7 @@ Every fight you complete decrements the window for unmatched flags. Meeting the 
 
 ## Notoriety (Fame)
 
-Notoriety is your career fame score. It determines how much iron you earn per fight and unlocks storyline recognition. It never fully resets — a floor is set at your peak tier.
+Notoriety is your career fame score. It determines how much cash you earn per fight and unlocks storyline recognition. It never fully resets — a floor is set at your peak tier.
 
 ### Fame Drawer
 
@@ -480,7 +480,7 @@ Your fame tier and score are shown in your fighter profile in the left sidebar. 
 
 ### Notoriety Tiers
 
-| Tier | Score Range | Iron Bonus |
+| Tier | Score Range | Cash Bonus |
 |---|---|---|
 | Unknown | 0–999 | +0% |
 | Prospect | 1,000–4,999 | +5% |
@@ -542,7 +542,7 @@ After 3 consecutive losses, your notoriety is frozen. The one exception is a Nem
 
 ## Sponsorship Contracts
 
-The **Contracts tab** lets you sign sponsor deals that pay iron per fight and trigger lump-sum bonuses when you complete their clauses.
+The **Contracts tab** lets you sign sponsor deals that pay cash per fight and trigger lump-sum bonuses when you complete their clauses.
 
 ### Slot Cap by Fame Tier
 
@@ -561,9 +561,9 @@ A pool of **4 sponsor offers refreshes every 7 days**, gated by your fame tier (
 
 When you sign one, it goes Active. While Active:
 
-- You earn **per-fight iron** automatically after every fight (win or lose).
+- You earn **per-fight cash** automatically after every fight (win or lose).
 - Each contract has a **clause** — e.g. "win your next 2 fights" or "make weight for 3 fights."
-- **Clause complete** → bonus iron + fame payout, contract closes successfully.
+- **Clause complete** → bonus cash + fame payout, contract closes successfully.
 - **Clause broken** → contract ends with a **fame penalty**.
 - **Time-limited clauses** (e.g. "win any 2 within the duration window") expire silently if the window closes without completion.
 
@@ -590,7 +590,7 @@ Sponsors you completed, broke, or dropped this week won't reappear in your offer
 
 ## Events: Fight Card Predictions
 
-The **Events tab** runs a weekly NPC fight card you can bet on for fame and iron. The card resolves automatically at the end of its 7-day window.
+The **Events tab** runs a weekly NPC fight card you can bet on for fame and cash. The card resolves automatically at the end of its 7-day window.
 
 ### The Card
 
@@ -618,11 +618,11 @@ You can lock any subset of the 5 fights. Each prediction is independent.
 
 | Slot | Exact (Winner + Method) | Winner Only | Wrong Winner |
 |---|---|---|---|
-| Prelim | +100 fame, +200 iron | +30 fame | −20 fame |
-| Main Card | +200 fame, +400 iron | +75 fame | −40 fame |
-| Headliner | +300 fame, +500 iron | +100 fame | −50 fame |
+| Prelim | +100 fame, +$200 | +30 fame | −20 fame |
+| Main Card | +200 fame, +$400 | +75 fame | −40 fame |
+| Headliner | +300 fame, +$500 | +100 fame | −50 fame |
 
-A perfect 5/5 card pays around **+1,000 fame + 1,700 iron**. Realistic averages are well below that.
+A perfect 5/5 card pays around **+1,000 fame + $1,700**. Realistic averages are well below that.
 
 ### Card Potential Bar
 
@@ -635,7 +635,7 @@ The first time you visit the Events tab after a card resolves, a **multi-fight r
 - Each fight's winner + method (KO/SUB/DEC chips)
 - Your prediction verdict per fight
 - Per-fight payout
-- Total fame and iron earned across the card
+- Total fame and cash earned across the card
 - A card-grade flavor string ("Perfect Card" / "Sharp Night" / "Rough Night" / "Brutal" etc.)
 
 After dismissal, a slim "Last Card" banner stays visible at the top of the Events tab for context.
@@ -656,7 +656,7 @@ Podcast unlocks once per calendar day. Resets at midnight. Pick one segment:
 
 | Segment | Reward | Notes |
 |---|---|---|
-| Recap your last fight | +100 fame, +150 iron | Always available if you've completed at least one fight. Safe option. |
+| Recap your last fight | +100 fame, +$150 | Always available if you've completed at least one fight. Safe option. |
 | Division Talk: Respectful | +100 fame | Pick a same-tier opponent. Writes a **Respect flag** on them (6-fight window). |
 | Division Talk: Trash Talk | +300 fame | Pick a same-tier opponent. Writes a **Beef flag** (4-fight window, with the −150 lapse penalty). |
 | Division Talk: Cryptic | +40 fame | No side effects. |
@@ -667,7 +667,7 @@ Podcast unlocks once per calendar day. Resets at midnight. Pick one segment:
 A one-time career retrospective. Pays:
 
 - **+1,500 fame**
-- **+2,000 iron**
+- **+$2,000**
 - The **Documentary** badge → unlocks the **Legacy** banner badge
 
 You'll only ever do this once. Pick the moment.
@@ -703,8 +703,8 @@ Injuries happen in fights and in sparring sessions. They apply penalties to your
 
 You can clear an injury early instead of waiting it out:
 
-- **Auto-heal injuries** (Bruised Rib, Sprained Ankle, Broken Hand) — pay iron at the Hospital to skip the wait.
-- **Doctor-required injuries** (Cut, Broken Nose, Concussion, Torn Ligament) — a doctor visit (energy + iron) clears them instantly. They still block fighting or sparring while active, so waiting them out has a real cost — but if you can't afford the doctor, they will still heal on their own. No injury can lock you out of the game permanently.
+- **Auto-heal injuries** (Bruised Rib, Sprained Ankle, Broken Hand) — pay cash at the Hospital to skip the wait.
+- **Doctor-required injuries** (Cut, Broken Nose, Concussion, Torn Ligament) — a doctor visit (energy + cash) clears them instantly. They still block fighting or sparring while active, so waiting them out has a real cost — but if you can't afford the doctor, they will still heal on their own. No injury can lock you out of the game permanently.
 
 ### New-Fighter Grace
 
@@ -714,43 +714,43 @@ During your first **3 fights**, you can never receive a fight-blocking injury (C
 
 ## The Hospital
 
-The **Hospital tab** is your one-stop medical screen. Iron-paid services to skip recovery time, treat blocking injuries, or restore HP without waiting.
+The **Hospital tab** is your one-stop medical screen. Cash-paid services to skip recovery time, treat blocking injuries, or restore HP without waiting.
 
 ### Services
 
 | Service | What it does | Cost |
 |---|---|---|
-| **Treatment** | Clears one treatment-required injury (Cut, Broken Nose, Concussion, Torn Ligament). Removes stat penalty immediately. | Energy + iron, varies by injury (see below) |
-| **Skip Recovery** | Instantly clears an auto-heal injury — no more waiting days. | Iron only, varies by injury |
-| **Health Restoration** | Three packages restore HP without waiting on passive regen. | Iron only |
+| **Treatment** | Clears one treatment-required injury (Cut, Broken Nose, Concussion, Torn Ligament). Removes stat penalty immediately. | Energy + cash, varies by injury (see below) |
+| **Skip Recovery** | Instantly clears an auto-heal injury — no more waiting days. | Cash only, varies by injury |
+| **Health Restoration** | Three packages restore HP without waiting on passive regen. | Cash only |
 | **Full Recovery Package** | Heals every active injury in one transaction. 15% bulk discount over individual services. Available when you have 2+ injuries. | Sum of individual costs × 0.85 |
 
 ### Treatment costs
 
-| Injury | Energy | Iron |
+| Injury | Energy | Cash |
 |---|---|---|
-| Cut | 10 | 200 |
-| Broken Nose | 10 | 400 |
-| Concussion | 20 | 1,500 |
-| Torn Ligament | 20 | 2,000 |
+| Cut | 10 | $200 |
+| Broken Nose | 10 | $400 |
+| Concussion | 20 | $1,500 |
+| Torn Ligament | 20 | $2,000 |
 
 ### Skip Recovery costs
 
-| Injury | Iron to skip |
+| Injury | Cash to skip |
 |---|---|
-| Bruised Rib | 600 |
-| Sprained Ankle | 800 |
-| Broken Hand | 1,200 |
+| Bruised Rib | $600 |
+| Sprained Ankle | $800 |
+| Broken Hand | $1,200 |
 
 ### Health Restoration packages
 
-| Package | HP delivered | Iron (full) |
+| Package | HP delivered | Cash (full) |
 |---|---|---|
-| Quick Patch | up to +25 HP | 250 |
-| Recovery Bay | up to +50 HP | 400 |
-| Full Restoration | to 100 HP | 700 |
+| Quick Patch | up to +25 HP | $250 |
+| Recovery Bay | up to +50 HP | $400 |
+| Full Restoration | to 100 HP | $700 |
 
-If a package would heal more HP than you're missing, the iron cost is **pro-rated** to what you actually receive — you never overpay. When two packages would deliver the same HP at different prices, the more expensive one is greyed out so you always click the best deal. All three packages are available at every tier — no level gating.
+If a package would heal more HP than you're missing, the cash cost is **pro-rated** to what you actually receive — you never overpay. When two packages would deliver the same HP at different prices, the more expensive one is greyed out so you always click the best deal. All three packages are available at every tier — no level gating.
 
 ### When to use the Hospital
 
@@ -766,7 +766,7 @@ If a package would heal more HP than you're missing, the iron cost is **pro-rate
 Any time you lose a fight, comeback mode activates. While in comeback mode:
 
 - Your next fight's XP is multiplied by 1.5×
-- Your iron purse increases by 30%
+- Your cash purse increases by 30%
 - If you win, you earn the **Resilience** badge (once per career) and comeback clears
 
 Losing three fights in a row also freezes your notoriety (see Notoriety Freeze above). Your fame unfreezes the next time you win. A losing streak never blocks you from fighting — you can always step back in.
@@ -921,7 +921,7 @@ When you click **Delete Account** in the Danger Zone, a confirmation modal asks 
 
 Deletion is a **30-day soft delete**, not an immediate purge:
 
-- Your fighter, iron, career history, rankings, banner and sponsorships are all marked deleted but not destroyed.
+- Your fighter, cash, career history, rankings, banner and sponsorships are all marked deleted but not destroyed.
 - You're logged out immediately.
 - If you change your mind, log in within 30 days using the same email + password. The login screen shows a golden **"Recover account"** banner with days remaining. One click restores everything.
 - After 30 days, a daily background job permanently purges the data. It cannot be recovered after that.
@@ -938,7 +938,7 @@ After every fight you see a breakdown of everything that happened:
 
 - Outcome and updated record
 - Health and stamina lost
-- Iron earned (with weight miss penalty if applicable)
+- Cash earned (with weight miss penalty if applicable)
 - Notoriety gained or lost (with a line-by-line breakdown)
 - XP gained per stat + any stat level-ups
 - Injuries sustained
@@ -946,7 +946,7 @@ After every fight you see a breakdown of everything that happened:
 - Weight cut result (+X or −X stamina)
 - Nemesis set or cleared
 - Tier promotion
-- **Sponsorship payouts** (per-fight iron + clause completions/breaks)
+- **Sponsorship payouts** (per-fight cash + clause completions/breaks)
 - **Callout bonus** (if it was a callout fight)
 - **Beef / Respect flag** matches (with their bonus applied) and any flags that lapsed
 - **If it was a title fight**: a dedicated championship victory screen with gold styling
@@ -959,15 +959,15 @@ The **Post-Fight Interview** prompt appears here too — pick a tone (Humble / C
 
 You spend **energy** to train at a gym. Training earns **XP** which raises **stats**. Higher stats raise your **Overall Rating**. A higher rating qualifies you for better gyms, and eventually for a **title shot** against your tier's champion.
 
-Before each fight, you run a **training camp** — targeted preparation that sets up conditional bonuses. You choose a **weight cut** gamble. The fight plays out and you earn **iron**, **notoriety**, and **XP**.
+Before each fight, you run a **training camp** — targeted preparation that sets up conditional bonuses. You choose a **weight cut** gamble. The fight plays out and you earn **cash**, **notoriety**, and **XP**.
 
-After every fight, the **press interview** lets you trade verbal stakes for fame — humbling yourself for a future iron rematch bonus, talking trash to set up a grudge match, or just owning the moment.
+After every fight, the **press interview** lets you trade verbal stakes for fame — humbling yourself for a future cash rematch bonus, talking trash to set up a grudge match, or just owning the moment.
 
 At gyms, you earn **ranks** that unlock unique sessions, permanent XP bonuses, and utility perks that follow you across your career.
 
 Beating champions promotes you through the tiers. Losing creates Nemeses and triggers comeback mode.
 
-**Notoriety isn't just a meter** — it's an economy. Spend it on **callouts** to force matchups with full intel. Sign **sponsorship contracts** that pay iron per fight and bigger bonuses for clauses you fulfill. Predict the weekly **fight card** in the Events tab for fame and iron. Record podcasts to build beef and respect flags around the division. Once you're a Star, **commission your career documentary** for a permanent legacy mark.
+**Notoriety isn't just a meter** — it's an economy. Spend it on **callouts** to force matchups with full intel. Sign **sponsorship contracts** that pay cash per fight and bigger bonuses for clauses you fulfill. Predict the weekly **fight card** in the Events tab for fame and cash. Record podcasts to build beef and respect flags around the division. Once you're a Star, **commission your career documentary** for a permanent legacy mark.
 
 Every milestone — fights, KOs, championships, callout wins, fame tiers — unlocks a new piece for your **profile banner**, the cosmetic identity layer that follows your fighter across every screen.
 

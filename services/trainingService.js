@@ -108,7 +108,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
             && fighter.activeGymPaidUntil
             && new Date(fighter.activeGymPaidUntil) > new Date();
         if (!isActiveMember) {
-            throw new Error(`Active membership required at ${gym.name} (${gym.weeklyCost} iron/week)`);
+            throw new Error(`Active membership required at ${gym.name} (${gym.weeklyCost} cash/week)`);
         }
     }
 

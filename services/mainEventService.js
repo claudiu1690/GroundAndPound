@@ -515,14 +515,14 @@ async function submitPrediction(fighterId, cardId, fightIndex, betType, pickedSi
     // ── Validate stake against tier limits + iron balance ────────────
     const limits = betLimitsFor(fighter);
     if (stakeNum < limits.min) {
-        throw new Error(`Minimum bet at this tier is ${limits.min} iron`);
+        throw new Error(`Minimum bet at this tier is $${limits.min}`);
     }
     if (stakeNum > limits.max) {
-        throw new Error(`Maximum bet at this tier is ${limits.max} iron`);
+        throw new Error(`Maximum bet at this tier is $${limits.max}`);
     }
     const currentIron = fighter.iron || 0;
     if (stakeNum > currentIron) {
-        throw new Error(`Not enough iron — you have ${currentIron}, bet is ${stakeNum}`);
+        throw new Error(`Not enough cash — you have $${currentIron}, bet is $${stakeNum}`);
     }
 
     // ── Lock odds at bet time ────────────────────────────────────────

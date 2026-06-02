@@ -29,7 +29,7 @@ export function TutorialCompleteModal({ onConfirm }) {
                 <p className="tut-complete-sub">{c.subheadline}</p>
 
                 <div className="tut-complete-reward">
-                    <span className="tut-complete-reward-icon">⊗</span>
+                    <span className="tut-complete-reward-icon">$</span>
                     <span className="tut-complete-reward-amount">+{c.rewardIron}</span>
                     <span className="tut-complete-reward-label">{c.rewardLabel}</span>
                 </div>

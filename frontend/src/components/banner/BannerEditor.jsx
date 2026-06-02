@@ -228,7 +228,7 @@ function PieceButton({ piece, selected, onClick }) {
             title={locked ? `🔒 ${piece.unlockHint}` : piece.label}
         >
             <div className="banner-piece-swatch" style={styleByKind}>
-                {piece.kind === "badge" && <span className="banner-piece-badge-icon">{visual.icon}</span>}
+                {/* Badge icon render removed — badges still earned/stored; will return as achievements. */}
                 {locked && <span className="banner-piece-lock">🔒</span>}
             </div>
             <div className="banner-piece-label">{piece.label}</div>

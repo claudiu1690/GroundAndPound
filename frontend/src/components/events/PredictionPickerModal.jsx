@@ -100,15 +100,15 @@ export function PredictionPickerModal({
     // Stake validation message — shown subtly below the stake row when relevant.
     let stakeHint = "";
     if (playerIron < limits.min) {
-        stakeHint = `You need ⊗${limits.min} to bet at this tier. Available: ⊗${playerIron}.`;
+        stakeHint = `You need $${limits.min} to bet at this tier. Available: $${playerIron}.`;
     } else if (stakeInput && !Number.isFinite(stakeNum)) {
         stakeHint = "Enter a whole number.";
     } else if (stakeNum < limits.min) {
-        stakeHint = `Below the ⊗${limits.min} minimum.`;
+        stakeHint = `Below the $${limits.min} minimum.`;
     } else if (stakeNum > limits.max) {
-        stakeHint = `Above the ⊗${limits.max} tier cap.`;
+        stakeHint = `Above the $${limits.max} tier cap.`;
     } else if (stakeNum > playerIron) {
-        stakeHint = `Only ⊗${playerIron} available.`;
+        stakeHint = `Only $${playerIron} available.`;
     }
 
     const sliderMax = Math.min(limits.max, playerIron);
@@ -232,7 +232,7 @@ export function PredictionPickerModal({
                     {/* Stake row — input + chips, single line on wide screens */}
                     <div className="slip-stake-row">
                         <div className="slip-stake-input-wrap">
-                            <span className="slip-coin">⊗</span>
+                            <span className="slip-coin">$</span>
                             <input
                                 type="number"
                                 className="slip-stake-input"
@@ -259,15 +259,15 @@ export function PredictionPickerModal({
                         <div className="slip-stake-hint">{stakeHint}</div>
                     ) : currentOdds != null && potentialPayout != null ? (
                         <div className="slip-summary">
-                            Wallet <strong className="slip-wallet">⊗ {playerIron.toLocaleString()}</strong>
+                            Wallet <strong className="slip-wallet">${playerIron.toLocaleString()}</strong>
                             <span className="slip-sep">·</span>
-                            Returns <strong className="slip-returns">⊗ {potentialPayout.toLocaleString()}</strong>
+                            Returns <strong className="slip-returns">${potentialPayout.toLocaleString()}</strong>
                             <span className="slip-sep">·</span>
-                            Profit <strong className="slip-profit">+⊗ {(potentialProfit ?? 0).toLocaleString()}</strong>
+                            Profit <strong className="slip-profit">+${(potentialProfit ?? 0).toLocaleString()}</strong>
                         </div>
                     ) : (
                         <div className="slip-summary slip-summary-empty">
-                            Wallet <strong className="slip-wallet">⊗ {playerIron.toLocaleString()}</strong>
+                            Wallet <strong className="slip-wallet">${playerIron.toLocaleString()}</strong>
                             <span className="slip-sep">·</span>
                             Pick an option to see the payout.
                         </div>
@@ -284,7 +284,7 @@ export function PredictionPickerModal({
                         onClick={submit}
                         disabled={!canSubmit}
                     >
-                        {submitting ? "Locking…" : stakeValid ? `Place bet · ⊗ ${stakeNum.toLocaleString()}` : "Place bet"}
+                        {submitting ? "Locking…" : stakeValid ? `Place bet · $${stakeNum.toLocaleString()}` : "Place bet"}
                     </button>
                 </footer>
             </div>

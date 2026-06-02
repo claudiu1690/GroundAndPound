@@ -75,7 +75,7 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDel
                 pickedMethod: betType === "EXACT" && pickedSide !== "DRAW" ? pickedMethod : null,
                 stake,
             });
-            onMessage?.(`Bet locked — ${stake} iron staked.`);
+            onMessage?.(`Bet locked — $${stake} staked.`);
             setPickerFight(null);
 
             // Local state patch — no full reload. The whole app would re-render if we
@@ -270,10 +270,10 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDel
                                         {summaryStats.won}/{summaryStats.total} won
                                         {" · "}
                                         <span className={summaryStats.totalNet >= 0 ? "yb-pos" : "yb-neg"}>
-                                            {summaryStats.totalNet >= 0 ? "+" : ""}{summaryStats.totalNet.toLocaleString()} iron
+                                            {summaryStats.totalNet >= 0 ? "+$" : "-$"}{Math.abs(summaryStats.totalNet).toLocaleString()}
                                         </span>
                                         {" net across "}
-                                        {summaryStats.totalStake.toLocaleString()} iron staked
+                                        ${summaryStats.totalStake.toLocaleString()} staked
                                     </>
                                 )
                                 : "No resolved bets yet."}
@@ -358,7 +358,7 @@ function HeadlinerBand({ fight, cardNumber, resolvesAt, prediction, onPick }) {
                             <span className="hlp-method">{prediction.pickedMethod}</span>
                         )}
                         <span className="hlp-stake">
-                            {prediction.stake} iron at ×{prediction.lockedOdds?.toFixed(2)}
+                            ${prediction.stake} at ×{prediction.lockedOdds?.toFixed(2)}
                         </span>
                     </div>
                 ) : (
@@ -419,7 +419,7 @@ function CompactFightCard({ fight, tone, prediction, onPick }) {
                         <span>{prediction.pickedMethod}</span>
                     )}
                     <span className="fr-locked-stake">
-                        {prediction.stake} iron at ×{prediction.lockedOdds?.toFixed(2)}
+                        ${prediction.stake} at ×{prediction.lockedOdds?.toFixed(2)}
                     </span>
                 </div>
             )}
@@ -494,7 +494,7 @@ function JustResolvedSummary({ card, predictions }) {
                 Last Card — Fight Night #{card.cardNumber} — {won}/{predictions.length} bets won
             </span>
             <span className={totalNet >= 0 ? "ej-positive" : "ej-negative"}>
-                {totalNet >= 0 ? `+${totalNet.toLocaleString()}` : totalNet.toLocaleString()} iron net
+                {totalNet >= 0 ? `+$${totalNet.toLocaleString()}` : `-$${Math.abs(totalNet).toLocaleString()}`} net
             </span>
         </div>
     );
@@ -522,7 +522,7 @@ function HistoryRow({ prediction }) {
                 <strong>{pickedWinner}</strong>
                 {prediction.betType === "EXACT" && side !== "DRAW" && prediction.pickedMethod
                     ? ` · ${prediction.pickedMethod}` : ""}
-                {" "}<span className="yb-stake">({prediction.stake} iron @ ×{prediction.lockedOdds?.toFixed(2)})</span>
+                {" "}<span className="yb-stake">(${prediction.stake} @ ×{prediction.lockedOdds?.toFixed(2)})</span>
             </span>
             <span className="yb-matchup">
                 {prediction.matchup?.aName} vs {prediction.matchup?.bName}
@@ -533,9 +533,9 @@ function HistoryRow({ prediction }) {
             <span className={`yb-delta yb-delta-${tone}`}>
                 {r.won ? <Check size={14} /> : <X size={14} />}
                 {r.won ? (
-                    <span>+{(r.netDelta || 0).toLocaleString()} iron</span>
+                    <span>+${(r.netDelta || 0).toLocaleString()}</span>
                 ) : (
-                    <span>{(r.netDelta || 0).toLocaleString()} iron</span>
+                    <span>-${Math.abs(r.netDelta || 0).toLocaleString()}</span>
                 )}
             </span>
         </div>

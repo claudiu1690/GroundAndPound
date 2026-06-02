@@ -66,7 +66,7 @@ function recordStr(r) {
 }
 
 const TONE_DEFS = {
-    RESPECTFUL: { label: "Respectful", Icon: Handshake, desc: "Pay respect. +15% iron if you later beat them." },
+    RESPECTFUL: { label: "Respectful", Icon: Handshake, desc: "Pay respect. +15% cash if you later beat them." },
     TRASH:      { label: "Trash Talk", Icon: Flame, desc: "+300 fame. Beef flag: +30% fame on grudge win. −150 if they never show." },
     CRYPTIC:    { label: "Cryptic",    Icon: VenetianMask, desc: "Say nothing. Say everything. +40 fame, no strings." },
 };
@@ -216,7 +216,7 @@ export function MediaTab({ fighter, onMessage, onRefreshFighter }) {
                         {!docUsed && (
                             <div className="rewards-strip">
                                 <span className="reward-chip gold">+{state.documentary.fameReward} Fame</span>
-                                <span className="reward-chip gold">+{state.documentary.ironReward} Iron</span>
+                                <span className="reward-chip gold">+${state.documentary.ironReward}</span>
                                 <span className="reward-chip">Legacy Badge</span>
                             </div>
                         )}
@@ -286,7 +286,7 @@ function FlagsStrip({ state }) {
                         <span className="media-flag-icon"><Handshake size={16} /></span>
                         <div>
                             <div className="media-flag-name">Respect: {r.opponentName}</div>
-                            <div className="media-flag-meta">+15% iron if you beat them next</div>
+                            <div className="media-flag-meta">+15% cash if you beat them next</div>
                         </div>
                     </div>
                 ))}
@@ -351,7 +351,7 @@ function PodcastView({ fighter, state, onBack, onMessage, onRefreshFighter, onRe
                         <div className="podcast-result-line"><strong>{result.fameReason}</strong></div>
                         <div className="podcast-result-rewards">
                             {result.fameDelta !== 0 && <span>{result.fameDelta > 0 ? `+${result.fameDelta}` : result.fameDelta} fame</span>}
-                            {result.ironDelta > 0 && <span>+{result.ironDelta} <Coins size={13} /></span>}
+                            {result.ironDelta > 0 && <span>+${result.ironDelta} <Coins size={13} /></span>}
                         </div>
                         {result.extra?.flag === "beef" && (
                             <div className="podcast-result-note">
@@ -360,7 +360,7 @@ function PodcastView({ fighter, state, onBack, onMessage, onRefreshFighter, onRe
                         )}
                         {result.extra?.flag === "respect" && (
                             <div className="podcast-result-note">
-                                <Handshake size={13} /> Respect flag on <strong>{result.extra.opponentName}</strong> — +15% iron if you beat them.
+                                <Handshake size={13} /> Respect flag on <strong>{result.extra.opponentName}</strong> — +15% cash if you beat them.
                             </div>
                         )}
                         {result.extra?.prediction && (
@@ -393,7 +393,7 @@ function PodcastView({ fighter, state, onBack, onMessage, onRefreshFighter, onRe
                         <SegmentCard
                             Icon={Mic}
                             title="Recap your last fight"
-                            desc="Talk about the finish. Small fame + small iron. Safe pick."
+                            desc="Talk about the finish. Small fame + small cash. Safe pick."
                             reward={<>+100 fame · +150 <Coins size={12} /></>}
                             disabled={!canPodcast || !state.podcast.hasLastFight}
                             locked={!state.podcast.hasLastFight ? "No completed fight to recap" : null}
@@ -402,7 +402,7 @@ function PodcastView({ fighter, state, onBack, onMessage, onRefreshFighter, onRe
                         <SegmentCard
                             Icon={Megaphone}
                             title="Talk about the division"
-                            desc="Pick a fighter, pick a tone. Trash talk creates beef, respect creates an iron bonus."
+                            desc="Pick a fighter, pick a tone. Trash talk creates beef, respect creates a cash bonus."
                             reward="up to +300 fame"
                             disabled={!canPodcast}
                             onClick={() => setSegment("DIVISION")}
@@ -421,7 +421,7 @@ function PodcastView({ fighter, state, onBack, onMessage, onRefreshFighter, onRe
                 {segment === "RECAP" && (
                     <div className="podcast-confirm">
                         <h3>Recap your last fight</h3>
-                        <p>Straightforward recap. +100 fame, +150 iron.</p>
+                        <p>Straightforward recap. +100 fame, +$150.</p>
                         <div className="podcast-actions">
                             <button type="button" className="btn btn-secondary" onClick={() => setSegment(null)} disabled={submitting}>Back</button>
                             <button type="button" className="btn btn-primary" onClick={() => submit({ segment: "RECAP" })} disabled={submitting}>
@@ -531,7 +531,7 @@ function DocumentaryView({ fighter, state, onBack, onMessage, onRefreshFighter, 
         try {
             const res = await api.doDocumentary(fighter._id);
             setResult(res);
-            onMessage?.(`Documentary released — +${res.fameDelta} fame, +${res.ironDelta} iron`);
+            onMessage?.(`Documentary released — +${res.fameDelta} fame, +$${res.ironDelta}`);
             if (onRefreshFighter) onRefreshFighter(fighter._id);
         } catch (e) {
             onMessage?.(e.message || "Could not record documentary");
@@ -550,7 +550,7 @@ function DocumentaryView({ fighter, state, onBack, onMessage, onRefreshFighter, 
                         <p>Your career, pressed to film. The division won't forget.</p>
                         <div className="documentary-rewards">
                             <div>+{result.fameDelta} fame</div>
-                            <div>+{result.ironDelta} <Coins size={13} /></div>
+                            <div>+${result.ironDelta} <Coins size={13} /></div>
                             <div>Badge: <strong>{result.badge}</strong> (unlocks Legacy banner piece)</div>
                         </div>
                     </div>
@@ -572,7 +572,7 @@ function DocumentaryView({ fighter, state, onBack, onMessage, onRefreshFighter, 
                     </p>
                     <div className="documentary-rewards">
                         <div>+{state.documentary.fameReward} fame</div>
-                        <div>+{state.documentary.ironReward} <Coins size={13} /></div>
+                        <div>+${state.documentary.ironReward} <Coins size={13} /></div>
                         <div>Unlocks the <strong>Legacy</strong> banner badge</div>
                     </div>
                     <div className="documentary-actions">

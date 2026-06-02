@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
  * after a card resolves. Headliner gets a hero treatment up top, then main card,
  * then prelims. Animated stagger gives each fight a moment.
  *
- * Now iron-only — each bet either won (paid out at locked odds) or lost (stake
+ * Now cash-only — each bet either won (paid out at locked odds) or lost (stake
  * already gone). No fame deltas.
  */
 export const CardResultOverlay = memo(function CardResultOverlay({
@@ -102,16 +102,16 @@ export const CardResultOverlay = memo(function CardResultOverlay({
                 <div className="card-result-totals">
                     <div className="card-result-total-row">
                         <span className="card-result-total-label">Staked</span>
-                        <span className="card-result-total-value">{totals.staked.toLocaleString()} ⊗</span>
+                        <span className="card-result-total-value">${totals.staked.toLocaleString()}</span>
                     </div>
                     <div className="card-result-total-row">
                         <span className="card-result-total-label">Paid back</span>
-                        <span className="card-result-total-value pos">{totals.payout.toLocaleString()} ⊗</span>
+                        <span className="card-result-total-value pos">${totals.payout.toLocaleString()}</span>
                     </div>
                     <div className={`card-result-total-row card-result-total-row-net ${totals.netDelta >= 0 ? "pos" : "neg"}`}>
                         <span className="card-result-total-label">Net</span>
                         <span className="card-result-total-value">
-                            {totals.netDelta >= 0 ? "+" : ""}{totals.netDelta.toLocaleString()} ⊗
+                            {totals.netDelta >= 0 ? "+$" : "-$"}{Math.abs(totals.netDelta).toLocaleString()}
                         </span>
                     </div>
                 </div>
@@ -241,12 +241,12 @@ function PredictionLine({ prediction, fight }) {
                 {prediction.betType === "EXACT" && prediction.pickedSide !== "DRAW" && prediction.pickedMethod && (
                     <span className="muted"> · {prediction.pickedMethod}</span>
                 )}
-                <span className="muted"> · {prediction.stake} ⊗ at ×{prediction.lockedOdds?.toFixed(2)}</span>
+                <span className="muted"> · ${prediction.stake} at ×{prediction.lockedOdds?.toFixed(2)}</span>
             </span>
             <span className={`card-hero-pick-delta card-hero-pick-delta-${tone}`}>
                 {r.won
-                    ? `+${(r.netDelta || 0).toLocaleString()} ⊗`
-                    : `${(r.netDelta || 0).toLocaleString()} ⊗`}
+                    ? `+$${(r.netDelta || 0).toLocaleString()}`
+                    : `-$${Math.abs(r.netDelta || 0).toLocaleString()}`}
             </span>
         </div>
     );
@@ -259,7 +259,7 @@ function PredictionPill({ prediction }) {
     const r = prediction.resolution || {};
     const tone = r.won ? "pos" : "neg";
     const icon = r.won ? "✓" : "✕";
-    const delta = `${r.netDelta >= 0 ? "+" : ""}${(r.netDelta || 0).toLocaleString()} ⊗`;
+    const delta = `${r.netDelta >= 0 ? "+$" : "-$"}${Math.abs(r.netDelta || 0).toLocaleString()}`;
     return (
         <span className={`card-pred-pill card-pred-pill-${tone}`}>
             <span className="card-pred-pill-icon">{icon}</span>

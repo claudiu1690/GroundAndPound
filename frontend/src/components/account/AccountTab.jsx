@@ -483,7 +483,7 @@ function DangerZone({ onLogoutClick, onDeleteClick }) {
                 </div>
                 <div className="danger-body">
                     <div className="danger-desc">
-                        Permanently deletes your fighter, all progress, iron, and career history.
+                        Permanently deletes your fighter, all progress, cash, and career history.
                     </div>
                     <button className="danger-btn" onClick={onDeleteClick}>
                         <Trash2 size={14} /> Delete Account

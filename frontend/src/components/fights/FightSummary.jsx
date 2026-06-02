@@ -4,7 +4,7 @@ import { getRatingConfig, MATCH_STATUS_LABELS, MATCH_STATUS_COLORS } from "../..
 import { ArrowUpCircle, Trophy } from "lucide-react";
 
 /**
- * Post-fight summary: health/stamina lost, XP gained, fame, iron, injuries, comeback, weight miss, etc.
+ * Post-fight summary: health/stamina lost, XP gained, fame, cash, injuries, comeback, weight miss, etc.
  */
 export const FightSummary = memo(function FightSummary({ summary, description }) {
   if (!summary) return null;
@@ -29,7 +29,7 @@ export const FightSummary = memo(function FightSummary({ summary, description })
     weightCutRoll,
     weightMissed,
     injuriesSustained,
-    newBadges,
+    // newBadges removed — badges still earned/stored; will return as achievements.
     mentalResetRequired,
     completedQuests,
     promoted,
@@ -48,7 +48,7 @@ export const FightSummary = memo(function FightSummary({ summary, description })
   const hasXp = xpGained && typeof xpGained === "object" && Object.keys(xpGained).length > 0;
   const recordLabel = recordChange === "W" ? "Win" : recordChange === "L" ? "Loss" : "Draw";
 
-  // Outcome flavor key used across hero modifier + badges.
+  // Outcome flavor key used across hero modifier.
   const oc = recordChange === "W" ? "win" : recordChange === "L" ? "loss" : "draw";
   const winText = recordChange === "W" ? "VICTORY" : recordChange === "L" ? "DEFEAT" : "DRAW";
 
@@ -81,7 +81,7 @@ export const FightSummary = memo(function FightSummary({ summary, description })
           <div className="result-right">
             <div className="result-stat" data-tut="result-iron">
               <div className="result-stat-val result-stat-val--green">+{ironEarned ?? 0}</div>
-              <div className="result-stat-label">Iron Earned</div>
+              <div className="result-stat-label">Cash Earned</div>
             </div>
             <div className="result-stat" data-tut="result-fame">
               <div className="result-stat-val result-stat-val--gold">{fameDisplay}</div>
@@ -157,12 +157,7 @@ export const FightSummary = memo(function FightSummary({ summary, description })
           </div>
         )}
 
-        {newBadges?.length > 0 && (
-          <div className="notice notice--good">
-            <span className="notice-glyph">🏅</span>
-            <span>Badge earned: {newBadges.join(", ")}</span>
-          </div>
-        )}
+        {/* Badge earned notice removed — badges still earned/stored; will return as achievements. */}
 
         {injuriesSustained?.length > 0 && (
           <div className="notice notice--danger">
@@ -198,7 +193,7 @@ export const FightSummary = memo(function FightSummary({ summary, description })
               </span>
             </div>
             <div className="stat-summary-row">
-              <span className="stat-summary-label">Iron Earned</span>
+              <span className="stat-summary-label">Cash Earned</span>
               <span className="stat-summary-val stat-summary-val--green">
                 +{ironEarned ?? 0}
                 {weightMissed && <span className="stat-summary-note"> (−20% weight miss)</span>}

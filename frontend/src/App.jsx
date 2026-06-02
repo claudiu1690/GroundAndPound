@@ -148,7 +148,7 @@ function FighterCard({ fighter }) {
         </div>
 
         <div className="fighter-card-footer">
-          <span>⊗ {fighter?.iron ?? 0}</span>
+          <span>${fighter?.iron ?? 0}</span>
           <span>Gym: {gymName}</span>
           <span className="fighter-card-fame">
             {fighter?.notoriety?.tierLabel && (
@@ -278,7 +278,7 @@ const RightPanels = memo(function RightPanels({ fighter, lastFightSummary, campS
                 {lastFightSummary.outcome}
               </div>
               <div className="rp-detail">Record: {lastFightSummary.recordAfter}</div>
-              <div className="rp-detail">Iron earned: +{lastFightSummary.ironEarned ?? 0} ⊗</div>
+              <div className="rp-detail">Cash earned: +${lastFightSummary.ironEarned ?? 0}</div>
               <div className="rp-detail">XP ×{lastFightSummary.xpMultiplier}</div>
               {lastFightSummary.promoted && (
                 <div className="rp-promoted">⬆ Promoted to {lastFightSummary.promoted.to}!</div>
@@ -918,7 +918,7 @@ const handleGetOffers = useCallback(async () => {
       // First-fight hint: show once after first career win
       const isFirstWin = rec && rec.wins === 1 && result.summary?.recordChange === "W";
       const firstWinHint = isFirstWin ? " | Build your record and raise your OVR to earn a title shot. Win the belt to move up." : "";
-      setMessage(`${out} — +${iron} ⊗${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}${firstWinHint}`);
+      setMessage(`${out} — +$${iron}${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}${firstWinHint}`);
       loadFighter(fighter._id);
       setFeedRefreshKey((k) => k + 1);
       // Clean up camp state after fight

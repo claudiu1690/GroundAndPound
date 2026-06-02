@@ -98,7 +98,7 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
         setBusyHealth(packageKey);
         try {
             const result = await api.hospitalRestoreHealth(fighterId, packageKey);
-            onMessage?.(`Restored ${result.restored} HP for ${result.ironPaid} iron.`);
+            onMessage?.(`Restored ${result.restored} HP for $${result.ironPaid}.`);
             if (onRefreshFighter) await onRefreshFighter(fighterId);
         } catch (e) {
             onMessage?.(e.message || "Health restoration failed");
@@ -112,7 +112,7 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
                 <div className="page-eyebrow">Medical Centre</div>
                 <h1 className="page-title">Hospital</h1>
                 <p className="page-sub">
-                    Iron-paid medical services. Doctor visits clear blocking injuries instantly.
+                    Cash-paid medical services. Doctor visits clear blocking injuries instantly.
                     Health packages restore HP without waiting.
                 </p>
             </header>
@@ -130,7 +130,7 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
                                 title={`Heal all ${quote.count} injuries — 15% bulk discount`}
                                 onClick={handleFullRecovery}
                             >
-                                <Package size={14} /> Full Recovery — {quote.iron} iron + {quote.energy}E
+                                <Package size={14} /> Full Recovery — ${quote.iron} + {quote.energy}E
                             </button>
                         )}
                     </div>
@@ -208,8 +208,8 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
                                         const titleText = dominated
                                             ? "A cheaper package delivers the same HP — pick that one instead."
                                             : cantAfford
-                                                ? `Need ${proRatedIron} iron`
-                                                : `Pay ${proRatedIron} iron for ${actualHeal} HP`;
+                                                ? `Need $${proRatedIron}`
+                                                : `Pay $${proRatedIron} for ${actualHeal} HP`;
                                         return (
                                             <div
                                                 key={pkg.key}
@@ -232,7 +232,7 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
                                                         title={titleText}
                                                         onClick={() => handleRestoreHealth(pkg.key)}
                                                     >
-                                                        <Coins size={13} /> {proRatedIron}
+                                                        <Coins size={13} /> ${proRatedIron}
                                                     </button>
                                                 </div>
                                             </div>
@@ -261,10 +261,10 @@ const ServicesSection = memo(function ServicesSection() {
                             <span className="svc-name">Treatment</span>
                         </div>
                         <p className="svc-desc">
-                            Doctor-required injuries heal on their own within a day. Pay iron + energy to
+                            Doctor-required injuries heal on their own within a day. Pay cash + energy to
                             clear one instantly and skip the wait.
                         </p>
-                        <div className="svc-price"><Coins size={12} /> From 200 iron</div>
+                        <div className="svc-price"><Coins size={12} /> From $200</div>
                     </div>
                 </div>
 
@@ -276,10 +276,10 @@ const ServicesSection = memo(function ServicesSection() {
                             <span className="svc-name">Skip Recovery</span>
                         </div>
                         <p className="svc-desc">
-                            Auto-heal injuries clear within hours on their own. Pay iron to skip the wait
+                            Auto-heal injuries clear within hours on their own. Pay cash to skip the wait
                             and get back to training right away.
                         </p>
-                        <div className="svc-price"><Coins size={12} /> From 600 iron</div>
+                        <div className="svc-price"><Coins size={12} /> From $600</div>
                     </div>
                 </div>
 
@@ -294,7 +294,7 @@ const ServicesSection = memo(function ServicesSection() {
                             HP regenerates passively at +1 every 5 minutes. Skip the wait with Quick Patch,
                             Recovery Bay, or Full Restoration.
                         </p>
-                        <div className="svc-price"><Coins size={12} /> From 200 iron</div>
+                        <div className="svc-price"><Coins size={12} /> From $200</div>
                     </div>
                 </div>
 
@@ -357,7 +357,7 @@ const HospitalInjuryRow = memo(function HospitalInjuryRow({
                         >
                             Treat Now
                         </button>
-                        <div className="treat-cost">{inj.docVisitIron} iron + {inj.docVisitEnergy} energy</div>
+                        <div className="treat-cost">${inj.docVisitIron} + {inj.docVisitEnergy} energy</div>
                     </>
                 )}
                 {isAutoHealing && inj.recoverySkipIron > 0 && (
@@ -370,7 +370,7 @@ const HospitalInjuryRow = memo(function HospitalInjuryRow({
                         >
                             Skip Recovery
                         </button>
-                        <div className="treat-cost">{inj.recoverySkipIron} iron</div>
+                        <div className="treat-cost">${inj.recoverySkipIron}</div>
                     </>
                 )}
             </div>
