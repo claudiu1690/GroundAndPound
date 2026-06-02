@@ -703,6 +703,10 @@ function App() {
             ? injuryEvents.map((e) => ({ label: e.label, round: e.sessionIndex }))
             : (result.injurySustained || []).map((label) => ({ label, round: null }));
           const variant = injuries.length ? "injury" : (levelUps.length ? "levelup" : "normal");
+          // Per-session XP RNG (additive; may be absent during rollout).
+          const rollTier = result.rollTier ?? null;
+          const rollTierCounts = result.rollTierCounts ?? { great: 0, normal: 0, sluggish: 0 };
+          const greatCount = rollTierCounts.great ?? 0;
           addToast({
             sessionName,
             xpGained,
@@ -714,6 +718,8 @@ function App() {
             maxStaminaGained: result.maxStaminaGained || 0,
             staminaCapHit: !!result.staminaCapHit,
             variant,
+            rollTier,
+            greatCount,
           });
 
           // Tutorial step 2 advances on a successful training session. The old

@@ -6,6 +6,7 @@ const { applyXpToStat, roundStatXp, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require(
 const fighterService = require("./fighterService");
 const energyService = require("./energyService");
 const gymRankService = require("./gymRankService");
+const { rollSessionXp, tierForRoll } = require("../utils/trainingRng");
 const {
     rollForSparringInjury,
     buildInjury,
@@ -224,6 +225,8 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
             maxStaminaGained,
             staminaCapHit,
             sessionsToday: fighter.trainingSessionsToday,
+            rollTier: null,
+            rollTierCounts: { great: 0, normal: 0, sluggish: 0 },
             fighter: fighterService.toPublicFighter(fighter),
             message,
         };
@@ -254,7 +257,18 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
     let stopReason = "completed";
     const injurySustained = [];
 
+    // Per-session XP roll tally (a session is drawn once, shared across stats).
+    const rollTierCounts = { great: 0, normal: 0, sluggish: 0 };
+    let lastTier = null;
+
     for (let i = 1; i <= k; i++) {
+        // Draw ONCE per session, before any stat math, so a session that ends
+        // in an injury (still counts as completed) is still tallied.
+        const sessionRoll = rollSessionXp();
+        const sessionTier = tierForRoll(sessionRoll);
+        rollTierCounts[sessionTier] += 1;
+        lastTier = sessionTier;
+
         // Apply one session of XP per stat (exact single-session math).
         for (const statName of config.stats) {
             if (injuryLockedStats.has(statName)) {
@@ -269,7 +283,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
             const gymMult = isFocus ? gym.focusXpMultiplier : gym.xpMultiplier;
             const rank3Mult = isFocus ? rank3BonusPct : 0;
 
-            const xp = config.xpBase * gymMult * totalXpMod * (1 + rank3Mult) / config.stats.length;
+            const xp = config.xpBase * sessionRoll * gymMult * totalXpMod * (1 + rank3Mult) / config.stats.length;
 
             const currentStat = fighter[valKey] || 10;
 
@@ -289,7 +303,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
             const { newStat, newXp } = applyXpToStat(currentStat, currentXp, xp, 100);
             fighter[valKey] = newStat;
             fighter[xpKey] = roundStatXp(newXp);
-            xpGained[statName] = (xpGained[statName] || 0) + Math.round(xp);
+            xpGained[statName] = (xpGained[statName] || 0) + Math.max(1, Math.round(xp));
         }
 
         // Increment gym rank training sessions (one per completed session).
@@ -320,6 +334,9 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
     if (stopReason !== "injury") {
         stopReason = deriveStopReason(k, clampedQ);
     }
+
+    // Single-session tier label (null for batches; the counts carry batch detail).
+    const rollTier = isBatch ? null : lastTier;
 
     // Refund energy for funded-but-not-completed sessions (only on injury stop).
     const refund = computeRefund(k, completed, config.energy);
@@ -405,6 +422,8 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
         maxStaminaGained: 0,
         staminaCapHit: false,
         sessionsToday: fighter.trainingSessionsToday,
+        rollTier,
+        rollTierCounts,
         fighter: fighterService.toPublicFighter(fighter),
         message,
     };

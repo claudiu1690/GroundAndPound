@@ -2666,11 +2666,24 @@ code {
 /* Top row */
 .train-toast-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .train-toast-title {
-  display:flex; align-items:center; gap:10px;
+  display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px;
   font-family:var(--font-display); font-weight:800; font-size:20px;
   text-transform:uppercase; letter-spacing:.5px; color:#F0F0F0;
 }
 .train-toast-check { color:#4ADE80; flex-shrink:0; }
+
+/* Per-session XP RNG badge — tag style, smaller than the 20px title. */
+.train-toast-badge {
+  font-family:var(--font-display); font-weight:800; font-size:14px;
+  text-transform:uppercase; letter-spacing:.5px; padding:3px 10px;
+  border-radius:5px; flex-shrink:0; line-height:1.2;
+}
+.train-toast-badge--great {
+  background: rgba(212,168,32,0.18); color:#D4A820; border:1px solid rgba(212,168,32,0.35);
+}
+.train-toast-badge--sluggish {
+  background: rgba(120,120,120,0.14); color:#9A9A9A; border:1px solid rgba(120,120,120,0.28);
+}
 .train-toast-close {
   all:unset; box-sizing:border-box; display:inline-flex; align-items:center;
   font-size:17px; color:#666; cursor:pointer; flex-shrink:0;

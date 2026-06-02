@@ -29,12 +29,32 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
     maxStaminaGained = 0,
     staminaCapHit = false,
     variant = "normal",
+    rollTier = null,
+    greatCount = 0,
     dismissing = false,
   } = toast;
 
   const isInjury = variant === "injury";
   const isLevelup = variant === "levelup";
   const isBatch = completed > 1;
+
+  // Per-session XP RNG badge (presentational; server-resolved).
+  // Single session: show great/sluggish from rollTier. Batch: show great count.
+  // Sluggish counts are intentionally not surfaced for batches.
+  let rollBadge = null;
+  if (completed <= 1) {
+    if (rollTier === "great") {
+      rollBadge = <span className="train-toast-badge train-toast-badge--great">Great session!</span>;
+    } else if (rollTier === "sluggish") {
+      rollBadge = <span className="train-toast-badge train-toast-badge--sluggish">Sluggish</span>;
+    }
+  } else if (greatCount > 0) {
+    rollBadge = (
+      <span className="train-toast-badge train-toast-badge--great">
+        {greatCount} great session{greatCount > 1 ? "s" : ""}
+      </span>
+    );
+  }
 
   // XP / conditioning branch.
   const hasXp = xpGained.length > 0;
@@ -48,6 +68,7 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
         <div className="train-toast-title">
           <Check size={19} className="train-toast-check" />
           <span>{sessionName} Complete</span>
+          {rollBadge}
         </div>
         <button
           type="button"
