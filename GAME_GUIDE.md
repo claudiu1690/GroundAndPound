@@ -185,6 +185,8 @@ XP accumulates in a bank for each stat. Once full, the stat increases by one poi
 
 Stats 96–99 can only grow from fights.
 
+Each training session rolls a small luck modifier (±20%) applied to that session's XP — most land near normal, with occasional **Great** (gold) or **Sluggish** results shown in the post-training toast. Over many sessions it averages out, so batch training isn't penalized.
+
 ---
 
 ## Fight Offers
