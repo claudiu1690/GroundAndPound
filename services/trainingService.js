@@ -40,6 +40,19 @@ function isTierUnlocked(fighterTier, requiredTier) {
 }
 
 /**
+ * Daily reset for the per-day training session counter. Mirrors the
+ * calendar-day (toDateString, server local time) idiom used by
+ * fightService.ensureDailyFightTierState. Called once per train.
+ */
+function ensureDailyTrainingState(fighter) {
+    const today = new Date().toDateString();
+    if (fighter.trainingDayKey !== today) {
+        fighter.trainingSessionsToday = 0;
+        fighter.trainingDayKey = today;
+    }
+}
+
+/**
  * PURE: derive the stop reason for a finished batch (no injury case).
  * k < clampedQ means the live-energy clamp reduced the funded count.
  */
@@ -80,6 +93,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
     if (!fighter) throw new Error("Fighter not found");
 
     await fighterService.reconcileEnergy(fighter);
+    ensureDailyTrainingState(fighter);
 
     const gym = await Gym.findById(gymId);
     if (!gym) throw new Error("Gym not found");
@@ -172,6 +186,8 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
         const energyAfter = snap.current;
         const energySpent = completed * config.energy;
 
+        fighter.trainingSessionsToday += completed;
+
         await fighter.save();
 
         let rankUpResult = null;
@@ -207,6 +223,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
             rankUp: rankUpResult,
             maxStaminaGained,
             staminaCapHit,
+            sessionsToday: fighter.trainingSessionsToday,
             fighter: fighterService.toPublicFighter(fighter),
             message,
         };
@@ -341,6 +358,8 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
     };
     const energyAfter = energySnap.current;
 
+    fighter.trainingSessionsToday += completed;
+
     await fighter.save();
 
     // Rank-up check once after the batch (mirrors the historical 2-save pattern).
@@ -385,6 +404,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
         rankUp: rankUpResult,
         maxStaminaGained: 0,
         staminaCapHit: false,
+        sessionsToday: fighter.trainingSessionsToday,
         fighter: fighterService.toPublicFighter(fighter),
         message,
     };

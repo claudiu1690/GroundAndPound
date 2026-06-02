@@ -2609,7 +2609,9 @@ code {
 }
 
 /* ============================================================
-   TRAINING RESULT POPUP
+   GENERIC BLOCKING MODAL (FightLimitPopup)
+   ── These 5 rules survived the training-result-modal removal because
+      FightLimitPopup (a fights component) reuses them for its shell. ──
    ============================================================ */
 .training-result-overlay {
   position: fixed;
@@ -2618,8 +2620,6 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Above the onboarding tutorial scrim (z 50000) so the result popup shows
-     normally during tutorial step 2 instead of being dimmed underneath it. */
   z-index: 50600;
 }
 .training-result-popup {
@@ -2637,45 +2637,109 @@ code {
   font-weight: 700;
   color: var(--text);
 }
-.training-result-xp { margin-bottom: 1rem; }
-.training-result-xp-label {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  margin-bottom: 0.4rem;
-}
-.training-result-xp-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-.training-result-xp-stats .stat-chip { font-size: 11px; padding: 0.25rem 0.5rem; }
 .training-result-fallback { margin: 0 0 1rem 0; font-size: 12px; color: var(--text-sec); }
-
-.training-result-levelups { margin-bottom: 1rem; padding: 0.5rem 0.65rem; background: rgba(22,163,74,0.08); border: 1px solid rgba(22,163,74,0.35); border-radius: 4px; }
-.training-result-levelups-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--green-bright); margin-bottom: 0.4rem; }
-.training-result-levelups-stats { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-.training-result-levelups-stats .stat-chip { font-size: 11px; padding: 0.25rem 0.5rem; }
-.training-result-levelup-chip { border-width: 1.5px; }
-
 .training-result-close { width: 100%; }
 
-/* ── Aggregated batch summary ─────────────────────────────────── */
-.training-result-stopreason { margin: -0.5rem 0 1rem 0; font-size: 12px; font-weight: 700; color: var(--c-amber-bright); }
-.training-result-changes { margin-bottom: 1rem; }
-.training-result-change-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.35rem; font-size: 12px; flex-wrap: wrap; }
-.training-result-change-row .stat-chip { font-size: 11px; padding: 0.25rem 0.5rem; }
-.training-result-change-vals { font-family: var(--font-display); font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
-.training-result-wasted { color: var(--text-muted); font-size: 11px; }
-.training-result-stamina { margin-bottom: 1rem; font-size: 12px; font-weight: 700; color: var(--green-bright); }
-.training-result-events { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
-.training-result-event { font-size: 12px; padding: 0.45rem 0.6rem; border-radius: 4px; border: 1px solid var(--c-border); }
-.training-result-event-injury { background: rgba(200,16,46,0.08); border-color: rgba(200,16,46,0.35); color: #f87171; }
-.training-result-event-rankup { background: rgba(212,168,32,0.08); border-color: rgba(212,168,32,0.35); color: var(--c-amber-bright); }
-.training-result-event-cap { color: var(--text-secondary); }
-.training-result-energy { margin-bottom: 1rem; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+/* ============================================================
+   POST-TRAINING TOASTS
+   ============================================================ */
+.toast-container {
+  position: fixed; bottom: 52px; right: 20px; z-index: 1000;
+  display: flex; flex-direction: column; gap: 12px; pointer-events: none;
+}
+.train-toast {
+  background:#1E1E1E; border:1px solid #2A2A2A; border-left:5px solid #3A9A4A;
+  border-radius:11px; padding:19px 22px; width:456px; pointer-events:all;
+  position:relative; overflow:hidden; animation: toastSlideIn .2s ease-out;
+  transition: opacity .3s, transform .3s;
+}
+.train-toast--levelup { border-left-color:#D4A820; }
+.train-toast.dismissing { opacity:0; transform: translateX(20px); }
+@keyframes toastSlideIn { from{opacity:0;transform:translateX(20px);} to{opacity:1;transform:translateX(0);} }
+.train-toast-progress {
+  position:absolute; bottom:0; left:0; height:4px; width:100%;
+  background:#3A9A4A; transform-origin:left; animation: toastDrain 3s linear forwards;
+}
+.train-toast--levelup .train-toast-progress { background:#D4A820; }
+@keyframes toastDrain { from{transform:scaleX(1);} to{transform:scaleX(0);} }
+
+/* Top row */
+.train-toast-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.train-toast-title {
+  display:flex; align-items:center; gap:10px;
+  font-family:var(--font-display); font-weight:800; font-size:20px;
+  text-transform:uppercase; letter-spacing:.5px; color:#F0F0F0;
+}
+.train-toast-check { color:#4ADE80; flex-shrink:0; }
+.train-toast-close {
+  all:unset; box-sizing:border-box; display:inline-flex; align-items:center;
+  font-size:17px; color:#666; cursor:pointer; flex-shrink:0;
+}
+.train-toast-close:hover { color:#999; }
+
+/* XP / conditioning row */
+.train-toast-xp { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-top:13px; }
+.train-toast-xp-label { font-size:16px; color:#666; }
+.train-toast-chip {
+  font-family:var(--font-display); font-weight:700; font-size:16px;
+  padding:5px 12px; border-radius:5px;
+}
+.train-toast-chip-stam {
+  background: rgba(212,168,32,0.18); color:#D4A820; border:1px solid rgba(212,168,32,0.35);
+}
+
+/* Level-up rows */
+.train-toast-levelup-row {
+  display:flex; align-items:center; gap:10px; margin-top:13px;
+  background: rgba(212,168,32,0.08); border:1px solid rgba(212,168,32,0.2);
+  border-radius:6px; padding:10px 13px;
+}
+.train-toast-levelup-icon { color:#D4A820; flex-shrink:0; }
+.train-toast-levelup-text { font-family:var(--font-display); font-weight:700; font-size:18px; color:#D4A820; }
+.train-toast-levelup-value {
+  margin-left:auto; font-family:var(--font-display); font-weight:800; font-size:19px;
+  color:#D4A820; font-variant-numeric:tabular-nums;
+}
+
+/* Injury variant + rows — red accent wins over level-up. */
+.train-toast--injury { border-left-color:#EF4444; }
+.train-toast--injury .train-toast-progress { background:#EF4444; }
+.train-toast-injury-row {
+  display:flex; align-items:center; gap:10px; margin-top:13px;
+  background: rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25);
+  border-radius:6px; padding:10px 13px;
+}
+.train-toast-injury-icon { color:#F87171; flex-shrink:0; }
+.train-toast-injury-text { font-family:var(--font-display); font-weight:700; font-size:18px; color:#F87171; }
+.train-toast-injury-round {
+  margin-left:auto; font-family:var(--font-display); font-weight:800; font-size:19px;
+  color:#F87171; font-variant-numeric:tabular-nums;
+}
+
+/* Meta row */
+.train-toast-meta {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  margin-top:14px; font-size:16px; color:#666;
+}
+.train-toast-energy { color:#3B82F6; font-weight:600; }
+.train-toast-sessions { color:#4ADE80; font-weight:600; }
+
+/* Session-card success border flash. The 100% stop returns to the card's
+   real default border-color (var(--c-border)). */
+.session-card--flash { animation: cardFlash 2.5s ease-out; }
+@keyframes cardFlash {
+  0% { border-color: rgba(58,154,74,0.5); }
+  100% { border-color: var(--c-border); }
+}
+
+@media (max-width: 768px) {
+  .toast-container { right:50%; transform:translateX(50%); bottom:64px; width:calc(100vw - 32px); max-width:504px; }
+  .train-toast { width:100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .train-toast, .train-toast-progress, .session-card--flash { animation: none; }
+  .train-toast { transition: none; }
+}
 
 /* ============================================================
    GYM QUESTS

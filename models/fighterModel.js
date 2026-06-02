@@ -110,6 +110,10 @@ const fighterSchema = new mongoose.Schema({
     fightDayKey: { type: String, default: null },
     /** Fights completed today per promotion tier (e.g. Amateur vs Regional Pro caps are separate) */
     fightsTodayByTier: { type: mongoose.Schema.Types.Mixed, default: {} },
+    /** Training sessions completed today (calendar day); reset via trainingDayKey */
+    trainingSessionsToday: { type: Number, default: 0 },
+    /** Calendar day key (toDateString) for trainingSessionsToday reset */
+    trainingDayKey: { type: String, default: null },
     // Comeback mode after loss
     comebackMode: { type: Boolean, default: false },
     consecutiveLosses: { type: Number, default: 0 },

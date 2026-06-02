@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { api, authStorage } from "./api";
 import "./App.css";
 import { FighterProfile } from "./components/fighterProfile/FighterProfile";
 import { GymTraining, SESSION_META } from "./components/gym/GymTraining";
 import { GymSelector } from "./components/gym/GymSelector";
-import { TrainingResultPopup } from "./components/gym/TrainingResultPopup";
+import { ToastContainer } from "./components/gym/ToastContainer";
 import { TierUpOverlay, BeltWonOverlay } from "./components/fights/TierUpOverlay";
 import { FightOffers } from "./components/fights/FightOffers";
 import { FightCamp } from "./components/fights/FightCamp";
@@ -30,6 +30,7 @@ import { AccountTab } from "./components/account/AccountTab";
 import { EmailVerifyBanner } from "./components/account/EmailVerifyBanner";
 import { DashboardTab } from "./components/dashboard/DashboardTab";
 import { tutorialBus } from "./utils/tutorialBus";
+import { useToasts } from "./hooks/useToasts";
 import {
   LayoutDashboard,
   BookOpen,
@@ -47,6 +48,10 @@ import {
   X,
   Zap,
   Heart,
+  CheckCircle2,
+  Circle,
+  ChevronRight,
+  Trophy,
 } from "lucide-react";
 
 // ── Navigation definition ──────────────────────────────────
@@ -320,7 +325,7 @@ const RightPanels = memo(function RightPanels({ fighter, lastFightSummary, campS
 /**
  * Two-view gym system: selector grid → training view inside gym.
  */
-const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, training, onSwitchGym, onRankUp }) {
+const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, training, onSwitchGym, onRankUp, flashSessionKey }) {
   // Default to the fighter's active gym (if membership is active), otherwise show gym selector
   const activeGymFromMembership = gyms?.find((g) => g.membership?.isActive);
   const freeGym = gyms?.find((g) => g.isFreeGym);
@@ -363,6 +368,7 @@ const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, tr
       onBack={() => setShowSelector(true)}
       onSwitchGym={onSwitchGym}
       onRankUp={onRankUp}
+      flashSessionKey={flashSessionKey}
     />
   );
 });
@@ -432,7 +438,11 @@ function App() {
   const [feedRefreshKey, setFeedRefreshKey]     = useState(0);
   const [champions, setChampions]               = useState([]);
   const [activeTab, setActiveTab]               = useState("home");
-  const [trainingResultPopup, setTrainingResultPopup] = useState({ open: false, sessionLabel: "", xpGained: {}, statLevelUps: [] });
+  // Post-training toast stack (replaces the old result modal).
+  const { toasts, addToast, beginDismiss } = useToasts();
+  // Which session card currently shows the success border-flash (null = none).
+  const [flashSessionKey, setFlashSessionKey] = useState(null);
+  const flashTimerRef = useRef(null);
   // In-flight guard so a slow batch can't be double-submitted — one click now
   // spends up to 25× energy.
   const [training, setTraining] = useState(false);
@@ -457,6 +467,9 @@ function App() {
 
   // Auto-close the mobile drawer whenever the active tab changes.
   useEffect(() => { setMobileDrawerOpen(false); }, [activeTab]);
+
+  // Clear the pending card-flash timer on unmount.
+  useEffect(() => () => { if (flashTimerRef.current) clearTimeout(flashTimerRef.current); }, []);
 
   const maybeShowBlockPopup = useCallback((rawMessage, errorCode) => {
     const blockingCodes = new Set([
@@ -673,27 +686,47 @@ function App() {
       const qty = Math.max(1, Math.floor(Number(quantity) || 1));
       try {
         const result = await api.train(fighter._id, trainGym, trainSession, qty);
-        const sessionLabel = (SESSION_META[trainSession] ?? SESSION_META.bag_work).label;
-        setTrainingResultPopup({
-          open: true,
-          sessionLabel,
-          // N=1 backward-compat fields (byte-identical popup at N=1).
-          xpGained: result.xpGained ?? {},
-          statLevelUps: result.statLevelUps ?? [],
-          // Aggregate fields (defensive null-guards — any may be missing).
-          requested: result.requested ?? qty,
-          completed: result.completed ?? 0,
-          stopReason: result.stopReason ?? "completed",
-          statChanges: result.statChanges ?? [],
-          energyBefore: result.energyBefore ?? null,
-          energyAfter: result.energyAfter ?? null,
-          energySpent: result.energySpent ?? null,
-          events: result.events ?? [],
-          injurySustained: result.injurySustained ?? [],
-          rankUp: result.rankUp ?? null,
-          maxStaminaGained: result.maxStaminaGained ?? 0,
-          staminaCapHit: result.staminaCapHit ?? false,
-        });
+        const completed = result.completed ?? 0;
+
+        if (completed > 0) {
+          // ── Build the post-training toast view-model ──────────────────
+          const sessionName = (SESSION_META[trainSession] ?? SESSION_META.bag_work).label;
+          const xpGained = Object.entries(result.xpGained || {})
+            .filter(([, v]) => v > 0)
+            .map(([stat, amount]) => ({ stat, amount: Number(amount) }));
+          const levelUps = (result.statChanges || [])
+            .filter((c) => c.after > c.before)
+            .map((c) => ({ stat: c.stat, oldValue: c.before, newValue: c.after }));
+          // Injuries: prefer the richer events (carry the round), fall back to labels.
+          const injuryEvents = (result.events || []).filter((e) => e && e.type === "injury");
+          const injuries = injuryEvents.length
+            ? injuryEvents.map((e) => ({ label: e.label, round: e.sessionIndex }))
+            : (result.injurySustained || []).map((label) => ({ label, round: null }));
+          const variant = injuries.length ? "injury" : (levelUps.length ? "levelup" : "normal");
+          addToast({
+            sessionName,
+            xpGained,
+            levelUps,
+            injuries,
+            completed,
+            energyRemaining: result.energyAfter,
+            sessionsToday: result.sessionsToday ?? 0,
+            maxStaminaGained: result.maxStaminaGained || 0,
+            staminaCapHit: !!result.staminaCapHit,
+            variant,
+          });
+
+          // Tutorial step 2 advances on a successful training session. The old
+          // modal fired this on dismiss; with toasts there's no dismiss gate, so
+          // we emit immediately on success.
+          tutorialBus.emit("training_complete");
+
+          // Trigger the session-card border flash (CSS-only animation).
+          setFlashSessionKey(trainSession);
+          if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+          flashTimerRef.current = setTimeout(() => setFlashSessionKey(null), 2500);
+        }
+
         loadFighter(fighter._id, { clearMessage: false });
         loadGyms();
       } catch (e) {
@@ -704,7 +737,7 @@ function App() {
         setTraining(false);
       }
     },
-    [fighter?._id, loadFighter, loadGyms, training]
+    [fighter?._id, loadFighter, loadGyms, training, addToast]
   );
 
   const handleSwitchGym = useCallback(
@@ -908,12 +941,6 @@ const handleGetOffers = useCallback(async () => {
     handleResolve();
   }, [weightCut, fighter?._id, fighter?.acceptedFightId, handleResolve]);
 
-  const closeTrainingPopup = useCallback(() => {
-    setTrainingResultPopup((p) => ({ ...p, open: false }));
-    // Tutorial step 2 advances once the training-result popup is dismissed.
-    tutorialBus.emit("training_complete");
-  }, []);
-
   // Tutorial completion — reload the fighter so the overlay unmounts (the
   // refreshed tutorial.completed flag) and the credited iron / gazette appear.
   const handleTutorialComplete = useCallback(async () => {
@@ -958,26 +985,8 @@ const handleGetOffers = useCallback(async () => {
         />
       )}
 
-      {/* ── TRAINING RESULT POPUP (after train, no message bar) ── */}
-      <TrainingResultPopup
-        open={trainingResultPopup.open}
-        sessionLabel={trainingResultPopup.sessionLabel}
-        xpGained={trainingResultPopup.xpGained}
-        statLevelUps={trainingResultPopup.statLevelUps}
-        requested={trainingResultPopup.requested}
-        completed={trainingResultPopup.completed}
-        stopReason={trainingResultPopup.stopReason}
-        statChanges={trainingResultPopup.statChanges}
-        energyBefore={trainingResultPopup.energyBefore}
-        energyAfter={trainingResultPopup.energyAfter}
-        energySpent={trainingResultPopup.energySpent}
-        events={trainingResultPopup.events}
-        injurySustained={trainingResultPopup.injurySustained}
-        rankUp={trainingResultPopup.rankUp}
-        maxStaminaGained={trainingResultPopup.maxStaminaGained}
-        staminaCapHit={trainingResultPopup.staminaCapHit}
-        onClose={closeTrainingPopup}
-      />
+      {/* ── POST-TRAINING TOASTS (after train, no message bar) ── */}
+      <ToastContainer toasts={toasts} onDismiss={beginDismiss} />
 
       <TierUpOverlay
         open={!!tierUpModal}
@@ -1190,6 +1199,7 @@ const handleGetOffers = useCallback(async () => {
                 training={training}
                 onSwitchGym={handleSwitchGym}
                 onRankUp={handleRankUp}
+                flashSessionKey={flashSessionKey}
               />
             </div>
           )}
