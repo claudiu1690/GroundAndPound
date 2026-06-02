@@ -1611,6 +1611,10 @@ code {
 .gym-card:hover:not(.locked) { border-color:#444; }
 .gym-card.current { border-color:var(--c-accent); }
 .gym-card.locked { cursor:not-allowed; }
+.gym-card-banner { position:relative; width:100%; height:96px; background:#1A1A1A; overflow:hidden; }
+.gym-card-banner-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.gym-card-banner-overlay { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0) 40%, rgba(0,0,0,.55) 100%); pointer-events:none; }
+.gym-card.locked .gym-card-banner-img { filter:grayscale(.8) brightness(.5); }
 .gym-card-accent { height:3px; width:100%; }
 .gym-card-accent.free { background:#2D7A3A; }
 .gym-card-accent.available { background:var(--c-accent); }
@@ -1653,11 +1657,12 @@ code {
 /* Redesigned in-gym training view */
 .gym-training { display:flex; flex-direction:column; min-height:100%; }
 
-.gym-header { background:var(--c-bg-bar); border-bottom:1px solid var(--c-border); padding:16px 24px; flex-shrink:0; }
-.gym-header-row1 { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.gym-header { background:var(--c-bg-bar); border-bottom:1px solid var(--c-border); padding:16px 24px; flex-shrink:0; position:relative; background-size:cover; background-position:center; }
+.gym-header-overlay { position:absolute; inset:0; background:linear-gradient(90deg, rgba(10,10,10,.92) 0%, rgba(10,10,10,.75) 45%, rgba(10,10,10,.45) 100%); pointer-events:none; z-index:0; }
+.gym-header-row1 { display:flex; align-items:center; gap:10px; margin-bottom:12px; position:relative; z-index:1; }
 .gym-back { all:unset; box-sizing:border-box; font-family:var(--font-display); font-weight:600; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); display:inline-flex; align-items:center; gap:4px; cursor:pointer; }
 .gym-back:hover { color:var(--text-secondary); }
-.gym-header-row2 { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.gym-header-row2 { display:flex; align-items:center; gap:16px; flex-wrap:wrap; position:relative; z-index:1; }
 .gym-title { font-family:var(--font-display); font-weight:800; font-size:26px; text-transform:uppercase; letter-spacing:.5px; color:#F0F0F0; }
 .gym-header .gym-tags { display:flex; gap:5px; align-items:center; }
 .gym-tag.xp { background:rgba(212,168,32,.1); color:var(--c-amber-bright); border:1px solid rgba(212,168,32,.2); }
@@ -1712,6 +1717,29 @@ code {
 .session-card-btn:hover { background:#E8102E; }
 .session-card-btn.inactive, .session-card-btn.locked-btn { background:transparent; color:var(--text-muted); border:1px solid var(--c-border); cursor:not-allowed; display:inline-flex; align-items:center; gap:4px; }
 .session-card-btn.inactive:hover, .session-card-btn.locked-btn:hover { background:transparent; }
+
+/* ── Batch / multi-session quantity control ───────────────────── */
+/* The active "Train" branch swaps the single button for this block. It
+   occupies the full footer width so the stepper/presets/live-line/button
+   stack cleanly below the stat tags. */
+.session-card-footer:has(.session-train-control) { flex-wrap:wrap; }
+.session-train-control { display:flex; flex-direction:column; gap:8px; flex:1 1 100%; min-width:0; }
+.session-injury-hint { margin-bottom:0; color:var(--text-secondary); }
+.session-qty-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+.session-stepper { display:inline-flex; align-items:center; gap:0; border:1px solid var(--c-border); border-radius:4px; overflow:hidden; }
+.session-stepper-btn { all:unset; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; color:#F0F0F0; cursor:pointer; background:var(--c-bg-tile-2); }
+.session-stepper-btn:hover:not(:disabled) { background:#2C2C2C; }
+.session-stepper-btn:disabled { color:var(--text-muted); cursor:not-allowed; opacity:.5; }
+.session-stepper-n { font-family:var(--font-display); font-weight:800; font-size:16px; min-width:34px; text-align:center; color:#F0F0F0; font-variant-numeric:tabular-nums; }
+.session-presets { display:inline-flex; align-items:center; gap:4px; }
+.session-preset { all:unset; box-sizing:border-box; font-family:var(--font-display); font-weight:700; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--text-secondary); background:var(--c-bg-tile-2); border:1px solid var(--c-border); border-radius:3px; padding:5px 8px; min-width:26px; text-align:center; cursor:pointer; }
+.session-preset:hover:not(:disabled) { background:#2C2C2C; color:#F0F0F0; }
+.session-preset.active { background:rgba(200,16,46,.14); border-color:var(--c-accent); color:#FFF; }
+.session-preset:disabled { color:var(--text-muted); cursor:not-allowed; opacity:.45; }
+.session-live-line { font-size:12px; color:var(--text-secondary); font-variant-numeric:tabular-nums; }
+.session-train-btn { width:100%; text-align:center; display:inline-flex; align-items:center; justify-content:center; }
+.session-train-btn:disabled { opacity:.6; cursor:wait; }
+
 .rank-badge { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; background:rgba(212,168,32,.1); color:var(--c-amber-bright); border:1px solid rgba(212,168,32,.2); border-radius:2px; padding:2px 6px; margin-left:6px; vertical-align:middle; }
 
 .other-section-label { font-family:var(--font-display); font-weight:700; font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; }
@@ -2633,6 +2661,21 @@ code {
 .training-result-levelup-chip { border-width: 1.5px; }
 
 .training-result-close { width: 100%; }
+
+/* ── Aggregated batch summary ─────────────────────────────────── */
+.training-result-stopreason { margin: -0.5rem 0 1rem 0; font-size: 12px; font-weight: 700; color: var(--c-amber-bright); }
+.training-result-changes { margin-bottom: 1rem; }
+.training-result-change-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.35rem; font-size: 12px; flex-wrap: wrap; }
+.training-result-change-row .stat-chip { font-size: 11px; padding: 0.25rem 0.5rem; }
+.training-result-change-vals { font-family: var(--font-display); font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.training-result-wasted { color: var(--text-muted); font-size: 11px; }
+.training-result-stamina { margin-bottom: 1rem; font-size: 12px; font-weight: 700; color: var(--green-bright); }
+.training-result-events { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.training-result-event { font-size: 12px; padding: 0.45rem 0.6rem; border-radius: 4px; border: 1px solid var(--c-border); }
+.training-result-event-injury { background: rgba(200,16,46,0.08); border-color: rgba(200,16,46,0.35); color: #f87171; }
+.training-result-event-rankup { background: rgba(212,168,32,0.08); border-color: rgba(212,168,32,0.35); color: var(--c-amber-bright); }
+.training-result-event-cap { color: var(--text-secondary); }
+.training-result-energy { margin-bottom: 1rem; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 
 /* ============================================================
    GYM QUESTS
@@ -9288,10 +9331,12 @@ code {
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: thin;
+  /* Keep the sidebar scrollable if content exceeds a short viewport, but hide the
+     scrollbar chrome — it otherwise shows an odd thin bar on landscape. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.sidebar::-webkit-scrollbar { width: 6px; }
-.sidebar::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 3px; }
+.sidebar::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
 .main {
   flex: 1;
@@ -10268,6 +10313,9 @@ code {
   .gym-row.cols3,
   .gym-row.cols2,
   .gym-row.cols1 { grid-template-columns: 1fr; }
+  /* Banner taller on single-column cards; hero overlay simpler on mobile. */
+  .gym-card-banner { height: 120px; }
+  .gym-header-overlay { background: linear-gradient(to right, rgba(10,10,10,.92), rgba(10,10,10,.7)); }
   /* Training header wraps; energy pill + join button keep their place. */
   .gym-header-row2 { gap: 10px; }
   .gym-training .gym-join-btn { width: 100%; min-height: 44px; text-align: center; }
@@ -10284,6 +10332,11 @@ code {
   /* Sessions: keep 2 columns (fine at 2), train buttons full width. */
   .gym-training .session-grid { grid-template-columns: 1fr 1fr; }
   .gym-training .session-card-btn { width: 100%; min-height: 36px; justify-content: center; }
+  /* Batch control: ≥44px touch targets, no horizontal scroll. */
+  .gym-training .session-train-btn { min-height: 44px; }
+  .gym-training .session-stepper-btn { width: 44px; height: 44px; }
+  .gym-training .session-preset { min-height: 44px; min-width: 40px; padding: 8px 10px; display: inline-flex; align-items: center; justify-content: center; }
+  .gym-training .session-qty-row { justify-content: flex-start; }
   .gym-training .rank-up-btn { width: 100%; min-height: 44px; justify-content: center; }
 
   /* ── 17. GENERIC MODALS / OVERLAYS — spot-check guard ───── */

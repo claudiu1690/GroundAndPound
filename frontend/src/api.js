@@ -122,10 +122,10 @@ export const api = {
     request(`/fighters/${fighterId}/champions`),
 
   // ── Training / Recovery ─────────────────────────────────
-  train: (fighterId, gymId, sessionType) =>
+  train: (fighterId, gymId, sessionType, quantity = 1) =>
     request(`/fighters/${fighterId}/train`, {
       method: "POST",
-      body: JSON.stringify({ gymId, sessionType }),
+      body: JSON.stringify({ gymId, sessionType, quantity }),
     }),
   doctorVisit: (fighterId, injuryType) =>
     request(`/fighters/${fighterId}/doctor-visit`, {

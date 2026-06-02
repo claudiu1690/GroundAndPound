@@ -89,12 +89,15 @@ async function debugRechargeEnergy(req, res) {
 async function train(req, res) {
     try {
         const { id } = req.params;
-        const { gymId, sessionType } = req.body;
+        const { gymId, sessionType, quantity } = req.body;
         if (!gymId || !sessionType) {
             return res.status(400).json({ message: "gymId and sessionType are required" });
         }
+        if (quantity !== undefined && !(Number.isInteger(quantity) && quantity >= 1)) {
+            return res.status(400).json({ message: "quantity must be an integer >= 1" });
+        }
         const trainingService = require("../services/trainingService");
-        const result = await trainingService.doTraining(id, gymId, sessionType);
+        const result = await trainingService.doTraining(id, gymId, sessionType, quantity ?? 1);
         res.json(result);
     } catch (err) {
         if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });

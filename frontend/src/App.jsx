@@ -320,7 +320,7 @@ const RightPanels = memo(function RightPanels({ fighter, lastFightSummary, campS
 /**
  * Two-view gym system: selector grid → training view inside gym.
  */
-const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, onSwitchGym, onRankUp }) {
+const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, training, onSwitchGym, onRankUp }) {
   // Default to the fighter's active gym (if membership is active), otherwise show gym selector
   const activeGymFromMembership = gyms?.find((g) => g.membership?.isActive);
   const freeGym = gyms?.find((g) => g.isFreeGym);
@@ -338,9 +338,9 @@ const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, on
 
   const selectedGym = selectedGymId ? gyms?.find((g) => String(g._id) === String(selectedGymId)) : null;
 
-  const handleTrain = useCallback((sessionKey) => {
+  const handleTrain = useCallback((sessionKey, quantity) => {
     if (!selectedGymId) return;
-    onTrain(selectedGymId, sessionKey);
+    onTrain(selectedGymId, sessionKey, quantity);
   }, [onTrain, selectedGymId]);
 
   if (showSelector || !selectedGym) {
@@ -359,6 +359,7 @@ const GymTrainingTab = memo(function GymTrainingTab({ fighter, gyms, onTrain, on
       fighter={fighter}
       allGyms={gyms}
       onTrain={handleTrain}
+      training={training}
       onBack={() => setShowSelector(true)}
       onSwitchGym={onSwitchGym}
       onRankUp={onRankUp}
@@ -432,6 +433,9 @@ function App() {
   const [champions, setChampions]               = useState([]);
   const [activeTab, setActiveTab]               = useState("home");
   const [trainingResultPopup, setTrainingResultPopup] = useState({ open: false, sessionLabel: "", xpGained: {}, statLevelUps: [] });
+  // In-flight guard so a slow batch can't be double-submitted — one click now
+  // spends up to 25× energy.
+  const [training, setTraining] = useState(false);
   const [tierUpModal, setTierUpModal] = useState(null);
   const [beltWonModal, setBeltWonModal] = useState(null);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
@@ -657,27 +661,50 @@ function App() {
   );
 
   const handleTrain = useCallback(
-    async (trainGym, trainSession) => {
+    async (trainGym, trainSession, quantity = 1) => {
       if (!fighter?._id || !trainGym) {
         setMessage("Select a fighter and a gym.");
         return;
       }
+      // One click can now spend up to 25× energy — block re-entry while a
+      // batch is resolving.
+      if (training) return;
+      setTraining(true);
+      const qty = Math.max(1, Math.floor(Number(quantity) || 1));
       try {
-        const result = await api.train(fighter._id, trainGym, trainSession);
+        const result = await api.train(fighter._id, trainGym, trainSession, qty);
         const sessionLabel = (SESSION_META[trainSession] ?? SESSION_META.bag_work).label;
         setTrainingResultPopup({
           open: true,
           sessionLabel,
+          // N=1 backward-compat fields (byte-identical popup at N=1).
           xpGained: result.xpGained ?? {},
           statLevelUps: result.statLevelUps ?? [],
+          // Aggregate fields (defensive null-guards — any may be missing).
+          requested: result.requested ?? qty,
+          completed: result.completed ?? 0,
+          stopReason: result.stopReason ?? "completed",
+          statChanges: result.statChanges ?? [],
+          energyBefore: result.energyBefore ?? null,
+          energyAfter: result.energyAfter ?? null,
+          energySpent: result.energySpent ?? null,
+          events: result.events ?? [],
+          injurySustained: result.injurySustained ?? [],
+          rankUp: result.rankUp ?? null,
+          maxStaminaGained: result.maxStaminaGained ?? 0,
+          staminaCapHit: result.staminaCapHit ?? false,
         });
         loadFighter(fighter._id, { clearMessage: false });
         loadGyms();
       } catch (e) {
+        // Covers 400 "Not enough energy", clamp-to-0, "quantity must be an
+        // integer >= 1", etc.
         setMessage(e.message || "Train failed");
+      } finally {
+        setTraining(false);
       }
     },
-    [fighter?._id, loadFighter]
+    [fighter?._id, loadFighter, loadGyms, training]
   );
 
   const handleSwitchGym = useCallback(
@@ -937,6 +964,18 @@ const handleGetOffers = useCallback(async () => {
         sessionLabel={trainingResultPopup.sessionLabel}
         xpGained={trainingResultPopup.xpGained}
         statLevelUps={trainingResultPopup.statLevelUps}
+        requested={trainingResultPopup.requested}
+        completed={trainingResultPopup.completed}
+        stopReason={trainingResultPopup.stopReason}
+        statChanges={trainingResultPopup.statChanges}
+        energyBefore={trainingResultPopup.energyBefore}
+        energyAfter={trainingResultPopup.energyAfter}
+        energySpent={trainingResultPopup.energySpent}
+        events={trainingResultPopup.events}
+        injurySustained={trainingResultPopup.injurySustained}
+        rankUp={trainingResultPopup.rankUp}
+        maxStaminaGained={trainingResultPopup.maxStaminaGained}
+        staminaCapHit={trainingResultPopup.staminaCapHit}
         onClose={closeTrainingPopup}
       />
 
@@ -1148,6 +1187,7 @@ const handleGetOffers = useCallback(async () => {
                 fighter={fighter}
                 gyms={gyms}
                 onTrain={handleTrain}
+                training={training}
                 onSwitchGym={handleSwitchGym}
                 onRankUp={handleRankUp}
               />
