@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api, authStorage } from "../../api";
 import { ForgotPasswordFlow } from "./ForgotPasswordFlow";
+import { CookieConsent } from "../legal/CookieConsent";
 
 const WEIGHT_CLASSES = ["Featherweight", "Lightweight", "Middleweight", "Heavyweight"];
 const STYLES = ["Boxer", "Kickboxer", "Wrestler", "Brazilian Jiu-Jitsu", "Muay Thai", "Judo", "Sambo", "Capoeira"];
@@ -260,6 +261,17 @@ export function AuthPage({ onAuthenticated, initialResetToken = null }) {
         </div>
       </div>
       <div className="auth-beta">Beta</div>
+      <div className="auth-cookie-link">
+        <button
+          type="button"
+          className="auth-form-link"
+          onClick={() => window.dispatchEvent(new CustomEvent("open-cookie-policy"))}
+        >
+          Cookie Policy
+        </button>
+        <span className="auth-copyright">© {new Date().getFullYear()} Digital Olive. All rights reserved.</span>
+      </div>
+      <CookieConsent />
     </div>
   );
 }

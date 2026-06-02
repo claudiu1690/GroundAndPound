@@ -9530,6 +9530,13 @@ code {
 }
 .bb-brand span { color: var(--c-accent); }
 
+.bb-copyright {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .bb-pill {
   display: inline-flex;
   align-items: center;
@@ -10694,4 +10701,184 @@ code {
 /* ── Narrow screens: shrink Iron numeral so it doesn't overflow ── */
 @media (max-width: 360px) {
   .dashboard-tab .dash-iron-num { font-size: 23px; }
+}
+
+/* ============================================================
+   COOKIE / STORAGE ACKNOWLEDGEMENT BANNER + POLICY MODAL
+   Banner is pinned to the bottom of the viewport. It sits above
+   page content but BELOW critical modals (account-modal uses
+   z-index 9000). On mobile it sits above the .m-bottom-nav
+   (z-index 120) so it never permanently hides the nav.
+   ============================================================ */
+.cookie-consent {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.1rem;
+  background: var(--bg-card);
+  border-top: 1px solid var(--gold-bright);
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.cookie-consent-text {
+  margin: 0;
+  flex: 1 1 360px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.cookie-consent-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.cookie-consent-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold-bright);
+  cursor: pointer;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+.cookie-consent-link:hover { color: var(--text); }
+
+.cookie-consent-accept {
+  white-space: nowrap;
+}
+
+/* Auth page footer link (below login) */
+.auth-cookie-link {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.auth-copyright {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Cookie policy modal — extends the shared account-modal shell. */
+.cookie-policy-modal {
+  max-width: 560px;
+  border-color: var(--gold-bright);
+}
+.cookie-policy-modal .account-modal-title { color: var(--gold-bright); }
+
+.cookie-policy-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.cookie-policy-updated {
+  margin: 0;
+  font-size: 10.5px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.cookie-policy-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.cookie-policy-h {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+}
+
+.cookie-policy-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.cookie-policy-text strong { color: var(--text); }
+.cookie-policy-note { font-style: italic; color: var(--text-muted); }
+
+.cookie-policy-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cookie-policy-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.5rem 0.6rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.cookie-policy-key {
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.cookie-policy-purpose {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.cookie-policy-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+}
+
+/* ── Mobile: stack the button below the text, sit above bottom nav ── */
+@media (max-width: 768px) {
+  .cookie-consent {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+    bottom: 56px; /* clear the .m-bottom-nav (height 56px) so it isn't hidden */
+    padding: 0.7rem 0.9rem;
+  }
+  .cookie-consent-actions {
+    justify-content: space-between;
+  }
+  .cookie-consent-accept {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+  }
 }

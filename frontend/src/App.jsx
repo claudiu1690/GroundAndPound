@@ -29,6 +29,7 @@ import { LibraryTab } from "./components/library/LibraryTab";
 import { AccountTab } from "./components/account/AccountTab";
 import { EmailVerifyBanner } from "./components/account/EmailVerifyBanner";
 import { DashboardTab } from "./components/dashboard/DashboardTab";
+import { CookieConsent } from "./components/legal/CookieConsent";
 import { tutorialBus } from "./utils/tutorialBus";
 import { useToasts } from "./hooks/useToasts";
 import {
@@ -967,6 +968,9 @@ const handleGetOffers = useCallback(async () => {
   if (loading) {
     return (
       <div className="app">
+        {/* Keep the consent notice visible during the load spinner so a
+            first-time player isn't shown an un-acknowledged screen, then a pop-in. */}
+        <CookieConsent />
         <div className="app-loading">Loading…</div>
       </div>
     );
@@ -977,6 +981,9 @@ const handleGetOffers = useCallback(async () => {
 
   return (
     <div className="app">
+
+      {/* ── COOKIE / STORAGE ACKNOWLEDGEMENT ── */}
+      <CookieConsent />
 
       {/* ── EMAIL-VERIFY BANNER ──
           Soft verification: the user can keep playing while this banner is up.
@@ -1459,6 +1466,7 @@ const handleGetOffers = useCallback(async () => {
       <footer className="bottombar">
         <div className="bottombar-inner">
           <span className="bb-brand">GROUND <span>&amp;</span> POUND</span>
+          <span className="bb-copyright">© {new Date().getFullYear()} Digital Olive. All rights reserved.</span>
           {injuryCount > 0 && (
             <button type="button" className="bb-pill bb-pill-injury" onClick={() => handleNavTab("hospital")}>
               🩹 {injuryCount} injur{injuryCount === 1 ? "y" : "ies"}
@@ -1483,7 +1491,15 @@ const handleGetOffers = useCallback(async () => {
             >
               <UserCircle2 size={12} strokeWidth={2.2} /> Account
             </button>
-            <button className="bb-btn" onClick={handleLogout} title="Sign out">Sign Out</button>
+            <button
+              type="button"
+              className="bb-btn"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-cookie-policy"))}
+              title="Cookie Policy"
+            >
+              Cookie Policy
+            </button>
+            <button type="button" className="bb-btn" onClick={handleLogout} title="Sign out">Sign Out</button>
           </div>
         </div>
       </footer>
