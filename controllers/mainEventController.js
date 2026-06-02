@@ -57,7 +57,7 @@ async function postPrediction(req, res) {
             /^Stake must be /,
             /^Minimum bet at this tier /,
             /^Maximum bet at this tier /,
-            /^Not enough iron /,
+            /^Not enough cash /,
         ];
         if (clientErrPatterns.some((re) => re.test(err.message))) {
             return res.status(400).json({ message: err.message });
