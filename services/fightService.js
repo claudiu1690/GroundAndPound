@@ -158,7 +158,10 @@ function computeStreak(fightHistory) {
 
 function classifyOfferType(nemesisOvr, fighterOvr) {
     const diff = nemesisOvr - fighterOvr;
-    if (diff <= -3) return OFFER_TYPE.EASY;
+    // Thresholds match the three OVR windows exactly: Easy tops out at O-2,
+    // Even spans O-1..O+1, Hard starts at O+2. (Easy was diff<=-3, which mislabeled
+    // a nemesis sitting on the Easy window's top edge O-2 as EVEN.)
+    if (diff <= -2) return OFFER_TYPE.EASY;
     if (diff >= 2)  return OFFER_TYPE.HARD;
     return OFFER_TYPE.EVEN;
 }
@@ -225,25 +228,77 @@ async function generateOffers(fighterId) {
     const exclude = [];
     if (nemesisOpp) exclude.push(nemesisOpp._id); // never double-pick the nemesis
 
-    const easyOpp = await randomOpp({ ...base, overallRating: { $gte: Math.max(12, overall - 5), $lte: overall - 3 }, _id: { $nin: exclude } });
+    // OVR windows are kept strictly disjoint and floor/ceiling-aware so the three
+    // difficulty offers can never collide on the same OVR or invert at the edges.
+    //   Easy: [max(12, O-6), O-2]   Even: [O-1, O+1]   Hard: [O+2, min(95, O+6)]
+    // At the bottom (O=14) this yields Easy [12,12], Even [13,15], Hard [16,20] —
+    // the old Easy [12,11] inversion (only 2 offers for new fighters) is gone, and
+    // Easy's top (O-2) < Even's bottom (O-1) < Hard's bottom (O+2) guarantees no
+    // duplicate-OVR / contradictory-label pairs.
+    const easyOpp = await randomOpp({ ...base, overallRating: { $gte: Math.max(12, overall - 6), $lte: overall - 2 }, _id: { $nin: exclude } });
     if (easyOpp[0]) exclude.push(easyOpp[0]._id);
 
-    const evenOpp = await randomOpp({ ...base, overallRating: { $gte: overall - 3, $lte: overall + 3 }, _id: { $nin: exclude } });
+    const evenOpp = await randomOpp({ ...base, overallRating: { $gte: overall - 1, $lte: overall + 1 }, _id: { $nin: exclude } });
     if (evenOpp[0]) exclude.push(evenOpp[0]._id);
 
-    const hardOpp = await randomOpp({ ...base, overallRating: { $gte: overall + 2, $lte: Math.min(95, overall + 5) }, _id: { $nin: exclude } });
+    const hardOpp = await randomOpp({ ...base, overallRating: { $gte: overall + 2, $lte: Math.min(95, overall + 6) }, _id: { $nin: exclude } });
+    if (hardOpp[0]) exclude.push(hardOpp[0]._id);
 
-    // Build slot map; nemesis replaces whichever slot they belong to
-    const slots = {
-        [OFFER_TYPE.EASY]: easyOpp[0] ? { type: OFFER_TYPE.EASY, opponent: easyOpp[0], context: buildOfferContext(easyOpp[0]) } : null,
-        [OFFER_TYPE.EVEN]: evenOpp[0] ? { type: OFFER_TYPE.EVEN, opponent: evenOpp[0], context: buildOfferContext(evenOpp[0]) } : null,
-        [OFFER_TYPE.HARD]: hardOpp[0] ? { type: OFFER_TYPE.HARD, opponent: hardOpp[0], context: buildOfferContext(hardOpp[0]) } : null,
-    };
-    if (nemesisOpp && nemesisType) {
-        slots[nemesisType] = { type: nemesisType, opponent: nemesisOpp, context: buildOfferContext(nemesisOpp), nemesisMeta };
+    // ── Backfill: guarantee 3 difficulty offers when a narrow window has no seeded
+    // opponent in this weight class. Because the pool is split across weight classes,
+    // a valid-but-narrow window (e.g. Easy [12,12]) can randomly come back empty even
+    // though other eligible opponents exist. We pull the nearest-OVR eligible
+    // opponents (respecting the same base filter + the running exclude list) and slot
+    // them into the empty windows in OVR order, so the final set stays ordered
+    // Easy(lowest) → Even → Hard(highest) with no duplicate picks. The nemesis is
+    // already in `exclude`, so backfill can never re-pick or displace it; its slot is
+    // assigned after, below, and is never treated as "empty" here.
+    const windowResults = { [OFFER_TYPE.EASY]: easyOpp[0], [OFFER_TYPE.EVEN]: evenOpp[0], [OFFER_TYPE.HARD]: hardOpp[0] };
+    if (nemesisOpp && nemesisType) windowResults[nemesisType] = nemesisOpp; // nemesis owns its slot — not empty
+    const emptyCount = Object.values(OFFER_TYPE).filter((t) => !windowResults[t]).length;
+
+    if (emptyCount > 0) {
+        const fillers = await Opponent.aggregate([
+            { $match: { ...base, _id: { $nin: exclude } } },
+            { $addFields: { _ovrDiff: { $abs: { $subtract: ["$overallRating", overall] } } } },
+            { $sort: { _ovrDiff: 1, overallRating: 1 } },
+            { $limit: emptyCount },
+        ]);
+        // Assign fillers (nearest-OVR first) to empty slots in ascending OVR order so
+        // the lowest filler lands in the lowest open slot, preserving Easy→Even→Hard.
+        const ordered = [...fillers].sort((a, b) => a.overallRating - b.overallRating);
+        const openSlots = Object.values(OFFER_TYPE).filter((t) => !windowResults[t]); // already Easy→Even→Hard order
+        for (let i = 0; i < ordered.length && i < openSlots.length; i++) {
+            windowResults[openSlots[i]] = ordered[i];
+        }
     }
 
-    let offers = Object.values(OFFER_TYPE).filter(t => slots[t]).map(t => slots[t]);
+    // Make sure the nemesis owns its OVR-correct slot before the final re-order. The
+    // window pick for that slot (if any) was already pushed to `exclude`, so it won't
+    // reappear as a filler.
+    if (nemesisOpp && nemesisType) windowResults[nemesisType] = nemesisOpp;
+
+    // ── Final ordering pass ──────────────────────────────────────
+    // The filler sort only orders fillers among themselves, not against already-filled
+    // window slots, so a backfilled Easy could out-OVR the Even card (the GCS ceiling
+    // case where Hard inverts and is backfilled hits this too). Collect the resolved
+    // opponents, sort by OVR ascending, and re-map by position: lowest → Easy, middle
+    // → Even, highest → Hard. This guarantees Easy.ovr ≤ Even.ovr ≤ Hard.ovr with
+    // labels matching position. classifyOfferType is now OVR-aligned (Fix 1), so the
+    // nemesis already lands where its OVR dictates; we just carry its meta onto
+    // whichever ordered offer is the nemesis so the decoration survives the re-sort.
+    const resolved = Object.values(OFFER_TYPE)
+        .map((t) => windowResults[t])
+        .filter(Boolean)
+        .sort((a, b) => a.overallRating - b.overallRating);
+
+    const ORDERED_TYPES = [OFFER_TYPE.EASY, OFFER_TYPE.EVEN, OFFER_TYPE.HARD];
+    const nemesisIdStr = nemesisOpp ? String(nemesisOpp._id) : null;
+    let offers = resolved.map((opp, i) => {
+        const offer = { type: ORDERED_TYPES[i], opponent: opp, context: buildOfferContext(opp) };
+        if (nemesisIdStr && String(opp._id) === nemesisIdStr) offer.nemesisMeta = nemesisMeta;
+        return offer;
+    });
 
     // ── Phase 4: Inject active callout into Hard slot ────────────
     if (fighter.activeCallout?.opponentId) {
