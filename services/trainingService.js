@@ -7,6 +7,7 @@ const fighterService = require("./fighterService");
 const energyService = require("./energyService");
 const gymRankService = require("./gymRankService");
 const { rollSessionXp, tierForRoll } = require("../utils/trainingRng");
+const { BOOSTERS, boosterStatList } = require("../consts/shopConfig");
 const {
     rollForSparringInjury,
     buildInjury,
@@ -222,6 +223,8 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
             events,
             injurySustained: [],
             rankUp: rankUpResult,
+            // S&C / conditioning never consumes booster charges (maxStamina-only, no stat XP).
+            booster: null,
             maxStaminaGained,
             staminaCapHit,
             sessionsToday: fighter.trainingSessionsToday,
@@ -236,6 +239,20 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
     const backstoryMod = fighter.backstory && BACKSTORIES[fighter.backstory]?.trainingXpMod || 0;
     const rank2Bonus = isRank2Session ? (config.xpBonus || 0) : 0;
     const totalXpMod = 1 + backstoryMod + rank2Bonus;
+
+    // ── Training booster (Shop v1.0) ──
+    // Resolve the active booster once. A charge is consumed per COMPLETED XP session
+    // (the S&C / maxStamina branch above never reaches here, so it never consumes).
+    // Mid-batch depletion is partial: sessions after charges run out get mult 1.
+    const boosterCfg = (fighter.activeBooster && fighter.activeBooster.sessionsLeft > 0)
+        ? BOOSTERS[fighter.activeBooster.id]
+        : null;
+    const boosterStats = boosterCfg ? new Set(boosterStatList(boosterCfg)) : null;
+    // config.stats keys are UPPERCASE (e.g. "STR"); booster stat keys are lowercase.
+    const boosterAffects = (stat) => !!boosterCfg && boosterStats.has(String(stat).toLowerCase());
+    let boosterSessionsConsumed = 0;
+    let boosterDepletedThisBatch = false;
+    const boosterId = boosterCfg ? fighter.activeBooster.id : null;
 
     const gymProgress = gym.isFreeGym ? null : gymRankService.getGymProgress(fighter, gym);
     const rank3BonusPct = gymProgress?.hasXpBonus ? (gymProgress.xpBonusPct / 100) : 0;
@@ -269,6 +286,10 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
         rollTierCounts[sessionTier] += 1;
         lastTier = sessionTier;
 
+        // Is THIS session charged by the booster? (only while charges remain)
+        const sessionCharged = !!boosterCfg && fighter.activeBooster
+            && fighter.activeBooster.sessionsLeft > 0;
+
         // Apply one session of XP per stat (exact single-session math).
         for (const statName of config.stats) {
             if (injuryLockedStats.has(statName)) {
@@ -283,7 +304,8 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
             const gymMult = isFocus ? gym.focusXpMultiplier : gym.xpMultiplier;
             const rank3Mult = isFocus ? rank3BonusPct : 0;
 
-            const xp = config.xpBase * sessionRoll * gymMult * totalXpMod * (1 + rank3Mult) / config.stats.length;
+            const boosterMult = (sessionCharged && boosterAffects(statName)) ? (1 + boosterCfg.pct) : 1;
+            const xp = config.xpBase * sessionRoll * gymMult * totalXpMod * (1 + rank3Mult) * boosterMult / config.stats.length;
 
             const currentStat = fighter[valKey] || 10;
 
@@ -304,6 +326,18 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
             fighter[valKey] = newStat;
             fighter[xpKey] = roundStatXp(newXp);
             xpGained[statName] = (xpGained[statName] || 0) + Math.max(1, Math.round(xp));
+        }
+
+        // Booster: consume exactly one charge per COMPLETED XP session (this one is
+        // completed — an injury that fires below still counts the session as completed).
+        // When charges hit 0 the booster is cleared; remaining sessions get mult 1.
+        if (sessionCharged && fighter.activeBooster && fighter.activeBooster.sessionsLeft > 0) {
+            fighter.activeBooster.sessionsLeft -= 1;
+            boosterSessionsConsumed += 1;
+            if (fighter.activeBooster.sessionsLeft <= 0) {
+                fighter.activeBooster = null;
+                boosterDepletedThisBatch = true;
+            }
         }
 
         // Increment gym rank training sessions (one per completed session).
@@ -406,6 +440,16 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
     }
     if (rankUpResult) message += ` ${rankUpResult.unlockDescription}!`;
 
+    const boosterResult = boosterCfg ? {
+        id: boosterId,
+        label: boosterCfg.name,
+        pct: boosterCfg.pct,
+        statsAffected: boosterStatList(boosterCfg),
+        sessionsConsumed: boosterSessionsConsumed,
+        sessionsLeftAfter: fighter.activeBooster ? fighter.activeBooster.sessionsLeft : 0,
+        depletedThisBatch: boosterDepletedThisBatch,
+    } : null;
+
     return {
         requested: k,
         completed,
@@ -419,6 +463,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
         events,
         injurySustained,
         rankUp: rankUpResult,
+        booster: boosterResult,
         maxStaminaGained: 0,
         staminaCapHit: false,
         sessionsToday: fighter.trainingSessionsToday,

@@ -20,6 +20,7 @@ export const LIBRARY_CATEGORIES = [
     "Career",
     "Economy",
     "Health",
+    "Shop & Supplements",
     "Events & Media",
 ];
 
@@ -30,6 +31,7 @@ export const CATEGORY_COLOR = {
     "Career": "career",
     "Economy": "economy",
     "Health": "health",
+    "Shop & Supplements": "shop",
     "Events & Media": "events",
 };
 export const slugFor = (cat) => CATEGORY_COLOR[cat] ?? "start";
@@ -559,6 +561,35 @@ export const LIBRARY_ARTICLES = [
             "Skip is neutral. No bonus, no penalty. Sometimes the right move is to say nothing.",
         ],
         keyTakeaway: "Interviews are only available after wins. Trash Talk pays the most but starts a 4-fight clock — fight them before the window closes or pay the penalty.",
+    },
+
+    // ──────────────────────────────────────────────────────────────
+    // SHOP & SUPPLEMENTS
+    // ──────────────────────────────────────────────────────────────
+    {
+        id: "shop-and-supplements",
+        category: "Shop & Supplements",
+        title: "The Shop — Energy, Boosters & Buffs",
+        summary: "Everything you can buy, how it works, and when it's worth spending Cash.",
+        tags: ["shop", "energy", "energy shot", "energy drink", "xp booster", "pre-fight buff", "supplement", "premium", "inventory"],
+        body: [
+            "The Shop is where you turn Cash into an edge. It has three areas: the Cash Store (spend Cash you earn from fights), Premium (optional real-money Energy Drink bundles), and My Inventory (use what you own). Nothing in the Shop is required to win — it's there to smooth out the grind and let you spike your preparation when a fight matters.",
+            "Energy items refill your energy bar instantly. An Energy Shot restores 30 energy and is bought with Cash. An Energy Drink restores 50 energy and is a premium item — you earn them free through contracts, win streaks, promotions and milestones, or buy a bundle. Use them from My Inventory or straight from the sidebar Inventory panel. You can't use an energy item when your bar is already full.",
+            "XP Boosters multiply the XP you earn from training sessions. Only one booster can be active at a time — while one is running, every other booster card is locked until it's used up. Each booster covers a set number of sessions and targets either all stats or a specific group (for example STR and WRE). The Full Camp Stack is the best value: a long run of all-stat boost in one purchase. The active booster shows a banner with its sessions remaining, and each training session burns one charge.",
+            {
+                type: "table",
+                headers: ["Item type", "What it does", "Duration", "Bought with"],
+                rows: [
+                    ["Energy Shot", "Restores 30 energy", "Instant", "Cash"],
+                    ["Energy Drink", "Restores 50 energy", "Instant", "Premium / earned"],
+                    ["XP Booster", "More XP per training session", "N sessions", "Cash"],
+                    ["Pre-Fight Buff", "Stat boost or injury protection", "1 fight", "Cash"],
+                ],
+            },
+            "Pre-Fight Buffs are consumed the moment your next fight resolves. You can hold many in inventory, but you select only one per fight — and you do it in Fight Camp, not the Shop. Stat buffs (like a Whey Protein Shake for STR, or a Focus Stack for FIQ and CHN) raise the listed stats for that single bout. Collagen Recovery is different: instead of stats, it reduces the severity of any injury you take in the fight. If you come out unhurt, it simply wasn't needed — and the result screen will say so.",
+            "Spending discipline matters. Boosters pay off most during a focused training push toward a stat threshold or promotion. Pre-fight buffs are worth it for a fight you genuinely need to win — a title shot, a grudge match, or a fight you're slightly underdog in. Energy items are for the days you log in to a full bar you can't spend fast enough. Buying everything every day is how you go broke; timing your purchases is how you climb.",
+        ],
+        keyTakeaway: "One XP Booster active at a time, one Pre-Fight Buff per fight (picked in Camp). Time your spending to the moments that matter instead of buying on autopilot.",
     },
 ];
 

@@ -45,6 +45,7 @@ export const FightSummary = memo(function FightSummary({ summary, description })
     opponentName,
     titleShotLost,
     titleTargetTier,
+    buff,
   } = summary;
 
   const hasXp = xpGained && typeof xpGained === "object" && Object.keys(xpGained).length > 0;
@@ -292,6 +293,19 @@ export const FightSummary = memo(function FightSummary({ summary, description })
                   </div>
                 );
               })}
+              {buff && (
+                <div className="camp-row camp-row--buff">
+                  <span className="camp-name">Supplement: {buff.label}</span>
+                  <span className="camp-matched" style={{ color: "var(--gold-bright)" }}>
+                    {buff.injuryMult != null ? "Recovery" : "Buff"}
+                  </span>
+                  <span className={buff.applied ? "camp-triggered" : "camp-not"}>
+                    {buff.injuryMult != null
+                      ? (buff.applied ? "Reduced injury severity" : "No injury sustained")
+                      : (buff.applied ? "Applied" : "Not applied")}
+                  </span>
+                </div>
+              )}
               {campBreakdown.wildcard && (
                 <div className="wildcard-row">
                   <span className="wildcard-label">Wildcard</span>

@@ -565,6 +565,15 @@ async function resolveFightAndApply(fighterId) {
     // Load the FightCamp for this fight (created on accept; may be absent for old fights)
     const fightCamp = await FightCamp.findOne({ fightId: fight._id });
 
+    // ── Shop v1.0: pre-fight supplement (buff) ──
+    // Authoritative ownership check here at resolve — selection-time guard is UX only.
+    const { BUFFS } = require("../consts/shopConfig");
+    const buffId = fightCamp?.selectedBuffId || null;
+    const buffCfg = buffId ? BUFFS[buffId] : null;
+    const ownsBuff = !!buffCfg
+        && ((fighter.inventory && fighter.inventory.prefightBuffs
+            && fighter.inventory.prefightBuffs[buffId]) || 0) > 0;
+
     if (fightCamp?.finalisedAt) {
         // ── Camp v2: NO flat stat modifier ───────────────────────────────────
         // Session bonuses are conditional and applied during fight resolution.
@@ -586,6 +595,16 @@ async function resolveFightAndApply(fighterId) {
     } else {
         // ── Legacy TCA fallback (for fights accepted before this deploy) ─────
         applyLegacyTcaPenalty(fightPlayer, fighter, tierConfig);
+    }
+
+    // ── Shop v1.0: apply pre-fight buff stat additions to the THROWAWAY copy only.
+    // The real fighter document is never mutated here. Each buffed stat is capped at 100.
+    if (ownsBuff && buffCfg.stats) {
+        for (const [k, v] of Object.entries(buffCfg.stats)) {
+            if (typeof fightPlayer[k] === "number") {
+                fightPlayer[k] = Math.min(100, fightPlayer[k] + v);
+            }
+        }
     }
 
     // GDD 8.8 (revised): Weight cut — stamina gamble with miss risk
@@ -779,10 +798,24 @@ async function resolveFightAndApply(fighterId) {
     // Evaluated before the record is updated below, so it reflects fights completed so far.
     const injuriesSustained = [];
     const injuryGrace = injuryGraceActive(fighter);
+    // Shop v1.0 — Collagen Recovery softens an injury's stat penalties (recovery hours
+    // unchanged). Scale negative appliedStatEffects by injuryMult, flooring any negative
+    // at -1, BEFORE applyInjuryToFighter so the reduced penalty is what gets applied.
+    const applyCollagenSoftening = (inj) => {
+        if (!(ownsBuff && buffCfg.injuryMult && inj && inj.appliedStatEffects)) return;
+        const eff = inj.appliedStatEffects;
+        for (const k of Object.keys(eff)) {
+            const e = eff[k];
+            if (typeof e === "number" && e < 0) {
+                eff[k] = Math.min(-1, Math.round(e * buffCfg.injuryMult));
+            }
+        }
+    };
     if (isKoLoss) {
         if (!injuryGrace) {
             const concussion = buildInjury("concussion");
             if (concussion) {
+                applyCollagenSoftening(concussion);
                 applyInjuryToFighter(fighter, concussion);
                 fighter.injuries = [...(fighter.injuries || []), concussion];
                 injuriesSustained.push(concussion.label);
@@ -795,6 +828,7 @@ async function resolveFightAndApply(fighterId) {
             const inj = buildInjury(fightInjuryType);
             // During grace, skip fight-blocking injuries (e.g. Cut); minor ones still apply.
             if (inj && !(injuryGrace && inj.cannotFight)) {
+                applyCollagenSoftening(inj);
                 applyInjuryToFighter(fighter, inj);
                 fighter.injuries = [...(fighter.injuries || []), inj];
                 injuriesSustained.push(inj.label);
@@ -984,6 +1018,18 @@ async function resolveFightAndApply(fighterId) {
             fighter[valKey] = newStat;
             fighter[xpKey] = roundStatXp(newXp);
         }
+    }
+
+    // ── Shop v1.0: consume the pre-fight buff EXACTLY ONCE, only here at resolve, only
+    // if still owned (>0). Owning 0 is a silent no-op — never go negative.
+    if (ownsBuff) {
+        const buffs = fighter.inventory.prefightBuffs;
+        const used = fighter.inventory.usedBuffs;
+        const remaining = (buffs[buffId] || 0) - 1;
+        if (remaining <= 0) delete buffs[buffId];
+        else buffs[buffId] = remaining;
+        used[buffId] = (used[buffId] || 0) + 1;
+        fighter.markModified("inventory");
     }
 
     await fighter.save();
@@ -1250,6 +1296,15 @@ async function resolveFightAndApply(fighterId) {
                 description: result.wildcard.description,
                 wasCountered: result.wildcard.countered ?? false,
             } : null,
+        } : null,
+        // Shop v1.0: pre-fight buff applied this fight (null if none selected).
+        buff: buffCfg ? {
+            id: buffId,
+            label: buffCfg.name,
+            applied: ownsBuff,
+            stats: buffCfg.stats || null,
+            injuryMult: buffCfg.injuryMult || null,
+            usedTotal: (fighter.inventory.usedBuffs && fighter.inventory.usedBuffs[buffId]) || 0,
         } : null,
     };
 

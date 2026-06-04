@@ -31,6 +31,7 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
     variant = "normal",
     rollTier = null,
     greatCount = 0,
+    booster = null,
     dismissing = false,
   } = toast;
 
@@ -116,6 +117,25 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
           )}
         </div>
       ))}
+
+      {/* XP booster status — active boost chip + sessions remaining, or a
+          depletion notice when the last charge was spent in this batch. */}
+      {booster && (
+        <div className="train-toast-booster-row">
+          <TrendingUp size={16} className="train-toast-booster-icon" />
+          <span className="train-toast-booster-text">
+            {booster.label || booster.name || "XP Booster"}
+            {booster.pct ? ` +${booster.pct <= 1 ? Math.round(booster.pct * 100) : Math.round(booster.pct)}%` : ""}
+          </span>
+          {booster.depletedThisBatch ? (
+            <span className="train-toast-booster-depleted">Booster depleted</span>
+          ) : (
+            <span className="train-toast-booster-left">
+              {booster.sessionsLeft} session{booster.sessionsLeft === 1 ? "" : "s"} left
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Meta row */}
       <div className="train-toast-meta">

@@ -98,6 +98,8 @@ router.post("/camp/:fightId/session",      campController.addSession);
 router.post("/camp/:fightId/remove-session", campController.removeSession);
 router.post("/camp/:fightId/injury-choice",campController.resolveInjury);
 router.post("/camp/:fightId/finalise",     campController.finaliseCamp);
+// Shop v1.0 — select/clear the pre-fight supplement for this fight's camp.
+router.put("/camp/:fightId/buff",          campController.selectBuff);
 
 /**
  * @swagger

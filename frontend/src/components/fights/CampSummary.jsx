@@ -47,6 +47,7 @@ export const CampSummary = memo(function CampSummary({
     weightCut,
     onWeightCutChange,
     isTitleFight,
+    selectedBuffLabel,
 }) {
     if (!summaryData) return null;
 
@@ -109,6 +110,13 @@ export const CampSummary = memo(function CampSummary({
                         })}
                     </div>
                 )}
+
+                <div className="cs-supp-row">
+                    <span className="cs-supp-label">Pre-Fight Supplement</span>
+                    <span className={`cs-supp-val${selectedBuffLabel ? " cs-supp-val--active" : ""}`}>
+                        {selectedBuffLabel || "None selected"}
+                    </span>
+                </div>
 
                 {hasPenalty && (
                     <div className="cs-injury-penalty">

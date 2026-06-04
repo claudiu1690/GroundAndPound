@@ -193,6 +193,33 @@ async function backfillTutorialForLegacyFighters() {
 }
 
 /**
+ * Shop, Inventory & Pre-Fight Supplements v1.0 — fighters that predate the feature
+ * have no `inventory` subdocument. Give them the empty inventory shape + null active
+ * booster so reads/writes never hit an undefined map. New fighters get these from the
+ * schema defaults, so this only ever touches genuinely legacy documents.
+ */
+async function backfillInventoryShape() {
+    const fighters = mongoose.connection.collection("fighters");
+    const result = await fighters.updateMany(
+        { inventory: { $exists: false } },
+        {
+            $set: {
+                inventory: {
+                    energyShots: 0,
+                    energyDrinks: 0,
+                    prefightBuffs: {},
+                    usedBuffs: {},
+                },
+                activeBooster: null,
+            },
+        }
+    );
+    if (result.modifiedCount > 0) {
+        console.log(`[Migration] Backfilled inventory shape for ${result.modifiedCount} existing fighter(s).`);
+    }
+}
+
+/**
  * Injury auto-heal v2 — doctor-required injuries used to have no recovery timer, so a
  * player who couldn't afford treatment was permanently stuck (Concussion blocks fighting,
  * and Amateur fights pay no iron). They now heal on their own over time. Backfill a
@@ -396,6 +423,7 @@ mongoose.connect(config.database.url, config.database.options)
         await backfillTutorialForLegacyFighters();
         await backfillDoctorInjuryTimers();
         await backfillClearNewFighterBlockingInjuries();
+        await backfillInventoryShape();
         await scheduler.startEnergyIncrementScheduler();
         await migrateAmateurPendingPromotion();
         const { ensureChampionsExist } = require("./services/championService");

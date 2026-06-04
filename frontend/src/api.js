@@ -115,6 +115,29 @@ export const api = {
       body: JSON.stringify({ fighterId, skip }),
     }),
 
+  // ── Shop / Inventory / Supplements ──────────────────────
+  getShopCatalog: (id) => request(`/fighters/${id}/shop/catalog`),
+  buyItem: (id, itemId, quantity = 1) =>
+    request(`/fighters/${id}/shop/buy`, {
+      method: "POST",
+      body: JSON.stringify({ itemId, quantity }),
+    }),
+  buyPremium: (id, bundleId) =>
+    request(`/fighters/${id}/shop/buy-premium`, {
+      method: "POST",
+      body: JSON.stringify({ bundleId }),
+    }),
+  useEnergyItem: (id, itemId) =>
+    request(`/fighters/${id}/inventory/use-energy`, {
+      method: "POST",
+      body: JSON.stringify({ itemId }),
+    }),
+  selectCampBuff: (fightId, fighterId, buffId) =>
+    request(`/fights/camp/${fightId}/buff`, {
+      method: "PUT",
+      body: JSON.stringify({ fighterId, buffId }),
+    }),
+
   // ── Career Feed ─────────────────────────────────────────
   getActivity: (fighterId) =>
     request(`/fighters/${fighterId}/activity`),

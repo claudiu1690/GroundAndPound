@@ -30,6 +30,9 @@ function handleError(err, res) {
         return res.status(400).json({ message: msg, code: CAMP_ERROR_CODES.CAMP_INVALID_CHOICE });
     if (msg === "Not enough energy")
         return res.status(400).json({ message: msg, code: CAMP_ERROR_CODES.NOT_ENOUGH_ENERGY });
+    // Shop v1.0 — pre-fight supplement selection errors.
+    if (msg === "You don't own that supplement" || msg === "Unknown supplement" || msg === "Fight already resolved")
+        return res.status(400).json({ message: msg });
     console.error("[CampController]", err);
     return res.status(500).json({ message: "Internal server error" });
 }
@@ -108,4 +111,22 @@ async function finaliseCamp(req, res) {
     }
 }
 
-module.exports = { getReport, getCampState, addSession, removeSession, resolveInjury, finaliseCamp };
+async function selectBuff(req, res) {
+    try {
+        const { fightId } = req.params;
+        const { fighterId, buffId } = req.body || {};
+        if (!fighterId) return res.status(400).json({ message: "fighterId is required" });
+        // Ownership: the body fighterId must match the authenticated account's fighter.
+        const ownFighterId = req.user && req.user.fighterId;
+        if (!ownFighterId || String(ownFighterId) !== String(fighterId)) {
+            return res.status(403).json({ message: "Access denied" });
+        }
+        // buffId is either a string id or null (clears the selection).
+        const result = await campService.selectBuff(fightId, fighterId, buffId ?? null);
+        res.json(result);
+    } catch (err) {
+        handleError(err, res);
+    }
+}
+
+module.exports = { getReport, getCampState, addSession, removeSession, resolveInjury, finaliseCamp, selectBuff };

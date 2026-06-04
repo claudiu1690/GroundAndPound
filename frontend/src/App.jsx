@@ -30,6 +30,8 @@ import { LibraryTab } from "./components/library/LibraryTab";
 import { AccountTab } from "./components/account/AccountTab";
 import { EmailVerifyBanner } from "./components/account/EmailVerifyBanner";
 import { DashboardTab } from "./components/dashboard/DashboardTab";
+import { ShopTab } from "./components/shop/ShopTab";
+import { InventorySidebar } from "./components/shop/InventorySidebar";
 import { CookieConsent } from "./components/legal/CookieConsent";
 import { tutorialBus } from "./utils/tutorialBus";
 import { TITLE_WINS } from "./constants/gameConstants";
@@ -66,7 +68,7 @@ const NAV_ITEMS = [
   { id: "rankings",  label: "Rankings",  icon: <ListOrdered size={13} strokeWidth={2.2} />, active: true },
   { id: "contracts", label: "Contracts", icon: <ScrollText size={13} strokeWidth={2.2} />,  active: true },
   { id: "hospital",  label: "Hospital",  icon: <Cross size={13} strokeWidth={2.2} />,       active: true },
-  { id: null,        label: "Shop",      icon: <ShoppingBag size={13} strokeWidth={2.2} />, active: false },
+  { id: "shop",      label: "Shop",      icon: <ShoppingBag size={13} strokeWidth={2.2} />, active: true },
   { id: "events",    label: "Events",    icon: <CalendarDays size={13} strokeWidth={2.2} />,active: true },
   { id: "media",     label: "Media",     icon: <Mic size={13} strokeWidth={2.2} />,         active: true },
   { id: "library",   label: "Library",   icon: <BookOpen size={13} strokeWidth={2.2} />,    active: true },
@@ -474,6 +476,8 @@ function App() {
   const [showCampSummary, setShowCampSummary] = useState(false);
   const [campSummaryData, setCampSummaryData] = useState(null);
   const [weightCut, setWeightCut]             = useState(null);
+  // Selected pre-fight supplement label, surfaced in the camp summary modal.
+  const [selectedBuffLabel, setSelectedBuffLabel] = useState(null);
 
   // Auto-close the mobile drawer whenever the active tab changes.
   useEffect(() => { setMobileDrawerOpen(false); }, [activeTab]);
@@ -772,6 +776,8 @@ function App() {
             variant,
             rollTier,
             greatCount,
+            // XP booster status surfaced post-train (additive; absent if none).
+            booster: result.booster ?? null,
           });
 
           // Tutorial step 2 advances on a successful training session. The old
@@ -981,6 +987,7 @@ const handleGetOffers = useCallback(async () => {
       setCampReport(null);
       setCampSummaryData(null);
       setShowCampSummary(false);
+      setSelectedBuffLabel(null);
       tutorialBus.emit("fight_resolved");
     } catch (e) {
       const errMsg = e.message || "Resolve failed";
@@ -1134,6 +1141,7 @@ const handleGetOffers = useCallback(async () => {
           weightCut={weightCut}
           onWeightCutChange={setWeightCut}
           isTitleFight={campState?.isTitleFight}
+          selectedBuffLabel={selectedBuffLabel ?? (campState?.selectedBuffId ? "1 supplement" : null)}
         />
       )}
 
@@ -1218,6 +1226,12 @@ const handleGetOffers = useCallback(async () => {
             campSlotsUsed={campState?.slotsUsed}
             onUpdateFighter={handleUpdateFighter}
             onRefreshFighter={loadFighter}
+            onMessage={setMessage}
+          />
+          <InventorySidebar
+            fighter={fighter}
+            onRefreshFighter={loadFighter}
+            onNavigateShop={() => handleNavTab("shop")}
             onMessage={setMessage}
           />
           <nav className="sidebar-menu sb-menu">
@@ -1358,6 +1372,17 @@ const handleGetOffers = useCallback(async () => {
             </div>
           )}
 
+          {/* ── SHOP ── */}
+          {activeTab === "shop" && (
+            <div className="page-layout">
+              <ShopTab
+                fighter={fighter}
+                onRefreshFighter={loadFighter}
+                onMessage={setMessage}
+              />
+            </div>
+          )}
+
           {/* ── ACCOUNT SETTINGS ── */}
           {activeTab === "account" && (
             <div className="page-layout">
@@ -1385,6 +1410,12 @@ const handleGetOffers = useCallback(async () => {
                   addingSession={addingSession}
                   finalising={resolving}
                   onMessage={setMessage}
+                  onNavigateShop={() => handleNavTab("shop")}
+                  onRefreshFighter={loadFighter}
+                  onSelectBuff={(buffId, label) => {
+                    setCampState((prev) => prev ? { ...prev, selectedBuffId: buffId } : prev);
+                    setSelectedBuffLabel(buffId ? label : null);
+                  }}
                 />
               ) : lastFightSummary ? (
                 <>
@@ -1495,6 +1526,12 @@ const handleGetOffers = useCallback(async () => {
                 campSlotsUsed={campState?.slotsUsed}
                 onUpdateFighter={handleUpdateFighter}
                 onRefreshFighter={loadFighter}
+                onMessage={setMessage}
+              />
+              <InventorySidebar
+                fighter={fighter}
+                onRefreshFighter={loadFighter}
+                onNavigateShop={() => handleNavTab("shop")}
                 onMessage={setMessage}
               />
               <nav className="sidebar-menu sb-menu m-drawer-menu">

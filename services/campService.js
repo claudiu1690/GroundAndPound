@@ -1,6 +1,8 @@
 const Fight = require("../models/fightModel");
 const FightCamp = require("../models/fightCampModel");
+const Fighter = require("../models/fighterModel");
 const energyService = require("./energyService");
+const { BUFFS } = require("../consts/shopConfig");
 const {
     CAMP_SESSIONS,
     SESSION_BONUSES,
@@ -616,8 +618,49 @@ async function finaliseCamp(fightId, fighterId, skip = false) {
     };
 }
 
+/**
+ * Shop v1.0 — select (or clear) the pre-fight supplement for this fight's camp.
+ * Selecting does NOT decrement inventory; ownership is a UX guard here and the buff
+ * is authoritatively re-validated and consumed at fight resolve.
+ *
+ * @param {string} fightId
+ * @param {string} fighterId
+ * @param {(string|null)} buffId  buff itemId, or null to clear the selection
+ * @returns {Promise<{ selectedBuffId: (string|null), message: string }>}
+ */
+async function selectBuff(fightId, fighterId, buffId) {
+    const camp = await FightCamp.findOne({ fightId });
+    if (!camp) throw new Error("Camp not found");
+    assertCampOwnership(camp, fighterId);
+
+    // Block selection once the fight has already been resolved/completed.
+    const fight = await Fight.findById(fightId).select("status");
+    if (fight && fight.status === "completed") throw new Error("Fight already resolved");
+
+    if (buffId === null || buffId === undefined || buffId === "") {
+        camp.selectedBuffId = null;
+        await camp.save();
+        return { selectedBuffId: null, message: "Supplement cleared." };
+    }
+
+    const buffCfg = BUFFS[buffId];
+    if (!buffCfg) throw new Error("Unknown supplement");
+
+    // Ownership guard at selection time (re-checked authoritatively at resolve).
+    const fighter = await Fighter.findById(fighterId).select("inventory");
+    if (!fighter) throw new Error("Camp not found");
+    const owned = (fighter.inventory && fighter.inventory.prefightBuffs
+        && fighter.inventory.prefightBuffs[buffId]) || 0;
+    if (owned <= 0) throw new Error("You don't own that supplement");
+
+    camp.selectedBuffId = buffId;
+    await camp.save();
+    return { selectedBuffId: buffId, message: `${buffCfg.name} selected for fight night.` };
+}
+
 module.exports = {
     createCamp,
+    selectBuff,
     getFighterReport,
     getCampState,
     addCampSession,

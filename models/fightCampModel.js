@@ -39,6 +39,10 @@ const fightCampSchema = new Schema({
     injuryPenalty: { type: Schema.Types.Mixed, default: null }, // { str: -0.10, ... }
 
     finalisedAt:   { type: Date, default: null },
+
+    // Shop v1.0 — pre-fight supplement selected for this fight. Selecting does NOT
+    // decrement inventory; the buff is consumed (and re-validated) at fight resolve.
+    selectedBuffId: { type: String, default: null },
 }, { timestamps: true });
 
 fightCampSchema.index({ fighterId: 1 });

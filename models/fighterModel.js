@@ -260,6 +260,26 @@ const fighterSchema = new mongoose.Schema({
     // `completed` is false until the completion modal is dismissed. While false,
     // the client mounts the tutorial overlay and resumes from `current_step`.
     // Existing fighters are backfilled to completed=true on server boot.
+    // Shop, Inventory & Pre-Fight Supplements v1.0
+    // prefightBuffs / usedBuffs are Mixed maps keyed by buff itemId → count.
+    // ANY mutation of these maps MUST be followed by fighter.markModified("inventory")
+    // or Mongoose silently drops the write.
+    inventory: {
+        energyShots:   { type: Number, default: 0, min: 0 },
+        energyDrinks:  { type: Number, default: 0, min: 0 },
+        prefightBuffs: { type: mongoose.Schema.Types.Mixed, default: {} },
+        usedBuffs:     { type: mongoose.Schema.Types.Mixed, default: {} },
+    },
+    // Active training booster — consumed one charge per completed XP session.
+    // null when no booster is active.
+    activeBooster: {
+        type: new mongoose.Schema({
+            id:            { type: String, required: true },
+            sessionsLeft:  { type: Number, required: true, min: 0 },
+            totalSessions: { type: Number, required: true },
+        }, { _id: false }),
+        default: null,
+    },
     tutorial: {
         completed:    { type: Boolean, default: false },
         current_step: { type: String,  default: "profile_intro" },

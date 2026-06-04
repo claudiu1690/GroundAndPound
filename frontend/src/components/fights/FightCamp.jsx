@@ -7,6 +7,7 @@ import {
     MATCH_STATUS_COLORS,
 } from "../../constants/campConfig";
 import { CampInjury } from "./CampInjury";
+import { CampSupplements } from "../shop/CampSupplements";
 
 const CAMP_SESSION_COLOR = {
     TAKEDOWN_DEFENCE: "blue",
@@ -88,6 +89,9 @@ export const FightCamp = memo(function FightCamp({
     addingSession,
     finalising,
     onMessage,
+    onNavigateShop,
+    onRefreshFighter,
+    onSelectBuff,
 }) {
     if (!fighter?.acceptedFightId || !campState) return null;
 
@@ -104,6 +108,7 @@ export const FightCamp = memo(function FightCamp({
         finalisedAt,
         sessions = [],
         isTitleFight = false,
+        selectedBuffId = null,
     } = campState;
 
     const isInjuredPending = isInjured && !injuryChoice;
@@ -222,6 +227,16 @@ export const FightCamp = memo(function FightCamp({
                         })}
                     </div>
                 </div>
+
+                <CampSupplements
+                    fighter={fighter}
+                    fightId={fighter.acceptedFightId}
+                    selectedBuffId={selectedBuffId}
+                    onSelected={onSelectBuff}
+                    onNavigateShop={onNavigateShop}
+                    onMessage={onMessage}
+                    disabled={isFinalised || isInjuredPending}
+                />
 
                 {!isFinalised && (
                     <div className="camp-finalise-row" data-tut="camp-finalise">

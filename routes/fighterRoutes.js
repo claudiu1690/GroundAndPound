@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const fighterController = require("../controllers/fighterController");
 const rankingController = require("../controllers/rankingController");
+const shopController = require("../controllers/shopController");
 const ownFighter = require("../middleware/ownFighterMiddleware");
 
 /**
@@ -193,5 +194,11 @@ router.post("/:id/callouts", fighterController.createCallout);
 router.delete("/:id/callouts", fighterController.cancelCallout);
 /** Reserved for media events (notoriety) — returns 501 until implemented */
 router.post("/:id/media-event", fighterController.mediaEventStub);
+
+// ── Shop, Inventory & Pre-Fight Supplements v1.0 ───────────
+router.get("/:id/shop/catalog", ownFighter, shopController.getCatalog);
+router.post("/:id/shop/buy", ownFighter, shopController.buy);
+router.post("/:id/shop/buy-premium", ownFighter, shopController.buyPremium);
+router.post("/:id/inventory/use-energy", ownFighter, shopController.useEnergy);
 
 module.exports = router;
