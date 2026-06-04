@@ -281,6 +281,48 @@ export const api = {
       body: JSON.stringify({ fighter_name: fighterName }),
     }),
 
+  // ── PvP (v1 Beta) ───────────────────────────────────────
+  // Attacker identity comes from the JWT server-side, so attack/history/
+  // pending never send a fighterId.
+  getPvpLadder: (params) =>
+    request(`/pvp/ladder?${new URLSearchParams(params)}`),
+  getPvpProfile: (fighterId) =>
+    request(`/pvp/ladder/${fighterId}`),
+  pvpAttack: (defenderId, offensiveCamp) =>
+    request(`/pvp/attack/${defenderId}`, {
+      method: "POST",
+      body: JSON.stringify({ offensive_camp: offensiveCamp }),
+    }),
+  getPvpHistory: (params) =>
+    request(`/pvp/history?${new URLSearchParams(params)}`),
+  getPvpPending: () => request("/pvp/pending"),
+
+  // ── The Circuit hub (v1.1) ──────────────────────────────
+  // One Yard feed (identity + revenge cards + ticker + contracts).
+  getPvpHub: () => request("/pvp/hub"),
+  // Rivalries list (head-to-head, heat, grudge/nemesis, revenge_available).
+  getPvpRivalries: (params) =>
+    request(`/pvp/rivalries?${new URLSearchParams(params || {})}`),
+  // Claim a completed daily/weekly contract → fame reward.
+  claimPvpContract: (contractId) =>
+    request(`/pvp/contracts/${contractId}/claim`, { method: "POST" }),
+  // Set the active cosmetic title (pass null to clear).
+  setPvpTitle: (title) =>
+    request("/pvp/title", { method: "POST", body: JSON.stringify({ title }) }),
+
+  // ── The Circuit — Seasons & Bounties (v1.2) ─────────────
+  // Bounty board, scoped collectable | posted | on_me (§7.6).
+  getPvpBounties: (params) =>
+    request(`/pvp/bounties?${new URLSearchParams(params || {})}`),
+  // Post an iron bounty on a target — escrow + burn handled server-side (§7.2).
+  postPvpBounty: (body) =>
+    request("/pvp/bounties", { method: "POST", body: JSON.stringify(body) }),
+  // Current season — number, countdown, my division, optional ended_results (§6.5).
+  getPvpSeason: () => request("/pvp/season"),
+  // Mark the ended-season results modal as seen (§6.5).
+  markPvpSeasonSeen: () =>
+    request("/pvp/season/seen", { method: "POST" }),
+
   // ── Forgot password / reset (unauthenticated) ───────────
   forgotPassword: (email) =>
     request("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),

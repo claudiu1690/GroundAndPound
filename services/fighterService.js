@@ -175,7 +175,7 @@ async function createFighter(data) {
  * @returns {Promise<Array<Object>>}
  */
 async function listFighters(limit = 50) {
-    const fighters = await Fighter.find({}).limit(limit).select("firstName lastName nickname weightClass style overallRating energy record").lean();
+    const fighters = await Fighter.find({ isPvpBot: { $ne: true } }).limit(limit).select("firstName lastName nickname weightClass style overallRating energy record").lean();
     return fighters;
 }
 

@@ -16,6 +16,7 @@
 export const LIBRARY_CATEGORIES = [
     "Getting Started",
     "Fighting",
+    "PvP",
     "Training & Gyms",
     "Career",
     "Economy",
@@ -26,6 +27,7 @@ export const LIBRARY_CATEGORIES = [
 export const CATEGORY_COLOR = {
     "Getting Started": "start",
     "Fighting": "fight",
+    "PvP": "pvp",
     "Training & Gyms": "gym",
     "Career": "career",
     "Economy": "economy",
@@ -198,6 +200,77 @@ export const LIBRARY_ARTICLES = [
             "If it was a title fight, a dedicated championship victory screen appears with gold styling before the summary. The moment deserves the treatment.",
         ],
         keyTakeaway: "The Camp Performance section tells you whether your preparation was right. Check it after every fight — it's the fastest way to become a better player.",
+    },
+
+    // ──────────────────────────────────────────────────────────────
+    // PVP
+    // ──────────────────────────────────────────────────────────────
+    {
+        id: "pvp-overview",
+        category: "PvP",
+        title: "PvP — Challenging Other Players",
+        summary: "How player-versus-player fights work, what they cost, and who you're allowed to attack.",
+        tags: ["pvp", "attack", "challenge", "ladder", "energy", "matchmaking"],
+        body: [
+            "PvP is a completely separate competitive system that runs alongside your normal career. It has its own ladder, its own record, and its own belt. Nothing that happens in PvP touches your PvE career — your win-loss record, your promotion tier, and your title-shot progress are never affected by a PvP fight. You can ignore PvP entirely and still have a complete career, or you can dive in and fight for the PvP belt.",
+            "PvP is asynchronous, just like the rest of the game. You attack from the PvP tab: browse the ladder, pick an opponent, press Challenge, build an offensive camp, and the fight resolves instantly. Your opponent does not need to be online — in v1 they are simulated from their stats, OVR, and current health while they're away. There's no waiting and no scheduling.",
+            "Attacking costs energy from the same pool you use for training and fighting — there is no separate PvP energy. The cost equals one normal fight at your tier, so every attack is a real choice between training, fighting, and climbing the PvP ladder.",
+            {
+                type: "table",
+                headers: ["Your tier", "Energy per attack"],
+                rows: [
+                    ["Amateur", "10"],
+                    ["Regional Pro", "15"],
+                    ["National", "18"],
+                    ["GCS Contender / GCS", "20"],
+                ],
+            },
+            "On top of energy, there's a daily cap of 5 PvP attacks per day. This throttles how fast anyone can farm the ladder. Defending against attacks does not use your cap or your energy — only attacking does.",
+            "Matchmaking is bracketed: you can only attack fighters within 8 OVR of you, in either direction. The Challenge button is disabled for anyone outside that range. This stops a top-tier fighter from farming beginners — and even within the bracket, the further you punch down, the smaller the reward (see The PvP Ladder, Belt & Rewards).",
+            "New players are protected. Until you've completed 3 PvP fights of your own, you cannot be attacked — you can throw the first punch, but nobody can hit you back until you've opted in by fighting. Once you hit 3 fights you join the ladder and become a valid target.",
+            "Before you attack, you can see an opponent's record, rank points, OVR, and style — but NOT their current HP or injuries. You can't cherry-pick a weakened target; you commit to the fight blind to their condition.",
+            "PvP fights have real consequences. Both fighters take HP damage, and both can pick up injuries exactly as in a PvE fight. Crucially, every loss puts you on a recovery cooldown during which you cannot be attacked again — so a bad result also buys you breathing room.",
+            {
+                type: "table",
+                headers: ["How you lost", "Cooldown (can't be attacked)"],
+                rows: [
+                    ["By KO/TKO", "12 hours"],
+                    ["By Submission", "6 hours"],
+                    ["By Decision", "3 hours"],
+                ],
+            },
+            "Note: in this first version there is no defensive camp — your defence is purely your stats, OVR, and health. The ability to pre-set a defensive camp that fires automatically when you're attacked is planned for a later update.",
+        ],
+        keyTakeaway: "PvP is a separate ladder that never touches your PvE career. Attacks cost a tier-fight's energy, are capped at 5/day, and only work within ±8 OVR. You're safe from attacks until your 3rd PvP fight.",
+    },
+    {
+        id: "pvp-ladder-belt",
+        category: "PvP",
+        title: "The PvP Ladder, Belt & Rewards",
+        summary: "How rank points work, how the belt changes hands, and what you earn from PvP.",
+        tags: ["pvp", "ladder", "belt", "rank points", "rewards", "champion"],
+        body: [
+            "You join the PvP ladder once you've completed 3 PvP fights. The ladder is sorted by rank points — not raw wins. When two players are tied on points, the higher win percentage ranks first, and recent activity breaks any remaining tie. This rewards quality and staying active over simply grinding volume.",
+            "Rank points are earned and lost based on the result and who you fought. Beating someone ranked above you, or finishing the fight, is worth more. Rank points never go below zero.",
+            {
+                type: "table",
+                headers: ["Result", "Rank points"],
+                rows: [
+                    ["Win (decision)", "+1"],
+                    ["Win by KO or Submission", "+2"],
+                    ["Win vs a higher-ranked opponent", "+2 (stacks with finish — up to +4)"],
+                    ["Loss", "−1"],
+                    ["Loss vs a lower-ranked opponent", "−2"],
+                    ["Draw", "0"],
+                ],
+            },
+            "The PvP belt belongs to the #1 ranked player and is live at all times — it can change hands even while the champion is offline. To challenge directly for the belt you must be ranked in the top 10. Beat the champion as a top-10 challenger and the belt is yours instantly, the moment the fight resolves. You can still attack the champion from outside the top 10, but the belt won't transfer on a win.",
+            "There is no vacancy — the belt only ever moves through a fight. If the champion stops logging in, they keep the belt until someone beats them. But an absentee champion doesn't get to sit on it forever: after 14 days of inactivity the challenge window widens so more players can contest the belt, and after 21 days an interim title fight is set up. The belt stays defended, but it never goes stale.",
+            "PvP pays into the same iron and fame pools as the rest of the game, but at a reduced rate so it can't shortcut your PvE progression. A PvP win pays 45% of the equivalent PvE purse; a draw pays 25%, and even a loss pays 15% as a participation amount. PvP wins also grant fame (40% of an equivalent PvE fight), while PvP losses are fame-neutral — you don't lose fame for losing.",
+            "All of those rewards are scaled by how big the OVR gap was. Beat an equal or stronger opponent and you collect the full amount; beat someone well below you and the iron and fame shrink toward nothing. Rank points, however, are based on ladder position rather than OVR — so climbing is about who you beat, not how much you outweigh them.",
+            "Defending the belt pays too: when a champion successfully turns back a challenger, they bank a defence bonus (half of a standard win's iron and fame) automatically, waiting for them the next time they log in.",
+        ],
+        keyTakeaway: "The ladder ranks by points, then win%, then activity. The belt is the #1 spot — challenge it from the top 10, win instantly, and an inactive champion gets opened up after 14–21 days. Rewards are real but down-weighted, and punching down pays little.",
     },
 
     // ──────────────────────────────────────────────────────────────

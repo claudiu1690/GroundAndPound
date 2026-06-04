@@ -6,7 +6,13 @@ import { ArrowUpCircle, Trophy } from "lucide-react";
 /**
  * Post-fight summary: health/stamina lost, XP gained, fame, cash, injuries, comeback, weight miss, etc.
  */
-export const FightSummary = memo(function FightSummary({ summary, description }) {
+/**
+ * Post-fight summary.
+ * `hideXpTile` (additive, default false) swaps the right-rail "XP Mult" tile
+ * for the optional `rightRailExtra` node — used by PvP, which has no stat XP.
+ * Default behaviour (PvE) is unchanged: the XP-mult tile renders as before.
+ */
+export const FightSummary = memo(function FightSummary({ summary, description, hideXpTile = false, rightRailExtra = null }) {
   if (!summary) return null;
 
   const {
@@ -87,10 +93,14 @@ export const FightSummary = memo(function FightSummary({ summary, description })
               <div className="result-stat-val result-stat-val--gold">{fameDisplay}</div>
               <div className="result-stat-label">Fame</div>
             </div>
-            <div className="result-stat">
-              <div className="result-stat-val result-stat-val--blue">×{xpMultiplier ?? 1}</div>
-              <div className="result-stat-label">XP Mult</div>
-            </div>
+            {hideXpTile ? (
+              rightRailExtra
+            ) : (
+              <div className="result-stat">
+                <div className="result-stat-val result-stat-val--blue">×{xpMultiplier ?? 1}</div>
+                <div className="result-stat-label">XP Mult</div>
+              </div>
+            )}
           </div>
         </div>
       </div>

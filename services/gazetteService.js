@@ -16,6 +16,7 @@
  */
 const Fighter = require("../models/fighterModel");
 const Fight = require("../models/fightModel");
+const PvpFight = require("../models/pvpFightModel");
 const FightCard = require("../models/mainEventModel");
 const { TEMPLATES } = require("../consts/gazetteTemplates");
 const { makeGazetteRng } = require("../utils/gazetteRng");
@@ -333,6 +334,190 @@ function buildRecordMilestoneStory(fighter) {
     };
 }
 
+/**
+ * PvP belt change (v1). Finds the most recent belt-changing PvpFight involving this
+ * fighter since the last gazette and renders the won/lost story. The other fighter's
+ * name is fetched separately (one extra lookup). Only belt-change stories are reported
+ * in v1 — regular PvP results surface via /pvp/pending, not the Gazette.
+ */
+async function buildPvpBeltStory(fighter, lastShownDate) {
+    const fgt = await PvpFight.findOne({
+        belt_changed: true,
+        $or: [{ attacker_id: fighter._id }, { defender_id: fighter._id }],
+    })
+        .sort({ fought_at: -1 })
+        .lean();
+    if (!fgt) return null;
+
+    // Don't re-surface a belt change already covered by a previous gazette.
+    if (lastShownDate && fgt.fought_at) {
+        const foughtDate = new Date(fgt.fought_at).toISOString().slice(0, 10);
+        if (foughtDate <= lastShownDate) return null;
+    }
+
+    const me = String(fighter._id);
+    const wonBelt = fgt.result?.winner_id && String(fgt.result.winner_id) === me;
+    const otherId = String(fgt.attacker_id) === me ? String(fgt.defender_id) : String(fgt.attacker_id);
+    const other = await Fighter.findById(otherId).select("firstName lastName nickname").lean();
+    const otherName = other ? fighterDisplayName(other) : "a rival";
+
+    if (wonBelt) {
+        return {
+            type: "pvp_belt_won",
+            templateGroup: "pvp_belt_won",
+            zoneOptions: ["lead"],
+            navigateTo: "pvp",
+            vars: { FIGHTER: fighterDisplayName(fighter), PREVIOUS_CHAMPION: otherName },
+        };
+    }
+    return {
+        type: "pvp_belt_lost",
+        templateGroup: "pvp_belt_lost",
+        zoneOptions: ["lead"],
+        navigateTo: "pvp",
+        vars: { FIGHTER: fighterDisplayName(fighter), NEW_CHAMPION: otherName },
+    };
+}
+
+/**
+ * The Circuit v1.1 — rivalry story. Surfaces a fresh REVENGE win or a newly-hot GRUDGE since
+ * the last gazette. Reads the most recent PvpFight involving the fighter + the rivalry doc for
+ * that pair. Revenge takes precedence over grudge.
+ */
+async function buildPvpRivalryStory(fighter, lastShownDate) {
+    const Rivalry = require("../models/rivalryModel");
+    const fgt = await PvpFight.findOne({
+        $or: [{ attacker_id: fighter._id }, { defender_id: fighter._id }],
+    })
+        .sort({ fought_at: -1 })
+        .lean();
+    if (!fgt || !fgt.fought_at) return null;
+    if (lastShownDate) {
+        const d = new Date(fgt.fought_at).toISOString().slice(0, 10);
+        if (d <= lastShownDate) return null;
+    }
+
+    const me = String(fighter._id);
+    const otherId = String(fgt.attacker_id) === me ? String(fgt.defender_id) : String(fgt.attacker_id);
+    const wonLast = fgt.result?.winner_id && String(fgt.result.winner_id) === me;
+
+    const minId = me < otherId ? me : otherId;
+    const maxId = me < otherId ? otherId : me;
+    const riv = await Rivalry.findOne({ pair_key: `${minId}:${maxId}` }).lean();
+    if (!riv) return null;
+
+    const other = await Fighter.findById(otherId).select("firstName lastName nickname").lean();
+    const otherName = other ? fighterDisplayName(other) : "a rival";
+
+    // Revenge: the player just won and previously trailed/lost to this opponent recently.
+    // We approximate "revenge" by: player won the latest fight AND the opponent had won the
+    // one before (rivalry last_winner before this is hard to read post-fact, so gate on heat
+    // + a win to keep it celebratory without false positives).
+    const isGrudge = (riv.heat || 0) >= 4;
+    if (wonLast && isGrudge) {
+        return {
+            type: "pvp_revenge",
+            templateGroup: "pvp_revenge",
+            zoneOptions: ["secondary", "filler"],
+            navigateTo: "pvp",
+            vars: { FIGHTER: fighterDisplayName(fighter), OPPONENT: otherName },
+        };
+    }
+    if (isGrudge) {
+        return {
+            type: "pvp_grudge",
+            templateGroup: "pvp_grudge",
+            zoneOptions: ["secondary", "filler"],
+            navigateTo: "pvp",
+            vars: { FIGHTER: fighterDisplayName(fighter), OPPONENT: otherName },
+        };
+    }
+    return null;
+}
+
+/**
+ * The Circuit v1.1 — PvP streak story. Fires when the fighter's persisted current_streak is at
+ * a milestone (3/5/10/15).
+ */
+function buildPvpStreakStory(fighter) {
+    const streak = fighter.pvp?.current_streak || 0;
+    if (![3, 5, 10, 15].includes(streak)) return null;
+    return {
+        type: "pvp_streak",
+        templateGroup: "pvp_streak",
+        zoneOptions: ["secondary", "filler"],
+        navigateTo: "pvp",
+        vars: { FIGHTER: fighterDisplayName(fighter), STREAK: String(streak) },
+    };
+}
+
+/**
+ * The Circuit v1.1 — title unlock story. Announces the fighter's most recently unlocked title
+ * (the last entry of pvp.titles). Cheap heuristic — UI dedupe handles repeats.
+ */
+function buildPvpTitleStory(fighter) {
+    const { PVP_TITLES } = require("../consts/pvpConfig");
+    const titles = Array.isArray(fighter.pvp?.titles) ? fighter.pvp.titles : [];
+    if (titles.length === 0) return null;
+    const key = titles[titles.length - 1];
+    const label = PVP_TITLES[key]?.label || key;
+    return {
+        type: "pvp_title_unlock",
+        templateGroup: "pvp_title_unlock",
+        zoneOptions: ["secondary", "filler"],
+        navigateTo: "pvp",
+        vars: { FIGHTER: fighterDisplayName(fighter), TITLE: label },
+    };
+}
+
+/**
+ * The Circuit v1.2 — season story. Fires once after a rollover the viewer hasn't acknowledged yet
+ * (season_number_seen < the most-recent ended season's number). If the viewer holds that season's
+ * champion title it renders the champion variant; otherwise the rollover variant with their
+ * finishing division. Read-only — POST /pvp/season/seen clears it.
+ */
+async function buildPvpSeasonStory(fighter) {
+    const PvpSeason = require("../models/pvpSeasonModel");
+    const lastEnded = await PvpSeason.findOne({ status: "ended" }).sort({ season_number: -1 }).lean();
+    if (!lastEnded) return null;
+    const seen = fighter.pvp?.season_number_seen || 0;
+    if (seen >= lastEnded.season_number) return null; // already acknowledged
+
+    const titles = Array.isArray(fighter.pvp?.season_titles) ? fighter.pvp.season_titles : [];
+    const championTitle = `season_${lastEnded.season_number}_champion`;
+    const isChampion = titles.includes(championTitle);
+
+    // Reconstruct the finishing division label from the season's flair title, if present.
+    let divisionLabel = "the ladder";
+    const prefix = `season_${lastEnded.season_number}_`;
+    for (const t of titles) {
+        if (t.startsWith(prefix) && t !== championTitle) {
+            const { PVP_DIVISION_BANDS } = require("../consts/pvpConfig");
+            const key = t.slice(prefix.length);
+            const band = PVP_DIVISION_BANDS.find((b) => b.key === key);
+            divisionLabel = band ? band.label : key;
+            break;
+        }
+    }
+
+    if (isChampion) {
+        return {
+            type: "pvp_season_champion",
+            templateGroup: "pvp_season_champion",
+            zoneOptions: ["lead", "secondary"],
+            navigateTo: "pvp",
+            vars: { FIGHTER: fighterDisplayName(fighter), SEASON: String(lastEnded.season_number) },
+        };
+    }
+    return {
+        type: "pvp_season_rollover",
+        templateGroup: "pvp_season_rollover",
+        zoneOptions: ["secondary", "filler"],
+        navigateTo: "pvp",
+        vars: { FIGHTER: fighterDisplayName(fighter), SEASON: String(lastEnded.season_number), DIVISION: divisionLabel },
+    };
+}
+
 // ── Composer ────────────────────────────────────────────────────────────────
 
 /**
@@ -358,6 +543,11 @@ async function composeGazette(fighter) {
 
     // ── Run every eligibility check ─────────────────────────────────────────
     const eventStory      = await buildEventResultStory(fighter, lastShownDate);
+    const pvpBeltStory    = await buildPvpBeltStory(fighter, lastShownDate);
+    const pvpRivalry      = await buildPvpRivalryStory(fighter, lastShownDate);
+    const pvpStreak       = buildPvpStreakStory(fighter);
+    const pvpTitle        = buildPvpTitleStory(fighter);
+    const pvpSeason       = await buildPvpSeasonStory(fighter);
     const mentalReset     = buildMentalResetStory(fighter);
     const firstLossTitle  = buildFirstLossInTitleStory(fighter, lastFight);
     const titleFight      = buildTitleFightStory(fighter, lastFight);
@@ -375,6 +565,8 @@ async function composeGazette(fighter) {
     // ── Lead priority order ─────────────────────────────────────────────────
     const leadCandidates = [
         mentalReset,        // 0 — forced lead, blocks fighting
+        (pvpSeason && pvpSeason.type === "pvp_season_champion") ? pvpSeason : null, // 0.4 — season champion crown
+        pvpBeltStory,       // 0.5 — PvP belt change (won/lost) since last login
         eventStory,         // 1 — recent Headliner
         firstLossTitle,     // 2 — composite (first loss + title)
         titleFight,         // 3 — title fight (won or lost)
@@ -391,6 +583,8 @@ async function composeGazette(fighter) {
     // ── Pool the remaining eligible stories for secondary / filler ──────────
     const pool = [
         rankJump, winStreak, rankEntry, lastFightStory,
+        pvpRivalry, pvpStreak, pvpTitle,   // The Circuit v1.1 — PvP flair (secondary/filler)
+        pvpSeason,                          // The Circuit v1.2 — season rollover / champion (secondary/filler)
         fameTier, notoriety, comeback, recordMilestone,
     ].filter((s) => s && s !== lead && s.zoneOptions.length > 0);
 
@@ -454,6 +648,16 @@ async function dismissGazette(fighterId) {
     fighter.gazette.fameTierBeforeLastLogin = fighter.notoriety?.peakTier || "Unknown";
     fighter.markModified("gazette");
     await fighter.save();
+
+    // PvP v1 — dismissing the Gazette acknowledges the player has seen their results,
+    // so mark any pending PvP defeats/defences as seen. Best-effort: never block dismiss.
+    try {
+        const pvpService = require("./pvpService");
+        await pvpService.markPendingSeen(fighter._id);
+    } catch (err) {
+        console.error("[gazette] markPendingSeen failed:", err.message);
+    }
+
     return { dismissed: true, date: todayUtc() };
 }
 

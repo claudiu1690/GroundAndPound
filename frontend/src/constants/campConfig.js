@@ -125,6 +125,23 @@ export const CAMP_SLOT_CONFIG = {
     GCS:              { normalSlots: 10, shortNoticeSlots: 4 },
 };
 
+/**
+ * Fight energy cost per promotion tier (mirror of backend PROMOTION_TIERS
+ * fightEnergyCost). Used for the PvP camp "−{N} Energy" stake chip.
+ */
+export const TIER_FIGHT_ENERGY_COST = {
+    Amateur:          10,
+    "Regional Pro":   15,
+    National:         18,
+    "GCS Contender":  20,
+    GCS:              20,
+};
+
+/** Fight energy cost for an attacker's promotion tier (default 10 = Amateur). */
+export function getFightEnergyCost(promotionTier) {
+    return TIER_FIGHT_ENERGY_COST[promotionTier] ?? 10;
+}
+
 export const CAMP_RATING_CONFIG = [
     { grade: "S", min: 90, label: "Elite preparation",    color: "#f59e0b" },
     { grade: "A", min: 75, label: "Strong preparation",   color: "#22c55e" },
@@ -145,4 +162,88 @@ export const CAMP_INJURY_LABELS = {
 /** Returns the rating config entry for a given grade letter. */
 export function getRatingConfig(grade) {
     return CAMP_RATING_CONFIG.find((r) => r.grade === grade) ?? CAMP_RATING_CONFIG[CAMP_RATING_CONFIG.length - 1];
+}
+
+// ── Client style-match cue + projected camp grade ───────────────────────────
+// Mirror of backend consts/campConfig.js + campService.getMatchStatus /
+// computeCampRating. Used ONLY for the PvP camp screen's CLIENT-SIDE
+// "projected" grade and per-session MATCHED/PARTIAL/UNMATCHED cue against the
+// defender's style — the authoritative grade comes from the server's
+// campBreakdown.rating on the fight summary. Keep in sync with the backend.
+
+/** Effective bonus multiplier per match status (mirror backend). */
+export const MATCH_STATUS_MULTIPLIERS = {
+    MATCHED:   1.0,
+    PARTIAL:   0.5,
+    UNMATCHED: 0,
+    WRONG:     0,
+};
+
+/**
+ * Style → recommended sessions mapping (mirror backend STYLE_SESSION_MAP).
+ * A session that appears in the defender style's list is MATCHED.
+ */
+export const STYLE_SESSION_MAP = {
+    Wrestler:              ["TAKEDOWN_DEFENCE", "SUBMISSION_ESCAPES", "CARDIO_PUSH"],
+    "Brazilian Jiu-Jitsu": ["SUBMISSION_ESCAPES", "TAKEDOWN_DEFENCE", "GROUND_AND_POUND_POSTURE"],
+    Boxer:                 ["STRIKING_ACCURACY", "BODY_SHOT_FOCUS", "CLINCH_CONTROL"],
+    Kickboxer:             ["CLINCH_CONTROL", "TAKEDOWN_DEFENCE", "STRIKING_ACCURACY"],
+    "Muay Thai":           ["CLINCH_CONTROL", "CARDIO_PUSH", "TAKEDOWN_DEFENCE"],
+    Judo:                  ["TAKEDOWN_DEFENCE", "SUBMISSION_ESCAPES", "GROUND_AND_POUND_POSTURE"],
+    Sambo:                 ["TAKEDOWN_DEFENCE", "SUBMISSION_ESCAPES", "STRIKING_ACCURACY"],
+    Capoeira:              ["STRIKING_ACCURACY", "CLINCH_CONTROL", "CARDIO_PUSH"],
+};
+
+/** Diminishing returns for repeated sessions (mirror backend). */
+const DIMINISHING_RETURNS = [1.0, 0.6, 0.3];
+
+/**
+ * Port of backend campService.getMatchStatus.
+ * - partialContributor (GAME_PLAN_STUDY) → always PARTIAL
+ * - alwaysMatched (SPARRING_GENERAL) → always MATCHED
+ * - in STYLE_SESSION_MAP[defenderStyle] → MATCHED, else UNMATCHED
+ *
+ * NOTE: the frontend CAMP_SESSIONS uses `alwaysMatched` where the backend uses
+ * `alwaysContributes`; both flags are honored here for safety.
+ */
+export function getMatchStatus(sessionType, defenderStyle) {
+    const cfg = CAMP_SESSIONS[sessionType];
+    if (!cfg) return MATCH_STATUSES.UNMATCHED;
+    if (cfg.partialContributor) return MATCH_STATUSES.PARTIAL;
+    if (cfg.alwaysMatched || cfg.alwaysContributes) return MATCH_STATUSES.MATCHED;
+    const recommended = STYLE_SESSION_MAP[defenderStyle] || [];
+    return recommended.includes(sessionType) ? MATCH_STATUSES.MATCHED : MATCH_STATUSES.UNMATCHED;
+}
+
+/**
+ * Client-side PROJECTED camp grade (port of campService.computeCampRating).
+ * Mirrors addCampSession's pointsEarned math:
+ *   pointsEarned = round(modifierContribution * diminishingFactor * multiplier)
+ * with diminishing applied in submission order per repeated session type.
+ * Returns the grade letter ("S".."F"). The server's campBreakdown.rating is
+ * authoritative on the summary — this is labelled "projected" in the UI.
+ */
+export function projectCampGrade(sessionIds, defenderStyle, maxSlots) {
+    const ids = Array.isArray(sessionIds) ? sessionIds : [];
+    const slots = maxSlots && maxSlots > 0 ? maxSlots : 0;
+    const maxPossiblePoints = slots * 3;
+
+    const seen = {};
+    let totalPoints = 0;
+    for (const sessionType of ids) {
+        const cfg = CAMP_SESSIONS[sessionType];
+        if (!cfg) continue;
+        const priorCount = seen[sessionType] || 0;
+        seen[sessionType] = priorCount + 1;
+        const diminishingFactor = DIMINISHING_RETURNS[Math.min(priorCount, DIMINISHING_RETURNS.length - 1)];
+        const multiplier = MATCH_STATUS_MULTIPLIERS[getMatchStatus(sessionType, defenderStyle)] ?? 0;
+        totalPoints += Math.round((cfg.modifierContribution ?? 0) * diminishingFactor * multiplier);
+    }
+
+    const scorePercent = maxPossiblePoints > 0
+        ? Math.min(100, Math.round((totalPoints / maxPossiblePoints) * 100))
+        : 0;
+    const entry = CAMP_RATING_CONFIG.find((r) => scorePercent >= r.min)
+        || CAMP_RATING_CONFIG[CAMP_RATING_CONFIG.length - 1];
+    return entry.grade;
 }

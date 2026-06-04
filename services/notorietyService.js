@@ -341,6 +341,7 @@ async function runNotorietyDecayBatch() {
     const fighters = await Fighter.find({
         "notoriety.lastEventAt": { $exists: true, $ne: null },
         "notoriety.isFrozen": false,
+        isPvpBot: { $ne: true }, // PvP bots never accrue/decay fame
     });
     let updated = 0;
     for (const fighter of fighters) {

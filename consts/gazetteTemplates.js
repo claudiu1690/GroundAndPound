@@ -309,6 +309,62 @@ const TEMPLATES = {
         { headline: "DARK SPELL FOR {FIGHTER}",
           body: "{LOSS_STREAK} straight defeats. The comeback story is waiting to be written." },
     ],
+
+    // ── PvP belt change (v1) — spec §9 strings ──────────────────────────────────
+    pvp_belt_won: [
+        { headline: "YOU'RE THE CHAMPION",
+          body: "You beat {PREVIOUS_CHAMPION} and took the PvP belt. Defend it well." },
+        { headline: "THE BELT IS YOURS",
+          body: "{PREVIOUS_CHAMPION} couldn't hold it. You are the new PvP champion." },
+    ],
+    pvp_belt_lost: [
+        { headline: "DETHRONED",
+          body: "{NEW_CHAMPION} took your belt while you were away. Time to take it back." },
+        { headline: "THE BELT IS GONE",
+          body: "{NEW_CHAMPION} beat you and claimed the PvP title. The ladder awaits." },
+    ],
+
+    // ── The Circuit v1.1 — rivalries / streaks / titles ─────────────────────────
+    pvp_grudge: [
+        { headline: "BAD BLOOD WITH {OPPONENT}",
+          body: "You and {OPPONENT} keep finding each other on the ladder. This one's personal now." },
+        { headline: "A GRUDGE IS BORN",
+          body: "{OPPONENT} is in your head. The Circuit has a real rivalry on its hands." },
+    ],
+    pvp_revenge: [
+        { headline: "REVENGE SERVED ON {OPPONENT}",
+          body: "{OPPONENT} put you down. You got back up and settled the score." },
+        { headline: "YOU GOT IT BACK",
+          body: "{OPPONENT} won't be smiling tonight. The debt to {OPPONENT} is paid." },
+    ],
+    pvp_streak: [
+        { headline: "{STREAK} IN A ROW ON THE CIRCUIT",
+          body: "Nobody on the ladder can slow you down. {STREAK} straight PvP wins and counting." },
+        { headline: "ON FIRE — {STREAK} STRAIGHT",
+          body: "The Circuit is taking notice. {STREAK} consecutive PvP victories." },
+        { headline: "THE RUN CONTINUES",
+          body: "Another one falls. That's {STREAK} PvP wins on the bounce." },
+    ],
+    pvp_title_unlock: [
+        { headline: "EARNED IT: {TITLE}",
+          body: "The Circuit recognises the grind. You've unlocked the {TITLE} title." },
+        { headline: "NEW ALIAS UNLOCKED",
+          body: "They'll know you as {TITLE} now. Wear it." },
+    ],
+
+    // ── The Circuit v1.2 — Seasons ──────────────────────────────────────────────
+    pvp_season_rollover: [
+        { headline: "SEASON {SEASON} IS OVER",
+          body: "The Circuit resets. The ladder has been softened and a new season begins — your {DIVISION} finish is locked in." },
+        { headline: "A NEW SEASON DAWNS",
+          body: "Season {SEASON} closed the books. You finished in {DIVISION}. Time to climb again." },
+    ],
+    pvp_season_champion: [
+        { headline: "SEASON {SEASON} CHAMPION: {FIGHTER}",
+          body: "{FIGHTER} held the belt when the season closed and is crowned Season {SEASON} Champion of the Circuit." },
+        { headline: "CROWNED FOR THE SEASON",
+          body: "When the dust settled on Season {SEASON}, {FIGHTER} stood atop the Circuit." },
+    ],
 };
 
 module.exports = { TEMPLATES };

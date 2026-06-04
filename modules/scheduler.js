@@ -8,6 +8,7 @@ const {
 const notorietyService = require("../services/notorietyService");
 const injuryHealService = require("../services/injuryHealService");
 const accountService = require("../services/accountService");
+const pvpService = require("../services/pvpService");
 
 /**
  * Build the connection config BullMQ uses for every Queue and Worker.
@@ -114,6 +115,81 @@ const hardDeleteWorker = new Worker(
 );
 hardDeleteWorker.on("error", (err) => console.error("[Hard delete] Worker error:", err));
 
+// ── PvP v1 — nightly ladder recalc + belt decay ──────────────────────────────
+const pvpLadderRecalcQueue = new Queue("pvp-ladder-recalc", { connection: QUEUE_CONNECTION });
+const pvpBeltDecayQueue = new Queue("pvp-belt-decay", { connection: QUEUE_CONNECTION });
+
+const pvpLadderRecalcWorker = new Worker(
+    "pvp-ladder-recalc",
+    async () => {
+        const { ranked, championSeeded } = await pvpService.runLadderRecalcBatch();
+        if (ranked > 0) {
+            console.log(`[PvP ladder recalc] Reranked ${ranked} fighter(s)${championSeeded ? " (seeded champion)" : ""}.`);
+        }
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+pvpLadderRecalcWorker.on("failed", (job, err) =>
+    console.error(`[PvP ladder recalc] Job ${job?.id} failed:`, err));
+pvpLadderRecalcWorker.on("error", (err) => console.error("[PvP ladder recalc] Worker error:", err));
+
+const pvpBeltDecayWorker = new Worker(
+    "pvp-belt-decay",
+    async () => {
+        const { processed } = await pvpService.runBeltDecayBatch();
+        if (processed > 0) console.log(`[PvP belt decay] Processed ${processed} champion(s).`);
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+pvpBeltDecayWorker.on("failed", (job, err) =>
+    console.error(`[PvP belt decay] Job ${job?.id} failed:`, err));
+pvpBeltDecayWorker.on("error", (err) => console.error("[PvP belt decay] Worker error:", err));
+
+// ── The Circuit v1.1 — nightly rivalry heat decay ─────────────────────────────
+const pvpRivalryHeatDecayQueue = new Queue("pvp-rivalry-heat-decay", { connection: QUEUE_CONNECTION });
+const pvpRivalryHeatDecayWorker = new Worker(
+    "pvp-rivalry-heat-decay",
+    async () => {
+        const { decayed } = await pvpService.runRivalryHeatDecayBatch();
+        if (decayed > 0) console.log(`[PvP rivalry heat decay] Cooled ${decayed} rivalry(ies).`);
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+pvpRivalryHeatDecayWorker.on("failed", (job, err) =>
+    console.error(`[PvP rivalry heat decay] Job ${job?.id} failed:`, err));
+pvpRivalryHeatDecayWorker.on("error", (err) => console.error("[PvP rivalry heat decay] Worker error:", err));
+
+// ── The Circuit v1.2 — nightly season rollover + bounty expiry ────────────────
+const pvpSeasonRolloverQueue = new Queue("pvp-season-rollover", { connection: QUEUE_CONNECTION });
+const pvpBountyExpiryQueue = new Queue("pvp-bounty-expiry", { connection: QUEUE_CONNECTION });
+
+const pvpSeasonRolloverWorker = new Worker(
+    "pvp-season-rollover",
+    async () => {
+        // No-op until now ≥ active.ends_at (the batch self-gates on the season state flip).
+        const res = await pvpService.runSeasonRolloverBatch();
+        if (res.rolledOver) {
+            console.log(`[PvP season rollover] Season ${res.season} → ${res.nextSeason}: reset ${res.ranked} fighter(s), rewarded ${res.rewarded}, champion ${res.championId || "none"}.`);
+        }
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+pvpSeasonRolloverWorker.on("failed", (job, err) =>
+    console.error(`[PvP season rollover] Job ${job?.id} failed:`, err));
+pvpSeasonRolloverWorker.on("error", (err) => console.error("[PvP season rollover] Worker error:", err));
+
+const pvpBountyExpiryWorker = new Worker(
+    "pvp-bounty-expiry",
+    async () => {
+        const { expired, refunded_iron } = await pvpService.runBountyExpiryBatch();
+        if (expired > 0) console.log(`[PvP bounty expiry] Expired ${expired} bounty(ies); refunded ${refunded_iron} iron.`);
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+pvpBountyExpiryWorker.on("failed", (job, err) =>
+    console.error(`[PvP bounty expiry] Job ${job?.id} failed:`, err));
+pvpBountyExpiryWorker.on("error", (err) => console.error("[PvP bounty expiry] Worker error:", err));
+
 async function startEnergyIncrementScheduler() {
     await ensureRedisConnected();
 
@@ -166,7 +242,37 @@ async function startEnergyIncrementScheduler() {
         removeOnComplete: true,
     });
 
-    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h).");
+    await pvpLadderRecalcQueue.add("recalc", {}, {
+        repeat: { every: 86_400_000 },
+        jobId: "pvp-ladder-recalc",
+        removeOnComplete: true,
+    });
+
+    await pvpBeltDecayQueue.add("decay", {}, {
+        repeat: { every: 86_400_000 },
+        jobId: "pvp-belt-decay",
+        removeOnComplete: true,
+    });
+
+    await pvpRivalryHeatDecayQueue.add("decay", {}, {
+        repeat: { every: 86_400_000 },
+        jobId: "pvp-rivalry-heat-decay",
+        removeOnComplete: true,
+    });
+
+    await pvpSeasonRolloverQueue.add("rollover", {}, {
+        repeat: { every: 86_400_000 },
+        jobId: "pvp-season-rollover",
+        removeOnComplete: true,
+    });
+
+    await pvpBountyExpiryQueue.add("expiry", {}, {
+        repeat: { every: 86_400_000 },
+        jobId: "pvp-bounty-expiry",
+        removeOnComplete: true,
+    });
+
+    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h, pvp ladder recalc: 24h, pvp belt decay: 24h, pvp rivalry heat decay: 24h, pvp season rollover: 24h, pvp bounty expiry: 24h).");
 }
 
 module.exports = {
@@ -176,10 +282,20 @@ module.exports = {
     notorietyDecayQueue,
     injuryHealQueue,
     hardDeleteQueue,
+    pvpLadderRecalcQueue,
+    pvpBeltDecayQueue,
+    pvpRivalryHeatDecayQueue,
+    pvpSeasonRolloverQueue,
+    pvpBountyExpiryQueue,
     energyWorker,
     energySyncWorker,
     notorietyDecayWorker,
     injuryHealWorker,
     hardDeleteWorker,
+    pvpLadderRecalcWorker,
+    pvpBeltDecayWorker,
+    pvpRivalryHeatDecayWorker,
+    pvpSeasonRolloverWorker,
+    pvpBountyExpiryWorker,
     redis,
 };

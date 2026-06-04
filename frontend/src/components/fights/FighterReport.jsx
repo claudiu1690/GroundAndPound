@@ -2,7 +2,7 @@ import { memo } from "react";
 import { createPortal } from "react-dom";
 import { RELIABILITY_LABELS } from "../../constants/campConfig";
 
-const STYLE_COLORS = {
+export const STYLE_COLORS = {
     Wrestler:              { bg: "#1e3a5f", label: "#60a5fa" },
     "Brazilian Jiu-Jitsu": { bg: "#1a3d2e", label: "#4ade80" },
     Boxer:                 { bg: "#3d1a1a", label: "#f87171" },

@@ -22,6 +22,7 @@ import { MediaTab } from "./components/media/MediaTab";
 import { EventsTab } from "./components/events/EventsTab";
 import { HospitalTab } from "./components/hospital/HospitalTab";
 import { RankingsTab } from "./components/rankings/RankingsTab";
+import { PvpTab } from "./components/pvp/PvpTab";
 import { GazetteModal } from "./components/gazette/GazetteModal";
 import { PostFightInterview } from "./components/fights/PostFightInterview";
 import { TutorialOverlay } from "./components/tutorial/TutorialOverlay";
@@ -62,6 +63,7 @@ const NAV_ITEMS = [
   { id: "fights",    label: "Fight",     icon: <Swords size={13} strokeWidth={2.2} />,      active: true },
   { id: "career",    label: "Career",    icon: <FileText size={13} strokeWidth={2.2} />,    active: true },
   { id: "rankings",  label: "Rankings",  icon: <ListOrdered size={13} strokeWidth={2.2} />, active: true },
+  { id: "pvp",       label: "PvP",       icon: <Trophy size={13} strokeWidth={2.2} />,      active: true },
   { id: "contracts", label: "Contracts", icon: <ScrollText size={13} strokeWidth={2.2} />,  active: true },
   { id: "hospital",  label: "Hospital",  icon: <Cross size={13} strokeWidth={2.2} />,       active: true },
   { id: null,        label: "Shop",      icon: <ShoppingBag size={13} strokeWidth={2.2} />, active: false },
@@ -1285,6 +1287,17 @@ const handleGetOffers = useCallback(async () => {
               <RankingsTab
                 fighter={fighter}
                 onMessage={setMessage}
+              />
+            </div>
+          )}
+
+          {/* ── PvP ── */}
+          {activeTab === "pvp" && (
+            <div className="page-layout">
+              <PvpTab
+                fighter={fighter}
+                onMessage={setMessage}
+                onRefreshFighter={loadFighter}
               />
             </div>
           )}

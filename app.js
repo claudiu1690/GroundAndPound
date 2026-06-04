@@ -12,6 +12,7 @@ const rankingRoutes = require("./routes/rankingRoutes");
 const gazetteRoutes = require("./routes/gazetteRoutes");
 const tutorialRoutes = require("./routes/tutorialRoutes");
 const accountRoutes = require("./routes/accountRoutes");
+const pvpRoutes = require("./routes/pvpRoutes");
 const accountController = require("./controllers/accountController");
 const authMiddleware = require("./middleware/authMiddleware");
 const mongoose = require("mongoose");
@@ -70,6 +71,7 @@ app.use("/rankings", authMiddleware, rankingRoutes);
 app.use("/gazette", authMiddleware, gazetteRoutes);
 app.use("/tutorial", authMiddleware, tutorialRoutes);
 app.use("/account", authMiddleware, accountRoutes);
+app.use("/pvp", authMiddleware, pvpRoutes);
 
 swagger(app);
 
@@ -360,6 +362,103 @@ async function migrateClearLegacyPredictions() {
     }
 }
 
+/**
+ * PvP System v1 (Beta) — fighters that predate the `pvp` subdocument need it backfilled
+ * with the full default object so the ladder/attack queries don't trip over a missing field.
+ * New accounts get the schema default, so this only touches genuinely legacy documents.
+ */
+async function backfillPvpSubdocForLegacyFighters() {
+    const fighters = mongoose.connection.collection("fighters");
+    const result = await fighters.updateMany(
+        { pvp: { $exists: false } },
+        {
+            $set: {
+                pvp: {
+                    wins: 0, losses: 0, draws: 0, total_fights: 0,
+                    rank_points: 0, ladder_rank: null, is_champion: false,
+                    attackable_after: null, last_pvp_fight_at: null,
+                    attacks_today: 0, attack_day_key: null,
+                    belt_defenses: 0, belt_won_at: null, belt_lost_at: null,
+                    belt_challenge_floor: 10, interim_booked: false,
+                },
+            },
+        }
+    );
+    if (result.modifiedCount > 0) {
+        console.log(`[Migration] Backfilled pvp subdocument for ${result.modifiedCount} existing fighter(s).`);
+    }
+}
+
+/**
+ * The Circuit v1.1 — fighters that have a pvp subdoc but predate the v1.1 fields (streaks,
+ * titles, rivalry/contract/fame fields) need them seeded so the snapshot round-trip + reads
+ * don't trip over missing keys. Keyed on the contracts object being absent.
+ */
+async function backfillPvpCircuitFieldsForLegacyFighters() {
+    const fighters = mongoose.connection.collection("fighters");
+    const result = await fighters.updateMany(
+        { pvp: { $exists: true }, "pvp.contracts": { $exists: false } },
+        {
+            $set: {
+                "pvp.current_streak": 0,
+                "pvp.best_streak": 0,
+                "pvp.titles": [],
+                "pvp.active_title": null,
+                "pvp.attack_wins": 0,
+                "pvp.giant_slayer_wins": 0,
+                "pvp.top10_defenses": 0,
+                "pvp.former_champion": false,
+                "pvp.nemesis_pvp": null,
+                "pvp.fame_today": 0,
+                "pvp.fame_day_key": null,
+                "pvp.fame_lifetime": 0,
+                "pvp.contracts": { daily_key: null, weekly_key: null, daily: [], weekly: [] },
+            },
+        }
+    );
+    if (result.modifiedCount > 0) {
+        console.log(`[Migration] Backfilled The Circuit v1.1 pvp fields for ${result.modifiedCount} existing fighter(s).`);
+    }
+}
+
+/**
+ * The Circuit v1.2 — fighters with a pvp subdoc that predate the v1.2 season fields
+ * (division, season_ fields, bounties_collected) need them seeded so the snapshot round-trip + the
+ * season reads don't trip over missing keys. Keyed on bounties_collected being absent.
+ */
+async function backfillPvpSeasonFieldsForLegacyFighters() {
+    const fighters = mongoose.connection.collection("fighters");
+    const result = await fighters.updateMany(
+        { pvp: { $exists: true }, "pvp.bounties_collected": { $exists: false } },
+        {
+            $set: {
+                "pvp.division": null,
+                "pvp.season_start_points": 0,
+                "pvp.season_titles": [],
+                "pvp.season_number_seen": 0,
+                "pvp.bounties_collected": 0,
+            },
+        }
+    );
+    if (result.modifiedCount > 0) {
+        console.log(`[Migration] Backfilled The Circuit v1.2 season fields for ${result.modifiedCount} existing fighter(s).`);
+    }
+}
+
+/**
+ * The Circuit v1.2 — seed an initial `active` PvP season on boot if none exists. Idempotent
+ * (the service guards against a double-seed via the unique season_number index).
+ */
+async function ensureInitialPvpSeason() {
+    try {
+        const pvpService = require("./services/pvpService");
+        const season = await pvpService.ensureSeasonSeeded();
+        if (season) console.log(`[PvP] Active season ${season.season_number} ready (ends ${new Date(season.ends_at).toISOString()}).`);
+    } catch (err) {
+        console.error("[PvP] Failed to seed initial season:", err.message);
+    }
+}
+
 mongoose.connect(config.database.url, config.database.options)
     .then(async () => {
         console.log("Connected to MongoDB");
@@ -369,8 +468,12 @@ mongoose.connect(config.database.url, config.database.options)
         await migrateClearLegacyPredictions();
         await backfillFighterGymFromQuestProgress();
         await backfillTutorialForLegacyFighters();
+        await backfillPvpSubdocForLegacyFighters();
+        await backfillPvpCircuitFieldsForLegacyFighters();
+        await backfillPvpSeasonFieldsForLegacyFighters();
         await backfillDoctorInjuryTimers();
         await backfillClearNewFighterBlockingInjuries();
+        await ensureInitialPvpSeason();
         await scheduler.startEnergyIncrementScheduler();
         const { ensureChampionsExist } = require("./services/championService");
         await ensureChampionsExist();

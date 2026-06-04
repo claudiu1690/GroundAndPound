@@ -218,7 +218,7 @@ async function notorietyLeaderboard(req, res) {
     try {
         const Fighter = require("../models/fighterModel");
         const { NOTORIETY_TIERS } = require("../consts/notorietyConfig");
-        const list = await Fighter.find({})
+        const list = await Fighter.find({ isPvpBot: { $ne: true } }) // exclude PvP bots
             .sort({ "notoriety.score": -1 })
             .limit(20)
             .select("firstName lastName nickname overallRating notoriety weightClass")

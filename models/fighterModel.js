@@ -12,6 +12,10 @@ const promotionTierValues = Object.keys(PROMOTION_TIERS);
 
 const fighterSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    // PvP v1 — bot ladder seed. Bots have userId:null, never log in, and exist only to
+    // populate the PvP ladder so new players have in-bracket targets (cold-start fix).
+    // Excluded from all PvE lists/leaderboards.
+    isPvpBot: { type: Boolean, default: false },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     nickname: { type: String, default: null },
@@ -266,11 +270,83 @@ const fighterSchema = new mongoose.Schema({
         started_at:   { type: Date,    default: Date.now },
         completed_at: { type: Date,    default: null },
     },
+    /**
+     * PvP System v1 (Beta) — fully parallel competitive ladder. Never touches the
+     * PvE record/ranking/tier. snake_case keys are load-bearing (frontend + spec).
+     */
+    pvp: {
+        wins:          { type: Number, default: 0 },
+        losses:        { type: Number, default: 0 },
+        draws:         { type: Number, default: 0 },
+        total_fights:  { type: Number, default: 0 },
+        rank_points:   { type: Number, default: 0, min: 0 },
+        ladder_rank:   { type: Number, default: null },   // null until 3 fights
+        is_champion:   { type: Boolean, default: false },
+        attackable_after: { type: Date, default: null },  // set on every loss; null = attackable
+        last_pvp_fight_at: { type: Date, default: null },
+        attacks_today:     { type: Number, default: 0 },
+        attack_day_key:    { type: String, default: null },  // toDateString() idiom
+        belt_defenses: { type: Number, default: 0 },
+        belt_won_at:   { type: Date, default: null },
+        belt_lost_at:  { type: Date, default: null },
+        belt_challenge_floor: { type: Number, default: 10 },  // widens to 20 on champ inactivity
+        interim_booked:       { type: Boolean, default: false },
+        // ── The Circuit v1.1 — streaks / titles / rivalries / contracts / fame ──
+        // EVERY field below is mirrored in defaultPvp() AND the snapshot capture/apply
+        // helpers in pvpService (Risk 1/10). Adding one here without the other two SILENTLY
+        // DROPS it on a concurrent-save retry.
+        current_streak:     { type: Number, default: 0 },   // signed; mirrors computeCurrentStreak
+        best_streak:        { type: Number, default: 0 },   // max positive streak ever
+        titles:             { type: [String], default: [] },     // cosmetic, zero stat effect
+        active_title:       { type: String, default: null },
+        attack_wins:        { type: Number, default: 0 },   // wins as attacker (the_hunter ≥10)
+        giant_slayer_wins:  { type: Number, default: 0 },   // wins vs higher-ranked (giant_slayer ≥5)
+        top10_defenses:     { type: Number, default: 0 },   // defences while ladder_rank≤10 (gatekeeper ≥5)
+        former_champion:    { type: Boolean, default: false }, // set on first belt loss (old_money)
+        nemesis_pvp:        { type: mongoose.Schema.Types.ObjectId, ref: "Fighter", default: null },
+        fame_today:         { type: Number, default: 0 },   // shared daily fame budget (Risk 8)
+        fame_day_key:       { type: String, default: null }, // toDateString() idiom
+        fame_lifetime:      { type: Number, default: 0 },   // PvP-only lifetime fame tally (Risk 3)
+        contracts: {
+            daily_key:  { type: String, default: null },
+            weekly_key: { type: String, default: null },
+            daily: { type: [{
+                id:       { type: String },
+                goal:     { type: Number },
+                progress: { type: Number, default: 0 },
+                claimed:  { type: Boolean, default: false },
+                _id: false,
+            }], default: [] },
+            weekly: { type: [{
+                id:       { type: String },
+                goal:     { type: Number },
+                progress: { type: Number, default: 0 },
+                claimed:  { type: Boolean, default: false },
+                _id: false,
+            }], default: [] },
+        },
+        // [v1.1 — deferred] defensive_camp: { type: [String], default: [] }  // DO NOT IMPLEMENT
+        // ── The Circuit v1.2 — Seasons & Divisions + Bounties ──
+        // EVERY field below is ALSO mirrored in defaultPvp() AND captureFighterPvpSnapshot/
+        // applyFighterPvpSnapshot (Risk 1/10). The snapshot deep-clones the whole pvp subdoc,
+        // so these ride along automatically — but they MUST exist in all three places in lockstep.
+        division:            { type: String, default: null },   // band-based view-layer (§6.3)
+        season_start_points: { type: Number, default: 0 },      // rank_points at last rollover
+        season_titles:       { type: [String], default: [] },   // season_${n}_champion / reward flair
+        season_number_seen:  { type: Number, default: 0 },      // last season whose results were shown
+        bounties_collected:  { type: Number, default: 0 },      // iron_collector ≥5 (§7.3)
+    },
 }, { timestamps: true });
 
 fighterSchema.index({ promotionTier: 1, weightClass: 1, overallRating: -1 });
 fighterSchema.index({ gymId: 1 });
 fighterSchema.index({ "notoriety.score": -1 });
+fighterSchema.index({ isPvpBot: 1 });
+// PvP v1 ladder + belt + cooldown + decay-job support
+fighterSchema.index({ "pvp.rank_points": -1, "pvp.wins": -1 });
+fighterSchema.index({ "pvp.is_champion": 1 });
+fighterSchema.index({ "pvp.attackable_after": 1 });
+fighterSchema.index({ "pvp.last_pvp_fight_at": 1 });
 
 const Fighter = mongoose.model("Fighter", fighterSchema);
 module.exports = Fighter;

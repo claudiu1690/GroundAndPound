@@ -616,6 +616,88 @@ async function finaliseCamp(fightId, fighterId, skip = false) {
     };
 }
 
+/**
+ * PvP v1 — stateless offensive camp evaluation.
+ *
+ * The PvE camp flow (createCamp/addCampSession/getFighterReport) is bound to a persisted
+ * Fight whose opponentId populates an Opponent. A PvP defender is a Fighter, so v1 does NOT
+ * create a Fight/FightCamp doc. Instead, given the raw session ids the attacker submitted,
+ * their own style, and the DEFENDER's style, this builds the same `sessionBonuses` array the
+ * engine consumes — evaluating each session against the defender's style via getMatchStatus
+ * (defender's style stands in for the PvE "opponent style"), with the same diminishing-returns
+ * curve for repeated sessions. No DB writes.
+ *
+ * Unknown session ids are silently ignored (validated/limited by the caller against the
+ * attacker's tier slot count). Returns [] for an empty/invalid camp.
+ *
+ * @param {string[]} sessionIds      offensive camp session ids
+ * @param {string}   attackerStyle   reserved for parity with PvE (not used to match in v1)
+ * @param {string}   defenderStyle   the style the sessions are evaluated against
+ * @returns {Array} sessionBonuses for resolveFight
+ */
+function buildOffensiveBonuses(sessionIds, attackerStyle, defenderStyle) {
+    if (!Array.isArray(sessionIds) || sessionIds.length === 0) return [];
+
+    const sessions = [];
+    const priorCounts = {};
+    for (const sessionType of sessionIds) {
+        const sessionCfg = CAMP_SESSIONS[sessionType];
+        if (!sessionCfg) continue; // ignore unknown ids; caller enforces hostile-input limits
+
+        const matchStatus = getMatchStatus(sessionType, defenderStyle);
+        const priorCount = priorCounts[sessionType] || 0;
+        priorCounts[sessionType] = priorCount + 1;
+        const diminishingFactor = DIMINISHING_RETURNS[Math.min(priorCount, DIMINISHING_RETURNS.length - 1)];
+
+        sessions.push({ sessionType, matchStatus, diminishingFactor });
+    }
+
+    return buildSessionBonuses(sessions);
+}
+
+/**
+ * PvP v1 — stateless offensive camp GRADE (Option A, single source of truth).
+ *
+ * Rebuilds the same `sessions` array buildOffensiveBonuses builds (matchStatus +
+ * diminishing in submission order), computes pointsEarned mirroring the PvE
+ * addCampSession formula (round(modifierContribution * diminishingFactor *
+ * MATCH_STATUS_MULTIPLIERS[matchStatus])), then defers to the EXISTING
+ * computeCampRating for the grade. The grade formula is NOT forked here — PvE and
+ * PvP share one path, so a PvE rating change automatically applies to PvP.
+ *
+ * Empty / invalid camp → grade "F" (computeCampRating returns the lowest bucket for
+ * a 0% score).
+ *
+ * @param {string[]} sessionIds      offensive camp session ids
+ * @param {string}   defenderStyle   the style the sessions are graded against
+ * @param {number}   maxSlots        attacker-tier CAMP_SLOT_CONFIG[tier].normalSlots
+ * @returns {{ grade: string }}
+ */
+function gradeOffensiveCamp(sessionIds, defenderStyle, maxSlots) {
+    const ids = Array.isArray(sessionIds) ? sessionIds : [];
+
+    const sessions = [];
+    const priorCounts = {};
+    for (const sessionType of ids) {
+        const sessionCfg = CAMP_SESSIONS[sessionType];
+        if (!sessionCfg) continue; // ignore unknown ids; caller enforces hostile-input limits
+
+        const matchStatus = getMatchStatus(sessionType, defenderStyle);
+        const priorCount = priorCounts[sessionType] || 0;
+        priorCounts[sessionType] = priorCount + 1;
+        const diminishingFactor = DIMINISHING_RETURNS[Math.min(priorCount, DIMINISHING_RETURNS.length - 1)];
+
+        // Mirror addCampSession:462-464 exactly so PvP pointsEarned == PvE pointsEarned.
+        const matchMultiplier = MATCH_STATUS_MULTIPLIERS[matchStatus] ?? 0;
+        const pointsEarned = Math.round(sessionCfg.modifierContribution * diminishingFactor * matchMultiplier);
+
+        sessions.push({ sessionType, matchStatus, diminishingFactor, pointsEarned });
+    }
+
+    const { grade } = computeCampRating(sessions, maxSlots);
+    return { grade };
+}
+
 module.exports = {
     createCamp,
     getFighterReport,
@@ -627,4 +709,9 @@ module.exports = {
     // Exported for fight resolution and testing
     buildSessionBonuses,
     generateWildcard,
+    // PvP v1 — stateless offensive camp evaluation
+    buildOffensiveBonuses,
+    gradeOffensiveCamp,
+    // Exported so PvP can reuse the SAME grade formula as PvE (single source of truth)
+    computeCampRating,
 };
