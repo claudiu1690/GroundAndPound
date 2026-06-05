@@ -52,6 +52,12 @@ export function RankingsTab({ fighter, onMessage }) {
                 // We don't actually displace NPC ranks; we just sort by rank and let player render in-line.
                 out.push({ ...playerRow });
                 out.sort((a, b) => {
+                    // Champion (rank null + isChampion) always sits at the very top,
+                    // above the #1 contender — never sorted to the bottom.
+                    if (a.isChampion && !b.isChampion) return -1;
+                    if (b.isChampion && !a.isChampion) return 1;
+                    // Any remaining null-rank row (e.g. an unranked entry) sinks to the bottom.
+                    if (a.rank == null && b.rank == null) return 0;
                     if (a.rank == null) return 1;
                     if (b.rank == null) return -1;
                     return a.rank - b.rank;
@@ -120,7 +126,7 @@ export function RankingsTab({ fighter, onMessage }) {
                             const isTop3 = isChampion || (rank != null && rank >= 1 && rank <= 3);
                             out.push(
                                 <div key={row.id || `row-${i}`} className={`rank-row ${isTop3 ? "top3" : ""} ${isPlayer ? "my-row" : ""} ${isUnranked ? "unranked" : ""}`}>
-                                    <div className={`rank-num ${(isChampion || rank === 1) ? "top1" : isTop3 ? "top3" : ""} ${isPlayer ? "mine" : ""}`}>{isUnranked ? "—" : rank}</div>
+                                    <div className={`rank-num ${(isChampion || rank === 1) ? "top1" : isTop3 ? "top3" : ""} ${isPlayer ? "mine" : ""}`}>{isChampion ? "C" : isUnranked ? "—" : rank}</div>
                                     <div className="rank-fighter">
                                         <span className={`rank-fighter-name ${isPlayer ? "mine" : ""}`}>{row.nickname ? `${row.name} "${row.nickname}"` : row.name}</span>
                                         {isChampion && <span className="rank-champ-badge">Champion</span>}
