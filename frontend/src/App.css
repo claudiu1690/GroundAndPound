@@ -854,6 +854,7 @@ code {
 .career-feed .feed-icon.neutral { background: var(--c-bg-tile); color: var(--text-muted); }
 .career-feed .feed-content { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-right: 70px; }
 .career-feed .feed-title { font-size: 14px; color: #F0F0F0; line-height: 1.4; }
+.career-feed .feed-title-fight-tag { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; vertical-align: middle; font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 1px 7px; border-radius: 3px; background: rgba(212,168,32,.12); color: var(--c-amber-bright); border: 1px solid rgba(212,168,32,.25); }
 .career-feed .feed-meta { font-size: 12px; color: var(--text-secondary); }
 .career-feed .feed-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 .career-feed .feed-type { position: absolute; top: 12px; right: 0; font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; }
