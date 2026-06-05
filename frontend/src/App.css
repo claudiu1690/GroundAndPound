@@ -1687,9 +1687,18 @@ code {
 .rank-step-unlock { font-size:10px; color:var(--text-muted); margin-top:1px; }
 .rank-step-line { flex:1; height:1px; background:var(--c-border); min-width:16px; }
 
-.rank-upcta { display:flex; align-items:center; gap:12px; padding:10px 24px; border-bottom:1px solid var(--c-border-3); flex-shrink:0; flex-wrap:wrap; }
-.rank-upcta .rank-req { font-size:11px; color:var(--text-secondary); }
-.rank-upcta .rank-req--done { color:#22C55E; }
+.rank-upcta { display:flex; align-items:center; gap:14px; padding:10px 24px; border-bottom:1px solid var(--c-border-3); flex-shrink:0; flex-wrap:wrap; }
+.rank-upcta-head { display:flex; flex-direction:column; line-height:1.15; flex-shrink:0; }
+.rank-upcta-eyebrow { font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted); }
+.rank-upcta-name { font-family:var(--font-display); font-weight:800; font-size:13px; color:var(--c-text); text-transform:uppercase; letter-spacing:.4px; }
+.rank-reqs { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.rank-req-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:5px; background:var(--c-bg-tile); border:1px solid var(--c-border); }
+.rank-req-chip > svg { display:block; }
+.rank-req-chip .rank-req-label { font-size:10px; font-weight:600; letter-spacing:.3px; text-transform:uppercase; color:var(--text-secondary); line-height:1; }
+.rank-req-chip .rank-req-val { font-family:var(--font-display); font-weight:800; font-size:13px; color:var(--c-text); line-height:1; }
+.rank-req-chip.is-done { background:rgba(34,197,94,.1); border-color:rgba(34,197,94,.3); }
+.rank-req-chip.is-done .rank-req-label, .rank-req-chip.is-done .rank-req-val { color:#22C55E; }
+.rank-req-chip--fee .rank-req-val { color:var(--c-amber-bright); }
 .rank-up-btn { all:unset; box-sizing:border-box; font-family:var(--font-display); font-weight:800; font-size:12px; letter-spacing:1px; text-transform:uppercase; background:var(--c-accent); color:#FFF; border-radius:4px; padding:6px 14px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; margin-left:auto; }
 .rank-up-btn:hover { background:#E8102E; }
 .rank-maxed { display:flex; align-items:center; gap:8px; padding:10px 24px; border-bottom:1px solid var(--c-border-3); color:var(--c-amber-bright); font-family:var(--font-display); font-weight:700; font-size:12px; flex-shrink:0; }
