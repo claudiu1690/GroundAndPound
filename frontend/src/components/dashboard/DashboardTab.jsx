@@ -45,9 +45,25 @@ function feedDate(createdAt) {
 }
 
 // ── Small presentational helpers ──────────────────────────────
-function VitalBar({ icon, label, pct, stateClass, statusText, etaText }) {
+function VitalBar({ icon, label, pct, stateClass, statusText, etaText, onClick }) {
+  const clickable = typeof onClick === "function";
   return (
-    <div className="dash-vital">
+    <div
+      className={`dash-vital ${clickable ? "dash-vital-clickable" : ""}`}
+      onClick={onClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick(e);
+              }
+            }
+          : undefined
+      }
+    >
       <div className="dash-vital-head">
         <span className="dash-vital-label">
           {icon}
@@ -276,6 +292,7 @@ export const DashboardTab = memo(function DashboardTab({
                     stateClass={`dash-health ${stateClass}`}
                     statusText={hLabel}
                     etaText={eta ? `Full in ${eta}` : null}
+                    onClick={() => nav("hospital")}
                   />
                 );
               })()}
@@ -341,7 +358,7 @@ export const DashboardTab = memo(function DashboardTab({
 
       {/* ── STATS & XP ── */}
       {statRows.length ? (
-        <ModuleCard className="dash-stats">
+        <ModuleCard className="dash-stats" onClick={() => nav("gym")}>
           <div className="dash-card-head">
             <span className="dash-card-title">
               <BarChart3 size={14} strokeWidth={2.2} />
