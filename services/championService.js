@@ -1,6 +1,6 @@
 const Opponent = require("../models/opponentModel");
 
-const CHAMPION_TIERS = ["Regional Pro", "National", "GCS"];
+const CHAMPION_TIERS = ["Amateur", "Regional Pro", "National", "GCS"];
 
 /**
  * Seed a new champion for a given tier + weight class.

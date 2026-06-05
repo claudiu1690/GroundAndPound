@@ -68,13 +68,33 @@ const TIER_LADDER = TIER_ORDER.slice(0, -1).map((fromTier, idx) => {
     return { from: fromTier, to: nextTier, minOverall };
 });
 
-const NO_CHAMPION_TIERS = ["Amateur", "GCS Contender"];
-const MIN_WINS_FOR_TITLE_SHOT = 3;
+const NO_CHAMPION_TIERS = ["GCS Contender"];
+
+/**
+ * Per-tier title-shot configuration, keyed by the promotionTier where the fighter
+ * holds the belt fight (their CURRENT tier, not the target).
+ *   titleWins  — wins-in-current-tier required before the title shot unlocks
+ *   beltFame   — fame (notoriety) awarded for winning the belt
+ *   beltBadge  — badge pushed onto the fighter when the belt is won
+ * Any tier not listed falls back to TITLE_SHOT_DEFAULT.
+ */
+const TITLE_SHOT_DEFAULT = { titleWins: 3, beltFame: 200, beltBadge: "Champion" };
+const TITLE_SHOT_BY_TIER = {
+    "Amateur":      { titleWins: 2, beltFame: 75,  beltBadge: "Amateur Champion" },
+    "Regional Pro": { titleWins: 3, beltFame: 200, beltBadge: "Champion" },
+    "National":     { titleWins: 3, beltFame: 200, beltBadge: "Champion" },
+    "GCS":          { titleWins: 3, beltFame: 200, beltBadge: "Champion" },
+};
+
+/** Read the title-shot config for a tier, defaulting for any unlisted tier. */
+function getTitleShotConfig(tier) {
+    return TITLE_SHOT_BY_TIER[tier] || TITLE_SHOT_DEFAULT;
+}
 
 /**
  * Check if a fighter qualifies for a tier promotion.
- * For gated tiers (Regional Pro, National, GCS): sets pendingPromotion instead of promoting.
- * For non-gated tiers (Amateur, GCS Contender): returns new tier name for immediate promotion.
+ * For gated tiers (Amateur, Regional Pro, National, GCS): sets pendingPromotion instead of promoting.
+ * For non-gated tiers (GCS Contender): returns new tier name for immediate promotion.
  */
 function checkPromotion(fighter) {
     if (fighter.pendingPromotion) return null; // already waiting for title shot
@@ -327,7 +347,8 @@ async function generateOffers(fighterId) {
         if (champion) {
             // Show boosted OVR on the card so the player knows the real challenge
             const displayChampion = { ...champion, overallRating: Math.round(champion.overallRating * 1.05) };
-            const winsMet     = (fighter.winsInCurrentTier ?? 0) >= MIN_WINS_FOR_TITLE_SHOT;
+            const titleConfig = getTitleShotConfig(fighter.promotionTier);
+            const winsMet     = (fighter.winsInCurrentTier ?? 0) >= titleConfig.titleWins;
             const cooldownOk  = (fighter.titleShotCooldown ?? 0) <= 0;
             const rankMet     = rankingService.isTopFive(fighter);
             const eligible    = winsMet && cooldownOk && rankMet;
@@ -338,7 +359,7 @@ async function generateOffers(fighterId) {
                 titleShotMeta: { targetTier: fighter.pendingPromotion },
                 locked: !eligible,
                 cooldownRemaining: fighter.titleShotCooldown ?? 0,
-                winsNeeded: Math.max(0, MIN_WINS_FOR_TITLE_SHOT - (fighter.winsInCurrentTier ?? 0)),
+                winsNeeded: Math.max(0, titleConfig.titleWins - (fighter.winsInCurrentTier ?? 0)),
                 rankNeeded: !rankMet,
                 currentRank: require("./rankingService").toDisplayRank(fighter.ranking?.rank ?? null),
                 nemesisMeta: fighter.nemesis?.opponentId?.toString() === champion._id.toString()
@@ -987,17 +1008,19 @@ async function resolveFightAndApply(fighterId) {
         rankingService.resetRankingForNewTier(fighter);
         beltWon = true;
         promoted = { from: oldTier, to: targetTier, viaTitleShot: true };
+        // Per-tier belt rewards, keyed to the tier where the belt was held (oldTier).
+        const beltConfig = getTitleShotConfig(oldTier);
         // Fame spike for winning the belt
-        notorietyService.applyNotorietyDelta(fighter, 200, {
+        notorietyService.applyNotorietyDelta(fighter, beltConfig.beltFame, {
             skipFreezeBlock: true,
             code: "BELT_WON",
-            reason: `Won the ${targetTier} belt`,
+            reason: `Won the ${oldTier} belt`,
             meta: { fightId: fight._id, tier: targetTier },
         });
         // Champion badge
         fighter.badges = fighter.badges || [];
-        if (!fighter.badges.includes("Champion")) {
-            fighter.badges.push("Champion");
+        if (!fighter.badges.includes(beltConfig.beltBadge)) {
+            fighter.badges.push(beltConfig.beltBadge);
         }
     } else {
         // Normal promotion check (non-gated auto-promote)
@@ -1144,14 +1167,17 @@ async function resolveFightAndApply(fighterId) {
         { from: promoted.from, to: promoted.to, weightClass: fighter.weightClass, tier: promoted.from });
     // Title shot eligible: fires when wins threshold is first met
     if (isWin && fighter.pendingPromotion
-        && (fighter.winsInCurrentTier ?? 0) === MIN_WINS_FOR_TITLE_SHOT
+        && (fighter.winsInCurrentTier ?? 0) === getTitleShotConfig(fighter.promotionTier).titleWins
         && (fighter.titleShotCooldown ?? 0) <= 0) {
         activityLogService.log(fighterId, "TITLE_SHOT_ELIGIBLE",
             `Title shot available \u2014 fight for the ${fighter.promotionTier} belt`,
             { tier: fighter.promotionTier, targetTier: fighter.pendingPromotion });
     }
     const newBadges = (isWin && isComeback) ? ["Resilience"] : [];
-    if (beltWon && !newBadges.includes("Champion")) newBadges.push("Champion");
+    if (beltWon) {
+        const wonBadge = getTitleShotConfig(promoted.from).beltBadge;
+        if (!newBadges.includes(wonBadge)) newBadges.push(wonBadge);
+    }
     for (const badge of newBadges)
         activityLogService.log(fighterId, "BADGE_EARNED",
             `Earned badge: ${badge}`, { badge, tier: _tier });

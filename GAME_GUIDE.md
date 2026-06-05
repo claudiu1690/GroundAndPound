@@ -817,7 +817,7 @@ The banner has four customizable layers:
 | Layer | Pieces | How They Unlock |
 |---|---|---|
 | Background | 8 | Fame tier (Slate at start → Holographic at Legend) |
-| Frame | 5 | Fame tier + special (Championship frame from winning any belt) |
+| Frame | 5 | Fame tier + special (Championship frame from winning a professional belt — Regional Pro and up; the Amateur belt grants the Amateur Champion badge but not this frame) |
 | Accent Color | 7 | Fame tier (Red/White/Blue at start → Pink at Star) |
 | Pinned Badges | 13 (pin up to 3) | Career milestones — first win, 10/25/50 wins, 5/10 KOs, Champion, Resilience, Callout Win, Documentary, fame tier badges |
 
