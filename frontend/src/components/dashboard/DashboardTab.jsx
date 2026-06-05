@@ -21,6 +21,7 @@ import {
   Snowflake,
 } from "lucide-react";
 import { tierLabel } from "../../constants/fame";
+import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
 
 // ── Time formatting ───────────────────────────────────────────
 function formatEta(minutes) {
@@ -220,15 +221,25 @@ export const DashboardTab = memo(function DashboardTab({
           {vitals ? (
             <>
               {(() => {
-                const e = vitals.energy ?? {};
-                const cur = e.current ?? 0;
-                const max = e.max ?? 100;
+                // Drive energy from the LIVE fighter prop — the same object the side
+                // panel reads, polled in sync by App. vitals.energy is a one-shot
+                // snapshot from the dashboard fetch (no polling) and would otherwise
+                // drift behind the sidebar as energy regenerates. Fall back to the
+                // snapshot only if the live value is unavailable.
+                const liveEnergy =
+                  fighter?.energy && typeof fighter.energy === "object" ? fighter.energy : null;
+                const cur = liveEnergy?.current ?? vitals.energy?.current ?? 0;
+                const max = liveEnergy?.max ?? vitals.energy?.max ?? 100;
                 const pct = max > 0 ? (cur / max) * 100 : 0;
-                const eta = formatEta(e.etaMinutes);
+                // Recompute eta + state from the live value so they match the number
+                // (server formula: +1 energy/min; "low" below the tier's per-fight cost).
+                const fightCost = FIGHT_ENERGY_COST[tier] ?? 10;
+                const energyState = cur <= 0 ? "empty" : cur < fightCost ? "low" : "ok";
+                const eta = formatEta(Math.max(0, max - cur));
                 const stateClass =
-                  e.state === "empty"
+                  energyState === "empty"
                     ? "is-empty"
-                    : e.state === "low"
+                    : energyState === "low"
                       ? "is-low"
                       : "is-ok";
                 return (
