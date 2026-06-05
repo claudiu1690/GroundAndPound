@@ -360,6 +360,31 @@ async function migrateClearLegacyPredictions() {
     }
 }
 
+/**
+ * Amateur title-shot migration — the Amateur tier became a gated/champion tier.
+ * Previously Amateurs auto-promoted to Regional Pro at OVR 30; now they must beat
+ * the Amateur champion via a title shot. Any fighter currently sitting at OVR ≥ 30
+ * in the Amateur tier never had pendingPromotion set, so they'd never see the title
+ * shot card. Backfill pendingPromotion = "Regional Pro" for them.
+ *
+ * Idempotent: the pendingPromotion null/absent filter makes re-runs no-ops, and it
+ * only ever sets the flag (never clears one a fighter legitimately has).
+ */
+async function migrateAmateurPendingPromotion() {
+    const Fighter = require("./models/fighterModel");
+    const result = await Fighter.updateMany(
+        {
+            promotionTier: "Amateur",
+            overallRating: { $gte: 30 },
+            $or: [{ pendingPromotion: null }, { pendingPromotion: { $exists: false } }],
+        },
+        { $set: { pendingPromotion: "Regional Pro" } }
+    );
+    if ((result.modifiedCount || 0) > 0) {
+        console.log(`[Migration] Set pendingPromotion=Regional Pro for ${result.modifiedCount} stuck Amateur fighter(s) (OVR ≥ 30).`);
+    }
+}
+
 mongoose.connect(config.database.url, config.database.options)
     .then(async () => {
         console.log("Connected to MongoDB");
@@ -372,6 +397,7 @@ mongoose.connect(config.database.url, config.database.options)
         await backfillDoctorInjuryTimers();
         await backfillClearNewFighterBlockingInjuries();
         await scheduler.startEnergyIncrementScheduler();
+        await migrateAmateurPendingPromotion();
         const { ensureChampionsExist } = require("./services/championService");
         await ensureChampionsExist();
         app.listen(config.port, () => {

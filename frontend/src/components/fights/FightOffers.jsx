@@ -314,7 +314,10 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                 const ctx = o.context ?? {};
                 const isTitle = typeKey === "TitleShot";
                 const isLocked = !!o.locked;
-                const badgeLabel = isTitle ? "Title Shot" : typeKey;
+                // The Amateur belt is a "turn pro" fight: beating the Amateur
+                // champion promotes you to Regional Pro. Frame it as such.
+                const isProDebut = isTitle && o.titleShotMeta?.targetTier === "Regional Pro";
+                const badgeLabel = isTitle ? (isProDebut ? "Turn Pro" : "Title Shot") : typeKey;
                 return (
                   <li key={o.opponent?._id ?? typeKey} data-tut={idx === 0 ? "offer-card" : undefined} className={`offer-card ${TYPE_CLASS[typeKey] ?? ""}${o.nemesisMeta ? " offer-card-nemesis" : ""}${o.isCallout ? " offer-card-callout" : ""}${o.beefMatch ? " offer-card-beef" : ""}${o.respectMatch ? " offer-card-respect" : ""}${isLocked ? " offer-card-locked" : ""}`}>
                     <div className="offer-card-info">
@@ -362,7 +365,11 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                       </div>
                       {isTitle && o.titleShotMeta && (
                         <div className="offer-title-meta">
-                          Win this fight to promote to <strong>{o.titleShotMeta.targetTier}</strong>
+                          {isProDebut ? (
+                            <>Beat the Amateur champion to turn pro and promote to <strong>{o.titleShotMeta.targetTier}</strong></>
+                          ) : (
+                            <>Win this fight to promote to <strong>{o.titleShotMeta.targetTier}</strong></>
+                          )}
                         </div>
                       )}
                       {o.nemesisMeta && (
@@ -413,7 +420,7 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                             className={`btn ${isTitle ? "btn-title" : "btn-primary"} btn-sm`}
                             onClick={() => onAcceptOffer(o.opponent._id, o.type)}
                           >
-                            {isTitle ? "Accept Title Shot" : "Accept"}
+                            {isTitle ? (isProDebut ? "Turn Pro" : "Accept Title Shot") : "Accept"}
                           </button>
                           <span className="offer-energy-cost">{energyCost} energy</span>
                         </>

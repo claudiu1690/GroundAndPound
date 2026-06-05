@@ -2,6 +2,8 @@ import { memo } from "react";
 
 const BADGE_HINTS = {
   "Iron Will": "Gym quest perk: lower KO/TKO risk when you take damage",
+  "Amateur Champion": "Won your division's Amateur title and turned pro.",
+  Champion: "Won a professional championship (Regional Pro and up).",
 };
 
 /**
