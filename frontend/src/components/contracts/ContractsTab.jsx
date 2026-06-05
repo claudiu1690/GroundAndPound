@@ -56,17 +56,20 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
 
     const fighterId = fighter?._id;
 
-    const load = useCallback(async () => {
+    const load = useCallback(async ({ silent = false } = {}) => {
         if (!fighterId) return;
-        setLoading(true);
+        // Silent refresh (after accept/drop) updates the data in place without
+        // flipping to the full-section "Loading…" placeholder, so the grid never
+        // unmounts and the page doesn't visibly re-render.
+        if (!silent) setLoading(true);
         try {
             const res = await api.getSponsorships(fighterId);
             setData(res);
         } catch (e) {
             onMessage?.(e.message || "Could not load contracts");
-            setData(null);
+            if (!silent) setData(null);
         }
-        setLoading(false);
+        if (!silent) setLoading(false);
     }, [fighterId, onMessage]);
 
     useEffect(() => { load(); }, [load]);
@@ -77,13 +80,15 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
         try {
             await api.acceptSponsor(fighterId, sponsorId);
             onMessage?.("Contract signed.");
-            await load();
-            if (onRefreshFighter) onRefreshFighter(fighterId);
+            // Signing creates a sponsorship only — it never changes the fighter's
+            // cash/energy/fame, so we skip the global fighter refresh (which would
+            // re-render the whole app) and just silently refresh the contracts data.
+            await load({ silent: true });
         } catch (e) {
             onMessage?.(e.message || "Could not accept contract");
         }
         setBusyId(null);
-    }, [fighterId, load, onMessage, onRefreshFighter]);
+    }, [fighterId, load, onMessage]);
 
     const requestDrop = useCallback((contract) => {
         setDropCandidate(contract);
@@ -101,7 +106,9 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
         try {
             await api.dropSponsor(fighterId, sponsorshipId);
             onMessage?.("Contract dropped.");
-            await load();
+            await load({ silent: true });
+            // Dropping applies a fame penalty, so the fighter (sidebar fame) does
+            // need refreshing here — unlike accepting.
             if (onRefreshFighter) onRefreshFighter(fighterId);
         } catch (e) {
             onMessage?.(e.message || "Could not drop contract");
