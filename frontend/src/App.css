@@ -1954,6 +1954,158 @@ code {
   text-align: center;
 }
 
+/* ── Contender checklist — "Path to the belt" panel ── */
+.contender-checklist {
+  margin-bottom: 0.85rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(212,160,18,0.32);
+  border-left: 3px solid var(--gold-bright);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(212,160,18,0.10) 0%, rgba(212,160,18,0.03) 100%);
+  box-shadow: 0 0 18px rgba(212,160,18,0.10);
+}
+.cc-header { display: flex; align-items: flex-start; gap: 0.55rem; }
+.cc-header-icon { color: var(--gold-bright); flex-shrink: 0; margin-top: 1px; }
+.cc-title {
+  font-size: 13px; font-weight: 800; color: #fbbf24;
+  letter-spacing: 0.02em;
+}
+.cc-sub { font-size: 11px; color: var(--text-secondary); margin-top: 0.1rem; }
+
+.cc-list {
+  list-style: none;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.cc-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+.cc-row-glyph {
+  flex-shrink: 0;
+  width: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.cc-row-dot { font-size: 11px; line-height: 1; }
+.cc-row--met .cc-row-glyph,
+.cc-row--met .cc-row-text { color: var(--green-bright, #4ade80); }
+.cc-row--met .cc-row-text { color: var(--text); }
+.cc-row--met .cc-row-icon { color: var(--green-bright, #4ade80); }
+.cc-row--unmet .cc-row-icon { color: var(--red-bright, #f87171); }
+.cc-row--unmet .cc-row-text { color: var(--text-secondary); }
+.cc-row--pending .cc-row-dot { color: var(--gold-bright); }
+.cc-row--pending .cc-row-text { color: var(--text-secondary); }
+
+.cc-footer {
+  margin-top: 0.7rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(212,160,18,0.2);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+/* ── Contender announcement modal ── */
+.contender-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(2px);
+}
+.contender-modal {
+  width: min(420px, 100%);
+  border-radius: 14px;
+  padding: 1.6rem 1.4rem 1.4rem;
+  text-align: center;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(212,160,18,0.16) 0%, rgba(0,0,0,0) 60%),
+    var(--bg-panel, #14161c);
+  border: 1px solid rgba(212,160,18,0.4);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 40px rgba(212,160,18,0.12);
+}
+.contender-modal-crest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  margin-bottom: 0.6rem;
+  color: var(--gold-bright);
+  background: rgba(212,160,18,0.14);
+  border: 1px solid rgba(212,160,18,0.4);
+}
+.contender-modal-eyebrow {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.18em;
+  color: var(--gold-bright);
+}
+.contender-modal-heading {
+  margin: 0.3rem 0 0.55rem;
+  font-size: 19px; font-weight: 800; color: var(--text);
+  line-height: 1.2;
+}
+.contender-modal-body {
+  margin: 0 0 1rem;
+  font-size: 12.5px; line-height: 1.5;
+  color: var(--text-secondary);
+}
+.contender-modal-steps-label {
+  font-size: 11px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-secondary);
+  text-align: left;
+  margin-bottom: 0.45rem;
+}
+.contender-modal-steps {
+  list-style: none;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+}
+.contender-modal-steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 12.5px;
+  color: var(--text);
+}
+.cms-num {
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 11px; font-weight: 800;
+  color: #fbbf24;
+  background: rgba(212,160,18,0.16);
+  border: 1px solid rgba(212,160,18,0.4);
+}
+.contender-modal-closer {
+  margin: 0 0 1.1rem;
+  font-size: 11.5px; line-height: 1.5;
+  color: var(--text-secondary);
+}
+.contender-modal-btn {
+  width: 100%;
+  justify-content: center;
+}
+
 .offer-card-info { flex: 1; min-width: 0; }
 
 .offer-badge-row { display: flex; gap: 0.3rem; align-items: center; margin-bottom: 0.2rem; }

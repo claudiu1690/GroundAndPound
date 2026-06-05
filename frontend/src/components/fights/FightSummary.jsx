@@ -43,6 +43,8 @@ export const FightSummary = memo(function FightSummary({ summary, description })
     nemesisName,
     beltWon,
     opponentName,
+    titleShotLost,
+    titleTargetTier,
   } = summary;
 
   const hasXp = xpGained && typeof xpGained === "object" && Object.keys(xpGained).length > 0;
@@ -126,6 +128,17 @@ export const FightSummary = memo(function FightSummary({ summary, description })
           <div className="notice notice--danger">
             <span className="notice-glyph">🧠</span>
             <span>Mental Reset required — complete it in your fighter profile before your next fight.</span>
+          </div>
+        )}
+
+        {titleShotLost && (
+          <div className="notice notice--warn">
+            <span className="notice-glyph">🔒</span>
+            <span>
+              {titleTargetTier === "Regional Pro"
+                ? "Came up short. Win 2 fights to get another crack at turning pro. (0/2)"
+                : <>Title shot lost. Win 2 fights to earn a rematch with <strong>{opponentName || "the champion"}</strong>. (0/2)</>}
+            </span>
           </div>
         )}
 

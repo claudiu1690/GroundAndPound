@@ -2,6 +2,8 @@ import { memo, useState } from "react";
 import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
 import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Trophy, Lock, Megaphone } from "lucide-react";
 import { CalloutModal } from "./CalloutModal";
+import { ContenderChecklist } from "./ContenderChecklist";
+import { TITLE_WINS } from "../../constants/gameConstants";
 
 const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard", TITLE: "TitleShot" };
 
@@ -281,10 +283,24 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
   const energyCost = FIGHT_ENERGY_COST[fighter.promotionTier] ?? 10;
   const activeCallout = fighter.activeCallout?.opponentId ? fighter.activeCallout : null;
 
+  // Show the contender checklist while the player is a title CONTENDER but the
+  // shot is not yet ready (cooldown, not top-5, or wins short of the gate).
+  const showChecklist = (() => {
+    if (!fighter.pendingPromotion) return false;
+    const rank = fighter.ranking?.rank ?? null;
+    const top5 = rank != null && rank <= 5;
+    const wins = fighter.winsInCurrentTier ?? 0;
+    const titleWins = TITLE_WINS[fighter.promotionTier] ?? 3;
+    const cooldown = fighter.titleShotCooldown ?? 0;
+    return cooldown > 0 || !top5 || wins < titleWins;
+  })();
+
   return (
     <section className="panel fight-offers">
       <h2 className="panel-title">Fight Offers</h2>
       <div className="panel-body">
+        {showChecklist && <ContenderChecklist fighter={fighter} offers={offers} />}
+
         <ActiveCalloutBanner activeCallout={activeCallout} onOpenCallout={() => setCalloutOpen(true)} />
 
         <CalloutModal
@@ -398,15 +414,15 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                           <span className="offer-locked-text">
                             {(() => {
                               if (o.cooldownRemaining > 0) {
-                                return `${o.cooldownRemaining} win${o.cooldownRemaining !== 1 ? "s" : ""} to retry`;
+                                return `${o.cooldownRemaining} win${o.cooldownRemaining !== 1 ? "s" : ""} to rematch`;
                               }
                               if (o.winsNeeded > 0) {
-                                return `${o.winsNeeded} win${o.winsNeeded !== 1 ? "s" : ""} needed`;
+                                return `${o.winsNeeded} win${o.winsNeeded !== 1 ? "s" : ""} to qualify`;
                               }
                               if (o.rankNeeded) {
                                 return o.currentRank == null
-                                  ? "Reach the rankings first"
-                                  : `Reach top 5 (currently #${o.currentRank})`;
+                                  ? "Get ranked first"
+                                  : `Reach top 5 (now #${o.currentRank})`;
                               }
                               return "Locked";
                             })()}

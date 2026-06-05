@@ -1209,6 +1209,11 @@ async function resolveFightAndApply(fighterId) {
         completedQuests: completedQuests.map((q) => q.title),
         promoted,
         beltWon,
+        // Post-loss title-shot signalling. After a title LOSS pendingPromotion is NOT
+        // cleared, so titleTargetTier is the tier the player is still contending for
+        // (drives Amateur "turn pro" framing in the post-fight notice).
+        titleShotLost: fight.offerType === "TitleShot" && isLoss,
+        titleTargetTier: fighter.pendingPromotion ?? null,
         nemesisCleared,
         nemesisSet,
         nemesisName,
@@ -1266,4 +1271,5 @@ module.exports = {
     setWeightCut,
     resolveFightAndApply,
     getOffers,
+    getTitleShotConfig,
 };

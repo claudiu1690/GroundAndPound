@@ -378,14 +378,40 @@ function buildNudge(fighter, ranking) {
     const rank = ranking?.rank ?? null;
     const isTopFive = !!ranking?.isTopFive;
 
+    const titleWins = fightService.getTitleShotConfig(fighter.promotionTier).titleWins;
+    const wins = fighter.winsInCurrentTier ?? 0;
+    const cooldown = fighter.titleShotCooldown ?? 0;
+    const pending = fighter.pendingPromotion;
+
+    // a. Post-loss rematch cooldown blocks everything else.
+    if (cooldown > 0) {
+        return {
+            text: `Title shot locked — win ${cooldown} more ${cooldown === 1 ? "fight" : "fights"} to earn a rematch (${2 - cooldown}/2).`,
+            linkTarget: "fights",
+        };
+    }
+    // b. Contender, top-5, wins met → title shot ready (Amateur = turn pro).
+    if (pending && isTopFive && wins >= titleWins) {
+        return {
+            text: pending === "Regional Pro"
+                ? "You're ready to turn pro — go take the fight."
+                : "Your title shot is ready — go fight for the belt.",
+            linkTarget: "fights",
+        };
+    }
+    // c. Contender, top-5, still grinding wins-in-tier.
+    if (pending && isTopFive && wins < titleWins) {
+        const need = titleWins - wins;
+        return {
+            text: `Win ${need} more ${need === 1 ? "fight" : "fights"} to earn your ${pending === "Regional Pro" ? "shot at turning pro" : "title shot"}.`,
+            linkTarget: "fights",
+        };
+    }
+    // d. Ranked but not yet top-5.
     if (!isTopFive && rank != null) {
         return { text: "Break into the top 5 to unlock a title shot.", linkTarget: "rankings" };
     }
-    const wins = fighter.winsInCurrentTier ?? 0;
-    if (fighter.pendingPromotion && wins < 3) {
-        const need = 3 - wins;
-        return { text: `Win ${need} more to earn your title shot.`, linkTarget: "fights" };
-    }
+    // e. Default.
     return { text: "Keep training to raise your OVR.", linkTarget: "gym" };
 }
 

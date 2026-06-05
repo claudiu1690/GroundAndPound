@@ -12,6 +12,7 @@ import { FighterReport } from "./components/fights/FighterReport";
 import { CampSummary } from "./components/fights/CampSummary";
 import { FightDescription } from "./components/fights/FightDescription";
 import { FightSummary } from "./components/fights/FightSummary";
+import { ContenderModal } from "./components/fights/ContenderModal";
 import { OctagonBackground } from "./components/layout/OctagonBackground";
 import { CareerFeed } from "./components/CareerFeed";
 import { AuthPage } from "./components/auth/AuthPage";
@@ -31,6 +32,7 @@ import { EmailVerifyBanner } from "./components/account/EmailVerifyBanner";
 import { DashboardTab } from "./components/dashboard/DashboardTab";
 import { CookieConsent } from "./components/legal/CookieConsent";
 import { tutorialBus } from "./utils/tutorialBus";
+import { TITLE_WINS } from "./constants/gameConstants";
 import { useToasts } from "./hooks/useToasts";
 import {
   LayoutDashboard,
@@ -177,7 +179,7 @@ const QuickActions = memo(function QuickActions({ onNavigate }) {
 });
 
 // ── Tier progress (right panel) ─────────────────────────────
-const GATED_TIERS = new Set(["Regional Pro", "National", "GCS"]);
+const GATED_TIERS = new Set(["Amateur", "Regional Pro", "National", "GCS"]);
 
 const TierProgress = memo(function TierProgress({ fighter, champions }) {
   if (!fighter) return null;
@@ -193,9 +195,12 @@ const TierProgress = memo(function TierProgress({ fighter, champions }) {
   const pending = fighter.pendingPromotion;
   const wins = fighter.winsInCurrentTier ?? 0;
   const cooldown = fighter.titleShotCooldown ?? 0;
-  const titleReady = pending && wins >= 3 && cooldown <= 0;
+  const titleWins = TITLE_WINS[currentTier] ?? 3;
+  const rank = fighter.ranking?.rank ?? null;
+  const top5 = rank != null && rank <= 5;
+  const titleReady = pending && top5 && wins >= titleWins && cooldown <= 0;
   const titleCooldown = pending && cooldown > 0;
-  const titleWinsNeeded = pending && wins < 3;
+  const titleWinsNeeded = pending && cooldown <= 0 && top5 && wins < titleWins;
 
   // Find champion for the current gated tier
   const currentChamp = (champions ?? []).find((c) => c.championTier === currentTier);
@@ -236,7 +241,7 @@ const TierProgress = memo(function TierProgress({ fighter, champions }) {
         )}
         {titleWinsNeeded && (
           <div className="tier-title-status tier-title-wins">
-            OVR reached — {3 - wins} more win{3 - wins !== 1 ? "s" : ""} to earn title shot
+            OVR reached — {titleWins - wins} more win{titleWins - wins !== 1 ? "s" : ""} to earn title shot
           </div>
         )}
 
@@ -450,6 +455,10 @@ function App() {
   const [tierUpModal, setTierUpModal] = useState(null);
   const [beltWonModal, setBeltWonModal] = useState(null);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
+  // One-time "you're a contender" announcement. We track the previous
+  // pendingPromotion value so we only fire on the absent→set transition.
+  const [contenderModal, setContenderModal] = useState(null);
+  const prevPendingPromotionRef = useRef(undefined);
   const [fameDrawerOpen, setFameDrawerOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   /** Bumps after train / membership pay so gym quest panel refetches without a full page reload. */
@@ -602,6 +611,48 @@ function App() {
     const t = setInterval(() => loadFighter(fighter._id), 60 * 1000);
     return () => clearInterval(t);
   }, [fighter?._id, loadFighter]);
+
+  // One-time contender announcement — fire when pendingPromotion goes from
+  // absent → set, once per (fighter, targetTier) lifecycle. The persistent
+  // ContenderChecklist panel carries the info afterwards.
+  useEffect(() => {
+    const fighterId = fighter?._id;
+    if (!fighterId) return;
+    // Don't pop the announcement over the onboarding tutorial.
+    if (fighter.tutorial && !fighter.tutorial.completed) return;
+
+    const target = fighter.pendingPromotion ?? null;
+    const prev = prevPendingPromotionRef.current;
+    prevPendingPromotionRef.current = target;
+
+    // Only react to a genuine absent→set transition. `prev === undefined` is
+    // the very first observation (fresh load) — treat a contender we load into
+    // as "already seen unless the localStorage key says otherwise".
+    if (!target) return;
+    if (prev === target) return;
+
+    const storageKey = `gnp_seen_contender_${fighterId}_${target}`;
+    let alreadySeen = false;
+    try { alreadySeen = localStorage.getItem(storageKey) === "1"; } catch (_) {}
+    if (alreadySeen) return;
+
+    // Resolve the champion name for the target tier: prefer a loaded title-shot
+    // offer, fall back to the champions roster for the current tier.
+    const currentTier = fighter.promotionTier ?? "Amateur";
+    const titleOffer = (offers ?? []).find((o) => o?.type === "TitleShot");
+    const rosterChamp = (champions ?? []).find((c) => c.championTier === currentTier);
+    const champName = titleOffer?.opponent?.name ?? rosterChamp?.name ?? null;
+
+    try { localStorage.setItem(storageKey, "1"); } catch (_) {}
+    setContenderModal({ currentTier, targetTier: target, champName });
+  }, [
+    fighter?._id,
+    fighter?.pendingPromotion,
+    fighter?.promotionTier,
+    fighter?.tutorial?.completed,
+    offers,
+    champions,
+  ]);
 
   // Email-change confirmation redirect — the backend bounces the user here from
   // /account/email/confirm with one of two query params. Surface the result via
@@ -1020,6 +1071,14 @@ const handleGetOffers = useCallback(async () => {
         open={!!fightLimitPopup.open}
         message={fightLimitPopup.message}
         onClose={() => setFightLimitPopup({ open: false, message: "" })}
+      />
+
+      <ContenderModal
+        open={!!contenderModal}
+        currentTier={contenderModal?.currentTier}
+        targetTier={contenderModal?.targetTier}
+        champName={contenderModal?.champName}
+        onClose={() => { setContenderModal(null); setActiveTab("fights"); }}
       />
 
       <FameDrawer
