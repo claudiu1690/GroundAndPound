@@ -46,7 +46,7 @@ function GymCard({ gym, locked, onSelectGym }) {
                     </div>
                     <div className="gym-price-block">
                         <div className={`gym-price ${isFree ? "free" : locked ? "locked-p" : "paid"}`}>
-                            {isFree ? "Free" : gym.weeklyCost.toLocaleString()}
+                            {isFree ? "Free" : `$${gym.weeklyCost.toLocaleString()}`}
                         </div>
                         {!isFree && <div className="gym-price-sub">/ week</div>}
                     </div>
