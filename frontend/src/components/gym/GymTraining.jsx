@@ -186,9 +186,6 @@ export const GymTraining = memo(function GymTraining({
     const currentRank = gym.progress?.rank ?? 0;
     const sortedRanks = (gym.ranks || []).slice().sort((a, b) => a.rank - b.rank);
     const next = (gym.ranks || []).find((r) => r.rank === currentRank + 1);
-    const winLabel = gym.relevantWinTypes?.length === 1
-        ? `${gym.relevantWinTypes[0]} wins`
-        : "wins";
 
     function rankUnlockText(r) {
         if (!r.unlock) return null;
@@ -275,25 +272,50 @@ export const GymTraining = memo(function GymTraining({
                 </div>
             )}
 
-            {/* Rank up CTA */}
-            {!isFree && gym.progress?.hasJoined && next && currentRank < 4 && (
-                <div className="rank-upcta">
-                    <span className={`rank-req${gym.progress.trainingSessions >= next.requirements.trainingSessions ? " rank-req--done" : ""}`}>
-                        Training {Math.min(gym.progress.trainingSessions, next.requirements.trainingSessions)}/{next.requirements.trainingSessions}
-                    </span>
-                    <span className={`rank-req${gym.progress.relevantWins >= next.requirements.relevantWins ? " rank-req--done" : ""}`}>
-                        Wins {Math.min(gym.progress.relevantWins, next.requirements.relevantWins)}/{next.requirements.relevantWins} {winLabel}
-                    </span>
-                    {next.requirements.ironCost > 0 && (
-                        <span className="rank-req">${next.requirements.ironCost}</span>
-                    )}
-                    {gym.progress?.nextRank?.canRankUp && gym.progress.nextRank.needsIron && (
-                        <button type="button" className="rank-up-btn" onClick={() => onRankUp(gym._id)}>
-                            <Trophy size={12} /> Rank Up (${next.requirements.ironCost})
-                        </button>
-                    )}
-                </div>
-            )}
+            {/* Rank up CTA — requirements to reach the next gym rank */}
+            {!isFree && gym.progress?.hasJoined && next && currentRank < 4 && (() => {
+                const tReq = next.requirements.trainingSessions;
+                const tDone = gym.progress.trainingSessions >= tReq;
+                const wReq = next.requirements.relevantWins;
+                const wDone = gym.progress.relevantWins >= wReq;
+                const winChipLabel = gym.relevantWinTypes?.length === 1
+                    ? `${gym.relevantWinTypes[0]} wins`
+                    : "Wins";
+                const ironCost = next.requirements.ironCost || 0;
+                return (
+                    <div className="rank-upcta">
+                        <div className="rank-upcta-head">
+                            <span className="rank-upcta-eyebrow">Next Rank</span>
+                            <span className="rank-upcta-name">{next.name}</span>
+                        </div>
+                        <div className="rank-reqs">
+                            <span className={`rank-req-chip${tDone ? " is-done" : ""}`}>
+                                {tDone && <Check size={11} />}
+                                <span className="rank-req-label">Training</span>
+                                <span className="rank-req-val">{Math.min(gym.progress.trainingSessions, tReq)}/{tReq}</span>
+                            </span>
+                            {wReq > 0 && (
+                                <span className={`rank-req-chip${wDone ? " is-done" : ""}`}>
+                                    {wDone && <Check size={11} />}
+                                    <span className="rank-req-label">{winChipLabel}</span>
+                                    <span className="rank-req-val">{Math.min(gym.progress.relevantWins, wReq)}/{wReq}</span>
+                                </span>
+                            )}
+                            {ironCost > 0 && (
+                                <span className="rank-req-chip rank-req-chip--fee">
+                                    <span className="rank-req-label">Cost</span>
+                                    <span className="rank-req-val">${ironCost.toLocaleString()}</span>
+                                </span>
+                            )}
+                        </div>
+                        {gym.progress?.nextRank?.canRankUp && gym.progress.nextRank.needsIron && (
+                            <button type="button" className="rank-up-btn" onClick={() => onRankUp(gym._id)}>
+                                <Trophy size={12} /> Rank Up (${ironCost.toLocaleString()})
+                            </button>
+                        )}
+                    </div>
+                );
+            })()}
 
             {/* Max rank achieved */}
             {!isFree && currentRank >= 4 && (

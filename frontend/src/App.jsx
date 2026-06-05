@@ -972,6 +972,9 @@ const handleGetOffers = useCallback(async () => {
       const firstWinHint = isFirstWin ? " | Build your record and raise your OVR to earn a title shot. Win the belt to move up." : "";
       setMessage(`${out} — +$${iron}${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}${firstWinHint}`);
       loadFighter(fighter._id);
+      // Refresh gyms too — a win updates gym rank progress (relevantWins, e.g.
+      // KO/TKO win requirements), which lives on the gyms payload, not the fighter.
+      loadGyms(fighter._id);
       setFeedRefreshKey((k) => k + 1);
       // Clean up camp state after fight
       setCampState(null);
@@ -985,7 +988,7 @@ const handleGetOffers = useCallback(async () => {
       setMessage(errMsg);
     }
     setResolving(false);
-  }, [fighter?._id, loadFighter, maybeShowBlockPopup]);
+  }, [fighter?._id, loadFighter, loadGyms, maybeShowBlockPopup]);
 
   const handleBeginFight = useCallback(async () => {
     if (!weightCut || !fighter?._id || !fighter?.acceptedFightId) return;
