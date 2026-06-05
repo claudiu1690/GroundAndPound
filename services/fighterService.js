@@ -610,12 +610,11 @@ async function hospitalRestoreHealth(fighterId, packageKey) {
 
 
 /**
- * Pay monthly membership fee for a gym.
- * Sets paidUntil = now + 30 days for that gym in the fighter's gymMemberships array.
- */
-/**
- * Switch active gym membership. Deducts weekly iron cost, cancels old membership.
- * Initializes gym rank progress if first time at this gym.
+ * Switch active gym membership. Deducts the weekly cash cost and sets
+ * activeGymPaidUntil = now + 7 days. Initializes gym rank progress if first
+ * time at this gym. This (activeGymId + activeGymPaidUntil) is the single
+ * source of truth for membership — see questService.hasValidGymMembership,
+ * trainingService access gate, and gymController's daysLeft countdown.
  */
 async function switchGym(fighterId, gymId) {
     const fighter = await Fighter.findById(fighterId);

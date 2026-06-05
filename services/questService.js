@@ -58,10 +58,14 @@ function isQuestLockedForFighter(quest, fighter) {
 }
 
 function hasValidGymMembership(fighter, gym) {
-    if (!gym.monthlyIron || gym.monthlyIron === 0) return true;
-    return (fighter.gymMemberships || []).some(
-        (m) => String(m.gymId) === String(gym._id) && new Date(m.paidUntil) > new Date()
-    );
+    // The free community gym never needs a membership.
+    if (gym.isFreeGym) return true;
+    // Single source of truth: the weekly membership (activeGymId + activeGymPaidUntil),
+    // the same fields trainingService, gymRankService and the gymController countdown use.
+    // (The legacy gymMemberships[]/monthlyIron model is never populated by switchGym.)
+    return String(fighter.activeGymId) === String(gym._id)
+        && !!fighter.activeGymPaidUntil
+        && new Date(fighter.activeGymPaidUntil) > new Date();
 }
 
 /** True when all combat stats are at least 60. */
