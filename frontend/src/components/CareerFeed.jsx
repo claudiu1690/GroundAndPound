@@ -100,12 +100,24 @@ export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey }) {
                                 const Icon = cfg.Icon;
                                 const [first, ...rest] = (entry.detail ?? "").split(" · ");
                                 const meta = rest.join(" · ") || null;
-                                const isTitle = entry.type === "TITLE_WON";
+                                // A title fight: the belt win (TITLE_WON) or any fight result
+                                // flagged isTitleFight (so title losses/draws stand out too).
+                                const isTitleFight = entry.type === "TITLE_WON" || !!entry.meta?.isTitleFight;
+                                // TITLE_WON already carries the "Title" badge + crown, so only
+                                // tag the win/loss/draw rows that would otherwise look ordinary.
+                                const showTitleTag = isTitleFight && entry.type !== "TITLE_WON";
                                 return (
-                                    <div className={`feed-item${isTitle ? " feed-item--title" : ""}`} key={entry._id}>
+                                    <div className={`feed-item${isTitleFight ? " feed-item--title" : ""}`} key={entry._id}>
                                         <span className={`feed-icon ${cfg.tone}`}><Icon size={16} strokeWidth={2} /></span>
                                         <div className="feed-content">
-                                            <div className="feed-title">{first}</div>
+                                            <div className="feed-title">
+                                                {first}
+                                                {showTitleTag && (
+                                                    <span className="feed-title-fight-tag">
+                                                        <Crown size={11} strokeWidth={2.4} /> Title Fight
+                                                    </span>
+                                                )}
+                                            </div>
                                             {meta && <div className="feed-meta">{meta}</div>}
                                             <div className="feed-time">{relativeTime(entry.createdAt)}</div>
                                         </div>

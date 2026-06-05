@@ -1144,15 +1144,16 @@ async function resolveFightAndApply(fighterId) {
 
     // ── Activity log entries (fire-and-forget, never throw) ──────────────
     const _tier = fighter.promotionTier;
+    const _isTitleFight = fight.offerType === "TitleShot";
     if (isWin)  activityLogService.log(fighterId, "FIGHT_WIN",
         `Beat ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
-        { opponentName: opponent.name, outcome: result.outcome, tier: _tier });
+        { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight });
     if (isLoss) activityLogService.log(fighterId, "FIGHT_LOSS",
         `Lost to ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
-        { opponentName: opponent.name, outcome: result.outcome, tier: _tier });
+        { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight });
     if (isDraw) activityLogService.log(fighterId, "FIGHT_DRAW",
         `Drew with ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
-        { opponentName: opponent.name, outcome: result.outcome, tier: _tier });
+        { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight });
     if (nemesisSet) activityLogService.log(fighterId, "NEMESIS_SET",
         `${nemesisName} is now your nemesis`,
         { opponentName: nemesisName, tier: _tier });
