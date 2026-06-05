@@ -10641,6 +10641,10 @@ code {
 .dashboard-tab .dash-card-clickable:hover { border-color: var(--c-accent); background: var(--c-bg-tile-2); }
 .dashboard-tab .dash-card-clickable:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
 
+.dashboard-tab .dash-vital-clickable { cursor: pointer; border-radius: 4px; transition: background .12s ease; }
+.dashboard-tab .dash-vital-clickable:hover { background: var(--c-bg-tile-2); }
+.dashboard-tab .dash-vital-clickable:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+
 .dashboard-tab .dash-muted { color: var(--text-secondary); font-size: 12px; font-style: italic; margin: 4px 0 0; }
 
 .dashboard-tab .dash-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
