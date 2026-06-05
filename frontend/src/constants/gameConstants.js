@@ -50,3 +50,16 @@ export const FIGHT_ENERGY_COST = {
   GCS:              20,
 };
 
+/**
+ * Wins required at the current tier to unlock a title shot, keyed by the
+ * fighter's current promotionTier. The Amateur belt (the "turn pro" fight)
+ * has a lighter gate; every pro tier from Regional Pro up needs 3.
+ */
+export const TITLE_WINS = {
+  Amateur:          2,
+  "Regional Pro":   3,
+  National:         3,
+  "GCS Contender":  3,
+  GCS:              3,
+};
+
