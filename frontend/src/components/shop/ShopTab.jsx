@@ -266,24 +266,26 @@ export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMess
 
   const fighterId = fighter?._id;
 
-  const loadCatalog = useCallback(async () => {
+  const loadCatalog = useCallback(async ({ silent = false } = {}) => {
     if (!fighterId) return;
-    setLoading(true);
+    // Silent reloads (after a purchase) keep the current catalog mounted so the
+    // page doesn't flash the full-page loading state and remount every card.
+    if (!silent) setLoading(true);
     setError("");
     try {
       const data = await api.getShopCatalog(fighterId);
       setCatalog(data);
     } catch (e) {
-      setError(e.message || "Failed to load the shop.");
+      if (!silent) setError(e.message || "Failed to load the shop.");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [fighterId]);
 
   useEffect(() => { loadCatalog(); }, [loadCatalog]);
 
   const afterMutation = useCallback(async () => {
-    await loadCatalog();
+    await loadCatalog({ silent: true });
     if (onRefreshFighter && fighterId) await onRefreshFighter(fighterId);
   }, [loadCatalog, onRefreshFighter, fighterId]);
 
