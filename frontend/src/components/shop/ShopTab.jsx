@@ -7,6 +7,7 @@ import {
   boosterEffectLine,
   inventoryCount,
   pctLabel,
+  resolveBoosterDisplay,
 } from "./shopConstants";
 
 // ── Small presentational pieces ─────────────────────────────
@@ -337,7 +338,9 @@ export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMess
   }, [fighterId, busyId, afterMutation, onMessage]);
 
   // ── Page shell with header + tabs (always rendered) ──
-  const invCount = inventoryCount(fighter?.inventory);
+  // Active booster lives on the fighter (not inventory) but is shown in the
+  // inventory view, so include it in the tab badge count.
+  const invCount = inventoryCount(fighter?.inventory) + (fighter?.activeBooster ? 1 : 0);
 
   return (
     <div className="shop-tab">
@@ -531,7 +534,9 @@ function PremiumStore({ catalog, fighter, busyId, notice, onBuy }) {
 function InventoryView({ catalog, fighter, busyId, onUse, onGoCash }) {
   const energyFull = !!catalog.energyFull;
   const energyItems = catalog.energyItems || [];
-  const activeBooster = catalog.activeBooster || fighter?.activeBooster || null;
+  // Fall back to the raw fighter booster only via resolveBoosterDisplay — the raw
+  // subdoc has no name/pct, which would render a blank booster name otherwise.
+  const activeBooster = catalog.activeBooster || resolveBoosterDisplay(fighter?.activeBooster) || null;
   const buffs = fighter?.inventory?.prefightBuffs || {};
   // Build a lookup of buff display names from the catalog.
   const buffNames = {};

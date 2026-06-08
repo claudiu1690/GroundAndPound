@@ -14,7 +14,7 @@ const CAMP_ERROR_CODES = {
 
 function handleError(err, res) {
     const msg = err.message || "Internal server error";
-    if (msg === "Fight not found or not accepted" || msg === "Camp not found" || msg === "Opponent not found")
+    if (msg === "Fight not found or not accepted" || msg === "Camp not found" || msg === "Opponent not found" || msg === "Fighter not found")
         return res.status(404).json({ message: msg, code: CAMP_ERROR_CODES.FIGHT_NOT_FOUND });
     if (msg === "Forbidden")
         return res.status(403).json({ message: "Access denied", code: CAMP_ERROR_CODES.FORBIDDEN });

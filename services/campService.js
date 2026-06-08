@@ -648,7 +648,7 @@ async function selectBuff(fightId, fighterId, buffId) {
 
     // Ownership guard at selection time (re-checked authoritatively at resolve).
     const fighter = await Fighter.findById(fighterId).select("inventory");
-    if (!fighter) throw new Error("Camp not found");
+    if (!fighter) throw new Error("Fighter not found");
     const owned = (fighter.inventory && fighter.inventory.prefightBuffs
         && fighter.inventory.prefightBuffs[buffId]) || 0;
     if (owned <= 0) throw new Error("You don't own that supplement");
