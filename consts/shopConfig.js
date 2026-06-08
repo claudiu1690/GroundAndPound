@@ -22,7 +22,7 @@ const ENERGY_ITEMS = {
         id: "energy-shot",
         name: "Energy Shot",
         category: "energy",
-        price: 400,
+        price: 600,
         energy: 30,
         premium: false,
         inventoryKey: "energyShots",
@@ -39,23 +39,23 @@ const ENERGY_ITEMS = {
 };
 
 const BOOSTERS = {
-    "focus-amino":       { id: "focus-amino",       name: "Focus Amino",       category: "booster", price: 500,  pct: 0.20, stats: "ALL",                  sessions: 3 },
-    "strength-formula":  { id: "strength-formula",  name: "Strength Formula",  category: "booster", price: 450,  pct: 0.25, stats: ["str", "wre"],         sessions: 3 },
-    "ground-protocol":   { id: "ground-protocol",   name: "Ground Protocol",   category: "booster", price: 450,  pct: 0.25, stats: ["gnd", "sub"],         sessions: 3 },
-    "strike-blend":      { id: "strike-blend",      name: "Strike Blend",      category: "booster", price: 450,  pct: 0.25, stats: ["str", "spd", "chn"],  sessions: 3 },
-    "leg-press-formula": { id: "leg-press-formula", name: "Leg Press Formula", category: "booster", price: 350,  pct: 0.25, stats: ["leg"],               sessions: 3 },
-    "iq-boost":          { id: "iq-boost",          name: "IQ Boost",          category: "booster", price: 450,  pct: 0.25, stats: ["fiq", "chn"],         sessions: 3 },
-    "full-camp-stack":   { id: "full-camp-stack",   name: "Full Camp Stack",   category: "booster", price: 1200, pct: 0.20, stats: "ALL",                  sessions: 8 },
+    "focus-amino":       { id: "focus-amino",       name: "Focus Amino",       category: "booster", price: 850,  pct: 0.20, stats: "ALL",                  sessions: 3 },
+    "strength-formula":  { id: "strength-formula",  name: "Strength Formula",  category: "booster", price: 750,  pct: 0.25, stats: ["str", "wre"],         sessions: 3 },
+    "ground-protocol":   { id: "ground-protocol",   name: "Ground Protocol",   category: "booster", price: 750,  pct: 0.25, stats: ["gnd", "sub"],         sessions: 3 },
+    "strike-blend":      { id: "strike-blend",      name: "Strike Blend",      category: "booster", price: 750,  pct: 0.25, stats: ["str", "spd", "chn"],  sessions: 3 },
+    "leg-press-formula": { id: "leg-press-formula", name: "Leg Press Formula", category: "booster", price: 500,  pct: 0.25, stats: ["leg"],               sessions: 3 },
+    "iq-boost":          { id: "iq-boost",          name: "IQ Boost",          category: "booster", price: 750,  pct: 0.25, stats: ["fiq", "chn"],         sessions: 3 },
+    "full-camp-stack":   { id: "full-camp-stack",   name: "Full Camp Stack",   category: "booster", price: 1900, pct: 0.20, stats: "ALL",                  sessions: 8 },
 };
 
 const BUFFS = {
-    "whey-protein-shake": { id: "whey-protein-shake", name: "Whey Protein Shake", category: "buff", price: 400, stats: { str: 3 } },
-    "creatine-stack":     { id: "creatine-stack",     name: "Creatine Stack",     category: "buff", price: 700, stats: { str: 3, wre: 2 } },
-    "focus-stack":        { id: "focus-stack",        name: "Focus Stack",        category: "buff", price: 650, stats: { fiq: 3, chn: 2 } },
-    "pre-workout":        { id: "pre-workout",        name: "Pre-Workout",        category: "buff", price: 600, stats: { spd: 3, str: 2 } },
-    "leg-day-formula":    { id: "leg-day-formula",    name: "Leg Day Formula",    category: "buff", price: 350, stats: { leg: 3 } },
-    "grappling-rub":      { id: "grappling-rub",      name: "Grappling Rub",      category: "buff", price: 650, stats: { gnd: 3, sub: 2 } },
-    "collagen-recovery":  { id: "collagen-recovery",  name: "Collagen Recovery",  category: "buff", price: 600, injuryMult: 0.80 },
+    "whey-protein-shake": { id: "whey-protein-shake", name: "Whey Protein Shake", category: "buff", price: 650, stats: { str: 3 } },
+    "creatine-stack":     { id: "creatine-stack",     name: "Creatine Stack",     category: "buff", price: 1150, stats: { str: 3, wre: 2 } },
+    "focus-stack":        { id: "focus-stack",        name: "Focus Stack",        category: "buff", price: 1100, stats: { fiq: 3, chn: 2 } },
+    "pre-workout":        { id: "pre-workout",        name: "Pre-Workout",        category: "buff", price: 1050, stats: { spd: 3, str: 2 } },
+    "leg-day-formula":    { id: "leg-day-formula",    name: "Leg Day Formula",    category: "buff", price: 600, stats: { leg: 3 } },
+    "grappling-rub":      { id: "grappling-rub",      name: "Grappling Rub",      category: "buff", price: 1100, stats: { gnd: 3, sub: 2 } },
+    "collagen-recovery":  { id: "collagen-recovery",  name: "Collagen Recovery",  category: "buff", price: 1000, injuryMult: 0.80 },
 };
 
 const PREMIUM_BUNDLES = {
