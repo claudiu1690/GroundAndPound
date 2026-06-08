@@ -131,7 +131,7 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
             <span className="train-toast-booster-depleted">Booster depleted</span>
           ) : (
             <span className="train-toast-booster-left">
-              {booster.sessionsLeft} session{booster.sessionsLeft === 1 ? "" : "s"} left
+              {booster.sessionsLeftAfter} session{booster.sessionsLeftAfter === 1 ? "" : "s"} left
             </span>
           )}
         </div>
