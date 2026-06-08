@@ -1,6 +1,12 @@
 import { memo, useState, useEffect } from "react";
-import { Zap, AlertTriangle, Check, ChevronLeft, Lock, Trophy, Minus, Plus } from "lucide-react";
+import { Zap, AlertTriangle, Check, ChevronLeft, Lock, Trophy, Minus, Plus, TrendingUp } from "lucide-react";
 import { gymImageUrl } from "./gymImage";
+import {
+    resolveBoosterDisplay,
+    boosterEffectLine,
+    boosterAffectsStat,
+    pctLabel,
+} from "../shop/shopConstants";
 
 // Full session metadata matching backend TRAINING_SESSIONS + rank 2 sessions
 export const SESSION_META = {
@@ -157,6 +163,11 @@ export const GymTraining = memo(function GymTraining({
     if (!fighter || !gym) return null;
 
     const energy = fighter.energy?.current ?? fighter.energy ?? 0;
+    // Active XP booster (only while it still has charges) — surfaced as a banner
+    // here and a per-card "+X%" badge on the sessions whose stats it boosts.
+    const activeBooster = fighter.activeBooster && fighter.activeBooster.sessionsLeft > 0
+        ? resolveBoosterDisplay(fighter.activeBooster)
+        : null;
     const isFree = gym.isFreeGym;
     const isActive = gym.membership?.isActive;
     const canTrain = isFree || isActive;
@@ -334,6 +345,17 @@ export const GymTraining = memo(function GymTraining({
             {/* STRIP 4 — Sessions */}
             <div className="sessions-area">
                 <div className="sessions-label">Training Sessions</div>
+                {activeBooster && (
+                    <div className="booster-banner">
+                        <TrendingUp size={14} className="booster-banner-icon" />
+                        <span className="booster-banner-name">{activeBooster.name}</span>
+                        <span className="booster-banner-pct">+{pctLabel(activeBooster.pct)}% XP</span>
+                        <span className="booster-banner-scope">{boosterEffectLine(activeBooster)}</span>
+                        <span className="booster-banner-left">
+                            {activeBooster.sessionsLeft} session{activeBooster.sessionsLeft === 1 ? "" : "s"} left
+                        </span>
+                    </div>
+                )}
                 <div className="session-grid" data-tut="gym-sessions">
                     {displaySessions.map((key) => {
                         const m = SESSION_META[key];
@@ -349,6 +371,8 @@ export const GymTraining = memo(function GymTraining({
                         const showQtyControl = !isRank2Locked && canTrain && !isLocked && !notEnoughEnergy;
                         const cardMax = Math.min(Math.floor(energy / m.cost), MAX_BATCH);
                         const isSparring = SPARRING_KEYS.has(key);
+                        // XP-boosted if a booster is active and covers any of this card's stats.
+                        const boostedHere = !!activeBooster && stats.some((s) => boosterAffectsStat(activeBooster, s));
 
                         let accentStyle;
                         if (isRank2Locked || isLocked) {
@@ -376,6 +400,11 @@ export const GymTraining = memo(function GymTraining({
                                         <div className={`session-card-name${cardLocked ? " locked" : ""}`}>
                                             {m.label}
                                             {isRank2Locked && <span className="rank-badge">Rank 2</span>}
+                                            {boostedHere && (
+                                                <span className="session-boost-badge" title={`${activeBooster.name}: +${pctLabel(activeBooster.pct)}% XP`}>
+                                                    <TrendingUp size={9} /> +{pctLabel(activeBooster.pct)}%
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="session-card-energy"><Zap size={11} /> {m.cost}E</div>
                                     </div>

@@ -1708,6 +1708,14 @@ code {
 
 .sessions-area { padding:24px; flex:1; }
 .sessions-label { font-family:var(--font-display); font-weight:700; font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:var(--text-muted); margin-bottom:16px; }
+/* Active XP booster banner above the session grid */
+.booster-banner { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:16px; padding:9px 14px; background:rgba(212,168,32,.08); border:1px solid rgba(212,168,32,.25); border-radius:7px; }
+.booster-banner-icon { color:var(--c-amber-bright); flex-shrink:0; }
+.booster-banner-name { font-family:var(--font-display); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--text); }
+.booster-banner-pct { font-family:var(--font-display); font-weight:800; font-size:11px; letter-spacing:.04em; color:var(--c-amber-bright); }
+.booster-banner-scope { font-size:11px; color:var(--text-secondary); }
+.booster-banner-left { margin-left:auto; font-family:var(--font-display); font-weight:700; font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); border:1px solid var(--c-border); border-radius:2px; padding:2px 7px; flex-shrink:0; }
+.session-boost-badge { display:inline-flex; align-items:center; gap:2px; font-family:var(--font-display); font-size:9px; font-weight:800; letter-spacing:.04em; background:rgba(212,168,32,.12); color:var(--c-amber-bright); border:1px solid rgba(212,168,32,.25); border-radius:2px; padding:2px 5px; margin-left:6px; vertical-align:middle; }
 .session-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
 .session-card { background:var(--c-bg-tile); border:1px solid var(--c-border); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; transition:border-color .15s; }
 .session-card:hover:not(.locked-card) { border-color:#555; }

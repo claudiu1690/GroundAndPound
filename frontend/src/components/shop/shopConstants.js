@@ -43,13 +43,13 @@ export function pctLabel(pct) {
  * so components without catalog access (the sidebar) resolve name/pct from here.
  */
 export const BOOSTER_DISPLAY = {
-  "focus-amino": { name: "Focus Amino", pct: 0.2 },
-  "strength-formula": { name: "Strength Formula", pct: 0.25 },
-  "ground-protocol": { name: "Ground Protocol", pct: 0.25 },
-  "strike-blend": { name: "Strike Blend", pct: 0.25 },
-  "leg-press-formula": { name: "Leg Press Formula", pct: 0.25 },
-  "iq-boost": { name: "IQ Boost", pct: 0.25 },
-  "full-camp-stack": { name: "Full Camp Stack", pct: 0.2 },
+  "focus-amino": { name: "Focus Amino", pct: 0.2, stats: "ALL" },
+  "strength-formula": { name: "Strength Formula", pct: 0.25, stats: ["str", "wre"] },
+  "ground-protocol": { name: "Ground Protocol", pct: 0.25, stats: ["gnd", "sub"] },
+  "strike-blend": { name: "Strike Blend", pct: 0.25, stats: ["str", "spd", "chn"] },
+  "leg-press-formula": { name: "Leg Press Formula", pct: 0.25, stats: ["leg"] },
+  "iq-boost": { name: "IQ Boost", pct: 0.25, stats: ["fiq", "chn"] },
+  "full-camp-stack": { name: "Full Camp Stack", pct: 0.2, stats: "ALL" },
 };
 
 /** Merge a raw activeBooster ({id,sessionsLeft,...}) with static display info. */
@@ -60,7 +60,19 @@ export function resolveBoosterDisplay(booster) {
     ...booster,
     name: booster.name || info.name || "XP Booster",
     pct: booster.pct != null ? booster.pct : info.pct,
+    stats: booster.stats != null ? booster.stats : info.stats,
   };
+}
+
+/**
+ * True if a booster boosts a given stat. `booster.stats` is "ALL" (or null) for
+ * all-stat boosters, otherwise a lowercase key array. `stat` may be any case.
+ */
+export function boosterAffectsStat(booster, stat) {
+  if (!booster) return false;
+  if (booster.stats === "ALL" || booster.stats == null) return true;
+  const list = Array.isArray(booster.stats) ? booster.stats : [];
+  return list.includes(String(stat).toLowerCase());
 }
 
 /**
