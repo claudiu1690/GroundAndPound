@@ -1142,6 +1142,7 @@ const handleGetOffers = useCallback(async () => {
           onWeightCutChange={setWeightCut}
           isTitleFight={campState?.isTitleFight}
           selectedBuffLabel={selectedBuffLabel ?? (campState?.selectedBuffId ? "1 supplement" : null)}
+          selectedBuffId={campState?.selectedBuffId ?? null}
         />
       )}
 

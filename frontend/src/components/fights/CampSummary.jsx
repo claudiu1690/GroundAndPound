@@ -6,6 +6,7 @@ import {
     MATCH_STATUS_LABELS,
     MATCH_STATUS_COLORS,
 } from "../../constants/campConfig";
+import { BUFF_DISPLAY, buffStatTags } from "../shop/shopConstants";
 
 const MATCH_ICON = {
     MATCHED: "✓",
@@ -48,8 +49,13 @@ export const CampSummary = memo(function CampSummary({
     onWeightCutChange,
     isTitleFight,
     selectedBuffLabel,
+    selectedBuffId,
 }) {
     if (!summaryData) return null;
+
+    const buffCfg = selectedBuffId ? BUFF_DISPLAY[selectedBuffId] : null;
+    const buffTags = buffCfg ? buffStatTags(buffCfg) : [];
+    const buffName = buffCfg?.name || selectedBuffLabel;
 
     const {
         campRating,
@@ -111,11 +117,22 @@ export const CampSummary = memo(function CampSummary({
                     </div>
                 )}
 
-                <div className="cs-supp-row">
-                    <span className="cs-supp-label">Pre-Fight Supplement</span>
-                    <span className={`cs-supp-val${selectedBuffLabel ? " cs-supp-val--active" : ""}`}>
-                        {selectedBuffLabel || "None selected"}
-                    </span>
+                <div className="cs-section">
+                    <div className="cs-supp-row">
+                        <span className="cs-supp-label">Pre-Fight Supplement</span>
+                        <div className="cs-supp-right">
+                            <span className={`cs-supp-val${buffName ? " cs-supp-val--active" : ""}`}>
+                                {buffName || "None selected"}
+                            </span>
+                            {buffTags.length > 0 && (
+                                <div className="cs-supp-tags">
+                                    {buffTags.map((t, i) => (
+                                        <span key={i} className={`shop-bt shop-bt-${t.slug}`}>{t.text}</span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {hasPenalty && (

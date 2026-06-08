@@ -64,6 +64,21 @@ export function resolveBoosterDisplay(booster) {
 }
 
 /**
+ * Static pre-fight buff display info, keyed by catalog id (name + effect).
+ * Mirrors BOOSTER_DISPLAY so components without catalog access (e.g. the camp
+ * summary, which only knows the selected buff id) can resolve stat tags.
+ */
+export const BUFF_DISPLAY = {
+  "whey-protein-shake": { name: "Whey Protein Shake", stats: { str: 3 } },
+  "creatine-stack": { name: "Creatine Stack", stats: { str: 3, wre: 2 } },
+  "focus-stack": { name: "Focus Stack", stats: { fiq: 3, chn: 2 } },
+  "pre-workout": { name: "Pre-Workout", stats: { spd: 3, str: 2 } },
+  "leg-day-formula": { name: "Leg Day Formula", stats: { leg: 3 } },
+  "grappling-rub": { name: "Grappling Rub", stats: { gnd: 3, sub: 2 } },
+  "collagen-recovery": { name: "Collagen Recovery", injuryMult: 0.8 },
+};
+
+/**
  * Build stat-tag descriptors for a pre-fight buff card.
  * buff.stats is an object { str: 3, wre: 2 }; collagen-style buffs carry
  * injuryMult instead (e.g. 0.8 = injury −20%).
