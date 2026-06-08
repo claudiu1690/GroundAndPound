@@ -4048,6 +4048,7 @@ code {
   color: var(--text-muted);
   margin-bottom: 10px;
 }
+.camp-logged-hint { font-size: 11px; color: var(--text-muted); line-height: 1.5; margin-bottom: 10px; }
 .camp-logged-slots { display: flex; flex-direction: column; gap: 6px; }
 .camp-logged-slot {
   display: flex;
@@ -4082,6 +4083,7 @@ code {
   letter-spacing: 1px;
   text-transform: uppercase;
 }
+.camp-matched-badge--pending { color: var(--text-muted); opacity: .7; }
 .camp-logged-remove {
   all: unset;
   cursor: pointer;

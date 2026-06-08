@@ -190,6 +190,12 @@ export const FightCamp = memo(function FightCamp({
 
                 <div className="camp-logged-section">
                     <div className="camp-logged-label">Sessions Logged</div>
+                    {!isFinalised && (
+                        <div className="camp-logged-hint">
+                            Read the Fighter Report to plan — how well each session counters your
+                            opponent is revealed when you finalise camp.
+                        </div>
+                    )}
                     <div className="camp-logged-slots">
                         {Array.from({ length: maxSlots }, (_, i) => {
                             const s = sessions[i];
@@ -209,9 +215,15 @@ export const FightCamp = memo(function FightCamp({
                                     {s.diminishingFactor < 1 && (
                                         <span className="camp-logged-repeat">repeat &times;{s.diminishingFactor}</span>
                                     )}
-                                    <span className="camp-matched-badge" style={{ color: statusColor }}>
-                                        {MATCH_STATUS_LABELS[s.matchStatus] ?? s.matchStatus}
-                                    </span>
+                                    {/* Match outcome is hidden while building — revealed only in the
+                                        finalise summary so the camp can't be probed. */}
+                                    {s.matchStatus ? (
+                                        <span className="camp-matched-badge" style={{ color: statusColor }}>
+                                            {MATCH_STATUS_LABELS[s.matchStatus] ?? s.matchStatus}
+                                        </span>
+                                    ) : (
+                                        <span className="camp-matched-badge camp-matched-badge--pending">Logged</span>
+                                    )}
                                     {canRemove && (
                                         <button
                                             type="button"

@@ -414,6 +414,40 @@ async function getFighterReport(fightId) {
     };
 }
 
+/**
+ * Client-safe camp view. While a camp is being BUILT (not finalised), the
+ * per-session match outcome is hidden — `matchStatus` and the `pointsEarned`
+ * that encodes it are stripped — so players plan from the Fighter Report instead
+ * of probing the camp (add a session, read the badge, remove for free, repeat).
+ * The full per-session breakdown is revealed in the finalise summary.
+ */
+function toClientCamp(camp) {
+    const obj = camp.toObject();
+    if (!camp.finalisedAt) {
+        obj.sessions = (obj.sessions || []).map((s) => ({
+            sessionType: s.sessionType,
+            slotIndex: s.slotIndex,
+            energySpent: s.energySpent,
+            diminishingFactor: s.diminishingFactor,
+        }));
+    }
+    return obj;
+}
+
+/**
+ * The live camp grade is only surfaced to support the in-camp injury STOP/PUSH
+ * decision — a random, unfarmable event. Outside an active injury choice it
+ * stays hidden, so the grade can't be read from API responses to binary-search
+ * which sessions matched. Returns null when not building, not injured, or empty.
+ */
+function buildPreview(camp) {
+    if (camp.finalisedAt) return null;
+    if (!(camp.isInjured && !camp.injuryChoice)) return null;
+    if (!camp.sessions || camp.sessions.length === 0) return null;
+    const { grade } = computeCampRating(camp.sessions, camp.maxSlots);
+    return { grade };
+}
+
 async function getCampState(fightId, fighterId) {
     const camp = await FightCamp.findOne({ fightId });
     if (!camp) throw new Error("Camp not found");
@@ -423,17 +457,11 @@ async function getCampState(fightId, fighterId) {
     const slotsUsed = camp.sessions.length;
     const slotsRemaining = Math.max(0, camp.maxSlots - slotsUsed);
 
-    let preview = null;
-    if (!camp.finalisedAt && slotsUsed > 0) {
-        const { grade } = computeCampRating(camp.sessions, camp.maxSlots);
-        preview = { grade };
-    }
-
     return {
-        ...camp.toObject(),
+        ...toClientCamp(camp),
         slotsUsed,
         slotsRemaining,
-        previewRating: camp.finalisedAt ? null : preview,
+        previewRating: buildPreview(camp),
         isTitleFight: fight?.offerType === "TitleShot",
     };
 }
@@ -492,13 +520,12 @@ async function addCampSession(fightId, fighterId, sessionType) {
     await camp.save();
 
     const slotsRemaining = Math.max(0, camp.maxSlots - camp.sessions.length);
-    const { grade } = computeCampRating(camp.sessions, camp.maxSlots);
 
     return {
-        camp: camp.toObject(),
+        camp: toClientCamp(camp),
         slotsUsed: camp.sessions.length,
         slotsRemaining,
-        previewRating: { grade },
+        previewRating: buildPreview(camp),
         injuryTriggered,
     };
 }
@@ -523,15 +550,12 @@ async function removeSession(fightId, fighterId, slotIndex) {
     await camp.save();
 
     const slotsRemaining = Math.max(0, camp.maxSlots - camp.sessions.length);
-    const preview = camp.sessions.length > 0
-        ? { grade: computeCampRating(camp.sessions, camp.maxSlots).grade }
-        : null;
 
     return {
-        camp: camp.toObject(),
+        camp: toClientCamp(camp),
         slotsUsed: camp.sessions.length,
         slotsRemaining,
-        previewRating: preview,
+        previewRating: buildPreview(camp),
     };
 }
 
@@ -561,7 +585,7 @@ async function resolveInjury(fightId, fighterId, choice) {
     }
 
     await camp.save();
-    return camp.toObject();
+    return toClientCamp(camp);
 }
 
 /**
