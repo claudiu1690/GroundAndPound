@@ -11178,7 +11178,7 @@ code {
 .shop-energy-balance { font-size: 10px; color: var(--text-muted); }
 .shop-energy-bal--blue { color: var(--c-blue); font-weight: 600; }
 .shop-energy-bal--gold { color: var(--c-amber-bright); font-weight: 600; }
-.shop-energy-action { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.shop-energy-action { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .shop-energy-cost { font-family: var(--font-display); font-weight: 700; font-size: 12px; color: var(--c-amber-bright); display: flex; align-items: center; gap: 3px; }
 .shop-energy-cost--muted { color: var(--text-secondary); }
 

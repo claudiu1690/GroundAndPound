@@ -64,7 +64,7 @@ function EnergyCard({ item, busy, onBuy, onGetMore }) {
           ) : (
             <>
               <div className="shop-energy-cost">
-                <Coins size={11} /> {item.price} Cash
+                <Coins size={11} /> {item.price}
               </div>
               <BuyButton
                 canAfford={item.canAfford}
