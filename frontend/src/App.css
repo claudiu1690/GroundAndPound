@@ -11204,7 +11204,7 @@ code {
 .shop-xp-tags { display: flex; gap: 3px; flex-wrap: wrap; margin-bottom: 10px; }
 .shop-xp-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 8px; border-top: 1px solid var(--c-border-3); }
 .shop-xp-price { font-family: var(--font-display); font-weight: 700; font-size: 12px; color: var(--c-amber-bright); display: flex; align-items: center; gap: 3px; }
-.shop-stack-tag { position: absolute; top: 8px; right: 8px; font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: rgba(212,168,32,.12); color: var(--c-amber-bright); border: 1px solid rgba(212,168,32,.2); border-radius: 2px; padding: 2px 6px; }
+.shop-stack-tag { display: inline-block; align-self: flex-start; margin-bottom: 8px; font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: rgba(212,168,32,.12); color: var(--c-amber-bright); border: 1px solid rgba(212,168,32,.2); border-radius: 2px; padding: 2px 6px; }
 
 /* Pre-fight buff cards */
 .shop-buff-card { background: var(--c-bg-tile); border: 1px solid var(--c-border); border-radius: 7px; overflow: hidden; transition: border-color .15s; }

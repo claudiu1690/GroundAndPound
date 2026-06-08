@@ -87,9 +87,9 @@ function BoosterCard({ booster, dimmed, busy, onBuy }) {
   const blocked = dimmed || booster.locked;
   return (
     <div className={`shop-xp-card${isStack ? " shop-xp-card--stack" : ""}${blocked ? " shop-xp-card--disabled" : ""}`}>
-      {isStack && <span className="shop-stack-tag">Best Value</span>}
       <div className="shop-xp-stripe" />
       <div className="shop-xp-body">
+        {isStack && <span className="shop-stack-tag">Best Value</span>}
         <div className="shop-xp-top">
           <div className="shop-xp-name">{booster.name}</div>
           <span className="shop-xp-sessions">{booster.sessions} sessions</span>
