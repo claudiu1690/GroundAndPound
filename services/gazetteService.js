@@ -53,6 +53,20 @@ function methodFromOutcome(outcome) {
     return "Decision";
 }
 
+/** Newspaper score-box method label (e.g. "Decision · Unanimous"). */
+function scoreMethodLabel(outcome) {
+    switch (outcome) {
+        case "KO/TKO":
+        case "Loss (KO/TKO)":       return "KO/TKO";
+        case "Submission":
+        case "Loss (submission)":   return "Submission";
+        case "Decision (unanimous)": return "Decision · Unanimous";
+        case "Decision (split)":     return "Decision · Split";
+        case "Draw":                 return "Draw";
+        default:                     return "Decision";
+    }
+}
+
 function isFinishOutcome(outcome) {
     return ["KO/TKO", "Submission", "Loss (KO/TKO)", "Loss (submission)"].includes(outcome);
 }
@@ -333,6 +347,31 @@ function buildRecordMilestoneStory(fighter) {
     };
 }
 
+/**
+ * Structured "Last Fight Result" for the gazette score-box. Reuses already-computed
+ * state (last fight + rank/tier baselines) — facts, not prose. Null with no fight.
+ */
+function buildLastResult(fighter, lastFight) {
+    if (!lastFight) return null;
+    const isDraw = lastFight.outcome === "Draw";
+    const playerWon = isWinOutcome(lastFight.outcome);
+    const player = fighterDisplayName(fighter);
+    const opponent = lastFight.opponentId?.name || "their opponent";
+    const rawFrom = fighter.gazette?.rankBeforeLastFight;
+    const rawTo = fighter.ranking?.rank;
+    return {
+        playerWon,
+        isDraw,
+        winnerName: isDraw ? player : (playerWon ? player : opponent),
+        loserName:  isDraw ? opponent : (playerWon ? opponent : player),
+        methodLabel: scoreMethodLabel(lastFight.outcome),
+        tier: fighter.gazette?.tierBeforeLastFight || fighter.promotionTier || "Amateur",
+        rankFrom: rawFrom != null ? (toDisplayRank(rawFrom) ?? rawFrom) : null,
+        rankTo:   rawTo   != null ? (toDisplayRank(rawTo)   ?? rawTo)   : null,
+        record: recordString(fighter),
+    };
+}
+
 // ── Composer ────────────────────────────────────────────────────────────────
 
 /**
@@ -436,6 +475,7 @@ async function composeGazette(fighter) {
         date,
         masthead: "The Octagon Gazette",
         stories,
+        lastResult: buildLastResult(fighter, lastFight),
         alreadyShownToday: lastShownDate === date,
     };
 }

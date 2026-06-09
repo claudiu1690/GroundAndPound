@@ -1,8 +1,8 @@
 /**
  * Octagon Gazette template catalog.
  *
- * Each story type has 4–6 template variants. The composer picks one at render time
- * (deterministic per (date, fighterId) — see utils/gazetteRng.js).
+ * Each story type has several template variants. The composer picks one at render
+ * time (deterministic per (date, fighterId) — see utils/gazetteRng.js).
  *
  * Variables are written as {VARIABLE_NAME} and substituted by the variable resolver.
  *
@@ -19,6 +19,12 @@ const TEMPLATES = {
           body: "The losses have piled up for {FIGHTER}. A Mental Reset is mandatory before they fight again." },
         { headline: "PAUSE BUTTON",
           body: "After three straight defeats, {FIGHTER} can't fight until they complete a Mental Reset." },
+        { headline: "{FIGHTER} BENCHED UNTIL THE HEAD CLEARS",
+          body: "The body's willing but the slate isn't clean. {FIGHTER} stays on the shelf until a Mental Reset is complete." },
+        { headline: "NO FIGHT BOOKED — AND THERE WON'T BE",
+          body: "Three defeats deep, {FIGHTER} is locked out of the cage until a Mental Reset goes through." },
+        { headline: "STEP OFF THE LEDGE, {FIGHTER}",
+          body: "Coaches have seen this spiral before. Before {FIGHTER} can sign anything, a Mental Reset comes first." },
     ],
 
     // ── PRIORITY 1: Event Result ────────────────────────────────────────────────
@@ -31,6 +37,12 @@ const TEMPLATES = {
           body: "{WINNER} needed just {ROUND} round(s) to finish {LOSER} in one of the year's most emphatic performances." },
         { headline: "ROUND {ROUND} FINISH: {WINNER} OVER {LOSER}",
           body: "The main card at {EVENT_NAME} ended early as {WINNER} secured the KO victory." },
+        { headline: "{WINNER} CLOSES THE SHOW EARLY ON {LOSER}",
+          body: "The crowd at {EVENT_NAME} barely settled before {WINNER} dropped {LOSER} cold in round {ROUND}." },
+        { headline: "ONE SHOT, ONE NIGHT — {WINNER} TAKES IT",
+          body: "{LOSER} walked in confident and left horizontal. {WINNER} owns the {EVENT_NAME} highlight reel after a round {ROUND} knockout." },
+        { headline: "{EVENT_NAME} ERUPTS AS {WINNER} FINISHES",
+          body: "{ROUND} round(s) was all {WINNER} required to separate {LOSER} from the contest and the result." },
     ],
     event_result_sub: [
         { headline: "{WINNER} TAPS OUT {LOSER} IN ROUND {ROUND}",
@@ -41,6 +53,12 @@ const TEMPLATES = {
           body: "{EVENT_NAME} saw another dominant submission victory as {WINNER} finished {LOSER} in round {ROUND}." },
         { headline: "TECHNICAL MASTERPIECE AT {EVENT_NAME}",
           body: "{WINNER} forces the tap from {LOSER} in round {ROUND} in a display of elite grappling." },
+        { headline: "{WINNER} WRAPS {LOSER} UP AND TURNS OUT THE LIGHTS",
+          body: "No panic, no rush. {WINNER} hunted the finish at {EVENT_NAME} and got the tap from {LOSER} in round {ROUND}." },
+        { headline: "NO ESCAPE AT {EVENT_NAME}",
+          body: "Once it hit the canvas it was academic. {WINNER} submits {LOSER} in round {ROUND} without a wasted motion." },
+        { headline: "{WINNER} CHOKES OUT THE COMPETITION",
+          body: "{LOSER} fought the grip as long as the body allowed. {WINNER} sealed the submission at {EVENT_NAME} in round {ROUND}." },
     ],
     event_result_dec: [
         { headline: "{WINNER} EDGES {LOSER} OVER THE DISTANCE AT {EVENT_NAME}",
@@ -51,6 +69,12 @@ const TEMPLATES = {
           body: "{WINNER} takes the decision over {LOSER} at {EVENT_NAME} after a grinding, tactical contest." },
         { headline: "JUDGES FAVOUR {WINNER} AFTER THREE ROUNDS",
           body: "It went the distance at {EVENT_NAME} but {WINNER} did enough to take the nod over {LOSER}." },
+        { headline: "{WINNER} BANKS THE ROUNDS, TAKES THE NOD AT {EVENT_NAME}",
+          body: "No finish, no fireworks, no doubt. {WINNER} out-worked {LOSER} from bell to bell for the decision." },
+        { headline: "FIFTEEN HARD MINUTES GO TO {WINNER}",
+          body: "{LOSER} never stopped pressing, but {EVENT_NAME} belonged to {WINNER} once the scorecards came in." },
+        { headline: "GROUND OUT AND EARNED — {WINNER} OVER {LOSER}",
+          body: "A chess match at {EVENT_NAME} tilted {WINNER}'s way, the judges rewarding the busier, smarter night's work." },
     ],
 
     // ── PRIORITY 2: First Loss + Title Fight Composite ─────────────────────────
@@ -61,6 +85,12 @@ const TEMPLATES = {
           body: "{FIGHTER}'s unbeaten run ends in the {TIER} title fight. {OPPONENT} keeps the belt." },
         { headline: "GOLD ELUDES THE UNDEFEATED",
           body: "{FIGHTER} arrives with a perfect record and leaves with a first loss. {OPPONENT} retains the {TIER} title." },
+        { headline: "ONE NIGHT, TWO FIRSTS — DEFEAT AND A TITLE MISS",
+          body: "{FIGHTER} reached for the {TIER} belt with a spotless record and walked away with neither. {OPPONENT} saw to that." },
+        { headline: "{OPPONENT} SPOILS THE CORONATION",
+          body: "The script had {FIGHTER} crowned undefeated. Instead {OPPONENT} kept the {TIER} title and wrote the first loss." },
+        { headline: "THE BELT, AND THE ZERO, STAY BEHIND",
+          body: "{FIGHTER} leaves the {TIER} title fight with a maiden defeat. {OPPONENT} proved the gap between contender and champion." },
     ],
 
     // ── PRIORITY 3: Title Fight Result ─────────────────────────────────────────
@@ -73,6 +103,12 @@ const TEMPLATES = {
           body: "The {TIER} division has a new ruler. {FIGHTER} finishes {OPPONENT} and seizes the gold." },
         { headline: "UPSET OF THE YEAR? {FIGHTER} CAPTURES THE {TIER} BELT",
           body: "{OPPONENT} didn't see it coming. {FIGHTER} is the new champion." },
+        { headline: "{FIGHTER} TAKES THE GOLD IN {ROUND} ROUND(S)",
+          body: "The wait is over. {FIGHTER} finishes {OPPONENT} and walks out of the {TIER} division as its champion." },
+        { headline: "LONG LIVE THE NEW {TIER} KING",
+          body: "{OPPONENT} held that belt like it was permanent. {FIGHTER} just proved nothing is." },
+        { headline: "EVERYTHING CHANGES TONIGHT FOR {FIGHTER}",
+          body: "A {TIER} title, a new life. {FIGHTER} beats {OPPONENT} and steps into a different career entirely." },
     ],
     title_lost: [
         { headline: "SO CLOSE, YET SO FAR",
@@ -83,6 +119,12 @@ const TEMPLATES = {
           body: "{OPPONENT} keeps the {TIER} title. {FIGHTER} returns to the rankings to rebuild." },
         { headline: "NOT YET",
           body: "{FIGHTER} pushes {OPPONENT} but falls short of the {TIER} championship. The hunger remains." },
+        { headline: "THE BELT STAYS WITH {OPPONENT}",
+          body: "{FIGHTER} had the moment in their hands and {OPPONENT} took it back. The {TIER} crown is still spoken for." },
+        { headline: "{ROUND} ROUND(S) SHORT OF THE DREAM",
+          body: "{FIGHTER} pushed {OPPONENT} hard, but the {TIER} title demanded more than was there tonight." },
+        { headline: "ONE STEP FROM GOLD, ONE STEP TOO FAR",
+          body: "{OPPONENT} answered every question {FIGHTER} asked. The {TIER} belt remains a mountain still to climb." },
     ],
 
     // ── PRIORITY 4: First Loss (standalone) ────────────────────────────────────
@@ -97,6 +139,12 @@ const TEMPLATES = {
           body: "{OPPONENT} ends the unbeaten run. How {FIGHTER} responds will define them." },
         { headline: "A DARK NIGHT FOR {FIGHTER}",
           body: "The unbeaten record is no more. {OPPONENT} wins in a defining moment in {FIGHTER}'s career." },
+        { headline: "THE ZERO FALLS FOR {FIGHTER}",
+          body: "It had to happen eventually. {OPPONENT} is the name on the night {FIGHTER}'s perfect record finally cracked." },
+        { headline: "{OPPONENT} WRITES THE FIRST BLEMISH",
+          body: "A flawless run ends here. {FIGHTER} takes a debut loss and now the real test — the response — begins." },
+        { headline: "UNBEATEN NO MORE",
+          body: "{FIGHTER}'s {RECORD} ledger carries its first defeat after {OPPONENT} found the answers nobody else could." },
     ],
 
     // ── PRIORITY 5: Auto-Promotion ─────────────────────────────────────────────
@@ -107,6 +155,12 @@ const TEMPLATES = {
           body: "{FIGHTER} ascends to the {TIER} division. A new pool of opponents awaits." },
         { headline: "DIVISION MOVE FOR {FIGHTER}",
           body: "Up and out. {FIGHTER} graduates to the {TIER} ranks." },
+        { headline: "{FIGHTER} OUTGROWS THE ROOM",
+          body: "There was nothing left to prove down a tier. {FIGHTER} moves up to {TIER} and the level rises with them." },
+        { headline: "GRADUATION DAY FOR {FIGHTER}",
+          body: "The promotion is official — {TIER} is the new home, and the welcome will not be gentle." },
+        { headline: "ONWARD AND UPWARD INTO {TIER}",
+          body: "{FIGHTER} earns the bump to the {TIER} ranks. Bigger names, longer odds, brighter lights." },
     ],
 
     // ── PRIORITY 6: Rank Entry ─────────────────────────────────────────────────
@@ -117,6 +171,12 @@ const TEMPLATES = {
           body: "After three fights, {FIGHTER} debuts in the {TIER} rankings at #{NEW_RANK}." },
         { headline: "FROM UNRANKED TO #{NEW_RANK}",
           body: "{FIGHTER} makes their {TIER} ranking debut. The climb begins." },
+        { headline: "{FIGHTER} CRACKS THE {TIER} LIST AT #{NEW_RANK}",
+          body: "No longer just a name on a card. {FIGHTER} debuts in the {TIER} rankings at #{NEW_RANK}." },
+        { headline: "A NUMBER NEXT TO THE NAME",
+          body: "{FIGHTER} is officially ranked, opening the {TIER} account at #{NEW_RANK}." },
+        { headline: "THE BOARD MAKES ROOM FOR {FIGHTER}",
+          body: "Three fights earned it. {FIGHTER} enters the {TIER} rankings at #{NEW_RANK} with plenty more in the tank." },
     ],
 
     // ── PRIORITY 7: Win Streak Milestone ───────────────────────────────────────
@@ -131,6 +191,12 @@ const TEMPLATES = {
           body: "What started as a good run is becoming something special. {STREAK} wins in a row for {FIGHTER}." },
         { headline: "UNSTOPPABLE? {FIGHTER} MAKES IT {STREAK}",
           body: "Another win, another step toward the top." },
+        { headline: "{STREAK} STRAIGHT AND NO BRAKES IN SIGHT",
+          body: "{FIGHTER} keeps cashing wins. {STREAK} in a row now, and the matchmakers are running out of safe options." },
+        { headline: "WHO BOOKS THE FIGHT THAT ENDS THIS?",
+          body: "{FIGHTER} sits on {STREAK} consecutive victories. So far, nobody's volunteered to be the answer." },
+        { headline: "{FIGHTER} TURNS A RUN INTO A REPUTATION",
+          body: "{STREAK} wins deep, the conversation has changed. This isn't a hot streak anymore — it's a résumé." },
     ],
 
     // ── PRIORITY 8: Rank Jump ──────────────────────────────────────────────────
@@ -143,6 +209,12 @@ const TEMPLATES = {
           body: "{FIGHTER} makes a statement leap up the {TIER} rankings, moving to #{NEW_RANK}." },
         { headline: "EYES ON {FIGHTER}",
           body: "From #{OLD_RANK} to #{NEW_RANK} in one night. The {TIER} division is paying attention." },
+        { headline: "{FIGHTER} VAULTS FROM #{OLD_RANK} TO #{NEW_RANK}",
+          body: "One result, a fistful of places. {FIGHTER} surges up the {TIER} board and the names above are nervous." },
+        { headline: "THE {TIER} LADDER JUST GOT SHAKEN",
+          body: "{FIGHTER} climbs to #{NEW_RANK}, leaving #{OLD_RANK} and a few bruised egos in the rear-view." },
+        { headline: "BIG NIGHT, BIGGER JUMP FOR {FIGHTER}",
+          body: "From #{OLD_RANK} to #{NEW_RANK} in {TIER}. The contenders' circle is suddenly within touching distance." },
     ],
 
     // ── PRIORITY 9: Last Fight Result (default lead/secondary) ─────────────────
@@ -157,6 +229,12 @@ const TEMPLATES = {
           body: "The fight was stopped in round {ROUND} as {FIGHTER} landed the decisive blow." },
         { headline: "LIGHTS OUT",
           body: "{FIGHTER} ends the night early with a KO victory over {OPPONENT} in round {ROUND}." },
+        { headline: "{FIGHTER} FINDS THE OFF SWITCH ON {OPPONENT}",
+          body: "It didn't go long. {FIGHTER} located the finish and {OPPONENT} was done in round {ROUND}." },
+        { headline: "CLEAN AND COLD — {FIGHTER} GETS THE KO",
+          body: "No controversy, no judges, no debate. {FIGHTER} flattened {OPPONENT} in round {ROUND}." },
+        { headline: "{ROUND} ROUND(S) WAS ALL {FIGHTER} NEEDED",
+          body: "{OPPONENT} came to compete and left on a stretcher of pride. {FIGHTER} closes the show with a knockout." },
     ],
     win_sub: [
         { headline: "{FIGHTER} SUBMITS {OPPONENT} IN ROUND {ROUND}",
@@ -167,6 +245,12 @@ const TEMPLATES = {
           body: "Technical, precise, and effective. {FIGHTER} gets the tap in round {ROUND}." },
         { headline: "ROUND {ROUND}: {FIGHTER} FORCES THE TAP",
           body: "{OPPONENT} had no escape as {FIGHTER} secured the submission victory." },
+        { headline: "{FIGHTER} WRINGS THE TAP FROM {OPPONENT}",
+          body: "Patient hands, no escape. {FIGHTER} hunted the finish and got it in round {ROUND}." },
+        { headline: "TAP, SNAP, OR NAP — {OPPONENT} CHOSE WISELY",
+          body: "{FIGHTER} locked it tight and {OPPONENT} had nowhere to go. Submission in round {ROUND}." },
+        { headline: "THE MAT BELONGS TO {FIGHTER}",
+          body: "Once it hit the floor it was a formality. {FIGHTER} submits {OPPONENT} in round {ROUND}." },
     ],
     win_dec: [
         { headline: "{FIGHTER} GRINDS OUT DECISION OVER {OPPONENT}",
@@ -177,6 +261,12 @@ const TEMPLATES = {
           body: "A disciplined performance from {FIGHTER} earns the decision victory." },
         { headline: "THE DISTANCE FAVOURS {FIGHTER}",
           body: "{OPPONENT} pushed hard but {FIGHTER} controlled the fight to earn the decision." },
+        { headline: "{FIGHTER} OUTPOINTS {OPPONENT} OVER THE DISTANCE",
+          body: "Busier, sharper, smarter. {FIGHTER} banked the rounds and the judges agreed." },
+        { headline: "NO FINISH, NO PROBLEM FOR {FIGHTER}",
+          body: "{OPPONENT} survived to the final bell but {FIGHTER} owned every minute that mattered." },
+        { headline: "THE SCORECARDS SMILE ON {FIGHTER}",
+          body: "A patient, professional shift from {FIGHTER}, who out-worked {OPPONENT} for the decision." },
     ],
     loss: [
         { headline: "{FIGHTER} SUFFERS DEFEAT AGAINST {OPPONENT}",
@@ -189,6 +279,12 @@ const TEMPLATES = {
           body: "{FIGHTER} fought hard but {OPPONENT} had the answers tonight." },
         { headline: "A LESSON LEARNED",
           body: "{FIGHTER} suffers a loss to {OPPONENT}. Every setback is data." },
+        { headline: "{OPPONENT} GETS THE BETTER OF {FIGHTER}",
+          body: "Not every night goes to plan. {FIGHTER} comes up short against {OPPONENT} and heads back to fix it." },
+        { headline: "{FIGHTER} TASTES DEFEAT TONIGHT",
+          body: "{OPPONENT} had the sharper edge. {FIGHTER} takes the loss and starts the long walk back." },
+        { headline: "THE NIGHT BELONGS TO {OPPONENT}",
+          body: "{FIGHTER} gave what they had; it wasn't enough against {OPPONENT}. The rebuild starts now." },
     ],
 
     // ── PRIORITY 10: Division Spotlight (fallback lead) ────────────────────────
@@ -199,6 +295,12 @@ const TEMPLATES = {
           body: "Sitting at #{RANK} in {TIER}, the next fight could change everything." },
         { headline: "THE DIVISION KEEPS MOVING",
           body: "{FIGHTER} is #{RANK} in {TIER}. Every day without a fight is a day others are catching up." },
+        { headline: "#{RANK} ISN'T A DESTINATION FOR {FIGHTER}",
+          body: "Holding #{RANK} in {TIER} is fine for some. {FIGHTER} didn't come this far to stop here." },
+        { headline: "THE CLOCK TICKS ON {FIGHTER}",
+          body: "Ranked #{RANK} in {TIER} and idle. Belts don't fall to the fighter sitting still." },
+        { headline: "FROM #{RANK}, EVERY DIRECTION IS A FIGHT",
+          body: "{FIGHTER} occupies #{RANK} in {TIER}. Above are targets, below are sharks. Time to move." },
     ],
     spotlight_unranked: [
         { headline: "THE JOURNEY BEGINS",
@@ -207,6 +309,12 @@ const TEMPLATES = {
           body: "{FIGHTER} has everything to prove in the {TIER} division. Time to get to work." },
         { headline: "A CAREER IN MOTION",
           body: "{FIGHTER} is building something in the {TIER} division. The rankings are within reach." },
+        { headline: "NO RANKING, ALL AMBITION",
+          body: "{FIGHTER} hasn't cracked the {TIER} board yet — but unranked is just a starting line, not a verdict." },
+        { headline: "{FIGHTER} KNOCKS ON THE DOOR",
+          body: "The {TIER} rankings are right there. {FIGHTER} only needs the results to be let in." },
+        { headline: "BUILDING FROM ZERO IN {TIER}",
+          body: "{FIGHTER} is unranked and unbothered. The whole {TIER} division is one good run away from learning the name." },
     ],
 
     // ── SECONDARY / FILLER STORIES ─────────────────────────────────────────────
@@ -218,6 +326,12 @@ const TEMPLATES = {
           body: "{FIGHTER} reaches {FAME_TIER} status. The buzz around the name is real." },
         { headline: "INTO {FAME_TIER}",
           body: "Notoriety check: {FIGHTER} just moved up to {FAME_TIER}." },
+        { headline: "{FIGHTER} GRADUATES TO {FAME_TIER}",
+          body: "The room knows the name now. {FIGHTER} climbs into the {FAME_TIER} bracket and the spotlight follows." },
+        { headline: "A BIGGER STAGE FINDS {FIGHTER}",
+          body: "Fame catches up to form. {FIGHTER} steps up to {FAME_TIER}, and more eyes mean more pressure." },
+        { headline: "{FAME_TIER} — AND THE NAME KEEPS GROWING",
+          body: "{FIGHTER} crosses into {FAME_TIER}. From here, the cameras don't need an introduction." },
     ],
 
     notoriety_gained: [
@@ -227,6 +341,12 @@ const TEMPLATES = {
           body: "Up {CHANGE} notoriety points." },
         { headline: "PEOPLE ARE TALKING ABOUT {FIGHTER}",
           body: "Notoriety now at {NOTORIETY}." },
+        { headline: "{FIGHTER} IS THE NAME ON EVERY LIP",
+          body: "Notoriety up {CHANGE} this week, sitting at {NOTORIETY}. The buzz has legs." },
+        { headline: "THE HYPE MACHINE FINDS A NEW FAVOURITE",
+          body: "{CHANGE} notoriety and climbing. {FIGHTER} is officially worth talking about." },
+        { headline: "STOCK RISING ON {FIGHTER}",
+          body: "Up {CHANGE} on the notoriety meter to {NOTORIETY}. The market likes what it sees." },
     ],
     notoriety_lost: [
         { headline: "FADING FROM THE SPOTLIGHT",
@@ -235,6 +355,12 @@ const TEMPLATES = {
           body: "Down {CHANGE} notoriety. Time to make some noise." },
         { headline: "QUIET SPELL FOR {FIGHTER}",
           body: "Notoriety at {NOTORIETY}. The fans need a reason to keep talking." },
+        { headline: "{FIGHTER} SLIPS FROM THE CONVERSATION",
+          body: "Notoriety down {CHANGE} to {NOTORIETY}. Out of sight is dangerously close to out of mind." },
+        { headline: "THE SPOTLIGHT WANDERS OFF {FIGHTER}",
+          body: "A move of {CHANGE} on the notoriety board drops {FIGHTER} to {NOTORIETY}. A statement win would fix it fast." },
+        { headline: "{FIGHTER}'S STOCK COOLS",
+          body: "Notoriety shifts {CHANGE} to {NOTORIETY}. The fans are fickle — time to remind them why." },
     ],
 
     nemesis_set: [
@@ -242,12 +368,20 @@ const TEMPLATES = {
           body: "{OPPONENT} just handed {FIGHTER} a loss. A grudge has officially started." },
         { headline: "{FIGHTER} HAS A NEW NEMESIS",
           body: "{OPPONENT}. Remember the name." },
+        { headline: "BAD BLOOD HAS A NAME NOW",
+          body: "{OPPONENT} beat {FIGHTER} and earned something worse than a win — a grudge. This one isn't finished." },
+        { headline: "{FIGHTER} WON'T FORGET {OPPONENT}",
+          body: "Some losses sting. This one sticks. {FIGHTER} marks {OPPONENT} as unfinished business." },
     ],
     nemesis_cleared: [
         { headline: "REVENGE SERVED",
           body: "{FIGHTER} settles the score with {OPPONENT}. Nemesis cleared." },
         { headline: "{FIGHTER} GETS THE WIN BACK",
           body: "The grudge is over. {FIGHTER} defeats {OPPONENT}." },
+        { headline: "THE DEBT IS PAID IN FULL",
+          body: "{FIGHTER} hunted down {OPPONENT} and collected. The nemesis is no more." },
+        { headline: "{FIGHTER} CLOSES THE BOOK ON {OPPONENT}",
+          body: "What was owed has been settled. {FIGHTER} beats {OPPONENT} and walks away even." },
     ],
 
     beef_lapsed: [
@@ -287,6 +421,12 @@ const TEMPLATES = {
           body: "Record now reads {RECORD}." },
         { headline: "CAREER LANDMARK FOR {FIGHTER}",
           body: "{MILESTONE_LABEL} reached. {RECORD} on the books." },
+        { headline: "{FIGHTER} STAMPS {MILESTONE_LABEL} INTO THE LEDGER",
+          body: "Milestones don't lie. {FIGHTER}'s record reads {RECORD} and the ink keeps flowing." },
+        { headline: "ANOTHER MARKER FALLS FOR {FIGHTER}",
+          body: "{MILESTONE_LABEL} is on the board now, with the record at {RECORD} and no sign of slowing." },
+        { headline: "THE RÉSUMÉ GROWS — {MILESTONE_LABEL}",
+          body: "{FIGHTER} hits {MILESTONE_LABEL}. {RECORD} and counting, one fight at a time." },
     ],
 
     gym_session: [
@@ -308,6 +448,12 @@ const TEMPLATES = {
           body: "{LOSS_STREAK} consecutive losses for {FIGHTER}. This is where careers are defined." },
         { headline: "DARK SPELL FOR {FIGHTER}",
           body: "{LOSS_STREAK} straight defeats. The comeback story is waiting to be written." },
+        { headline: "{FIGHTER} STARES DOWN THE SLIDE",
+          body: "{LOSS_STREAK} on the trot. This is the stretch where careers either break or harden." },
+        { headline: "THE ONLY WAY OUT IS THROUGH",
+          body: "{LOSS_STREAK} straight losses for {FIGHTER}. Nobody writes the comeback chapter without one of these first." },
+        { headline: "ROCK BOTTOM HAS A BASEMENT — AND A LADDER",
+          body: "{FIGHTER} is {LOSS_STREAK} defeats deep. The fall is documented. The climb is the story worth telling." },
     ],
 };
 
