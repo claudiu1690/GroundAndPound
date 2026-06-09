@@ -150,7 +150,7 @@ export const CampSummary = memo(function CampSummary({
                 <div className="cs-wc-section">
                     <div className="cs-section-label">Weight Cut Strategy</div>
                     <div className="cs-wc-explanation">
-                        Each cut rolls a random stamina swing when the cage door closes — bigger gambles mean bigger upside and worse crashes. Miss weight and you lose 20% of your purse.
+                        Each cut rolls a random stamina swing when the cage door closes — bigger gambles mean bigger upside. Miss weight and the cut backfires: your stamina crashes and you lose 20% of your purse plus 200 fame.
                     </div>
                     <div className="cs-wc-grid" data-tut="weight-cut">
                         {WEIGHT_CUT_OPTIONS.map((opt) => {

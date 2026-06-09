@@ -166,10 +166,10 @@ export const LIBRARY_ARTICLES = [
         body: [
             "Before every fight, you choose a weight cut strategy. It's a gamble — you're trading certainty for potential upside, or accepting a safe result with no ceiling.",
             "Easy cut gives you exactly +0 stamina and a 0% chance of missing weight. Boring, but reliable. Moderate cut rolls −5 to +10 stamina with a 5% miss chance. Aggressive cut rolls −12 to +18 stamina with a 20% miss chance. A good aggressive cut is a significant advantage. A bad one puts you at a deficit before the fight starts.",
-            "Missing weight costs you 20% of your cash purse. That's a real financial penalty, not just a slap on the wrist. Against a hard opponent or in a title fight, showing up drained and out of pocket is a combination that ends careers.",
+            "Missing weight backfires badly. A failed cut never gives you the good roll — your stamina always crashes — and on top of that you lose 20% of your cash purse and 200 fame. Against a hard opponent or in a title fight, showing up drained, broke, and less famous is a combination that ends careers.",
             "The Titan perk from Rank 4 at Titan Performance Center raises the bad roll floor by 3 — it doesn't remove the risk, but it reduces the damage ceiling of a failed cut. For fighters who love the aggressive cut, it's a meaningful safety net.",
         ],
-        keyTakeaway: "Aggressive cuts have a 20% miss rate. Missing costs 20% cash. Factor the risk into every decision — there's no shame in an Easy cut before a title fight.",
+        keyTakeaway: "Aggressive cuts have a 20% miss rate. Missing crashes your stamina and costs 20% cash plus 200 fame. Factor the risk into every decision — there's no shame in an Easy cut before a title fight.",
     },
     {
         id: "fight-outcomes",

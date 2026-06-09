@@ -607,20 +607,33 @@ async function resolveFightAndApply(fighterId) {
         }
     }
 
-    // GDD 8.8 (revised): Weight cut — stamina gamble with miss risk
-    // Easy: no change. Moderate/Aggressive: random stamina roll (can be negative).
+    // GDD 8.8 (revised): Weight cut — a stamina gamble with miss risk.
+    // Miss weight is the BAD TAIL of the same gamble: a missed cut always drains you
+    // (a negative stamina roll) and never grants a boost. A positive roll therefore
+    // guarantees you made weight — you can't gain stamina AND miss weight on one cut.
     const weightCut = fight.weightCut || "easy";
     const WEIGHT_CUT_CONFIG = {
         easy:       { min: 0,  max: 0,  missPct: 0    },
         moderate:   { min: -5, max: 10, missPct: 0.05 },
         aggressive: { min: -12, max: 18, missPct: 0.20 },
     };
-    const wcConfig = WEIGHT_CUT_CONFIG[weightCut];
-    const weightCutRoll = wcConfig.min === 0 && wcConfig.max === 0
-        ? 0
-        : wcConfig.min + Math.floor(Math.random() * (wcConfig.max - wcConfig.min + 1));
-    fightPlayer.stamina = Math.max(1, (fightPlayer.stamina ?? 100) + weightCutRoll);
+    const wcConfig = WEIGHT_CUT_CONFIG[weightCut] || WEIGHT_CUT_CONFIG.easy;
+    // Strength Reserve (Titan Performance rank-4 perk): raise the bad-roll floor by 3.
+    const hasStrengthReserve = (fighter.gymPerks || []).includes("strength_reserve");
+    const rollFloor = Math.min(wcConfig.max, wcConfig.min + (hasStrengthReserve ? 3 : 0));
     const weightMissed = wcConfig.missPct > 0 && Math.random() < wcConfig.missPct;
+    let weightCutRoll;
+    if (wcConfig.min === 0 && wcConfig.max === 0) {
+        weightCutRoll = 0;                                   // easy cut — no swing, no miss risk
+    } else if (weightMissed) {
+        // A missed cut only ever drains stamina — roll the negative band [rollFloor, -1].
+        const lo = Math.min(rollFloor, -1);
+        weightCutRoll = lo + Math.floor(Math.random() * (-1 - lo + 1));
+    } else {
+        // Made weight — full swing from the (perk-adjusted) floor up to the max upside.
+        weightCutRoll = rollFloor + Math.floor(Math.random() * (wcConfig.max - rollFloor + 1));
+    }
+    fightPlayer.stamina = Math.max(1, (fightPlayer.stamina ?? 100) + weightCutRoll);
     fight.weightCutRoll = weightCutRoll;
 
     const playerName = fighter.nickname
@@ -725,8 +738,6 @@ async function resolveFightAndApply(fighterId) {
     let ironEarned = Math.round(
         basePurse * outcomeIronMult * (1 + notorietyPurseFrac + comebackPurseFrac)
     );
-    if (weightMissed) ironEarned = Math.round(ironEarned * 0.8);
-
     // Phase 4: callout purse bump (+25%) only on a WIN. Losing a callout just loses the fame spend.
     const isCalloutFight = !!fight.isCallout;
     if (isCalloutFight && isWin) {
@@ -741,6 +752,10 @@ async function resolveFightAndApply(fighterId) {
         const { RESPECT_WIN_IRON_MULT } = require("../consts/mediaConfig");
         ironEarned = Math.round(ironEarned * RESPECT_WIN_IRON_MULT);
     }
+
+    // Weight miss penalty applies LAST — after every purse bonus — so missing weight
+    // always costs 20% of the FINAL purse (a callout/respect bump can't cancel it out).
+    if (weightMissed) ironEarned = Math.round(ironEarned * 0.8);
 
     const wasFrozenBeforeFight = !!fighter.notoriety.isFrozen;
     const prevConsecutiveLosses = fighter.consecutiveLosses || 0;
