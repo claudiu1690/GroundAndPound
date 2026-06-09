@@ -913,6 +913,16 @@ async function resolveFightAndApply(fighterId) {
     // ─────────────────────────────────────────────────────────────────────
 
     const winStreakAfterWin = isWin ? (fighter.winStreak || 0) : 0;
+
+    // ── Energy Drink free-earn: win-streak milestones (5/10/15/20) ──────
+    // Grants clamp against the running inventory value via the shared helper.
+    let streakDrinksGranted = 0;
+    if (isWin) {
+        const { grantEnergyDrinks } = require("./shopService");
+        const tbl = { 5: 1, 10: 2, 15: 2, 20: 3 };
+        if (tbl[winStreakAfterWin]) streakDrinksGranted = grantEnergyDrinks(fighter, tbl[winStreakAfterWin]);
+    }
+
     const awardCtx = {
         promotionTier: promoTier,
         outcome: result.outcome,
@@ -1080,6 +1090,15 @@ async function resolveFightAndApply(fighterId) {
         }
     }
 
+    // ── Energy Drink free-earn: promotion grant (title-shot OR non-title promotion) ──
+    // Guarded once on the unified `promoted` flag, BEFORE the resolve-persisting save below
+    // so the inventory mutation flushes. Clamps against the running inventory value.
+    let promotionDrinksGranted = 0;
+    if (promoted) {
+        const { grantEnergyDrinks } = require("./shopService");
+        promotionDrinksGranted = grantEnergyDrinks(fighter, 3);
+    }
+
     // Phase 6: Beef/respect flag lifecycle.
     //   - Matched opponent (fight) consumes the flag: remove from array, no penalty.
     //   - Unmatched flags decrement expiresAfterFights by 1 per completed fight.
@@ -1193,7 +1212,9 @@ async function resolveFightAndApply(fighterId) {
     const _isTitleFight = fight.offerType === "TitleShot";
     if (isWin)  activityLogService.log(fighterId, "FIGHT_WIN",
         `Beat ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
-        { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight });
+        { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight,
+          winStreak: winStreakAfterWin,
+          streakDrinks: (winStreakAfterWin >= 10 ? streakDrinksGranted : 0) });
     if (isLoss) activityLogService.log(fighterId, "FIGHT_LOSS",
         `Lost to ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
         { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight });
@@ -1208,10 +1229,10 @@ async function resolveFightAndApply(fighterId) {
         { opponentName: nemesisName, tier: _tier });
     if (promoted && !beltWon) activityLogService.log(fighterId, "TIER_PROMOTION",
         `Promoted to ${promoted.to}`,
-        { from: promoted.from, to: promoted.to, tier: promoted.from });
+        { from: promoted.from, to: promoted.to, tier: promoted.from, drinksGranted: promotionDrinksGranted });
     if (beltWon) activityLogService.log(fighterId, "TITLE_WON",
         `Won ${promoted.from} ${fighter.weightClass} Title \u2014 promoted to ${promoted.to}`,
-        { from: promoted.from, to: promoted.to, weightClass: fighter.weightClass, tier: promoted.from });
+        { from: promoted.from, to: promoted.to, weightClass: fighter.weightClass, tier: promoted.from, drinksGranted: promotionDrinksGranted });
     // Title shot eligible: fires when wins threshold is first met
     if (isWin && fighter.pendingPromotion
         && (fighter.winsInCurrentTier ?? 0) === getTitleShotConfig(fighter.promotionTier).titleWins
@@ -1270,9 +1291,16 @@ async function resolveFightAndApply(fighterId) {
         opponentName: opponent?.name || null,
         interviewDone: !!fight.interview?.done,
         // Phase 3: sponsorship payouts/events from this fight.
+        // Sponsor energy drinks ride on sponsorship.events[].rewardDrinks (set in
+        // sponsorshipService.resolveAfterFight) — sponsorshipEvents IS that array.
         sponsorship: {
             events: sponsorshipEvents,
             ironDelta: sponsorshipIronDelta,
+        },
+        // Energy Drink free-earn: streak + promotion grants from this resolve.
+        drinksGranted: {
+            streak: streakDrinksGranted || 0,
+            promotion: promotionDrinksGranted || 0,
         },
         // Phase 4: callout flag + whether the new banner-unlock badge was just earned.
         isCallout: isCalloutFight,

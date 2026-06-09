@@ -25,6 +25,24 @@ function ensureInventoryShape(fighter) {
 }
 
 /**
+ * Grant energy drinks to a fighter's inventory, clamped to SOFT_CAP.
+ * MUTATES ONLY — never saves. Callers are mid-fight-resolve and persist later.
+ * @param {object} fighter   Mongoose fighter doc
+ * @param {number} amount    requested number of drinks to grant
+ * @returns {number}         the actually-granted count (0 if at/over cap or amount <= 0)
+ */
+function grantEnergyDrinks(fighter, amount) {
+    ensureInventoryShape(fighter);
+    const current = fighter.inventory.energyDrinks;
+    const granted = Math.max(0, Math.min(Number(amount) || 0, SOFT_CAP - current));
+    if (granted > 0) {
+        fighter.inventory.energyDrinks = current + granted;
+        fighter.markModified("inventory");
+    }
+    return granted;
+}
+
+/**
  * Build the shop catalog for a fighter.
  * @param {string} fighterId
  */
@@ -238,4 +256,6 @@ module.exports = {
     buyItem,
     buyPremium,
     useEnergyItem,
+    grantEnergyDrinks,
+    ensureInventoryShape,
 };

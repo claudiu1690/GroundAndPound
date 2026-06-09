@@ -521,8 +521,7 @@ function PremiumStore({ catalog, fighter, busyId, notice, onBuy }) {
         <Info size={14} className="shop-premium-earn-icon" />
         <div className="shop-premium-earn-text">
           You can also earn Energy Drinks for free through <strong>contract completions</strong>,{" "}
-          <strong>win streaks</strong>, <strong>tier promotions</strong> and{" "}
-          <strong>career milestones</strong>. Buying is always optional.
+          <strong>win streaks</strong> and <strong>tier promotions</strong>. Buying is always optional.
         </div>
       </div>
     </section>

@@ -15,6 +15,8 @@ const {
 } = require("../consts/sponsorClauses");
 const { tierRank } = require("../consts/notorietyConfig");
 const notorietyService = require("./notorietyService");
+// Safe top-level require: shopService does NOT require sponsorshipService, so no circular dep.
+const { grantEnergyDrinks } = require("./shopService");
 
 /**
  * Deterministic PRNG so available offers stay stable within a week for a given fighter.
@@ -176,10 +178,13 @@ async function acceptOffer(fighterId, sponsorId) {
         durationFights: offer.durationFights,
         rewardPerFight: offer.rewardPerFight,
         rewardBonus: offer.rewardBonus,
+        rewardDrinks: offer.rewardDrinks || 0,
         fameBonusOnComplete: offer.fameBonusOnComplete,
         famePenaltyOnBreak: offer.famePenaltyOnBreak,
         progress: {},
-        totals: { ironEarned: 0, fameEarned: 0 },
+        // Snapshot pattern: completion reads reward fields from the contract doc only,
+        // never the catalog — so drinksEarned starts at 0 here.
+        totals: { ironEarned: 0, fameEarned: 0, drinksEarned: 0 },
         status: "active",
     });
     return decorate(contract.toObject());
@@ -264,6 +269,15 @@ async function resolveAfterFight(fighter, fight) {
                 });
                 contract.totals.fameEarned += contract.fameBonusOnComplete;
             }
+            // Free-earn: grant energy drinks on completion (clamped against SOFT_CAP).
+            // The inventory mutation is flushed by fightService's post-resolve save, which
+            // is conditional on events being pushed — a completion ALWAYS pushes an event
+            // below, so the mutation persists.
+            let drinksGranted = 0;
+            if (contract.rewardDrinks > 0) {
+                drinksGranted = grantEnergyDrinks(fighter, contract.rewardDrinks);
+                contract.totals.drinksEarned += drinksGranted;
+            }
             contract.status = "completed";
             contract.resolvedAt = new Date();
             events.push({
@@ -271,6 +285,7 @@ async function resolveAfterFight(fighter, fight) {
                 brand: contract.brand,
                 rewardBonus: contract.rewardBonus,
                 fameBonus: contract.fameBonusOnComplete,
+                rewardDrinks: drinksGranted,
             });
         } else if (status === "broken") {
             if (contract.famePenaltyOnBreak > 0) {

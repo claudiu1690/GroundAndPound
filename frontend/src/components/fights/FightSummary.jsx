@@ -46,7 +46,16 @@ export const FightSummary = memo(function FightSummary({ summary, description })
     titleShotLost,
     titleTargetTier,
     buff,
+    drinksGranted,
+    sponsorship,
   } = summary;
+
+  // Energy Drink free-earn notices (post-fight). All guarded with ?? 0 so a
+  // missing field on older/cached summaries renders nothing.
+  const streakDrinks = drinksGranted?.streak ?? 0;
+  const promoDrinks = drinksGranted?.promotion ?? 0;
+  const sponsorDrinks = (sponsorship?.events ?? []).reduce((s, e) => s + (e.rewardDrinks ?? 0), 0);
+  const drinkLabel = (n) => `${n} Energy Drink${n === 1 ? "" : "s"}`;
 
   const hasXp = xpGained && typeof xpGained === "object" && Object.keys(xpGained).length > 0;
   const recordLabel = recordChange === "W" ? "Win" : recordChange === "L" ? "Loss" : "Draw";
@@ -168,6 +177,27 @@ export const FightSummary = memo(function FightSummary({ summary, description })
           <div className="notice notice--good">
             <span className="notice-glyph">⬆</span>
             <span>PROMOTED: {promoted.from} → {promoted.to}! New competition level unlocked.</span>
+          </div>
+        )}
+
+        {streakDrinks > 0 && (
+          <div className="notice notice--good">
+            <span className="notice-glyph">⚡</span>
+            <span>Win-streak reward: +{drinkLabel(streakDrinks)}</span>
+          </div>
+        )}
+
+        {promoDrinks > 0 && (
+          <div className="notice notice--good">
+            <span className="notice-glyph">⚡</span>
+            <span>Promotion reward: +{drinkLabel(promoDrinks)}</span>
+          </div>
+        )}
+
+        {sponsorDrinks > 0 && (
+          <div className="notice notice--good">
+            <span className="notice-glyph">⚡</span>
+            <span>Sponsor bonus: +{drinkLabel(sponsorDrinks)}</span>
           </div>
         )}
 

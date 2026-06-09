@@ -29,12 +29,14 @@ const sponsorshipSchema = new mongoose.Schema(
         durationFights: { type: Number, default: 3 },
         rewardPerFight:      { type: Number, default: 0 },
         rewardBonus:         { type: Number, default: 0 },
+        rewardDrinks:        { type: Number, default: 0 },
         fameBonusOnComplete: { type: Number, default: 0 },
         famePenaltyOnBreak:  { type: Number, default: 0 },
         progress: { type: mongoose.Schema.Types.Mixed, default: {} },
         totals: {
             ironEarned: { type: Number, default: 0 },
             fameEarned: { type: Number, default: 0 },
+            drinksEarned: { type: Number, default: 0 },
         },
         status: {
             type: String,

@@ -99,7 +99,16 @@ export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey }) {
                                 const cfg = EVENT_CONFIG[entry.type] ?? FALLBACK;
                                 const Icon = cfg.Icon;
                                 const [first, ...rest] = (entry.detail ?? "").split(" · ");
-                                const meta = rest.join(" · ") || null;
+                                // Surface free-earned Energy Drinks from meta as an extra detail chunk.
+                                const drinks =
+                                    entry.type === "FIGHT_WIN"
+                                        ? (entry.meta?.streakDrinks ?? 0)
+                                        : (entry.type === "TIER_PROMOTION" || entry.type === "TITLE_WON")
+                                            ? (entry.meta?.drinksGranted ?? 0)
+                                            : 0;
+                                const metaParts = [...rest];
+                                if (drinks > 0) metaParts.push(`+${drinks} Energy Drink${drinks === 1 ? "" : "s"}`);
+                                const meta = metaParts.join(" · ") || null;
                                 // A title fight: the belt win (TITLE_WON) or any fight result
                                 // flagged isTitleFight (so title losses/draws stand out too).
                                 const isTitleFight = entry.type === "TITLE_WON" || !!entry.meta?.isTitleFight;
