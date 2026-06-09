@@ -46,6 +46,8 @@ const BOOSTERS = {
     "leg-press-formula": { id: "leg-press-formula", name: "Leg Press Formula", category: "booster", price: 500,  pct: 0.25, stats: ["leg"],               sessions: 3 },
     "iq-boost":          { id: "iq-boost",          name: "IQ Boost",          category: "booster", price: 750,  pct: 0.25, stats: ["fiq", "chn"],         sessions: 3 },
     "full-camp-stack":   { id: "full-camp-stack",   name: "Full Camp Stack",   category: "booster", price: 1900, pct: 0.20, stats: "ALL",                  sessions: 8 },
+    // Granted (not purchasable) by the Media Hub Documentary "Technician" focus.
+    "DOC_TECHNICIAN":    { id: "DOC_TECHNICIAN",    name: "Documentary Focus",  category: "booster", price: null, pct: 0.05, stats: "ALL",                  sessions: 10 },
 };
 
 const BUFFS = {

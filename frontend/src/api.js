@@ -268,15 +268,19 @@ export const api = {
   getPredictionHistory: (fighterId, limit = 20) =>
     request(`/events/history?fighterId=${encodeURIComponent(fighterId)}&limit=${limit}`),
 
-  // ── Media Hub (Phase 6) ─────────────────────────────────
+  // ── Media Hub ───────────────────────────────────────────
   getMediaState: (fighterId) => request(`/media/${fighterId}`),
-  getDivisionRoster: (fighterId) => request(`/media/${fighterId}/division-roster`),
-  getInterviewArchive: (fighterId, limit = 20) =>
-    request(`/media/${fighterId}/archive?limit=${limit}`),
-  doPodcast: (fighterId, body) =>
+  getMediaTargets: (fighterId) => request(`/media/${fighterId}/targets`),
+  recordPodcast: (fighterId, body) =>
     request(`/media/${fighterId}/podcast`, { method: "POST", body: JSON.stringify(body) }),
-  doDocumentary: (fighterId) =>
-    request(`/media/${fighterId}/documentary`, { method: "POST" }),
+  recordDocumentary: (fighterId, body) =>
+    request(`/media/${fighterId}/documentary`, { method: "POST", body: JSON.stringify(body) }),
+  getAppearances: (fighterId) => request(`/media/${fighterId}/appearances`),
+  takeAppearance: (fighterId, instanceId, body) =>
+    request(`/media/${fighterId}/appearances/${instanceId}`, { method: "POST", body: JSON.stringify(body || {}) }),
+  getRivalry: (fighterId) => request(`/media/${fighterId}/rivalry`),
+  getArchive: (fighterId, filter = "all", page = 1) =>
+    request(`/media/${fighterId}/archive?filter=${encodeURIComponent(filter)}&page=${page}`),
 
   // ── Account settings ────────────────────────────────────
   getAccountProfile: (accountId) =>

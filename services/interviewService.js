@@ -196,6 +196,10 @@ async function resolveInterview({ fighterId, fightId, choice, targetOpponentId }
                 createdAt: new Date(),
             });
         }
+        // Beef and Respect are mutually exclusive per opponent — last stance wins.
+        fighter.respectFlags = (fighter.respectFlags || []).filter(
+            (f) => String(f.opponentId) !== String(targetOpponent._id)
+        );
     }
     if (def.emitRespectFlag && fight.opponentId) {
         // Write a respect flag on the just-fought opponent regardless of outcome —
@@ -213,6 +217,10 @@ async function resolveInterview({ fighterId, fightId, choice, targetOpponentId }
                 createdAt: new Date(),
             });
         }
+        // Beef and Respect are mutually exclusive per opponent — last stance wins.
+        fighter.beefFlags = (fighter.beefFlags || []).filter(
+            (f) => String(f.opponentId) !== String(fight.opponentId)
+        );
     }
 
     // Persist fight + fighter

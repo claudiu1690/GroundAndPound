@@ -1159,6 +1159,17 @@ async function resolveFightAndApply(fighterId) {
         console.error("[media] flag lifecycle error:", e.message);
     }
 
+    // Phase 6: Media Hub post-fight hooks — resolve deferred documentary payout and
+    // arm/resolve undercard-feature appearances. Additive + must never reject the
+    // fight save (mirrors the flag-lifecycle error pattern above).
+    try {
+        const mediaHubService = require("./mediaHubService");
+        await mediaHubService.resolveDocumentaryOnFight(fighter, fight);
+        await mediaHubService.armUndercardOnFight(fighter, fight);
+    } catch (e) {
+        console.error("[media] media hub post-fight error:", e.message);
+    }
+
     // Phase 4: Resolve active callout when the fight was flagged as a callout.
     // Award "Callout Win" badge on a win (unlocks BADGE_CALLOUT banner piece).
     let calloutBadgeAwarded = false;

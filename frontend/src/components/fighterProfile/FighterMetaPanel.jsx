@@ -85,7 +85,7 @@ function RankBlock({ ranking, tier }) {
 }
 
 /**
- * Grouped meta panel — Resources / Career / Profile sections.
+ * Grouped meta panel — Resources / Media Career / Career / Profile sections.
  * Record is intentionally omitted; it's already on the gold hero card above.
  */
 export const FighterMetaPanel = memo(function FighterMetaPanel({ fighter, campSlotsUsed }) {

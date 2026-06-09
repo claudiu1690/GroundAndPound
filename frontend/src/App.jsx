@@ -19,7 +19,7 @@ import { AuthPage } from "./components/auth/AuthPage";
 import { FightLimitPopup } from "./components/fights/FightLimitPopup";
 import { FameDrawer } from "./components/fame/FameDrawer";
 import { ContractsTab } from "./components/contracts/ContractsTab";
-import { MediaTab } from "./components/media/MediaTab";
+import { MediaHub } from "./components/media/MediaHub";
 import { EventsTab } from "./components/events/EventsTab";
 import { HospitalTab } from "./components/hospital/HospitalTab";
 import { RankingsTab } from "./components/rankings/RankingsTab";
@@ -1318,10 +1318,11 @@ const handleGetOffers = useCallback(async () => {
           {/* ── MEDIA ── */}
           {activeTab === "media" && (
             <div className="page-layout">
-              <MediaTab
+              <MediaHub
                 fighter={fighter}
                 onMessage={setMessage}
                 onRefreshFighter={loadFighter}
+                onNavigate={handleNavTab}
               />
             </div>
           )}

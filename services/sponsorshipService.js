@@ -17,38 +17,8 @@ const { tierRank } = require("../consts/notorietyConfig");
 const notorietyService = require("./notorietyService");
 // Safe top-level require: shopService does NOT require sponsorshipService, so no circular dep.
 const { grantEnergyDrinks } = require("./shopService");
-
-/**
- * Deterministic PRNG so available offers stay stable within a week for a given fighter.
- * Not cryptographic — just enough to pseudo-shuffle.
- */
-function hashSeed(str) {
-    let h = 2166136261;
-    for (let i = 0; i < str.length; i += 1) {
-        h ^= str.charCodeAt(i);
-        h = Math.imul(h, 16777619);
-    }
-    return h >>> 0;
-}
-function mulberry32(seed) {
-    let t = seed >>> 0;
-    return () => {
-        t += 0x6d2b79f5;
-        let x = t;
-        x = Math.imul(x ^ (x >>> 15), x | 1);
-        x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
-        return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
-    };
-}
-function seededShuffle(arr, seed) {
-    const out = arr.slice();
-    const rng = mulberry32(seed);
-    for (let i = out.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(rng() * (i + 1));
-        [out[i], out[j]] = [out[j], out[i]];
-    }
-    return out;
-}
+// Shared rotation PRNG helpers (extracted; behavior-preserving).
+const { hashSeed, seededShuffle } = require("../utils/rotation");
 
 /** Current rotation index (week number since epoch). */
 function currentRotation() {

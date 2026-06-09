@@ -164,6 +164,12 @@ async function createFighter(data) {
         promotionTier: "Amateur",
         overallRating: 14
     });
+    // Media Hub: seed a generated podcast name at creation.
+    try {
+        const { generatePodcastName } = require("../consts/mediaHubConfig");
+        fighter.media = fighter.media || {};
+        fighter.media.podcastName = generatePodcastName(firstName, lastName, nickname || null);
+    } catch (_) { /* non-fatal */ }
     fighter.overallRating = calculateOverall(fighter);
     await fighter.save();
     return getFighterById(fighter._id);

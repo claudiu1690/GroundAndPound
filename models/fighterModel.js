@@ -162,13 +162,50 @@ const fighterSchema = new mongoose.Schema({
         setAt:        { type: Date,   default: null },
     },
     /**
-     * Phase 6 — Media Hub state. Tracks podcast cooldown + simple activity counts
-     * for the Media tab + a cached cooldown end.
+     * Phase 6 — Media Hub state.
+     *
+     * Legacy fields (lastPodcastAt, podcastCount, interviewCount) are retained for
+     * back-compat; episodeCount/lastRecordedDate are the canonical podcast counters.
      */
     media: {
-        lastPodcastAt: { type: Date, default: null },
-        podcastCount:  { type: Number, default: 0 },
-        interviewCount:{ type: Number, default: 0 },
+        // Podcast
+        podcastName:      { type: String, default: null },
+        episodeCount:     { type: Number, default: 0 },
+        lastRecordedDate: { type: Date,   default: null },
+        // Legacy / back-compat
+        lastPodcastAt:    { type: Date,   default: null },
+        podcastCount:     { type: Number, default: 0 },
+        interviewCount:   { type: Number, default: 0 },
+        // Documentary
+        documentaryStatus:     { type: String, enum: ["locked", "available", "recorded"], default: "locked" },
+        documentaryChoices:    { type: mongoose.Schema.Types.Mixed, default: null },
+        documentaryRecordedAt: { type: Date, default: null },
+        documentaryReward:     { type: mongoose.Schema.Types.Mixed, default: null },
+        documentaryPending: {
+            type: new mongoose.Schema({
+                focus:       { type: String, required: true },
+                tone:        { type: String, required: true },
+                timing:      { type: String, required: true },
+                committedAt: { type: Date, default: Date.now },
+                fightsSince: { type: Number, default: 0 },
+            }, { _id: false }),
+            default: null,
+        },
+        // Appearances pool
+        appearancesRotation: { type: Number, default: -1 },
+        appearances: {
+            type: [new mongoose.Schema({
+                instanceId:         { type: String, required: true },
+                type:               { type: String, required: true },
+                expiresAt:          { type: Date, required: true },
+                requiresFightByDate:{ type: Date, default: null },
+                status:             { type: String, enum: ["available", "taken", "expired"], default: "available" },
+                takenAt:            { type: Date, default: null },
+                // Snapshot of the cash basis for sponsor-linked appearances (BRAND_DEAL_CLIP).
+                cashSnapshot:       { type: Number, default: 0 },
+            }, { _id: false })],
+            default: [],
+        },
     },
     /**
      * Phase 4 — Active callout. Cleared when the called-out opponent is fought
@@ -203,7 +240,7 @@ const fighterSchema = new mongoose.Schema({
     beefFlags: [{
         opponentId:         { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", required: true },
         opponentName:       { type: String, default: "" },
-        source:             { type: String, enum: ["INTERVIEW", "PODCAST"], default: "INTERVIEW" },
+        source:             { type: String, enum: ["INTERVIEW", "PODCAST", "APPEARANCE"], default: "INTERVIEW" },
         expiresAfterFights: { type: Number, default: 4 },
         createdAt:          { type: Date, default: Date.now },
         _id: false,
@@ -211,7 +248,7 @@ const fighterSchema = new mongoose.Schema({
     respectFlags: [{
         opponentId:         { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", required: true },
         opponentName:       { type: String, default: "" },
-        source:             { type: String, enum: ["INTERVIEW", "PODCAST"], default: "INTERVIEW" },
+        source:             { type: String, enum: ["INTERVIEW", "PODCAST", "APPEARANCE"], default: "INTERVIEW" },
         expiresAfterFights: { type: Number, default: 4 },
         createdAt:          { type: Date, default: Date.now },
         _id: false,
