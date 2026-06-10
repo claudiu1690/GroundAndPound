@@ -183,6 +183,10 @@ router.post("/:id/rank-up-gym", fighterController.rankUpGym);
 router.get("/:id/champions", fighterController.getChampions);
 router.get("/:id/rank", rankingController.getFighterRank);
 router.get("/:id/activity", fighterController.getActivity);
+// Career Page / badge system — same (no extra) auth middleware as /:id/activity and /:id/banner.
+router.get("/:id/profile", fighterController.getCareerProfile);
+router.put("/:id/pinned-badges", fighterController.setPinnedBadges);
+router.post("/:id/badges/seen", fighterController.markBadgesSeen);
 router.get("/:id/dashboard", ownFighter, fighterController.getDashboard);
 router.get("/:id/fame-events", fighterController.getFameEvents);
 router.get("/:id/banner/catalog", fighterController.getBannerCatalog);

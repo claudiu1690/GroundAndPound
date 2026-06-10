@@ -195,6 +195,10 @@ async function resolveInterview({ fighterId, fightId, choice, targetOpponentId }
                 expiresAfterFights: def.beefExpiresAfterFights,
                 createdAt: new Date(),
             });
+            // Lifetime beefs-started counter (drives the `controversy` badge). Only a
+            // genuinely NEW beef counts — refreshing an existing flag does not.
+            fighter.media = fighter.media || {};
+            fighter.media.beefsStarted = (fighter.media.beefsStarted || 0) + 1;
         }
         // Beef and Respect are mutually exclusive per opponent — last stance wins.
         fighter.respectFlags = (fighter.respectFlags || []).filter(
@@ -232,6 +236,17 @@ async function resolveInterview({ fighterId, fightId, choice, targetOpponentId }
         resolvedAt: new Date(),
     };
     await fight.save();
+
+    // Career Page badges: a beef written here can earn controversy / serial_beefcake.
+    // resolveInterview persists its own fighter.save() below, so this is the correct
+    // award site. Idempotent via the earned-Set guard — safe even if the fight-resolve
+    // trigger already ran for this fighter.
+    try {
+        require("./badgeService").evaluateBadges(fighter, { beefChange: true });
+    } catch (e) {
+        console.error("[badges] evaluate on interview failed:", e.message);
+    }
+
     await fighter.save();
 
     return {

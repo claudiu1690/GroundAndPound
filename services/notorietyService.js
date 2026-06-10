@@ -162,8 +162,20 @@ function applyNotorietyDelta(fighter, delta, options = {}) {
     }
     next = Math.max(0, next);
     fighter.notoriety.score = next;
+    const peakBefore = fighter.notoriety.peakTier;
     syncPeakTier(fighter);
     applyPeakTierFloor(fighter);
+    // Career Page badges: a peak-tier change can earn peoples_champion / star_power.
+    // Mutation-only (no save here) and idempotent via the badge earned-Set guard, so
+    // it's safe whether or not the host flow saves. Guarded on an actual tier change to
+    // avoid evaluating on every fame tick.
+    if (fighter.notoriety.peakTier !== peakBefore) {
+        try {
+            require("./badgeService").evaluateBadges(fighter, { fameChange: true });
+        } catch (e) {
+            console.error("[badges] evaluate on fame tier change failed:", e.message);
+        }
+    }
     const actualDelta = fighter.notoriety.score - before;
     if (options.code && actualDelta !== 0 && fighter._id) {
         logFameEvent(fighter._id, actualDelta, options.code, options.reason || "", options.meta || {});

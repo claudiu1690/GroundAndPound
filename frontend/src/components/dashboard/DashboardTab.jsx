@@ -121,6 +121,7 @@ function ModuleCard({ className = "", stripe = "", children, onClick, dataTut, r
 export const DashboardTab = memo(function DashboardTab({
   fighter,
   onNavigate,
+  onOpenCareerProfile,
   refreshKey,
 }) {
   const fighterId = fighter?._id;
@@ -211,8 +212,8 @@ export const DashboardTab = memo(function DashboardTab({
 
       {/* ── TOP BAND: identity + vitals ── */}
       <div className="dash-band">
-        {/* Identity strip */}
-        <ModuleCard className="dash-identity" dataTut="dashboard-identity">
+        {/* Identity strip — click to open your full profile */}
+        <ModuleCard className="dash-identity" dataTut="dashboard-identity" onClick={onOpenCareerProfile}>
           <div className="dash-identity-info">
             <div className="dash-identity-name">
               {firstName}

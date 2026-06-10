@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Check, X, TrendingUp, AlertTriangle } from "lucide-react";
+import { Check, X, TrendingUp, AlertTriangle, ShieldCheck } from "lucide-react";
 import { STAT_CHIP_CLASS } from "./GymTraining";
 
 /**
@@ -17,6 +17,36 @@ import { STAT_CHIP_CLASS } from "./GymTraining";
  * border/progress accent turns red.
  */
 export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
+  // Badge-unlock toast — a lightweight, distinct variant (raised on fight
+  // resolve when newlyEarnedBadges is present). Rendered before the training VM
+  // destructure so it never touches training-only fields.
+  if (toast.kind === "badge") {
+    return (
+      <div className={`train-toast train-toast--badge${toast.dismissing ? " dismissing" : ""}`}>
+        <div className="train-toast-top">
+          <div className="train-toast-title">
+            <ShieldCheck size={19} className="train-toast-badge-icon" />
+            <span>Badge Unlocked: {toast.badgeName}</span>
+          </div>
+          <button
+            type="button"
+            className="train-toast-close"
+            aria-label="Dismiss"
+            onClick={() => onDismiss(toast.id)}
+          >
+            <X size={18} />
+          </button>
+        </div>
+        {toast.badgeContext && (
+          <div className="train-toast-xp">
+            <span className="train-toast-xp-label">{toast.badgeContext}</span>
+          </div>
+        )}
+        <div className="train-toast-progress" />
+      </div>
+    );
+  }
+
   const {
     id,
     sessionName,

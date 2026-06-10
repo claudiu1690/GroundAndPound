@@ -11487,3 +11487,188 @@ code {
 .train-toast-booster-text { font-size: 12px; font-weight: 600; color: var(--c-amber-bright); flex: 1; }
 .train-toast-booster-left { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--text-secondary); }
 .train-toast-booster-depleted { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: #f87171; }
+
+/* Badge-unlock toast variant */
+.train-toast--badge { border-left: 3px solid var(--c-amber-bright); }
+.train-toast-badge-icon { color: var(--c-amber-bright); flex-shrink: 0; }
+
+/* ══════════════════════════════════════════════════════════════
+   CAREER PAGE (Feed + Profile sub-tabs) — ported from the mockup.
+   Local vars mirror the mockup palette so the ported classes map 1:1.
+   ══════════════════════════════════════════════════════════════ */
+.page-layout:has(.career-page) { padding: 0; gap: 0; }
+
+.career-page {
+  --tp: #F0F0F0; --ts: #AAAAAA; --tm: #555555;
+  --sur: #1A1A1A; --bor: #2A2A2A; --bos: #1E1E1E;
+  --acc: #C8102E; --gold: #D4A820; --blue: #3B82F6;
+  --amb: #C87A10; --grn: #3A9A4A; --pur: #8B5CF6; --teal: #14B8A6;
+  display: flex; flex-direction: column; min-height: 100%;
+}
+
+/* Sub tabs */
+.career-page .sub-tabs { background: var(--bg-nav); border-bottom: 1px solid var(--bor); display: flex; flex-shrink: 0; }
+.career-page .st {
+  font-family: var(--font-display); font-weight: 700; font-size: 12px; letter-spacing: 1.5px;
+  text-transform: uppercase; padding: 0 22px; height: 44px; display: flex; align-items: center;
+  border-bottom: 2px solid transparent; color: var(--tm); cursor: pointer; gap: 6px;
+  background: none; border-top: none; border-left: none; border-right: none;
+}
+.career-page .st.act { color: var(--tp); border-bottom-color: var(--acc); }
+.career-page .st:hover:not(.act) { color: var(--ts); }
+
+/* Panes — both mounted, toggled with CSS; each keeps its own scroll */
+.career-page .career-panes { flex: 1; min-height: 0; display: flex; }
+.career-page .career-pane { display: none; flex-direction: column; flex: 1; overflow-y: auto; min-height: 0; }
+.career-page .career-pane.active { display: flex; }
+
+/* Loading / error / empty states */
+.career-page .career-state { padding: 40px 24px; color: var(--ts); font-size: 13px; }
+.career-page .career-state--error { color: var(--acc); display: flex; align-items: center; gap: 12px; }
+.career-page .career-retry-btn {
+  font-family: var(--font-display); font-weight: 700; font-size: 11px; letter-spacing: 1px;
+  text-transform: uppercase; background: var(--acc); color: #fff; border: none;
+  border-radius: 4px; padding: 7px 13px; cursor: pointer;
+}
+.career-page .career-empty { color: var(--tm); font-size: 12px; font-style: italic; padding: 6px 0; }
+
+/* ── BANNER ── */
+.career-page .banner { background: linear-gradient(135deg,#0A0A0A 0%,#111 50%,#0A0A0A 100%); border-bottom: 1px solid var(--bor); padding: 20px 24px; position: relative; overflow: hidden; flex-shrink: 0; }
+.career-page .banner-bg { position: absolute; inset: 0; background: radial-gradient(ellipse at 20% 60%,rgba(200,16,46,0.08) 0%,transparent 55%); pointer-events: none; }
+.career-page .banner-inner { display: flex; align-items: flex-end; gap: 20px; position: relative; z-index: 1; }
+.career-page .career-banner-preview { flex: 1; min-width: 0; }
+.career-page .career-banner-preview .banner-preview { width: 100%; }
+.career-page .avatar-wrap { position: relative; flex-shrink: 0; }
+.career-page .avatar { width: 80px; height: 80px; border-radius: 50%; background: #1A1A1A; border: 2px solid var(--bor); display: flex; align-items: center; justify-content: center; }
+.career-page .banner-info { flex: 1; min-width: 0; }
+.career-page .banner-name { font-family: var(--font-display); font-weight: 800; font-size: 30px; text-transform: uppercase; color: var(--tp); line-height: 1; margin-bottom: 2px; letter-spacing: 0.5px; }
+.career-page .banner-nick { font-size: 13px; color: var(--ts); font-style: italic; margin-bottom: 8px; }
+.career-page .banner-pills { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.career-page .bp { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; border-radius: 2px; }
+.career-page .bp.ovr { background: var(--acc); color: #fff; }
+.career-page .bp.tier { background: var(--bor); color: var(--ts); }
+.career-page .bp.wc { background: rgba(59,130,246,0.12); color: #93C5FD; border: 1px solid rgba(59,130,246,0.2); }
+.career-page .bp.rec { background: var(--sur); color: var(--ts); border: 1px solid var(--bor); }
+.career-page .banner-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+.career-page .pinned-row { display: flex; align-items: center; gap: 5px; }
+.career-page .pin-lbl { font-size: 9px; color: var(--tm); letter-spacing: 1px; text-transform: uppercase; }
+.career-page .pin-b { width: 34px; height: 34px; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 1px solid; cursor: pointer; }
+.career-page .pin-b:disabled { cursor: default; opacity: .8; }
+.career-page .pin-empty { width: 34px; height: 34px; border-radius: 6px; border: 1px dashed var(--bos); display: flex; align-items: center; justify-content: center; cursor: pointer; background: none; }
+.career-page .pin-empty:disabled { cursor: default; }
+.career-page .pin-sub { font-size: 9px; color: var(--tm); letter-spacing: .5px; text-transform: uppercase; }
+.career-page .customize-btn { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; background: var(--sur); border: 1px solid var(--bor); border-radius: 3px; color: var(--ts); padding: 5px 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+.career-page .customize-btn:hover { border-color: #3A3A3A; color: var(--tp); }
+
+/* ── PROFILE BODY ── */
+.career-page .profile-body { padding: 18px 24px; display: flex; flex-direction: column; gap: 16px; }
+.career-page .three-col { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.career-page .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.career-page .p-card { background: var(--sur); border: 1px solid var(--bor); border-radius: 8px; padding: 14px 16px; }
+.career-page .p-card-lbl { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--tm); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+
+/* Stats */
+.career-page .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; }
+.career-page .sr { display: flex; align-items: center; gap: 4px; }
+.career-page .snm { font-family: var(--font-display); font-weight: 700; font-size: 10px; color: var(--ts); letter-spacing: 1px; width: 26px; }
+.career-page .sv { font-family: var(--font-display); font-weight: 800; font-size: 13px; color: var(--tp); }
+.career-page .sbar { flex: 1; height: 2px; background: var(--bos); border-radius: 1px; overflow: hidden; }
+.career-page .sbar-f { height: 100%; border-radius: 1px; background: var(--acc); }
+
+/* Career rows */
+.career-page .cr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; gap: 10px; }
+.career-page .cr:last-child { margin-bottom: 0; }
+.career-page .cl { font-size: 11px; color: var(--ts); flex-shrink: 0; }
+.career-page .cv { font-family: var(--font-display); font-weight: 700; font-size: 12px; color: var(--tp); text-align: right; }
+.career-page .cv.acc { color: var(--acc); }
+.career-page .cv.grn { color: #4ADE80; }
+.career-page .cv.gold { color: var(--gold); }
+
+/* Belts */
+.career-page .belts-row { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+.career-page .belt-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.career-page .belt-img { width: 44px; height: 44px; border-radius: 6px; border: 1px solid var(--bor); background: #0D0D0D; display: flex; align-items: center; justify-content: center; }
+.career-page .belt-lbl { font-family: var(--font-display); font-weight: 700; font-size: 8px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--tm); text-align: center; max-width: 46px; line-height: 1.3; }
+/* Not-won belt — mirrors the Championships badge locked treatment (greyscale, dimmed). */
+.career-page .belt-img--locked { background: rgba(100,100,100,0.08); border-color: var(--bos, #1E1E1E); opacity: 0.25; filter: grayscale(1); }
+
+/* Badges */
+.career-page .badges-full { background: var(--sur); border: 1px solid var(--bor); border-radius: 8px; overflow: visible; }
+.career-page .badges-header { padding: 12px 16px; border-bottom: 1px solid var(--bos); display: flex; align-items: center; justify-content: space-between; }
+.career-page .badges-title { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--tm); }
+.career-page .badges-count { font-family: var(--font-display); font-weight: 700; font-size: 11px; color: var(--ts); }
+.career-page .badges-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+.career-page .cat-lbl { font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--tm); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.career-page .cat-lbl::after { content: ''; flex: 1; height: 1px; background: var(--bos); }
+.career-page .badge-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.career-page .bw { display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; cursor: default; }
+.career-page .badge-new-dot { position: absolute; top: -5px; right: -2px; z-index: 4; font-family: var(--font-display); font-weight: 800; font-size: 7px; letter-spacing: 0.5px; line-height: 1; color: #fff; background: var(--acc, #C8102E); border-radius: 3px; padding: 2px 4px; box-shadow: 0 0 0 2px var(--sur, #1A1A1A); }
+
+/* Badge unlock celebration modal */
+.badge-modal-root { position: fixed; inset: 0; z-index: 260; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.badge-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.72); }
+.badge-modal-card { position: relative; width: min(380px, 94vw); max-height: 86vh; overflow-y: auto; background: var(--sur, #1A1A1A); border: 1px solid var(--bor, #2A2A2A); border-top: 3px solid var(--gold, #D4A820); border-radius: 10px; padding: 18px 18px 16px; box-shadow: 0 24px 70px rgba(0,0,0,0.6); }
+.badge-modal-head { display: flex; align-items: center; justify-content: center; gap: 7px; font-family: var(--font-display); font-weight: 800; font-size: 15px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold, #D4A820); margin-bottom: 14px; }
+.badge-modal-spark { color: var(--gold, #D4A820); }
+.badge-modal-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.badge-modal-item { display: flex; align-items: center; gap: 12px; }
+.badge-modal-icon { width: 46px; height: 46px; flex-shrink: 0; border-radius: 8px; border: 1px solid; display: flex; align-items: center; justify-content: center; }
+.badge-modal-info { min-width: 0; }
+.badge-modal-name { font-family: var(--font-display); font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--tp, #F0F0F0); }
+.badge-modal-desc { font-size: 11px; color: var(--ts, #AAA); line-height: 1.4; margin-top: 2px; }
+.badge-modal-btn { width: 100%; font-family: var(--font-display); font-weight: 800; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; background: var(--acc, #C8102E); color: #fff; border: none; border-radius: 5px; padding: 10px; cursor: pointer; }
+.badge-modal-btn:hover { background: #E8102E; }
+.career-page .bw:hover .b-tip { opacity: 1; transform: translateX(-50%) translateY(0); }
+.career-page .bi { width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid; position: relative; overflow: hidden; }
+.career-page .bi.locked { opacity: 0.25; filter: grayscale(1); }
+.career-page .bn { font-family: var(--font-display); font-weight: 700; font-size: 8px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--ts); text-align: center; max-width: 52px; line-height: 1.3; }
+.career-page .bi.locked + .bn { color: var(--tm); }
+.career-page .b-tip { position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%) translateY(4px); background: #1E1E1E; border: 1px solid var(--bor); border-radius: 5px; padding: 6px 9px; min-width: 140px; max-width: 175px; opacity: 0; transition: all 0.15s; pointer-events: none; z-index: 30; }
+.career-page .tt-n { font-family: var(--font-display); font-weight: 800; font-size: 11px; text-transform: uppercase; color: var(--tp); margin-bottom: 2px; }
+.career-page .tt-d { font-size: 10px; color: var(--ts); line-height: 1.4; }
+.career-page .tt-e { font-size: 9px; color: #4ADE80; margin-top: 3px; }
+.career-page .tt-l { font-size: 9px; color: var(--tm); margin-top: 3px; }
+.career-page .prog { position: absolute; bottom: 3px; left: 3px; right: 3px; height: 2px; background: rgba(0,0,0,0.5); border-radius: 1px; overflow: hidden; }
+.career-page .prog-f { height: 100%; border-radius: 1px; }
+
+/* ── FEED PANE (timeline) ── */
+.career-page .feed-wrap { padding: 18px 24px; display: flex; flex-direction: column; gap: 0; }
+.career-page .feed-group-lbl { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--tm); margin: 12px 0 8px; padding-top: 4px; border-top: 1px solid var(--bos); }
+.career-page .feed-group-lbl:first-child { margin-top: 0; border-top: none; }
+.career-page .feed-item { display: flex; align-items: stretch; gap: 0; margin-bottom: 6px; }
+.career-page .feed-icon { width: 32px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding-top: 2px; }
+.career-page .feed-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.career-page .feed-line { width: 1px; background: var(--bos); flex: 1; margin: 4px auto 0; }
+.career-page .feed-body { flex: 1; min-width: 0; background: var(--sur); border: 1px solid var(--bor); border-radius: 6px; padding: 9px 13px; margin-left: 10px; }
+.career-page .feed-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+.career-page .feed-title { font-family: var(--font-display); font-weight: 800; font-size: 13px; text-transform: uppercase; color: var(--tp); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.career-page .feed-title-fight-tag { display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 1px 6px; border-radius: 2px; background: rgba(212,168,32,.12); color: var(--gold); border: 1px solid rgba(212,168,32,.25); }
+.career-page .feed-type { font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 1px 6px; border-radius: 2px; }
+.career-page .feed-sub { font-size: 11px; color: var(--ts); }
+.career-page .feed-right { text-align: right; flex-shrink: 0; }
+.career-page .feed-reward { font-family: var(--font-display); font-weight: 700; font-size: 12px; color: var(--gold); }
+.career-page .feed-time { font-size: 10px; color: var(--tm); }
+
+/* ── BADGE PICKER MODAL ── */
+.badge-picker-root { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.badge-picker-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.7); }
+.badge-picker-shell { position: relative; z-index: 1; width: min(520px, 92vw); max-height: 80vh; display: flex; flex-direction: column; background: #161616; border: 1px solid #2A2A2A; border-radius: 10px; overflow: hidden; }
+.badge-picker-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #2A2A2A; }
+.badge-picker-header h2 { font-family: var(--font-display); font-weight: 800; font-size: 16px; text-transform: uppercase; color: #F0F0F0; margin: 0; }
+.badge-picker-close { background: none; border: none; color: #AAA; cursor: pointer; display: flex; }
+.badge-picker-close:hover { color: #fff; }
+.badge-picker-body { padding: 16px 18px; overflow-y: auto; }
+.badge-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 10px; }
+.badge-picker-item { display: flex; flex-direction: column; align-items: center; gap: 5px; background: none; border: 1px solid transparent; border-radius: 8px; padding: 6px 4px; cursor: pointer; }
+.badge-picker-item:hover { border-color: #2A2A2A; background: #1A1A1A; }
+.badge-picker-item.pinned { border-color: var(--c-amber-bright, #D4A820); }
+.badge-picker-tile { width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid; }
+.badge-picker-name { font-family: var(--font-display); font-weight: 700; font-size: 8px; letter-spacing: .5px; text-transform: uppercase; color: #AAA; text-align: center; line-height: 1.2; }
+.badge-picker-pinned-tag { font-size: 7px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--c-amber-bright, #D4A820); }
+
+@media (max-width: 720px) {
+  .career-page .three-col { grid-template-columns: 1fr; }
+  .career-page .two-col { grid-template-columns: 1fr; }
+  .career-page .banner-inner { flex-wrap: wrap; }
+  .career-page .banner-right { align-items: flex-start; }
+}

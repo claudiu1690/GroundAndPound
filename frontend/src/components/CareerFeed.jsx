@@ -1,21 +1,49 @@
 import { memo, useEffect, useState } from "react";
 import { api } from "../api";
-import { Trophy, X, Minus, ArrowUp, Crown, Flame, Swords, ShieldCheck, Target, AlertTriangle } from "lucide-react";
+import {
+    Trophy, X, Minus, ArrowUp, Crown, Flame, Swords, ShieldCheck, Target,
+    AlertTriangle, Mic, Megaphone, Star, FileText, Cross, HeartPulse,
+} from "lucide-react";
+
+// Event type → timeline dot colour + icon + type-pill label.
+// Colours follow the mockup palette (Win green, Loss red, Draw grey, Title gold,
+// Promotion purple, Badge gold, Podcast blue, Post-fight green/red, Appearance
+// blue, Contract amber, Injury red, Injury Healed green).
+const GREEN = "#4ADE80";
+const RED = "#C8102E";
+const GREY = "#999999";
+const GOLD = "#D4A820";
+const BLUE = "#3B82F6";
+const PURPLE = "#8B5CF6";
+const AMBER = "#C87A10";
 
 const EVENT_CONFIG = {
-    FIGHT_WIN:           { tone: "win",     Icon: Trophy,        label: "Win" },
-    FIGHT_LOSS:          { tone: "loss",    Icon: X,             label: "Loss" },
-    FIGHT_DRAW:          { tone: "neutral", Icon: Minus,         label: "Draw" },
-    TIER_PROMOTION:      { tone: "special", Icon: ArrowUp,       label: "Promotion" },
-    TITLE_WON:           { tone: "badge",   Icon: Crown,         label: "Title" },
-    NEMESIS_SET:         { tone: "nemesis", Icon: Flame,         label: "Nemesis" },
-    NEMESIS_CLEARED:     { tone: "special", Icon: Swords,        label: "Nemesis" },
-    BADGE_EARNED:        { tone: "badge",   Icon: ShieldCheck,   label: "Badge" },
-    TITLE_SHOT_ELIGIBLE: { tone: "badge",   Icon: Target,        label: "Title Shot" },
-    MENTAL_RESET:        { tone: "neutral", Icon: AlertTriangle, label: "Mental" },
+    FIGHT_WIN:           { color: GREEN,  Icon: Trophy,        label: "Win" },
+    FIGHT_LOSS:          { color: RED,    Icon: X,             label: "Loss" },
+    FIGHT_DRAW:          { color: GREY,   Icon: Minus,         label: "Draw" },
+    TIER_PROMOTION:      { color: PURPLE, Icon: ArrowUp,       label: "Promotion" },
+    TITLE_WON:           { color: GOLD,   Icon: Crown,         label: "Title" },
+    NEMESIS_SET:         { color: RED,    Icon: Flame,         label: "Nemesis" },
+    NEMESIS_CLEARED:     { color: PURPLE, Icon: Swords,        label: "Nemesis" },
+    BADGE_EARNED:        { color: GOLD,   Icon: ShieldCheck,   label: "Badge" },
+    TITLE_SHOT_ELIGIBLE: { color: GOLD,   Icon: Target,        label: "Title Shot" },
+    MENTAL_RESET:        { color: GREY,   Icon: AlertTriangle, label: "Mental" },
+    PODCAST:             { color: BLUE,   Icon: Mic,           label: "Podcast" },
+    POST_FIGHT:          { color: RED,    Icon: Megaphone,     label: "Media" },
+    APPEARANCE:          { color: BLUE,   Icon: Star,          label: "Appearance" },
+    CONTRACT:            { color: AMBER,  Icon: FileText,      label: "Contract" },
+    INJURY:              { color: RED,    Icon: Cross,         label: "Injury" },
+    INJURY_HEALED:       { color: GREEN,  Icon: HeartPulse,    label: "Healed" },
 };
 
-const FALLBACK = { tone: "neutral", Icon: Minus, label: "Event" };
+const FALLBACK = { color: GREY, Icon: Minus, label: "Event" };
+
+function tint(hex, a) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${a})`;
+}
 
 function relativeTime(dateStr) {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -61,18 +89,20 @@ function groupByDate(entries) {
 export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey }) {
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
         if (!fighterId) return;
         let cancelled = false;
         setLoading(true);
+        setError(false);
         api.getActivity(fighterId)
             .then((data) => {
-                // Badge events hidden from the feed — still logged server-side; will return as achievements.
-                if (!cancelled) setEntries((data.activity ?? []).filter((e) => e.type !== "BADGE_EARNED"));
+                // Badge events are now shown in the timeline (gold dot/pill).
+                if (!cancelled) setEntries(data.activity ?? []);
             })
             .catch(() => {
-                if (!cancelled) setEntries([]);
+                if (!cancelled) { setEntries([]); setError(true); }
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -80,45 +110,59 @@ export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey }) {
         return () => { cancelled = true; };
     }, [fighterId, refreshKey]);
 
+    const groups = groupByDate(entries);
+
     return (
-        <section className="career-feed">
-            <header className="page-header">
-                <div className="page-eyebrow">Career</div>
-                <h1 className="page-title">Career Feed</h1>
-            </header>
-            <div className="feed">
-                {loading && entries.length === 0 ? (
-                    <div className="feed-empty">Loading…</div>
-                ) : entries.length === 0 ? (
-                    <div className="feed-empty">No career history yet. Step into the cage.</div>
-                ) : (
-                    groupByDate(entries).map((group) => (
-                        <div className="date-group" key={group.label}>
-                            <div className="date-label">{group.label}</div>
-                            {group.items.map((entry) => {
-                                const cfg = EVENT_CONFIG[entry.type] ?? FALLBACK;
-                                const Icon = cfg.Icon;
-                                const [first, ...rest] = (entry.detail ?? "").split(" · ");
-                                // Surface free-earned Energy Drinks from meta as an extra detail chunk.
-                                const drinks =
-                                    entry.type === "FIGHT_WIN"
-                                        ? (entry.meta?.streakDrinks ?? 0)
-                                        : (entry.type === "TIER_PROMOTION" || entry.type === "TITLE_WON")
-                                            ? (entry.meta?.drinksGranted ?? 0)
-                                            : 0;
-                                const metaParts = [...rest];
-                                if (drinks > 0) metaParts.push(`+${drinks} Energy Drink${drinks === 1 ? "" : "s"}`);
-                                const meta = metaParts.join(" · ") || null;
-                                // A title fight: the belt win (TITLE_WON) or any fight result
-                                // flagged isTitleFight (so title losses/draws stand out too).
-                                const isTitleFight = entry.type === "TITLE_WON" || !!entry.meta?.isTitleFight;
-                                // TITLE_WON already carries the "Title" badge + crown, so only
-                                // tag the win/loss/draw rows that would otherwise look ordinary.
-                                const showTitleTag = isTitleFight && entry.type !== "TITLE_WON";
-                                return (
-                                    <div className={`feed-item${isTitleFight ? " feed-item--title" : ""}`} key={entry._id}>
-                                        <span className={`feed-icon ${cfg.tone}`}><Icon size={16} strokeWidth={2} /></span>
-                                        <div className="feed-content">
+        <div className="feed-wrap">
+            {loading && entries.length === 0 ? (
+                <div className="career-empty">Loading…</div>
+            ) : error && entries.length === 0 ? (
+                <div className="career-empty">Could not load your career feed.</div>
+            ) : entries.length === 0 ? (
+                <div className="career-empty">No career history yet. Step into the cage.</div>
+            ) : (
+                groups.map((group) => (
+                    <div key={group.label}>
+                        <div className="feed-group-lbl">{group.label}</div>
+                        {group.items.map((entry, idx) => {
+                            const cfg = EVENT_CONFIG[entry.type] ?? FALLBACK;
+                            const Icon = cfg.Icon;
+                            const isLast = idx === group.items.length - 1;
+
+                            const [first, ...rest] = (entry.detail ?? "").split(" · ");
+
+                            // Surface free-earned Energy Drinks from meta as an extra detail chunk.
+                            const drinks =
+                                entry.type === "FIGHT_WIN"
+                                    ? (entry.meta?.streakDrinks ?? 0)
+                                    : (entry.type === "TIER_PROMOTION" || entry.type === "TITLE_WON")
+                                        ? (entry.meta?.drinksGranted ?? 0)
+                                        : 0;
+                            const metaParts = [...rest];
+                            if (drinks > 0) metaParts.push(`+${drinks} Energy Drink${drinks === 1 ? "" : "s"}`);
+                            const sub = metaParts.join(" · ") || null;
+
+                            // Reward line (fame / cash) if present on meta.
+                            const fame = entry.meta?.fameGained ?? entry.meta?.fame ?? null;
+                            const cash = entry.meta?.cashGained ?? entry.meta?.cash ?? entry.meta?.purse ?? null;
+                            const rewardBits = [];
+                            if (fame != null && fame !== 0) rewardBits.push(`+${Number(fame).toLocaleString()} fame`);
+                            if (cash != null && cash !== 0) rewardBits.push(`+$${Number(cash).toLocaleString()}`);
+                            const reward = rewardBits.join(" · ") || null;
+
+                            const isTitleFight = entry.type === "TITLE_WON" || !!entry.meta?.isTitleFight;
+                            const showTitleTag = isTitleFight && entry.type !== "TITLE_WON";
+
+                            return (
+                                <div className="feed-item" key={entry._id}>
+                                    <div className="feed-icon">
+                                        <div className="feed-dot" style={{ background: tint(cfg.color, 0.14), color: cfg.color }}>
+                                            <Icon size={14} strokeWidth={2} />
+                                        </div>
+                                        {!isLast && <div className="feed-line" />}
+                                    </div>
+                                    <div className="feed-body">
+                                        <div className="feed-top">
                                             <div className="feed-title">
                                                 {first}
                                                 {showTitleTag && (
@@ -126,18 +170,26 @@ export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey }) {
                                                         <Crown size={11} strokeWidth={2.4} /> Title Fight
                                                     </span>
                                                 )}
+                                                <span
+                                                    className="feed-type"
+                                                    style={{ background: tint(cfg.color, 0.1), color: cfg.color, border: `1px solid ${tint(cfg.color, 0.25)}` }}
+                                                >
+                                                    {cfg.label}
+                                                </span>
                                             </div>
-                                            {meta && <div className="feed-meta">{meta}</div>}
-                                            <div className="feed-time">{relativeTime(entry.createdAt)}</div>
+                                            <div className="feed-right">
+                                                {reward && <div className="feed-reward">{reward}</div>}
+                                                <div className="feed-time">{relativeTime(entry.createdAt)}</div>
+                                            </div>
                                         </div>
-                                        <span className={`feed-type ${cfg.tone}`}>{cfg.label}</span>
+                                        {sub && <div className="feed-sub">{sub}</div>}
                                     </div>
-                                );
-                            })}
-                        </div>
-                    ))
-                )}
-            </div>
-        </section>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ))
+            )}
+        </div>
     );
 });

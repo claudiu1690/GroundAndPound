@@ -112,6 +112,14 @@ function applyRankUp(fighter, gym, rankDef) {
         }
     }
 
+    // Career Page badges: a Rank-4 gym promotion can earn a gym badge. Additive +
+    // mutation-only — the caller's fighter.save() persists. Never break the rank-up.
+    try {
+        require("./badgeService").evaluateBadges(fighter, { gymRankUp: true });
+    } catch (e) {
+        console.error("[badges] evaluate on gym rank-up failed:", e.message);
+    }
+
     return { rankedUp: true, newRank: rankDef.rank, rankName: rankDef.name, unlockDescription };
 }
 

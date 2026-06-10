@@ -15,6 +15,8 @@ import { FightSummary } from "./components/fights/FightSummary";
 import { ContenderModal } from "./components/fights/ContenderModal";
 import { OctagonBackground } from "./components/layout/OctagonBackground";
 import { CareerFeed } from "./components/CareerFeed";
+import { CareerPage } from "./components/career/CareerPage";
+import { prettifyBadgeId } from "./components/career/badgeCatalog";
 import { AuthPage } from "./components/auth/AuthPage";
 import { FightLimitPopup } from "./components/fights/FightLimitPopup";
 import { FameDrawer } from "./components/fame/FameDrawer";
@@ -780,6 +782,14 @@ function App() {
             booster: result.booster ?? null,
           });
 
+          // Badge-unlock toasts from training milestones (e.g. session counts).
+          const newBadges = result.newlyEarnedBadges;
+          if (Array.isArray(newBadges) && newBadges.length) {
+            for (const b of newBadges) {
+              addToast({ kind: "badge", badgeName: prettifyBadgeId(b.badgeId), badgeContext: b.context || null });
+            }
+          }
+
           // Tutorial step 2 advances on a successful training session. The old
           // modal fired this on dismiss; with toasts there's no dismiss gate, so
           // we emit immediately on success.
@@ -977,6 +987,17 @@ const handleGetOffers = useCallback(async () => {
       const isFirstWin = rec && rec.wins === 1 && result.summary?.recordChange === "W";
       const firstWinHint = isFirstWin ? " | Build your record and raise your OVR to earn a title shot. Win the belt to move up." : "";
       setMessage(`${out} — +$${iron}${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}${firstWinHint}`);
+      // Badge-unlock toasts — one per newly earned badge from the fight resolve.
+      const newBadges = result.summary?.newlyEarnedBadges;
+      if (Array.isArray(newBadges) && newBadges.length) {
+        for (const b of newBadges) {
+          addToast({
+            kind: "badge",
+            badgeName: prettifyBadgeId(b.badgeId),
+            badgeContext: b.context || null,
+          });
+        }
+      }
       loadFighter(fighter._id);
       // Refresh gyms too — a win updates gym rank progress (relevantWins, e.g.
       // KO/TKO win requirements), which lives on the gyms payload, not the fighter.
@@ -995,7 +1016,7 @@ const handleGetOffers = useCallback(async () => {
       setMessage(errMsg);
     }
     setResolving(false);
-  }, [fighter?._id, loadFighter, loadGyms, maybeShowBlockPopup]);
+  }, [fighter?._id, loadFighter, loadGyms, maybeShowBlockPopup, addToast]);
 
   const handleBeginFight = useCallback(async () => {
     if (!weightCut || !fighter?._id || !fighter?.acceptedFightId) return;
@@ -1017,6 +1038,13 @@ const handleGetOffers = useCallback(async () => {
 
   const handleNavTab = useCallback((id) => {
     setActiveTab(id);
+  }, []);
+
+  // Career sub-tab (Feed / Profile), lifted so the dashboard can deep-link to Profile.
+  const [careerSubTab, setCareerSubTab] = useState("feed");
+  const openCareerProfile = useCallback(() => {
+    setCareerSubTab("profile");
+    setActiveTab("career");
   }, []);
 
   // Show auth page if not logged in. When the user arrived via the
@@ -1268,6 +1296,7 @@ const handleGetOffers = useCallback(async () => {
               fighter={fighter}
               onNavigate={handleNavTab}
               onOpenProfile={() => setMobileDrawerOpen(true)}
+              onOpenCareerProfile={openCareerProfile}
               refreshKey={feedRefreshKey}
             />
           )}
@@ -1294,12 +1323,17 @@ const handleGetOffers = useCallback(async () => {
             </div>
           )}
 
-          {/* ── CAREER FEED ── */}
+          {/* ── CAREER (Feed + Profile) ── */}
           {activeTab === "career" && (
             <div className="page-layout">
-              <CareerFeed
+              <CareerPage
+                fighter={fighter}
                 fighterId={fighter?._id}
                 refreshKey={feedRefreshKey}
+                onMessage={setMessage}
+                onRefreshFighter={loadFighter}
+                subTab={careerSubTab}
+                onSubTabChange={setCareerSubTab}
               />
             </div>
           )}

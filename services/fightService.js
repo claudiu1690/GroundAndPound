@@ -1192,6 +1192,46 @@ async function resolveFightAndApply(fighterId) {
         }
     }
 
+    // ── Career Page badges: evaluate against this fight's facts. Additive +
+    //    never breaks the resolve flow. Mutates fighter.badgesEarned; the
+    //    fighter.save() below persists it. `newlyEarnedBadges` bubbles into the
+    //    response so the UI can surface fresh awards.
+    let newlyEarnedBadges = [];
+    try {
+        const badgeService = require("./badgeService");
+        // wasKnockedDown: no explicit knockdown flag exists in the resolution engine,
+        // so we use the "player was hurt" proxy — any round where the player's health
+        // dropped below the hurt threshold (35). Documented deviation.
+        const wasKnockedDown = Array.isArray(result.rounds)
+            && result.rounds.some((r) => (r && typeof r.playerHealth === "number") && r.playerHealth < 35);
+        // Opponent end health: final round's opponentHealth from the engine rounds.
+        const lastRound = Array.isArray(result.rounds) && result.rounds.length
+            ? result.rounds[result.rounds.length - 1]
+            : null;
+        const oppEndHealthPct = lastRound && typeof lastRound.opponentHealth === "number"
+            ? lastRound.opponentHealth
+            : (isWin ? 0 : 100);
+        const r = badgeService.evaluateBadges(fighter, {
+            isWin,
+            outcome: result.outcome,
+            wasKnockedDown,
+            endedHealthPct: healthEnd,
+            oppEndHealthPct,
+            oppOvr: opponentOvr,
+            wasComeback: isComeback,
+            isCalloutWin: isCalloutFight && isWin,
+            beefMatched: !!beefMatch,
+            nemesisCleared,
+            campGrade: fightCamp ? (fightCamp.campRating || null) : null,
+            // beltWonForTier: the tier whose belt was won (oldTier = promoted.from),
+            // null when no belt was won this fight.
+            beltWonForTier: beltWon && promoted ? promoted.from : null,
+        });
+        newlyEarnedBadges = r.newlyEarned;
+    } catch (e) {
+        console.error("[badges] evaluate on fight resolve failed:", e.message);
+    }
+
     await fighter.save();
 
     // GDD 7.4: update quest progress after fight
@@ -1300,6 +1340,8 @@ async function resolveFightAndApply(fighterId) {
         weightMissed,
         injuriesSustained,
         newBadges,
+        // Career Page: badges newly earned by this fight (catalog ids + context).
+        newlyEarnedBadges,
         completedQuests: completedQuests.map((q) => q.title),
         promoted,
         beltWon,

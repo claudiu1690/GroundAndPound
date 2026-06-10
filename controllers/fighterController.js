@@ -375,6 +375,144 @@ async function cancelCallout(req, res) {
     }
 }
 
+// ── Career Page / badge system ─────────────────────────────────
+
+const PROFILE_TIER_ORDER = ["Amateur", "Regional Pro", "National", "GCS Contender", "GCS"];
+const BELT_BADGE_BY_TIER = {
+    "Amateur": "champ_amateur",
+    "Regional Pro": "champ_regional_pro",
+    "National": "champ_national",
+    "GCS Contender": "champ_gcs_contender",
+    "GCS": "champ_gcs",
+};
+
+/**
+ * GET /fighters/:id/profile — Career Page payload.
+ * Returns { fighter, belts[5], badges, pvp:null }.
+ */
+async function getCareerProfile(req, res) {
+    try {
+        const Fighter = require("../models/fighterModel");
+        const badgeService = require("../services/badgeService");
+        const { tierRank } = require("../consts/notorietyConfig");
+        const { PROMOTION_TIERS } = require("../consts/gameConstants");
+
+        const fighter = await Fighter.findById(req.params.id).populate("gymId", "name");
+        if (!fighter) return res.status(404).json({ message: "Fighter not found" });
+
+        // Lazy self-heal: award any state-derivable badges the fighter now qualifies for
+        // (e.g. championship badges proven by promotion tier) so the belts and the badge
+        // grid always agree, without depending on the one-time migration. Silent (no feed).
+        try {
+            const healed = badgeService.evaluateBadges(fighter, {}, { silent: true });
+            if (healed.newlyEarned.length > 0) await fighter.save();
+        } catch (_) { /* non-fatal — fall back to whatever is already stored */ }
+
+        const earnedIds = new Set((fighter.badgesEarned || []).map((b) => b && b.badgeId).filter(Boolean));
+
+        // Belt accessibility compares promotion-tier ladder ordering.
+        const PROMOTION_TIER_ORDER = Object.keys(PROMOTION_TIERS); // Amateur..GCS in ladder order
+        const promoRank = (t) => {
+            const idx = PROMOTION_TIER_ORDER.indexOf(t);
+            return idx < 0 ? 0 : idx;
+        };
+        const playerPromoRank = promoRank(fighter.promotionTier);
+
+        const belts = PROMOTION_TIER_ORDER.map((tier) => {
+            const badgeId = BELT_BADGE_BY_TIER[tier] || null;
+            const winnable = tier !== "GCS Contender";
+            let state;
+            if (winnable && badgeId && earnedIds.has(badgeId)) {
+                state = "won";
+            } else if (promoRank(tier) <= playerPromoRank) {
+                state = "accessible";
+            } else {
+                state = "locked";
+            }
+            // GCS Contender belt is never "won" (non-winnable), but can be accessible/locked.
+            return { tier, badgeId, state, winnable };
+        });
+
+        res.json({
+            fighter: fighterService.toPublicFighter(fighter),
+            belts,
+            badges: badgeService.buildBadgeProfile(fighter),
+            pvp: null,
+        });
+        // tierRank referenced for parity with contract intent; promotion-tier ordering
+        // is the authoritative comparison for belt accessibility.
+        void tierRank;
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+/**
+ * PUT /fighters/:id/pinned-badges — set up to 3 pinned (earned) badges.
+ */
+async function setPinnedBadges(req, res) {
+    try {
+        const Fighter = require("../models/fighterModel");
+        const { getBadge } = require("../consts/badgeCatalog");
+
+        const raw = req.body && req.body.pinnedBadges;
+        if (!Array.isArray(raw)) {
+            return res.status(400).json({ message: "pinnedBadges must be an array of badge ids" });
+        }
+        if (!raw.every((x) => typeof x === "string")) {
+            return res.status(400).json({ message: "pinnedBadges must be an array of strings" });
+        }
+        // Dedupe preserving order.
+        const deduped = [];
+        for (const id of raw) {
+            if (!deduped.includes(id)) deduped.push(id);
+        }
+        if (deduped.length > 3) {
+            return res.status(400).json({ message: "You can pin at most 3 badges" });
+        }
+
+        const fighter = await Fighter.findById(req.params.id);
+        if (!fighter) return res.status(404).json({ message: "Fighter not found" });
+
+        const earnedIds = new Set((fighter.badgesEarned || []).map((b) => b && b.badgeId).filter(Boolean));
+        for (const id of deduped) {
+            if (!getBadge(id) || !earnedIds.has(id)) {
+                return res.status(400).json({
+                    message: "Cannot pin a badge you have not earned",
+                    code: "BADGE_NOT_EARNED",
+                });
+            }
+        }
+
+        fighter.pinnedBadges = deduped;
+        await fighter.save();
+        res.json({ pinnedBadges: deduped });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+/**
+ * POST /fighters/:id/badges/seen — acknowledge all newly-unlocked badges
+ * (clears the "NEW" highlight / unlock modal). Idempotent.
+ */
+async function markBadgesSeen(req, res) {
+    try {
+        const Fighter = require("../models/fighterModel");
+        const badgeService = require("../services/badgeService");
+        const fighter = await Fighter.findById(req.params.id);
+        if (!fighter) return res.status(404).json({ message: "Fighter not found" });
+        const changed = badgeService.markBadgesSeen(fighter);
+        if (changed > 0) await fighter.save();
+        res.json({ acknowledged: changed });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 async function saveBanner(req, res) {
     try {
         const bannerService = require("../services/bannerService");
@@ -410,6 +548,9 @@ module.exports = {
     getFameEvents,
     getBannerCatalog,
     saveBanner,
+    getCareerProfile,
+    setPinnedBadges,
+    markBadgesSeen,
     getCalloutRoster,
     createCallout,
     cancelCallout,

@@ -108,6 +108,10 @@ function writeBeefFlag(fighter, opp, source, expiresAfterFights) {
             expiresAfterFights,
             createdAt: new Date(),
         });
+        // Lifetime beefs-started counter (drives the `controversy` badge). Only a
+        // genuinely NEW beef counts — refreshing an existing flag does not.
+        fighter.media = fighter.media || {};
+        fighter.media.beefsStarted = (fighter.media.beefsStarted || 0) + 1;
     }
     // Beef and Respect are mutually exclusive per opponent — last stance wins.
     fighter.respectFlags = (fighter.respectFlags || []).filter(
@@ -634,6 +638,14 @@ async function recordPodcast(fighterId, body) {
 
     const listenersAtTime = listenersFromScore(fighter.notoriety.score || 0);
 
+    // Career Page badges (first_episode / media_star / controversy from any beef
+    // flags written above). Mutation-only — the save below persists. Never throws.
+    try {
+        require("./badgeService").evaluateBadges(fighter, { podcast: true });
+    } catch (e) {
+        console.error("[badges] evaluate on podcast failed:", e.message);
+    }
+
     await fighter.save();
 
     const episode = await PodcastEpisode.create({
@@ -744,6 +756,13 @@ async function recordDocumentary(fighterId, body) {
         };
         reward = { fame: 0, cash: 0, deferred: true, boosterGranted: false };
         fighter.media.documentaryReward = reward;
+    }
+
+    // Career Page badge: `documentary` (status now "recorded"). Mutation-only.
+    try {
+        require("./badgeService").evaluateBadges(fighter, { documentary: true });
+    } catch (e) {
+        console.error("[badges] evaluate on documentary failed:", e.message);
     }
 
     await fighter.save();

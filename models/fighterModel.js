@@ -112,6 +112,8 @@ const fighterSchema = new mongoose.Schema({
     fightsTodayByTier: { type: mongoose.Schema.Types.Mixed, default: {} },
     /** Training sessions completed today (calendar day); reset via trainingDayKey */
     trainingSessionsToday: { type: Number, default: 0 },
+    /** Lifetime training sessions completed (never resets) — drives session badges. */
+    careerTrainingSessions: { type: Number, default: 0 },
     /** Calendar day key (toDateString) for trainingSessionsToday reset */
     trainingDayKey: { type: String, default: null },
     // Comeback mode after loss
@@ -126,6 +128,20 @@ const fighterSchema = new mongoose.Schema({
     gymPerks: [{ type: String }],
     // GDD 8.6: Badges earned (e.g. "Resilience" for winning a comeback fight)
     badges: [{ type: String }],
+    // Career Page badge system — structured earned-badge ledger (catalog ids).
+    // `badges` (above) is the legacy string list and is NOT touched by this system.
+    badgesEarned: [{
+        badgeId:  { type: String, required: true },
+        earnedAt: { type: Date, default: Date.now },
+        context:  { type: String, default: null },
+        // false = a fresh gameplay unlock the player hasn't acknowledged yet (drives the
+        // "NEW" highlight + unlock modal). Silent self-heals/backfills set true. Legacy
+        // entries leave this undefined → treated as already seen.
+        seen:     { type: Boolean },
+        _id: false,
+    }],
+    // Up to 3 earned badgeIds the player has pinned for display.
+    pinnedBadges: { type: [String], default: [] },
     // GDD 8.5: Mental Reset required after 3 consecutive losses (blocks next fight)
     mentalResetRequired: { type: Boolean, default: false },
     // Champion system: title shot progression
@@ -176,6 +192,9 @@ const fighterSchema = new mongoose.Schema({
         lastPodcastAt:    { type: Date,   default: null },
         podcastCount:     { type: Number, default: 0 },
         interviewCount:   { type: Number, default: 0 },
+        // Lifetime beefs-started counter — incremented at every beef-flag creation
+        // site. Drives the `controversy` badge (>= 10). Distinct from active beefFlags.
+        beefsStarted:     { type: Number, default: 0 },
         // Documentary
         documentaryStatus:     { type: String, enum: ["locked", "available", "recorded"], default: "locked" },
         documentaryChoices:    { type: mongoose.Schema.Types.Mixed, default: null },

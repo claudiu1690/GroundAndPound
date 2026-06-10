@@ -189,6 +189,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
         const energySpent = completed * config.energy;
 
         fighter.trainingSessionsToday += completed;
+        fighter.careerTrainingSessions = (fighter.careerTrainingSessions || 0) + completed;
 
         await fighter.save();
 
@@ -197,6 +198,13 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
             rankUpResult = gymRankService.checkRankUp(fighter, gym);
             if (rankUpResult) await fighter.save();
         }
+
+        // Training-session badge milestones (and any other state-derived badges).
+        let newlyEarnedBadges = [];
+        try {
+            newlyEarnedBadges = require("./badgeService").evaluateBadges(fighter, { training: true }).newlyEarned;
+            if (newlyEarnedBadges.length > 0) await fighter.save();
+        } catch (_) { /* badge eval must never break training */ }
 
         // Backward-compatible single-session message.
         let message = maxStaminaGained > 0
@@ -228,6 +236,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
             maxStaminaGained,
             staminaCapHit,
             sessionsToday: fighter.trainingSessionsToday,
+            newlyEarnedBadges,
             rollTier: null,
             rollTierCounts: { great: 0, normal: 0, sluggish: 0 },
             fighter: fighterService.toPublicFighter(fighter),
@@ -410,6 +419,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
     const energyAfter = energySnap.current;
 
     fighter.trainingSessionsToday += completed;
+    fighter.careerTrainingSessions = (fighter.careerTrainingSessions || 0) + completed;
 
     await fighter.save();
 
@@ -419,6 +429,13 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
         rankUpResult = gymRankService.checkRankUp(fighter, gym);
         if (rankUpResult) await fighter.save();
     }
+
+    // Training-session badge milestones (and any other state-derived badges).
+    let newlyEarnedBadges = [];
+    try {
+        newlyEarnedBadges = require("./badgeService").evaluateBadges(fighter, { training: true }).newlyEarned;
+        if (newlyEarnedBadges.length > 0) await fighter.save();
+    } catch (_) { /* badge eval must never break training */ }
 
     // ── Message: identical to today for N=1; suffixed only when batched. ──
     const xpParts = Object.entries(xpGained)
@@ -467,6 +484,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
         maxStaminaGained: 0,
         staminaCapHit: false,
         sessionsToday: fighter.trainingSessionsToday,
+        newlyEarnedBadges,
         rollTier,
         rollTierCounts,
         fighter: fighterService.toPublicFighter(fighter),

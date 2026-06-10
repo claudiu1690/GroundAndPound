@@ -144,6 +144,15 @@ export const api = {
   getChampions: (fighterId) =>
     request(`/fighters/${fighterId}/champions`),
 
+  // ── Career Profile ──────────────────────────────────────
+  getCareerProfile: (id) => request(`/fighters/${id}/profile`),
+  setPinnedBadges: (id, pinnedBadges) =>
+    request(`/fighters/${id}/pinned-badges`, {
+      method: "PUT",
+      body: JSON.stringify({ pinnedBadges }),
+    }),
+  markBadgesSeen: (id) => request(`/fighters/${id}/badges/seen`, { method: "POST" }),
+
   // ── Training / Recovery ─────────────────────────────────
   train: (fighterId, gymId, sessionType, quantity = 1) =>
     request(`/fighters/${fighterId}/train`, {
