@@ -1,974 +1,609 @@
 # Ground & Pound — Game Guide
 
----
+> **Auto-generated** from the in-game Library (`frontend/src/components/library/libraryContent.js`). **Do not edit by hand** — run `node scripts/generateGameGuide.mjs` to regenerate. The Library is the source of truth for player-facing system descriptions; this file is a read-only export for out-of-game reading.
 
-## What Is This Game?
+## Contents
 
-Ground & Pound is a text-based MMA career simulation. You create a fighter, train them at specialty gyms, prepare for fights in a training camp, and fight your way up through five promotion tiers — from unknown amateur to GCS champion. Every decision costs energy. Every fight has consequences. There are no levels — your fighter grows through their stats, and your stats grow through training and fighting.
+**Getting Started**
+- What Is Ground & Pound?
+- Creating Your Fighter
+- Energy — The Daily Resource
+- The Career Feed
 
----
+**Fighting**
+- Fight Offers — Reading the Room
+- Fight Camp — Preparing to Win
+- The Fighter Report — Reading Your Opponent
+- Wildcards — The Hidden Variable
+- Weight Cut — The Gamble Before the Fight
+- Fight Outcomes — What Can Happen
+- The Fight Summary — Understanding What Happened
 
-## Creating Your Fighter
+**Training & Gyms**
+- How Training Works
+- The Gym System — Choosing Where to Train
+- Gym Ranks — The Long Game
+- Rank 4 Perks — What They Do
+- Training Sessions — What Each One Does
 
-When you create a fighter you choose:
+**Career**
+- The Five Tiers — Your Roadmap to the Top
+- Champions & Title Shots
+- Rankings — Your Place in the Division
+- Notoriety & Fame — The Second Economy
+- Badges — Permanent Career Marks
+- Banner Customizer — Your Fighter's Identity
 
-- **Weight Class** — Featherweight (145 lbs), Lightweight (155 lbs), Middleweight (185 lbs), or Heavyweight (265 lbs). You stay in this weight class for your career.
-- **Fighting Style** — Determines which stats start higher and how your Overall Rating is calculated. Eight styles: Boxer, Kickboxer, Muay Thai, Wrestler, Brazilian Jiu-Jitsu, Judo, Sambo, and Capoeira.
-- **Backstory** (optional) — A background that gives a small permanent bonus.
+**Economy**
+- Cash — How Money Works
+- Sponsorship Contracts — Passive Income
+- Callouts — Forcing the Matchup
 
-### Backstory Bonuses
-| Backstory | Bonus |
-|---|---|
-| Street Fighter | CHN +5, reduced KO chance |
-| College Wrestler | WRE +8 |
-| Kickboxing Champion | STR +6, LEG +4 |
-| Army Veteran | Max Stamina +10 |
-| MMA Prodigy | All stats +2 |
-| Late Bloomer | +25% XP from all training sessions |
+**Health**
+- Health & Stamina — Your Physical State
+- Injuries — Types, Penalties, and Recovery
+- The Hospital — When to Spend and When to Wait
+- Comeback Mode — Bouncing Back
+- The Nemesis System — Unfinished Business
 
----
+**Shop & Supplements**
+- The Shop — Energy, Boosters & Buffs
 
-## The Eight Stats
-
-Your fighter has eight combat stats, each rated 1–100.
-
-| Stat | Full Name | What It Does |
-|---|---|---|
-| STR | Striking Power | Heavy hands, punishing shots |
-| SPD | Hand Speed | Fast combinations, hard to time |
-| LEG | Kicks | Active leg attacks, targets head and body |
-| WRE | Takedown Offence | Shoots early, high takedown success rate |
-| GND | Ground Control | Dominant from top position, heavy ground and pound |
-| SUB | Submission Game | Chains submission attempts |
-| CHN | Chin | Absorbs damage, rarely stopped by strikes |
-| FIQ | Fight IQ | Reads setups, rarely makes tactical mistakes |
-
-Your **Overall Rating** is calculated from all eight stats, weighted by your fighting style. Each style has primary stats (weighted 1.2×), secondary stats (1.0×), and off-style stats (0.85×).
-
----
-
-## Energy
-
-Everything you do costs energy. Maximum is 100. It regenerates at 1 point per minute automatically.
-
-| Action | Energy Cost |
-|---|---|
-| Training sessions | 3–8 (varies) |
-| Accepting a fight | 10–20 (varies by tier) |
-| Hospital treatment | 10–20 (varies by injury) — also costs cash |
+**Events & Media**
+- Events — Betting on the Card
+- The Media Hub — Building Your Profile Outside the Cage
+- Post-Fight Interview — Every Word Counts
 
 ---
 
-## The Promotion Tiers
+## Getting Started
 
-Your career moves through five tiers. Moving between tiers is no longer fully automatic — some tiers require a **title shot** (see Champions & Title Shots below).
+### What Is Ground & Pound?
 
-| Tier | Overall Range | Fights Per Day | Signing Fee |
-|---|---|---|---|
-| Amateur | 0–30 | 8 | 400 |
-| Regional Pro | 30–48 | 4 | 2,000 |
-| National | 45–65 | 2 | 10,000 |
-| GCS Contender | 60–75 | 1 | 25,000 |
-| GCS | 62–95 | 1 | 50,000 |
+*The big picture — what kind of game this is and what you're actually trying to do.*
 
-**Promotion gates:**
-- **Amateur → Regional Pro**: Auto-promotes at OVR 30
-- **Regional Pro → National**: Must beat the Regional Pro champion (title shot)
-- **National → GCS Contender**: Must beat the National champion (title shot)
-- **GCS Contender → GCS**: Auto-promotes at OVR 62
-- **GCS**: Final tier — defend your belt indefinitely
+Ground & Pound is a text-based MMA career simulation. You are not watching fights happen — you are building the fighter who wins them. Every decision you make before stepping into the cage determines what happens when the door shuts.
 
----
+Your career starts at the bottom of the Amateur division, completely unknown, with raw stats and a borrowed locker at the community gym. From there, every training session, every fight camp, every sponsorship deal, and every callout is a step toward the only thing that matters: the GCS Championship.
 
-## Training & The Gym System
+There are five promotion tiers standing between you and the top. Almost every one makes you look the tier's champion in the eye and take what's theirs — starting with the Amateur belt that turns you pro. Only one tier promotes on Overall Rating alone. The game doesn't hand you anything.
 
-### How It Works
+The fight itself resolves instantly — press Fight and the simulation runs. The real game happens in the hours and days before that moment. How you trained, which sessions you picked in camp, how you read the Fighter Report — that's where championships are won and lost.
 
-Training happens at gyms. There is **one free community gym** always available, plus **ten specialty gyms** that require a **weekly cash membership**. You can have only one paid membership active at a time — paying a new gym cancels your previous one. Ranks you earn at a gym persist forever, even if you switch away.
+> **Key takeaway:** Build the fighter. Make the decisions. The cage takes care of the rest.
 
-### The Free Gym
+### Creating Your Fighter
 
-**Community MMA Center** — Always free. Trains all stats at 0.6× base XP. No ranks, no progression. It's the safety net when you can't afford a membership.
+*Everything you choose at character creation and what it means for your career.*
 
-### Specialty Gyms
+When you create a fighter, three choices define your starting point: weight class, fighting style, and backstory. None of these lock you into a fixed path — you can train any stat to 100 regardless of style — but they determine where you start and how quickly you develop in certain areas.
 
-Each specialty gym focuses on 2–3 stats and offers faster XP in those areas. Training at a gym earns you rank progress that unlocks permanent rewards.
+Weight class isn't cosmetic — it shapes your entire matchmaking universe. The four options are Featherweight (145 lb), Lightweight (155 lb), Middleweight (185 lb), and Heavyweight (265 lb). You'll only ever face opponents in your own class, you can only call out fighters who share it, and the rankings and champions you compete against are class-specific. Pick deliberately — you stay in this class for your career.
 
-| Gym | Focus Stats | Unlocks At | Weekly Cost |
-|---|---|---|---|
-| Iron Fist Boxing | STR, SPD, CHN | Amateur | $300 |
-| Dragon Kickboxing | STR, LEG, SPD | Amateur | $300 |
-| Warrior Muay Thai | LEG, STR, CHN | Amateur | $350 |
-| Apex Wrestling Academy | WRE, STR, GND | Amateur | $400 |
-| Gracie Ground Game | GND, SUB | Amateur | $400 |
-| Renzo Combat Systems | SUB, WRE, FIQ | Regional Pro | $1,500 |
-| Precision MMA Lab | SPD, FIQ, CHN | Regional Pro | $1,500 |
-| Titan Performance Center | STR, WRE, CHN | National | $4,000 |
-| The War Room | FIQ, GND, SUB | National | $4,000 |
-| Elite Fight Academy | All stats | GCS Contender | $10,000 |
+Fighting style has real mechanical weight. Each style assigns your eight stats into primary (1.2× OVR weight), secondary (1.0×), and off-style (0.85×) categories. A Boxer's STR and SPD count for more in their Overall Rating than a Wrestler's would. Choose the style that matches how you want to fight.
 
-**XP multipliers** are tiered:
-- Amateur-tier gyms: 1.0× base, 1.25× on focus stats
-- Regional Pro gyms: 1.15× base, 1.4× on focus stats
-- National gyms: 1.3× base, 1.5× on focus stats
-- Elite Fight Academy: 1.5× on all stats
+Backstory gives a small permanent bonus that never goes away. Street Fighter gives CHN and KO resistance. Late Bloomer gives +25% XP from all training — extremely valuable for a grinding playstyle. MMA Prodigy gives +2 to everything, safe and consistent. Choose based on how you plan to develop your fighter.
 
-There are **no stat caps**. Any gym can train any stat to 100 — but you'll do it much faster at the right gym.
+> **Key takeaway:** Style affects how your stats are weighted in your OVR. Backstory gives a permanent bonus. Both matter — choose deliberately.
 
-### Gym Ranks
+### Energy — The Daily Resource
 
-Each specialty gym has 4 ranks. You earn them by training sessions and scoring specific types of wins while enrolled.
+*How energy works, what it costs, and how to think about spending it.*
 
-| Rank | Unlocks |
-|---|---|
-| 1 | Access to the gym's training sessions (granted on joining) |
-| 2 | A unique advanced session only available at this gym |
-| 3 | +5% XP to focus stats permanently |
-| 4 | A utility perk + permanent badge for your fighter profile |
+Energy is the heartbeat of your career. Maximum 100. Every meaningful action costs it. It regenerates automatically at 1 point per minute — a full bar from zero takes about an hour and forty minutes of real time.
 
-Wins only count at your **currently active paid gym**, and only if the win type matches the gym's discipline (KO/TKO for striking gyms, Submission for BJJ, Decision for tactical gyms, etc.). Rank 3 and 4 require a cash payment in addition to the training and win thresholds.
+Training sessions cost 3–8 energy depending on the session. Sparring is the most expensive at 8 but trains all eight stats. Accepting a fight costs 10–20 depending on your tier. Hospital doctor visits cost 10–20 on top of their cash cost.
 
-### Rank 4 Perks & Badges
+The most important thing to understand about energy is that it forces prioritisation. You can't do everything every day. On days you're in fight camp, energy spent on sessions is energy not available for training. On days you're grinding stats, accepting a fight costs a chunk of your daily budget.
 
-Reaching Rank 4 at any gym earns a permanent badge on your fighter profile and a utility perk.
+Energy doesn't carry over. A full bar you didn't spend is wasted. Log in regularly, spend your energy, and come back. The players who treat their energy bar like a daily task are the ones who climb fastest.
 
-| Gym | Badge | Perk Effect |
-|---|---|---|
-| Iron Fist Boxing | Champion Boxer | +1 camp slot when fighting a striker |
-| Dragon Kickboxing | Grand Master Kickboxer | Cardio Push session costs 1 less energy |
-| Warrior Muay Thai | Grand Kru | Conditioning sessions raise Max Stamina by +2 instead of +1 (same 120 cap) |
-| Apex Wrestling | Olympic Wrestler | Takedown Defence always at least PARTIAL match |
-| Gracie Ground Game | BJJ Black Belt | Submission Escapes gives +5% extra bonus |
-| Renzo Combat | Submission Master | Fighter Report shows 1 extra fight log |
-| Precision MMA Lab | Fight Scientist | Game Plan Study becomes MATCHED instead of PARTIAL |
-| Titan Performance | Titan | Weight cut bad roll floor raised by 3 |
-| The War Room | Tactician | 30% chance opponent's wildcard is revealed |
-| Elite Fight Academy | Elite Master | +10% fame from all fights |
+> **Key takeaway:** Energy regens at 1/min. Spend it every day. It doesn't roll over — unused energy is a missed opportunity.
 
-### Training Sessions
+### The Career Feed
 
-Base sessions available at most gyms:
+*Your career story, told in real time.*
 
-| Session | Energy | Stats Trained |
-|---|---|---|
-| Bag Work | 4 | STR |
-| Footwork | 4 | SPD |
-| Kick Drills | 4 | LEG |
-| Pad Work | 5 | STR, SPD |
-| Wrestling | 5 | WRE |
-| Clinch Work | 5 | WRE, STR |
-| BJJ | 6 | GND, SUB |
-| Submissions | 6 | SUB |
-| Sparring | 8 | All 8 stats — 3% injury risk |
-| Film Study | 3 | FIQ |
-| Conditioning | 4 | Raises max stamina |
+The Career Feed on your dashboard is a reverse-chronological log of everything significant that has happened in your career. Fight results, promotions, title shots, badges earned, sponsor contracts signed and broken, nemesis events — it's all there.
 
-Each gym only offers sessions that train its focus stats, plus sparring. The free community gym offers everything at reduced XP. Injury healing happens passively over time or at the Hospital — there's no in-gym recovery session.
+Think of it as your fighter's autobiography being written in real time. When you win your first title, it's in the feed. When you lose three in a row and freeze your notoriety, that's in there too. The feed doesn't judge — it just records.
 
-### How Stats Level Up
+The Fame drawer (★ Fame button in the footer) gives you a focused view of fame-only events — every notoriety gain, milestone hit, and fame tier-up in order. Useful when you want to track your fame growth specifically without the noise of everything else.
 
-XP accumulates in a bank for each stat. Once full, the stat increases by one point. The more a stat grows, the more XP each additional point costs.
-
-| Stat Range | XP Per Point |
-|---|---|
-| 1–10 | 10 |
-| 11–20 | 25 |
-| 21–30 | 50 |
-| 31–40 | 100 |
-| 41–50 | 200 |
-| 51–60 | 400 |
-| 61–70 | 800 |
-| 71–80 | 1,500 |
-| 81–90 | 2,500 |
-| 91–95 | 6,000 |
-| 96–99 | 8,000 — fight XP only, cannot be trained at a gym |
-
-Stats 96–99 can only grow from fights.
-
-Each training session rolls a small luck modifier (±20%) applied to that session's XP — most land near normal, with occasional **Great** (gold) or **Sluggish** results shown in the post-training toast. Over many sessions it averages out, so batch training isn't penalized.
+> **Key takeaway:** The Career Feed is your permanent record. Check it to understand where you've been and what's driven your progress.
 
 ---
 
-## Fight Offers
+## Fighting
 
-When you are ready to fight, you request offers from the promoter. You receive three cards — one Easy, one Even, and one Hard opponent. A fourth **Title Shot** card appears when you're eligible (see below).
+### Fight Offers — Reading the Room
 
-| Type | Opponent Strength |
-|---|---|
-| Easy | 3–5 Overall below you |
-| Even | Within 3 Overall |
-| Hard | 2–5 Overall above you |
-| Title Shot | The champion of your current tier |
+*How fight offers work, what the four types mean, and how to choose.*
 
-Accepting a fight costs energy (10–20 depending on tier) and enters the training camp phase.
+When you're ready to fight, you request offers from the promoter. Three cards come back — Easy, Even, and Hard. A fourth Title Shot card appears when you've earned it.
 
-### Callouts (Fame-Driven Matchmaking)
+Easy opponents are 3–5 Overall below you. They're safer wins but pay less cash and earn less notoriety. Even opponents are within 3 OVR either way — competitive fights that pay fair. Hard opponents are 2–5 OVR above you — the upset potential is real, and so is the payout.
 
-In the Fight tab, the **📣 Call Out** button lets you spend fame to force a specific opponent into your next Hard offer slot. The roster modal shows opponents in your weight class — same tier (cheaper) and one tier above ("stretch", more expensive).
+There's no objectively correct choice. If you need cash, take the safer fight. If you're chasing notoriety milestones or have a sponsor clause demanding a finish, a harder opponent might serve you better. If you're deep in comeback mode after two losses, staying healthy and building a win streak matters more than the risk-reward of a Hard fight.
 
-**Cost formula:**
+The Title Shot card appears in gold when your OVR hits the threshold, you've earned the required wins at your current tier (2 at Amateur, 3 from Regional Pro up), and you're ranked in the top 5. Beating the Amateur champion on this card is how you turn pro. It replaces nothing — it's a fourth option, always optional. You can ignore it and keep taking regular fights, but the clock is ticking.
 
-| Roster | Base | + Per OVR Gap |
-|---|---|---|
-| Same Tier | 200 fame | +50 each |
-| Stretch (+1 Tier) | 800 fame | +75 each |
+> **Key takeaway:** Easy, Even, Hard, Title Shot. Match your pick to what your career needs right now — not what looks safest in isolation.
 
-Capped at 3,000 fame. Minimum 100. You can cancel an active callout for a full fame refund any time before fighting.
+### Fight Camp — Preparing to Win
 
-**What you get:** the opponent appears in your next Hard slot with a gold border and "📣 Called out" pill, and their **Fighter Report shows full intel** — every stat marked Confirmed, no fog of war.
+*How camp works, why session selection matters, and how to get an S grade.*
 
-**On a callout win:**
-- **+25% cash purse**
-- **+30% fame** (grudge bonus, stacks with all other notoriety modifiers)
-- **Callout Win** badge (unlocks the matching banner piece)
+Accept a fight and you enter Fight Camp — the preparation phase between agreeing to the match and stepping into the cage. Camp doesn't permanently improve your stats. It sets up conditional bonuses that fire during the fight when specific situations arise.
 
-Losing a callout burns the fame you spent. No additional penalty.
+The number of camp slots you get depends on your tier and whether it's a title fight. Amateur fighters get 2 slots on normal fights. Title fights always get 5 slots regardless of tier — the biggest stage gets the most preparation.
 
----
+Choosing the right sessions requires reading the Fighter Report first. If the report shows your opponent is a wrestler, Takedown Defence is your most valuable session. If they're a submission hunter, Submission Escapes should be in your camp. Match your preparation to their threat.
 
-## Champions & Title Shots
+Sessions are rated Matched, Partial, Unmatched, or Wrong — but the rating stays hidden while you build. It's revealed only when you finalise camp, so you have to read the opponent and commit rather than guess-and-check. Matched means you directly countered their game and received 100% of the bonus. Partial means it was broadly useful but not targeted — 50%. Unmatched sessions gave nothing. Wrong sessions actively hurt you. The camp grade S through F reflects how well you read the opponent.
 
-Each professional tier (Regional Pro, National, GCS) has a persistent NPC champion per weight class. You cannot promote past these tiers without beating the champion.
+Game Plan Study is always Partial against any opponent — it's the safe fallback when you're uncertain. Sparring trains all stats at +3% (always active) but carries a 3% injury risk per session. Repeating the same session has diminishing returns — the second time gets 60% value, the third 30%.
 
-### How to Earn a Title Shot
+> **Key takeaway:** Read the Fighter Report, pick sessions that counter what you see. Matched sessions at 100% beat safe sessions at 50% every time.
 
-1. Your Overall Rating must reach the next tier's threshold (OVR 45 for National, OVR 60 for GCS Contender, etc.)
-2. Once reached, a **pending promotion** is set — but you do not promote yet.
-3. You must accumulate **3 wins at your current tier** before the title shot offer appears.
-4. The title shot appears as a 4th gold-bordered card in your fight offers.
+### The Fighter Report — Reading Your Opponent
 
-### The Championship Fight
+*How to interpret scouting intel and use it to build a smarter camp.*
 
-Champions are tougher than regular opponents:
+Before you fill your camp slots, you get a Fighter Report — a scouting document that tells you what's known about your opponent's stats and tendencies. Not everything is visible. The report classifies each stat as Confirmed, Suspected, Unverified, or Unknown.
 
-- They receive a **+5% boost to all stats** during the fight.
-- Their **Fighter Report shows only 2 visible fight logs** instead of 5 — less intel, more guessing, more reliance on gut.
-- A **wildcard** is still hidden from the report, as always.
+Confirmed stats are proven across multiple fights — treat them as fact. Suspected stats are suggested by limited footage — likely but not certain. Unverified means the data exists but isn't backed by enough evidence. Unknown means you're flying blind on that stat.
 
-Title fights get a dedicated **gold theme** across the entire pipeline — fight offer card, Fighter Report banner, Fight Camp header, Camp Summary, and the post-fight "New Champion" victory screen.
+The key is reading what the report is telling you about their style, not just the numbers. A fighter with Confirmed high WRE and GND is telling you to prepare for takedowns and ground control. A fighter with Suspected high SUB is warning you to prepare submission escapes even if the data isn't locked in.
 
-Title fights always run a **full 5-slot training camp** — never short notice.
+Champions show less information — their report is restricted to 2 visible fight logs instead of 5. Against champions, lean on Game Plan Study and Sparring as safety nets when intel is thin. Don't overcommit to specific counters you can't confirm.
 
-### Winning a Title
+Callout opponents are different — their report shows full intel, every stat Confirmed. If you spent the fame to call someone out, you earned the complete picture.
 
-- You dethrone the champion.
-- You **promote to the next tier**.
-- You earn **+200 notoriety** on top of the normal fight reward.
-- You earn a permanent **Champion** badge on your fighter profile.
-- A new NPC champion is seeded from the highest-rated remaining opponent in the old tier.
+> **Key takeaway:** Confirmed intel is fact. Suspected intel is a signal worth acting on. Unknown stats are where opponents hide their surprises.
 
-### Losing a Title Shot
+### Wildcards — The Hidden Variable
 
-- You enter a **2-win cooldown** — the title shot card stays visible but greyed out until you win 2 more fights.
-- If the champion beat you twice in a row, they become your **Nemesis**.
-- Your pending promotion stays set — you can always try again.
+*What wildcards are, how they work, and how to defend against them.*
 
----
+Every opponent carries a hidden tendency — a middle-tier stat that can unexpectedly boost their performance during the fight. You'll never see it in the Fighter Report. It's the one thing you can't fully prepare for.
 
-## Fight Camp
+If your camp sessions happen to counter the wildcard — for example, you prepared Submission Escapes and the wildcard was a submission tendency — the wildcard is neutralised and you get the full benefit of your session. If your camp didn't address it, the opponent gets a hidden +15% advantage in that area.
 
-Between accepting a fight and fighting it, you have a training camp. Camp does not improve your stats permanently — it prepares conditional bonuses that activate during the fight when specific situations occur.
+This is why camp preparation is never fully predictable. You can build a perfect camp based on the report and still face an unexpected threat in the fight. The wildcard is the game acknowledging that real fighters always have something you didn't see on tape.
 
-### Camp Slots
+There's one way to partially beat the system: reach Rank 4 at The War Room and earn the Tactician perk. It gives a 30% chance to reveal the opponent's wildcard before camp starts — not guaranteed, but information you can act on when it fires.
 
-| Tier | Normal Slots | Short Notice |
-|---|---|---|
-| Amateur | 2 | 1 |
-| Regional Pro | 3 | 1 |
-| National | 3 | 1 |
-| GCS Contender | 5 | 2 |
-| GCS | 3 | 1 |
-| **Title Fight** | **5** | **2** |
+> **Key takeaway:** The wildcard is hidden and always present. Build your camp to cover the obvious threats — the wildcard is the game's one unavoidable surprise.
 
-### Camp Sessions
+### Weight Cut — The Gamble Before the Fight
 
-| Session | Energy | Bonus When Triggered | Best Used Against |
-|---|---|---|---|
-| Takedown Defence | 6 | Sprawl success +25% | Wrestlers, Judoka, Sambo |
-| Submission Escapes | 6 | Escape probability +20% | BJJ, Sambo, Submission Hunters |
-| Striking Accuracy | 5 | Strike damage +15% | Defensive fighters, Counter Strikers |
-| Cardio Push | 5 | Stamina drain −20% when below 70% | Pressure Fighters, high-volume opponents |
-| Game Plan Study | 4 | Opponent damage −6% (always half-active) | Any opponent — safe general choice |
-| Body Shot Focus | 5 | Body damage +30%, opponent stamina drain +15% | High-chin fighters, weak conditioning |
-| Clinch Control | 5 | Clinch damage +25% | Kickboxers, Muay Thai, Clinch Bullies |
-| Ground & Pound Posture | 6 | GnP damage +20% from top | Guard players, submission-light opponents |
-| Sparring (general) | 8 | +3% all stats (always active) — 3% injury risk | Generic fallback — expensive and risky |
+*How to choose a weight cut strategy and what the risk-reward actually looks like.*
 
-### Match Status
+Before every fight, you choose a weight cut strategy. It's a gamble — you're trading certainty for potential upside, or accepting a safe result with no ceiling.
 
-Your sessions are rated against what the opponent actually brings:
+Easy cut gives you exactly +0 stamina and a 0% chance of missing weight. Boring, but reliable. Moderate cut rolls −5 to +10 stamina with a 5% miss chance. Aggressive cut rolls −12 to +18 stamina with a 20% miss chance. A good aggressive cut is a significant advantage. A bad one puts you at a deficit before the fight starts.
 
-| Status | Meaning | Bonus Applied |
-|---|---|---|
-| Matched | Directly counters opponent's game | 100% |
-| Partial | Broadly useful but not targeted | 50% |
-| Unmatched | Nothing in the opponent's style justifies this | 0% |
-| Wrong | Contradicts opponent profile | 0% + penalty |
+Missing weight backfires badly. A failed cut never gives you the good roll — your stamina always crashes — and on top of that you lose 20% of your cash purse and 200 fame. Against a hard opponent or in a title fight, showing up drained, broke, and less famous is a combination that ends careers.
 
-Game Plan Study always counts as Partial regardless of opponent — it is the safe fallback.
+The Titan perk from Rank 4 at Titan Performance Center raises the bad roll floor by 3 — it doesn't remove the risk, but it reduces the damage ceiling of a failed cut. For fighters who love the aggressive cut, it's a meaningful safety net.
 
-Repeating the same session gives diminishing returns: the second time you do it earns 60% of the value, the third time 30%.
+> **Key takeaway:** Aggressive cuts have a 20% miss rate. Missing crashes your stamina and costs 20% cash plus 200 fame. Factor the risk into every decision — there's no shame in an Easy cut before a title fight.
 
-### Camp Rating
+### Fight Outcomes — What Can Happen
 
-Your camp is graded S through F based on total points earned. This rating is informational — it does not give you a flat stat modifier.
+*The eight possible results, what causes them, and what they mean for your career.*
 
-| Grade | Points | Label |
-|---|---|---|
-| S | 90–100 | Elite preparation |
-| A | 75–89 | Strong preparation |
-| B | 55–74 | Good preparation |
-| C | 35–54 | Adequate preparation |
-| D | 15–34 | Weak preparation |
-| F | 0–14 | Poor preparation |
+Every fight resolves to one of eight outcomes. Understanding what each one means helps you interpret your fight summary and understand where your fighter needs to grow.
 
-### The Fighter Report
+KO/TKO win means your striking was dominant enough to stop the fight. Submission win means you either took the fight to the ground and controlled it, or your opponent shot for a takedown and you capitalised. Decision win means you outworked the opponent across the duration of the fight — consistent pressure, smart game plan, better conditioning.
 
-Before you start camp, you receive a scouting report. The report classifies what is known about the opponent's stats:
+The same logic applies in reverse for losses. A KO/TKO loss means your chin or your defence couldn't handle their striking. A submission loss means they were better on the ground. A decision loss means they simply outperformed you over the full fight — often the hardest result to diagnose because no single thing went catastrophically wrong.
 
-| Level | Meaning |
-|---|---|
-| Confirmed | Proven across multiple fights — treat this as fact |
-| Suspected | Suggested by 1–2 fights — likely but not certain |
-| Unverified | Known stat but insufficient fight evidence |
-| Unknown | No data — could be anything |
+Draws are rare and feel anticlimactic, but they're possible. They don't count as wins for streak or title shot purposes but also don't break comeback mode.
 
-Champions show less information — their tape is restricted. Use Game Plan Study and Sparring as safety nets when fighting them.
+How you win and lose matters beyond the result column. KO wins earn more notoriety than decisions. Submission wins show technical mastery. Decision wins against hard opponents show you can compete for the full duration. Every result tells a story about your fighter.
 
-### Wildcards
+> **Key takeaway:** How you win is as important as winning. KO and submission finishes earn more notoriety and tell a better story than decisions.
 
-Every opponent has a hidden tendency — a middle-tier stat that can unexpectedly boost their performance. This is never shown in the report. If you prepared a session that counters it, the bonus is neutralised. If you did not, the opponent gets a hidden +15% advantage in that area.
+### The Fight Summary — Understanding What Happened
 
-The **Tactician** perk (Rank 4 at The War Room) has a 30% chance to reveal the wildcard before the fight.
+*How to read your post-fight breakdown and what every section means.*
 
-### Camp Injuries
+After every fight, the Fight Summary shows you a complete breakdown of what happened. This isn't just a scoreboard — it's a diagnostic tool. Use it to understand your fighter and improve your next camp.
 
-Sparring carries a 3% injury risk per session. If an injury occurs you must choose:
+The Camp Performance section is the most valuable part. It shows your camp grade, which sessions triggered, what match status they received, and how your wildcard played out. If you got a D-grade camp and lost, this is where you find out why. If you prepared perfectly and still lost, the wildcard section might hold the answer.
 
-- **Stop camp**: Lose remaining slots, camp grade drops, fight healthy.
-- **Push through**: Keep your slots, but carry the injury penalty into the fight.
+The Notoriety section gives a line-by-line breakdown of every fame modifier that applied — the base fight reward, any streak bonuses, milestone hits, callout bonuses, and beef or respect flag payouts. If your notoriety moved less than expected, this section explains exactly where the shortfall was.
 
-| Injury | Fight Penalty |
-|---|---|
-| Bruised Knuckle | STR −10% |
-| Twisted Knee | LEG −20%, WRE −10% |
-| Rib Strain | Max Stamina −15% |
-| Minor Concussion | FIQ −15%, forces camp stop, requires doctor visit |
-| Eye Cut | SPD −10%, opponent accuracy +5% |
+XP gained per stat is shown here too. Fights give XP based on what happened in them — a KO win gives big STR and CHN XP, a submission win rewards SUB and GND. Watching which stats level up from which fights helps you understand how your fighter is naturally developing.
 
-You can remove a logged session by clicking its filled slot — your energy is refunded.
+If it was a title fight, a dedicated championship victory screen appears with gold styling before the summary. The moment deserves the treatment.
+
+> **Key takeaway:** The Camp Performance section tells you whether your preparation was right. Check it after every fight — it's the fastest way to become a better player.
 
 ---
 
-## The Fight
+## Training & Gyms
 
-### Weight Cut
+### How Training Works
 
-Before every fight you choose a weight cut strategy. The result is a gamble — a random stamina roll with a chance to miss weight.
+*The basics of stat development, XP, and why training is the foundation of everything.*
 
-| Strategy | Stamina Roll | Miss Weight Chance |
-|---|---|---|
-| Easy | +0 (guaranteed) | 0% |
-| Moderate | −5 to +10 (random) | 5% |
-| Aggressive | −12 to +18 (random) | 20% |
+Training is how your fighter improves. Every session earns XP in specific stats. Once a stat's XP bank fills up, that stat increases by one point. Your Overall Rating rises as your stats grow.
 
-A good aggressive cut gives you a big stamina boost; a bad one leaves you drained before the fight starts. Missing weight costs 20% of your cash purse. The **Titan** perk (Rank 4 at Titan Performance Center) raises the bad roll floor by 3.
+There are no levels in this game. Your fighter doesn't gain 'experience' in an abstract sense — they get concretely better at striking, grappling, takedowns, and so on. The OVR number is a reflection of your actual stats, not a progress bar.
 
-### Fight Outcomes
+The XP cost to raise a stat increases as it gets higher. Early points are cheap — 10 XP per point in the 1–10 range. By the time you're pushing into the 70s, each point costs 1,500 XP. Elite stats (96–99) can only be raised through fights, not training sessions — only real combat experience can push a fighter to that level.
 
-Eight possible results:
+Your fighting style determines how stats are weighted in your OVR calculation. Training a primary stat raises your OVR faster than training an off-style stat. That's not a reason to ignore off-style stats — a well-rounded fighter is harder to exploit — but it explains why a Boxer training LEG sees slower OVR growth than a Boxer training STR.
 
-- **KO/TKO** (win) — You drop your opponent
-- **Submission** (win) — You lock in a tap
-- **Decision — Unanimous** (win) — All judges score it for you
-- **Decision — Split** (win) — You take 2 of 3 judges
-- **Draw** — No winner
-- **Loss — Decision** — Judges score against you
-- **Loss — KO/TKO** — You get dropped (health forced to 0)
-- **Loss — Submission** — You get tapped
+> **Key takeaway:** Stats grow through XP. Higher stats cost more XP per point. The right gym makes everything faster.
 
-### Post-Fight XP
+### The Gym System — Choosing Where to Train
 
-You earn XP distributed across stats based on how the fight ended:
+*How gyms work, what separates them, and how to decide where your cash goes.*
 
-| Result | XP Distribution |
-|---|---|
-| Win by KO/TKO | STR 30, CHN 15, SPD 10 |
-| Win by Submission | SUB 30, GND 20, WRE 10 |
-| Win by Decision | All stats 15, FIQ 20 |
-| Loss by KO/TKO | CHN 20, FIQ 15 |
-| Loss by other | FIQ 25 |
+There are eleven gyms in Ground & Pound — one free community gym and ten specialty gyms that require a weekly cash membership. You can only have one paid membership active at a time. Switching gyms cancels your current membership immediately.
 
-XP is multiplied by an outcome modifier:
+The Community MMA Center is always available at no cost. It trains all stats at 0.6× base XP — slower than any specialty gym but always there when your cash runs low. It has no ranks and no progression. Think of it as the safety net, not the goal.
 
-| Outcome | Multiplier |
-|---|---|
-| KO/TKO | 1.3× |
-| Submission | 1.25× |
-| Decision Unanimous | 1.1× |
-| Decision Split | 1.05× |
-| Draw | 1.0× |
-| Loss by Decision | 0.8× |
-| Loss by Finish | 0.7× |
+Specialty gyms focus on 2–3 stats and give faster XP in those areas. An Amateur-tier gym gives 1.25× XP on focus stats. A National-tier gym gives 1.5× on focus stats. Elite Fight Academy gives 1.5× on all stats. The further up the career ladder you climb, the better your training options become — but they also get significantly more expensive.
 
-If you are in **comeback mode** when you win, all fight XP is additionally multiplied by 1.5×.
+Choosing the right gym means matching the gym's focus to your style's primary stats. A Boxer should be at Iron Fist Boxing (STR, SPD, CHN). A BJJ fighter belongs at Gracie Ground Game (GND, SUB). Training your primary stats at the right gym is the fastest path to a high OVR.
 
-### Cash Earnings
+> **Key takeaway:** Match the gym to your style's primary stats. The right gym makes your strong stats stronger faster.
 
-Cash is the game's currency. The base purse is your tier's signing fee. On top of that:
+### Gym Ranks — The Long Game
 
-- Win: 100% of purse
-- Draw: 50% of purse
-- Loss: 70% of purse
+*How gym ranks work, what they unlock, and why they follow you forever.*
 
-Modifiers:
-- Higher notoriety tier: +5% to +50% depending on fame
-- Comeback mode: +30%
-- Championship Pedigree perk (Elite Fight Academy, Rank 4): +10% fame from all fights (indirectly boosts cash via the notoriety tier)
-- Missing weight: −20%
-- Active **Respect flag** on opponent (you won): +15% cash
-- Callout fight win: +25% cash
+Every specialty gym has four ranks. You earn them by accumulating training sessions and scoring specific types of wins while enrolled at that gym. Ranks are permanent — they follow you even if you switch gyms or can't afford the membership. Earn a rank, keep it forever.
 
----
+Rank 1 is granted automatically when you join. It gives you access to the gym's training sessions. Rank 2 unlocks a unique advanced session only available at that gym. Rank 3 gives a permanent +5% XP bonus to focus stats — a compounding advantage that pays off across your entire career. Rank 4 is the pinnacle: a utility perk and a permanent badge on your fighter profile.
 
-## Post-Fight Interview
+Win types matter for ranks. Striking gyms count KO/TKO wins. BJJ and submission gyms count submission wins. Tactical gyms count decision wins. If you're training at a wrestling gym but winning all your fights by KO, those wins don't contribute to your gym rank progress.
 
-After every fight (win or loss), the press interviews you. Three tones to pick, plus skip:
+Ranks 3 and 4 also require a cash payment in addition to the training and win thresholds. The cash cost is significant — these are career investments, not freebies. But the permanent XP bonus from Rank 3 and the utility perk from Rank 4 are some of the most powerful advantages in the game.
 
-| Tone | Fame | Side Effect |
-|---|---|---|
-| 🙇 Humble | +100 | Writes a **Respect flag** on the just-fought opponent. If you face them again within 6 fights and win, that fight pays +15% cash. |
-| 🔥 Confident | +150 | Pure fame. No flags, no strings. |
-| 📣 Trash Talk | +200 | Pick a target from the same-tier roster (within ±6 OVR, excluding fighters you've already beaten). Writes a **Beef flag** on that fighter. |
-| Skip | 0 | Move on. No reward, no consequence. |
+> **Key takeaway:** Gym ranks are permanent and compound over time. Rank 3's +5% XP bonus is worth planning your career around.
 
-The Trash Talk picker only shows fighters you can realistically face in your next few offers. For high-OVR or stretch-tier targets, use the **Callout** system instead — it spends fame but guarantees the matchup.
+### Rank 4 Perks — What They Do
 
----
+*Every gym's Rank 4 perk explained and which ones to prioritise.*
 
-## Beef & Respect Flags
+Reaching Rank 4 at any gym earns a permanent utility perk that changes how something in the game works. These aren't cosmetic — they affect camp performance, weight cuts, fight preparation, and more. Here's what each one does.
 
-Flags are silent contracts you make with rivals. They're created by:
+| Gym | Perk | What It Actually Means |
+| --- | --- | --- |
+| Iron Fist Boxing | Champion Boxer | An extra camp slot when fighting a striker. More prep time against your most common opponents. |
+| Dragon Kickboxing | Grand Master Kickboxer | Cardio Push costs 1 less energy. Makes stamina preservation cheaper in camp. |
+| Warrior Muay Thai | Grand Kru | Conditioning raises Max Stamina by +2 instead of +1. Faster path to a higher stamina ceiling. |
+| Apex Wrestling | Olympic Wrestler | Takedown Defence always rates at least PARTIAL. Your wrestling preparation never completely misfires. |
+| Gracie Ground Game | BJJ Black Belt | Submission Escapes gives +5% extra bonus. More reliable escape probability on the mat. |
+| Renzo Combat | Submission Master | Fighter Report shows 1 extra fight log. Better intel in every camp. |
+| Precision MMA Lab | Fight Scientist | Game Plan Study counts as MATCHED instead of PARTIAL. The safe fallback becomes a full-value session. |
+| Titan Performance | Titan | Weight cut bad roll floor raised by 3. Reduces the damage ceiling of a failed aggressive cut. |
+| The War Room | Tactician | 30% chance the opponent's wildcard is revealed before camp. Information you can act on. |
+| Elite Fight Academy | Elite Master | +10% fame from all fights. Every fight, forever, pays more notoriety. |
 
-- **Trash Talk** tone in post-fight interviews → Beef flag
-- **Humble** tone in post-fight interviews → Respect flag
-- **Division Talk** segments on the Podcast → Trash creates Beef, Respectful creates Respect (see Media Hub)
+> **Key takeaway:** Fight Scientist (Game Plan Study = MATCHED) and Elite Master (+10% fame forever) are among the most universally powerful perks. Tactician (wildcard reveal) is transformative if you hate surprises.
 
-Active flags appear on offer cards as **🔥 Beef** or **🙇 Respect** pills with a colored border. Hover for the remaining window.
+### Training Sessions — What Each One Does
 
-| Flag | Origin | Window | On Win | On Lapse |
-|---|---|---|---|---|
-| Beef | Trash Talk / Podcast | 4 fights | +30% fame (grudge bonus) | −150 fame |
-| Respect | Humble / Podcast | 6 fights | +15% cash purse | Silent expiry |
+*Every available session, its energy cost, and what stats it trains.*
 
-Every fight you complete decrements the window for unmatched flags. Meeting the flagged opponent — win or lose — consumes the flag (without penalty even on a loss).
+Sessions are the atomic unit of training. Each one costs energy and earns XP in specific stats. Here's a complete reference.
+
+| Session | Energy | Stats Trained | Notes |
+| --- | --- | --- | --- |
+| Bag Work | 4 | STR | Pure striking power. Core session for Boxers and Kickboxers. |
+| Footwork | 4 | SPD | Hand speed and movement. Builds fast combinations. |
+| Kick Drills | 4 | LEG | Lower body attacks. Essential for Muay Thai and Kickboxers. |
+| Pad Work | 5 | STR, SPD | Combination striking. Two stats for one session — efficient. |
+| Wrestling | 5 | WRE | Takedown offence. Core for Wrestlers and Sambo fighters. |
+| Clinch Work | 5 | WRE, STR | Dirty boxing and clinch pressure. Two stats, useful for Muay Thai. |
+| BJJ | 6 | GND, SUB | Ground control and submission chains. Two stats — good value. |
+| Submissions | 6 | SUB | Pure submission hunting. More targeted than BJJ sessions. |
+| Sparring | 8 | All 8 stats | Most expensive but broadest. 3% injury risk per session. |
+| Film Study | 3 | FIQ | Cheapest session. Tactical awareness. Often overlooked, valuable for decision fighters. |
+| Conditioning | 4 | Max Stamina | Raises your stamina ceiling, not the stat itself. Stacks over time. |
+
+> **Key takeaway:** Sparring trains everything but carries injury risk. Film Study is the cheapest session in the game and directly improves Fight IQ — don't ignore it.
 
 ---
 
-## Notoriety (Fame)
+## Career
 
-Notoriety is your career fame score. It determines how much cash you earn per fight and unlocks storyline recognition. It never fully resets — a floor is set at your peak tier.
+### The Five Tiers — Your Roadmap to the Top
 
-### Fame Drawer
+*What each tier looks like, how you move between them, and what changes as you climb.*
 
-Your fame tier and score are shown in your fighter profile in the left sidebar. The **★ Fame button in the footer** opens the Fame drawer — a side panel that shows:
+Your career moves through five promotion tiers: Amateur, Regional Pro, National, GCS Contender, and GCS. Each tier has a different OVR range, a different number of available fights per day, and a different signing fee for the professional tiers.
 
-- Current tier with progress bar to the next threshold
-- Status chips (Frozen, Decay warning, Peak floor)
-- **Recent fame events** — every fame change you've earned with reason and timestamp (fight wins, milestones, sponsor bonuses, callout spends, prediction outcomes, etc.)
-- Deep links to the Contracts, Events, Media, and Callout features
+Amateur is where everyone starts. Modest payouts, eight fight slots per day, OVR range of 0–30. It's the proving ground — the place where you find your style and start building the record that will define your reputation. It ends with your first belt: beat the Amateur champion to turn pro.
 
-### Notoriety Tiers
+Every tier from Amateur upward makes you beat the tier's champion to advance — the one exception is GCS Contender, which promotes automatically at OVR 62. You don't get promoted just by reaching the OVR threshold; you have to earn it in the most important fight of that chapter of your career. GCS is the final tier. There's no tier above it. Winning the GCS Championship is the peak of the mountain.
 
-| Tier | Score Range | Cash Bonus |
-|---|---|---|
-| Unknown | 0–999 | +0% |
-| Prospect | 1,000–4,999 | +5% |
-| Rising Star | 5,000–14,999 | +12% |
-| Contender | 15,000–39,999 | +22% |
-| Star | 40,000–79,999 | +35% |
-| Legend | 80,000+ | +50% |
+As you climb, the pace of the game changes. Eight fights per day in Amateur becomes one per day in GCS. The game slows down and every fight carries more weight. The signing fees at higher tiers aren't just flavour — they're a signal that this tier costs more to compete in, and the rewards need to justify the investment.
 
-### Notoriety from Fights
+> **Key takeaway:** Every tier from Amateur up makes you beat the champion to advance — only GCS Contender auto-promotes. You can't buy or train your way past a belt; you have to fight your way through.
 
-Base rewards depend on outcome and tier:
+### Champions & Title Shots
 
-| Outcome | Amateur | Regional Pro | National | GCS |
-|---|---|---|---|---|
-| Win KO/TKO | +80 | +200 | +500 | +1,200 |
-| Win Submission | +70 | +175 | +450 | +1,000 |
-| Win Unanimous Decision | +40 | +120 | +300 | +700 |
-| Win Split Decision | +25 | +80 | +200 | +500 |
-| Draw | +10 | +30 | +80 | +200 |
-| Loss Decision | −10 | −30 | −80 | −150 |
-| Loss by Finish | −20 | −60 | −150 | −300 |
+*How to earn a title shot, what makes champion fights different, and what happens when you win or lose.*
 
-### Bonus Notoriety Events
+Beating the tier champion is the only way to advance — at every tier except GCS Contender, which promotes automatically at OVR 62. Your very first belt is the Amateur title: beat the Amateur champion (the top contender in your division) to turn pro and move up to Regional Pro.
 
-| Event | Bonus |
-|---|---|
-| Winning a Title Shot | +200 |
-| Defeating your Nemesis | +150 |
-| Comeback win (after 2+ consecutive losses) | +150 |
-| First finish in current promotion tier | +100 |
-| Fight of the Night (decision win, opponent below 50% health) | +200 |
-| Giant Killer (beat someone 10+ OVR above you) | +300 |
-| 5-fight win streak | +100 |
-| 10-fight win streak | +250 |
-| 20-fight win streak | +500 |
+The path to a title shot has three steps, and all three must be met before the Title Shot (or Turn Pro) card appears in your Fight Offers. First, your Overall Rating reaches the next tier's threshold — once it does, you become a contender and a "Path to the Belt" checklist appears at the top of your Fight Offers tracking your progress. Second, you climb into the top 5 of your division's rankings. Third, you bank the required number of wins at your current tier: 2 wins at Amateur, and 3 wins from Regional Pro upward. Hit all three and the card unlocks automatically.
 
-### One-Time Milestones
+The Amateur title shot is your pro debut, so the framing is "Turn Pro" rather than a belt defence — but the three steps are the same: reach OVR 30, sit in your division's top 5, and bank 2 wins at the Amateur tier. Win the Amateur belt and you earn the distinct Amateur Champion badge plus a fame boost.
 
-| Milestone | Bonus |
-|---|---|
-| 10 career wins | +150 |
-| 25 career wins | +400 |
-| 50 career wins | +800 |
-| 10 career KO/TKO wins | +300 |
+Champion fights are harder than regular fights. The champion receives a +5% boost to all stats during the fight. Their Fighter Report shows only 2 visible fight logs instead of the normal 5 — less tape to study means more uncertainty. Bring your best camp and don't assume you can out-prepare what you can't see. Title fights always run a full 5-slot training camp regardless of tier.
 
-### The Peak Tier Floor
+Win the title and you promote to the next tier, earn a notoriety boost on top of the fight reward, and receive a permanent belt badge — the distinct Amateur Champion badge for the Amateur belt, or the generic Champion badge for every pro title from Regional Pro up. A new NPC champion is seeded from the strongest remaining fighter in the old tier.
 
-Your notoriety score can decrease from losses or inactivity — but it can never drop below the floor of your highest-ever tier.
+Lose a title shot and you can't immediately re-challenge — you enter a 2-win cooldown. The Title Shot card stays locked until you win 2 more fights; the checklist shows your recovery progress (for example 1/2) so you always know how close you are to a rematch. Each win ticks the cooldown down by one. If the same champion beats you twice, they also become your Nemesis, and beating them clears both the Nemesis flag and reopens the title shot.
 
-### Inactivity Decay
+> **Key takeaway:** Champions get +5% to all stats and show less tape. Treat every title fight like the hardest fight of your career — because it is.
 
-If you do not fight for more than 20 consecutive days, your notoriety begins decaying by 1% per day until it hits the floor.
+### Rankings — Your Place in the Division
 
-### Notoriety Freeze
+*How rankings work, when you enter them, and why the top 5 matters.*
 
-After 3 consecutive losses, your notoriety is frozen. The one exception is a Nemesis or Title Shot victory — those bonuses always apply.
+Every tier in your weight class has a ranked roster. The champion sits at the top, then the contenders are ranked #1 through #N below them. Your job is to climb that ladder — and the rank you hold gates the most important opportunities in the game.
 
----
+You don't enter the rankings on day one. The first 3 fights at any tier are your entry period. After fight 3, you're placed in the rankings based on your record so far — a 3–0 record puts you closer to the title shot zone, a 1–2 places you at the bottom. From there, every win climbs you up, every loss drops you down.
 
-## Sponsorship Contracts
+Wins by KO or submission climb faster than decision wins. Upset wins (beating a higher-ranked opponent) climb the most — you can move multiple ranks at once. Decision losses drop you one rank; losses to lower-ranked fighters drop you two. The rank movement formula favours fighters who go after the toughest matchups.
 
-The **Contracts tab** lets you sign sponsor deals that pay cash per fight and trigger lump-sum bonuses when you complete their clauses.
+Top 5 of your division is the title shot zone. Hitting it is one of three requirements to challenge the champion — alongside reaching the OVR threshold and a minimum number of wins at the current tier (2 at Amateur, 3 from Regional Pro up). The other ranks gate other features: top 15 unlocks callouts, top 1 means you're the champion of your tier (you're not, unless you've won the belt — the champion always sits above the ranked roster).
 
-### Slot Cap by Fame Tier
+NPC ranks are fixed and never change. When you climb past them, they don't move down — you just visually slot in above them. This keeps the division stable and meaningful: the #5 NPC has been the #5 NPC since you started.
 
-| Fame Tier | Max Active Contracts |
-|---|---|
-| Unknown | 0 |
-| Prospect | 1 |
-| Rising Star | 2 |
-| Contender | 2 |
-| Star | 3 |
-| Legend | 4 |
+> **Key takeaway:** First 3 fights at a tier are your placement matches. Top 5 unlocks the title shot. Top 15 unlocks callouts. Every rank matters.
 
-### How Contracts Work
+### Notoriety & Fame — The Second Economy
 
-A pool of **4 sponsor offers refreshes every 7 days**, gated by your fame tier (Prospect sees Prospect-tier sponsors, Star sees everything up to and including Star-tier).
+*What notoriety actually is, how it grows and shrinks, and why it matters beyond a number.*
 
-When you sign one, it goes Active. While Active:
+Notoriety is your fame score — a measure of how known and talked-about your fighter is in the MMA world. It's not just a vanity metric. Notoriety determines your fame tier, which gates sponsorship contracts, callout access, the documentary, and your banner cosmetics.
 
-- You earn **per-fight cash** automatically after every fight (win or lose).
-- Each contract has a **clause** — e.g. "win your next 2 fights" or "make weight for 3 fights."
-- **Clause complete** → bonus cash + fame payout, contract closes successfully.
-- **Clause broken** → contract ends with a **fame penalty**.
-- **Time-limited clauses** (e.g. "win any 2 within the duration window") expire silently if the window closes without completion.
+You earn notoriety from fights, media appearances, sponsorship bonuses, event predictions, and career milestones. You can lose it from losses, inactivity, broken sponsorship clauses, and beef flags that lapse. The system is designed to reward activity and punish stagnation.
 
-### Available Clause Types
+Your notoriety has a floor — it can never drop below the level of your highest-ever tier. If you climbed to National tier and lost five in a row, your notoriety might tank but it won't fall back to Amateur levels. The floor protects your career's history.
 
-| Clause | What It Means |
-|---|---|
-| Win Next N | Win your next N fights consecutively. Any non-win breaks. |
-| Finish Next N | Win your next N by KO or Submission. Decision wins or losses break. |
-| Win Any N | Win N fights within the contract's duration window. |
-| Land One KO | Win at least one fight by KO within the duration window. |
-| No Weight Miss | Make weight for N consecutive fights. |
-| No Finish Loss | Don't get finished (lose by KO or Sub) for N fights. Decision losses are okay. |
+After 3 consecutive losses, your notoriety freezes — no gains until you win again, with one exception: Nemesis victories and title shot wins always apply their bonuses regardless. The freeze never blocks you from fighting; it just pauses fame growth until you bounce back. After 20 days without a fight, notoriety begins decaying at 1% per day until you fight again. The game rewards fighters who stay active.
 
-### Drop a Contract
+> **Key takeaway:** Notoriety has a floor based on your career peak. Three straight losses freeze it. Stay active or watch it decay.
 
-You can drop an active contract any time. Costs **half the break penalty in fame**. Useful when you realize you can't meet the clause and want to free up a slot.
+### Badges — Permanent Career Marks
 
-### Anti-Farm Rule
+*Every badge in the game, how to earn it, and what it means for your profile.*
 
-Sponsors you completed, broke, or dropped this week won't reappear in your offer pool until the next weekly rotation.
+Badges are permanent markers earned through career achievements and gym mastery. They appear on your fighter profile and can be pinned to your banner. Once earned, they never go away.
+
+Career badges come from doing exceptional things in your fights: winning while in comeback mode earns the Resilience badge. Your first belt — beating the Amateur champion to turn pro — earns the distinct Amateur Champion badge. Every pro title after it (Regional Pro and up) earns the generic Champion badge. Winning a callout fight earns the Callout Win badge. Recording your documentary at Star fame tier earns the Documentary badge and unlocks the Legacy banner piece.
+
+Gym badges are earned by reaching Rank 4 at each specialty gym — Champion Boxer, BJJ Black Belt, Tactician, Elite Master, and the rest. These are the hardest to earn because they require sustained dedication to one gym across training sessions and specific win types. A fighter with multiple Rank 4 gym badges has put in serious time.
+
+Badges aren't just cosmetic. Several unlock banner pieces for the customizer, and the gym badges come with the Rank 4 utility perks that change how the game works for you permanently.
+
+> **Key takeaway:** Gym badges require the most work but come with permanent perks. Career badges tell the story of your biggest moments.
+
+### Banner Customizer — Your Fighter's Identity
+
+*How the banner works, what each layer unlocks, and why it matters.*
+
+Every fighter has a customizable banner on their profile. It's a visual identity layer — four customizable parts that evolve as your career progresses. Open it with the Customize button on your profile sidebar.
+
+The four layers are Background, Frame, Accent Colour, and Pinned Badges. Backgrounds unlock at fame tiers — starting at a basic Slate and working up to Holographic at Legend fame. Frames unlock through fame progression too, with a special Championship frame available to anyone who has won a professional belt (Regional Pro and up — the Amateur belt earns the distinct Amateur Champion badge but not this frame). Accent colours span seven options unlocked by fame tier. Pinned Badges let you choose up to three of your earned badges to display prominently.
+
+The banner is purely cosmetic — it doesn't affect fight outcomes. But it appears on your profile and in any future context where other players see your fighter. A banner loaded with Rank 4 gym badges and a Championship frame tells everyone who looks at it exactly what kind of fighter you are and what you've done.
+
+> **Key takeaway:** The banner is cosmetic but meaningful. It's the visual summary of your career that other players see first.
 
 ---
 
-## Events: Fight Card Predictions
+## Economy
 
-The **Events tab** runs a weekly NPC fight card you can bet on for fame and cash. The card resolves automatically at the end of its 7-day window.
+### Cash — How Money Works
 
-### The Card
+*Where cash comes from, where it goes, and how to manage it across your career.*
 
-Every week, the system assembles a 5-fight card from non-champion GCS fighters. Fights can mix weight classes (each individual fight is intra-class).
+Cash is the currency of your MMA career. You earn it by fighting — every fight pays a purse based on your tier, the opponent's difficulty, and any bonuses from callouts, sponsorships, or comeback mode. You spend it on gym memberships, hospital treatment, and eventually title shot fees.
 
-| Slot | Count | Pool |
-|---|---|---|
-| Prelim | 2 | Mid-tier GCS (OVR 70–87) |
-| Main Card | 2 | Top GCS (OVR 88+) |
-| Headliner | 1 | Highest combined OVR pair on the card |
+The cash economy gets tighter in the middle tiers. Amateur fights pay modest purses with low gym costs. Regional Pro and National fights pay more, but the gym memberships in those tiers cost significantly more too. Managing your cash means knowing when to upgrade your gym, when to stay at the cheaper one, and when a hospital visit is worth the cost versus just waiting for natural recovery.
 
-The Events tab presents the card UFC-poster-style: a gold headliner band with both fighters flanking the title block, then a Main Card grid below, then Prelims.
+Sponsorships are the cash multiplier. A well-chosen sponsor with a clause you can realistically meet pays per-fight cash plus a lump-sum bonus on completion. Multiple sponsors active at once can double or triple the cash you earn per fight. This is why fame tier matters beyond prestige — more fame means more sponsor slots.
 
-### Predictions
+Don't let your cash run dry right before a title fight. Preparation costs energy. Treatment costs cash. If you're going into the most important fight of your career with an untreated injury and empty pockets, the prep phase was mismanaged. Budget ahead.
 
-Click any fight card to open the picker:
+> **Key takeaway:** Fight for cash, spend it on gyms and health. Sponsorships multiply your fight earnings. Never run out before a title shot.
 
-- Pick a **side** — Fighter A, Draw, or Fighter B
-- Pick a **method** — KO/TKO, Submission, or Decision (skipped if you picked Draw)
-- **Lock in** — predictions are final once submitted
+### Sponsorship Contracts — Passive Income
 
-You can lock any subset of the 5 fights. Each prediction is independent.
+*How to read a sponsor offer, choose the right clause, and avoid breaking deals.*
 
-### Reward Tiers
+Sponsorships are deals that pay cash per fight while active and trigger a bonus when you complete their clause. They're passive income — sign the contract, keep fighting, collect the reward. The catch is the clause. Every contract has one, and breaking it costs you fame.
 
-| Slot | Exact (Winner + Method) | Winner Only | Wrong Winner |
-|---|---|---|---|
-| Prelim | +100 fame, +$200 | +30 fame | −20 fame |
-| Main Card | +200 fame, +$400 | +75 fame | −40 fame |
-| Headliner | +300 fame, +$500 | +100 fame | −50 fame |
+Clause types vary widely. Win Next N requires consecutive wins — any non-win breaks the streak. Finish Next N demands KO or submission victories — decision wins break it. Win Any N within a time window is the most flexible. No Weight Miss requires you to make weight on every fight for N fights. No Finish Loss means you can lose by decision but not by KO or submission.
 
-A perfect 5/5 card pays around **+1,000 fame + $1,700**. Realistic averages are well below that.
+The right sponsor is one whose clause aligns with how you actually fight. Don't sign a Finish Next 3 clause if you've been winning by decision all month. Don't sign No Weight Miss if you love aggressive cuts. The per-fight cash is nice but the clause bonus is the real payday — only sign what you can realistically complete.
 
-### Card Potential Bar
+You can drop a contract at any time for half the break penalty in fame. Useful when circumstances change and the clause is no longer achievable. Better to pay half than break it for the full penalty.
 
-While picking, the Events tab shows a **Card Potential** bar with your current best-case and worst-case fame totals from your locked picks, plus how much more is on the table from unpicked fights.
+Your sponsor pool refreshes every 7 days. Sponsors you've completed, broken, or dropped this week won't reappear until the next rotation. Build your relationships with the offers available, not the ones you're waiting for.
 
-### Resolution Reveal
+> **Key takeaway:** Only sign clauses you can actually complete. The per-fight cash is nice but the clause bonus and fame penalty are what really matter.
 
-The first time you visit the Events tab after a card resolves, a **multi-fight reveal modal** pops with:
+### Callouts — Forcing the Matchup
 
-- Each fight's winner + method (KO/SUB/DEC chips)
-- Your prediction verdict per fight
-- Per-fight payout
-- Total fame and cash earned across the card
-- A card-grade flavor string ("Perfect Card" / "Sharp Night" / "Rough Night" / "Brutal" etc.)
+*What callouts cost, what you get for the cash, and when they're worth it.*
 
-After dismissal, a slim "Last Card" banner stays visible at the top of the Events tab for context.
+The Callout button in the Fight tab lets you spend fame to force a specific opponent into your next Hard offer slot. You're not buying a guaranteed win — you're buying a guaranteed matchup with full intel. The rest is on you.
 
-### Living Roster
+Same-tier callouts start at 200 fame plus 50 per OVR gap. Stretch callouts — targeting someone in the tier above — start at 800 fame plus 75 per OVR gap. Both are capped at 3,000 fame. You can cancel for a full refund any time before the fight.
 
-When a card resolves, every NPC fighter's **record and fight history are updated** with the result. Over time, the GCS roster accumulates real history — Fighter Reports for these fighters become more accurate as they fight more cards.
+What you get: the opponent's Fighter Report shows every stat as Confirmed. No fog of war, no guessing. Against someone you've been trying to read for weeks, complete intel is worth real fame. You also get a +25% cash purse and +30% fame on a win — the grudge bonus stacks with everything else.
+
+Callouts are locked until you're ranked in the top 15 of your division. You must also only target fighters ranked above you — calling out lower-ranked opponents isn't allowed. This makes callouts a rank-climbing tool, not a farming mechanism.
+
+> **Key takeaway:** Callouts give full intel and a win bonus. They cost fame upfront and require top 15 rank. Use them when the matchup matters more than the cost.
 
 ---
 
-## Media Hub
+## Health
 
-The **Media tab** has three actions, each with its own role.
+### Health & Stamina — Your Physical State
 
-### Podcast (1 per calendar day, 5 energy)
+*How HP and stamina work, how they deplete, and how they recover.*
 
-Podcast unlocks once per calendar day. Resets at midnight. Pick one segment:
+Your fighter has two physical meters: Health and Stamina. Both run 0–100. Both affect performance. Both recover over time.
 
-| Segment | Reward | Notes |
-|---|---|---|
-| Recap your last fight | +100 fame, +$150 | Always available if you've completed at least one fight. Safe option. |
-| Division Talk: Respectful | +100 fame | Pick a same-tier opponent. Writes a **Respect flag** on them (6-fight window). |
-| Division Talk: Trash Talk | +300 fame | Pick a same-tier opponent. Writes a **Beef flag** (4-fight window, with the −150 lapse penalty). |
-| Division Talk: Cryptic | +40 fame | No side effects. |
-| Predict Main Event | — | Deep-links to the Events tab to lock a prediction. Rewards apply at card resolution. |
+Health represents your physical condition between fights. It depletes from damage taken in fights. Losing by KO or TKO drops your health to zero. It regenerates passively at +1 HP every 5 minutes of real time — a full recovery from zero takes about 8 hours. Log off after a brutal fight and come back fresh.
 
-### Documentary (Once per career, unlocks at Star fame tier)
+Stamina is a fight-level resource. It affects your performance during the fight based on your weight cut result and conditioning. Conditioning sessions raise your maximum stamina ceiling, and certain backstories (Army Veteran) start with a higher max.
 
-A one-time career retrospective. Pays:
+Going into a fight at low health isn't just a number — it affects your ability to absorb damage and stay in the fight. Fighting at 40% health against a hard opponent is a mistake you'll feel in the result. The Hospital exists for exactly this situation.
 
-- **+1,500 fame**
-- **+$2,000**
-- The **Documentary** badge → unlocks the **Legacy** banner badge
+> **Key takeaway:** Health recovers passively at +1 HP per 5 minutes. Low health going into a fight is a real disadvantage — not just a warning.
 
-You'll only ever do this once. Pick the moment.
+### Injuries — Types, Penalties, and Recovery
 
-### Interview Archive
+*Every injury in the game, what it does to your fighter, and how to get rid of it.*
 
-Read-only history of every post-fight interview you've given, color-coded by tone.
+Injuries happen in fights and in sparring sessions. They apply stat penalties and can block you from fighting or training certain ways until they clear. The good news: every injury heals on its own. The system never permanently locks you out of the game.
 
----
+Each injury ticks down a recovery timer once every real hour, then auto-clears. Bruised Ribs heal in 6 hours with a −10 max stamina penalty. Cuts heal in 6 hours but block fighting until cleared. Broken Noses heal in 9 hours with −3 CHN. Concussions (from KO/sub losses) heal in 12 hours and block both fighting and sparring. Sprained Ankles (from sparring) take 18 hours with −15 LEG. Torn Ligaments take 24 hours and block fighting. Broken Hands take 24 hours and block bag work and pad work.
 
-## Health & Stamina
+Doctor-required injuries (Cut, Broken Nose, Concussion, Torn Ligament) can also be cleared instantly at the Hospital for energy + cash — the paid fast path. The wait-versus-pay choice is yours. If you have a title shot waiting, paying is usually worth it. If you've got time to spare, the free heal is just as effective — the worst injury in the game clears in a single day.
 
-- **Health** runs 0–100. Depleted by damage in fights. Losing by KO/TKO drops your health to 0. Regenerates passively at **+1 HP per 5 minutes** of real time — a full 0→100 takes about 8 hours, so a player who logs off after a brutal session comes back fresh. Players who want to fight sooner can buy **Health Restoration** packages at the Hospital (see below).
-- **Stamina** runs 0–100 (or higher with certain backstories or conditioning). Affected by weight cut, fight activity, and exhaustion checks.
+Sparring is the most common source of new injuries. A 3% chance per session sounds small but it adds up across a full camp. If an injury occurs during camp, you choose between stopping camp (losing remaining slots, healthier fighter) or pushing through (keeping slots, carrying the injury penalty into the fight).
 
----
+There's a new-fighter grace period: during your first 3 fights, no fight-blocking injury (Concussion, Cut, Torn Ligament) is ever inflicted on you — in fights or in sparring. A rough debut can't lock a brand-new fighter out of the game.
 
-## Injuries
+> **Key takeaway:** Every injury heals on its own within 24 hours at most. Pay the doctor when you can't even wait that long. Otherwise, the free heal is the same outcome.
 
-Injuries happen in fights and in sparring sessions. They apply penalties to your stats until healed and may block specific actions (fighting, sparring, bag work).
+### The Hospital — When to Spend and When to Wait
 
-**Every injury heals on its own.** Each one ticks down a recovery timer once per 24h of real time, then clears automatically — no injury is ever a permanent dead end. The Hospital tab shows the live countdown for every active injury (e.g. `3d 12h`).
+*Hospital services, what they cost, and how to decide whether a visit is worth it.*
 
-| Injury | Source | Penalty | Blocks | Heals In |
-|---|---|---|---|---|
-| Cut | Fight | None | Fighting | 2 days |
-| Bruised Rib | Fight | −10 max stamina | — | 2 days |
-| Broken Nose | Fight | −3 CHN | — | 3 days |
-| Broken Hand | Fight | −20 STR | Bag/pad work | 6 days |
-| Sprained Ankle | Sparring | −15 LEG | — | 5 days |
-| Torn Ligament | Sparring | −10 STR, −10 LEG | Fighting | 6 days |
-| Concussion | KO/TKO/Sub loss (always) | −2 CHN | Fighting + sparring | 4 days |
+The Hospital tab is your medical centre. It offers four services: Doctor Visit (Treatment) for the doctor-required injuries, Skip Recovery to instantly clear an auto-heal injury, Health Restoration packages, and a Full Recovery Package when you have multiple injuries at once.
 
-You can clear an injury early instead of waiting it out:
+Doctor Visit clears one doctor-required injury — Cut, Broken Nose, Concussion, or Torn Ligament. It costs energy and cash. Concussions are the most expensive at 20 energy and $1,500. Cuts and Broken Noses are cheaper. Torn Ligaments are expensive but worth it if a title shot is waiting. Remember — these injuries will heal on their own within 6 to 24 hours even if you don't pay; the doctor visit is just the fast path.
 
-- **Auto-heal injuries** (Bruised Rib, Sprained Ankle, Broken Hand) — pay cash at the Hospital to skip the wait.
-- **Doctor-required injuries** (Cut, Broken Nose, Concussion, Torn Ligament) — a doctor visit (energy + cash) clears them instantly. They still block fighting or sparring while active, so waiting them out has a real cost — but if you can't afford the doctor, they will still heal on their own. No injury can lock you out of the game permanently.
+Skip Recovery instantly clears an auto-heal injury. Use it when an injury is dragging on and you have a fight or sponsor clause that can't wait. Bruised Ribs cost $600, Sprained Ankles $800, Broken Hands $1,200. If you can wait a few hours, don't spend the cash.
 
-### New-Fighter Grace
+Health Restoration packages restore HP without waiting. Quick Patch restores up to 25 HP for $250. Recovery Bay restores up to 50 HP for $400. Full Restoration brings you to 100 HP for $700. The cost is pro-rated — if you only need 15 HP, Quick Patch charges you proportionally less. You never overpay for more restoration than you need.
 
-During your first **3 fights**, you can never receive a fight-blocking injury (Concussion, Cut, or Torn Ligament) — in a fight or in sparring. A rough debut can't lock a brand-new fighter out of the game before they've built up resources. Non-blocking injuries (e.g. Broken Nose, Bruised Rib) can still happen. After your 3rd fight the grace expires and all injuries apply normally.
+Full Recovery Package heals every active injury in one transaction, with a 15% bulk discount over the sum of individual services. Available when you have 2 or more active injuries.
 
----
+> **Key takeaway:** Every injury heals for free within a day at most. Pay the hospital when even that wait is too long — typically when a title shot or sponsor clause is on the line.
 
-## The Hospital
+### Comeback Mode — Bouncing Back
 
-The **Hospital tab** is your one-stop medical screen. Cash-paid services to skip recovery time, treat blocking injuries, or restore HP without waiting.
+*What happens when you lose, how the game helps you recover, and why a losing streak never blocks you from fighting.*
 
-### Services
+Every loss activates Comeback Mode. While in Comeback Mode, your next fight earns 1.5× XP and a 30% larger cash purse. Win that fight and you earn the Resilience badge (once per career) and Comeback clears. The game is designed to give you a reason to keep going after a setback, not to punish you into quitting.
 
-| Service | What it does | Cost |
-|---|---|---|
-| **Treatment** | Clears one treatment-required injury (Cut, Broken Nose, Concussion, Torn Ligament). Removes stat penalty immediately. | Energy + cash, varies by injury (see below) |
-| **Skip Recovery** | Instantly clears an auto-heal injury — no more waiting days. | Cash only, varies by injury |
-| **Health Restoration** | Three packages restore HP without waiting on passive regen. | Cash only |
-| **Full Recovery Package** | Heals every active injury in one transaction. 15% bulk discount over individual services. Available when you have 2+ injuries. | Sum of individual costs × 0.85 |
+Three consecutive losses freeze your notoriety — no fame gains from fights, sponsors, or media until you win again. The freeze is automatic and clears itself the moment you put a win on the record. Nemesis victories and title shot wins are the two exceptions: they always pay their bonuses, even through a freeze.
 
-### Treatment costs
+Crucially, a losing streak never blocks you from fighting. You can always step into the cage to break the freeze. The game gives you the comeback XP and cash bonuses precisely so you have every incentive to climb back out — there is no forced rest, no mandatory cleanup step, no gate between you and the next fight.
 
-| Injury | Energy | Cash |
-|---|---|---|
-| Cut | 10 | $200 |
-| Broken Nose | 10 | $400 |
-| Concussion | 20 | $1,500 |
-| Torn Ligament | 20 | $2,000 |
+Come back with a new camp, a different approach, and a clear head. The Career Feed will remember the losing streak, but it'll also remember the comeback.
 
-### Skip Recovery costs
+> **Key takeaway:** One loss = Comeback Mode bonus. Three straight losses = frozen notoriety until your next win. Nothing ever blocks you from fighting your way out.
 
-| Injury | Cash to skip |
-|---|---|
-| Bruised Rib | $600 |
-| Sprained Ankle | $800 |
-| Broken Hand | $1,200 |
+### The Nemesis System — Unfinished Business
 
-### Health Restoration packages
+*How you get a nemesis, what they do to your fight offers, and how to get rid of them.*
 
-| Package | HP delivered | Cash (full) |
-|---|---|---|
-| Quick Patch | up to +25 HP | $250 |
-| Recovery Bay | up to +50 HP | $400 |
-| Full Restoration | to 100 HP | $700 |
+If an opponent beats you, they become your Nemesis. You can only have one at a time. The Nemesis appears in your fight offers, slotted at a difficulty matching their strength relative to where you are now. Their card is marked differently — you know exactly who it is and why they're there.
 
-If a package would heal more HP than you're missing, the cash cost is **pro-rated** to what you actually receive — you never overpay. When two packages would deliver the same HP at different prices, the more expensive one is greyed out so you always click the best deal. All three packages are available at every tier — no level gating.
+Beating your Nemesis pays +150 Notoriety on top of the normal fight reward. That bonus applies even if your notoriety is frozen from a losing streak — Nemesis victories are one of the two exceptions to the freeze (the other being title shot wins). The game is giving you a specific reason to seek out the rematch.
 
-### When to use the Hospital
+If the champion beats you twice in a title shot, they become your Nemesis. This is the sharpest version of the system — the person standing between you and promotion is now also the person who haunts your fight offers. Beating them clears both the Nemesis flag and opens the title shot again.
 
-- You have a **fight blocked** by a Cut, Concussion, or Torn Ligament and don't want to wait days.
-- You finished a war at low HP and want to fight again soon — passive regen takes hours.
-- You're stacking sponsor clauses or callouts that require you to fight quickly, and an auto-heal injury (e.g. Sprained Ankle) is dragging on.
-- You can ignore the Hospital entirely if you have time — every auto-heal injury clears for free, and HP regenerates passively.
+Nemesis flags clear in two ways: you beat them, or you get promoted past their tier. If you've outgrown the tier your Nemesis operates in, they're automatically cleared. Some fighters choose to pursue the rematch for pride and the notoriety bonus. Others just climb past it. Both are valid.
+
+> **Key takeaway:** Nemesis wins pay +150 notoriety even through a freeze. The rematch is always worth it if you can win it.
 
 ---
 
-## Comeback Mode
+## Shop & Supplements
 
-Any time you lose a fight, comeback mode activates. While in comeback mode:
+### The Shop — Energy, Boosters & Buffs
 
-- Your next fight's XP is multiplied by 1.5×
-- Your cash purse increases by 30%
-- If you win, you earn the **Resilience** badge (once per career) and comeback clears
+*Everything you can buy, how it works, and when it's worth spending Cash.*
 
-Losing three fights in a row also freezes your notoriety (see Notoriety Freeze above). Your fame unfreezes the next time you win. A losing streak never blocks you from fighting — you can always step back in.
+The Shop is where you turn Cash into an edge. It has three areas: the Cash Store (spend Cash you earn from fights), Premium (optional real-money Energy Drink bundles), and My Inventory (use what you own). Nothing in the Shop is required to win — it's there to smooth out the grind and let you spike your preparation when a fight matters.
 
----
+Energy items refill your energy bar instantly. An Energy Shot restores 30 energy and is bought with Cash. An Energy Drink restores 50 energy and is a premium item — you earn them free through contracts, win streaks and promotions, or buy a bundle. Use them from My Inventory or straight from the sidebar Inventory panel. You can't use an energy item when your bar is already full.
 
-## The Nemesis System
+XP Boosters multiply the XP you earn from training sessions. Only one booster can be active at a time — while one is running, every other booster card is locked until it's used up. Each booster covers a set number of sessions and targets either all stats or a specific group (for example STR and WRE). The Full Camp Stack is the best value: a long run of all-stat boost in one purchase. While a booster is active, the gym shows a banner with its sessions remaining, and every session it boosts is marked with a +X% badge — so you can see at a glance which training to spend charges on. Each training session burns one charge.
 
-If an opponent beats you, they become your **Nemesis**. You can only have one at a time. Your Nemesis appears in your fight offers, slotted to match their strength relative to you. Their card shows how many times you have lost and promises **+150 Notoriety** for the rematch victory.
+| Item type | What it does | Duration | Bought with |
+| --- | --- | --- | --- |
+| Energy Shot | Restores 30 energy | Instant | Cash |
+| Energy Drink | Restores 50 energy | Instant | Premium / earned |
+| XP Booster | More XP per training session | N sessions | Cash |
+| Pre-Fight Buff | Stat boost or injury protection | 1 fight | Cash |
 
-That +150 applies even if your notoriety is frozen.
+Pre-Fight Buffs are consumed the moment your next fight resolves. You can hold many in inventory, but you select only one per fight — and you do it in Fight Camp, not the Shop. Stat buffs (like a Whey Protein Shake for STR, or a Focus Stack for FIQ and CHN) raise the listed stats for that single bout. Collagen Recovery is different: instead of stats, it reduces the severity of any injury you take in the fight. If you come out unhurt, it simply wasn't needed — and the result screen will say so.
 
-If the champion beats you in a title shot twice, they become your Nemesis.
+Spending discipline matters. Boosters pay off most during a focused training push toward a stat threshold or promotion. Pre-fight buffs are worth it for a fight you genuinely need to win — a title shot, a grudge match, or a fight you're slightly underdog in. Energy items are for the days you log in to a full bar you can't spend fast enough. Buying everything every day is how you go broke; timing your purchases is how you climb.
 
-When you defeat your Nemesis, the flag is cleared. If you are promoted and your old Nemesis is in a lower tier, they are automatically cleared.
-
----
-
-## Badges
-
-Badges are permanent markers earned through career achievements and gym mastery.
-
-| Badge | How to Earn |
-|---|---|
-| Resilience | Win a fight while in comeback mode |
-| Champion | Win a championship title (any tier) |
-| Callout Win | Win a fight against an opponent you formally called out (Fight tab) |
-| Documentary | Record your career documentary in the Media tab (Star fame tier) |
-| Champion Boxer | Reach Rank 4 at Iron Fist Boxing |
-| Grand Master Kickboxer | Reach Rank 4 at Dragon Kickboxing |
-| Grand Kru | Reach Rank 4 at Warrior Muay Thai |
-| Olympic Wrestler | Reach Rank 4 at Apex Wrestling Academy |
-| BJJ Black Belt | Reach Rank 4 at Gracie Ground Game |
-| Submission Master | Reach Rank 4 at Renzo Combat Systems |
-| Fight Scientist | Reach Rank 4 at Precision MMA Lab |
-| Titan | Reach Rank 4 at Titan Performance Center |
-| Tactician | Reach Rank 4 at The War Room |
-| Elite Master | Reach Rank 4 at Elite Fight Academy |
+> **Key takeaway:** One XP Booster active at a time, one Pre-Fight Buff per fight (picked in Camp). Time your spending to the moments that matter instead of buying on autopilot.
 
 ---
 
-## Banner Customizer
+## Events & Media
 
-Every fighter has a **customizable banner** on their profile. Click the **✎ Customize** button on the profile sidebar to open the editor.
+### Events — Betting on the Card
 
-The banner has four customizable layers:
+*How the weekly fight card works, how betting works, and how the odds shape your payout.*
 
-| Layer | Pieces | How They Unlock |
-|---|---|---|
-| Background | 8 | Fame tier (Slate at start → Holographic at Legend) |
-| Frame | 5 | Fame tier + special (Championship frame from winning a professional belt — Regional Pro and up; the Amateur belt grants the Amateur Champion badge but not this frame) |
-| Accent Color | 7 | Fame tier (Red/White/Blue at start → Pink at Star) |
-| Pinned Badges | 13 (pin up to 3) | Career milestones — first win, 10/25/50 wins, 5/10 KOs, Champion, Resilience, Callout Win, Documentary, fame tier badges |
+Every week the Events tab runs a 5-fight NPC card featuring GCS-level fighters. You can't fight on these cards — but you can bet on them. Each bet stakes cash and either pays out at the odds you locked in, or the stake is gone. No fame is involved; this is a pure cash sidebet.
 
-Locked pieces show their unlock condition on hover. The banner is purely cosmetic — no fight effect — but it appears on your profile and in any future PvP/social context where other players see your fighter.
+The card has three tiers: two Prelim fights featuring mid-tier GCS fighters (OVR 70–87), two Main Card fights featuring top GCS fighters (OVR 88+), and one Headliner — the highest combined OVR matchup on the card. The tab presents it like a real fight poster.
 
----
+When you click a fight you choose between two bet types. Winner bets are just on who wins — A, Draw, or B. Lower odds, lower risk. Exact bets are winner plus method (KO/TKO, Submission, Decision, or Draw). The harder the call, the higher the multiplier. Decimal odds are shown next to every option — a fight at ×1.50 means a $100 bet pays back $150 on a win (a $50 profit). At ×8.00 the same $100 stake pays $800 back.
 
-## The Career Feed
+Stake limits scale with your promotion tier. An Amateur fighter can bet $50–$1,000 per fight. By GCS, the band is $500–$10,000. Bigger stakes match the bigger purses, but the house edge (15%) is the same at every tier — the longer you bet without an information edge, the slower your cash bleeds. Use bets to swing for upside on fights you've actually studied, not as a passive income stream.
 
-Your dashboard shows a **Career Feed** — a reverse-chronological log of everything significant that has happened in your career:
+The card runs for 7 days and resolves automatically. Your cash is debited the moment you place the bet and the odds are locked at that moment — even if the line moves later, you get the price you signed up for. When the card resolves, every winning bet pays back stake × locked odds straight to your cash. The first time you open the Events tab after resolution, a reveal modal walks you through every result with your verdict and net change per fight.
 
-- Fight wins, losses, and draws
-- Tier promotions
-- Title shot eligibility, title wins
-- Nemesis set / cleared
-- Badges earned
-- Sponsor contracts signed, completed, broken, or dropped
-- Callout wins (with bonuses earned)
-- Beef flag lapses (with the −150 fame penalty)
-- Main event predictions resolved
-- Fame milestones and tier-ups
+> **Key takeaway:** Bets cost cash up front. Odds are locked at bet time. Payout on a win = stake × odds, paid in cash. There's a house edge — bet on fights you've actually studied.
 
-This is your career story, told in real time. The **Fame drawer** (★ Fame button in the footer) offers a focused, fame-only slice of the same activity.
+### The Media Hub — Building Your Profile Outside the Cage
 
----
+*The five tabs of the Media Hub — Podcast, Documentary, Appearances, Rivalry Board and Archive — and what each one pays.*
 
-## The Octagon Gazette
+The Media Hub is where you build your public persona alongside your fighting career. It doesn't touch your fight stats — it generates fame and cash, creates and tracks rivalries, and records your media history. It has five tabs: Podcast, Documentary, Appearances, Rivalry Board, and Archive. Your podcast's listener count grows with your fame and never resets.
 
-The **Octagon Gazette** is a daily newspaper that opens automatically the first time you log in each day. It recaps the most relevant events from your career and the wider game world as newspaper headlines — turning the things that happened while you were away into a story.
+The Podcast records once per day (resets at midnight UTC) for 5 energy. You pick TWO segments and they air together as one titled episode. Recap Last Fight (+100 fame, +$150) and Fight Breakdown (+200 fame) are safe fame with no strings. The Division Talk segments target a rival: Trash Talk pays the most up front (+300 fame) but writes a Beef flag — a 4-fight clock with a +30% fame bonus if you beat them, and a −150 fame penalty if the window lapses. Show Respect (+100 fame) writes a Respect flag instead — a 6-fight window worth +15% cash on a win, with no penalty. Stay Cryptic (+40 fame) is safe filler. Bring On a Guest (+250 fame, unlocks at Regional Pro) lets you choose the tone — Beef or Respect — for your target. You can't aim both segments at the same fighter, and any rival is only ever a Beef or a Respect, never both.
 
-### When it appears
+The Documentary is a once-per-career production unlocked at Star fame tier. You make three choices: a Focus (The Fighter for broad appeal, The Underdog for a bigger cash share, or The Technician for a one-time gym XP booster), a Tone (Inspirational, Raw & Honest, or Controversial — which spikes fame but starts a Beef with a random rival), and a Release Timing (release now, or hold it for a title shot or a title win to multiply the whole payout, up to ×2). On top of a tone-based fame bonus it pays a base of +1,500 fame and +$2,000, awards the Documentary badge, and unlocks the Legacy banner piece. You only ever get one — pick your moment.
 
-- On your **first login of each day** (UTC date).
-- Not on subsequent logins the same day.
-- Not on a brand-new account with zero fights — there's nothing to report yet.
+Appearances are a rotating pool of three one-off opportunities that refresh every week. A Magazine Cover pays fame scaled to your tier; an Undercard Feature pays its fame only if you actually fight within ten days of booking it; a Podcast Guest spot (+350 fame) lets you set a Beef or Respect flag; a Brand Deal Clip pays cash if you have an active sponsor; a Charity Exhibition pays fame once you reach Contender tier. Take what you want before the week is out — unused opportunities expire and don't roll over.
 
-Dismiss it with the **×** or the **Enter the Gym** button to start playing. Tapping the lead story when it's an Event result takes you straight to the Events tab.
+The Rivalry Board and the Archive are read-only. The Rivalry Board gathers every active storyline in one place — your Nemesis, every Beef and Respect flag with its remaining window, and any active callout — so you can see what's live and what's about to lapse. The Archive is your full media history in reverse order: every podcast episode, post-fight interview, appearance, and your documentary, filterable by type.
 
-### Layout
+> **Key takeaway:** Two podcast segments a day — beef for fame, respect for cash, and never both on one rival. Appearances refresh weekly: use them or lose them. The Documentary is once-per-career — save it for a title run to double the payout.
 
-The paper has three zones, showing **5–6 stories maximum**:
+### Post-Fight Interview — Every Word Counts
 
-| Zone | Stories | Format |
-|---|---|---|
-| Lead | 1 | Large headline + short article |
-| Secondary | 2 | Medium headline + one-line blurb |
-| In Brief | up to 3 | One-line briefs |
+*The four interview tones and what each one does to your career.*
 
-If fewer stories qualify, the paper simply shows fewer — it never pads with empty cards.
+After every win, before the summary closes, you're asked to give a post-fight interview. Losses skip this step — only winners take the mic. There are four tones to choose from: Humble, Confident, Trash Talk, and Skip. Each one does something different — this isn't just flavour.
 
-### The Lead Story
+Humble earns a small notoriety bonus now and sets up a larger cash reward if you fight that opponent again in a rematch. It's the long-game option — sacrifice immediate reward for a future payday. Confident earns a standard notoriety bonus with no side effects. It's the clean, uncomplicated choice.
 
-Exactly one story takes the lead, picked by priority — the first match wins:
+Trash Talk earns the highest immediate notoriety bonus but writes a Beef flag on the opponent. The Beef flag pays a bonus if you fight them within 4 fights — but if the 4-fight window closes without a matchup, you take a −150 fame penalty. Trash talk is a commitment, not just an attitude.
 
-1. **Event Result** — the weekly fight card's headliner, shown as a fight-result card (matchup + method)
-2. **First Loss in a Title Fight** — a composite story when your first-ever loss came with gold on the line
-3. **Title Fight Result** — won or lost
-4. **First Loss** — your perfect record just took its first blemish
-5. **Promotion** — you moved up a division
-6. **Rank Entry** — you entered the rankings after your 3rd fight in the tier
-7. **Win Streak** — you hit a 5- or 10-fight streak
-8. **Rank Jump** — you climbed 5+ spots in one fight
-9. **Last Fight Result** — the default recap of your most recent bout
-10. **Division Spotlight** — a generic lead when nothing else happened
+Skip is neutral. No bonus, no penalty. Sometimes the right move is to say nothing.
 
-### Other Stories
-
-Beyond the lead, the Gazette surfaces: fame tier changes, notoriety swings, nemesis set/cleared, sponsorship news, record milestones, gym milestones, beef flag lapses, and losing-streak ("comeback") narratives — assigned to the Secondary and In Brief zones.
-
-### Notes
-
-- Headlines are **templated** — each story type has several pre-written variations, and the paper picks one consistently per day, so it reads identically whether you open it on phone or desktop.
-- The Gazette is purely informational. It doesn't grant rewards or change anything — it's the morning paper, not a mechanic.
+> **Key takeaway:** Interviews are only available after wins. Trash Talk pays the most but starts a 4-fight clock — fight them before the window closes or pay the penalty.
 
 ---
-
-## Account
-
-The **Account** button lives in the footer next to **Sign Out**. It opens a single-page settings screen with six sections.
-
-### What You Can Change
-
-| Section | What it does |
-|---|---|
-| **Fighter Info** | Read-only display of your fighter's full name, weight class, style and backstory. These are **permanent** — they can't be changed after creation. |
-| **Change Nickname** | Update the quote-marks name shown on your fighter card ("Conor *The Notorious* McGregor"). 2–20 characters; letters, numbers, spaces, hyphens and apostrophes only. |
-| **Change Email** | Move your account to a new email address. The new address gets a confirmation link valid for 24 hours — the change isn't applied until you click it. While pending, you can **Resend** the link or **Cancel** the request. The old address stays active until confirmation. |
-| **Change Password** | Requires your current password. New password needs ≥8 characters and at least one number. After saving, your other devices are logged out — the device you used stays signed in with a fresh session. |
-| **Notifications** | Toggle email notifications on/off. Security-critical emails (password reset, deletion confirmation) **always** go out regardless of this toggle. |
-| **Danger Zone** | Log out (this device only) or permanently delete the account. |
-
-### Forgot Password
-
-If you can't log in, click **Forgot password?** on the login page and enter your email. You'll get a reset link valid for **1 hour**. The link takes you to a form where you set a new password and then log in.
-
-For your security, the system never confirms or denies whether an email is registered — the success message looks the same either way. Forgot-password requests are rate-limited to 3 per hour per email address.
-
-### Deleting Your Account
-
-When you click **Delete Account** in the Danger Zone, a confirmation modal asks you to type your fighter's full name exactly (e.g. *Conor McGregor*). The button stays disabled until the name matches.
-
-Deletion is a **30-day soft delete**, not an immediate purge:
-
-- Your fighter, cash, career history, rankings, banner and sponsorships are all marked deleted but not destroyed.
-- You're logged out immediately.
-- If you change your mind, log in within 30 days using the same email + password. The login screen shows a golden **"Recover account"** banner with days remaining. One click restores everything.
-- After 30 days, a daily background job permanently purges the data. It cannot be recovered after that.
-
-### What You **Cannot** Change
-
-Your **fighter name**, **weight class**, **fighting style** and **backstory** are locked at creation and can't be changed afterwards. The career is the career — you can rename the fighter you walked in with, but you can't swap them out for a new one. Want a different build? Delete the account and create a new one.
-
----
-
-## The Fight Summary
-
-After every fight you see a breakdown of everything that happened:
-
-- Outcome and updated record
-- Health and stamina lost
-- Cash earned (with weight miss penalty if applicable)
-- Notoriety gained or lost (with a line-by-line breakdown)
-- XP gained per stat + any stat level-ups
-- Injuries sustained
-- Camp performance (grade, triggered sessions, wildcard result)
-- Weight cut result (+X or −X stamina)
-- Nemesis set or cleared
-- Tier promotion
-- **Sponsorship payouts** (per-fight cash + clause completions/breaks)
-- **Callout bonus** (if it was a callout fight)
-- **Beef / Respect flag** matches (with their bonus applied) and any flags that lapsed
-- **If it was a title fight**: a dedicated championship victory screen with gold styling
-
-The **Post-Fight Interview** prompt appears here too — pick a tone (Humble / Confident / Trash Talk / Skip) before continuing.
-
----
-
-## Summary of How Everything Connects
-
-You spend **energy** to train at a gym. Training earns **XP** which raises **stats**. Higher stats raise your **Overall Rating**. A higher rating qualifies you for better gyms, and eventually for a **title shot** against your tier's champion.
-
-Before each fight, you run a **training camp** — targeted preparation that sets up conditional bonuses. You choose a **weight cut** gamble. The fight plays out and you earn **cash**, **notoriety**, and **XP**.
-
-After every fight, the **press interview** lets you trade verbal stakes for fame — humbling yourself for a future cash rematch bonus, talking trash to set up a grudge match, or just owning the moment.
-
-At gyms, you earn **ranks** that unlock unique sessions, permanent XP bonuses, and utility perks that follow you across your career.
-
-Beating champions promotes you through the tiers. Losing creates Nemeses and triggers comeback mode.
-
-**Notoriety isn't just a meter** — it's an economy. Spend it on **callouts** to force matchups with full intel. Sign **sponsorship contracts** that pay cash per fight and bigger bonuses for clauses you fulfill. Predict the weekly **fight card** in the Events tab for fame and cash. Record podcasts to build beef and respect flags around the division. Once you're a Star, **commission your career documentary** for a permanent legacy mark.
-
-Every milestone — fights, KOs, championships, callout wins, fame tiers — unlocks a new piece for your **profile banner**, the cosmetic identity layer that follows your fighter across every screen.
-
-Every system costs something and gives something back. There are no shortcuts — only decisions.
