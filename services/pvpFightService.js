@@ -26,6 +26,7 @@ const {
     GAMEPLAN_WEIGHTS,
     GAMEPLAN_KEYS,
     TWISTS,
+    DP,
     divisionMeta,
     bracketTier,
 } = require("../consts/pvpConfig");
@@ -226,6 +227,7 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     const attackerDivisionBefore = attackerRecord.division;
     const defenderDivisionBefore = defenderRecord.division;
     const rankBefore = await fighterRank(attackerRecord);
+    const attackerStreakBefore = attackerRecord.winStreak;
 
     // ── Apply DP + division to both records. ─────────────────────────────────
     const attackerApply = applyDpAndDivision(attackerRecord, attackerDp.dpChange, { isWin: attackerWon });
@@ -267,6 +269,12 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     await attackerRecord.save();
     await defenderRecord.save();
     await attacker.save();
+
+    // ── Recompute belt holder AFTER record saves (additive DTO surface). ──────
+    const beltHolderAfterId = await pvpRecordService.currentBeltHolderId(season._id, season.weightClass);
+    const playerIsNowBeltHolder = beltHolderAfterId != null && String(beltHolderAfterId) === String(attackerFighterId);
+    const beltHolderDpAfter = playerIsNowBeltHolder ? defenderRecord.dp : null;
+    const seasonWeeksRemaining = Math.max(0, Math.ceil((season.endDate.getTime() - now.getTime()) / (7 * 24 * 3600 * 1000)));
 
     const winnerId = isDraw ? null : (attackerWon ? attackerFighterId : defenderId);
     const loserId = isDraw ? null : (attackerWon ? defenderId : attackerFighterId);
@@ -372,6 +380,7 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
             dpChange: defenderDpChange,
             divisionBefore: defenderDivisionBefore,
             divisionAfter: defenderRecord.division,
+            overallRating: defender.overallRating || 0,
         },
         dpBreakdown: attackerDp.breakdown,
         twistApplied: attackerDp.twistApplied,
@@ -384,6 +393,13 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         },
         energyRemaining,
         commentary: engine.commentary || [],
+        streakBefore: attackerStreakBefore,
+        streakBroken: !attackerWon && !isDraw && attackerStreakBefore >= DP.STREAK_MIN,
+        promotionShieldGranted: attackerApply.promoted ? 3 : 0,
+        playerIsNowBeltHolder,
+        beltHolderDpAfter,
+        seasonWeeksRemaining,
+        seasonNumber: season.seasonNumber,
     };
 }
 

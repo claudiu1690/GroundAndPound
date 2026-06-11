@@ -23,6 +23,11 @@ export function divisionLabel(key) {
   return DIVISIONS.find((d) => d.key === key)?.label ?? key;
 }
 
+/** Full division meta — floor, promoteAt, label, color. Returns defaults for unknown keys. */
+export function divisionMeta(key) {
+  return DIVISIONS.find((d) => d.key === key) ?? { key, label: key, color: "#888888", floor: 0, promoteAt: null };
+}
+
 export const REWARDS = {
   prospect:   { iron: 500,   fame: 500,   drinks: 0, badge: null        },
   contender:  { iron: 1200,  fame: 1200,  drinks: 0, badge: null        },

@@ -1,15 +1,36 @@
-import { ArrowUp, ArrowDown, Minus, Flame, Swords, Shield } from "lucide-react";
+import { DIVISIONS, divisionLabel, divisionMeta } from "./pvpConst";
 
 /**
  * Screen 3 — Fight Result.
  * Receives the FightResult DTO from POST /pvp/fight (§3.4).
- * Field names match the contract exactly: attacker.dpChange, rankAfter,
- * promotionShield, flags.isRivalryResolved, dpBreakdown, etc.
+ * Props are UNCHANGED: { result, fighter, onFightAgain, onBackToLadder }
  */
 export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
   if (!result) return null;
 
-  const { youWon, method, attacker, defender, dpBreakdown, twistApplied, twistName, flags, commentary, energyRemaining } = result;
+  const {
+    youWon,
+    method,
+    attacker,
+    defender,
+    dpBreakdown,
+    twistApplied,
+    twistName,
+    flags,
+    commentary,
+    energyRemaining,
+    streakBefore,
+    streakBroken,
+    promotionShieldGranted,
+    playerIsNowBeltHolder,
+    beltHolderDpAfter,
+    seasonWeeksRemaining,
+    seasonNumber,
+  } = result;
+
+  // Derived flat names
+  const isDraw = method === "draw";
+  const outcome = isDraw ? "draw" : youWon ? "win" : "loss";
 
   const dpChange = attacker?.dpChange ?? 0;
   const dpBefore = attacker?.dpBefore ?? 0;
@@ -20,192 +41,496 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
   const promoted = attacker?.promoted ?? false;
   const divisionAfter = attacker?.divisionAfter ?? attacker?.division ?? "";
   const divisionBefore = attacker?.divisionBefore ?? "";
+  const division = attacker?.division ?? divisionAfter;
 
-  const opponentName = youWon ? defender?.name : (attacker?.name === fighter?.firstName + " " + fighter?.lastName ? defender?.name : defender?.name);
+  const opponentName = defender?.name ?? "Opponent";
+  const opponentDivision = defender?.divisionAfter ?? "";
+  const opponentOvr = defender?.overallRating;
+  const defenderWasBeltHolder = flags?.isBeltHolderFight ?? false;
+  const rivalryResolved = flags?.isRivalryResolved ?? false;
 
-  // Build breakdown display string
-  const breakdownParts = [];
-  if (dpBreakdown) {
-    if (dpBreakdown.base) breakdownParts.push(`${dpBreakdown.base > 0 ? "+" : ""}${dpBreakdown.base} base`);
-    if (dpBreakdown.beltHolderBonus) breakdownParts.push(`+${dpBreakdown.beltHolderBonus} belt`);
-    if (dpBreakdown.rivalryBonus) breakdownParts.push(`+${dpBreakdown.rivalryBonus} rivalry`);
-    if (dpBreakdown.bracketBonus) breakdownParts.push(`+${dpBreakdown.bracketBonus} bracket`);
-    if (dpBreakdown.streakMultiplier && dpBreakdown.streakMultiplier !== 1) breakdownParts.push(`×${dpBreakdown.streakMultiplier} streak`);
-    if (dpBreakdown.repeatPenalty && dpBreakdown.repeatPenalty !== 1) breakdownParts.push(`×${dpBreakdown.repeatPenalty} repeat`);
+  // Weight class label from fighter prop (capitalised)
+  const weightClassLabel = fighter?.weightClass
+    ? fighter.weightClass.charAt(0).toUpperCase() + fighter.weightClass.slice(1)
+    : "";
+
+  // Division nav label — show "Before → After" when promoted
+  const divNavLabel = promoted
+    ? `${divisionLabel(divisionBefore)} → ${divisionLabel(divisionAfter)}`
+    : divisionLabel(division);
+  const cardNavRight = weightClassLabel
+    ? `${weightClassLabel} · ${divNavLabel}`
+    : divNavLabel;
+
+  // DP sign display
+  function dpSign(n) {
+    if (isDraw) return "0";
+    const abs = Math.abs(n).toLocaleString();
+    return n >= 0 ? `+${abs}` : `−${abs}`;
   }
-  const breakdownStr = breakdownParts.join(" · ");
 
-  // DP history bars — max is based on promoteAt guess from division, or just scale vs current
-  const maxDp = Math.max(dpBefore, dpAfter, 100);
-  const barBefore = Math.min(100, (dpBefore / maxDp) * 100);
-  const barAfter = Math.min(100, (dpAfter / maxDp) * 100);
-
-  const rankDiff = rankBefore && rankAfter ? rankBefore - rankAfter : null;
-
+  // Method display label
   function methodLabel(m) {
-    if (!m) return "";
+    if (!m || m === "draw") return "Decision";
     if (m === "ko") return "KO";
     if (m === "submission") return "Submission";
     if (m === "decision") return "Decision";
-    if (m === "draw") return "Draw";
     return m;
   }
 
+  // ---------- CONTEXT PILLS ----------
+  const contextPills = [];
+  if (!isDraw) {
+    if (youWon && (streakBefore ?? 0) >= 3) {
+      contextPills.push({ cls: "streak", text: "🔥 ×1.25 streak" });
+    }
+    if (rivalryResolved) {
+      contextPills.push({ cls: "rival", text: "⚔ Rivalry Resolved" });
+    }
+    if (youWon && defenderWasBeltHolder) {
+      contextPills.push({ cls: "belt", text: "🏆 Belt Holder beaten +50" });
+    }
+    if (promoted) {
+      contextPills.push({ cls: "promoted", text: "⬆ Promoted" });
+    }
+    if (!youWon && defenderWasBeltHolder) {
+      contextPills.push({ cls: "belt", text: "🏆 Belt Holder" });
+    }
+    if (streakBroken) {
+      contextPills.push({ cls: "broken", text: "Streak broken" });
+    }
+  }
+
+  // ---------- DP BREAKDOWN ROWS ----------
+  const breakdownRows = [];
+  if (isDraw) {
+    breakdownRows.push({ label: "Draw", value: "No change", cls: "penalty" });
+    breakdownRows.push({
+      label: "Streak",
+      value: `Unchanged — ${streakBefore ?? streakAfter ?? 0} wins`,
+      cls: "penalty",
+    });
+  } else if (dpBreakdown) {
+    // Base
+    if (youWon) {
+      breakdownRows.push({ label: "Base win", value: `+${dpBreakdown.base ?? 120}`, cls: "base" });
+    } else {
+      const baseVal = dpBreakdown.base ?? dpChange;
+      breakdownRows.push({ label: "Loss", value: `${baseVal}`, cls: "loss" });
+    }
+    // Belt holder bonus
+    if ((dpBreakdown.beltHolderBonus ?? 0) !== 0) {
+      breakdownRows.push({ label: "Belt Holder bonus", value: `+${dpBreakdown.beltHolderBonus}`, cls: "bonus" });
+    }
+    // Rivalry resolved
+    if ((dpBreakdown.rivalryBonus ?? 0) !== 0) {
+      breakdownRows.push({ label: "Rivalry resolved", value: `+${dpBreakdown.rivalryBonus}`, cls: "bonus" });
+    }
+    // Bracket bonus
+    if ((dpBreakdown.bracketBonus ?? 0) !== 0) {
+      breakdownRows.push({ label: "Bracket bonus", value: `+${dpBreakdown.bracketBonus}`, cls: "bonus" });
+    }
+    // Twist bonus
+    if ((dpBreakdown.twistBonus ?? 0) !== 0) {
+      breakdownRows.push({
+        label: `${twistName ?? "Twist"} twist`,
+        value: `+${dpBreakdown.twistBonus}`,
+        cls: "bonus",
+      });
+    }
+    // Streak multiplier (win)
+    if (youWon && (dpBreakdown.streakMultiplier ?? 1) > 1) {
+      breakdownRows.push({
+        label: `Streak multiplier ×${dpBreakdown.streakMultiplier}`,
+        value: `×${dpBreakdown.streakMultiplier}`,
+        cls: "mult",
+      });
+    }
+    // Repeat penalty
+    if ((dpBreakdown.repeatPenalty ?? 1) !== 1) {
+      breakdownRows.push({
+        label: "Repeat penalty",
+        value: `×${dpBreakdown.repeatPenalty}`,
+        cls: "penalty",
+      });
+    }
+    // Streak broken (loss)
+    if (streakBroken) {
+      breakdownRows.push({ label: "Streak multiplier", value: "reset to ×1.0", cls: "penalty" });
+    }
+  }
+
+  // Total value class
+  const totalCls = isDraw ? "draw" : youWon ? "win" : "loss";
+  const totalLabel = isDraw ? "0 DP" : `${dpSign(dpChange)} DP`;
+
+  // ---------- LADDER MOVEMENT ----------
+  const rankDiff = rankBefore != null && rankAfter != null ? rankBefore - rankAfter : null;
+
+  // ---------- BANNERS (ordered: promo, belt, rival-res, streak-up, streak-down) ----------
+  const showPromoBanner = promoted;
+  const showBeltBanner = (playerIsNowBeltHolder && defenderWasBeltHolder);
+  const showRivalResBanner = rivalryResolved;
+  const showStreakUpBanner = youWon && streakAfter >= 3;
+  const showStreakDownBanner = !!streakBroken;
+
+  // ---------- PROGRESS BAR ----------
+  const divMeta = divisionMeta(division);
+  const divMetaAfter = divisionMeta(divisionAfter);
+
+  // Next division
+  const currentDivIndex = DIVISIONS.findIndex((d) => d.key === division);
+  const nextDiv = currentDivIndex >= 0 && currentDivIndex < DIVISIONS.length - 1
+    ? DIVISIONS[currentDivIndex + 1]
+    : null;
+  const nextDivAfterIndex = DIVISIONS.findIndex((d) => d.key === divisionAfter);
+  const nextDivAfter = nextDivAfterIndex >= 0 && nextDivAfterIndex < DIVISIONS.length - 1
+    ? DIVISIONS[nextDivAfterIndex + 1]
+    : null;
+
+  function barPct(dp, promoteAt, floor) {
+    if (promoteAt == null) {
+      // Champion: show near-full bar relative to floor*1.1
+      const ref = (floor ?? 5000) * 1.1;
+      return Math.min(100, Math.max(0, (dp / ref) * 100));
+    }
+    return Math.min(100, Math.max(0, (dp / promoteAt) * 100));
+  }
+
+  // Belt-holder-defeated variant
+  const isBeltHolderProg = playerIsNowBeltHolder && defenderWasBeltHolder && beltHolderDpAfter != null;
+  const isPromoProg = promoted && !isBeltHolderProg;
+
   return (
     <div className="pvp-card">
+      {/* Nav */}
       <div className="pvp-card-nav">
         <div className="pvp-cnav-title">PVP Result</div>
-        <div className="pvp-cnav-right">
-          {divisionAfter}
-        </div>
+        <div className="pvp-cnav-right">{cardNavRight}</div>
       </div>
 
-      {/* Hero */}
-      <div className={`pvp-fr-hero ${youWon ? "pvp-fr-hero-win" : "pvp-fr-hero-loss"}`}>
-        <div className={`pvp-fr-outcome ${youWon ? "pvp-fr-outcome-win" : "pvp-fr-outcome-loss"}`}>
-          {method === "draw" ? "Draw" : youWon ? "Victory" : "Defeat"}
-        </div>
-        <div className="pvp-fr-sub">
-          vs {defender?.name ?? "opponent"} · {methodLabel(method)}
-          {flags?.isRivalryResolved ? " · Rivalry Resolved" : ""}
-          {flags?.isBeltHolderFight ? " · Belt Holder" : ""}
+      {/* ── RESULT HERO ── */}
+      <div className={`pvp-rh pvp-rh-${outcome}`}>
+        <div className={`pvp-rh-glow pvp-rh-glow-${outcome}`} />
+
+        {/* DP number */}
+        <div className="pvp-rh-dp">
+          <div className={`pvp-rh-dp-val pvp-rh-dp-val-${outcome}`}>{dpSign(dpChange)}</div>
+          <div className={`pvp-rh-dp-lbl pvp-rh-dp-lbl-${outcome}`}>DP</div>
         </div>
 
-        <div className="pvp-fr-dp-swing">
-          <div>
-            <div className={`pvp-fr-dp-val ${youWon ? "pvp-fr-dp-val-win" : "pvp-fr-dp-val-loss"}`}>
-              {dpChange >= 0 ? "+" : ""}{dpChange} DP
-            </div>
-            <div className="pvp-fr-dp-lbl">Division Points {youWon ? "earned" : "lost"}</div>
-            {breakdownStr && (
-              <div className={`pvp-fr-dp-bonus ${!youWon ? "pvp-fr-dp-bonus-loss" : ""}`}>
-                {breakdownStr}
-                {twistApplied && twistName ? ` · ${twistName} twist` : ""}
-              </div>
-            )}
+        {/* Outcome + method */}
+        <div className="pvp-rh-outcome-row">
+          <span className={`pvp-rh-outcome pvp-rh-outcome-${outcome}`}>
+            {isDraw ? "Draw" : youWon ? "Victory" : "Defeat"}
+          </span>
+          <span className={`pvp-rh-method pvp-rh-method-${outcome}`}>
+            {methodLabel(method)}
+          </span>
+        </div>
+
+        {/* Opponent line */}
+        <div className="pvp-rh-sub">
+          vs {opponentName}
+          {opponentDivision ? ` · ${divisionLabel(opponentDivision)}` : ""}
+          {defenderWasBeltHolder ? " · 🏆 Belt Holder" : ""}
+        </div>
+
+        {/* Context pills / draw plain text */}
+        {isDraw ? (
+          <div className="pvp-rh-context" style={{ color: "#555" }}>
+            Streak unchanged · No rivalry progress · No DP change
           </div>
+        ) : (
+          <div className="pvp-rh-context">
+            {contextPills.map((p, i) => (
+              <span key={i} className={`pvp-rh-ctx-pill pvp-rh-ctx-pill-${p.cls}`}>
+                {p.text}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── DP BREAKDOWN ── */}
+      <div className="pvp-dpb">
+        <div className="pvp-dpb-title">DP Breakdown</div>
+        <div className="pvp-dpb-rows">
+          {breakdownRows.map((row, i) => (
+            <div key={i} className="pvp-dpb-row">
+              <span className="pvp-dpb-lbl">{row.label}</span>
+              <span className={`pvp-dpb-val pvp-dpb-val-${row.cls}`}>{row.value}</span>
+            </div>
+          ))}
+        </div>
+        <div className="pvp-dpb-divider" />
+        <div className="pvp-dpb-total">
+          <span className="pvp-dpb-total-lbl">Total</span>
+          <span className={`pvp-dpb-total-val pvp-dpb-total-val-${totalCls}`}>{totalLabel}</span>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="pvp-fr-body">
-        {/* Rank movement */}
+      {/* ── RESULT BODY ── */}
+      <div className="pvp-rb">
+
+        {/* Ladder movement */}
         {rankBefore != null && rankAfter != null && (
-          <div className="pvp-ladder-move">
-            <div className="pvp-lm-label">Ladder rank movement</div>
-            <span className="pvp-lm-rank pvp-lm-same" style={{ color: "#AAAAAA" }}>#{rankBefore}</span>
-            <div className="pvp-lm-arrow">→</div>
-            <span className={`pvp-lm-rank ${rankDiff > 0 ? "pvp-lm-up" : rankDiff < 0 ? "pvp-lm-down" : "pvp-lm-same"}`}>
+          <div className="pvp-lm">
+            <span className="pvp-lm-label">Ladder position</span>
+            <span className="pvp-lm-from">#{rankBefore}</span>
+            <span className="pvp-lm-arrow">→</span>
+            <span className={`pvp-lm-to pvp-lm-to-${rankDiff > 0 ? "up" : rankDiff < 0 ? "down" : "same"}`}>
               #{rankAfter}
             </span>
-            {rankDiff !== null && rankDiff !== 0 && (
-              <span style={{ fontSize: 10, marginLeft: 4, color: rankDiff > 0 ? "#4ADE80" : "#C8102E" }}>
-                {rankDiff > 0 ? "▲" : "▼"} {Math.abs(rankDiff)}
-              </span>
+            {promoted ? (
+              <span className="pvp-lm-delta pvp-lm-delta-up">▲ {divisionLabel(divisionAfter)}</span>
+            ) : rankDiff !== null && rankDiff > 0 ? (
+              <span className="pvp-lm-delta pvp-lm-delta-up">▲ {rankDiff} places</span>
+            ) : rankDiff !== null && rankDiff < 0 ? (
+              <span className="pvp-lm-delta pvp-lm-delta-down">▼ {Math.abs(rankDiff)} places</span>
+            ) : (
+              <span className="pvp-lm-delta pvp-lm-delta-same">No change</span>
             )}
           </div>
         )}
 
-        {/* Promotion banner */}
-        {promoted && (
-          <div className="pvp-promo-banner">
-            <ArrowUp size={18} strokeWidth={2} style={{ color: "#3B82F6" }} />
-            <div style={{ flex: 1 }}>
-              <div className="pvp-banner-title" style={{ color: "#3B82F6" }}>
-                Promoted to {divisionAfter}!
-              </div>
+        {/* Promo banner */}
+        {showPromoBanner && (
+          <div className="pvp-banner pvp-banner-promo">
+            <div className="pvp-banner-icon">⬆</div>
+            <div className="pvp-banner-info">
+              <div className="pvp-banner-title">Promoted to {divisionLabel(divisionAfter)}</div>
               <div className="pvp-banner-sub">
-                You advanced from {divisionBefore}. Promotion Shield active for {attacker?.promotionShield ?? 3} fights.
+                Promotion Shield active — {promotionShieldGranted ?? attacker?.promotionShield ?? 3} fights of DP protection.
+              </div>
+            </div>
+            <div className="pvp-banner-val">
+              <span
+                className="pvp-div-pill"
+                style={{
+                  background: `${divisionMeta(divisionAfter).color}1e`,
+                  color: divisionMeta(divisionAfter).color,
+                  border: `1px solid ${divisionMeta(divisionAfter).color}33`,
+                }}
+              >
+                {divisionLabel(divisionAfter)}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Belt banner */}
+        {showBeltBanner && (
+          <div className="pvp-banner pvp-banner-belt">
+            <div className="pvp-banner-icon">🏆</div>
+            <div className="pvp-banner-info">
+              <div className="pvp-banner-title">Belt Holder Defeated</div>
+              <div className="pvp-banner-sub">
+                {opponentName} loses the top spot. You're now #1 — defend it to claim the belt at season end.
               </div>
             </div>
           </div>
         )}
 
         {/* Rivalry resolved banner */}
-        {flags?.isRivalryResolved && (
-          <div className="pvp-rival-res-banner">
-            <Swords size={18} strokeWidth={2} />
-            <div style={{ flex: 1 }}>
-              <div className="pvp-banner-title" style={{ color: "#C87A10" }}>Rivalry Resolved</div>
-              <div className="pvp-banner-sub">3-0 record. The rivalry is over.</div>
+        {showRivalResBanner && (
+          <div className="pvp-banner pvp-banner-rival-res">
+            <div className="pvp-banner-icon">⚔</div>
+            <div className="pvp-banner-info">
+              <div className="pvp-banner-title">Rivalry Resolved</div>
+              <div className="pvp-banner-sub">
+                3 wins against {opponentName} this season. The rivalry is over.
+              </div>
             </div>
-            <div className="pvp-banner-dp" style={{ color: "#C87A10" }}>+25 DP</div>
+            <div className="pvp-banner-val">+25</div>
           </div>
         )}
 
-        {/* Rivalry set banner */}
-        {flags?.isRivalryFight && !flags?.isRivalryResolved && (
-          <div className="pvp-rival-set-banner">
-            <Swords size={18} strokeWidth={2} style={{ color: "#C87A10" }} />
-            <div style={{ flex: 1 }}>
-              <div className="pvp-banner-title" style={{ color: "#C87A10" }}>Rivalry Forming</div>
-              <div className="pvp-banner-sub">One more win to resolve this rivalry and earn bonus DP.</div>
-            </div>
-          </div>
-        )}
-
-        {/* Streak banner — logic:
-              streakAfter === 3 → multiplier kicks in NEXT fight, not this one
-              streakAfter >= 4  → ×1.25 was already active on this fight */}
-        {youWon && streakAfter >= 3 && (
-          <div className="pvp-streak-res-banner">
-            <Flame size={16} strokeWidth={2} style={{ color: "#D4A820" }} />
-            <div style={{ flex: 1 }}>
-              <div className="pvp-banner-title" style={{ color: "#D4A820" }}>
-                {streakAfter}-win streak
-                {streakAfter >= 4 ? " · ×1.25 active" : ""}
+        {/* Streak up banner */}
+        {showStreakUpBanner && (
+          <div className="pvp-banner pvp-banner-streak-up">
+            <div className="pvp-banner-icon">🔥</div>
+            <div className="pvp-banner-info">
+              <div className="pvp-banner-title">
+                {streakAfter}-win streak{streakAfter >= 4 ? " · ×1.25 active" : ""}
               </div>
               <div className="pvp-banner-sub">
                 {streakAfter === 3
-                  ? "Next win at ×1.25 multiplier"
-                  : "×1.25 multiplier was active on this fight"}
+                  ? "Win again to activate the ×1.25 multiplier."
+                  : promoted
+                  ? "Streak carries into the new division."
+                  : "Next win is still at ×1.25 multiplier. Keep going."}
               </div>
             </div>
           </div>
         )}
 
-        {/* Streak broken — show when the DP breakdown had an active multiplier on the lost fight,
-            indicating the player had a streak that is now gone. */}
-        {!youWon && (dpBreakdown?.streakMultiplier ?? 1) > 1 && (
-          <div className="pvp-streak-broken-banner">
-            <Flame size={16} strokeWidth={2} style={{ color: "#C8102E" }} />
-            <div style={{ flex: 1 }}>
-              <div className="pvp-banner-title" style={{ color: "#C8102E" }}>Win streak broken</div>
-              <div className="pvp-banner-sub">DP multiplier reset to ×1.0</div>
+        {/* Streak down banner */}
+        {showStreakDownBanner && (
+          <div className="pvp-banner pvp-banner-streak-down">
+            <div className="pvp-banner-icon">💨</div>
+            <div className="pvp-banner-info">
+              <div className="pvp-banner-title">{(streakBefore ?? 0)}-win streak ended</div>
+              <div className="pvp-banner-sub">
+                DP multiplier reset to ×1.0. Win 3 in a row to reactivate ×1.25.
+              </div>
             </div>
           </div>
         )}
 
-        {/* Defense shield note */}
-        {!youWon && attacker?.promotionShield > 0 && (
-          <div className="pvp-shield-note">
-            <Shield size={13} strokeWidth={2} style={{ color: "#3B82F6" }} />
-            <span>Promotion Shield active — {attacker.promotionShield} fight{attacker.promotionShield !== 1 ? "s" : ""} remaining</span>
+        {/* ── DP PROGRESS BAR ── */}
+        {isBeltHolderProg ? (
+          // Variant 1: Belt-holder-defeated
+          <div className="pvp-dp-prog">
+            <div className="pvp-dp-prog-title">
+              Champion Division · Season {seasonNumber ?? ""}
+            </div>
+            <div className="pvp-dp-bar-row">
+              <span className="pvp-dp-bar-lbl">Your DP</span>
+              <div className="pvp-dp-bar-track">
+                <div
+                  className="pvp-dp-bar-fill"
+                  style={{ width: `${barPct(dpAfter, divMeta.promoteAt, divMeta.floor)}%`, background: "#4ADE80" }}
+                />
+              </div>
+              <span className="pvp-dp-bar-val" style={{ color: "#4ADE80" }}>{(dpAfter ?? 0).toLocaleString()}</span>
+            </div>
+            <div className="pvp-dp-bar-row">
+              <span className="pvp-dp-bar-lbl">{opponentName.split(" ")[0]}</span>
+              <div className="pvp-dp-bar-track">
+                <div
+                  className="pvp-dp-bar-fill"
+                  style={{ width: `${barPct(beltHolderDpAfter, divMeta.promoteAt, divMeta.floor)}%`, background: "rgba(59,130,246,0.4)" }}
+                />
+              </div>
+              <span className="pvp-dp-bar-val" style={{ color: "#AAAAAA" }}>{(beltHolderDpAfter ?? 0).toLocaleString()}</span>
+            </div>
+            <div className="pvp-dp-note">
+              {seasonWeeksRemaining ?? "?"} weeks remaining — <span>stay at #1</span> to claim the belt
+            </div>
+          </div>
+        ) : isPromoProg ? (
+          // Variant 2: Promotion
+          <div className="pvp-dp-prog">
+            <div className="pvp-dp-prog-title">
+              {divisionLabel(divisionAfter)} Division · Starting DP
+            </div>
+            <div className="pvp-dp-bar-row">
+              <span className="pvp-dp-bar-lbl">Position</span>
+              <div className="pvp-dp-bar-track">
+                <div
+                  className="pvp-dp-bar-fill"
+                  style={{ width: `${barPct(dpAfter, divMetaAfter.promoteAt, divMetaAfter.floor)}%`, background: "#4ADE80" }}
+                />
+              </div>
+              <span className="pvp-dp-bar-val" style={{ color: "#AAAAAA" }}>{(dpAfter ?? 0).toLocaleString()}</span>
+            </div>
+            {nextDivAfter ? (
+              <div className="pvp-dp-note">
+                <span>{((nextDivAfter.promoteAt ?? 0) - dpAfter).toLocaleString()} DP</span> needed for {nextDivAfter.label} promotion
+              </div>
+            ) : (
+              <div className="pvp-dp-note">You're in Champion.</div>
+            )}
+          </div>
+        ) : isDraw ? (
+          // Variant 3b: Draw
+          <div className="pvp-dp-prog">
+            <div className="pvp-dp-prog-title">Season DP — unchanged</div>
+            <div className="pvp-dp-bar-row">
+              <span className="pvp-dp-bar-lbl">DP</span>
+              <div className="pvp-dp-bar-track">
+                <div
+                  className="pvp-dp-bar-fill"
+                  style={{ width: `${barPct(dpAfter, divMeta.promoteAt, divMeta.floor)}%`, background: "#3B82F6", opacity: 0.5 }}
+                />
+              </div>
+              <span className="pvp-dp-bar-val" style={{ color: "#AAAAAA" }}>{(dpAfter ?? 0).toLocaleString()}</span>
+            </div>
+            {nextDiv ? (
+              <div className="pvp-dp-note">
+                <span>{((nextDiv.promoteAt ?? 0) - dpAfter).toLocaleString()} DP</span> needed for {nextDiv.label} promotion
+              </div>
+            ) : (
+              <div className="pvp-dp-note">You're at the top — Champion division.</div>
+            )}
+          </div>
+        ) : youWon ? (
+          // Variant 3a: Win
+          <div className="pvp-dp-prog">
+            <div className="pvp-dp-prog-title">
+              Season DP · {(dpBefore ?? 0).toLocaleString()} → {(dpAfter ?? 0).toLocaleString()}
+            </div>
+            <div className="pvp-dp-bar-row">
+              <span className="pvp-dp-bar-lbl">Before</span>
+              <div className="pvp-dp-bar-track">
+                <div
+                  className="pvp-dp-bar-fill"
+                  style={{ width: `${barPct(dpBefore, divMeta.promoteAt, divMeta.floor)}%`, background: "rgba(59,130,246,0.4)" }}
+                />
+              </div>
+              <span className="pvp-dp-bar-val" style={{ color: "#AAAAAA" }}>{(dpBefore ?? 0).toLocaleString()}</span>
+            </div>
+            <div className="pvp-dp-bar-row">
+              <span className="pvp-dp-bar-lbl">After</span>
+              <div className="pvp-dp-bar-track">
+                <div
+                  className="pvp-dp-bar-fill"
+                  style={{ width: `${barPct(dpAfter, divMeta.promoteAt, divMeta.floor)}%`, background: "#4ADE80" }}
+                />
+              </div>
+              <span className="pvp-dp-bar-val" style={{ color: "#4ADE80" }}>{(dpAfter ?? 0).toLocaleString()}</span>
+            </div>
+            {nextDiv ? (
+              <div className="pvp-dp-note">
+                <span>{((nextDiv.promoteAt ?? 0) - dpAfter).toLocaleString()} DP</span> needed for {nextDiv.label} promotion
+              </div>
+            ) : (
+              <div className="pvp-dp-note">You're at the top — Champion division.</div>
+            )}
+          </div>
+        ) : (
+          // Variant 4: Loss
+          <div className="pvp-dp-prog">
+            <div className="pvp-dp-prog-title">
+              Season DP · {(dpBefore ?? 0).toLocaleString()} → {(dpAfter ?? 0).toLocaleString()}
+            </div>
+            <div className="pvp-dp-bar-row">
+              <span className="pvp-dp-bar-lbl">Before</span>
+              <div className="pvp-dp-bar-track">
+                <div
+                  className="pvp-dp-bar-fill"
+                  style={{ width: `${barPct(dpBefore, divMeta.promoteAt, divMeta.floor)}%`, background: "rgba(59,130,246,0.4)" }}
+                />
+              </div>
+              <span className="pvp-dp-bar-val" style={{ color: "#AAAAAA" }}>{(dpBefore ?? 0).toLocaleString()}</span>
+            </div>
+            <div className="pvp-dp-bar-row">
+              <span className="pvp-dp-bar-lbl">After</span>
+              <div className="pvp-dp-bar-track">
+                <div
+                  className="pvp-dp-bar-fill"
+                  style={{ width: `${barPct(dpAfter, divMeta.promoteAt, divMeta.floor)}%`, background: "#C8102E", opacity: 0.6 }}
+                />
+              </div>
+              <span className="pvp-dp-bar-val" style={{ color: "#C8102E" }}>{(dpAfter ?? 0).toLocaleString()}</span>
+            </div>
+            {(() => {
+              const floor = divMeta.floor ?? 0;
+              const above = (dpAfter ?? 0) - floor;
+              const nearFloor = above < 60;
+              return (
+                <div className="pvp-dp-note">
+                  {nearFloor
+                    ? `Near floor — at risk of demotion on next loss`
+                    : <>Still <span>{above.toLocaleString()} DP</span> above division floor — {divisionLabel(division)} secure</>}
+                </div>
+              );
+            })()}
           </div>
         )}
 
-        {/* DP history bar */}
-        <div className="pvp-dp-history">
-          <div className="pvp-dph-title">
-            Season DP · {dpBefore.toLocaleString()} → {dpAfter.toLocaleString()}
-          </div>
-          <div className="pvp-dph-bar">
-            <div className="pvp-dph-lbl">Before</div>
-            <div className="pvp-dph-track">
-              <div className="pvp-dph-fill" style={{ width: `${barBefore}%`, background: "#3B82F6", opacity: 0.5 }} />
-            </div>
-            <div className="pvp-dph-val" style={{ color: "#AAAAAA" }}>{dpBefore.toLocaleString()}</div>
-          </div>
-          <div className="pvp-dph-bar">
-            <div className="pvp-dph-lbl">After</div>
-            <div className="pvp-dph-track">
-              <div className="pvp-dph-fill" style={{ width: `${barAfter}%`, background: youWon ? "#3B82F6" : "#C8102E", opacity: youWon ? 1 : 0.7 }} />
-            </div>
-            <div className="pvp-dph-val" style={{ color: youWon ? "#F0F0F0" : "#C8102E" }}>{dpAfter.toLocaleString()}</div>
-          </div>
-        </div>
-
-        {/* Commentary snippets */}
+        {/* Commentary */}
         {commentary && commentary.length > 0 && (
           <div className="pvp-commentary">
             {commentary.slice(0, 2).map((line, i) => (
@@ -221,14 +546,10 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
         )}
       </div>
 
-      {/* Actions */}
-      <div className="pvp-fr-actions">
-        <button className="pvp-fr-btn pvp-fr-btn-prim" onClick={onFightAgain}>
-          Fight Again
-        </button>
-        <button className="pvp-fr-btn pvp-fr-btn-sec" onClick={onBackToLadder}>
-          Back to Ladder
-        </button>
+      {/* ── ACTIONS ── */}
+      <div className="pvp-ra">
+        <button className="pvp-ra-btn-prim" onClick={onFightAgain}>Fight Again</button>
+        <button className="pvp-ra-btn-sec" onClick={onBackToLadder}>Back to Ladder</button>
       </div>
     </div>
   );

@@ -29,6 +29,7 @@ const pvpFightSchema = new mongoose.Schema({
         bracketBonus: { type: Number, default: 0 },
         streakMultiplier: { type: Number, default: 1 },
         repeatPenalty: { type: Number, default: 1 },
+        twistBonus: { type: Number, default: 0 },
     },
     isRivalryFight: { type: Boolean, default: false },
     isRivalryResolved: { type: Boolean, default: false },

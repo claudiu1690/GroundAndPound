@@ -116,6 +116,27 @@ test("iron_circuit twist is a no-op", () => {
     assert.strictEqual(dpChange, 120);
 });
 
+test("breakdown.twistBonus surfaces the twist contribution without changing dpChange", () => {
+    // blood_sport ko: 120 * 1.25 = 150, so the twist's additive contribution is 30.
+    const ko = computeDp({ isWin: true, method: "ko", twist: "blood_sport" });
+    assert.strictEqual(ko.dpChange, 150);
+    assert.strictEqual(ko.breakdown.twistBonus, 30);
+
+    // Non-matching method (decision) — twist does not apply, twistBonus stays 0.
+    const dec = computeDp({ isWin: true, method: "decision", twist: "blood_sport" });
+    assert.strictEqual(dec.dpChange, 120);
+    assert.strictEqual(dec.breakdown.twistBonus, 0);
+
+    // No twist (iron_circuit) — twistBonus is 0, dpChange unchanged.
+    const plain = computeDp({ isWin: true, method: "ko", twist: "iron_circuit" });
+    assert.strictEqual(plain.dpChange, 120);
+    assert.strictEqual(plain.breakdown.twistBonus, 0);
+
+    // Loss branch returns before the twist slot — twistBonus is 0.
+    const loss = computeDp({ isWin: false, isAttacker: true, method: "ko", twist: "blood_sport" });
+    assert.strictEqual(loss.breakdown.twistBonus, 0);
+});
+
 test("the_contenders twist lowers streak threshold (still 3, no-op vs default)", () => {
     const { dpChange } = computeDp({ isWin: true, attackerStreak: 3, twist: "the_contenders" });
     assert.strictEqual(dpChange, 150); // streak applies at 3

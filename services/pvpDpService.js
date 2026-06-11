@@ -63,6 +63,7 @@ function computeDp({
         bracketBonus: 0,
         streakMultiplier: 1,
         repeatPenalty: 1,
+        twistBonus: 0,
     };
 
     // ── 1. base ──────────────────────────────────────────────────────────────
@@ -113,7 +114,9 @@ function computeDp({
     const twistDef = TWISTS[twist];
     if (twistDef && Array.isArray(twistDef.methods) && typeof twistDef.pct === "number") {
         if (twistDef.methods.includes(method)) {
+            const before = val;
             val = Math.round(val * (1 + twistDef.pct));
+            breakdown.twistBonus = val - before;
             twistApplied = true;
         }
     }
