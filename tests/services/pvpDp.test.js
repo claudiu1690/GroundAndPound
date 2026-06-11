@@ -2,7 +2,21 @@ const { test } = require("node:test");
 const assert = require("node:assert");
 
 const { computeDp, applyDpAndDivision } = require("../../services/pvpDpService");
-const { DP, divisionFloor } = require("../../consts/pvpConfig");
+const { DP, divisionFloor, bracketTier } = require("../../consts/pvpConfig");
+
+// ── bracketTier: bonus only when fighting UP (defender higher OVR) ───────────
+test("bracketTier rewards fighting UP only", () => {
+    // attacker OVR, defender OVR
+    assert.strictEqual(bracketTier(30, 38), "plus10");   // up 8  → +10%
+    assert.strictEqual(bracketTier(30, 45), "plus25");   // up 15 → +25%
+    assert.strictEqual(bracketTier(30, 30), "none");     // even  → none
+    assert.strictEqual(bracketTier(30, 33), "none");     // up 3 (below 6) → none
+    assert.strictEqual(bracketTier(30, 55), "none");     // up 25 (beyond window) → none
+    // Fighting DOWN must NEVER grant a bonus (the bug this guards against).
+    assert.strictEqual(bracketTier(38, 30), "none");     // down 8
+    assert.strictEqual(bracketTier(45, 30), "none");     // down 15
+    assert.strictEqual(bracketTier(60, 16), "none");     // down 44
+});
 
 // ── computeDp: base cases ───────────────────────────────────────────────────
 

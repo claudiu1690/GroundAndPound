@@ -152,16 +152,14 @@ function nextDivision(divKey) {
 }
 
 /**
- * Bracket tier from the OVR gap between attacker and defender.
- *   |gap| 6–10  → plus10
- *   |gap| 11–20 → plus25
- *   else        → none
- * (A bonus only applies when fighting UP, but the bracket tier itself is gap-based;
- * the DP service applies the bonus on a WIN regardless of direction per the contract,
- * which embeds the bracket on the candidate card for display.)
+ * Bracket tier from the OVR gap, rewarding ONLY fighting UP (defender higher OVR).
+ * Signed gap = defenderOvr - attackerOvr (positive = the opponent is tougher):
+ *   gap 6–10  → plus10
+ *   gap 11–20 → plus25
+ *   else (fighting down, even, or beyond the matchmaking window) → none
  */
 function bracketTier(attackerOvr, defenderOvr) {
-    const gap = Math.abs((Number(defenderOvr) || 0) - (Number(attackerOvr) || 0));
+    const gap = (Number(defenderOvr) || 0) - (Number(attackerOvr) || 0);
     if (gap >= 6 && gap <= 10) return "plus10";
     if (gap >= 11 && gap <= 20) return "plus25";
     return "none";
