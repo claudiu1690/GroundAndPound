@@ -1,0 +1,103 @@
+import { useState } from "react";
+import { usePvpHistory } from "../../../hooks/usePvpHistory";
+
+function relativeTime(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return new Date(dateStr).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function methodLabel(m) {
+  if (!m) return "";
+  if (m === "ko") return "KO";
+  if (m === "submission") return "Sub";
+  if (m === "decision") return "Decision";
+  if (m === "draw") return "Draw";
+  return m;
+}
+
+export function HistoryTab({ season }) {
+  const [page, setPage] = useState(1);
+  const { data, loading, error } = usePvpHistory(season?.id, page);
+  const fights = data?.fights ?? [];
+
+  return (
+    <div className="pvp-history-wrap">
+      {loading && fights.length === 0 ? (
+        <div className="pvp-loading">Loading history…</div>
+      ) : error ? (
+        <div className="pvp-error-note">{error}</div>
+      ) : fights.length === 0 ? (
+        <div className="pvp-empty-history">No fights this season yet.</div>
+      ) : (
+        <>
+          <div className="pvp-hist-list">
+            {fights.map((f) => {
+              const won = f.youWon;
+              const dp = f.dpChange ?? 0;
+              return (
+                <div key={f.fightId} className="pvp-hist-row">
+                  <div className={`pvp-hist-stripe ${won ? "pvp-hist-stripe-w" : "pvp-hist-stripe-l"}`} />
+                  <div className="pvp-hist-body">
+                    <div className="pvp-hist-top">
+                      <span className={`pvp-hist-result ${won ? "pvp-hist-result-w" : "pvp-hist-result-l"}`}>
+                        {won ? "Win" : "Loss"}
+                      </span>
+                      <span className="pvp-hist-opp">vs {f.opponentName}</span>
+                      {f.isRivalryFight && (
+                        <span className="pvp-hist-tag pvp-hist-tag-rival">Rival</span>
+                      )}
+                      {f.isBeltHolderFight && (
+                        <span className="pvp-hist-tag pvp-hist-tag-belt">🏆 Champ</span>
+                      )}
+                    </div>
+                    <div className="pvp-hist-sub">
+                      {methodLabel(f.method)} · {f.divisionAfter}
+                      {f.role === "defender" && (
+                        <span className="pvp-hist-tag pvp-hist-tag-def">Defense</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="pvp-hist-right">
+                    <div className={`pvp-hist-dp ${won ? "pvp-hist-dp-w" : "pvp-hist-dp-l"}`}>
+                      {dp >= 0 ? "+" : ""}{dp} DP
+                    </div>
+                    <div className="pvp-hist-time">{relativeTime(f.fightAt)}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Pagination */}
+          {data?.totalPages > 1 && (
+            <div className="pvp-pagination">
+              <button
+                className="pvp-page-btn"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                Prev
+              </button>
+              <span className="pvp-page-info">Page {page} / {data.totalPages}</span>
+              <button
+                className="pvp-page-btn"
+                onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
+                disabled={page >= data.totalPages}
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

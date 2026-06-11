@@ -2,7 +2,7 @@ import { memo, useEffect, useState } from "react";
 import { api } from "../api";
 import {
     Trophy, X, Minus, ArrowUp, Crown, Flame, Swords, ShieldCheck, Target,
-    AlertTriangle, Mic, Megaphone, Star, FileText, Cross, HeartPulse,
+    AlertTriangle, Mic, Megaphone, Star, FileText, Cross, HeartPulse, Shield,
 } from "lucide-react";
 
 // Event type → timeline dot colour + icon + type-pill label.
@@ -34,6 +34,16 @@ const EVENT_CONFIG = {
     CONTRACT:            { color: AMBER,  Icon: FileText,      label: "Contract" },
     INJURY:              { color: RED,    Icon: Cross,         label: "Injury" },
     INJURY_HEALED:       { color: GREEN,  Icon: HeartPulse,    label: "Healed" },
+    // PVP / The Proving Ground
+    pvp_win:             { color: GREEN,  Icon: Trophy,        label: "PVP Win" },
+    pvp_loss:            { color: RED,    Icon: X,             label: "PVP Loss" },
+    pvp_defended:        { color: GREEN,  Icon: ShieldCheck,   label: "Defended" },
+    pvp_defense_loss:    { color: RED,    Icon: Shield,        label: "Defense Lost" },
+    pvp_promoted:        { color: PURPLE, Icon: ArrowUp,       label: "Promoted" },
+    pvp_rivalry_set:     { color: AMBER,  Icon: Flame,         label: "Rivalry" },
+    pvp_rivalry_resolved:{ color: PURPLE, Icon: Swords,        label: "Rivalry" },
+    pvp_season_end:      { color: GOLD,   Icon: Trophy,        label: "Season End" },
+    pvp_belt_won:        { color: GOLD,   Icon: Crown,         label: "PVP Belt" },
 };
 
 const FALLBACK = { color: GREY, Icon: Minus, label: "Event" };

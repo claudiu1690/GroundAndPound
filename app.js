@@ -12,6 +12,7 @@ const rankingRoutes = require("./routes/rankingRoutes");
 const gazetteRoutes = require("./routes/gazetteRoutes");
 const tutorialRoutes = require("./routes/tutorialRoutes");
 const accountRoutes = require("./routes/accountRoutes");
+const pvpRoutes = require("./routes/pvpRoutes");
 const accountController = require("./controllers/accountController");
 const authMiddleware = require("./middleware/authMiddleware");
 const mongoose = require("mongoose");
@@ -70,6 +71,7 @@ app.use("/rankings", authMiddleware, rankingRoutes);
 app.use("/gazette", authMiddleware, gazetteRoutes);
 app.use("/tutorial", authMiddleware, tutorialRoutes);
 app.use("/account", authMiddleware, accountRoutes);
+app.use("/pvp", authMiddleware, pvpRoutes);
 
 swagger(app);
 

@@ -8,6 +8,8 @@ const {
 const notorietyService = require("../services/notorietyService");
 const injuryHealService = require("../services/injuryHealService");
 const accountService = require("../services/accountService");
+const pvpDecayService = require("../services/pvpDecayService");
+const pvpSeasonService = require("../services/pvpSeasonService");
 
 /**
  * Build the connection config BullMQ uses for every Queue and Worker.
@@ -114,6 +116,35 @@ const hardDeleteWorker = new Worker(
 );
 hardDeleteWorker.on("error", (err) => console.error("[Hard delete] Worker error:", err));
 
+// ── PVP inactivity decay — daily DP decay for idle Proving Ground records ─────
+const pvpDecayQueue = new Queue("pvp-decay", { connection: QUEUE_CONNECTION });
+const pvpDecayWorker = new Worker(
+    "pvp-decay",
+    async () => {
+        const n = await pvpDecayService.runDecayBatch();
+        if (n > 0) console.log(`[PVP decay] Applied inactivity decay to ${n} record(s).`);
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+pvpDecayWorker.on("error", (err) => console.error("[PVP decay] Worker error:", err));
+pvpDecayWorker.on("failed", (job, err) => console.error("[PVP decay] Job failed:", err));
+
+// ── PVP season transition sweep — self-healing end/start of seasons (launch-critical)
+const pvpSeasonTransitionQueue = new Queue("pvp-season-transition", { connection: QUEUE_CONNECTION });
+const pvpSeasonTransitionWorker = new Worker(
+    "pvp-season-transition",
+    async () => {
+        const { ended, started, failed } = await pvpSeasonService.runSeasonTransitionSweep();
+        if (ended > 0 || started > 0) {
+            console.log(`[PVP transition] Ended ${ended} season(s), started ${started} season(s).`);
+        }
+        if (failed > 0) console.error(`[PVP transition] ${failed} season(s) failed — see prior errors.`);
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+pvpSeasonTransitionWorker.on("error", (err) => console.error("[PVP transition] Worker error:", err));
+pvpSeasonTransitionWorker.on("failed", (job, err) => console.error("[PVP transition] Job failed:", err));
+
 async function startEnergyIncrementScheduler() {
     await ensureRedisConnected();
 
@@ -166,7 +197,21 @@ async function startEnergyIncrementScheduler() {
         removeOnComplete: true,
     });
 
-    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h).");
+    // PVP inactivity decay — midnight UTC daily.
+    await pvpDecayQueue.add("decay", {}, {
+        repeat: { pattern: "0 0 * * *", tz: "UTC" },
+        jobId: "pvp-inactivity-decay",
+        removeOnComplete: true,
+    });
+
+    // PVP season transition — 00:05 UTC daily (offset from decay so they don't contend).
+    await pvpSeasonTransitionQueue.add("transition", {}, {
+        repeat: { pattern: "5 0 * * *", tz: "UTC" },
+        jobId: "pvp-season-transition",
+        removeOnComplete: true,
+    });
+
+    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h, pvp decay: 0 0 UTC, pvp season transition: 5 0 UTC).");
 }
 
 module.exports = {
@@ -176,10 +221,14 @@ module.exports = {
     notorietyDecayQueue,
     injuryHealQueue,
     hardDeleteQueue,
+    pvpDecayQueue,
+    pvpSeasonTransitionQueue,
     energyWorker,
     energySyncWorker,
     notorietyDecayWorker,
     injuryHealWorker,
     hardDeleteWorker,
+    pvpDecayWorker,
+    pvpSeasonTransitionWorker,
     redis,
 };

@@ -38,6 +38,7 @@ import { CookieConsent } from "./components/legal/CookieConsent";
 import { tutorialBus } from "./utils/tutorialBus";
 import { TITLE_WINS } from "./constants/gameConstants";
 import { useToasts } from "./hooks/useToasts";
+import { PvpHub } from "./components/pvp/PvpHub";
 import {
   LayoutDashboard,
   BookOpen,
@@ -59,6 +60,7 @@ import {
   Circle,
   ChevronRight,
   Trophy,
+  Crosshair,
 } from "lucide-react";
 
 // ── Navigation definition ──────────────────────────────────
@@ -74,6 +76,7 @@ const NAV_ITEMS = [
   { id: "events",    label: "Events",    icon: <CalendarDays size={13} strokeWidth={2.2} />,active: true },
   { id: "media",     label: "Media",     icon: <Mic size={13} strokeWidth={2.2} />,         active: true },
   { id: "library",   label: "Library",   icon: <BookOpen size={13} strokeWidth={2.2} />,    active: true },
+  { id: "pvp",       label: "Proving Ground", icon: <Crosshair size={13} strokeWidth={2.2} />, active: true },
 ];
 
 // ── Tier ladder for display ────────────────────────────────
@@ -1430,6 +1433,16 @@ const handleGetOffers = useCallback(async () => {
             </div>
           )}
 
+          {/* ── PROVING GROUND (PVP) ── */}
+          {activeTab === "pvp" && (
+            <div className="page-layout">
+              <PvpHub
+                fighter={fighter}
+                onNavigate={handleNavTab}
+              />
+            </div>
+          )}
+
           {/* ── FIGHTS ── */}
           {activeTab === "fights" && (
             <div className="page-layout">
@@ -1535,6 +1548,9 @@ const handleGetOffers = useCallback(async () => {
         </button>
         <button type="button" className={`m-nav-item ${activeTab === "rankings" ? "act" : ""}`} onClick={() => handleNavTab("rankings")}>
           <ListOrdered size={17} strokeWidth={2.2} /><span>Rank</span>
+        </button>
+        <button type="button" className={`m-nav-item ${activeTab === "pvp" ? "act" : ""}`} onClick={() => handleNavTab("pvp")}>
+          <Crosshair size={17} strokeWidth={2.2} /><span>PVP</span>
         </button>
         <button type="button" className={`m-nav-item ${mobileDrawerOpen ? "act" : ""}`} onClick={() => setMobileDrawerOpen(true)}>
           <Menu size={17} strokeWidth={2.2} /><span>More</span>

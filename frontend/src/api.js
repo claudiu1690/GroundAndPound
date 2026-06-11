@@ -334,4 +334,26 @@ export const api = {
   // response shape as login on success (token + fighterId).
   recoverAccount: (email, password) =>
     request("/auth/recover", { method: "POST", body: JSON.stringify({ email, password }) }),
+
+  // ── PVP / The Proving Ground ─────────────────────────────
+  pvpLadder: (wc, seasonId, page = 1, limit = 25) =>
+    request(`/pvp/ladder/${wc}/${seasonId}?page=${page}&limit=${limit}`),
+  pvpRecord: (playerId) =>
+    request(`/pvp/record/${playerId}`),
+  pvpOpponents: () =>
+    request(`/pvp/opponents`),
+  pvpFight: (body) =>
+    request(`/pvp/fight`, { method: "POST", body: JSON.stringify(body) }),
+  pvpFights: (seasonId, page = 1, limit = 25) =>
+    request(`/pvp/fights/${seasonId}?page=${page}&limit=${limit}`),
+  pvpDefenseResults: () =>
+    request(`/pvp/defense-results`),
+  pvpSetDefenseGameplan: (gameplan) =>
+    request(`/pvp/defense-gameplan`, { method: "POST", body: JSON.stringify({ gameplan }) }),
+  pvpHof: (wc) =>
+    request(wc ? `/pvp/hof?weightClass=${wc}` : `/pvp/hof`),
+  pvpCurrentSeason: (wc) =>
+    request(`/pvp/season/current/${wc}`),
+  pvpAcknowledgeSeason: (seasonId) =>
+    request(`/pvp/acknowledge-season`, { method: "POST", body: JSON.stringify({ seasonId }) }),
 };

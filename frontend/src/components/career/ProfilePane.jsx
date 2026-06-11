@@ -64,7 +64,7 @@ export function ProfilePane({ fighter: liveFighter, fighterId, onMessage, onRefr
 
   if (!data) return null;
 
-  const { fighter, belts, badges, pvp } = data;
+  const { fighter, belts, badges } = data;
   const earnedCount = badges?.earnedCount ?? earnedBadges.length;
 
   return (
@@ -90,7 +90,7 @@ export function ProfilePane({ fighter: liveFighter, fighterId, onMessage, onRefr
 
         <div className="two-col">
           <MediaCareerCard fighter={fighter} />
-          <PvpHistoryCard pvp={pvp} />
+          <PvpHistoryCard fighterId={fighterId} />
         </div>
       </div>
 

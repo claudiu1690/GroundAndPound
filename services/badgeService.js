@@ -11,6 +11,7 @@
  */
 
 const { BADGES, BADGE_CATEGORIES, getBadge } = require("../consts/badgeCatalog");
+const { resolvePvpBadge } = require("../consts/pvpBadges");
 
 let _activityLogService = null;
 function activityLog() {
@@ -144,6 +145,38 @@ function buildBadgeProfile(fighter) {
         });
         return { key: cat.key, label: cat.label, badges };
     });
+
+    // ── Proving Ground (PVP) seasonal badges ─────────────────────────────────
+    // These are awarded imperatively into badgesEarned with deterministic ids that
+    // are NOT in the static catalog (they are unbounded over seasons). Resolve any
+    // pvp_-prefixed earned id the catalog didn't already cover and group them into a
+    // synthesized "Proving Ground" category.
+    const catalogIds = new Set(BADGES.map((b) => b.id));
+    const pvpBadges = [];
+    for (const [id, entry] of earnedMap.entries()) {
+        if (!id.startsWith("pvp_") || catalogIds.has(id)) continue;
+        const resolved = resolvePvpBadge(id);
+        if (!resolved) continue;
+        earnedCount += 1;
+        pvpBadges.push({
+            id,
+            name: resolved.name,
+            description: resolved.description,
+            category: "proving_ground",
+            subgroup: null,
+            earned: true,
+            new: entry.seen === false,
+            context: entry.context ?? null,
+            progress: null,
+            conditionLabel: resolved.description,
+            icon: resolved.icon,
+            color: resolved.color,
+        });
+    }
+    if (pvpBadges.length > 0) {
+        pvpBadges.sort((a, b) => a.name.localeCompare(b.name));
+        categories.push({ key: "proving_ground", label: "Proving Ground", badges: pvpBadges });
+    }
 
     return { earnedCount, lockedCount, categories };
 }

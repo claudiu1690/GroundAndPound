@@ -14,6 +14,10 @@ const activityLogSchema = new mongoose.Schema({
             "TIER_PROMOTION", "TITLE_WON",
             "NEMESIS_SET", "NEMESIS_CLEARED",
             "BADGE_EARNED", "TITLE_SHOT_ELIGIBLE", "MENTAL_RESET",
+            // Proving Ground (PVP) — feed writes silently drop if any of these is missing.
+            "pvp_win", "pvp_loss", "pvp_defended", "pvp_defense_loss",
+            "pvp_promoted", "pvp_rivalry_set", "pvp_rivalry_resolved",
+            "pvp_season_end", "pvp_belt_won",
         ],
         required: true,
     },
