@@ -24,7 +24,7 @@ promotion tiers — from unknown amateur to GCS champion.
 Single-page web client. Top to bottom: a collapsible **Message Bar**, the **App Body**
 (left sidebar + content panel), and a fixed **App Footer**.
 
-- **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — iron, fame, rank, class, gym, backstory — badges, stat meters, active injuries) and the nav menu: **Home, Training, Fight, Career, Rankings, Contracts, Hospital, Shop, Events, Media**.
+- **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — iron, fame, rank, class, gym, backstory — badges, stat meters, active injuries) and the nav menu: **Home, Training, Fight, Career, Rankings, Contracts, Hospital, Shop, Events, Media, Proving Ground**.
 - **Footer:** game wordmark, contextual status badges (injury count → Hospital, camp → Fight, Fame → Fame drawer), Sign Out.
 - **Overlays:** Training toast stack, Tier-Up / Belt-Won overlays, Fight Limit popup, Fame drawer, Octagon Gazette, Onboarding Tutorial, Fighter Report, Camp Summary, Badge-unlock celebration.
 
@@ -557,11 +557,84 @@ New accounts run a guided tooltip sequence through the core loop: fighter profil
 
 ---
 
-## 22. System Interconnections
+## 22. The Proving Ground (PvP)
+
+An asynchronous, click-resolved player-vs-player ladder that runs alongside — and independent of — the PvE career/title path. There is no real-time coordination: you attack a stored opponent, the fight resolves instantly against their **defense gameplan**, and they see the result the next time they log in. The Proving Ground has its own ladder, its own currency (Division Points), and its own seasonal belt; it does **not** touch your PvE rank, tier, or championship.
+
+### 22.1 Entering the Proving Ground
+Each PvP fight costs **15 energy** (shared with the career energy bar). You pick an opponent from a short matchmade list, choose a **gameplan**, and fight. Your own record carries a **defense gameplan** that the engine uses whenever someone attacks you while you're offline — a successful defense is how you hold position without logging in. Fights reuse the same pure, stat-driven fight simulator as PvE (no weight variable — combat is decided by the eight stats), so a PvP fight is a fair stat contest, not a coin flip.
+
+### 22.2 Division Points & Divisions
+Standing is measured in **Division Points (DP)**. Your **division** is derived purely from your DP (never stored authoritatively) — there are five, by DP floor:
+
+| Division | DP floor | Promotes at |
+|---|---|---|
+| Prospect | 0 | 300 |
+| Contender | 300 | 1,200 |
+| Challenger | 1,200 | 2,500 |
+| Elite | 2,500 | 5,000 |
+| Champion | 5,000 | — (top) |
+
+On a win that crosses your division's promote threshold you **promote**: division advances, DP resets to the new floor (no carry), and you gain a **Promotion Shield** (3 fights of DP-loss protection, decrementing each fight). Divisions never demote mid-season — a loss floors your DP at your current division's floor; the only downward movement is the season-end soft reset (§22.6).
+
+### 22.3 Earning & Losing DP
+Base: **win +120**, attacker **loss −55**, defender **loss −28**. A draw is **0**. A defender who repels an attack gains **nothing** (defense holds position, it doesn't farm DP). Win modifiers apply in this order, then clamps:
+
+1. **Belt Holder bonus** +50 (flat) — beating the current belt holder.
+2. **Rivalry Resolved** +25 (flat) — the win that settles a rivalry (§22.5).
+3. **Bracket bonus** +10% (OVR gap 6–10) or +25% (gap 11–20) — reward for fighting up.
+4. **Season twist** ×(1+pct) when the win method matches the active twist (§22.6).
+5. **Streak multiplier** ×1.25 once you're on a 3+ win streak.
+6. **Repeat penalty** ×0.5 (2nd fight) / ×0.25 (3rd+) against the **same opponent in the same ISO week** — discourages farming one target.
+
+Clamps: a win always grants **at least +1**; a loss never exceeds **−100**; a loss can't drop you below your division floor.
+
+### 22.4 Matchmaking & Gameplans
+Matchmaking surfaces up to **5** opponents from your season pool, expanding an OVR window (±5 → ±10 → ±15 → ±20) until it fills, then ranking by DP closeness. Each candidate shows difficulty, any bracket bonus, and belt/rival flags. **Gameplans** reweight your stats for the bout: **Aggressive** (STR/SPD up, CHN/FIQ down), **Balanced** (neutral), **Counter** (FIQ/CHN up, STR/SPD down). You pick your attack gameplan per fight; your defense gameplan is set once and reused.
+
+### 22.5 The Belt, Rivalries & Inactivity Decay
+- **The Belt:** the #1 Champion-division player (with at least one fight) at season end is crowned belt holder, entering the Hall of Fame and earning the belt reward.
+- **Rivalries:** beating the same opponent repeatedly in a season builds a rivalry; the **3rd win resolves it** and pays the +25 rivalry bonus on that fight.
+- **Inactivity decay:** going **7 days without a PvP fight** costs **−10 DP** (floored at your division floor; Prospects are exempt). It nudges idle ladders without punishing newcomers.
+
+### 22.6 Seasons, Twists & Rewards
+Seasons run **70 days**. Each season carries one **twist** that rewards a style of finish: *Iron Circuit* (standard), *Blood Sport* (KO/sub +25%), *Iron Fist* (KO +30%), *Ground War* (sub +30%), *The Marathon* (decision +20%), *The Contenders* (streak bonus from 3 wins). At season end, every player with at least one fight is paid by their final division; the belt reward **replaces** the Champion reward (no stack):
+
+| Final division | Iron | Fame | Energy drinks | Badge |
+|---|---|---|---|---|
+| Prospect | 500 | 500 | 0 | — |
+| Contender | 1,200 | 1,200 | 0 | — |
+| Challenger | 2,500 | 2,500 | 0 | Challenger |
+| Elite | 5,000 | 5,000 | 2 | Elite |
+| Champion | 10,000 | 10,000 | 5 | Champion |
+| **Belt holder** | 15,000 | 15,000 | 7 | Belt |
+
+After payout, a **soft reset** drops each player one tier into the next season (champion→contender, elite→challenger, challenger→contender, contender→prospect, prospect→prospect), DP set to the new floor — so every season is a fresh climb that still rewards last season's standing with a head start. A new season is seeded automatically.
+
+Seasons are controlled by a per-season **config block** (`Season.config`), so behaviour is flippable season to season without code changes — see the Open format below.
+
+### 22.7 Season 1 — The Open (cross-weight-class) format
+Normally PvP runs **one season per weight class** (four parallel ladders, four belts). At launch the player pool is too thin to populate four ladders, so **Season 1 is a single "Open" season** flagged `config.crossWeightClass = true`:
+
+- **One merged ladder** across all weight classes, **one belt**, **one reward pass** — the densest possible opponent pool and a single, uniquely prestigious Open belt.
+- Fairness is preserved by the existing OVR matchmaking window (the fight engine has no weight variable, so a same-OVR cross-class fight is mechanically identical to a same-class one) plus the bracket bonus for fighting up. No new guardrail.
+- Throughout the Open season, opponents' **real weight classes are shown** (opponent cards, ladder, pre-fight, fight result) so cross-class matchups read as intentional.
+- **At season end, players redistribute back into their real weight class** for the normal per-weight-class Season 2 (the four-ladder structure resumes), carrying their soft-reset standing. Each record stores the player's real weight class for this purpose.
+
+The flag is **not** hardcoded to Season 1 — `crossWeightClass` can be set on any future season if the population ever needs merging again. Season 2+ default to per-weight-class.
+
+### 22.8 The Fight Result screen
+A PvP fight resolves to a result screen led by the **DP swing** (the score), then the outcome + method, opponent line, context pills (streak/rivalry/promotion/belt), a **DP breakdown panel** itemising every modifier, ladder movement (rank before → after), contextual banners (promotion + shield, streak up/broken, rivalry resolved, belt-holder defeated), and a Season-DP progress bar toward the next division. Actions: Fight Again / Back to Ladder.
+
+---
+
+## 23. System Interconnections
 
 The core loop: spend energy to train at a gym → training earns XP → XP raises stats → higher stats raise Overall → a higher rating qualifies for better gyms and title shots. Before each fight, run a camp (conditional bonuses) and pick a weight-cut gamble; the fight pays iron, notoriety, and XP.
 
 Notoriety is both a meter and an economy: spent on callouts (forced matchups with full intel), it gates sponsorship slots, and it's earned/lost through fights, event predictions, and media. Beef/Respect flags create grudge and rematch incentives across the division. The Shop and earned Energy Drinks let the player convert iron/achievement into tempo (energy, XP, fight buffs).
+
+The **Proving Ground** (§22) is a parallel economy: the same trained stats and OVR that drive the PvE career also determine PvP matchmaking and fight outcomes, and season-end PvP rewards pay back into the shared currencies (iron, fame, energy drinks, badges) — so ladder climbing feeds the career and vice versa, without either path gating the other.
 
 ---
 
@@ -569,8 +642,9 @@ Notoriety is both a meter and an economy: spent on callouts (forced matchups wit
 
 The in-game **Library** (`frontend/src/components/library/libraryContent.js`) is the
 player-facing source of truth for *how systems work in-product*, kept current per the
-working rule "after any player-facing feature change, check the Library." This GDD is
-the *design-intent* source of truth; the Library is *what the game tells players*.
+**mandatory rule** (CLAUDE.md → "Documentation upkeep"): *after every major change,
+update BOTH this GDD and the Library.* This GDD is the *design-intent* source of truth;
+the Library is *what the game tells players*.
 
 **`GAME_GUIDE.md` is a read-only, auto-generated export of the Library** — not an
 independently-authored doc. After editing `libraryContent.js`, regenerate it with
@@ -587,6 +661,10 @@ third hand-maintained copy.
 
 Ideas from earlier design drafts that are **not** in the game (do not propose against
 them as if they exist): Odd Jobs / Notice Board income, equipment + durability, daily
-missions, fighter age / retirement / Hall of Fame (contradicts the no-end-state
-principle), real-money subscription. **PVP** has frontend groundwork only (an empty
-PVP History card) and no backend — owns this appendix if/when scoped.
+missions, fighter age / retirement (contradicts the no-end-state principle), real-money
+subscription.
+
+**PvP (The Proving Ground) is now implemented** — see §22. It introduces a
+season-scoped, PvP-only Hall of Fame for belt holders; this does not contradict the
+no-end-state principle (the career itself never ends — seasons recur and players
+redistribute, they are never retired).

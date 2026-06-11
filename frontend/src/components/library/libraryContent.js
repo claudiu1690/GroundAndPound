@@ -16,6 +16,7 @@
 export const LIBRARY_CATEGORIES = [
     "Getting Started",
     "Fighting",
+    "The Proving Ground",
     "Training & Gyms",
     "Career",
     "Economy",
@@ -27,6 +28,7 @@ export const LIBRARY_CATEGORIES = [
 export const CATEGORY_COLOR = {
     "Getting Started": "start",
     "Fighting": "fight",
+    "The Proving Ground": "fight",
     "Training & Gyms": "gym",
     "Career": "career",
     "Economy": "economy",
@@ -591,6 +593,75 @@ export const LIBRARY_ARTICLES = [
             "Spending discipline matters. Boosters pay off most during a focused training push toward a stat threshold or promotion. Pre-fight buffs are worth it for a fight you genuinely need to win — a title shot, a grudge match, or a fight you're slightly underdog in. Energy items are for the days you log in to a full bar you can't spend fast enough. Buying everything every day is how you go broke; timing your purchases is how you climb.",
         ],
         keyTakeaway: "One XP Booster active at a time, one Pre-Fight Buff per fight (picked in Camp). Time your spending to the moments that matter instead of buying on autopilot.",
+    },
+
+    // ──────────────────────────────────────────────────────────────
+    // THE PROVING GROUND (PvP)
+    // ──────────────────────────────────────────────────────────────
+    {
+        id: "proving-ground-overview",
+        category: "The Proving Ground",
+        title: "The Proving Ground — PvP, Explained",
+        summary: "What the Proving Ground is, how a PvP fight works, and how it fits alongside your career.",
+        tags: ["pvp", "proving ground", "ladder", "division points", "dp", "gameplan", "defense", "season", "energy"],
+        body: [
+            "The Proving Ground is the game's player-versus-player ladder — a place to test your fighter against other real players' fighters without touching your career. It runs in parallel to the title path: your PvP results never change your PvE rank, tier, or championship, and the other way around. Whatever you've built in training is exactly what fights here.",
+            "PvP is asynchronous — there's no live opponent sitting across from you. You pick a matchmade opponent, choose a gameplan, and the fight resolves instantly against their stored defense. When someone attacks you while you're offline, the game fights on your behalf using your saved defense gameplan. That's the whole loop: attack to climb, defend to hold your spot.",
+            "Every PvP fight costs 15 energy from the same bar you train with, so laddering competes with your career for energy — pick your spots. The matchmaker hands you up to five opponents near your skill and standing; each card flags how tough they are, whether beating them pays a bonus, and whether they're a rival or the current belt holder.",
+            "Before each fight you choose an attack gameplan: Aggressive (leans on STR and SPD), Balanced (no bias), or Counter (leans on FIQ and CHN). Your defense gameplan is set once and reused every time you're attacked, so choose it to match how your stats are built. Because PvP reuses the same stat-driven engine as your career fights, there's no luck-of-the-draw weight advantage — it's a fair contest decided by stats, gameplan, and the season's rules.",
+        ],
+        keyTakeaway: "PvP is a parallel ladder that costs 15 energy a fight. Attack to climb, set a defense gameplan to hold your spot offline — your trained stats decide it.",
+    },
+    {
+        id: "proving-ground-divisions",
+        category: "The Proving Ground",
+        title: "Division Points, Divisions & the Belt",
+        summary: "How DP, the five divisions, promotion shields, rivalries, decay and the seasonal belt work.",
+        tags: ["pvp", "division points", "dp", "divisions", "promotion", "shield", "belt", "rivalry", "decay", "bracket", "streak"],
+        body: [
+            "Your standing in the Proving Ground is one number: Division Points (DP). Win and it climbs, lose and it falls. Your division is read straight off your DP — there are five, each with a floor you sit above and a threshold that promotes you.",
+            {
+                type: "table",
+                headers: ["Division", "DP floor", "Promotes at"],
+                rows: [
+                    ["Prospect", "0", "300"],
+                    ["Contender", "300", "1,200"],
+                    ["Challenger", "1,200", "2,500"],
+                    ["Elite", "2,500", "5,000"],
+                    ["Champion", "5,000", "Top — holds the belt"],
+                ],
+            },
+            "A win that pushes you past your division's promotion threshold promotes you: you move up, your DP resets to the new division's floor, and you receive a Promotion Shield worth three fights of protection — DP losses can't drop you while the shield holds. You never get demoted mid-season. A loss can floor your DP at your current division's bottom, but you keep the division until the season resets.",
+            "A win starts at +120 DP and is shaped by modifiers, in order. Beating the belt holder adds +50. Resolving a rivalry adds +25. Fighting up the rankings pays a bracket bonus — +10% for a 6–10 OVR gap, +25% for an 11–20 gap. The season twist can multiply matching wins. A 3-plus win streak multiplies everything by ×1.25. But hit the same opponent twice in one week and the reward is halved, then quartered — so spread your fights around. Losing as the attacker costs up to −55; defending and losing only costs −28; a win always banks at least +1, and no single loss costs more than −100.",
+            "Rivalries build as you keep beating the same player within a season — the third win 'resolves' the rivalry and pays its +25 bonus. The belt belongs to whoever sits #1 in the Champion division when the season ends (with at least one fight): they're crowned, enter the Hall of Fame, and take the season's biggest reward. And if you go quiet, it costs you — seven days without a PvP fight bleeds −10 DP (Prospects are spared), so check in to defend your climb.",
+        ],
+        keyTakeaway: "DP is everything. Promotions reset you to the new floor with a 3-fight shield, the belt goes to the season-end Champion #1, and a week of inactivity costs DP.",
+    },
+    {
+        id: "proving-ground-seasons",
+        category: "The Proving Ground",
+        title: "Seasons, Twists & Rewards",
+        summary: "How PvP seasons run, what twists do, end-of-season rewards, and the special Open Season 1.",
+        tags: ["pvp", "season", "twist", "rewards", "soft reset", "open season", "cross weight class", "belt", "hall of fame"],
+        body: [
+            "The Proving Ground runs in seasons of 70 days. Each season carries a twist — a rule that rewards a particular way of winning: Blood Sport pays +25% on KO and submission wins, Iron Fist +30% on KOs, Ground War +30% on submissions, The Marathon +20% on decisions, The Contenders switches on streak bonuses sooner, and Iron Circuit is the clean, no-twist baseline. Read the twist when a season opens and lean your gameplan into it.",
+            "When a season ends, everyone who fought at least once is paid by the division they finished in. The belt holder's reward replaces the Champion reward — it doesn't stack on top of it.",
+            {
+                type: "table",
+                headers: ["Final division", "Iron", "Fame", "Energy drinks", "Badge"],
+                rows: [
+                    ["Prospect", "500", "500", "0", "—"],
+                    ["Contender", "1,200", "1,200", "0", "—"],
+                    ["Challenger", "2,500", "2,500", "0", "Challenger"],
+                    ["Elite", "5,000", "5,000", "2", "Elite"],
+                    ["Champion", "10,000", "10,000", "5", "Champion"],
+                    ["Belt holder", "15,000", "15,000", "7", "Belt"],
+                ],
+            },
+            "After rewards, a soft reset drops each player one tier into the next season and sets their DP to that division's floor — so every season is a fresh climb, but finishing high still buys you a head start. The next season is seeded automatically.",
+            "Season 1 is special. Normally each weight class runs its own ladder and crowns its own belt, but at launch there aren't enough players to fill four ladders — so Season 1 is run as a single Open season: every weight class shares one ladder, one belt, and one reward pass. You'll be matched against fighters from other weight classes, and you'll see their real weight class on every screen. It's still a fair fight — the engine decides bouts on stats and OVR, not body weight. When the Open season ends, everyone returns to their own weight class for the normal four-ladder Season 2, carrying their soft-reset standing. The one-of-a-kind Open belt is the prize for being the best fighter in the game, full stop.",
+        ],
+        keyTakeaway: "70-day seasons, each with a twist; rewards scale by final division and soft-reset you one tier for the next. Season 1 is a single Open ladder across all weight classes — one belt for everyone.",
     },
 ];
 
