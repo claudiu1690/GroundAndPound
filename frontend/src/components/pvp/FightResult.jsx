@@ -1,4 +1,4 @@
-import { DIVISIONS, divisionLabel, divisionMeta } from "./pvpConst";
+import { DIVISIONS, divisionLabel, divisionMeta, OPEN_LABEL } from "./pvpConst";
 
 /**
  * Screen 3 — Fight Result.
@@ -26,6 +26,7 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
     beltHolderDpAfter,
     seasonWeeksRemaining,
     seasonNumber,
+    crossWeightClass,
   } = result;
 
   // Derived flat names
@@ -54,13 +55,20 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
     ? fighter.weightClass.charAt(0).toUpperCase() + fighter.weightClass.slice(1)
     : "";
 
+  // Opponent's real weight class — only meaningful in Open seasons
+  const opponentRealWc = crossWeightClass ? defender?.realWeightClass : null;
+
   // Division nav label — show "Before → After" when promoted
   const divNavLabel = promoted
     ? `${divisionLabel(divisionBefore)} → ${divisionLabel(divisionAfter)}`
     : divisionLabel(division);
-  const cardNavRight = weightClassLabel
-    ? `${weightClassLabel} · ${divNavLabel}`
-    : divNavLabel;
+  // In Open seasons the arena spans all classes — show the open label instead
+  // of the viewer's single weight class so it reads as the open arena.
+  const cardNavRight = crossWeightClass
+    ? `${OPEN_LABEL} · ${divNavLabel}`
+    : weightClassLabel
+      ? `${weightClassLabel} · ${divNavLabel}`
+      : divNavLabel;
 
   // DP sign display
   function dpSign(n) {
@@ -232,6 +240,7 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
         {/* Opponent line */}
         <div className="pvp-rh-sub">
           vs {opponentName}
+          {crossWeightClass && opponentRealWc ? ` · ${opponentRealWc}` : ""}
           {opponentDivision ? ` · ${divisionLabel(opponentDivision)}` : ""}
           {defenderWasBeltHolder ? " · 🏆 Belt Holder" : ""}
         </div>

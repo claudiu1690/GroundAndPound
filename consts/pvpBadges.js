@@ -44,7 +44,21 @@ function resolvePvpBadge(id) {
     let m = id.match(/^pvp_belt_s(\d+)_([a-z]+)$/);
     if (m) {
         const season = Number(m[1]);
-        const wc = titleCase(m[2]);
+        const rawWc = m[2];
+        const wc = titleCase(rawWc);
+        // Open (cross-weight-class) season belt has its own copy.
+        if (rawWc === "open") {
+            return {
+                id,
+                name: `Open Proving Ground Belt — Season ${season}`,
+                icon: "Crown",
+                color: "#FFD700",
+                description: `Held the Open (all weight classes) Proving Ground belt at the end of Season ${season}.`,
+                category: "proving_ground",
+                season,
+                weightClass: wc,
+            };
+        }
         return {
             id,
             name: `${wc} Belt — Season ${season}`,

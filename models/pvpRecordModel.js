@@ -1,10 +1,19 @@
 const mongoose = require("mongoose");
-const { WEIGHT_CLASSES_PVP, DIVISION_KEYS, GAMEPLAN_KEYS } = require("../consts/pvpConfig");
+const { SEASON_WEIGHT_CLASSES, WEIGHT_CLASSES_PVP, DIVISION_KEYS, GAMEPLAN_KEYS } = require("../consts/pvpConfig");
 
 const pvpRecordSchema = new mongoose.Schema({
     playerId: { type: mongoose.Schema.Types.ObjectId, ref: "Fighter", required: true },
     seasonId: { type: mongoose.Schema.Types.ObjectId, ref: "Season", required: true },
-    weightClass: { type: String, enum: WEIGHT_CLASSES_PVP, required: true },
+    // SEASON-DERIVED weightClass — it equals the season's weightClass, NOT necessarily
+    // the fighter's real class. In an Open season this is "Open" for EVERY record. This
+    // is load-bearing: every pool/ladder/rank/belt/decay/fight-validation query filters
+    // on it to merge or partition the pool. Do NOT "fix" it to the fighter's real class —
+    // use `realWeightClass` (below) for the fighter's true class instead.
+    weightClass: { type: String, enum: SEASON_WEIGHT_CLASSES, required: true },
+    // The fighter's REAL weight class at the time of record creation. Used only for the
+    // Open→per-WC season-end redistribution and the realWeightClass DTO surface; never
+    // for pool filtering. Null on legacy records (predating this field).
+    realWeightClass: { type: String, enum: WEIGHT_CLASSES_PVP, default: null },
     division: { type: String, enum: DIVISION_KEYS, default: "prospect" },
     dp: { type: Number, default: 0, min: 0 },
     peakDp: { type: Number, default: 0 },
@@ -36,5 +45,7 @@ pvpRecordSchema.index({ seasonId: 1, weightClass: 1, dp: -1 });
 pvpRecordSchema.index({ seasonId: 1, weightClass: 1, overallRating: 1 });
 // Decay batch scan.
 pvpRecordSchema.index({ seasonId: 1, lastFightAt: 1 });
+// Open→per-WC season-end redistribution: group an Open season's records by real class.
+pvpRecordSchema.index({ seasonId: 1, realWeightClass: 1 });
 
 module.exports = mongoose.model("PVPRecord", pvpRecordSchema);

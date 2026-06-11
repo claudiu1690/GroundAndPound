@@ -57,7 +57,7 @@ async function getOpponents(fighter, season, myRecord) {
     // Resolve names.
     const ids = candidates.map((c) => c.playerId);
     const fighters = await Fighter.find({ _id: { $in: ids } })
-        .select("firstName lastName nickname overallRating")
+        .select("firstName lastName nickname overallRating weightClass")
         .lean();
     const fighterMap = new Map(fighters.map((f) => [String(f._id), f]));
 
@@ -96,6 +96,7 @@ async function getOpponents(fighter, season, myRecord) {
             divisionColor: meta.color,
             dp: c.dp,
             overallRating: cOvr,
+            realWeightClass: f ? f.weightClass : (c.realWeightClass || null),
             difficulty,
             bracketBonus: bracketTier(myOvr, cOvr),
             isBeltHolder: beltHolderId != null && String(c.playerId) === beltHolderId,

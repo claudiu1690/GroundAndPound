@@ -1,10 +1,11 @@
 const mongoose = require("mongoose");
-const { WEIGHT_CLASSES_PVP } = require("../consts/pvpConfig");
+const { SEASON_WEIGHT_CLASSES } = require("../consts/pvpConfig");
 
 const hallOfFameSchema = new mongoose.Schema({
     seasonId: { type: mongoose.Schema.Types.ObjectId, ref: "Season", required: true },
     seasonNumber: { type: Number },
-    weightClass: { type: String, enum: WEIGHT_CLASSES_PVP },
+    // SEASON-DERIVED — "Open" for an Open season's belt entry.
+    weightClass: { type: String, enum: SEASON_WEIGHT_CLASSES },
     beltHolderId: { type: mongoose.Schema.Types.ObjectId, ref: "Fighter" },
     finalDp: { type: Number, default: 0 },
     record: {

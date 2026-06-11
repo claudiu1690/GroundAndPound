@@ -3,6 +3,7 @@ import { RefreshCw, Zap } from "lucide-react";
 import { usePvpOpponents } from "../../../hooks/usePvpOpponents";
 import { PreFight } from "../PreFight";
 import { FightResult } from "../FightResult";
+import { seasonWeightClassLabel } from "../pvpConst";
 
 function DiffPill({ difficulty }) {
   const map = {
@@ -88,7 +89,7 @@ export function FightTab({ fighter, season, myRecord, onFightResolved }) {
 
       <div className="pvp-fight-header">
         <div className="pvp-section-lbl" style={{ marginBottom: 0 }}>
-          Available Opponents · {season?.weightClass}
+          Available Opponents · {seasonWeightClassLabel(season)}
         </div>
         <button
           className="pvp-refresh-btn"
@@ -141,6 +142,9 @@ export function FightTab({ fighter, season, myRecord, onFightResolved }) {
                     </div>
                     <div className="pvp-mc-meta">
                       <span>{c.wins ?? 0}W · {c.losses ?? 0}L this season</span>
+                      {season?.crossWeightClass && c.realWeightClass && (
+                        <span className="pvp-wc-pill">{c.realWeightClass}</span>
+                      )}
                     </div>
                     {(beltNote || rivalNote || bracketNote) && (
                       <div className={`pvp-mc-bonus ${c.isRival ? "pvp-mc-bonus-amb" : ""}`}>

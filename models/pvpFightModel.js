@@ -1,9 +1,10 @@
 const mongoose = require("mongoose");
-const { WEIGHT_CLASSES_PVP, GAMEPLAN_KEYS } = require("../consts/pvpConfig");
+const { SEASON_WEIGHT_CLASSES, GAMEPLAN_KEYS } = require("../consts/pvpConfig");
 
 const pvpFightSchema = new mongoose.Schema({
     seasonId: { type: mongoose.Schema.Types.ObjectId, ref: "Season", required: true },
-    weightClass: { type: String, enum: WEIGHT_CLASSES_PVP, required: true },
+    // SEASON-DERIVED — equals the season's weightClass ("Open" in an Open season).
+    weightClass: { type: String, enum: SEASON_WEIGHT_CLASSES, required: true },
     attackerId: { type: mongoose.Schema.Types.ObjectId, ref: "Fighter", required: true },
     defenderId: { type: mongoose.Schema.Types.ObjectId, ref: "Fighter", required: true },
     attackerGameplan: { type: String, enum: GAMEPLAN_KEYS },

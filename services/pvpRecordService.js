@@ -51,7 +51,11 @@ async function getOrCreateRecord(fighterId, season, fighter = null) {
         record = await PVPRecord.create({
             playerId: fighterId,
             seasonId: season._id,
+            // SEASON-DERIVED (load-bearing): equals season.weightClass — "Open" in an
+            // Open season. Pool filters depend on this; do not change it.
             weightClass: season.weightClass,
+            // The fighter's REAL class — used only for Open→per-WC redistribution.
+            realWeightClass: f.weightClass || null,
             division: "prospect",
             dp: 0,
             peakDp: 0,
@@ -118,6 +122,9 @@ function shapeRecord(record, fighter, opts = {}) {
         seasonId: String(record.seasonId),
         seasonNumber: season ? season.seasonNumber : (opts.seasonNumber ?? null),
         weightClass: record.weightClass,
+        // The fighter's real class (drives the Open-season WC pill on the "you" sticky row).
+        // Additive; non-Open consumers ignore it.
+        realWeightClass: record.realWeightClass || null,
         division: record.division,
         divisionColor: meta.color,
         dp: record.dp,
@@ -207,7 +214,8 @@ async function getJustEndedBlock(playerId, weightClass) {
     // Most-recent unacknowledged, eligible record whose season has ended.
     const candidates = await PVPRecord.find({
         playerId,
-        weightClass,
+        // Match the real-WC arg OR an ended Open record (which carries weightClass:"Open").
+        weightClass: { $in: [weightClass, "Open"] },
         seasonEndSeen: false,
         $expr: { $gte: [{ $add: ["$wins", "$losses"] }, 1] },
     }).sort({ createdAt: -1 }).limit(10).lean();

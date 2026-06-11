@@ -15,10 +15,16 @@ const pvpSeasonService = require("../services/pvpSeasonService");
 const pvpRecordService = require("../services/pvpRecordService");
 const pvpMatchmakingService = require("../services/pvpMatchmakingService");
 const pvpFightService = require("../services/pvpFightService");
-const { WEIGHT_CLASSES_PVP, TWISTS, divisionMeta, DIVISIONS } = require("../consts/pvpConfig");
+const { WEIGHT_CLASSES_PVP, SEASON_WEIGHT_CLASSES, OPEN_WEIGHT_CLASS, TWISTS, divisionMeta, DIVISIONS } = require("../consts/pvpConfig");
 
 function isValidWeightClass(wc) {
     return WEIGHT_CLASSES_PVP.includes(wc);
+}
+
+// Ladder route param may be a real class OR the "Open" sentinel (the frontend keys the
+// ladder off season.weightClass, which is "Open" for an Open season).
+function isValidLadderWeightClass(wc) {
+    return SEASON_WEIGHT_CLASSES.includes(wc);
 }
 
 function clampLimit(raw, def = 25, max = 100) {
@@ -36,6 +42,7 @@ function shapeSeasonBlock(season, beltHolderName = null) {
     } else if (typeof twist.streakFrom === "number") {
         twistEffect = `Streak bonus from ${twist.streakFrom} wins`;
     }
+    const crossWeightClass = !!(season.config && season.config.crossWeightClass);
     return {
         id: String(season._id),
         seasonNumber: season.seasonNumber,
@@ -44,6 +51,8 @@ function shapeSeasonBlock(season, beltHolderName = null) {
         twistName: twist.name || season.twist,
         twistEffect,
         weightClass: season.weightClass,
+        crossWeightClass,
+        weightClassLabel: crossWeightClass ? "Open · All Weight Classes" : season.weightClass,
         status: season.status,
         beltHolderId: season.beltHolderId ? String(season.beltHolderId) : null,
         beltHolderName,
@@ -71,7 +80,7 @@ function handleError(res, err) {
 async function getLadder(req, res) {
     try {
         const { weightClass, seasonId } = req.params;
-        if (!isValidWeightClass(weightClass)) {
+        if (!isValidLadderWeightClass(weightClass)) {
             return res.status(400).json({ message: "Invalid weight class.", code: "bad_weight_class" });
         }
         if (!mongoose.isValidObjectId(seasonId)) {
@@ -84,7 +93,9 @@ async function getLadder(req, res) {
 
         const page = Math.max(1, parseInt(req.query.page, 10) || 1);
         const limit = clampLimit(req.query.limit, 25, 100);
-        const filter = { seasonId: season._id, weightClass };
+        // Use the RESOLVED season's weightClass ("Open" for an Open season) so the merged
+        // ladder is returned. The route param is only validated above as the entry class.
+        const filter = { seasonId: season._id, weightClass: season.weightClass };
         const total = await PVPRecord.countDocuments(filter);
         const records = await PVPRecord.find(filter)
             .sort({ dp: -1 })
@@ -94,10 +105,11 @@ async function getLadder(req, res) {
 
         const ids = records.map((r) => r.playerId);
         const fighters = await Fighter.find({ _id: { $in: ids } })
-            .select("firstName lastName nickname").lean();
+            .select("firstName lastName nickname weightClass").lean();
         const nameMap = new Map(fighters.map((f) => [String(f._id), pvpRecordService.fighterName(f)]));
+        const wcMap = new Map(fighters.map((f) => [String(f._id), f.weightClass]));
 
-        const beltId = await pvpRecordService.currentBeltHolderId(season._id, weightClass);
+        const beltId = await pvpRecordService.currentBeltHolderId(season._id, season.weightClass);
         const me = String(req.user.fighterId);
 
         const rows = records.map((r, i) => {
@@ -113,6 +125,7 @@ async function getLadder(req, res) {
                 losses: r.losses,
                 winStreak: r.winStreak,
                 overallRating: r.overallRating,
+                realWeightClass: wcMap.get(String(r.playerId)) || r.realWeightClass || null,
                 isBeltHolder: beltId != null && String(r.playerId) === beltId,
                 isYou: String(r.playerId) === me,
             };
@@ -179,8 +192,8 @@ async function getOpponents(req, res) {
         const fighter = await Fighter.findById(req.user.fighterId);
         if (!fighter) return res.status(404).json({ message: "Fighter not found.", code: "fighter_not_found" });
 
-        const season = await Season.findOne({ weightClass: fighter.weightClass, status: "active" });
-        if (!season) {
+        const season = await pvpSeasonService.getCurrentSeasonForFighter(fighter.weightClass);
+        if (!season || season.status !== "active") {
             return res.status(409).json({ message: "No active season for your weight class.", code: "season_not_active" });
         }
 
@@ -263,10 +276,18 @@ async function getHof(req, res) {
         const limit = clampLimit(req.query.limit, 20, 100);
         const filter = {};
         if (weightClass) {
-            if (!isValidWeightClass(weightClass)) {
+            // Accept any SEASON weight class, including the "Open" sentinel (the frontend
+            // HoF tab passes season.weightClass, which is "Open" during an Open season).
+            if (!SEASON_WEIGHT_CLASSES.includes(weightClass)) {
                 return res.status(400).json({ message: "Invalid weight class.", code: "bad_weight_class" });
             }
-            filter.weightClass = weightClass;
+            // Open-season HoF entries (weightClass:"Open") surface for EVERY viewer regardless
+            // of their filter, so a per-WC filter always sees the Open belt entry too. When the
+            // filter already IS "Open", just match Open (dedupe).
+            const classes = weightClass === OPEN_WEIGHT_CLASS
+                ? [OPEN_WEIGHT_CLASS]
+                : [weightClass, OPEN_WEIGHT_CLASS];
+            filter.weightClass = { $in: classes };
         }
         const entries = await HallOfFame.find(filter)
             .sort({ seasonNumber: -1 })
@@ -302,7 +323,7 @@ async function getCurrentSeason(req, res) {
         if (!isValidWeightClass(weightClass)) {
             return res.status(400).json({ message: "Invalid weight class.", code: "bad_weight_class" });
         }
-        const season = await pvpSeasonService.getCurrentSeason(weightClass);
+        const season = await pvpSeasonService.getCurrentSeasonForFighter(weightClass);
         if (!season) {
             return res.json({ season: null, yourRecord: null, beltUnclaimed: true, poolCount: 0 });
         }
@@ -312,11 +333,18 @@ async function getCurrentSeason(req, res) {
         const fighter = await Fighter.findById(req.user.fighterId)
             .select("firstName lastName nickname weightClass overallRating").lean();
 
-        if (fighter && fighter.weightClass === weightClass) {
+        // The resolved season governs eligibility: in an Open season every fighter belongs
+        // regardless of real class, so only gate the per-WC case on the route param matching
+        // the actor's real class.
+        const eligible = fighter && (
+            pvpSeasonService.isCrossWeightClass(season) || fighter.weightClass === weightClass
+        );
+
+        if (eligible) {
             const record = await PVPRecord.findOne({ playerId: req.user.fighterId, seasonId: season._id });
             if (record) {
                 const rank = await pvpRecordService.computeRank(record);
-                const beltId = await pvpRecordService.currentBeltHolderId(season._id, weightClass);
+                const beltId = await pvpRecordService.currentBeltHolderId(season._id, season.weightClass);
                 yourRecord = pvpRecordService.shapeRecord(record, fighter, {
                     season,
                     rank,
@@ -325,7 +353,7 @@ async function getCurrentSeason(req, res) {
                 });
                 poolCount = await PVPRecord.countDocuments({
                     seasonId: season._id,
-                    weightClass,
+                    weightClass: season.weightClass,
                     division: record.division,
                 });
             }

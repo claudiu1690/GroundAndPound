@@ -1,4 +1,5 @@
 import { Users } from "lucide-react";
+import { seasonWeightClassLabel } from "./pvpConst";
 
 /**
  * Screen 7 — shown in LadderTab when poolCount < 5.
@@ -26,7 +27,7 @@ export function EmptyState({ season, poolCount = 0, beltUnclaimed = true, onFigh
 
       <div className="pvp-empty-body">
         <div className="pvp-pool-card">
-          <div className="pvp-pc-title">Current Player Pool · {season?.weightClass ?? ""}</div>
+          <div className="pvp-pc-title">Current Player Pool · {seasonWeightClassLabel(season) ?? ""}</div>
           <div className="pvp-pc-row">
             <span className="pvp-pc-lbl">Active fighters</span>
             <span className="pvp-pc-val pvp-pc-val-grn">{poolCount}</span>

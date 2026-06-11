@@ -1,5 +1,5 @@
 import { X, RotateCcw } from "lucide-react";
-import { divisionColor, divisionLabel } from "./pvpConst";
+import { divisionColor, divisionLabel, OPEN_LABEL, seasonWeightClassLabel } from "./pvpConst";
 
 /**
  * Screen 5 — Season End Modal.
@@ -26,6 +26,9 @@ export function SeasonEndModal({ lastSeasonRecord, nextSeason, onClose, onViewLe
 
   // Prefer the API-embedded color; fall back to the local mirror.
   const divCol = apiDivColor || divisionColor(division);
+  // The ended season's weight-class identity — use OPEN_LABEL when it was an
+  // Open season (identified by weightClass === "Open" on the record).
+  const endedSeasonWcLabel = weightClass === "Open" ? OPEN_LABEL : weightClass;
   // Reset landing spot comes directly from the backend — no local SOFT_RESET lookup needed.
   const resetDiv = newDivision ?? "prospect";
   const resetColor = divisionColor(resetDiv);
@@ -49,7 +52,7 @@ export function SeasonEndModal({ lastSeasonRecord, nextSeason, onClose, onViewLe
             <div className="pvp-modal-title">
               Season {seasonNumber}{seasonName ? ` — ${seasonName}` : ""}
             </div>
-            <div className="pvp-modal-season">Final results · {weightClass} Division</div>
+            <div className="pvp-modal-season">Final results · {endedSeasonWcLabel} Division</div>
           </div>
           <button className="pvp-modal-close" onClick={onClose} aria-label="Close">
             <X size={14} strokeWidth={2} />
@@ -169,7 +172,7 @@ export function SeasonEndModal({ lastSeasonRecord, nextSeason, onClose, onViewLe
                   Season {nextSeason.seasonNumber}{nextSeason.name ? ` — ${nextSeason.name}` : ""}
                 </div>
               </div>
-              <div className="pvp-ns-season-name">10 weeks · {weightClass} · Belt unclaimed</div>
+              <div className="pvp-ns-season-name">10 weeks · {seasonWeightClassLabel(nextSeason) ?? weightClass} · Belt unclaimed</div>
               {nextSeason.twistName && (
                 <div className="pvp-ns-twist">
                   <div className="pvp-ns-twist-text">

@@ -1,7 +1,7 @@
 import { Shield, Flame, Swords } from "lucide-react";
 import { usePvpLadder } from "../../../hooks/usePvpLadder";
 import { EmptyState } from "../EmptyState";
-import { divisionColor } from "../pvpConst";
+import { divisionColor, seasonWeightClassLabel } from "../pvpConst";
 
 function DivBadge({ division, color }) {
   const c = color || divisionColor(division);
@@ -51,7 +51,7 @@ export function LadderTab({ season, yourRecord, poolCount, myFighterId, onFight 
             <div className="pvp-pos-info">
               <div className="pvp-pos-name">{yourRecord.name}</div>
               <div className="pvp-pos-sub">
-                {wc} · #{yourRecord.rank ?? "—"} in division
+                {seasonWeightClassLabel(season) ?? wc} · #{yourRecord.rank ?? "—"} in division
               </div>
             </div>
             <div className="pvp-pos-dp">
@@ -127,7 +127,7 @@ export function LadderTab({ season, yourRecord, poolCount, myFighterId, onFight 
       {/* Leaderboard */}
       <div className="pvp-lb-card">
         <div className="pvp-lb-head">
-          <div className="pvp-lb-title">{wc} Ladder</div>
+          <div className="pvp-lb-title">{seasonWeightClassLabel(season) ?? wc} Ladder</div>
           <div className="pvp-lb-sub">
             {loading ? "Loading…" : `${data?.total ?? 0} fighters`}
           </div>
@@ -162,6 +162,9 @@ export function LadderTab({ season, yourRecord, poolCount, myFighterId, onFight 
                       {isYou && <span className="pvp-you-tag">You</span>}
                     </div>
                     <DivBadge division={row.division} color={row.divisionColor} />
+                    {season?.crossWeightClass && row.realWeightClass && (
+                      <span className="pvp-wc-pill">{row.realWeightClass}</span>
+                    )}
                     <div className={`pvp-lb-dp ${isYou ? "pvp-lb-dp-bright" : ""}`}>
                       {(row.dp ?? 0).toLocaleString()}
                     </div>
@@ -181,6 +184,9 @@ export function LadderTab({ season, yourRecord, poolCount, myFighterId, onFight 
                     {yourRecord.name} <span className="pvp-you-tag">You</span>
                   </div>
                   <DivBadge division={yourRecord.division} color={yourRecord.divisionColor} />
+                  {season?.crossWeightClass && yourRecord.realWeightClass && (
+                    <span className="pvp-wc-pill">{yourRecord.realWeightClass}</span>
+                  )}
                   <div className="pvp-lb-dp pvp-lb-dp-bright">{(yourRecord.dp ?? 0).toLocaleString()}</div>
                 </div>
               </>

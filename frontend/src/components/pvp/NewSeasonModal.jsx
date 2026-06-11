@@ -1,4 +1,4 @@
-import { divisionLabel, divisionColor } from "./pvpConst";
+import { divisionLabel, divisionColor, seasonWeightClassLabel, OPEN_LABEL } from "./pvpConst";
 
 /**
  * Screen 6 — New Season Start modal.
@@ -32,7 +32,7 @@ export function NewSeasonModal({ season, newDivision, newDp, previousDivision, o
             {season.name ? ` — ${season.name}` : ""}
           </div>
           <div className="pvp-ns-sub">
-            {weeksLeft} weeks · {season.weightClass} · Starting from {divisionLabel(resetDiv)}
+            {weeksLeft} weeks · {seasonWeightClassLabel(season)} · Starting from {divisionLabel(resetDiv)}
           </div>
 
           {/* Belt unclaimed */}
@@ -41,7 +41,7 @@ export function NewSeasonModal({ season, newDivision, newDp, previousDivision, o
             <div className="pvp-nbu-info">
               <div className="pvp-nbu-title">Belt Unclaimed — Season {season.seasonNumber}</div>
               <div className="pvp-nbu-sub">
-                The {season.weightClass} belt is vacant. First fighter to reach #1 Champion at season end claims it.
+                The {seasonWeightClassLabel(season)} belt is vacant. First fighter to reach #1 Champion at season end claims it.
               </div>
             </div>
           </div>

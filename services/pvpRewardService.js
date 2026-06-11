@@ -74,8 +74,13 @@ function applyRewardBundle(fighter, reward, { badgeId, context, feedType, feedDe
  * @returns {{ ended:boolean, rewarded:number, beltHolderId:(string|null) }}
  */
 async function finalizeSeason(season) {
-    // ── Idempotency guard 1: already ended. ──────────────────────────────────
-    if (season.status === "ended") {
+    // ── Idempotency guard 1: fully complete (ended AND redistributed). ───────
+    // An ended-but-not-yet-redistributed season FALLS THROUGH and re-runs: a crash
+    // between status="ended" and redistribution completing would otherwise strand the
+    // season (the active-season sweep would never re-pick it). Every step below is
+    // idempotent — rewards skip rewardedAt, HoF/seed/record creates are dup-key guarded —
+    // so re-running is safe. redistributedAt is the single completion marker.
+    if (season.status === "ended" && season.redistributedAt) {
         return { ended: false, rewarded: 0, beltHolderId: season.beltHolderId ? String(season.beltHolderId) : null };
     }
 
@@ -165,18 +170,42 @@ async function finalizeSeason(season) {
     await season.save();
 
     // ── Soft reset + seed N+1 (best-effort; failures logged, not fatal). ─────
-    try {
-        await softReset(season, ladder);
-    } catch (err) {
-        console.error(`[PVP finalize] soft reset failed for season ${season._id}:`, err.message);
+    if (pvpSeasonService.isCrossWeightClass(season)) {
+        // Open season → redistribute everyone into their REAL weight class for the
+        // normal per-WC next cycle. Seed the 4 per-WC seasons first (Map<realWC, doc>),
+        // then per-record soft-reset into the matching target.
+        try {
+            const nextSeasons = await pvpSeasonService.seedPerWcCycle(
+                season.seasonNumber + 1,
+                season.endDate,
+                "upcoming"
+            );
+            await softResetOpen(season, ladder, nextSeasons);
+        } catch (err) {
+            console.error(`[PVP finalize] open redistribution failed for season ${season._id}:`, err.message);
+        }
+    } else {
+        try {
+            await softReset(season, ladder);
+        } catch (err) {
+            console.error(`[PVP finalize] soft reset failed for season ${season._id}:`, err.message);
+        }
+        try {
+            const startDate = season.endDate;
+            const nextTwist = pvpSeasonService.pickTwistForSeason(season.seasonNumber + 1);
+            await pvpSeasonService.seedSeason(season.seasonNumber + 1, season.weightClass, nextTwist, startDate, "upcoming");
+        } catch (err) {
+            console.error(`[PVP finalize] seed N+1 failed for season ${season._id}:`, err.message);
+        }
     }
-    try {
-        const startDate = season.endDate;
-        const nextTwist = pvpSeasonService.pickTwistForSeason(season.seasonNumber + 1);
-        await pvpSeasonService.seedSeason(season.seasonNumber + 1, season.weightClass, nextTwist, startDate, "upcoming");
-    } catch (err) {
-        console.error(`[PVP finalize] seed N+1 failed for season ${season._id}:`, err.message);
-    }
+
+    // ── Completion marker. ONLY set after redistribution + N+1 seeding ran. ──
+    // If any of the above threw and was swallowed (best-effort), the partial state is
+    // still recoverable because the inner creates are dup-key/rewardedAt guarded — but
+    // we only stamp redistributedAt here, so a hard crash before this line leaves the
+    // season re-runnable on the next sweep.
+    season.redistributedAt = new Date();
+    await season.save();
 
     return { ended: true, rewarded, beltHolderId };
 }
@@ -217,6 +246,9 @@ async function softResetInto(season, nextSeason, ladder) {
                 playerId: record.playerId,
                 seasonId: nextSeason._id,
                 weightClass: nextSeason.weightClass,
+                // For a per-WC next season, nextSeason.weightClass IS the real class, so
+                // carrying it forward (or the record's own) is always correct.
+                realWeightClass: record.realWeightClass || nextSeason.weightClass,
                 division: targetDivision,
                 dp,
                 peakDp: 0,
@@ -239,4 +271,69 @@ async function softResetInto(season, nextSeason, ladder) {
     }
 }
 
-module.exports = { finalizeSeason, softReset, applyRewardBundle, awardBadge, hasFought };
+/**
+ * Open-season redistribution: spread an ended Open season's records into the per-WC
+ * next-cycle seasons by each player's REAL weight class. Mirrors softResetInto but the
+ * target season is chosen per-record (not shared). Idempotent — re-running against an
+ * already-redistributed season hits the {playerId,seasonId} unique index and skips.
+ *
+ * @param {import("mongoose").Document} openSeason the ended Open season
+ * @param {Array} ladder optional pre-loaded records for openSeason
+ * @param {Map<string, object>} nextSeasons Map<realWeightClass, seasonDoc> from seedPerWcCycle
+ */
+async function softResetOpen(openSeason, ladder, nextSeasons) {
+    const records = ladder || (await PVPRecord.find({ seasonId: openSeason._id }));
+    for (const record of records) {
+        // Resolve the player's real weight class: prefer the stamped field, else look up
+        // the live fighter (covers legacy records that predate realWeightClass).
+        let realWc = record.realWeightClass;
+        if (!realWc) {
+            try {
+                // eslint-disable-next-line no-await-in-loop
+                const f = await Fighter.findById(record.playerId).select("weightClass").lean();
+                realWc = f ? f.weightClass : null;
+            } catch (err) {
+                console.error(`[PVP open reset] fighter load failed for ${record.playerId}:`, err.message);
+                continue;
+            }
+        }
+        if (!realWc) continue; // deleted fighter / unknown class — nothing to redistribute into.
+
+        const target = nextSeasons.get(realWc);
+        if (!target) {
+            console.error(`[PVP open reset] no target season for class "${realWc}" (player ${record.playerId}) — skipped.`);
+            continue;
+        }
+
+        const targetDivision = SOFT_RESET[record.division] || "prospect";
+        const dp = divisionFloor(targetDivision);
+        try {
+            // eslint-disable-next-line no-await-in-loop
+            await PVPRecord.create({
+                playerId: record.playerId,
+                seasonId: target._id,
+                weightClass: target.weightClass, // REAL WC (e.g. "Middleweight"), NOT "Open".
+                realWeightClass: realWc,
+                division: targetDivision,
+                dp,
+                peakDp: 0,
+                overallRating: record.overallRating,
+                wins: 0,
+                losses: 0,
+                winStreak: 0,
+                longestStreak: 0,
+                defenseGameplan: record.defenseGameplan,
+                promotionShield: 0,
+                lastFightAt: null,
+                lastActiveAt: new Date(),
+            });
+        } catch (err) {
+            if (!(err && err.code === 11000)) {
+                console.error(`[PVP open reset] create failed for player ${record.playerId}:`, err.message);
+            }
+            // dup-key → already redistributed, skip (re-run safe).
+        }
+    }
+}
+
+module.exports = { finalizeSeason, softReset, softResetOpen, applyRewardBundle, awardBadge, hasFought };

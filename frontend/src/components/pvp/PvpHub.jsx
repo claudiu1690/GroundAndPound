@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Zap } from "lucide-react";
 import { usePvpSeason } from "../../hooks/usePvpSeason";
+import { OPEN_LABEL } from "./pvpConst";
 import { usePvpDefenseResults } from "../../hooks/usePvpDefenseResults";
 import { LadderTab } from "./tabs/LadderTab";
 import { FightTab } from "./tabs/FightTab";
@@ -183,6 +184,11 @@ export function PvpHub({ fighter, onNavigate }) {
                   {weeksLeft !== null && (
                     <span style={{ fontSize: 12, color: "#AAAAAA" }}>
                       {weeksLeft} week{weeksLeft !== 1 ? "s" : ""} remaining
+                    </span>
+                  )}
+                  {season?.crossWeightClass && (
+                    <span className="pvp-open-pill">
+                      {OPEN_LABEL}
                     </span>
                   )}
                   {season?.twistName && season.twistName !== "Iron Circuit" && (

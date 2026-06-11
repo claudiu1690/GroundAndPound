@@ -8,6 +8,7 @@
 const Season = require("../models/seasonModel");
 const {
     WEIGHT_CLASSES_PVP,
+    OPEN_WEIGHT_CLASS,
     TWIST_KEYS,
     TWISTS,
     SEASON_LENGTH_DAYS,
@@ -37,14 +38,43 @@ function addDays(date, days) {
     return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 }
 
+/** Is this an Open (cross-weight-class) season? */
+function isCrossWeightClass(season) {
+    return !!(season && season.config && season.config.crossWeightClass);
+}
+
 /**
- * Resolve the "current" season for a weight class: the active one, else the next
- * upcoming one (so the hub can show a countdown), else null.
+ * Resolve the season a fighter of `realWeightClass` plays in, with Open taking
+ * precedence over the per-WC season. Precedence (first match wins):
+ *   1. active Open season
+ *   2. active per-WC season for the fighter's real class
+ *   3. upcoming Open season (so the hub can show a countdown)
+ *   4. upcoming per-WC season
+ * Returns null if none exist.
+ */
+async function getCurrentSeasonForFighter(realWeightClass) {
+    const activeOpen = await Season.findOne({ weightClass: OPEN_WEIGHT_CLASS, status: "active" })
+        .sort({ seasonNumber: -1 });
+    if (activeOpen) return activeOpen;
+
+    const activeWc = await Season.findOne({ weightClass: realWeightClass, status: "active" })
+        .sort({ seasonNumber: -1 });
+    if (activeWc) return activeWc;
+
+    const upcomingOpen = await Season.findOne({ weightClass: OPEN_WEIGHT_CLASS, status: "upcoming" })
+        .sort({ startDate: 1 });
+    if (upcomingOpen) return upcomingOpen;
+
+    return Season.findOne({ weightClass: realWeightClass, status: "upcoming" }).sort({ startDate: 1 });
+}
+
+/**
+ * Resolve the "current" season for a weight class. Alias kept for existing callers —
+ * delegates to getCurrentSeasonForFighter so Open seasons take precedence. When no Open
+ * season exists this returns the per-WC season exactly as before.
  */
 async function getCurrentSeason(weightClass) {
-    const active = await Season.findOne({ weightClass, status: "active" }).sort({ seasonNumber: -1 });
-    if (active) return active;
-    return Season.findOne({ weightClass, status: "upcoming" }).sort({ startDate: 1 });
+    return getCurrentSeasonForFighter(weightClass);
 }
 
 async function getSeasonById(seasonId) {
@@ -57,7 +87,7 @@ async function getSeasonById(seasonId) {
  * @param {Date} startDate
  * @param {"upcoming"|"active"} status
  */
-async function seedSeason(seasonNumber, weightClass, twist, startDate, status = "upcoming") {
+async function seedSeason(seasonNumber, weightClass, twist, startDate, status = "upcoming", config = {}) {
     const start = startDate instanceof Date ? startDate : new Date(startDate);
     const end = addDays(start, SEASON_LENGTH_DAYS);
     const resolvedTwist = twist || "iron_circuit";
@@ -70,6 +100,7 @@ async function seedSeason(seasonNumber, weightClass, twist, startDate, status = 
             startDate: start,
             endDate: end,
             status,
+            config: { crossWeightClass: !!(config && config.crossWeightClass) },
         });
         return doc;
     } catch (err) {
@@ -98,10 +129,34 @@ async function seedAllForCycle(seasonNumber, twist, startDate, status = "active"
     const out = [];
     for (const wc of WEIGHT_CLASSES_PVP) {
         // eslint-disable-next-line no-await-in-loop
-        const doc = await seedSeason(seasonNumber, wc, chosenTwist, startDate, status);
+        const doc = await seedSeason(seasonNumber, wc, chosenTwist, startDate, status, {});
         out.push(doc);
     }
     return out;
+}
+
+/**
+ * Seed a single Open (cross-weight-class) season — one merged ladder for all classes.
+ * Idempotent via {weightClass:"Open", seasonNumber} unique index.
+ */
+async function seedOpenSeason(seasonNumber, twist, startDate, status = "active") {
+    return seedSeason(seasonNumber, OPEN_WEIGHT_CLASS, twist, startDate, status, { crossWeightClass: true });
+}
+
+/**
+ * Seed the 4 per-weight-class seasons for a cycle and RETURN a Map<realWeightClass,
+ * seasonDoc> so the Open→per-WC redistribution can resolve each player's target. Twist
+ * is the deterministic rotation pick for the season number. Idempotent per-WC.
+ */
+async function seedPerWcCycle(seasonNumber, startDate, status = "upcoming") {
+    const chosenTwist = seasonNumber <= 1 ? "iron_circuit" : pickTwistForSeason(seasonNumber);
+    const map = new Map();
+    for (const wc of WEIGHT_CLASSES_PVP) {
+        // eslint-disable-next-line no-await-in-loop
+        const doc = await seedSeason(seasonNumber, wc, chosenTwist, startDate, status, {});
+        if (doc) map.set(wc, doc);
+    }
+    return map;
 }
 
 /**
@@ -109,7 +164,9 @@ async function seedAllForCycle(seasonNumber, twist, startDate, status = "active"
  *  Phase 1: end every active season past its endDate (delegates to pvpRewardService.finalizeSeason).
  *  Phase 2: start every upcoming season whose startDate has passed.
  * Idempotent: each phase re-queries by status, and finalizeSeason is itself idempotent.
- * @returns {{ ended:number, started:number, failed:number }}
+ * Phase 1 also recovers ended-but-unredistributed seasons (crash recovery) — counted
+ * separately as `recovered`.
+ * @returns {{ ended:number, started:number, failed:number, recovered:number }}
  */
 async function runSeasonTransitionSweep(now = new Date()) {
     const pvpRewardService = require("./pvpRewardService");
@@ -117,13 +174,37 @@ async function runSeasonTransitionSweep(now = new Date()) {
     let started = 0;
     let failed = 0;
 
-    // Phase 1 — end due seasons.
+    // Phase 1 — end due seasons + recover stranded finalizes.
+    //   (a) active seasons past their endDate (normal end).
+    //   (b) ended-but-unredistributed seasons (a crash left finalize half-done; the
+    //       redistributedAt sentinel is still null). finalizeSeason is idempotent, so
+    //       re-running completes redistribution + N+1 seeding without double-paying.
     const due = await Season.find({ status: "active", endDate: { $lte: now } });
-    for (const season of due) {
+    const stranded = await Season.find({ status: "ended", redistributedAt: null });
+
+    // Dedupe: a season can only appear in one set (status differs), but guard anyway so a
+    // race never double-processes the same doc in a single sweep.
+    const seen = new Set();
+    const toFinalize = [];
+    for (const season of [...due, ...stranded]) {
+        const key = String(season._id);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        toFinalize.push(season);
+    }
+
+    let recovered = 0;
+    for (const season of toFinalize) {
+        const wasStranded = season.status === "ended";
         try {
             // eslint-disable-next-line no-await-in-loop
             await pvpRewardService.finalizeSeason(season);
-            ended += 1;
+            if (wasStranded) {
+                recovered += 1;
+                console.warn(`[PVP transition] recovered stranded finalize for season ${season._id}.`);
+            } else {
+                ended += 1;
+            }
         } catch (err) {
             failed += 1;
             console.error(`[PVP transition] finalizeSeason failed for season ${season._id}:`, err.message);
@@ -144,14 +225,18 @@ async function runSeasonTransitionSweep(now = new Date()) {
         }
     }
 
-    return { ended, started, failed };
+    return { ended, started, failed, recovered };
 }
 
 module.exports = {
     getCurrentSeason,
+    getCurrentSeasonForFighter,
+    isCrossWeightClass,
     getSeasonById,
     seedSeason,
     seedAllForCycle,
+    seedOpenSeason,
+    seedPerWcCycle,
     runSeasonTransitionSweep,
     pickTwistForSeason,
     seasonNameFor,

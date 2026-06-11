@@ -20,6 +20,7 @@ const { redis, ensureRedisConnected } = require("../lib/redis");
 const { resolveFight } = require("../utils/fightResolution");
 const activityLogService = require("./activityLogService");
 const pvpRecordService = require("./pvpRecordService");
+const pvpSeasonService = require("./pvpSeasonService");
 const pvpRivalryService = require("./pvpRivalryService");
 const { computeDp, applyDpAndDivision } = require("./pvpDpService");
 const {
@@ -381,6 +382,7 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
             divisionBefore: defenderDivisionBefore,
             divisionAfter: defenderRecord.division,
             overallRating: defender.overallRating || 0,
+            realWeightClass: defender.weightClass,
         },
         dpBreakdown: attackerDp.breakdown,
         twistApplied: attackerDp.twistApplied,
@@ -400,6 +402,7 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         beltHolderDpAfter,
         seasonWeeksRemaining,
         seasonNumber: season.seasonNumber,
+        crossWeightClass: pvpSeasonService.isCrossWeightClass(season),
     };
 }
 
@@ -528,8 +531,8 @@ async function setDefenseGameplan(fighterId, gameplan) {
     }
     const fighter = await Fighter.findById(fighterId).select("weightClass");
     if (!fighter) throw new PvpError("no_active_record", "No active record.", 409);
-    const season = await Season.findOne({ weightClass: fighter.weightClass, status: "active" });
-    if (!season) throw new PvpError("no_active_record", "No active record.", 409);
+    const season = await pvpSeasonService.getCurrentSeasonForFighter(fighter.weightClass);
+    if (!season || season.status !== "active") throw new PvpError("no_active_record", "No active record.", 409);
     const record = await PVPRecord.findOne({ playerId: fighterId, seasonId: season._id });
     if (!record) throw new PvpError("no_active_record", "No active record.", 409);
     record.defenseGameplan = gameplan;

@@ -24,6 +24,14 @@ for (const wc of WEIGHT_CLASSES_PVP) {
     }
 }
 
+// Sentinel weight class for an "Open" (cross-weight-class) season. NEVER a real fighter
+// class — fighters keep their real class on the Fighter doc; a season's records are
+// stamped with this sentinel so all pool/ladder/belt/decay filters merge into one pool.
+const OPEN_WEIGHT_CLASS = "Open";
+// Every weightClass a SEASON (and therefore a record/fight/HoF) may carry: the 4 real
+// classes plus the Open sentinel. Fighter weightClass enums stay WEIGHT_CLASSES_PVP.
+const SEASON_WEIGHT_CLASSES = [...WEIGHT_CLASSES_PVP, OPEN_WEIGHT_CLASS];
+
 const DIVISIONS = [
     { key: "prospect", floor: 0, promoteAt: 300, ovrMin: 10, ovrMax: 20, color: "#888" },
     { key: "contender", floor: 300, promoteAt: 1200, ovrMin: 18, ovrMax: 30, color: "#93C5FD" },
@@ -158,6 +166,8 @@ function badgeIdFor(divKey, seasonNumber, weightClass) {
 
 module.exports = {
     WEIGHT_CLASSES_PVP,
+    OPEN_WEIGHT_CLASS,
+    SEASON_WEIGHT_CLASSES,
     DIVISIONS,
     DIVISION_KEYS,
     DP,

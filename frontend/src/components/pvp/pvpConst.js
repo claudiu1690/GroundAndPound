@@ -83,3 +83,16 @@ export const SOFT_RESET = {
 
 export const SEASON_LENGTH_DAYS = 70;
 export const WEIGHT_CLASSES_PVP = ["featherweight", "lightweight", "middleweight", "heavyweight"];
+
+/** Label used wherever an Open (cross-weight-class) season's identity is shown. */
+export const OPEN_LABEL = "Open · All Weight Classes";
+
+/**
+ * Returns the display label for a season's weight-class identity.
+ * Uses the backend-provided weightClassLabel when present; falls back to
+ * OPEN_LABEL when crossWeightClass is true; otherwise returns weightClass.
+ */
+export function seasonWeightClassLabel(season) {
+  return season?.weightClassLabel
+    || (season?.crossWeightClass ? OPEN_LABEL : season?.weightClass);
+}
