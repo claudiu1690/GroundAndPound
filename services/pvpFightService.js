@@ -22,6 +22,7 @@ const activityLogService = require("./activityLogService");
 const pvpRecordService = require("./pvpRecordService");
 const pvpSeasonService = require("./pvpSeasonService");
 const pvpRivalryService = require("./pvpRivalryService");
+const energyService = require("./energyService");
 const { computeDp, applyDpAndDivision } = require("./pvpDpService");
 const {
     GAMEPLAN_WEIGHTS,
@@ -140,7 +141,10 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     // ── Load attacker + energy check. ────────────────────────────────────────
     const attacker = await Fighter.findById(attackerFighterId);
     if (!attacker) throw new PvpError("defender_not_found", "Fighter not found.", 404);
-    const energyCurrent = attacker.energy?.current ?? 0;
+    // Energy lives in Redis (live, regen-ticked); the Mongo energy field is only a
+    // periodic backup. Read the LIVE value via energyService — reading attacker.energy
+    // directly sees a stale value and spuriously 402s a player who actually has energy.
+    const { current: energyCurrent } = await energyService.getEnergy(attackerFighterId);
     if (energyCurrent < PVP_ENERGY_COST) {
         throw new PvpError("insufficient_energy", "Not enough energy — PVP fights cost 15 energy.", 402);
     }
@@ -255,7 +259,6 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     const { method, attackerWon, isDraw } = mapOutcome(engine);
 
     const attackerName2 = attackerName; // alias kept for placement-branch readability
-    const energyAfter = Math.max(0, energyCurrent - PVP_ENERGY_COST);
 
     // ════════════════════════════════════════════════════════════════════════
     // (g) PLACEMENT BRANCH — the attacker's first 3 PVP fights.
@@ -281,9 +284,13 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         pvpRecordService.touchActive(attackerRecord);
         if (typeof attacker.overallRating === "number") attackerRecord.overallRating = attacker.overallRating;
 
-        // Energy deduction on the attacker fighter.
-        attacker.energy.current = energyAfter;
-        attacker.energy.lastSyncedAt = now;
+        // Spend energy via the energy service (Redis source of truth), then mirror the
+        // result onto the doc so the upcoming attacker.save() stays consistent.
+        const energyRemaining = (await energyService.deductEnergy(attackerFighterId, PVP_ENERGY_COST)).current;
+        if (attacker.energy && typeof attacker.energy === "object") {
+            attacker.energy.current = energyRemaining;
+            attacker.energy.lastSyncedAt = now;
+        }
 
         // Onboarding counters on the fighter doc.
         if (!attacker.pvpOnboarding) attacker.pvpOnboarding = {};
@@ -432,7 +439,7 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
                 isBeltHolderFight,
                 isPromotion: false,
             },
-            energyRemaining: attacker.energy.current,
+            energyRemaining,
             commentary: engine.commentary || [],
             streakBefore: 0,
             streakBroken: false,
@@ -529,9 +536,12 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     if (typeof attacker.overallRating === "number") attackerRecord.overallRating = attacker.overallRating;
     if (typeof defender.overallRating === "number") defenderRecord.overallRating = defender.overallRating;
 
-    // ── Deduct attacker energy. ──────────────────────────────────────────────
-    attacker.energy.current = Math.max(0, energyCurrent - PVP_ENERGY_COST);
-    attacker.energy.lastSyncedAt = now;
+    // ── Deduct attacker energy via the energy service (Redis source of truth). ──
+    const energyRemaining = (await energyService.deductEnergy(attackerFighterId, PVP_ENERGY_COST)).current;
+    if (attacker.energy && typeof attacker.energy === "object") {
+        attacker.energy.current = energyRemaining;
+        attacker.energy.lastSyncedAt = now;
+    }
 
     // ── Persist: records → fighters → fight doc → rivalry → feed. ────────────
     await attackerRecord.save();
@@ -616,7 +626,6 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     // ── Build the FightResult DTO (§3.4). ────────────────────────────────────
     const rankAfter = await fighterRank(attackerRecord);
     const attMeta = divisionMeta(attackerRecord.division);
-    const energyRemaining = attacker.energy.current;
 
     return {
         fightId: fightDoc ? String(fightDoc._id) : null,
