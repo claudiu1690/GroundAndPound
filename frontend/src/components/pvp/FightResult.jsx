@@ -1,12 +1,31 @@
 import { DIVISIONS, divisionLabel, divisionMeta, OPEN_LABEL } from "./pvpConst";
+import { PlacementResult } from "./PlacementResult";
 
 /**
  * Screen 3 — Fight Result.
  * Receives the FightResult DTO from POST /pvp/fight (§3.4).
  * Props are UNCHANGED: { result, fighter, onFightAgain, onBackToLadder }
+ *
+ * New DTO fields consumed (onboarding / placement):
+ *   result.isPlacement      — boolean; when true, render PlacementResult instead
+ *   result.placement        — { fightNumber, total:3, wins } | null
+ *   result.placementComplete — boolean; when true on 3rd fight
+ *   result.catchUpActive    — boolean
+ *   result.dpBreakdown.catchUpMultiplier — number; show gold row when > 1
  */
 export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
   if (!result) return null;
+
+  // Branch: placement fights get their own screen (no DP swing)
+  if (result.isPlacement) {
+    return (
+      <PlacementResult
+        result={result}
+        onFightAgain={onFightAgain}
+        onBackToLadder={onBackToLadder}
+      />
+    );
+  }
 
   const {
     youWon,
@@ -152,6 +171,14 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
         label: `Streak multiplier ×${dpBreakdown.streakMultiplier}`,
         value: `×${dpBreakdown.streakMultiplier}`,
         cls: "mult",
+      });
+    }
+    // Catch-up multiplier (new competitor bonus)
+    if ((dpBreakdown.catchUpMultiplier ?? 1) > 1) {
+      breakdownRows.push({
+        label: "Catch-up ×2",
+        value: "×2",
+        cls: "catchup",
       });
     }
     // Repeat penalty

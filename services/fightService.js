@@ -1284,6 +1284,16 @@ async function resolveFightAndApply(fighterId) {
     if (isLoss) activityLogService.log(fighterId, "FIGHT_LOSS",
         `Lost to ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
         { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight });
+    // \u2500\u2500 PVP unlock: 3rd CAREER win opens "The Proving Ground". Fighter-flag flip +
+    // feed only \u2014 NO pvp service import (one-way dependency). Guarded save persists it. \u2500\u2500
+    if (isWin && fighter.pvpOnboarding && !fighter.pvpOnboarding.unlocked && (fighter.record.wins || 0) >= 3) {
+        fighter.pvpOnboarding.unlocked = true;
+        fighter.markModified("pvpOnboarding");
+        activityLogService.log(fighterId, "pvp_unlocked",
+            "The Proving Ground is now open to you",
+            { careerWins: fighter.record.wins });
+        try { await fighter.save(); } catch (e) { console.error("[pvp unlock] save failed:", e.message); }
+    }
     if (isDraw) activityLogService.log(fighterId, "FIGHT_DRAW",
         `Drew with ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
         { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight });

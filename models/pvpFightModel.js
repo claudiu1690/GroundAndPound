@@ -31,6 +31,8 @@ const pvpFightSchema = new mongoose.Schema({
         streakMultiplier: { type: Number, default: 1 },
         repeatPenalty: { type: Number, default: 1 },
         twistBonus: { type: Number, default: 0 },
+        // Catch-up multiplier on attacker WIN DP (1 normally, 2 while catch-up active).
+        catchUpMultiplier: { type: Number, default: 1 },
     },
     isRivalryFight: { type: Boolean, default: false },
     isRivalryResolved: { type: Boolean, default: false },
@@ -38,6 +40,10 @@ const pvpFightSchema = new mongoose.Schema({
     wasDefenseWhileOffline: { type: Boolean, default: false },
     twistApplied: { type: Boolean, default: false },
     twistName: { type: String, default: null },
+    // PVP New Player Experience — a placement fight (one of the attacker's first 3).
+    // Placement fights award NO DP, never touch the defender record, and are EXCLUDED
+    // from repeat-penalty and rivalry win counts.
+    isPlacement: { type: Boolean, default: false },
     // Unread-defense feed: false until the defender views it.
     defenderSeen: { type: Boolean, default: false },
     commentary: { type: [String], default: [] },

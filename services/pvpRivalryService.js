@@ -18,7 +18,8 @@ const PVPRival = require("../models/pvpRivalModel");
  * the current, not-yet-written fight)?
  */
 async function priorWinCount(seasonId, attackerId, defenderId) {
-    return PVPFight.countDocuments({ seasonId, winnerId: attackerId, loserId: defenderId });
+    // Placement fights award no DP and never count toward a rivalry.
+    return PVPFight.countDocuments({ seasonId, winnerId: attackerId, loserId: defenderId, isPlacement: { $ne: true } });
 }
 
 /**

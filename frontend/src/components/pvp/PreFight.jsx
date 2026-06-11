@@ -39,7 +39,11 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
       setError(
         e.status === 402
           ? "Not enough energy — PVP fights cost 15 energy."
-          : e.message || "Fight failed. Try again."
+          : e.status === 403
+            ? "The Proving Ground unlocks at 3 career wins."
+            : e.status === 409
+              ? "This fighter is protected and can't be challenged right now."
+              : e.message || "Fight failed. Try again."
       );
     } finally {
       setFighting(false);

@@ -40,6 +40,10 @@ export function SeasonEndModal({ lastSeasonRecord, nextSeason, onClose, onViewLe
   const drinks = rewards?.drinks ?? 0;
   const badge  = rewards?.badge  ?? null;
 
+  // New onboarding fields — present only when this is the player's first completed season.
+  const firstSeasonBonusPaid = lastSeasonRecord?.firstSeasonBonusPaid ?? false;
+  const firstSeasonBonus = lastSeasonRecord?.firstSeasonBonus ?? null;
+
   const nextSeasonNumber = (seasonNumber ?? 0) + 1;
 
   return (
@@ -103,6 +107,15 @@ export function SeasonEndModal({ lastSeasonRecord, nextSeason, onClose, onViewLe
                 {badge && (
                   <div className="pvp-reward-line">
                     Season {seasonNumber} {divisionLabel(division)} Badge unlocked
+                  </div>
+                )}
+                {/* First Season Bonus — shown only when flag is set */}
+                {firstSeasonBonusPaid && (
+                  <div className="pvp-first-season-bonus-row">
+                    <span className="pvp-fsb-label">First Season Bonus</span>
+                    <span className="pvp-fsb-value">
+                      +{(firstSeasonBonus?.iron ?? 500).toLocaleString()} cash &middot; +{(firstSeasonBonus?.fame ?? 100).toLocaleString()} fame
+                    </span>
                   </div>
                 )}
               </div>

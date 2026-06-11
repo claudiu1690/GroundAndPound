@@ -15,16 +15,13 @@ const pvpSeasonService = require("../services/pvpSeasonService");
 const pvpRecordService = require("../services/pvpRecordService");
 const pvpMatchmakingService = require("../services/pvpMatchmakingService");
 const pvpFightService = require("../services/pvpFightService");
-const { WEIGHT_CLASSES_PVP, SEASON_WEIGHT_CLASSES, OPEN_WEIGHT_CLASS, TWISTS, divisionMeta, DIVISIONS } = require("../consts/pvpConfig");
+const { WEIGHT_CLASSES_PVP, SEASON_WEIGHT_CLASSES, OPEN_WEIGHT_CLASS, TWISTS, DIVISION_KEYS } = require("../consts/pvpConfig");
+
+// Accepted weightClass query values for the full ladder screen: FW|LW|MW|HW or "All".
+const LADDER_WC_PARAMS = ["FW", "LW", "MW", "HW", "All"];
 
 function isValidWeightClass(wc) {
     return WEIGHT_CLASSES_PVP.includes(wc);
-}
-
-// Ladder route param may be a real class OR the "Open" sentinel (the frontend keys the
-// ladder off season.weightClass, which is "Open" for an Open season).
-function isValidLadderWeightClass(wc) {
-    return SEASON_WEIGHT_CLASSES.includes(wc);
 }
 
 function clampLimit(raw, def = 25, max = 100) {
@@ -76,69 +73,99 @@ function handleError(res, err) {
     return res.status(500).json({ message: "Internal server error" });
 }
 
-// ── GET /pvp/ladder/:weightClass/:seasonId ──────────────────────────────────
+// ── GET /pvp/ladder ─────────────────────────────────────────────────────────
+// Query-param, division-filtered, paginated full ladder. Actor = req.user.fighterId.
 async function getLadder(req, res) {
     try {
-        const { weightClass, seasonId } = req.params;
-        if (!isValidLadderWeightClass(weightClass)) {
-            return res.status(400).json({ message: "Invalid weight class.", code: "bad_weight_class" });
-        }
-        if (!mongoose.isValidObjectId(seasonId)) {
+        const seasonId = req.query.seasonId;
+        if (!seasonId || !mongoose.isValidObjectId(seasonId)) {
             return res.status(404).json({ message: "Season not found.", code: "season_not_found" });
         }
         const season = await Season.findById(seasonId);
-        if (!season || season.weightClass !== weightClass) {
+        if (!season) {
             return res.status(404).json({ message: "Season not found.", code: "season_not_found" });
         }
 
+        // division — optional enum.
+        let division = null;
+        if (req.query.division != null && req.query.division !== "") {
+            if (!DIVISION_KEYS.includes(req.query.division)) {
+                return res.status(400).json({ message: "Invalid division.", code: "bad_division" });
+            }
+            division = req.query.division;
+        }
+
+        // weightClass — optional FW|LW|MW|HW or All (default All).
+        let wcParam = "All";
+        if (req.query.weightClass != null && req.query.weightClass !== "") {
+            if (!LADDER_WC_PARAMS.includes(req.query.weightClass)) {
+                return res.status(400).json({ message: "Invalid weight class.", code: "bad_weight_class" });
+            }
+            wcParam = req.query.weightClass;
+        }
+
         const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-        const limit = clampLimit(req.query.limit, 25, 100);
-        // Use the RESOLVED season's weightClass ("Open" for an Open season) so the merged
-        // ladder is returned. The route param is only validated above as the entry class.
-        const filter = { seasonId: season._id, weightClass: season.weightClass };
-        const total = await PVPRecord.countDocuments(filter);
-        const records = await PVPRecord.find(filter)
-            .sort({ dp: -1 })
-            .skip((page - 1) * limit)
-            .limit(limit)
-            .lean();
+        const limit = clampLimit(req.query.limit, 20, 20);
 
-        const ids = records.map((r) => r.playerId);
-        const fighters = await Fighter.find({ _id: { $in: ids } })
-            .select("firstName lastName nickname weightClass").lean();
-        const nameMap = new Map(fighters.map((f) => [String(f._id), pvpRecordService.fighterName(f)]));
-        const wcMap = new Map(fighters.map((f) => [String(f._id), f.weightClass]));
-
-        const beltId = await pvpRecordService.currentBeltHolderId(season._id, season.weightClass);
-        const me = String(req.user.fighterId);
-
-        const rows = records.map((r, i) => {
-            const meta = divisionMeta(r.division) || DIVISIONS[0];
-            return {
-                rank: (page - 1) * limit + i + 1,
-                playerId: String(r.playerId),
-                name: nameMap.get(String(r.playerId)) || "Unknown",
-                division: r.division,
-                divisionColor: meta.color,
-                dp: r.dp,
-                wins: r.wins,
-                losses: r.losses,
-                winStreak: r.winStreak,
-                overallRating: r.overallRating,
-                realWeightClass: wcMap.get(String(r.playerId)) || r.realWeightClass || null,
-                isBeltHolder: beltId != null && String(r.playerId) === beltId,
-                isYou: String(r.playerId) === me,
-            };
+        const { rows, total, divisionCounts } = await pvpRecordService.getLadderPage({
+            seasonId: season._id,
+            season,
+            division,
+            wcParam,
+            page,
+            limit,
+            viewerId: req.user.fighterId,
         });
 
+        const totalPages = Math.max(1, Math.ceil(total / limit));
         return res.json({
             season: shapeSeasonBlock(season, await beltHolderName(season)),
+            divisionCounts,
             rows,
             page,
             limit,
             total,
-            totalPages: Math.max(1, Math.ceil(total / limit)),
+            totalPages,
+            hasMore: page < totalPages,
         });
+    } catch (err) {
+        return handleError(res, err);
+    }
+}
+
+// ── GET /pvp/ladder/position ────────────────────────────────────────────────
+// The viewer's OWN standing (regardless of any filter). { position: null } if none.
+async function getLadderPosition(req, res) {
+    try {
+        const seasonId = req.query.seasonId;
+        if (!seasonId || !mongoose.isValidObjectId(seasonId)) {
+            return res.status(404).json({ message: "Season not found.", code: "season_not_found" });
+        }
+        const season = await Season.findById(seasonId);
+        if (!season) {
+            return res.status(404).json({ message: "Season not found.", code: "season_not_found" });
+        }
+        const result = await pvpRecordService.getPositionForViewer(req.user.fighterId, season);
+        return res.json(result);
+    } catch (err) {
+        return handleError(res, err);
+    }
+}
+
+// ── GET /pvp/challenge-eligibility/:playerId ────────────────────────────────
+async function getChallengeEligibility(req, res) {
+    try {
+        const { playerId } = req.params;
+        if (!mongoose.isValidObjectId(playerId)) {
+            return res.status(404).json({ message: "Fighter not found.", code: "fighter_not_found" });
+        }
+        const viewer = await Fighter.findById(req.user.fighterId)
+            .select("overallRating weightClass").lean();
+        if (!viewer) {
+            return res.status(404).json({ message: "Fighter not found.", code: "fighter_not_found" });
+        }
+        const result = await pvpRecordService.getChallengeEligibility(viewer, playerId);
+        return res.json(result);
     } catch (err) {
         return handleError(res, err);
     }
@@ -191,6 +218,18 @@ async function getOpponents(req, res) {
     try {
         const fighter = await Fighter.findById(req.user.fighterId);
         if (!fighter) return res.status(404).json({ message: "Fighter not found.", code: "fighter_not_found" });
+
+        // Unlock gate — a locked fighter must not reach matchmaking OR have a record
+        // created for them (creating a record would otherwise slip them past the gate).
+        try {
+            const changed = await pvpRecordService.ensureUnlocked(fighter);
+            if (changed) await fighter.save();
+        } catch (e) {
+            console.error("[pvpController] ensureUnlocked failed:", e.message);
+        }
+        if (!fighter.pvpOnboarding || !fighter.pvpOnboarding.unlocked) {
+            return res.status(403).json({ message: "The Proving Ground unlocks at 3 career wins.", code: "pvp_locked" });
+        }
 
         const season = await pvpSeasonService.getCurrentSeasonForFighter(fighter.weightClass);
         if (!season || season.status !== "active") {
@@ -330,8 +369,19 @@ async function getCurrentSeason(req, res) {
 
         let yourRecord = null;
         let poolCount = 0;
+        // HYDRATED (not lean) — ensureUnlocked may mutate pvpOnboarding and we save it.
         const fighter = await Fighter.findById(req.user.fighterId)
-            .select("firstName lastName nickname weightClass overallRating").lean();
+            .select("firstName lastName nickname weightClass overallRating record pvpOnboarding");
+
+        // Self-heal the unlock flag; persist only if it actually changed.
+        if (fighter) {
+            try {
+                const changed = await pvpRecordService.ensureUnlocked(fighter);
+                if (changed) await fighter.save();
+            } catch (e) {
+                console.error("[pvpController] ensureUnlocked failed:", e.message);
+            }
+        }
 
         // The resolved season governs eligibility: in an Open season every fighter belongs
         // regardless of real class, so only gate the per-WC case on the route param matching
@@ -340,9 +390,11 @@ async function getCurrentSeason(req, res) {
             pvpSeasonService.isCrossWeightClass(season) || fighter.weightClass === weightClass
         );
 
+        let myRecordDoc = null;
         if (eligible) {
             const record = await PVPRecord.findOne({ playerId: req.user.fighterId, seasonId: season._id });
             if (record) {
+                myRecordDoc = record;
                 const rank = await pvpRecordService.computeRank(record);
                 const beltId = await pvpRecordService.currentBeltHolderId(season._id, season.weightClass);
                 yourRecord = pvpRecordService.shapeRecord(record, fighter, {
@@ -365,6 +417,34 @@ async function getCurrentSeason(req, res) {
             weightClass
         );
 
+        // ── PVP New Player Experience onboarding block (additive). ───────────
+        const ob = (fighter && fighter.pvpOnboarding) || {};
+        const nowMs = Date.now();
+        const unlocked = !!ob.unlocked;
+        const placementActive = unlocked && !ob.placementComplete;
+        const shieldActive = !!(ob.shieldExpiresAt && nowMs < new Date(ob.shieldExpiresAt).getTime());
+        const cuActive = !!(
+            myRecordDoc &&
+            myRecordDoc.catchUpExpiresAt &&
+            nowMs < new Date(myRecordDoc.catchUpExpiresAt).getTime() &&
+            myRecordDoc.division !== "elite" &&
+            myRecordDoc.division !== "champion"
+        );
+        const onboarding = {
+            locked: !unlocked,
+            careerWins: (fighter && fighter.record && fighter.record.wins) || 0,
+            winsNeeded: 3,
+            placement: placementActive
+                ? { active: true, fights: ob.placementFights || 0, wins: ob.placementWins || 0, needed: 3 }
+                : null,
+            shield: shieldActive
+                ? { active: true, expiresAt: ob.shieldExpiresAt }
+                : null,
+            catchUp: cuActive
+                ? { active: true, expiresAt: myRecordDoc.catchUpExpiresAt }
+                : null,
+        };
+
         return res.json({
             season: shapeSeasonBlock(season, await beltHolderName(season)),
             yourRecord,
@@ -372,6 +452,7 @@ async function getCurrentSeason(req, res) {
             poolCount,
             justEnded,
             lastSeasonRecord,
+            onboarding,
         });
     } catch (err) {
         return handleError(res, err);
@@ -394,6 +475,8 @@ async function acknowledgeSeason(req, res) {
 
 module.exports = {
     getLadder,
+    getLadderPosition,
+    getChallengeEligibility,
     getRecord,
     getOpponents,
     postFight,

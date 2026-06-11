@@ -626,6 +626,17 @@ The flag is **not** hardcoded to Season 1 — `crossWeightClass` can be set on a
 ### 22.8 The Fight Result screen
 A PvP fight resolves to a result screen led by the **DP swing** (the score), then the outcome + method, opponent line, context pills (streak/rivalry/promotion/belt), a **DP breakdown panel** itemising every modifier, ladder movement (rank before → after), contextual banners (promotion + shield, streak up/broken, rivalry resolved, belt-holder defeated), and a Season-DP progress bar toward the next division. Actions: Fight Again / Back to Ladder.
 
+### 22.9 New-player onboarding
+A staged entry path softens the cold start so a newcomer is never farmed or hopelessly behind. Lifetime onboarding state lives on the Fighter (`pvpOnboarding` subdoc); the per-season catch-up window lives on the PVPRecord.
+
+- **Unlock gate.** The Proving Ground is locked until the player has **3 career (PvE) wins**. The nav tab stays visible but shows a locked screen with a `wins/3` progress bar — players know PvP exists before they can enter. Unlock is checked after every PvE fight resolution; it fires once and is permanent. *(Applies in Season 1.)*
+- **Placement matches.** A player's **first 3 PvP fights ever** are placement bouts: they run the real fight engine but award **0 DP to both sides**, with no streak, no rivalry, and no repeat-penalty contribution — and the **defender's record is left completely untouched** (placement players can only be attackers; they're hidden from matchmaking as defenders). After fight 3 the player is seeded by their placement record: **3 wins → Contender / 400 DP, 2 → Prospect / 200, 1 → Prospect / 100, 0 → Prospect / 0**. *(Season-1 exception: skipped — Season-1 entrants start Prospect / 0 immediately.)*
+- **New Competitor Shield.** Granted once, at placement completion: the player **cannot be challenged for 7 days or until they make their first attack**, whichever comes first (going on offense forfeits the protection). Shielded players still appear on opponent cards with a "Protected" pill but can't be challenged. *(Season-1 exception: not granted.)*
+- **Mid-season catch-up.** A player whose record is created **more than 14 days after season start** gets a 7-day window in which **DP gains are ×2** (the final multiplier in the DP chain; gains only, never losses). **Capped: it does not apply once the player reaches Elite or Champion**, so it accelerates a late joiner to mid-ladder without rocketing them into belt contention. *(Season-1 exception: not applied — everyone joins together.)*
+- **First-season bonus.** The first time a player completes any PvP season (≥1 fight) they receive a one-time **+500 iron / +100 fame** on top of their normal division rewards. *(Applies in Season 1.)*
+
+**Season-1 exception summary:** unlock gate APPLIES; placement, shield, and catch-up are SKIPPED; first-season bonus APPLIES. Detected via `season.seasonNumber === 1` at record creation.
+
 ---
 
 ## 23. System Interconnections

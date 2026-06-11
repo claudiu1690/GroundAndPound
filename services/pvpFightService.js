@@ -28,9 +28,15 @@ const {
     GAMEPLAN_KEYS,
     TWISTS,
     DP,
+    PLACEMENT_DP,
+    PLACEMENT_FIGHTS,
+    NEW_COMPETITOR_SHIELD_DAYS,
+    divisionForDp,
     divisionMeta,
     bracketTier,
 } = require("../consts/pvpConfig");
+
+const DAY_MS = 24 * 3600 * 1000;
 
 const PVP_ENERGY_COST = 15;
 const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
@@ -139,6 +145,24 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         throw new PvpError("insufficient_energy", "Not enough energy — PVP fights cost 15 energy.", 402);
     }
 
+    // ── (a) Lazy shield expiry: a time-expired New Competitor Shield is cleared
+    // silently on the attacker's next action (no feed — it lapsed, wasn't spent). ──
+    if (
+        attacker.pvpOnboarding &&
+        attacker.pvpOnboarding.shieldExpiresAt &&
+        now >= attacker.pvpOnboarding.shieldExpiresAt
+    ) {
+        attacker.pvpOnboarding.shieldExpiresAt = null;
+        attacker.markModified("pvpOnboarding");
+    }
+
+    // ── (b) Locked guard: self-heal first, then reject if still locked. ──────
+    const unlockChanged = await pvpRecordService.ensureUnlocked(attacker);
+    if (unlockChanged) attacker.markModified("pvpOnboarding");
+    if (!attacker.pvpOnboarding || !attacker.pvpOnboarding.unlocked) {
+        throw new PvpError("pvp_locked", "The Proving Ground unlocks at 3 career wins.", 403);
+    }
+
     // ── Season must be active. ───────────────────────────────────────────────
     const season = await Season.findById(seasonId);
     if (!season) throw new PvpError("season_not_found", "Season not found.", 404);
@@ -158,13 +182,56 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         throw new PvpError("defender_not_in_season", "Defender is not registered in this season.", 409);
     }
 
-    // ── Repeat count (BEFORE writing this fight). ────────────────────────────
+    // ── (c) Protected-defender rejection: a shielded OR mid-placement defender
+    // cannot be challenged. ──────────────────────────────────────────────────
+    const defShielded = !!(
+        defender.pvpOnboarding &&
+        defender.pvpOnboarding.shieldExpiresAt &&
+        now < defender.pvpOnboarding.shieldExpiresAt
+    );
+    const defInPlacement = !!(
+        defender.pvpOnboarding &&
+        defender.pvpOnboarding.unlocked &&
+        !defender.pvpOnboarding.placementComplete
+    );
+    if (defShielded || defInPlacement) {
+        throw new PvpError("defender_protected", "This fighter is protected and can't be challenged right now.", 409);
+    }
+
+    // ── (d) Is THIS fight a placement fight for the attacker? ────────────────
+    const isPlacement = !!(
+        attacker.pvpOnboarding &&
+        attacker.pvpOnboarding.unlocked &&
+        !attacker.pvpOnboarding.placementComplete
+    );
+
+    // ── (e) Shield clear-on-attack: stepping into the open ends protection. Runs
+    // after all validation (so a rejected attack keeps the shield). ──────────
+    if (
+        attacker.pvpOnboarding &&
+        attacker.pvpOnboarding.shieldExpiresAt &&
+        now < attacker.pvpOnboarding.shieldExpiresAt
+    ) {
+        attacker.pvpOnboarding.shieldExpiresAt = null;
+        attacker.markModified("pvpOnboarding");
+        try {
+            activityLogService.log(
+                attackerFighterId,
+                "pvp_shield_cleared",
+                "Protection lifted — you stepped into the open",
+                { seasonId: String(season._id), weightClass: season.weightClass }
+            );
+        } catch (_) { /* feed failures never block the fight */ }
+    }
+
+    // ── Repeat count (BEFORE writing this fight). Placement fights never count. ─
     const weekStart = startOfIsoWeekUtc(now);
     const repeatCount = await PVPFight.countDocuments({
         attackerId: attackerFighterId,
         defenderId,
         seasonId: season._id,
         fightAt: { $gte: weekStart },
+        isPlacement: { $ne: true },
     });
 
     // ── Belt-holder flag: is the defender the current #1 in champion division? ─
@@ -187,6 +254,205 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
 
     const { method, attackerWon, isDraw } = mapOutcome(engine);
 
+    const attackerName2 = attackerName; // alias kept for placement-branch readability
+    const energyAfter = Math.max(0, energyCurrent - PVP_ENERGY_COST);
+
+    // ════════════════════════════════════════════════════════════════════════
+    // (g) PLACEMENT BRANCH — the attacker's first 3 PVP fights.
+    //   - Attacker DP change is 0 (no computeDp / applyDpAndDivision for attacker).
+    //   - Attacker W/L increments; winStreak / longestStreak stay UNTOUCHED (0).
+    //   - DEFENDER RECORD IS NEVER MUTATED OR SAVED — no DP, no W/L, no streak, no
+    //     lastFightAt/lastActiveAt, no OVR snapshot. The defender doc is read-only here.
+    //   - Rivalry is SKIPPED entirely (no priorWinCount, no processRivalry).
+    //   - On the 3rd placement fight → seed DP/division from placement wins + grant the
+    //     New Competitor Shield.
+    // ════════════════════════════════════════════════════════════════════════
+    if (isPlacement) {
+        const attackerDpBefore = attackerRecord.dp;          // 0 during placement
+        const attackerDivisionBefore = attackerRecord.division;
+        const rankBefore = await fighterRank(attackerRecord);
+
+        // Attacker W/L (no streak). Draw is "not a win".
+        if (!isDraw) {
+            if (attackerWon) attackerRecord.wins += 1;
+            else attackerRecord.losses += 1;
+        }
+        attackerRecord.lastFightAt = now;
+        pvpRecordService.touchActive(attackerRecord);
+        if (typeof attacker.overallRating === "number") attackerRecord.overallRating = attacker.overallRating;
+
+        // Energy deduction on the attacker fighter.
+        attacker.energy.current = energyAfter;
+        attacker.energy.lastSyncedAt = now;
+
+        // Onboarding counters on the fighter doc.
+        if (!attacker.pvpOnboarding) attacker.pvpOnboarding = {};
+        attacker.pvpOnboarding.placementFights = (attacker.pvpOnboarding.placementFights || 0) + 1;
+        if (attackerWon) {
+            attacker.pvpOnboarding.placementWins = (attacker.pvpOnboarding.placementWins || 0) + 1;
+        }
+
+        // Completion: 3rd placement fight → seed entry DP/division + grant shield.
+        let placementComplete = false;
+        let shieldGranted = false;
+        if (attacker.pvpOnboarding.placementFights >= PLACEMENT_FIGHTS) {
+            const pWins = attacker.pvpOnboarding.placementWins || 0;
+            const seedDp = PLACEMENT_DP[pWins] != null ? PLACEMENT_DP[pWins] : 0;
+            attackerRecord.dp = seedDp;
+            attackerRecord.peakDp = seedDp;
+            attackerRecord.division = divisionForDp(seedDp);
+            // NO promotionShield on placement completion.
+            attacker.pvpOnboarding.placementComplete = true;
+            attacker.pvpOnboarding.shieldExpiresAt = new Date(now.getTime() + NEW_COMPETITOR_SHIELD_DAYS * DAY_MS);
+            placementComplete = true;
+            shieldGranted = true;
+        }
+        attacker.markModified("pvpOnboarding");
+
+        // Persist attacker record + fighter. DEFENDER RECORD IS NOT SAVED.
+        await attackerRecord.save();
+        await attacker.save();
+
+        const winnerId = isDraw ? null : (attackerWon ? attackerFighterId : defenderId);
+        const loserId = isDraw ? null : (attackerWon ? defenderId : attackerFighterId);
+
+        // Zeroed DP breakdown (placement awards no DP to either side).
+        const zeroBreakdown = {
+            base: 0, rivalryBonus: 0, beltHolderBonus: 0, bracketBonus: 0,
+            streakMultiplier: 1, repeatPenalty: 1, twistBonus: 0, catchUpMultiplier: 1,
+        };
+
+        let fightDoc;
+        try {
+            fightDoc = await PVPFight.create({
+                seasonId: season._id,
+                weightClass: season.weightClass,
+                attackerId: attackerFighterId,
+                defenderId,
+                attackerGameplan: gameplan,
+                defenderGameplan: defenderRecord.defenseGameplan,
+                winnerId,
+                loserId,
+                method,
+                attackerDpChange: 0,
+                defenderDpChange: 0,
+                attackerDpBefore,
+                attackerDpAfter: attackerRecord.dp,
+                defenderDpBefore: defenderRecord.dp,
+                defenderDpAfter: defenderRecord.dp, // unchanged — read only
+                attackerDivisionBefore,
+                attackerDivisionAfter: attackerRecord.division,
+                defenderDivisionBefore: defenderRecord.division,
+                defenderDivisionAfter: defenderRecord.division,
+                dpBreakdown: zeroBreakdown,
+                isRivalryFight: false,
+                isRivalryResolved: false,
+                isBeltHolderFight,
+                isPlacement: true,
+                wasDefenseWhileOffline: true,
+                twistApplied: false,
+                twistName: (TWISTS[season.twist] || {}).name || null,
+                defenderSeen: false,
+                commentary: engine.commentary || [],
+            });
+        } catch (err) {
+            console.error("[PVP placement] failed to write fight doc:", err.message);
+        }
+
+        // Defender still gets a defense feed (dpChange 0). Attacker placement feed below.
+        try {
+            const meta = { seasonId: String(season._id), weightClass: season.weightClass, placement: true };
+            if (isDraw) {
+                activityLogService.log(defenderId, "pvp_defended", `PVP draw vs ${attackerName2}`, { ...meta, draw: true });
+            } else if (attackerWon) {
+                activityLogService.log(defenderId, "pvp_defense_loss", `Lost a PVP defense to ${attackerName2}`, meta);
+            } else {
+                activityLogService.log(defenderId, "pvp_defended", `Defended against ${attackerName2}`, meta);
+            }
+            if (placementComplete) {
+                activityLogService.log(
+                    attackerFighterId,
+                    "pvp_placement_done",
+                    `Placement complete — you enter at ${attackerRecord.division} with ${attackerRecord.dp} DP`,
+                    { ...meta, division: attackerRecord.division, dp: attackerRecord.dp }
+                );
+            }
+        } catch (_) { /* feed failures never block the fight */ }
+
+        const attMeta = divisionMeta(attackerRecord.division);
+        const rankAfter = await fighterRank(attackerRecord);
+        const placementFightNumber = attacker.pvpOnboarding.placementFights;
+
+        return {
+            fightId: fightDoc ? String(fightDoc._id) : null,
+            winnerId: winnerId ? String(winnerId) : null,
+            loserId: loserId ? String(loserId) : null,
+            method,
+            youWon: attackerWon,
+            isPlacement: true,
+            placement: {
+                fightNumber: placementFightNumber,
+                total: PLACEMENT_FIGHTS,
+                wins: attacker.pvpOnboarding.placementWins || 0,
+            },
+            ...(placementComplete ? { placementComplete: true, shieldGranted: true } : {}),
+            attacker: {
+                playerId: String(attackerFighterId),
+                name: attackerName2,
+                dpBefore: attackerDpBefore,
+                dpAfter: attackerRecord.dp,
+                dpChange: 0,
+                divisionBefore: attackerDivisionBefore,
+                divisionAfter: attackerRecord.division,
+                division: attackerRecord.division,
+                divisionColor: attMeta ? attMeta.color : null,
+                rankBefore,
+                rankAfter,
+                streakAfter: attackerRecord.winStreak, // stays 0 in placement
+                promoted: false,
+                promotionShield: attackerRecord.promotionShield,
+            },
+            defender: {
+                playerId: String(defenderId),
+                name: defenderName,
+                dpBefore: defenderRecord.dp,
+                dpAfter: defenderRecord.dp,
+                dpChange: 0,
+                divisionBefore: defenderRecord.division,
+                divisionAfter: defenderRecord.division,
+                overallRating: defender.overallRating || 0,
+                realWeightClass: defender.weightClass,
+            },
+            dpBreakdown: zeroBreakdown,
+            twistApplied: false,
+            twistName: (TWISTS[season.twist] || {}).name || null,
+            flags: {
+                isRivalryFight: false,
+                isRivalryResolved: false,
+                isBeltHolderFight,
+                isPromotion: false,
+            },
+            energyRemaining: attacker.energy.current,
+            commentary: engine.commentary || [],
+            streakBefore: 0,
+            streakBroken: false,
+            promotionShieldGranted: 0,
+            playerIsNowBeltHolder: false,
+            beltHolderDpAfter: null,
+            seasonWeeksRemaining: Math.max(0, Math.ceil((season.endDate.getTime() - now.getTime()) / (7 * DAY_MS))),
+            seasonNumber: season.seasonNumber,
+            crossWeightClass: pvpSeasonService.isCrossWeightClass(season),
+        };
+    }
+
+    // ── (f) Catch-up: late joiner below elite gets ×2 WIN DP while the window is open. ─
+    const catchUpActive = !!(
+        attackerRecord.catchUpExpiresAt &&
+        now < attackerRecord.catchUpExpiresAt &&
+        attackerRecord.division !== "elite" &&
+        attackerRecord.division !== "champion"
+    );
+
     // ── Rivalry prediction (so the +25 resolving bonus applies THIS fight). ──
     let priorWins = 0;
     if (attackerWon) {
@@ -208,6 +474,7 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         bracketTier: bTier,
         twist: season.twist,
         repeatCount,
+        catchUpActive,
     });
 
     // Defender DP: never gains. Attacker-win → defender loses (-28 floored). Attacker-loss
@@ -357,6 +624,9 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         loserId: loserId ? String(loserId) : null,
         method,
         youWon: attackerWon,
+        isPlacement: false,
+        placement: null,
+        catchUpActive,
         attacker: {
             playerId: String(attackerFighterId),
             name: attackerName,
@@ -456,6 +726,9 @@ async function listDefenseResults(fighterId, ack = true) {
         dpChange: r.defenderDpChange,
         halfRate: true,
         divisionAfter: r.defenderDivisionAfter,
+        // Placement attacks put no DP at stake for the defender (informational row).
+        isPlacement: !!r.isPlacement,
+        noDpAtStake: !!r.isPlacement,
     }));
 
     const unreadCount = results.length;

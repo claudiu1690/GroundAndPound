@@ -35,12 +35,21 @@ const pvpRecordSchema = new mongoose.Schema({
     // record? Drives the GET /pvp/season/current `justEnded` signal. Set true via
     // POST /pvp/acknowledge-season.
     seasonEndSeen: { type: Boolean, default: false },
+    // PVP New Player Experience — catch-up window. Non-null only when this record was
+    // created AFTER the season had been running CATCHUP_JOIN_OFFSET_DAYS. While `now <
+    // catchUpExpiresAt` and the record is below elite, attacker WIN DP is doubled.
+    catchUpExpiresAt: { type: Date, default: null },
+    // First-Proving-Ground-season welcome bonus paid at season finalize. Drives the
+    // `firstSeasonBonusPaid` flag on the just-ended block; idempotency rides rewardedAt.
+    firstSeasonBonusPaid: { type: Boolean, default: false },
 }, { timestamps: true });
 
 // One record per player per season (record lookup).
 pvpRecordSchema.index({ playerId: 1, seasonId: 1 }, { unique: true });
 // Ladder pagination + champion-division belt-holder (#1 in champion).
 pvpRecordSchema.index({ seasonId: 1, weightClass: 1, dp: -1 });
+// Division-filtered ladder page (full ladder screen — division tab + dp sort).
+pvpRecordSchema.index({ seasonId: 1, weightClass: 1, division: 1, dp: -1 });
 // Matchmaking OVR-bracket query.
 pvpRecordSchema.index({ seasonId: 1, weightClass: 1, overallRating: 1 });
 // Decay batch scan.

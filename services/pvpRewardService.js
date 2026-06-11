@@ -44,12 +44,12 @@ function awardBadge(fighter, badgeId, context) {
  * Apply a full reward bundle (iron + fame + drinks + badge) to a loaded fighter doc.
  * Mutation only — caller saves.
  */
-function applyRewardBundle(fighter, reward, { badgeId, context, feedType, feedDetail, season }) {
+function applyRewardBundle(fighter, reward, { badgeId, context, feedType, feedDetail, season, code = "PVP_SEASON_REWARD" }) {
     if (reward.iron) fighter.iron = (fighter.iron || 0) + reward.iron;
     if (reward.fame) {
         // skipFreezeBlock so a frozen (3-loss) fighter still receives PVP season fame.
         notorietyService.applyNotorietyDelta(fighter, reward.fame, {
-            code: "PVP_SEASON_REWARD",
+            code,
             reason: feedDetail || "PVP season reward",
             meta: { seasonId: String(season._id), seasonNumber: season.seasonNumber },
             skipFreezeBlock: true,
@@ -151,10 +151,27 @@ async function finalizeSeason(season) {
             season,
         });
 
+        // ── First-Proving-Ground-season welcome bonus (one-time per fighter). ──
+        // Rides this record's rewardedAt idempotency: paid bonus + flag are committed
+        // together with rewardedAt below, so a re-finalize never double-pays.
+        let firstSeasonBonusPaid = false;
+        if (fighter.pvpOnboarding && fighter.pvpOnboarding.firstSeasonComplete === false) {
+            applyRewardBundle(fighter, { iron: 500, fame: 100, drinks: 0, badge: null }, {
+                feedType: "pvp_season_first",
+                feedDetail: "First Proving Ground season complete — welcome bonus",
+                code: "PVP_FIRST_SEASON_BONUS",
+                season,
+            });
+            fighter.pvpOnboarding.firstSeasonComplete = true;
+            fighter.markModified("pvpOnboarding");
+            firstSeasonBonusPaid = true;
+        }
+
         try {
             // eslint-disable-next-line no-await-in-loop
             await fighter.save();
             record.rewardedAt = new Date();
+            if (firstSeasonBonusPaid) record.firstSeasonBonusPaid = true;
             // eslint-disable-next-line no-await-in-loop
             await record.save();
             rewarded += 1;

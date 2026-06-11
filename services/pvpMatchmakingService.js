@@ -57,9 +57,17 @@ async function getOpponents(fighter, season, myRecord) {
     // Resolve names.
     const ids = candidates.map((c) => c.playerId);
     const fighters = await Fighter.find({ _id: { $in: ids } })
-        .select("firstName lastName nickname overallRating weightClass")
+        .select("firstName lastName nickname overallRating weightClass pvpOnboarding")
         .lean();
     const fighterMap = new Map(fighters.map((f) => [String(f._id), f]));
+
+    // HIDE mid-placement defenders — they are protected and must not appear in the pool.
+    candidates = candidates.filter((c) => {
+        const f = fighterMap.get(String(c.playerId));
+        const ob = f && f.pvpOnboarding;
+        return !(ob && ob.unlocked && !ob.placementComplete);
+    });
+    if (candidates.length === 0) return [];
 
     // Belt holder this season = #1 in champion division with >=1 fight.
     const beltTop = await PVPRecord.findOne({
@@ -101,6 +109,12 @@ async function getOpponents(fighter, season, myRecord) {
             bracketBonus: bracketTier(myOvr, cOvr),
             isBeltHolder: beltHolderId != null && String(c.playerId) === beltHolderId,
             isRival: rivalSet.has(String(c.playerId)),
+            // Shielded (New Competitor Shield active) — surfaced for display; the fight
+            // endpoint also rejects challenges against shielded defenders.
+            isProtected: !!(
+                f && f.pvpOnboarding && f.pvpOnboarding.shieldExpiresAt &&
+                new Date() < new Date(f.pvpOnboarding.shieldExpiresAt)
+            ),
             lastActiveAt: c.lastActiveAt,
             wins: c.wins,
             losses: c.losses,

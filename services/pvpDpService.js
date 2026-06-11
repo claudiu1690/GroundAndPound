@@ -36,7 +36,10 @@ const {
  *                                            surfaced via twistApplied/twistName (no breakdown slot)
  *   6. streakMultiplier         *1.25      (win & attackerStreak >= twist.streakFrom ?? 3)
  *   7. repeatPenalty            *0.5 (2nd) / *0.25 (3rd+) vs same opp this ISO week
- *   8. clamps                   win → max(1, val); loss → max(-100, val)
+ *   8. catchUpMultiplier        *2         (win & catchUpActive — late-joiner catch-up;
+ *                                            the caller passes an ALREADY-CAPPED boolean,
+ *                                            i.e. it is false for elite/champion records)
+ *   9. clamps                   win → max(1, val); loss → max(-100, val)
  *
  * The DP floor on a loss (max(divisionFloor, dp+change)) is applied by the CALLER
  * (applyDpAndDivision) because it needs the current division.
@@ -55,6 +58,7 @@ function computeDp({
     bracketTier = "none",
     twist = "iron_circuit",
     repeatCount = 0,
+    catchUpActive = false,
 } = {}) {
     const breakdown = {
         base: 0,
@@ -64,6 +68,7 @@ function computeDp({
         streakMultiplier: 1,
         repeatPenalty: 1,
         twistBonus: 0,
+        catchUpMultiplier: 1,
     };
 
     // ── 1. base ──────────────────────────────────────────────────────────────
@@ -139,7 +144,15 @@ function computeDp({
         val = Math.round(val * DP.REPEAT_3RD);
     }
 
-    // 8. clamp — a win always grants at least MIN_WIN_GAIN.
+    // 8. catch-up multiplier — late-joiner double DP on a WIN. The caller is responsible
+    // for the Elite/Champion cap (passes catchUpActive=false for those divisions), so this
+    // branch trusts the flag. Gains-only is structural: loss/draw returned earlier.
+    if (catchUpActive) {
+        breakdown.catchUpMultiplier = 2;
+        val = Math.round(val * 2);
+    }
+
+    // 9. clamp — a win always grants at least MIN_WIN_GAIN.
     val = Math.max(DP.MIN_WIN_GAIN, val);
 
     return { dpChange: val, twistApplied, breakdown };

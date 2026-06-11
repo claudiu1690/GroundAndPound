@@ -142,6 +142,33 @@ test("the_contenders twist lowers streak threshold (still 3, no-op vs default)",
     assert.strictEqual(dpChange, 150); // streak applies at 3
 });
 
+// ── computeDp: catch-up ×2 (New Player Experience) ──────────────────────────
+
+test("catch-up doubles a plain win and sets breakdown.catchUpMultiplier", () => {
+    const { dpChange, breakdown } = computeDp({ isWin: true, catchUpActive: true });
+    assert.strictEqual(breakdown.catchUpMultiplier, 2);
+    assert.strictEqual(dpChange, 240); // 120 * 2
+});
+
+test("catch-up applies AFTER repeat penalty (last win step)", () => {
+    // base 120, repeat 2nd ×0.5 = 60, then catch-up ×2 = 120.
+    const { dpChange, breakdown } = computeDp({ isWin: true, repeatCount: 1, catchUpActive: true });
+    assert.strictEqual(breakdown.repeatPenalty, 0.5);
+    assert.strictEqual(breakdown.catchUpMultiplier, 2);
+    assert.strictEqual(dpChange, 120);
+});
+
+test("catch-up inactive leaves catchUpMultiplier at 1 and dp unchanged", () => {
+    const { dpChange, breakdown } = computeDp({ isWin: true, catchUpActive: false });
+    assert.strictEqual(breakdown.catchUpMultiplier, 1);
+    assert.strictEqual(dpChange, 120);
+});
+
+test("catch-up never affects a loss or draw (gains-only)", () => {
+    assert.strictEqual(computeDp({ isWin: false, isAttacker: true, catchUpActive: true }).dpChange, -55);
+    assert.strictEqual(computeDp({ isDraw: true, catchUpActive: true }).dpChange, 0);
+});
+
 // ── computeDp: clamps ───────────────────────────────────────────────────────
 
 test("MIN_WIN_GAIN: a win never grants less than 1", () => {

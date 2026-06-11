@@ -18,6 +18,9 @@ const activityLogSchema = new mongoose.Schema({
             "pvp_win", "pvp_loss", "pvp_defended", "pvp_defense_loss",
             "pvp_promoted", "pvp_rivalry_set", "pvp_rivalry_resolved",
             "pvp_season_end", "pvp_belt_won",
+            // PVP New Player Experience.
+            "pvp_unlocked", "pvp_placement_start", "pvp_placement_done",
+            "pvp_shield_cleared", "pvp_season_first",
         ],
         required: true,
     },

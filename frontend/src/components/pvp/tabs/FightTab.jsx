@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RefreshCw, Zap } from "lucide-react";
 import { usePvpOpponents } from "../../../hooks/usePvpOpponents";
 import { PreFight } from "../PreFight";
@@ -22,12 +22,37 @@ function DiffPill({ difficulty }) {
   );
 }
 
-export function FightTab({ fighter, season, myRecord, onFightResolved }) {
+/**
+ * FightTab — opponents list + pre-fight flow.
+ *
+ * New onboarding props consumed:
+ *   onboarding.placement?.active — when true, show placement header instead of normal header
+ *   candidate.isProtected        — grey "Protected" pill + disabled Challenge button
+ *
+ * New result fields routed:
+ *   result.isPlacement           — FightResult branches to PlacementResult automatically
+ *   result.placementComplete     — PlacementResult shows completion screen
+ */
+export function FightTab({ fighter, season, myRecord, onFightResolved, onboarding, preSelectedDefenderId, onPreSelectionConsumed }) {
   const { data, loading, refreshing, error, silentRefetch } = usePvpOpponents();
   const [selected, setSelected] = useState(null);   // candidate chosen
   const [fightResult, setFightResult] = useState(null);
 
   const candidates = data?.candidates ?? [];
+
+  // When a preSelectedDefenderId arrives (from a profile Challenge click),
+  // auto-select the matching candidate once the opponent list loads.
+  // If the candidate isn't in the list we gracefully show the full list
+  // without crashing. Consume the pre-selection ID immediately to avoid
+  // re-triggering on data refreshes.
+  useEffect(() => {
+    if (!preSelectedDefenderId || loading || !data) return;
+    const match = candidates.find((c) => c.playerId === preSelectedDefenderId);
+    onPreSelectionConsumed?.();
+    if (match) setSelected(match);
+    // If not found, the list is shown normally — graceful degradation.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preSelectedDefenderId, loading, data]);
   const energyCur = fighter?.energy?.current ?? 0;
 
   function handleFightComplete(result) {
@@ -87,20 +112,41 @@ export function FightTab({ fighter, season, myRecord, onFightResolved }) {
         <div className="pvp-ec-val">{energyCur}</div>
       </div>
 
-      <div className="pvp-fight-header">
-        <div className="pvp-section-lbl" style={{ marginBottom: 0 }}>
-          Available Opponents · {seasonWeightClassLabel(season)}
+      {/* Placement header — replaces normal header when in placement */}
+      {onboarding?.placement?.active ? (
+        <div className="pvp-placement-fight-header">
+          <div className="pvp-placement-fight-title">
+            Placement Match {Math.min(3, (onboarding.placement.fights ?? 0) + 1)} of 3
+          </div>
+          <div className="pvp-placement-fight-sub">
+            Win to start higher on the ladder. No DP gained or lost during placement.
+          </div>
+          <button
+            className="pvp-refresh-btn"
+            onClick={silentRefetch}
+            disabled={refreshing}
+            title="Refresh opponents"
+          >
+            <RefreshCw size={13} strokeWidth={2} className={refreshing ? "pvp-spin" : ""} />
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </button>
         </div>
-        <button
-          className="pvp-refresh-btn"
-          onClick={silentRefetch}
-          disabled={refreshing}
-          title="Refresh opponents"
-        >
-          <RefreshCw size={13} strokeWidth={2} className={refreshing ? "pvp-spin" : ""} />
-          {refreshing ? "Refreshing…" : "Refresh"}
-        </button>
-      </div>
+      ) : (
+        <div className="pvp-fight-header">
+          <div className="pvp-section-lbl" style={{ marginBottom: 0 }}>
+            Available Opponents · {seasonWeightClassLabel(season)}
+          </div>
+          <button
+            className="pvp-refresh-btn"
+            onClick={silentRefetch}
+            disabled={refreshing}
+            title="Refresh opponents"
+          >
+            <RefreshCw size={13} strokeWidth={2} className={refreshing ? "pvp-spin" : ""} />
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="pvp-loading">Finding opponents…</div>
@@ -139,6 +185,9 @@ export function FightTab({ fighter, season, myRecord, onFightResolved }) {
                         </>
                       )}
                       {c.isRival && <span className="pvp-mc-rival-tag">Rival</span>}
+                      {c.isProtected && (
+                        <span className="pvp-mc-protected-pill">Protected</span>
+                      )}
                     </div>
                     <div className="pvp-mc-meta">
                       <span>{c.wins ?? 0}W · {c.losses ?? 0}L this season</span>
@@ -161,9 +210,10 @@ export function FightTab({ fighter, season, myRecord, onFightResolved }) {
                 <div className="pvp-mc-action">
                   <button
                     className="pvp-chal-btn"
-                    onClick={() => setSelected(c)}
-                    disabled={energyCur < 15}
-                    style={energyCur < 15 ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+                    onClick={() => !c.isProtected && setSelected(c)}
+                    disabled={energyCur < 15 || !!c.isProtected}
+                    style={(energyCur < 15 || c.isProtected) ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+                    title={c.isProtected ? "This fighter is protected — they're still finding their footing." : undefined}
                   >
                     Challenge
                   </button>

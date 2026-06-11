@@ -613,6 +613,21 @@ export const LIBRARY_ARTICLES = [
         keyTakeaway: "PvP is a parallel ladder that costs 15 energy a fight. Attack to climb, set a defense gameplan to hold your spot offline — your trained stats decide it.",
     },
     {
+        id: "proving-ground-onboarding",
+        category: "The Proving Ground",
+        title: "Your First Steps on the Ladder",
+        summary: "Unlocking PvP, placement matches, your new-competitor protections, and the first-season bonus.",
+        tags: ["pvp", "unlock", "placement", "new competitor shield", "catch-up", "first season", "onboarding", "new player"],
+        body: [
+            "The Proving Ground doesn't open the moment you create a fighter — you unlock it by winning 3 career fights first. Until then the tab is visible but shows a locked screen with your progress, so you always know it's waiting. The gate makes sure you arrive with a fighter that can actually compete instead of getting fed to the ladder on day one.",
+            "Once unlocked, your first 3 PvP fights are placement matches. These are real fights against real opponents, but nothing is at stake: no Division Points change hands for you or your opponent, and your win streak and rivalries don't start ticking yet. They exist to find your level. Win all three and you enter as a Contender on 400 DP; the fewer you win, the lower you seed (2 wins → 200 DP, 1 → 100, 0 → 0). While you're in placement you also can't be attacked — you fight on your own terms until you've found your footing.",
+            "When placement ends you get a New Competitor Shield: for 7 days, or until you throw your first real attack, no one can challenge you. It's a grace period to settle in, not a fortress — the moment you go on the offensive the shield drops and you're fully in the game. Other players see a 'Protected' tag on you and can't pick you as a target until then.",
+            "If you join a season late — more than two weeks after it started — you get a catch-up bonus: your DP gains are doubled for 7 days so you can close the gap on players who've been grinding all season. It only boosts wins, never softens losses, and it switches off once you reach the top divisions (Elite and Champion) — it's there to get you to the middle of the pack quickly, not to hand you the belt. And whenever you finish your very first PvP season with at least one fight, you bank a one-time welcome bonus of 500 cash and 100 fame on top of your normal rewards.",
+            "Season 1 is the exception. Because it's the open launch season where everyone starts together, placement, the shield, and catch-up are all switched off — you enter straight onto the ladder at Prospect. The 3-win unlock gate and the first-season bonus still apply.",
+        ],
+        keyTakeaway: "Win 3 career fights to unlock PvP, play 3 no-stakes placement matches to set your starting rank, then enjoy a 7-day shield. Late joiners get ×2 DP to catch up; everyone gets a one-time first-season bonus.",
+    },
+    {
         id: "proving-ground-divisions",
         category: "The Proving Ground",
         title: "Division Points, Divisions & the Belt",

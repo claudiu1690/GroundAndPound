@@ -342,6 +342,19 @@ const fighterSchema = new mongoose.Schema({
         started_at:   { type: Date,    default: Date.now },
         completed_at: { type: Date,    default: null },
     },
+    // PVP New Player Experience — onboarding state for "The Proving Ground".
+    // Mirrors the `tutorial` subdoc shape. Additive; legacy fighters default to all
+    // falsy/zero/null. `unlocked` flips on the 3rd CAREER win; placement is the first
+    // 3 PVP fights (skipped in the Open Season 1). NO shieldFightsRemaining — the
+    // New Competitor Shield is time-OR-first-attack (shieldExpiresAt only).
+    pvpOnboarding: {
+        unlocked:           { type: Boolean, default: false },
+        placementComplete:  { type: Boolean, default: false },
+        placementWins:      { type: Number,  default: 0 },
+        placementFights:    { type: Number,  default: 0 },
+        shieldExpiresAt:    { type: Date,    default: null },
+        firstSeasonComplete:{ type: Boolean, default: false },
+    },
 }, { timestamps: true });
 
 fighterSchema.index({ promotionTier: 1, weightClass: 1, overallRating: -1 });

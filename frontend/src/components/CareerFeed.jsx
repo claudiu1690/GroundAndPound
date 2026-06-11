@@ -44,6 +44,12 @@ const EVENT_CONFIG = {
     pvp_rivalry_resolved:{ color: PURPLE, Icon: Swords,        label: "Rivalry" },
     pvp_season_end:      { color: GOLD,   Icon: Trophy,        label: "Season End" },
     pvp_belt_won:        { color: GOLD,   Icon: Crown,         label: "PVP Belt" },
+    // Onboarding / New Player Experience
+    pvp_unlocked:        { color: GREEN,  Icon: Trophy,        label: "PVP Unlocked" },
+    pvp_placement_start: { color: BLUE,   Icon: Swords,        label: "Placement" },
+    pvp_placement_done:  { color: PURPLE, Icon: ShieldCheck,   label: "Placement Done" },
+    pvp_shield_cleared:  { color: GREY,   Icon: Shield,        label: "Shield Lifted" },
+    pvp_season_first:    { color: GOLD,   Icon: Star,          label: "First Season" },
 };
 
 const FALLBACK = { color: GREY, Icon: Minus, label: "Event" };

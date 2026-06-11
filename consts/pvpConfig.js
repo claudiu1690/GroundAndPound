@@ -95,6 +95,22 @@ const SOFT_RESET = {
     champion: "contender",
 };
 
+// ── PVP New Player Experience (single source of truth) ──────────────────────
+// Placement seeds the attacker's starting DP by wins-in-placement (out of 3).
+const PLACEMENT_DP = { 3: 400, 2: 200, 1: 100, 0: 0 };
+// New Competitor Shield — 7 days OR first attack, whichever first (no fight count).
+const NEW_COMPETITOR_SHIELD_DAYS = 7;
+// Catch-up window: doubles attacker WIN DP for late joiners (below elite) for this long.
+const CATCHUP_DAYS = 7;
+// A record only earns a catch-up window if it joins this many days after season start.
+const CATCHUP_JOIN_OFFSET_DAYS = 14;
+// One-time welcome bonus when a fighter completes their FIRST Proving Ground season.
+const FIRST_SEASON_BONUS = { iron: 500, fame: 100 };
+// Number of placement fights before division/DP seeding.
+const PLACEMENT_FIGHTS = 3;
+// Career wins required to unlock the Proving Ground.
+const PVP_UNLOCK_WINS = 3;
+
 const SEASON_LENGTH_DAYS = 70;
 const DECAY_AFTER_DAYS = 7;
 const DECAY_AMOUNT = 10;
@@ -184,6 +200,14 @@ module.exports = {
     MIN_FIGHTS_FOR_REWARD,
     MATCHMAKE_COUNT,
     MATCH_OVR_STEPS,
+    // New Player Experience
+    PLACEMENT_DP,
+    NEW_COMPETITOR_SHIELD_DAYS,
+    CATCHUP_DAYS,
+    CATCHUP_JOIN_OFFSET_DAYS,
+    FIRST_SEASON_BONUS,
+    PLACEMENT_FIGHTS,
+    PVP_UNLOCK_WINS,
     // helpers
     divisionForDp,
     divisionMeta,
