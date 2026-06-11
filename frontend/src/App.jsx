@@ -69,6 +69,7 @@ const NAV_ITEMS = [
   { id: "gym",       label: "Training",  icon: <Dumbbell size={13} strokeWidth={2.2} />,    active: true },
   { id: "fights",    label: "Fight",     icon: <Swords size={13} strokeWidth={2.2} />,      active: true },
   { id: "career",    label: "Career",    icon: <FileText size={13} strokeWidth={2.2} />,    active: true },
+  { id: "pvp",       label: "Proving Ground", icon: <Crosshair size={13} strokeWidth={2.2} />, active: true },
   { id: "rankings",  label: "Rankings",  icon: <ListOrdered size={13} strokeWidth={2.2} />, active: true },
   { id: "contracts", label: "Contracts", icon: <ScrollText size={13} strokeWidth={2.2} />,  active: true },
   { id: "hospital",  label: "Hospital",  icon: <Cross size={13} strokeWidth={2.2} />,       active: true },
@@ -76,7 +77,6 @@ const NAV_ITEMS = [
   { id: "events",    label: "Events",    icon: <CalendarDays size={13} strokeWidth={2.2} />,active: true },
   { id: "media",     label: "Media",     icon: <Mic size={13} strokeWidth={2.2} />,         active: true },
   { id: "library",   label: "Library",   icon: <BookOpen size={13} strokeWidth={2.2} />,    active: true },
-  { id: "pvp",       label: "Proving Ground", icon: <Crosshair size={13} strokeWidth={2.2} />, active: true },
 ];
 
 // ── Tier ladder for display ────────────────────────────────
