@@ -26,7 +26,7 @@ Single-page web client. Top to bottom: a collapsible **Message Bar**, the **App 
 
 - **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — iron, fame, rank, class, gym, backstory — badges, stat meters, active injuries) and the nav menu: **Home, Training, Fight, Career, Rankings, Contracts, Hospital, Shop, Events, Media, Proving Ground**.
 - **Footer:** game wordmark, contextual status badges (injury count → Hospital, camp → Fight, Fame → Fame drawer), Sign Out.
-- **Overlays:** Training toast stack, Tier-Up / Belt-Won overlays, Fight Limit popup, Fame drawer, Octagon Gazette, Onboarding Tutorial, Fighter Report, Camp Summary, Badge-unlock celebration.
+- **Overlays:** Training toast stack, Tier-Up / Belt-Won overlays, Fight-block popup (energy / injury), Fame drawer, Octagon Gazette, Onboarding Tutorial, Fighter Report, Camp Summary, Badge-unlock celebration.
 
 ---
 
@@ -96,13 +96,16 @@ Energy is the universal action resource. Max **100**, regenerates **+1/min** of 
 
 Five tiers. A tier's **signing fee is its base fight purse** (no fee is ever paid).
 
-| Tier | Overall Range | Fights / Day | Base Purse (Iron) |
+| Tier | Overall Range | Fight Energy Cost | Base Purse (Iron) |
 |---|---|---|---|
-| Amateur | 0–30 | 8 | 400 |
-| Regional Pro | 30–48 | 4 | 2,000 |
-| National | 45–65 | 2 | 10,000 |
-| GCS Contender | 60–75 | 1 | 25,000 |
-| GCS | 62–95 | 1 | 50,000 |
+| Amateur | 0–30 | 10 | 400 |
+| Regional Pro | 30–48 | 15 | 2,000 |
+| National | 45–65 | 18 | 10,000 |
+| GCS Contender | 60–75 | 20 | 25,000 |
+| GCS | 62–95 | 20 | 50,000 |
+
+There is **no daily fight cap** — the number of fights per day is limited only by
+energy (each fight costs the tier's energy amount above; energy regenerates 1/min).
 
 ### 5.1 Promotion Gates
 - **Amateur → Regional Pro:** reach OVR 30 (pending promotion), then win **2** Amateur fights to earn the **Amateur title shot** vs. the NPC Amateur champion; winning grants the **Amateur Champion** badge and **+75 fame**.

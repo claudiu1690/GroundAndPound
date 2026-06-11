@@ -127,38 +127,8 @@ const activityLogService = require("./activityLogService");
 const championService = require("./championService");
 const rankingService = require("./rankingService");
 
-/**
- * Daily fight caps are per promotion tier. Legacy `fightsToday` was one global counter, so Amateur
- * fights incorrectly counted against Regional Pro's cap after promotion.
- */
-function ensureDailyFightTierState(fighter) {
-    const today = new Date().toDateString();
-    if (fighter.fightDayKey == null) {
-        fighter.fightsTodayByTier = fighter.fightsTodayByTier && typeof fighter.fightsTodayByTier === "object"
-            ? { ...fighter.fightsTodayByTier }
-            : {};
-        if (fighter.lastFightDate && fighter.lastFightDate.toDateString() === today && (fighter.fightsToday || 0) > 0) {
-            fighter.fightsTodayByTier.Amateur = (fighter.fightsTodayByTier.Amateur || 0) + (fighter.fightsToday || 0);
-        }
-        fighter.fightDayKey = today;
-        return;
-    }
-    if (fighter.fightDayKey !== today) {
-        fighter.fightsTodayByTier = {};
-        fighter.fightDayKey = today;
-        fighter.fightsToday = 0;
-    }
-    if (!fighter.fightsTodayByTier || typeof fighter.fightsTodayByTier !== "object") {
-        fighter.fightsTodayByTier = {};
-    }
-}
-
-function incrementFightsTodayForTier(fighter, tier) {
-    ensureDailyFightTierState(fighter);
-    fighter.fightsTodayByTier[tier] = (fighter.fightsTodayByTier[tier] || 0) + 1;
-    fighter.fightsToday = (fighter.fightsToday || 0) + 1;
-    fighter.lastFightDate = new Date();
-}
+// (Daily fight caps were removed — fights are limited only by energy. `lastFightDate`
+// is still stamped on each fight in resolveFightAndApply for the notoriety "last event".)
 
 /**
  * Generate 3 fight offers for the fighter (Easy, Even, Hard).
@@ -451,16 +421,7 @@ async function acceptOffer(fighterId, fightId) {
     const fight = await Fight.findOne({ _id: fightId, fighterId, status: "offered" });
     if (!fight) throw new Error("Fight not found or not available");
 
-    ensureDailyFightTierState(fighter);
-    if (fighter.isModified && fighter.isModified()) await fighter.save();
-
     const tierConfig = PROMOTION_TIERS[fight.promotionTier];
-    const dailyCap = tierConfig ? tierConfig.dailyFightCap : 1;
-    const fightsThisTierToday = fighter.fightsTodayByTier[fight.promotionTier] || 0;
-    if (fightsThisTierToday >= dailyCap) {
-        throw new Error(`Daily fight cap reached for ${fight.promotionTier} (${dailyCap}/day). Come back tomorrow.`);
-    }
-
     const energyCost = tierConfig ? tierConfig.fightEnergyCost : 10;
     await fighterService.deductEnergy(fighterId, energyCost);
 
@@ -993,7 +954,7 @@ async function resolveFightAndApply(fighterId) {
         notorietyTierUp = { from: peakTierBefore, to: fighter.notoriety.peakTier };
     }
 
-    incrementFightsTodayForTier(fighter, promoTier);
+    fighter.lastFightDate = new Date();
 
     // Gazette v1.0 — snapshot pre-fight state so tomorrow's newspaper has accurate deltas.
     // Capture rank + tier BEFORE updatePlayerRank mutates them.

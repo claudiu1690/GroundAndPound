@@ -406,13 +406,13 @@ Sessions are the atomic unit of training. Each one costs energy and earns XP in 
 
 *What each tier looks like, how you move between them, and what changes as you climb.*
 
-Your career moves through five promotion tiers: Amateur, Regional Pro, National, GCS Contender, and GCS. Each tier has a different OVR range, a different number of available fights per day, and a different signing fee for the professional tiers.
+Your career moves through five promotion tiers: Amateur, Regional Pro, National, GCS Contender, and GCS. Each tier has a different OVR range, a different energy cost per fight, and a different signing fee for the professional tiers.
 
-Amateur is where everyone starts. Modest payouts, eight fight slots per day, OVR range of 0–30. It's the proving ground — the place where you find your style and start building the record that will define your reputation. It ends with your first belt: beat the Amateur champion to turn pro.
+Amateur is where everyone starts. Modest payouts, cheap fights at 10 energy each, OVR range of 0–30. It's the proving ground — the place where you find your style and start building the record that will define your reputation. It ends with your first belt: beat the Amateur champion to turn pro.
 
 Every tier from Amateur upward makes you beat the tier's champion to advance — the one exception is GCS Contender, which promotes automatically at OVR 62. You don't get promoted just by reaching the OVR threshold; you have to earn it in the most important fight of that chapter of your career. GCS is the final tier. There's no tier above it. Winning the GCS Championship is the peak of the mountain.
 
-As you climb, the pace of the game changes. Eight fights per day in Amateur becomes one per day in GCS. The game slows down and every fight carries more weight. The signing fees at higher tiers aren't just flavour — they're a signal that this tier costs more to compete in, and the rewards need to justify the investment.
+As you climb, the pace of the game changes. There's no daily fight limit — how often you fight is bounded only by your energy — but fights get more expensive: 10 energy each in Amateur, up to 20 in GCS. The game slows down and every fight carries more weight. The signing fees at higher tiers aren't just flavour — they're a signal that this tier costs more to compete in, and the rewards need to justify the investment.
 
 > **Key takeaway:** Every tier from Amateur up makes you beat the champion to advance — only GCS Contender auto-promotes. You can't buy or train your way past a belt; you have to fight your way through.
 

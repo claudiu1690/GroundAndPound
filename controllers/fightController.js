@@ -3,7 +3,6 @@ const interviewService = require("../services/interviewService");
 
 const FIGHT_ERROR_CODES = {
     DOCTOR_VISIT_REQUIRED: "FIGHT_DOCTOR_VISIT_REQUIRED",
-    DAILY_CAP_REACHED: "FIGHT_DAILY_CAP_REACHED",
     NOT_ENOUGH_ENERGY: "FIGHT_NOT_ENOUGH_ENERGY",
     NO_ACCEPTED_FIGHT: "FIGHT_NO_ACCEPTED_FIGHT",
     INVALID_STRATEGY: "FIGHT_INVALID_STRATEGY",
@@ -46,14 +45,8 @@ async function acceptOffer(req, res) {
         res.json(fight);
     } catch (err) {
         if (err.message && err.message.includes("not found")) return res.status(404).json({ message: err.message });
-        if (err.message === "Not enough energy"
-            || err.message?.startsWith("Daily fight cap reached")) {
-            return res.status(400).json({
-                message: err.message,
-                code: err.message?.startsWith("Daily fight cap reached")
-                    ? FIGHT_ERROR_CODES.DAILY_CAP_REACHED
-                    : FIGHT_ERROR_CODES.NOT_ENOUGH_ENERGY
-            });
+        if (err.message === "Not enough energy") {
+            return res.status(400).json({ message: err.message, code: FIGHT_ERROR_CODES.NOT_ENOUGH_ENERGY });
         }
         console.error(err);
         res.status(500).json({ message: "Internal server error" });

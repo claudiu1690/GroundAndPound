@@ -42,9 +42,8 @@ function isTierUnlocked(fighterTier, requiredTier) {
 }
 
 /**
- * Daily reset for the per-day training session counter. Mirrors the
- * calendar-day (toDateString, server local time) idiom used by
- * fightService.ensureDailyFightTierState. Called once per train.
+ * Daily reset for the per-day training session counter, keyed on the
+ * calendar day (toDateString, server local time). Called once per train.
  */
 function ensureDailyTrainingState(fighter) {
     const today = new Date().toDateString();

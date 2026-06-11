@@ -492,7 +492,6 @@ function App() {
 
   const maybeShowBlockPopup = useCallback((rawMessage, errorCode) => {
     const blockingCodes = new Set([
-      "FIGHT_DAILY_CAP_REACHED",
       "FIGHT_NOT_ENOUGH_ENERGY",
       "FIGHT_MENTAL_RESET_REQUIRED",
       "FIGHT_DOCTOR_VISIT_REQUIRED",
@@ -502,7 +501,6 @@ function App() {
     ]);
     const msg = (rawMessage || "").toLowerCase();
     const fallbackByMessage = [
-      "daily fight cap reached",
       "not enough energy",
       "mental reset required",
       "cannot fight:",

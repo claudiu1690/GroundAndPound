@@ -15,6 +15,8 @@ const fighterSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     nickname: { type: String, default: null },
+    // Marks a non-account NPC seeded for PVP ladder population (delete by this flag).
+    isPvpBot: { type: Boolean, default: false },
     weightClass: {
         type: String,
         enum: WEIGHT_CLASSES,
@@ -103,13 +105,9 @@ const fighterSchema = new mongoose.Schema({
     // Training camp state for accepted fight
     acceptedFightId: { type: mongoose.Schema.Types.ObjectId, ref: "Fight", default: null },
     trainingCampActions: { type: Number, default: 0 },
-    // Daily fight count — legacy total (kept for migration / display); cap uses fightsTodayByTier
-    fightsToday: { type: Number, default: 0 },
+    // Timestamp of the player's last fight — used as the notoriety "last event" time.
+    // (Daily fight caps were removed; fights are limited only by energy.)
     lastFightDate: { type: Date, default: null },
-    /** Calendar day key (toDateString) for fightsTodayByTier reset */
-    fightDayKey: { type: String, default: null },
-    /** Fights completed today per promotion tier (e.g. Amateur vs Regional Pro caps are separate) */
-    fightsTodayByTier: { type: mongoose.Schema.Types.Mixed, default: {} },
     /** Training sessions completed today (calendar day); reset via trainingDayKey */
     trainingSessionsToday: { type: Number, default: 0 },
     /** Lifetime training sessions completed (never resets) — drives session badges. */
