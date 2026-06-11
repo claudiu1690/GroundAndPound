@@ -282,6 +282,8 @@ A win starts at +120 DP and is shaped by modifiers, in order. Beating the belt h
 
 Rivalries build as you keep beating the same player within a season — the third win 'resolves' the rivalry and pays its +25 bonus. The belt belongs to whoever sits #1 in the Champion division when the season ends (with at least one fight): they're crowned, enter the Hall of Fame, and take the season's biggest reward. And if you go quiet, it costs you — seven days without a PvP fight bleeds −10 DP (Prospects are spared), so check in to defend your climb.
 
+You watch all of this on the Ladder screen. Filter it by division — and, in the open Season 1, by weight class — to see exactly who sits above and below you; your own position stays pinned at the top no matter what you're browsing, and a 'Last Active' column flags who's drifting toward inactivity decay. Tap any fighter to open their profile, and if they're a fair match in your season you can challenge them straight from there. That shortcut still respects matchmaking, though: brand-new fighters under their New Competitor Shield, and anyone too far outside your skill range, can't be called out directly.
+
 > **Key takeaway:** DP is everything. Promotions reset you to the new floor with a 3-fight shield, the belt goes to the season-end Champion #1, and a week of inactivity costs DP.
 
 ### Seasons, Twists & Rewards

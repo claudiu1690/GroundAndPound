@@ -6,8 +6,22 @@ import { PinnedBadgeRow } from "./PinnedBadgeRow";
  * Profile hero. Shows the player's CUSTOMIZED cosmetic banner (the same
  * BannerPreview rendered in the sidebar) — no avatar/photo — with the
  * pinned-badge row and a "Customize Banner" button alongside.
+ *
+ * When `readOnly` is true:
+ *   - BannerPreview is non-interactive (no onClick / no title).
+ *   - "Customize Banner" button is hidden.
+ *   - PinnedBadgeRow receives readOnly so pin editing is disabled.
  */
-export function ProfileBanner({ fighter, earnedBadges, earnedCount, fighterId, onMessage, onPinnedChange, onCustomizeBanner }) {
+export function ProfileBanner({
+  fighter,
+  earnedBadges,
+  earnedCount,
+  fighterId,
+  onMessage,
+  onPinnedChange,
+  onCustomizeBanner,
+  readOnly = false,
+}) {
   return (
     <div className="banner career-banner">
       <div className="banner-bg" />
@@ -16,8 +30,8 @@ export function ProfileBanner({ fighter, earnedBadges, earnedCount, fighterId, o
           <BannerPreview
             fighter={fighter}
             size="full"
-            onClick={onCustomizeBanner}
-            title="Click to customize your banner"
+            onClick={readOnly ? undefined : onCustomizeBanner}
+            title={readOnly ? undefined : "Click to customize your banner"}
           />
         </div>
 
@@ -27,12 +41,15 @@ export function ProfileBanner({ fighter, earnedBadges, earnedCount, fighterId, o
             earnedBadges={earnedBadges}
             earnedCount={earnedCount}
             pinnedBadges={fighter?.pinnedBadges}
-            onMessage={onMessage}
-            onPinnedChange={onPinnedChange}
+            onMessage={readOnly ? null : onMessage}
+            onPinnedChange={readOnly ? null : onPinnedChange}
+            readOnly={readOnly}
           />
-          <button type="button" className="customize-btn" onClick={onCustomizeBanner}>
-            <Pencil size={11} /> Customize Banner
-          </button>
+          {!readOnly && (
+            <button type="button" className="customize-btn" onClick={onCustomizeBanner}>
+              <Pencil size={11} /> Customize Banner
+            </button>
+          )}
         </div>
       </div>
     </div>

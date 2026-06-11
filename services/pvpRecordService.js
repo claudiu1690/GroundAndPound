@@ -518,7 +518,9 @@ async function getLadderPage({ seasonId, season, division, wcParam, page, limit,
             fightingStyle: f.style || null,
             // Authoritative real class from the fighter doc (record value is a fallback).
             realWeightClass: f.weightClass || r.realWeightClass || null,
-            lastActiveAt: r.lastFightAt || null,
+            // Prefer last PVP fight (decay-relevant); fall back to last record activity
+            // so a never-fought record shows its join time, not a blank "—".
+            lastActiveAt: r.lastFightAt || r.lastActiveAt || null,
             isViewer: pid === me,
             isBeltHolder: beltId != null && pid === beltId,
             isRivalWithViewer: rivalSet.has(pid),

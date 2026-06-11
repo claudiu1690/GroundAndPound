@@ -637,6 +637,14 @@ A staged entry path softens the cold start so a newcomer is never farmed or hope
 
 **Season-1 exception summary:** unlock gate APPLIES; placement, shield, and catch-up are SKIPPED; first-season bonus APPLIES. Detected via `season.seasonNumber === 1` at record creation.
 
+### 22.10 Browsing the ladder & challenging from a profile
+The Ladder tab is a full, filterable standings view, not just a top-N list:
+
+- **Filters.** A division selector (Prospect → Champion, defaulting to the player's own division) and — in a cross-weight (Open) season — a weight-class selector (All / FW / LW / MW / HW, defaulting to All); in a normal per-weight-class season the weight filter is hidden. A **division summary** row shows the live fighter count in each division. All counts and the table respect the active filters; in an Open season the weight filter and the per-row weight-class tag key on each fighter's **real** weight class.
+- **Your position** stays pinned above the table regardless of the active filter, showing your rank, DP, record, streak, and progress to the next division (or, for a Champion, your rank among champions and the weeks left in the season).
+- **The table** is paginated (20 per page, "Load More") and ranks fighters within the selected division by DP. Rows carry contextual tags (Belt Holder, Rival, You, Protected, streak ×1.25, cross-weight class), highlight the belt holder and your own row, and a "Last Active" column hints at who is at risk of inactivity decay.
+- **Profiles & challenges.** Clicking any fighter opens a **read-only** version of their Career Profile (no edit controls). If they're a valid target in the current season, a **Challenge** button there is a shortcut into the pre-fight flow — but it never bypasses matchmaking: it's disabled for protected (new-competitor-shield) fighters and for anyone outside the player's OVR matchmaking range, and hidden for fighters not in the same active season.
+
 ---
 
 ## 23. System Interconnections

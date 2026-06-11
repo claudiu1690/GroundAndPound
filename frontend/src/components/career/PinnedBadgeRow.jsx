@@ -16,7 +16,7 @@ const MAX_PINS = 3;
  * `earnedBadges` is the flat list of earned badge metadata (id, name, category)
  * pulled from the profile. `pinnedBadges` is the current ordered id array.
  */
-export function PinnedBadgeRow({ fighterId, earnedBadges, pinnedBadges, earnedCount, onMessage, onPinnedChange }) {
+export function PinnedBadgeRow({ fighterId, earnedBadges, pinnedBadges, earnedCount, onMessage, onPinnedChange, readOnly = false }) {
   const [pickerSlot, setPickerSlot] = useState(null); // index being edited, or null
   const [saving, setSaving] = useState(false);
 
@@ -79,6 +79,33 @@ export function PinnedBadgeRow({ fighterId, earnedBadges, pinnedBadges, earnedCo
 
     commit(next);
   }, [pickerSlot, pins, commit]);
+
+  // In readOnly mode: render pinned badges as static icons (no picker, no "+" slot).
+  if (readOnly) {
+    const readOnlyPins = pins.filter(Boolean);
+    return (
+      <div className="pinned-row">
+        <span className="pin-lbl">Pinned</span>
+        {readOnlyPins.length === 0 && (
+          <span style={{ fontSize: 10, color: "#555" }}>None</span>
+        )}
+        {readOnlyPins.map((id) => {
+          const meta = byId.get(id);
+          const { Icon, color, bg } = badgeVisual(id, meta?.category);
+          return (
+            <span
+              key={id}
+              className="pin-b"
+              style={{ background: bg, borderColor: color, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+              title={meta?.name || id}
+            >
+              <Icon size={18} color={color} strokeWidth={1.8} aria-hidden="true" />
+            </span>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <>

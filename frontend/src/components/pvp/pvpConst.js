@@ -82,6 +82,66 @@ export const SOFT_RESET = {
 };
 
 export const SEASON_LENGTH_DAYS = 70;
+
+/**
+ * Map CAPITALIZED real weight-class names (as returned by the API in
+ * `realWeightClass`) to their short display abbreviations.
+ * Deliberately NOT reusing the WEIGHT_CLASSES_PVP lowercase array.
+ */
+export function wcAbbrev(realWeightClass) {
+  const map = {
+    Featherweight: "FW",
+    Lightweight: "LW",
+    Middleweight: "MW",
+    Heavyweight: "HW",
+    // lowercase variants as a fallback in case the API sends them
+    featherweight: "FW",
+    lightweight: "LW",
+    middleweight: "MW",
+    heavyweight: "HW",
+  };
+  return map[realWeightClass] ?? realWeightClass ?? "";
+}
+
+/**
+ * Returns the CSS color for a given `lastActiveAt` ISO date string.
+ * today (UTC same day) → #4ADE80
+ * 1–3 days ago         → #AAAAAA
+ * 4–7 days ago         → #555
+ * 8+ days or null      → #333
+ */
+export function lastActiveColor(date) {
+  if (!date) return "#333";
+  const now = new Date();
+  const d = new Date(date);
+  // UTC-day difference
+  const nowDay = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const dDay = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const days = Math.floor((nowDay - dDay) / 86400000);
+  if (days === 0) return "#4ADE80";
+  if (days <= 3) return "#AAAAAA";
+  if (days <= 7) return "#555";
+  return "#333";
+}
+
+/**
+ * Returns a human-readable relative time string for a `lastActiveAt` date.
+ * null → "—"
+ * today (UTC same day) → "Today"
+ * 1d ago → "Yesterday"
+ * Nd ago → "Nd ago"
+ */
+export function relativeTime(date) {
+  if (!date) return "—";
+  const now = new Date();
+  const d = new Date(date);
+  const nowDay = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const dDay = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const days = Math.floor((nowDay - dDay) / 86400000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  return `${days}d ago`;
+}
 export const WEIGHT_CLASSES_PVP = ["featherweight", "lightweight", "middleweight", "heavyweight"];
 
 /** Label used wherever an Open (cross-weight-class) season's identity is shown. */

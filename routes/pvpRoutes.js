@@ -5,7 +5,11 @@ const router = express.Router();
 
 // All routes are auth-protected via the mount in app.js (app.use("/pvp", authMiddleware, ...)).
 // Actor = req.user.fighterId. /record and /ladder are intentionally public reads (within auth).
-router.get("/ladder/:weightClass/:seasonId", c.getLadder);
+// /ladder/position MUST be registered before the bare /ladder so the literal path
+// is not shadowed (Express matches in declaration order).
+router.get("/ladder/position", c.getLadderPosition);
+router.get("/ladder", c.getLadder);
+router.get("/challenge-eligibility/:playerId", c.getChallengeEligibility);
 router.get("/record/:playerId", c.getRecord);
 router.get("/opponents", c.getOpponents);
 router.post("/fight", c.postFight);

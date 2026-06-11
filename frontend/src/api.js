@@ -336,8 +336,14 @@ export const api = {
     request("/auth/recover", { method: "POST", body: JSON.stringify({ email, password }) }),
 
   // ── PVP / The Proving Ground ─────────────────────────────
-  pvpLadder: (wc, seasonId, page = 1, limit = 25) =>
-    request(`/pvp/ladder/${wc}/${seasonId}?page=${page}&limit=${limit}`),
+  pvpLadder: ({ seasonId, division, weightClass, page = 1, limit = 20 }) => {
+    const p = new URLSearchParams({ seasonId, page: String(page), limit: String(limit) });
+    if (division) p.set("division", division);
+    if (weightClass && weightClass !== "All") p.set("weightClass", weightClass);
+    return request(`/pvp/ladder?${p}`);
+  },
+  pvpLadderPosition: (seasonId) => request(`/pvp/ladder/position?seasonId=${seasonId}`),
+  pvpChallengeEligibility: (playerId) => request(`/pvp/challenge-eligibility/${playerId}`),
   pvpRecord: (playerId) =>
     request(`/pvp/record/${playerId}`),
   pvpOpponents: () =>
