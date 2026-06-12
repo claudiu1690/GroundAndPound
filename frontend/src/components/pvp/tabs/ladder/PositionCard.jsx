@@ -29,7 +29,6 @@ export function PositionCard({ position }) {
     nextDivisionThreshold,
     divisionFloor,
     dpToPromotion,
-    promotionShield,
     shieldActive,
     catchUpActive,
     championRank,
@@ -52,6 +51,11 @@ export function PositionCard({ position }) {
       : 0;
 
   const wcDisplay = realWeightClass ? wcAbbrev(realWeightClass) : null;
+
+  // New Competitor Shield badge (shown to brand-new players; not granted in Season 1).
+  const shieldLabel = shieldActive ? "🛡 New Competitor Shield" : null;
+  const shieldTip =
+    "New Competitor Shield: as a new player you can't be challenged for a short grace period after joining — it ends when it expires or when you throw your first attack.";
 
   return (
     <div className="lt-pos-card">
@@ -96,8 +100,8 @@ export function PositionCard({ position }) {
           {catchUpActive && (
             <div className="lt-pos-catchup">×2 catch-up active</div>
           )}
-          {(shieldActive || promotionShield > 0) && (
-            <div className="lt-pos-shield">🛡 Shield active</div>
+          {shieldLabel && (
+            <div className="lt-pos-shield" title={shieldTip}>{shieldLabel}</div>
           )}
         </div>
       </div>

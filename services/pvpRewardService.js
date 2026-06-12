@@ -275,7 +275,6 @@ async function softResetInto(season, nextSeason, ladder) {
                 winStreak: 0,
                 longestStreak: 0,
                 defenseGameplan: record.defenseGameplan,
-                promotionShield: 0,
                 lastFightAt: null,
                 lastActiveAt: new Date(),
             });
@@ -340,7 +339,6 @@ async function softResetOpen(openSeason, ladder, nextSeasons) {
                 winStreak: 0,
                 longestStreak: 0,
                 defenseGameplan: record.defenseGameplan,
-                promotionShield: 0,
                 lastFightAt: null,
                 lastActiveAt: new Date(),
             });

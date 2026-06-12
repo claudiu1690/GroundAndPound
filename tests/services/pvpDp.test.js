@@ -218,7 +218,7 @@ test("loss skips all positive modifiers", () => {
 test("defender never gains DP — attacker-loss yields defender change 0 (caller passes 0)", () => {
     // Per contract, a successful DEFENSE gives the defender 0. The orchestrator passes
     // dpChange=0 in that case; applyDpAndDivision must leave dp untouched.
-    const record = { dp: 800, division: "contender", peakDp: 800, promotionShield: 0 };
+    const record = { dp: 800, division: "contender", peakDp: 800 };
     const res = applyDpAndDivision(record, 0, { isWin: false });
     assert.strictEqual(record.dp, 800);
     assert.strictEqual(res.dpAfter, 800);
@@ -228,48 +228,39 @@ test("defender never gains DP — attacker-loss yields defender change 0 (caller
 // ── applyDpAndDivision: floor on loss ───────────────────────────────────────
 
 test("DP floor on loss — cannot drop below current division floor", () => {
-    const record = { dp: 320, division: "contender", peakDp: 1000, promotionShield: 0 };
+    const record = { dp: 320, division: "contender", peakDp: 1000 };
     applyDpAndDivision(record, -55, { isWin: false }); // 320-55=265 < 300 floor
     assert.strictEqual(record.dp, 300); // clamped to contender floor
     assert.strictEqual(record.division, "contender"); // no mid-season demotion
 });
 
 test("loss above floor reduces dp normally", () => {
-    const record = { dp: 900, division: "contender", peakDp: 900, promotionShield: 0 };
+    const record = { dp: 900, division: "contender", peakDp: 900 };
     applyDpAndDivision(record, -55, { isWin: false });
     assert.strictEqual(record.dp, 845);
 });
 
 // ── applyDpAndDivision: promotion sets to floor (no carry) + shield ──────────
 
-test("promotion sets dp to new division floor (no carry) and shield=3", () => {
+test("promotion sets dp to new division floor (no carry)", () => {
     // contender promotes at 1200. dp 1180 + 150 = 1330 >= 1200 → promote to challenger (floor 1200)
-    const record = { dp: 1180, division: "contender", peakDp: 1180, promotionShield: 0 };
+    const record = { dp: 1180, division: "contender", peakDp: 1180 };
     const res = applyDpAndDivision(record, 150, { isWin: true });
     assert.strictEqual(res.promoted, true);
     assert.strictEqual(record.division, "challenger");
     assert.strictEqual(record.dp, divisionFloor("challenger")); // 1200, no carry of the +130 overshoot
-    assert.strictEqual(record.promotionShield, 3);
 });
 
 test("win below promoteAt does not promote", () => {
-    const record = { dp: 500, division: "contender", peakDp: 500, promotionShield: 0 };
+    const record = { dp: 500, division: "contender", peakDp: 500 };
     const res = applyDpAndDivision(record, 120, { isWin: true });
     assert.strictEqual(res.promoted, false);
     assert.strictEqual(record.dp, 620);
     assert.strictEqual(record.division, "contender");
 });
 
-test("shield decrements every fight, win or loss", () => {
-    const record = { dp: 1300, division: "challenger", peakDp: 1300, promotionShield: 3 };
-    applyDpAndDivision(record, 120, { isWin: true });
-    assert.strictEqual(record.promotionShield, 2);
-    applyDpAndDivision(record, -55, { isWin: false });
-    assert.strictEqual(record.promotionShield, 1);
-});
-
 test("peakDp tracks high-water mark", () => {
-    const record = { dp: 500, division: "contender", peakDp: 500, promotionShield: 0 };
+    const record = { dp: 500, division: "contender", peakDp: 500 };
     applyDpAndDivision(record, 120, { isWin: true }); // 620
     assert.strictEqual(record.peakDp, 620);
     applyDpAndDivision(record, -55, { isWin: false }); // 565 — peak stays 620

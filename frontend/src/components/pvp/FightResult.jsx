@@ -40,7 +40,6 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
     energyRemaining,
     streakBefore,
     streakBroken,
-    promotionShieldGranted,
     playerIsNowBeltHolder,
     beltHolderDpAfter,
     seasonWeeksRemaining,
@@ -337,7 +336,7 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
             <div className="pvp-banner-info">
               <div className="pvp-banner-title">Promoted to {divisionLabel(divisionAfter)}</div>
               <div className="pvp-banner-sub">
-                Promotion Shield active — {promotionShieldGranted ?? attacker?.promotionShield ?? 3} fights of DP protection.
+                Your DP resets to the new division&apos;s floor — keep winning to climb.
               </div>
             </div>
             <div className="pvp-banner-val">

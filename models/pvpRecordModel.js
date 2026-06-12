@@ -25,7 +25,6 @@ const pvpRecordSchema = new mongoose.Schema({
     winStreak: { type: Number, default: 0 },
     longestStreak: { type: Number, default: 0 },
     defenseGameplan: { type: String, enum: GAMEPLAN_KEYS, default: "balanced" },
-    promotionShield: { type: Number, default: 0, min: 0, max: 3 },
     lastFightAt: { type: Date, default: null },
     lastActiveAt: { type: Date, default: Date.now },
     // Idempotency markers — see pvpDecayService / pvpRewardService.

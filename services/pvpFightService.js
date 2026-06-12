@@ -308,7 +308,6 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
             attackerRecord.dp = seedDp;
             attackerRecord.peakDp = seedDp;
             attackerRecord.division = divisionForDp(seedDp);
-            // NO promotionShield on placement completion.
             attacker.pvpOnboarding.placementComplete = true;
             attacker.pvpOnboarding.shieldExpiresAt = new Date(now.getTime() + NEW_COMPETITOR_SHIELD_DAYS * DAY_MS);
             placementComplete = true;
@@ -417,7 +416,6 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
                 rankAfter,
                 streakAfter: attackerRecord.winStreak, // stays 0 in placement
                 promoted: false,
-                promotionShield: attackerRecord.promotionShield,
             },
             defender: {
                 playerId: String(defenderId),
@@ -443,7 +441,6 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
             commentary: engine.commentary || [],
             streakBefore: 0,
             streakBroken: false,
-            promotionShieldGranted: 0,
             playerIsNowBeltHolder: false,
             beltHolderDpAfter: null,
             seasonWeeksRemaining: Math.max(0, Math.ceil((season.endDate.getTime() - now.getTime()) / (7 * DAY_MS))),
@@ -650,7 +647,6 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
             rankAfter,
             streakAfter: attackerRecord.winStreak,
             promoted: attackerApply.promoted,
-            promotionShield: attackerRecord.promotionShield,
         },
         defender: {
             playerId: String(defenderId),
@@ -676,7 +672,6 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         commentary: engine.commentary || [],
         streakBefore: attackerStreakBefore,
         streakBroken: !attackerWon && !isDraw && attackerStreakBefore >= DP.STREAK_MIN,
-        promotionShieldGranted: attackerApply.promoted ? 3 : 0,
         playerIsNowBeltHolder,
         beltHolderDpAfter,
         seasonWeeksRemaining,

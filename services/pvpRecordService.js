@@ -231,7 +231,6 @@ function shapeRecord(record, fighter, opts = {}) {
         winStreak: record.winStreak,
         longestStreak: record.longestStreak,
         defenseGameplan: record.defenseGameplan,
-        promotionShield: record.promotionShield,
         rank: opts.rank ?? null,
         isBeltHolder: !!opts.isBeltHolder,
         lastFightAt: record.lastFightAt,
@@ -610,7 +609,6 @@ async function getPositionForViewer(viewerId, season) {
             nextDivisionThreshold: threshold,
             divisionFloor: meta.floor,
             dpToPromotion,
-            promotionShield: record.promotionShield,
             shieldActive,
             shieldExpiresAt: shieldActive ? shieldExp : null,
             // Counter dropped — kept for FE compat, always 0.

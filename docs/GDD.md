@@ -578,7 +578,7 @@ Standing is measured in **Division Points (DP)**. Your **division** is derived p
 | Elite | 2,500 | 5,000 |
 | Champion | 5,000 | — (top) |
 
-On a win that crosses your division's promote threshold you **promote**: division advances, DP resets to the new floor (no carry), and you gain a **Promotion Shield** (3 fights of DP-loss protection, decrementing each fight). Divisions never demote mid-season — a loss floors your DP at your current division's floor; the only downward movement is the season-end soft reset (§22.6).
+On a win that crosses your division's promote threshold you **promote**: division advances and DP resets to the new floor (no carry). Divisions never demote mid-season — a loss floors your DP at your current division's floor; the only downward movement is the season-end soft reset (§22.6).
 
 ### 22.3 Earning & Losing DP
 Base: **win +120**, attacker **loss −55**, defender **loss −28**. A draw is **0**. A defender who repels an attack gains **nothing** (defense holds position, it doesn't farm DP). Win modifiers apply in this order, then clamps:

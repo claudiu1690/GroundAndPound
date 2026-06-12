@@ -264,7 +264,7 @@ Season 1 is the exception. Because it's the open launch season where everyone st
 
 ### Division Points, Divisions & the Belt
 
-*How DP, the five divisions, promotion shields, rivalries, decay and the seasonal belt work.*
+*How DP, the five divisions, promotion, rivalries, decay and the seasonal belt work.*
 
 Your standing in the Proving Ground is one number: Division Points (DP). Win and it climbs, lose and it falls. Your division is read straight off your DP — there are five, each with a floor you sit above and a threshold that promotes you.
 
@@ -276,7 +276,7 @@ Your standing in the Proving Ground is one number: Division Points (DP). Win and
 | Elite | 2,500 | 5,000 |
 | Champion | 5,000 | Top — holds the belt |
 
-A win that pushes you past your division's promotion threshold promotes you: you move up, your DP resets to the new division's floor, and you receive a Promotion Shield worth three fights of protection — DP losses can't drop you while the shield holds. You never get demoted mid-season. A loss can floor your DP at your current division's bottom, but you keep the division until the season resets.
+A win that pushes you past your division's promotion threshold promotes you: you move up and your DP resets to the new division's floor. You never get demoted mid-season — a loss can floor your DP at your current division's bottom, but you keep the division until the season resets.
 
 A win starts at +120 DP and is shaped by modifiers, in order. Beating the belt holder adds +50. Resolving a rivalry adds +25. Fighting up the rankings pays a bracket bonus — +10% for a 6–10 OVR gap, +25% for an 11–20 gap. The season twist can multiply matching wins. A 3-plus win streak multiplies everything by ×1.25. But hit the same opponent twice in one week and the reward is halved, then quartered — so spread your fights around. Losing as the attacker costs up to −55; defending and losing only costs −28; a win always banks at least +1, and no single loss costs more than −100.
 

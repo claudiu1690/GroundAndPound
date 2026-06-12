@@ -631,7 +631,7 @@ export const LIBRARY_ARTICLES = [
         id: "proving-ground-divisions",
         category: "The Proving Ground",
         title: "Division Points, Divisions & the Belt",
-        summary: "How DP, the five divisions, promotion shields, rivalries, decay and the seasonal belt work.",
+        summary: "How DP, the five divisions, promotion, rivalries, decay and the seasonal belt work.",
         tags: ["pvp", "division points", "dp", "divisions", "promotion", "shield", "belt", "rivalry", "decay", "bracket", "streak"],
         body: [
             "Your standing in the Proving Ground is one number: Division Points (DP). Win and it climbs, lose and it falls. Your division is read straight off your DP — there are five, each with a floor you sit above and a threshold that promotes you.",
@@ -646,7 +646,7 @@ export const LIBRARY_ARTICLES = [
                     ["Champion", "5,000", "Top — holds the belt"],
                 ],
             },
-            "A win that pushes you past your division's promotion threshold promotes you: you move up, your DP resets to the new division's floor, and you receive a Promotion Shield worth three fights of protection — DP losses can't drop you while the shield holds. You never get demoted mid-season. A loss can floor your DP at your current division's bottom, but you keep the division until the season resets.",
+            "A win that pushes you past your division's promotion threshold promotes you: you move up and your DP resets to the new division's floor. You never get demoted mid-season — a loss can floor your DP at your current division's bottom, but you keep the division until the season resets.",
             "A win starts at +120 DP and is shaped by modifiers, in order. Beating the belt holder adds +50. Resolving a rivalry adds +25. Fighting up the rankings pays a bracket bonus — +10% for a 6–10 OVR gap, +25% for an 11–20 gap. The season twist can multiply matching wins. A 3-plus win streak multiplies everything by ×1.25. But hit the same opponent twice in one week and the reward is halved, then quartered — so spread your fights around. Losing as the attacker costs up to −55; defending and losing only costs −28; a win always banks at least +1, and no single loss costs more than −100.",
             "Rivalries build as you keep beating the same player within a season — the third win 'resolves' the rivalry and pays its +25 bonus. The belt belongs to whoever sits #1 in the Champion division when the season ends (with at least one fight): they're crowned, enter the Hall of Fame, and take the season's biggest reward. And if you go quiet, it costs you — seven days without a PvP fight bleeds −10 DP (Prospects are spared), so check in to defend your climb.",
             "You watch all of this on the Ladder screen. Filter it by division — and, in the open Season 1, by weight class — to see exactly who sits above and below you; your own position stays pinned at the top no matter what you're browsing, and a 'Last Active' column flags who's drifting toward inactivity decay. Tap any fighter to open their profile, and if they're a fair match in your season you can challenge them straight from there. That shortcut still respects matchmaking, though: brand-new fighters under their New Competitor Shield, and anyone too far outside your skill range, can't be called out directly.",

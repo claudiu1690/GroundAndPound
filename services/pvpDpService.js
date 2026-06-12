@@ -165,12 +165,11 @@ function computeDp({
  * Rules (contract §2 applyDpAndDivision):
  *  - peakDp tracks the high-water mark of dp after the change.
  *  - WIN: dp += change. If next division exists and dp >= current promoteAt → promote:
- *         set division=next, dp=next.floor (NO CARRY), promotionShield=3.
+ *         set division=next, dp=next.floor (NO CARRY).
  *         Else recompute division upward only (never demote on a win).
  *  - LOSS: dp = max(divisionFloor(current division), dp + change). Division never
  *          demotes mid-season (soft reset happens only at season end).
- *  - DRAW (change 0): no division change, shield still decrements.
- *  - Shield decrements by 1 after EVERY fight (win/loss/draw) if > 0.
+ *  - DRAW (change 0): no division change.
  *
  * @returns {{ promoted:boolean, newDivision:string, dpAfter:number }}
  */
@@ -186,7 +185,6 @@ function applyDpAndDivision(record, dpChange, { isWin = false } = {}) {
         if (next && curMeta && curMeta.promoteAt != null && record.dp >= curMeta.promoteAt) {
             record.division = next;
             record.dp = divisionFloor(next); // set to floor, no carry
-            record.promotionShield = 3;
             promoted = true;
         } else {
             // Recompute upward only — a win must never demote.
@@ -204,12 +202,6 @@ function applyDpAndDivision(record, dpChange, { isWin = false } = {}) {
 
     // peakDp high-water mark.
     if (record.dp > (record.peakDp || 0)) record.peakDp = record.dp;
-
-    // Shield decrements after every fight — EXCEPT the fight that just promoted,
-    // which freshly granted shield=3 (those 3 protected fights are the ones still to come).
-    // DELIBERATE (H-1, not a bug): "promotionShield = 3" means 3 protected fights AFTER
-    // promotion, so the promoting fight itself must not consume one of them.
-    if (!promoted && record.promotionShield > 0) record.promotionShield -= 1;
 
     return { promoted, newDivision: record.division, dpAfter: record.dp, beforeDivision };
 }
