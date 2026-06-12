@@ -180,12 +180,18 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
         cls: "catchup",
       });
     }
-    // Repeat penalty
+    // Repeat penalty — show the actual DP it removed (signed, negative), not the bare
+    // multiplier. The ×0.5/×0.25 is kept for the math; this is the human-readable hit.
     if ((dpBreakdown.repeatPenalty ?? 1) !== 1) {
+      const penaltyDp = dpBreakdown.repeatPenaltyDp;
       breakdownRows.push({
         label: "Repeat penalty",
-        value: `×${dpBreakdown.repeatPenalty}`,
+        value:
+          penaltyDp != null && penaltyDp !== 0
+            ? `${penaltyDp}` // already negative, e.g. "-109"
+            : `×${dpBreakdown.repeatPenalty}`, // fallback for older payloads
         cls: "penalty",
+        tip: `You've already fought this opponent ${dpBreakdown.repeatPenalty === 0.25 ? "3+ times" : "twice"} this week — repeat wins pay reduced DP (×${dpBreakdown.repeatPenalty}) so farming the same target isn't worth it.`,
       });
     }
     // Streak broken (loss)
@@ -292,8 +298,11 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
         <div className="pvp-dpb-title">DP Breakdown</div>
         <div className="pvp-dpb-rows">
           {breakdownRows.map((row, i) => (
-            <div key={i} className="pvp-dpb-row">
-              <span className="pvp-dpb-lbl">{row.label}</span>
+            <div key={i} className="pvp-dpb-row" title={row.tip || undefined}>
+              <span className="pvp-dpb-lbl">
+                {row.label}
+                {row.tip && <span className="pvp-dpb-info"> ⓘ</span>}
+              </span>
               <span className={`pvp-dpb-val pvp-dpb-val-${row.cls}`}>{row.value}</span>
             </div>
           ))}

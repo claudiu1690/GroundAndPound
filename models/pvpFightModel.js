@@ -30,6 +30,8 @@ const pvpFightSchema = new mongoose.Schema({
         bracketBonus: { type: Number, default: 0 },
         streakMultiplier: { type: Number, default: 1 },
         repeatPenalty: { type: Number, default: 1 },
+        // Actual DP removed by the repeat penalty (signed, negative) — for display.
+        repeatPenaltyDp: { type: Number, default: 0 },
         twistBonus: { type: Number, default: 0 },
         // Catch-up multiplier on attacker WIN DP (1 normally, 2 while catch-up active).
         catchUpMultiplier: { type: Number, default: 1 },

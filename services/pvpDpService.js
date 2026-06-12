@@ -67,6 +67,7 @@ function computeDp({
         bracketBonus: 0,
         streakMultiplier: 1,
         repeatPenalty: 1,
+        repeatPenaltyDp: 0,
         twistBonus: 0,
         catchUpMultiplier: 1,
     };
@@ -135,13 +136,19 @@ function computeDp({
         val = Math.round(val * DP.STREAK_MULT);
     }
 
-    // 7. repeat penalty (same opponent, this ISO week — repeatCount is PRIOR fights)
+    // 7. repeat penalty (same opponent, this ISO week — repeatCount is PRIOR fights).
+    //    Keep the multiplier for the math; also record the ACTUAL DP it removed (signed,
+    //    negative) so the result screen can show "−N" instead of a bare "×0.25".
     if (repeatCount === 1) {
+        const beforePenalty = val;
         breakdown.repeatPenalty = DP.REPEAT_2ND; // 2nd fight → ×0.5
         val = Math.round(val * DP.REPEAT_2ND);
+        breakdown.repeatPenaltyDp = val - beforePenalty;
     } else if (repeatCount >= 2) {
+        const beforePenalty = val;
         breakdown.repeatPenalty = DP.REPEAT_3RD; // 3rd+ → ×0.25
         val = Math.round(val * DP.REPEAT_3RD);
+        breakdown.repeatPenaltyDp = val - beforePenalty;
     }
 
     // 8. catch-up multiplier — late-joiner double DP on a WIN. The caller is responsible

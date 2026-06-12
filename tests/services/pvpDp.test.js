@@ -89,10 +89,12 @@ test("repeat penalty: 2nd fight ×0.5, 3rd+ ×0.25", () => {
     const second = computeDp({ isWin: true, repeatCount: 1 });
     assert.strictEqual(second.breakdown.repeatPenalty, 0.5);
     assert.strictEqual(second.dpChange, 60); // 120 * 0.5
+    assert.strictEqual(second.breakdown.repeatPenaltyDp, -60); // 60 - 120
 
     const third = computeDp({ isWin: true, repeatCount: 2 });
     assert.strictEqual(third.breakdown.repeatPenalty, 0.25);
     assert.strictEqual(third.dpChange, 30); // 120 * 0.25
+    assert.strictEqual(third.breakdown.repeatPenaltyDp, -90); // 30 - 120
 });
 
 test("full ordered stack belt→rivalry→bracket→streak→repeat", () => {

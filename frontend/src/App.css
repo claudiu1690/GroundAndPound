@@ -11987,6 +11987,8 @@ code {
 .pvp-dpb-rows { display: flex; flex-direction: column; gap: 3px; }
 .pvp-dpb-row { display: flex; align-items: center; justify-content: space-between; }
 .pvp-dpb-lbl { font-size: 11px; color: #AAAAAA; }
+.pvp-dpb-row[title] { cursor: help; }
+.pvp-dpb-info { font-size: 9px; color: #777; }
 .pvp-dpb-val { font-family: var(--font-display); font-weight: 700; font-size: 12px; }
 .pvp-dpb-val-base { color: #F0F0F0; }
 .pvp-dpb-val-bonus { color: #4ADE80; }
