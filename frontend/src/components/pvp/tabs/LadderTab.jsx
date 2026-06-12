@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Shield } from "lucide-react";
 import { usePvpLadder } from "../../../hooks/usePvpLadder";
 import { usePvpPosition } from "../../../hooks/usePvpPosition";
@@ -44,16 +44,18 @@ export function LadderTab({ season, myFighterId, onboarding, onOpenProfile }) {
   const { position, loading: posLoading } = usePvpPosition(seasonId);
 
   // ── filter state ─────────────────────────────────────────────────────────
-  // Default division: player's own division (from position) once loaded.
+  // division === null means "All divisions". It defaults to the player's own
+  // division ONCE when position first loads; after that the player is free to
+  // pick "All" (null) and it sticks.
   const [division, setDivision] = useState(null);
   const [weightClass, setWeightClass] = useState("All");
+  const didInitDivision = useRef(false);
 
-  // Sync default division when position first loads.
   useEffect(() => {
-    if (position?.division && division === null) {
+    if (!didInitDivision.current && position?.division) {
+      didInitDivision.current = true;
       setDivision(position.division);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [position?.division]);
 
   // ── ladder data ───────────────────────────────────────────────────────────

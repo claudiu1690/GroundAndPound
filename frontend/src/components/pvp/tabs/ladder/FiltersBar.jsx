@@ -42,6 +42,12 @@ export function FiltersBar({ division, setDivision, weightClass, setWeightClass,
     <div className="lt-filters-bar">
       <span className="lt-filter-lbl">Division</span>
       <div className="lt-filter-group">
+        <button
+          className={`lt-fb${!division ? " lt-fb-act" : ""}`}
+          onClick={() => setDivision(null)}
+        >
+          All
+        </button>
         {DIVISIONS.map(({ key, label }) => {
           const isActive = division === key;
           const color = divisionColor(key);
