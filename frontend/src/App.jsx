@@ -1437,6 +1437,7 @@ const handleGetOffers = useCallback(async () => {
               <PvpHub
                 fighter={fighter}
                 onNavigate={handleNavTab}
+                onRefreshFighter={loadFighter}
               />
             </div>
           )}

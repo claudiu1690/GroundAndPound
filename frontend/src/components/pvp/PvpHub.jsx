@@ -32,7 +32,7 @@ const TABS = [
  * button). Dismissing either calls POST /pvp/acknowledge-season so the
  * banner doesn't reappear on subsequent visits.
  */
-export function PvpHub({ fighter, onNavigate }) {
+export function PvpHub({ fighter, onNavigate, onRefreshFighter }) {
   const weightClass = fighter?.weightClass ?? "featherweight";
   const fighterId = fighter?._id;
 
@@ -102,6 +102,9 @@ export function PvpHub({ fighter, onNavigate }) {
 
   function handleFightResolved() {
     silentRefetch();
+    // Refresh the global fighter so the energy bar reflects the 15-energy PVP cost
+    // immediately, instead of waiting for the next 60s energy poll.
+    if (onRefreshFighter && fighter?._id) onRefreshFighter(fighter._id, { clearMessage: false });
   }
 
   /**
