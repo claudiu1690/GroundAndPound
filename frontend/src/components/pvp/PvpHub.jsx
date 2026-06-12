@@ -213,6 +213,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter }) {
       {showDefense && (
         <DefenseResults
           myRecord={yourRecord}
+          fighter={fighter}
           onBack={() => setShowDefense(false)}
           onGameplanChanged={() => silentRefetch()}
         />
@@ -303,21 +304,24 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter }) {
             {TABS.map((tab) => (
               <button
                 key={tab.id}
-                className={`pvp-pt ${activeTab === tab.id ? "pvp-pt-act" : ""}`}
-                onClick={() => setActiveTab(tab.id)}
+                className={`pvp-pt ${activeTab === tab.id && !showDefense ? "pvp-pt-act" : ""}`}
+                onClick={() => { setShowDefense(false); setActiveTab(tab.id); }}
               >
                 {tab.label}
               </button>
             ))}
-            {unreadDefense > 0 && (
-              <button
-                className="pvp-pt pvp-pt-defense"
-                onClick={() => setShowDefense(true)}
-              >
-                Defense{" "}
+            {/* Always available — opens the Defense Report where the player sets
+                their default defense gameplan. Badge appears only when there are
+                unread offline-defense results. */}
+            <button
+              className={`pvp-pt pvp-pt-defense ${showDefense ? "pvp-pt-act" : ""}`}
+              onClick={() => setShowDefense(true)}
+            >
+              Defense
+              {unreadDefense > 0 && (
                 <span className="pvp-defense-badge">{unreadDefense}</span>
-              </button>
-            )}
+              )}
+            </button>
           </div>
 
           {/* Tab content */}

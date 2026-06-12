@@ -1,10 +1,8 @@
-import { useState, useMemo } from "react";
-import { Zap, ChevronLeft, Flame, Grab, Lock, Shield, Scale } from "lucide-react";
-import { GAMEPLAN_META, gameplanLabel } from "./pvpConst";
+import { useState } from "react";
+import { Zap, ChevronLeft } from "lucide-react";
+import { gameplanLabel } from "./pvpConst";
+import { GameplanPicker } from "./GameplanPicker";
 import { api } from "../../api";
-
-// Gameplan card icons (lucide — matches the app's line-icon style).
-const GP_ICONS = { striking: Flame, wrestling: Grab, submission: Lock, counter: Shield, balanced: Scale };
 
 /**
  * Screen 2 — Pre-Fight.
@@ -70,36 +68,6 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
       setFighting(false);
     }
   }
-
-  const gpColors = {
-    striking:   { border: "#C8102E", bg: "rgba(200,16,46,0.05)", tagBg: "rgba(200,16,46,0.1)", tagColor: "#C8102E", tagBorder: "rgba(200,16,46,0.2)" },
-    wrestling:  { border: "#3B82F6", bg: "rgba(59,130,246,0.05)", tagBg: "rgba(59,130,246,0.1)", tagColor: "#3B82F6", tagBorder: "rgba(59,130,246,0.2)" },
-    submission: { border: "#A855F7", bg: "rgba(168,85,247,0.05)", tagBg: "rgba(168,85,247,0.1)", tagColor: "#A855F7", tagBorder: "rgba(168,85,247,0.2)" },
-    counter:    { border: "#3A9A4A", bg: "rgba(58,154,74,0.05)", tagBg: "rgba(58,154,74,0.1)", tagColor: "#4ADE80", tagBorder: "rgba(58,154,74,0.2)" },
-    balanced:   { border: "#3B82F6", bg: "rgba(59,130,246,0.05)", tagBg: "rgba(59,130,246,0.1)", tagColor: "#3B82F6", tagBorder: "rgba(59,130,246,0.2)" },
-  };
-
-  // Compute which gameplan "suits the build" — display-only, computed once.
-  // Clusters: striking=avg(str,spd,leg), wrestling=avg(wre,gnd),
-  //           submission=avg(sub,gnd), counter=chn, balanced=excluded.
-  const suitedGameplan = useMemo(() => {
-    if (!fighter) return null;
-    const s = fighter;
-    const num = (v) => (typeof v === "number" && !isNaN(v) ? v : 0);
-    const clusters = {
-      striking:   (num(s.str) + num(s.spd) + num(s.leg)) / 3,
-      wrestling:  (num(s.wre) + num(s.gnd)) / 2,
-      submission: (num(s.sub) + num(s.gnd)) / 2,
-      counter:    num(s.chn),
-    };
-    let best = null;
-    let bestVal = 0;
-    for (const [key, val] of Object.entries(clusters)) {
-      if (val > bestVal) { bestVal = val; best = key; }
-    }
-    // Only return a result if stats had real values (bestVal > 0)
-    return bestVal > 0 ? best : null;
-  }, [fighter]);
 
   return (
     <div className="pvp-card">
@@ -184,40 +152,11 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
         {/* Gameplan picker */}
         <div>
           <div className="pvp-section-lbl" style={{ marginBottom: 8 }}>Pick your gameplan</div>
-          <div className="pvp-gameplan-grid">
-            {["striking", "wrestling", "submission", "counter", "balanced"].map((gp) => {
-              const meta = GAMEPLAN_META[gp];
-              const sel = gameplan === gp;
-              const colors = gpColors[gp];
-              const Icon = GP_ICONS[gp];
-              const suited = suitedGameplan === gp;
-              return (
-                <button
-                  key={gp}
-                  className={`pvp-gp-card ${sel ? "pvp-gp-sel" : ""}`}
-                  style={sel ? { borderColor: colors.border, background: colors.bg } : {}}
-                  onClick={() => setGameplan(gp)}
-                >
-                  <div className="pvp-gp-icon">
-                    <Icon size={20} strokeWidth={2} color={sel ? colors.border : "#777"} />
-                  </div>
-                  <div className="pvp-gp-name" style={sel ? { color: colors.border } : {}}>
-                    {meta.label}
-                  </div>
-                  <div className="pvp-gp-desc">{meta.desc}</div>
-                  <span
-                    className="pvp-gp-tag"
-                    style={{ background: colors.tagBg, color: colors.tagColor, border: `1px solid ${colors.tagBorder}` }}
-                  >
-                    {meta.tag}
-                  </span>
-                  {suited && (
-                    <span className="pvp-gp-suited-pill">Suits your build</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          <GameplanPicker
+            selected={gameplan}
+            onSelect={setGameplan}
+            fighter={fighter}
+          />
         </div>
 
         {/* Opponent intel */}

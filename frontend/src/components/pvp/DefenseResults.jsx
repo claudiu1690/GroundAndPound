@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { Swords, ChevronLeft } from "lucide-react";
+import { Swords, ChevronLeft, Check } from "lucide-react";
 import { usePvpDefenseResults } from "../../hooks/usePvpDefenseResults";
 import { gameplanLabel } from "./pvpConst";
+import { GameplanPicker } from "./GameplanPicker";
 import { api } from "../../api";
 
 /**
  * Screen 4 — Defense Report.
  * Shows unread offline defenses and lets the fighter change their defense gameplan.
  */
-export function DefenseResults({ myRecord, onBack, onGameplanChanged }) {
+export function DefenseResults({ myRecord, fighter, onBack, onGameplanChanged }) {
   const { data, loading, error } = usePvpDefenseResults();
   const [gameplan, setGameplan] = useState(
     myRecord?.defenseGameplan === "aggressive"
@@ -65,7 +66,10 @@ export function DefenseResults({ myRecord, onBack, onGameplanChanged }) {
         ) : error ? (
           <div className="pvp-error-note">{error}</div>
         ) : results.length === 0 ? (
-          <div className="pvp-def-empty">No unread defense challenges.</div>
+          <div className="pvp-def-empty">
+            No recent defense challenges. Set your default defense gameplan below —
+            it's used automatically whenever someone challenges you while you're offline.
+          </div>
         ) : (
           <>
             <div className="pvp-section-lbl">Results</div>
@@ -154,21 +158,19 @@ export function DefenseResults({ myRecord, onBack, onGameplanChanged }) {
         <div className="pvp-gameplan-set">
           <div className="pvp-gps-info">
             <div className="pvp-gps-title">Your default defense gameplan</div>
-            <div className="pvp-gps-btns">
-              {["striking", "wrestling", "submission", "counter", "balanced"].map((gp) => (
-                <button
-                  key={gp}
-                  className={`pvp-gps-btn ${gameplan === gp ? "pvp-gps-btn-act" : ""}`}
-                  onClick={() => handleSetGameplan(gp)}
-                  disabled={saving}
-                >
-                  {gameplanLabel(gp)}
-                </button>
-              ))}
+            <div className="pvp-gps-sub">
+              The gameplan your fighter uses when challenged while you're offline. Pick the one that fits your build.
             </div>
+            <GameplanPicker
+              selected={gameplan}
+              onSelect={handleSetGameplan}
+              fighter={fighter}
+              disabled={saving}
+            />
             {saveMsg && (
-              <div style={{ fontSize: 10, color: saveMsg === "Saved" ? "#4ADE80" : "#C8102E", marginTop: 4 }}>
-                {saveMsg}
+              <div className={`pvp-gps-save ${saveMsg === "Saved" ? "pvp-gps-save-ok" : "pvp-gps-save-err"}`}>
+                {saveMsg === "Saved" && <Check size={13} strokeWidth={3} />}
+                {saveMsg === "Saved" ? "Defense gameplan saved" : saveMsg}
               </div>
             )}
           </div>

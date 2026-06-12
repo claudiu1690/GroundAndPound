@@ -12087,9 +12087,13 @@ code {
 .pvp-def-dp-l { color: #AAAAAA; }
 .pvp-def-note { font-size: 10px; color: #555; text-align: right; }
 .pvp-def-empty { padding: 20px; text-align: center; font-size: 12px; color: #555; }
-.pvp-gameplan-set { background: #0F0F0F; border: 1px solid #1E1E1E; border-radius: 6px; padding: 11px 14px; display: flex; align-items: center; gap: 12px; }
-.pvp-gps-info { flex: 1; }
-.pvp-gps-title { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #555; margin-bottom: 5px; }
+.pvp-gameplan-set { border-top: 1px solid #2A2A2A; padding-top: 12px; margin-top: 2px; }
+.pvp-gps-info { width: 100%; }
+.pvp-gps-save { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; padding: 5px 11px; border-radius: 5px; font-family: var(--font-display); font-weight: 700; font-size: 11px; letter-spacing: 0.5px; }
+.pvp-gps-save-ok { color: #4ADE80; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.28); }
+.pvp-gps-save-err { color: #FF5A5A; background: rgba(200,16,46,0.1); border: 1px solid rgba(200,16,46,0.28); }
+.pvp-gps-title { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #555; margin-bottom: 3px; }
+.pvp-gps-sub { font-size: 11px; color: #888888; line-height: 1.4; margin-bottom: 8px; }
 .pvp-gps-btns { display: flex; flex-wrap: wrap; gap: 6px; }
 .pvp-gps-btn { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 5px 10px; border-radius: 3px; cursor: pointer; border: 1px solid #2A2A2A; background: #1A1A1A; color: #AAAAAA; }
 .pvp-gps-btn-act { background: rgba(200,16,46,0.1); border-color: rgba(200,16,46,0.25); color: #C8102E; }
