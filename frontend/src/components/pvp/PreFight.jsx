@@ -98,6 +98,9 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
           <div className="pvp-pf-fighter pvp-pf-right">
             <div className="pvp-pf-name" style={{ textAlign: "right" }}>{candidate.name}</div>
             <div className="pvp-pf-meta" style={{ justifyContent: "flex-end" }}>
+              {candidate.fightingStyle && (
+                <span className="pvp-mc-style">{candidate.fightingStyle}</span>
+              )}
               <span style={{ color: "#555" }}>{(candidate.dp ?? 0).toLocaleString()} DP</span>
               <span style={{ color: "#555" }}>OVR {candidate.overallRating ?? "—"}</span>
               {season?.crossWeightClass && candidate.realWeightClass && (

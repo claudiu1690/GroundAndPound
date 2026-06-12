@@ -190,6 +190,9 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
                       )}
                     </div>
                     <div className="pvp-mc-meta">
+                      {c.fightingStyle && (
+                        <span className="pvp-mc-style">{c.fightingStyle}</span>
+                      )}
                       <span>{c.wins ?? 0}W · {c.losses ?? 0}L this season</span>
                       {season?.crossWeightClass && c.realWeightClass && (
                         <span className="pvp-wc-pill">{c.realWeightClass}</span>
