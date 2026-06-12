@@ -562,7 +562,7 @@ New accounts run a guided tooltip sequence through the core loop: fighter profil
 
 ## 22. The Proving Ground (PvP)
 
-An asynchronous, click-resolved player-vs-player ladder that runs alongside — and independent of — the PvE career/title path. There is no real-time coordination: you attack a stored opponent, the fight resolves instantly against their **defense gameplan**, and they see the result the next time they log in. The Proving Ground has its own ladder, its own currency (Division Points), and its own seasonal belt; it does **not** touch your PvE rank, tier, or championship.
+An asynchronous, click-resolved player-vs-player ladder that runs alongside the PvE career/title path. There is no real-time coordination: you attack a stored opponent, the fight resolves instantly against their **defense gameplan**, and they see the result the next time they log in. The Proving Ground has its own *economy* — its own ladder, currency (Division Points), and seasonal belt — and does **not** touch your PvE rank, tier, or championship. But it is **not** physically independent: a PvP fight uses, and changes, your **one real body** — HP, injuries, and stat XP carry between PvP and PvE in both directions (§22.11).
 
 ### 22.1 Entering the Proving Ground
 Each PvP fight costs **15 energy** (shared with the career energy bar). You pick an opponent from a short matchmade list, choose a **gameplan**, and fight. Your own record carries a **defense gameplan** that the engine uses whenever someone attacks you while you're offline — a successful defense is how you hold position without logging in. Fights reuse the same pure, stat-driven fight simulator as PvE (no weight variable — combat is decided by the eight stats), so a PvP fight is a fair stat contest, not a coin flip.
@@ -647,6 +647,17 @@ The Ladder tab is a full, filterable standings view, not just a top-N list:
 - **Your position** stays pinned above the table regardless of the active filter, showing your rank, DP, record, streak, and progress to the next division (or, for a Champion, your rank among champions and the weeks left in the season).
 - **The table** is paginated (20 per page, "Load More") and ranks fighters within the selected division by DP. Rows carry contextual tags (Belt Holder, Rival, You, Protected, streak ×1.25, cross-weight class), highlight the belt holder and your own row, and a "Last Active" column hints at who is at risk of inactivity decay.
 - **Profiles & challenges.** Clicking any fighter opens a **read-only** version of their Career Profile (no edit controls). If they're a valid target in the current season, a **Challenge** button there is a shortcut into the pre-fight flow — but it never bypasses matchmaking: it's disabled for protected (new-competitor-shield) fighters and for anyone outside the player's OVR matchmaking range, and hidden for fighters not in the same active season.
+
+### 22.11 Real consequences — HP, injuries & stat XP
+A PvP fight resolves with the **same physical and progression consequences as a PvE fight** — there is one body, and it gets hit in both modes. The post-fight consequence logic (HP, injuries, stat XP) lives in **one shared home** that PvE and PvP both call, so the rules are identical by construction.
+
+- **HP.** Each fighter enters the bout at their **real current health** (not a fresh 100) and ends at the engine's result; a KO/submission loss zeros their HP. Health regenerates over time exactly as in PvE. A low-HP fighter is genuinely weaker — and an easy mark on defense.
+- **Injuries.** Both fighters roll the **same injury system** as PvE: a KO/sub loss guarantees a Concussion; otherwise a single fight-injury roll (FIQ- and tier-weighted). These are **real injuries** — they appear in the Hospital, heal over time, and a fight-blocking injury gates **both** your PvP fights *and* your PvE career until it heals or you visit the doctor. The new-fighter injury grace (§17.2) still applies.
+- **Stat XP.** Both fighters earn post-fight stat XP from the same §10.3 table — so PvP is a real (if uncontrollable, all-stats) progression avenue, including the 96–99 fight-XP-only band.
+- **Applied to both fighters, online or offline.** A defender takes full HP loss, injury rolls, and XP even while logged out (their defense-results screen reports what it cost them). The defender is reconciled to their true current state before the fight; a fighter with a fight-blocking injury **cannot be challenged** (shown "Recovering"), which also caps how badly an offline player can be ground down.
+- **What's NOT shared.** PvP keeps its own economy — DP, season rewards, and the 15-energy attack cost — and does **not** pay the PvE iron purse, notoriety, or trigger nemesis/comeback. The attacker pays 15 energy; the defender pays no energy.
+- **Anti-farm guard.** Stat XP from repeat fights against the same opponent in a week is reduced (×0.5 the 2nd, ×0.25 the 3rd+, mirroring the DP repeat penalty), so trading wins can't farm XP.
+- **Exception — placement.** A placement bout (§22.9) is the one fight where the *defender* takes no physical consequences (they never opted in); the attacker still does.
 
 ---
 

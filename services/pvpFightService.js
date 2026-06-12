@@ -18,6 +18,11 @@ const PVPRecord = require("../models/pvpRecordModel");
 const PVPFight = require("../models/pvpFightModel");
 const { redis, ensureRedisConnected } = require("../lib/redis");
 const { resolveFight } = require("../utils/fightResolution");
+const { isFightBlocked, tickRecoveryForFighter } = require("../utils/injuryUtils");
+const fighterService = require("./fighterService");
+const fightConsequenceService = require("./fightConsequenceService");
+const saveWithVersionRetry = require("../utils/saveWithVersionRetry");
+const { PROMOTION_TIERS } = require("../consts/gameConstants");
 const activityLogService = require("./activityLogService");
 const pvpRecordService = require("./pvpRecordService");
 const pvpSeasonService = require("./pvpSeasonService");
@@ -62,7 +67,9 @@ function weightedStats(fighter, gameplan) {
         copy[k] = Math.max(1, v);
     }
     copy.stamina = copy.maxStamina ?? 100;
-    copy.health = 100;
+    // Real HP for both fighters — PvP fights now carry into HP. Defaults to 100 only when
+    // the fighter has no numeric health (should not happen for hydrated docs).
+    copy.health = typeof copy.health === "number" ? copy.health : 100;
     return copy;
 }
 
@@ -78,6 +85,43 @@ function mapOutcome(result) {
     if (o === "Loss (decision)") return { method: "decision", attackerWon: false, isDraw: false };
     // Fallback — treat as attacker loss by decision.
     return { method: "decision", attackerWon: false, isDraw: false };
+}
+
+/**
+ * Mirror an engine outcome (attacker perspective) into the DEFENDER's perspective, so the
+ * shared consequence engine can roll the defender's injury/XP from their own POV.
+ * Uses the same FIGHT_OUTCOMES strings the consequence module keys off.
+ */
+function mirrorOutcome(outcome) {
+    switch (outcome) {
+        case "KO/TKO":              return "Loss (KO/TKO)";
+        case "Submission":          return "Loss (submission)";
+        case "Decision (unanimous)":
+        case "Decision (split)":    return "Loss (decision)";
+        case "Loss (KO/TKO)":       return "KO/TKO";
+        case "Loss (submission)":   return "Submission";
+        case "Loss (decision)":     return "Decision (unanimous)";
+        case "Draw":                return "Draw";
+        default:                    return "Decision (unanimous)";
+    }
+}
+
+/** Convert a Mongoose Map (or plain object/undefined) of XP values into a plain object. */
+function mapToObject(m) {
+    if (!m) return {};
+    if (typeof m.entries === "function") {
+        const out = {};
+        for (const [k, v] of m.entries()) out[k] = v;
+        return out;
+    }
+    return { ...m };
+}
+
+/** Repeat-fight stat-XP penalty (same weeklies as DP repeat): 0→1, 1→0.5, ≥2→0.25. */
+function repeatXpPenalty(repeatCount) {
+    if (repeatCount <= 0) return 1;
+    if (repeatCount === 1) return 0.5;
+    return 0.25;
 }
 
 /** UTC ISO-week start (Monday 00:00:00.000 UTC) for the given date. */
@@ -149,6 +193,13 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         throw new PvpError("insufficient_energy", "Not enough energy — PVP fights cost 15 energy.", 402);
     }
 
+    // ── Real-consequence (a): attacker can't fight with a doctor-visit injury. Checked
+    //    before any spend (energy / DP), mirroring GDD 8.9 for PvE. ──
+    const ab = isFightBlocked(attacker);
+    if (ab) {
+        throw new PvpError("attacker_injured", `You can't fight: ${ab.label} requires a doctor visit first.`, 409);
+    }
+
     // ── (a) Lazy shield expiry: a time-expired New Competitor Shield is cleared
     // silently on the attacker's next action (no feed — it lapsed, wasn't spent). ──
     if (
@@ -178,6 +229,14 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     const defender = await Fighter.findById(defenderId);
     if (!defender) throw new PvpError("defender_not_found", "Defender not found.", 404);
 
+    // ── (c) Reconcile the defender to true current state BEFORE the block check:
+    //    passive health regen + auto-heal recovery ticks may have cleared a stale injury
+    //    or topped HP since their last interaction. Done on the in-memory doc; the
+    //    NON-placement persistence below re-reconciles a FRESH doc under version-retry, and
+    //    the placement branch never saves this doc. ──
+    fighterService.reconcileHealth(defender);
+    tickRecoveryForFighter(defender);
+
     const attackerRecord = await pvpRecordService.getOrCreateRecord(attackerFighterId, season, attacker);
     if (!attackerRecord) throw new PvpError("season_not_active", "This season is not active.", 409);
 
@@ -200,6 +259,13 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     );
     if (defShielded || defInPlacement) {
         throw new PvpError("defender_protected", "This fighter is protected and can't be challenged right now.", 409);
+    }
+
+    // ── (b) Recovering-defender rejection: a fighter with a doctor-visit injury can't be
+    //    challenged (evaluated after the (c) reconcile, so a healed injury no longer blocks). ──
+    const db = isFightBlocked(defender);
+    if (db) {
+        throw new PvpError("defender_recovering", "This fighter is recovering and can't be challenged right now.", 409);
     }
 
     // ── (d) Is THIS fight a placement fight for the attacker? ────────────────
@@ -259,6 +325,34 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     const { method, attackerWon, isDraw } = mapOutcome(engine);
 
     const attackerName2 = attackerName; // alias kept for placement-branch readability
+
+    // ── Real-consequence shared setup (applies to BOTH branches). ────────────
+    // Snapshot PRE-fight OVR for both sides BEFORE any consequence mutates stats. The DP
+    // economy (bracket tier) must use pre-fight ratings — real consequences must NOT leak
+    // into DP/economy.
+    const attackerOvrBefore = attacker.overallRating || 0;
+    const defenderOvrBefore = defender.overallRating || 0;
+    // (e) End-of-fight HP for each side from the engine (additive opponentHealthAfter).
+    const attackerEndHealth = engine.playerHealthAfter ?? weightedAttacker.health;
+    const defenderEndHealth = engine.opponentHealthAfter ?? weightedDefender.health;
+    // (f) Defender perspective + per-side injury risk + shared repeat XP penalty.
+    const defenderPerspective = mirrorOutcome(engine.outcome);
+    const attackerRiskMult = (PROMOTION_TIERS[attacker.promotionTier]
+        && PROMOTION_TIERS[attacker.promotionTier].injuryRiskMult) ?? 1;
+    const defenderRiskMult = (PROMOTION_TIERS[defender.promotionTier]
+        && PROMOTION_TIERS[defender.promotionTier].injuryRiskMult) ?? 1;
+    const xpPenaltyMult = repeatXpPenalty(repeatCount);
+
+    // (g) Attacker ALWAYS takes real consequences (placement + normal). Mutates the
+    //     attacker doc in place; persisted by the per-branch attacker.save() (guarded by
+    //     the per-attacker Redis lock). The injury roll here is the attacker's only RNG.
+    const attackerCons = fightConsequenceService.applyFightConsequences(attacker, {
+        outcomePerspective: engine.outcome,
+        endingHealth: attackerEndHealth,
+        injuryRiskMult: attackerRiskMult,
+        xpMultiplier: xpPenaltyMult,
+        collagenBuff: null,
+    });
 
     // ════════════════════════════════════════════════════════════════════════
     // (g) PLACEMENT BRANCH — the attacker's first 3 PVP fights.
@@ -360,6 +454,14 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
                 twistName: (TWISTS[season.twist] || {}).name || null,
                 defenderSeen: false,
                 commentary: engine.commentary || [],
+                // Real consequences: attacker only — defender is untouched in placement.
+                attackerHealthBefore: attackerCons.healthBefore,
+                attackerHealthAfter: attackerCons.healthAfter,
+                attackerInjuries: attackerCons.injuriesSustained,
+                attackerXpGained: attackerCons.xpGained,
+                defenderHealthBefore: null,
+                defenderHealthAfter: null,
+                defenderInjuries: [],
             });
         } catch (err) {
             console.error("[PVP placement] failed to write fight doc:", err.message);
@@ -427,6 +529,16 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
                 divisionAfter: defenderRecord.division,
                 overallRating: defender.overallRating || 0,
                 realWeightClass: defender.weightClass,
+                // Placement never touches the defender — no real consequences leak out.
+                wasHurt: false,
+                tookInjury: false,
+            },
+            // Attacker's OWN real consequences (HP/injury/XP). Never exposes the defender's.
+            consequences: {
+                health: { before: attackerCons.healthBefore, after: attackerCons.healthAfter },
+                injuriesSustained: attackerCons.injuriesSustained,
+                xpGained: attackerCons.xpGained,
+                statLevelUps: attackerCons.statLevelUps,
             },
             dpBreakdown: zeroBreakdown,
             twistApplied: false,
@@ -449,6 +561,20 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         };
     }
 
+    // ── Real-consequence (g): DEFENDER takes real consequences ONLY in the normal branch.
+    //   The injury roll happens HERE exactly once, on the in-memory (reconciled) defender;
+    //   the resulting `mutation` descriptor is replayed (no re-roll) onto a FRESH defender
+    //   doc under saveWithVersionRetry at persist time. We apply to the in-memory doc first
+    //   so the defenderRecord.overallRating snapshot below reflects the post-fight OVR. ──
+    const defenderCons = fightConsequenceService.applyFightConsequences(defender, {
+        outcomePerspective: defenderPerspective,
+        endingHealth: defenderEndHealth,
+        injuryRiskMult: defenderRiskMult,
+        xpMultiplier: xpPenaltyMult,
+        collagenBuff: null,
+    });
+    const defenderMutation = defenderCons.mutation;
+
     // ── (f) Catch-up: late joiner below elite gets ×2 WIN DP while the window is open. ─
     const catchUpActive = !!(
         attackerRecord.catchUpExpiresAt &&
@@ -465,7 +591,8 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     const isRivalryResolved = attackerWon && priorWins === 2; // this win is the 3rd.
 
     // ── DP computation. ──────────────────────────────────────────────────────
-    const bTier = bracketTier(attacker.overallRating || 0, defender.overallRating || 0);
+    // Pre-fight OVR only — real consequences (stat XP from this fight) must not move DP.
+    const bTier = bracketTier(attackerOvrBefore, defenderOvrBefore);
 
     const attackerDp = computeDp({
         isWin: attackerWon,
@@ -543,7 +670,25 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     // ── Persist: records → fighters → fight doc → rivalry → feed. ────────────
     await attackerRecord.save();
     await defenderRecord.save();
+    // Attacker: consequences already applied in-place; the per-attacker Redis lock makes
+    // this save race-free.
     await attacker.save();
+    // Defender: re-apply the FROZEN consequence descriptor (HP + the already-rolled injury +
+    // re-banked XP) onto a FRESH doc under optimistic-concurrency retry, so a concurrent
+    // training/heal/other-attacker write isn't clobbered and the injury is NEVER re-rolled.
+    // We also re-reconcile the fresh doc so its regen/recovery baseline is current.
+    try {
+        await saveWithVersionRetry(
+            () => Fighter.findById(defenderId),
+            (fresh) => {
+                fighterService.reconcileHealth(fresh);
+                tickRecoveryForFighter(fresh);
+                fightConsequenceService.applyConsequenceMutation(fresh, defenderMutation);
+            }
+        );
+    } catch (err) {
+        console.error("[PVP fight] defender consequence persist failed:", err.message);
+    }
 
     // ── Recompute belt holder AFTER record saves (additive DTO surface). ──────
     const beltHolderAfterId = await pvpRecordService.currentBeltHolderId(season._id, season.weightClass);
@@ -585,6 +730,15 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
             twistName: (TWISTS[season.twist] || {}).name || null,
             defenderSeen: false,
             commentary: engine.commentary || [],
+            // Real consequences — both sides.
+            attackerHealthBefore: attackerCons.healthBefore,
+            attackerHealthAfter: attackerCons.healthAfter,
+            attackerInjuries: attackerCons.injuriesSustained,
+            attackerXpGained: attackerCons.xpGained,
+            defenderHealthBefore: defenderCons.healthBefore,
+            defenderHealthAfter: defenderCons.healthAfter,
+            defenderInjuries: defenderCons.injuriesSustained,
+            defenderXpGained: defenderCons.xpGained,
         });
     } catch (err) {
         console.error("[PVP fight] failed to write fight doc:", err.message);
@@ -618,6 +772,9 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         promoted: attackerApply.promoted,
         rivalryFlags,
         season,
+        // Defender real-consequence snapshot → enriches the defense feed meta (injury/HP).
+        defenderInjury: defenderCons.injuriesSustained[0] || null,
+        defenderHealthAfter: defenderCons.healthAfter,
     });
 
     // ── Build the FightResult DTO (§3.4). ────────────────────────────────────
@@ -658,6 +815,16 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
             divisionAfter: defenderRecord.division,
             overallRating: defender.overallRating || 0,
             realWeightClass: defender.weightClass,
+            // Coarse signals only — NEVER the defender's exact HP/injury.
+            wasHurt: !isDraw && attackerWon,
+            tookInjury: !!(defenderCons && defenderCons.injuriesSustained.length),
+        },
+        // Attacker's OWN real consequences (HP/injury/XP). Never exposes the defender's.
+        consequences: {
+            health: { before: attackerCons.healthBefore, after: attackerCons.healthAfter },
+            injuriesSustained: attackerCons.injuriesSustained,
+            xpGained: attackerCons.xpGained,
+            statLevelUps: attackerCons.statLevelUps,
         },
         dpBreakdown: attackerDp.breakdown,
         twistApplied: attackerDp.twistApplied,
@@ -680,18 +847,21 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     };
 }
 
-function writeFeed({ attackerId, defenderId, attackerName, defenderName, attackerWon, isDraw, method, attackerDpChange, defenderDpChange, promoted, rivalryFlags, season }) {
+function writeFeed({ attackerId, defenderId, attackerName, defenderName, attackerWon, isDraw, method, attackerDpChange, defenderDpChange, promoted, rivalryFlags, season, defenderInjury = null, defenderHealthAfter = null }) {
     const meta = { seasonId: String(season._id), weightClass: season.weightClass };
+    // Real-consequence meta for the DEFENDER's feed entries only (the injury they took +
+    // their resulting HP). Attacker-facing entries never carry the defender's body state.
+    const defMeta = { ...meta, injury: defenderInjury, healthAfter: defenderHealthAfter };
     try {
         if (isDraw) {
             // Both careers log the bout (DP unchanged for both, M-3).
             activityLogService.log(attackerId, "pvp_loss", `PVP draw vs ${defenderName}`, { ...meta, draw: true });
-            activityLogService.log(defenderId, "pvp_defended", `PVP draw vs ${attackerName}`, { ...meta, draw: true });
+            activityLogService.log(defenderId, "pvp_defended", `PVP draw vs ${attackerName}`, { ...defMeta, draw: true });
             return;
         }
         if (attackerWon) {
             activityLogService.log(attackerId, "pvp_win", `PVP win vs ${defenderName} by ${method} (${attackerDpChange >= 0 ? "+" : ""}${attackerDpChange} DP)`, meta);
-            activityLogService.log(defenderId, "pvp_defense_loss", `Lost a PVP defense to ${attackerName} (${defenderDpChange} DP)`, meta);
+            activityLogService.log(defenderId, "pvp_defense_loss", `Lost a PVP defense to ${attackerName} (${defenderDpChange} DP)`, defMeta);
             if (promoted) {
                 activityLogService.log(attackerId, "pvp_promoted", `Promoted in the Proving Ground`, meta);
             }
@@ -702,7 +872,7 @@ function writeFeed({ attackerId, defenderId, attackerName, defenderName, attacke
             }
         } else {
             activityLogService.log(attackerId, "pvp_loss", `PVP loss to ${defenderName} by ${method} (${attackerDpChange} DP)`, meta);
-            activityLogService.log(defenderId, "pvp_defended", `Defended against ${attackerName}`, meta);
+            activityLogService.log(defenderId, "pvp_defended", `Defended against ${attackerName}`, defMeta);
         }
     } catch (_) { /* feed failures never block the fight */ }
 }
@@ -730,6 +900,11 @@ async function listDefenseResults(fighterId, ack = true) {
         dpChange: r.defenderDpChange,
         halfRate: true,
         divisionAfter: r.defenderDivisionAfter,
+        // Real consequences the DEFENDER took (null/empty for placement rows).
+        healthBefore: r.defenderHealthBefore,
+        healthAfter: r.defenderHealthAfter,
+        injuriesSustained: r.defenderInjuries || [],
+        xpGained: mapToObject(r.defenderXpGained),
         // Placement attacks put no DP at stake for the defender (informational row).
         isPlacement: !!r.isPlacement,
         noDpAtStake: !!r.isPlacement,

@@ -1,5 +1,6 @@
 import { Shield } from "lucide-react";
 import { divisionLabel } from "./pvpConst";
+import { ConsequencesBlock } from "./ConsequencesBlock";
 
 /**
  * PlacementResult — shown when result.isPlacement is true.
@@ -23,6 +24,7 @@ export function PlacementResult({ result, onFightAgain, onBackToLadder }) {
     attacker,
     commentary,
     energyRemaining,
+    consequences,
   } = result;
 
   const isDraw = method === "draw";
@@ -166,6 +168,13 @@ export function PlacementResult({ result, onFightAgain, onBackToLadder }) {
           ))}
         </div>
       )}
+
+      {/* Consequences — attacker always gets full consequences even in placement */}
+      <ConsequencesBlock
+        consequences={consequences}
+        defender={defender}
+        isPlacement={!consequences}
+      />
 
       {energyRemaining != null && (
         <div className="pvp-energy-remaining">

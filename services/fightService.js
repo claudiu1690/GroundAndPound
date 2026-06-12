@@ -120,6 +120,7 @@ const {
     injuryGraceActive,
 } = require("../utils/injuryUtils");
 const { applyXpToStat, roundStatXp, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require("../utils/statProgression");
+const fightConsequenceService = require("./fightConsequenceService");
 const notorietyService = require("./notorietyService");
 const { tierRank } = require("../consts/notorietyConfig");
 const { logFightResolve } = require("../utils/fightResolveLogger");
@@ -736,21 +737,6 @@ async function resolveFightAndApply(fighterId) {
         healthEnd < 50;
     const giantKiller = isWin && opponentOvr >= fighterOvr + 10;
 
-    // Build fight XP totals
-    const fightXp = {};
-    if (isWin && result.outcome === OUT_KO_TKO) {
-        fightXp.STR = 30; fightXp.CHN = 15; fightXp.SPD = 10;
-    } else if (isWin && result.outcome === OUT_SUB) {
-        fightXp.SUB = 30; fightXp.GND = 20; fightXp.WRE = 10;
-    } else if (isWin) {
-        ["STR", "SPD", "LEG", "WRE", "GND", "SUB", "CHN", "FIQ"].forEach(s => { fightXp[s] = 15; });
-        fightXp.FIQ = 20;
-    } else if (isKoLoss) {
-        fightXp.CHN = 20; fightXp.FIQ = 15;
-    } else if (isLoss) {
-        fightXp.FIQ = 25;
-    }
-
     fight.status = "completed";
     fight.outcome = result.outcome;
     fight.ironEarned = ironEarned;
@@ -761,56 +747,25 @@ async function resolveFightAndApply(fighterId) {
     await fight.save();
 
     // Post-fight: only health is persisted — stamina is fight-time only and resets next fight.
-    // Reset the health regen timestamp so passive regen starts fresh after the fight.
-    fighter.health = Math.min(100, result.playerHealthAfter ?? 100);
-    fighter.healthLastRegenAt = new Date();
+    // Reset the fight-binding state; physical/progression consequences are owned by the
+    // shared fightConsequenceService (HP + regen anchor, injury roll, stat-XP, OVR).
     fighter.acceptedFightId = null;
     fighter.trainingCampActions = 0;
     fighter.weightCut = "easy"; // reset for next fight
 
-    // GDD 8.9: Roll for fight injuries; a KO/TKO/Sub loss normally adds a Concussion.
-    // New-fighter grace: a fighter's first few fights never take a fight-blocking injury,
-    // so a rough debut (e.g. losing your first fight by KO) can't lock you out of the game.
-    // Evaluated before the record is updated below, so it reflects fights completed so far.
-    const injuriesSustained = [];
-    const injuryGrace = injuryGraceActive(fighter);
-    // Shop v1.0 — Collagen Recovery softens an injury's stat penalties (recovery hours
-    // unchanged). Scale negative appliedStatEffects by injuryMult, flooring any negative
-    // at -1, BEFORE applyInjuryToFighter so the reduced penalty is what gets applied.
-    const applyCollagenSoftening = (inj) => {
-        if (!(ownsBuff && buffCfg.injuryMult && inj && inj.appliedStatEffects)) return;
-        const eff = inj.appliedStatEffects;
-        for (const k of Object.keys(eff)) {
-            const e = eff[k];
-            if (typeof e === "number" && e < 0) {
-                eff[k] = Math.min(-1, Math.round(e * buffCfg.injuryMult));
-            }
-        }
-    };
-    if (isKoLoss) {
-        if (!injuryGrace) {
-            const concussion = buildInjury("concussion");
-            if (concussion) {
-                applyCollagenSoftening(concussion);
-                applyInjuryToFighter(fighter, concussion);
-                fighter.injuries = [...(fighter.injuries || []), concussion];
-                injuriesSustained.push(concussion.label);
-            }
-        }
-    } else {
-        const injuryRiskMult = (tierConfig && tierConfig.injuryRiskMult) || 1;
-        const fightInjuryType = rollForFightInjury(fighter.fiq || 10, injuryRiskMult);
-        if (fightInjuryType) {
-            const inj = buildInjury(fightInjuryType);
-            // During grace, skip fight-blocking injuries (e.g. Cut); minor ones still apply.
-            if (inj && !(injuryGrace && inj.cannotFight)) {
-                applyCollagenSoftening(inj);
-                applyInjuryToFighter(fighter, inj);
-                fighter.injuries = [...(fighter.injuries || []), inj];
-                injuriesSustained.push(inj.label);
-            }
-        }
-    }
+    // GDD 8.9: physical + progression consequences. The injury roll inside this call is
+    // the ONLY Math.random() here and sits at the exact RNG-stream position the old inline
+    // block occupied (right after HP is known, before record mutation). xpMultiplier:1 →
+    // stat XP === old Math.round(baseXp) (the outcome/comeback multiplier was never applied
+    // to stat XP). Evaluated before the record is updated below.
+    const cons = fightConsequenceService.applyFightConsequences(fighter, {
+        outcomePerspective: result.outcome,
+        endingHealth: result.playerHealthAfter ?? 100,
+        injuryRiskMult: (tierConfig && tierConfig.injuryRiskMult) || 1,
+        xpMultiplier: 1,
+        collagenBuff: (ownsBuff && buffCfg.injuryMult) ? { injuryMult: buffCfg.injuryMult } : null,
+    });
+    const injuriesSustained = cons.injuriesSustained;
 
     let nemesisCleared = false;
     let nemesisSet     = false;
@@ -981,30 +936,9 @@ async function resolveFightAndApply(fighterId) {
         rankingService.updatePlayerRank(fighter, fightResult);
     }
 
-    /** Same progression as training: XP banks toward the next point, then stat increases (fixes raw XP like 80/50). */
-    const statLevelUps = [];
-    const fightXpApplied = {};
-    if (Object.keys(fightXp).length > 0) {
-        for (const [statName, baseXp] of Object.entries(fightXp)) {
-            const xpAmount = Math.round(baseXp);
-            fightXpApplied[statName] = xpAmount;
-            const xpKey = STAT_TO_XP_KEY[statName];
-            const valKey = STAT_TO_VAL_KEY[statName];
-            if (!xpKey || !valKey) continue;
-            const currentStat = fighter[valKey] ?? 10;
-            const currentXp = fighter[xpKey] ?? 0;
-            const { newStat, newXp } = applyXpToStat(
-                currentStat,
-                currentXp,
-                xpAmount,
-                100,
-                { fightMode: true }
-            );
-            if (newStat > currentStat) statLevelUps.push(statName);
-            fighter[valKey] = newStat;
-            fighter[xpKey] = roundStatXp(newXp);
-        }
-    }
+    // Stat-XP banking + OVR recompute were applied by fightConsequenceService above.
+    const statLevelUps = cons.statLevelUps;
+    const fightXpApplied = cons.xpGained;
 
     // ── Shop v1.0: consume the pre-fight buff EXACTLY ONCE, only here at resolve, only
     // if still owned (>0). Owning 0 is a silent no-op — never go negative.
@@ -1019,8 +953,7 @@ async function resolveFightAndApply(fighterId) {
     }
 
     await fighter.save();
-    const { calculateOverall } = require("../utils/overallRating");
-    fighter.overallRating = calculateOverall(fighter);
+    // OVR was recomputed by fightConsequenceService above (after stat-XP banking).
 
     // Tier promotion check — happens after overall is updated
     const oldTier = fighter.promotionTier;
@@ -1290,9 +1223,9 @@ async function resolveFightAndApply(fighterId) {
         outcome: result.outcome,
         recordChange: isWin ? "W" : isLoss ? "L" : "D",
         recordAfter: `${fighter.record.wins}-${fighter.record.losses}-${fighter.record.draws}`,
-        healthStart: 100,
+        healthStart: cons.healthBefore,
         healthEnd,
-        healthLost: Math.max(0, 100 - healthEnd),
+        healthLost: Math.max(0, cons.healthBefore - cons.healthAfter),
         staminaStart: maxStaminaVal,
         staminaEnd,
         staminaLost: Math.max(0, maxStaminaVal - staminaEnd),

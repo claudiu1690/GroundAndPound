@@ -15,7 +15,16 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
 
   const energyCur = fighter?.energy?.current ?? 0;
   const energyAfter = Math.max(0, energyCur - 15);
-  const canFight = energyCur >= 15 && !fighting;
+
+  // Fight-blocking injury: any active injury with cannotFight === true
+  const blockingInjury = (fighter?.injuries ?? []).find((inj) => inj.cannotFight);
+  const isInjuryBlocked = !!blockingInjury;
+
+  // Low HP advisory (< 50) — warns but does not block
+  const health = fighter?.health ?? 100;
+  const isLowHp = health < 50 && !isInjuryBlocked;
+
+  const canFight = energyCur >= 15 && !fighting && !isInjuryBlocked;
 
   const bracketLabel = {
     none: null,
@@ -36,14 +45,23 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
       });
       onFightComplete(result);
     } catch (e) {
+      const code = e.code ?? e.errorCode ?? null;
       setError(
-        e.status === 402
-          ? "Not enough energy — PVP fights cost 15 energy."
-          : e.status === 403
-            ? "The Proving Ground unlocks at 3 career wins."
-            : e.status === 409
-              ? "This fighter is protected and can't be challenged right now."
-              : e.message || "Fight failed. Try again."
+        code === "attacker_injured"
+          ? "You're injured — visit the Hospital before fighting."
+          : code === "defender_recovering"
+            ? "This fighter is recovering and can't be challenged right now."
+            : e.status === 402
+              ? "Not enough energy — PVP fights cost 15 energy."
+              : e.status === 403
+                ? e.message?.toLowerCase().includes("injur") || code?.includes("injur")
+                  ? "You're injured — visit the Hospital before fighting."
+                  : "The Proving Ground unlocks at 3 career wins."
+                : e.status === 409
+                  ? e.message?.toLowerCase().includes("recover")
+                    ? "This fighter is recovering and can't be challenged right now."
+                    : "This fighter is protected and can't be challenged right now."
+                  : e.message || "Fight failed. Try again."
       );
     } finally {
       setFighting(false);
@@ -198,6 +216,24 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
           </div>
         </div>
 
+        {/* Injury-blocked notice — disables fighting */}
+        {isInjuryBlocked && (
+          <div className="pvp-pf-injury-block">
+            <span className="pvp-pf-injury-block-icon">+</span>
+            Recovering — visit the Hospital before your next PVP fight.
+            <div className="pvp-pf-injury-block-sub">
+              {blockingInjury.label ?? "Injury"} must be treated before you can fight.
+            </div>
+          </div>
+        )}
+
+        {/* Low HP advisory — does not block fighting */}
+        {isLowHp && (
+          <div className="pvp-pf-low-hp">
+            Low HP ({health}/100) — you will start this fight hurt. Consider visiting the Hospital first.
+          </div>
+        )}
+
         {/* Error */}
         {error && (
           <div className="pvp-error-note">{error}</div>
@@ -213,11 +249,13 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
           {fighting ? "Resolving…" : "Fight · 15 energy"}
         </button>
         <div className="pvp-energy-note">
-          {canFight
-            ? `${energyAfter} energy remaining after this fight`
-            : energyCur < 15
-              ? "Not enough energy (need 15)"
-              : ""}
+          {isInjuryBlocked
+            ? "Can't fight while recovering from injury"
+            : canFight
+              ? `${energyAfter} energy remaining after this fight`
+              : energyCur < 15
+                ? "Not enough energy (need 15)"
+                : ""}
         </div>
       </div>
     </div>

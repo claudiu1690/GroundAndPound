@@ -12364,4 +12364,78 @@ code {
 .lt-rop-elig-loading { font-size: 11px; color: #555; }
 .lt-rop-elig-error { font-size: 11px; color: #C8102E; }
 
+/* ============================================================
+   PVP CONSEQUENCES BLOCK — pvp-cons- namespace
+   Shown after the DP breakdown on FightResult and PlacementResult.
+   ============================================================ */
+
+.pvp-cons { padding: 12px 22px; background: #0A0A0A; border-bottom: 1px solid #1E1E1E; display: flex; flex-direction: column; gap: 8px; }
+.pvp-cons-title { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #555; }
+
+/* HP bar */
+.pvp-cons-hp-block { background: #0F0F0F; border: 1px solid #1E1E1E; border-radius: 5px; padding: 9px 12px; }
+.pvp-cons-hp-row { display: flex; align-items: center; gap: 8px; }
+.pvp-cons-hp-lbl { font-size: 10px; color: #AAAAAA; width: 22px; flex-shrink: 0; }
+.pvp-cons-hp-track { flex: 1; height: 5px; background: #1E1E1E; border-radius: 3px; overflow: hidden; position: relative; }
+.pvp-cons-hp-fill-before { position: absolute; top: 0; left: 0; height: 100%; background: rgba(59,130,246,0.2); border-radius: 3px; }
+.pvp-cons-hp-fill-after { position: absolute; top: 0; left: 0; height: 100%; border-radius: 3px; transition: width 0.4s; }
+.pvp-cons-hp-val { font-family: var(--font-display); font-weight: 700; font-size: 11px; color: #AAAAAA; white-space: nowrap; }
+.pvp-cons-hp-lost { font-family: var(--font-display); font-weight: 700; font-size: 11px; color: #C8102E; white-space: nowrap; }
+.pvp-cons-hp-ok { font-size: 11px; color: #4ADE80; white-space: nowrap; }
+
+/* Injury card */
+.pvp-cons-injury-card { background: rgba(200,16,46,0.07); border: 1px solid rgba(200,16,46,0.25); border-radius: 5px; padding: 9px 12px; display: flex; flex-direction: column; gap: 5px; }
+.pvp-cons-injury-header { font-family: var(--font-display); font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #C8102E; }
+.pvp-cons-injury-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.pvp-cons-injury-chip { font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; background: rgba(200,16,46,0.12); color: #C8102E; border: 1px solid rgba(200,16,46,0.3); }
+.pvp-cons-injury-note { font-size: 11px; color: #AAAAAA; }
+
+/* XP gained row */
+.pvp-cons-xp-row { display: flex; align-items: baseline; gap: 8px; }
+.pvp-cons-xp-lbl { font-size: 10px; color: #555; letter-spacing: 1px; text-transform: uppercase; flex-shrink: 0; }
+.pvp-cons-xp-vals { font-size: 11px; color: #AAAAAA; }
+.pvp-cons-xp-sep { color: #333; }
+.pvp-cons-xp-stat { font-family: var(--font-display); font-weight: 700; color: #D4A820; }
+.pvp-cons-xp-amt { color: #4ADE80; font-weight: 600; }
+
+/* Stat level-up chips */
+.pvp-cons-levelups { display: flex; flex-wrap: wrap; gap: 5px; }
+.pvp-cons-levelup-chip { font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; border-radius: 2px; background: rgba(212,168,32,0.12); color: #D4A820; border: 1px solid rgba(212,168,32,0.25); }
+
+/* Defender flavor (secondary) */
+.pvp-cons-defender-flavor { font-size: 11px; color: #555; font-style: italic; }
+
+/* Placement no-cost note */
+.pvp-cons-placement-note { font-size: 11px; color: #555; font-style: italic; }
+
+/* ============================================================
+   PVP PRE-FIGHT — health / injury status banners
+   ============================================================ */
+
+/* Low HP advisory (amber, non-blocking) */
+.pvp-pf-low-hp { background: rgba(200,122,16,0.08); border: 1px solid rgba(200,122,16,0.25); border-radius: 5px; padding: 9px 13px; font-size: 11px; color: #C87A10; line-height: 1.4; }
+
+/* Injury-blocked notice (red, blocks fight) */
+.pvp-pf-injury-block { background: rgba(200,16,46,0.08); border: 1px solid rgba(200,16,46,0.25); border-radius: 5px; padding: 9px 13px; font-size: 12px; color: #C8102E; font-weight: 600; line-height: 1.4; display: flex; align-items: flex-start; gap: 7px; flex-direction: column; }
+.pvp-pf-injury-block-icon { font-size: 14px; font-weight: 800; flex-shrink: 0; }
+.pvp-pf-injury-block-sub { font-size: 11px; color: #AAAAAA; font-weight: 400; }
+
+/* ============================================================
+   PVP FIGHT TAB — recovering opponent pill
+   Mirror of pvp-mc-protected-pill but amber
+   ============================================================ */
+.pvp-mc-recovering-pill { font-family: var(--font-display); font-weight: 700; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; padding: 1px 6px; border-radius: 2px; background: rgba(200,122,16,0.12); color: #C87A10; border: 1px solid rgba(200,122,16,0.25); }
+
+/* ============================================================
+   PVP DEFENSE RESULTS — physical cost sub-row
+   ============================================================ */
+.pvp-def-phys-cost { padding: 7px 12px 7px 12px; background: #0A0A0A; border-top: 1px solid #1A1A1A; display: flex; flex-direction: column; gap: 5px; }
+.pvp-def-phys-placement { font-size: 11px; color: #555; font-style: italic; }
+.pvp-def-phys-hp { display: flex; align-items: center; gap: 8px; }
+.pvp-def-phys-lbl { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 1px; width: 22px; flex-shrink: 0; }
+.pvp-def-phys-range { font-family: var(--font-display); font-weight: 700; font-size: 11px; color: #AAAAAA; }
+.pvp-def-phys-lost { font-family: var(--font-display); font-weight: 700; font-size: 11px; color: #C8102E; }
+.pvp-def-phys-ok { font-size: 11px; color: #4ADE80; }
+.pvp-def-phys-injuries { display: flex; flex-wrap: wrap; gap: 4px; }
+.pvp-def-phys-xp { font-size: 11px; color: #AAAAAA; }
 

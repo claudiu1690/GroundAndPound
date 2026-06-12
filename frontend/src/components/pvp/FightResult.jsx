@@ -1,5 +1,6 @@
 import { DIVISIONS, divisionLabel, divisionMeta, OPEN_LABEL } from "./pvpConst";
 import { PlacementResult } from "./PlacementResult";
+import { ConsequencesBlock } from "./ConsequencesBlock";
 
 /**
  * Screen 3 — Fight Result.
@@ -313,6 +314,14 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
           <span className={`pvp-dpb-total-val pvp-dpb-total-val-${totalCls}`}>{totalLabel}</span>
         </div>
       </div>
+
+      {/* ── CONSEQUENCES ── */}
+      {result.consequences && (
+        <ConsequencesBlock
+          consequences={result.consequences}
+          defender={defender}
+        />
+      )}
 
       {/* ── RESULT BODY ── */}
       <div className="pvp-rb">

@@ -46,6 +46,17 @@ const pvpFightSchema = new mongoose.Schema({
     // Placement fights award NO DP, never touch the defender record, and are EXCLUDED
     // from repeat-penalty and rivalry win counts.
     isPlacement: { type: Boolean, default: false },
+    // ── Real-consequence snapshots (PvP HP/injury/XP). Null/empty pre-migration and
+    //    for placement fights (the defender is never touched in placement). ──
+    attackerHealthBefore: { type: Number, default: null },
+    attackerHealthAfter: { type: Number, default: null },
+    defenderHealthBefore: { type: Number, default: null },
+    defenderHealthAfter: { type: Number, default: null },
+    attackerInjuries: { type: [String], default: [] },
+    defenderInjuries: { type: [String], default: [] },
+    // Per-stat XP banked this fight (e.g. { STR: 30, CHN: 15 }).
+    attackerXpGained: { type: Map, of: Number, default: undefined },
+    defenderXpGained: { type: Map, of: Number, default: undefined },
     // Unread-defense feed: false until the defender views it.
     defenderSeen: { type: Boolean, default: false },
     commentary: { type: [String], default: [] },

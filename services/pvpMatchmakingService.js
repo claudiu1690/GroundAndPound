@@ -17,6 +17,7 @@ const {
     MATCH_OVR_STEPS,
 } = require("../consts/pvpConfig");
 const { fighterName } = require("./pvpRecordService");
+const { isFightBlocked } = require("../utils/injuryUtils");
 
 /**
  * @param {object} fighter actor Fighter doc (needs _id, overallRating)
@@ -57,7 +58,7 @@ async function getOpponents(fighter, season, myRecord) {
     // Resolve names.
     const ids = candidates.map((c) => c.playerId);
     const fighters = await Fighter.find({ _id: { $in: ids } })
-        .select("firstName lastName nickname overallRating weightClass style pvpOnboarding")
+        .select("firstName lastName nickname overallRating weightClass style pvpOnboarding injuries health")
         .lean();
     const fighterMap = new Map(fighters.map((f) => [String(f._id), f]));
 
@@ -116,6 +117,9 @@ async function getOpponents(fighter, season, myRecord) {
                 f && f.pvpOnboarding && f.pvpOnboarding.shieldExpiresAt &&
                 new Date() < new Date(f.pvpOnboarding.shieldExpiresAt)
             ),
+            // Fight-blocking injury (needs a doctor visit). Shown with a pill + disabled,
+            // NOT excluded from the pool (same UX as Protected).
+            isRecovering: !!isFightBlocked(f || {}),
             lastActiveAt: c.lastActiveAt,
             wins: c.wins,
             losses: c.losses,

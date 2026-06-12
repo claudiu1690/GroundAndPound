@@ -801,9 +801,12 @@ function resolveFight(player, opponent, options = {}) {
             if (resultLine) commentary.push(resultLine);
             // KO/TKO loss — health should be 0 regardless of soft-KO threshold
             const playerHealthAfter = result.outcome === "Loss (KO/TKO)" ? 0 : p.health;
+            // When the attacker wins by KO/TKO the opponent is finished → 0; otherwise
+            // report the opponent's natural tracked health. (Additive: PvE ignores this.)
+            const opponentHealthAfter = result.outcome === "KO/TKO" ? 0 : o.health;
             return {
                 outcome: result.outcome, rounds, winner,
-                playerHealthAfter, playerStaminaAfter: p.stamina,
+                playerHealthAfter, opponentHealthAfter, playerStaminaAfter: p.stamina,
                 commentary, sessionBonuses, wildcard: wildcard ? { ...wildcard, countered: wildcardCountered } : null,
             };
         }
@@ -834,7 +837,7 @@ function resolveFight(player, opponent, options = {}) {
     if (resultLine) commentary.push(resultLine);
     return {
         outcome, rounds, winner,
-        playerHealthAfter: p.health, playerStaminaAfter: p.stamina,
+        playerHealthAfter: p.health, opponentHealthAfter: o.health, playerStaminaAfter: p.stamina,
         commentary, scorecard, sessionBonuses,
         wildcard: wildcard ? { ...wildcard, countered: wildcardCountered } : null,
     };

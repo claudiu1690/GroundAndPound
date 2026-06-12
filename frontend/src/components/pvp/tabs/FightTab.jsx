@@ -188,6 +188,9 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
                       {c.isProtected && (
                         <span className="pvp-mc-protected-pill">Protected</span>
                       )}
+                      {c.isRecovering && (
+                        <span className="pvp-mc-recovering-pill">Recovering</span>
+                      )}
                     </div>
                     <div className="pvp-mc-meta">
                       {c.fightingStyle && (
@@ -213,10 +216,16 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
                 <div className="pvp-mc-action">
                   <button
                     className="pvp-chal-btn"
-                    onClick={() => !c.isProtected && setSelected(c)}
-                    disabled={energyCur < 15 || !!c.isProtected}
-                    style={(energyCur < 15 || c.isProtected) ? { opacity: 0.5, cursor: "not-allowed" } : {}}
-                    title={c.isProtected ? "This fighter is protected — they're still finding their footing." : undefined}
+                    onClick={() => !c.isProtected && !c.isRecovering && setSelected(c)}
+                    disabled={energyCur < 15 || !!c.isProtected || !!c.isRecovering}
+                    style={(energyCur < 15 || c.isProtected || c.isRecovering) ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+                    title={
+                      c.isRecovering
+                        ? "This fighter is recovering from an injury and can't be challenged right now."
+                        : c.isProtected
+                          ? "This fighter is protected — they're still finding their footing."
+                          : undefined
+                    }
                   >
                     Challenge
                   </button>

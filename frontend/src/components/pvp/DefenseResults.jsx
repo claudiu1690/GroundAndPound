@@ -67,6 +67,17 @@ export function DefenseResults({ myRecord, onBack, onGameplanChanged }) {
             {results.map((r) => {
               const won = r.youWon;
               const dp = r.dpChange ?? 0;
+
+              // Physical cost fields (new; absent on placement rows and older payloads)
+              const isPlacement = r.isPlacement ?? false;
+              const healthBefore = r.healthBefore ?? null;
+              const healthAfter  = r.healthAfter  ?? null;
+              const injuries     = r.injuriesSustained ?? [];
+              const xpGained     = r.xpGained ?? {};
+              const xpEntries    = Object.entries(xpGained).filter(([, v]) => v > 0);
+              const hasPhysCost  = healthBefore != null && healthAfter != null;
+              const hpLost       = hasPhysCost ? healthBefore - healthAfter : 0;
+
               return (
                 <div key={r.fightId} className="pvp-def-result-card">
                   <div className="pvp-def-stripe" style={{ background: won ? "#3A9A4A" : "#C8102E" }} />
@@ -90,6 +101,44 @@ export function DefenseResults({ myRecord, onBack, onGameplanChanged }) {
                       </div>
                     </div>
                   </div>
+
+                  {/* Physical cost row */}
+                  {isPlacement ? (
+                    <div className="pvp-def-phys-cost pvp-def-phys-placement">
+                      No physical cost (placement)
+                    </div>
+                  ) : hasPhysCost ? (
+                    <div className="pvp-def-phys-cost">
+                      <div className="pvp-def-phys-hp">
+                        <span className="pvp-def-phys-lbl">HP</span>
+                        <span className="pvp-def-phys-range">{healthBefore} → {healthAfter}</span>
+                        {hpLost > 0 ? (
+                          <span className="pvp-def-phys-lost">−{hpLost} HP</span>
+                        ) : (
+                          <span className="pvp-def-phys-ok">No damage</span>
+                        )}
+                      </div>
+                      {injuries.length > 0 && (
+                        <div className="pvp-def-phys-injuries">
+                          {injuries.map((inj, i) => (
+                            <span key={i} className="pvp-cons-injury-chip">{inj}</span>
+                          ))}
+                        </div>
+                      )}
+                      {xpEntries.length > 0 && (
+                        <div className="pvp-def-phys-xp">
+                          {xpEntries.map(([stat, val], i) => (
+                            <span key={stat}>
+                              {i > 0 && <span className="pvp-cons-xp-sep"> · </span>}
+                              <span className="pvp-cons-xp-stat">{stat}</span>
+                              {" "}
+                              <span className="pvp-cons-xp-amt">+{val}</span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               );
             })}
