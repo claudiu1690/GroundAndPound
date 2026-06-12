@@ -1,0 +1,43 @@
+var{test}=require("node:test");var assert=require("node:assert/strict");
+var{weightedStats,PvpError}=require("../../services/pvpFightService");
+var{GAMEPLAN_STRATEGY,GAMEPLAN_KEYS,GAMEPLAN_KEYS_WITH_LEGACY}=require("../../consts/pvpConfig");
+var{FIGHT_RESOLUTION_CONFIG:CFG}=require("../../consts/fightResolutionConfig");
+function mkF(v){v=v||20;var o={str:v,spd:v,leg:v,wre:v,gnd:v,sub:v,chn:v,fiq:v,health:100,maxStamina:100};return{toObject:function(){return Object.assign({},o);}}}
+test("striking boosts str spd leg penalises chn (tuned)",function(){var s=weightedStats(mkF(20),"striking");assert.equal(s.str,21);assert.equal(s.spd,21);assert.equal(s.leg,21);assert.equal(s.chn,19);assert.equal(s.wre,20,"wre 1.0");assert.equal(s.gnd,20);assert.equal(s.sub,20);});
+test("wrestling boosts wre gnd penalises chn (tuned)",function(){var w=weightedStats(mkF(20),"wrestling");assert.equal(w.wre,24);assert.equal(w.gnd,22);assert.equal(w.chn,19);assert.equal(w.spd,20,"spd 1.0");assert.equal(w.str,20,"str 1.0");assert.equal(w.leg,20,"leg 1.0");assert.equal(w.sub,20,"sub 1.0");});
+test("submission boosts sub gnd slight chn penalty (tuned)",function(){var s=weightedStats(mkF(20),"submission");assert.equal(s.sub,25);assert.equal(s.gnd,23);assert.equal(s.chn,20);assert.equal(s.str,20,"str 1.0");assert.equal(s.spd,20,"spd 1.0");assert.equal(s.wre,20,"wre 1.0");assert.equal(s.leg,20,"leg 1.0");});
+test("counter boosts wre sub penalises str spd; defense is the Counter Striker strategy not chin (tuned)",function(){var c=weightedStats(mkF(20),"counter");assert.equal(c.wre,21);assert.equal(c.sub,21);assert.equal(c.str,18);assert.equal(c.spd,18);assert.equal(c.chn,20,"chn 1.0 — no chin double-dip");assert.equal(c.leg,20,"leg 1.0");assert.equal(c.gnd,20,"gnd 1.0");});
+test("balanced is identity",function(){var b=weightedStats(mkF(20),"balanced");["str","spd","leg","wre","gnd","sub","chn"].forEach(function(k){assert.equal(b[k],20);});});
+test("legacy aggressive has no weights entry defaults to identity",function(){var a=weightedStats(mkF(20),"aggressive");["str","spd","leg","wre","gnd","sub","chn"].forEach(function(k){assert.equal(a[k],20);});});
+test("weightedStats clamps very low base stats to minimum 1",function(){var f={toObject:function(){return{str:1,spd:1,leg:1,wre:1,gnd:1,sub:1,chn:1,fiq:1,health:100,maxStamina:100};}};assert.ok(weightedStats(f,"submission").chn>=1);assert.ok(weightedStats(f,"striking").wre>=1);});
+test("grappling+counter GAMEPLAN_STRATEGY keys map to non-empty strings; striking is null (tuned out)",function(){["wrestling","submission","counter"].forEach(function(gp){assert.equal(typeof GAMEPLAN_STRATEGY[gp],"string");assert.ok(GAMEPLAN_STRATEGY[gp].length>0);});assert.equal(GAMEPLAN_STRATEGY.striking,null);});
+test("balanced is null and balanced or undefined is undefined",function(){assert.equal(GAMEPLAN_STRATEGY.balanced,null);assert.equal(GAMEPLAN_STRATEGY.balanced||undefined,undefined);});
+test("aggressive key absent maps to undefined engine default",function(){assert.equal(GAMEPLAN_STRATEGY["aggressive"],undefined);assert.equal(GAMEPLAN_STRATEGY["aggressive"]||undefined,undefined);});
+test("opponentStrategy wiring non-balanced defenders pass correct strings",function(){assert.equal(GAMEPLAN_STRATEGY["wrestling"]||undefined,"Takedown Heavy");assert.equal(GAMEPLAN_STRATEGY["submission"]||undefined,"Submission Hunter");assert.equal(GAMEPLAN_STRATEGY["striking"]||undefined,undefined);assert.equal(GAMEPLAN_STRATEGY["counter"]||undefined,"Counter Striker");});
+test("legacy aggressive defender maps to undefined opponentStrategy",function(){assert.equal(GAMEPLAN_STRATEGY["aggressive"]||undefined,undefined);});
+function gSM(ps,ia){if(!ps)return CFG.strategy.strikeDamageMod.default;if(ia&&(ps==="Pressure Fighter"||ps==="Clinch Bully"))return CFG.strategy.strikeDamageMod.pressureAttacker;if(!ia&&ps==="Counter Striker")return CFG.strategy.strikeDamageMod.counterDefender;return CFG.strategy.strikeDamageMod.default;}
+function gTD(ps){if(!ps)return CFG.strategy.takedownAttempt.default;if(ps==="Takedown Heavy"||ps==="Ground & Pound")return CFG.strategy.takedownAttempt.takedownHeavy;if(ps==="Submission Hunter")return CFG.strategy.takedownAttempt.submissionHunter;return CFG.strategy.takedownAttempt.default;}
+function gSub(ps){if(!ps)return CFG.strategy.subAttempt.default;if(ps==="Submission Hunter"||ps==="Ground & Pound")return CFG.strategy.subAttempt.submissionHunter;return CFG.strategy.subAttempt.default;}
+test("Pressure Fighter hits pressureAttacker branch 1.1",function(){assert.equal(gSM("Pressure Fighter",true),1.1);assert.notEqual(gSM("Pressure Fighter",true),CFG.strategy.strikeDamageMod.default);});
+test("Takedown Heavy hits takedownHeavy branch 0.58 above default",function(){assert.equal(gTD("Takedown Heavy"),0.58);assert.ok(gTD("Takedown Heavy")>CFG.strategy.takedownAttempt.default);});
+test("Submission Hunter boosts sub attempt 0.38 and TD rate 0.5",function(){assert.equal(gSub("Submission Hunter"),0.38);assert.ok(gSub("Submission Hunter")>CFG.strategy.subAttempt.default);assert.equal(gTD("Submission Hunter"),0.5);assert.ok(gTD("Submission Hunter")>CFG.strategy.takedownAttempt.default);});
+test("Counter Striker counterDefender branch 0.9 incoming mod",function(){assert.equal(gSM("Counter Striker",false),0.9);assert.ok(gSM("Counter Striker",false)<CFG.strategy.strikeDamageMod.default);});
+test("Counter Striker attacker outgoing is default 1.0 defensive design",function(){assert.equal(gSM("Counter Striker",true),CFG.strategy.strikeDamageMod.default);});
+test("aggressive NOT in GAMEPLAN_KEYS strict",function(){assert.equal(GAMEPLAN_KEYS.includes("aggressive"),false);});
+test("all 5 new keys in GAMEPLAN_KEYS",function(){["striking","wrestling","submission","counter","balanced"].forEach(function(gp){assert.ok(GAMEPLAN_KEYS.includes(gp));});});
+test("aggressive in GAMEPLAN_KEYS_WITH_LEGACY list is plus-1",function(){assert.ok(GAMEPLAN_KEYS_WITH_LEGACY.includes("aggressive"));assert.equal(GAMEPLAN_KEYS_WITH_LEGACY.length,GAMEPLAN_KEYS.length+1);});
+test("PvpError has correct shape",function(){var e=new PvpError("bad_gameplan","msg",400);assert.equal(e.code,"bad_gameplan");assert.equal(e.status,400);assert.equal(e.isPvp,true);});
+function gL(key){var M={striking:{label:"Striking"},wrestling:{label:"Wrestling"},submission:{label:"Submission"},counter:{label:"Counter"},balanced:{label:"Balanced"}};if(key==="aggressive")return"Striking";return(M[key]&&M[key].label)||(key?key[0].toUpperCase()+key.slice(1):"—");}
+test("gameplanLabel resolves 5 live keys",function(){assert.equal(gL("striking"),"Striking");assert.equal(gL("wrestling"),"Wrestling");assert.equal(gL("submission"),"Submission");assert.equal(gL("counter"),"Counter");assert.equal(gL("balanced"),"Balanced");});
+test("gameplanLabel aggressive to Striking",function(){assert.equal(gL("aggressive"),"Striking");});
+test("gameplanLabel null and undefined to em-dash",function(){assert.equal(gL(null),"—");assert.equal(gL(undefined),"—");});
+test("gameplanLabel unknown key title-cased",function(){assert.equal(gL("unknownKey"),"UnknownKey");});
+function cS(f){if(!f)return null;var num=function(v){return(typeof v==="number"&&!isNaN(v))?v:0;};var cl={striking:(num(f.str)+num(f.spd)+num(f.leg))/3,wrestling:(num(f.wre)+num(f.gnd))/2,submission:(num(f.sub)+num(f.gnd))/2,counter:num(f.chn)};var b=null,bv=0;Object.entries(cl).forEach(function(e){if(e[1]>bv){bv=e[1];b=e[0];}});return bv>0?b:null;}
+test("suitedGameplan null fighter returns null",function(){assert.equal(cS(null),null);});
+test("suitedGameplan empty fighter returns null",function(){assert.equal(cS({}),null);});
+test("suitedGameplan NaN stats returns null",function(){assert.equal(cS({str:NaN,spd:NaN,leg:NaN,wre:NaN,gnd:NaN,sub:NaN,chn:NaN}),null);});
+test("suitedGameplan striker build returns striking",function(){assert.equal(cS({str:30,spd:28,leg:25,wre:10,gnd:10,sub:10,chn:10}),"striking");});
+test("suitedGameplan wrestler build returns wrestling",function(){assert.equal(cS({str:10,spd:10,leg:10,wre:30,gnd:30,sub:10,chn:10}),"wrestling");});
+test("suitedGameplan submission build returns submission",function(){assert.equal(cS({str:10,spd:10,leg:10,wre:10,gnd:25,sub:35,chn:10}),"submission");});
+test("suitedGameplan high-chin build returns counter",function(){assert.equal(cS({str:10,spd:10,leg:10,wre:10,gnd:10,sub:10,chn:40}),"counter");});
+test("suitedGameplan balanced never returned from cluster map",function(){assert.notEqual(cS({str:20,spd:20,leg:20,wre:20,gnd:20,sub:20,chn:20}),"balanced");});

@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { SEASON_WEIGHT_CLASSES, GAMEPLAN_KEYS } = require("../consts/pvpConfig");
+const { SEASON_WEIGHT_CLASSES, GAMEPLAN_KEYS_WITH_LEGACY } = require("../consts/pvpConfig");
 
 const pvpFightSchema = new mongoose.Schema({
     seasonId: { type: mongoose.Schema.Types.ObjectId, ref: "Season", required: true },
@@ -7,8 +7,8 @@ const pvpFightSchema = new mongoose.Schema({
     weightClass: { type: String, enum: SEASON_WEIGHT_CLASSES, required: true },
     attackerId: { type: mongoose.Schema.Types.ObjectId, ref: "Fighter", required: true },
     defenderId: { type: mongoose.Schema.Types.ObjectId, ref: "Fighter", required: true },
-    attackerGameplan: { type: String, enum: GAMEPLAN_KEYS },
-    defenderGameplan: { type: String, enum: GAMEPLAN_KEYS },
+    attackerGameplan: { type: String, enum: GAMEPLAN_KEYS_WITH_LEGACY },
+    defenderGameplan: { type: String, enum: GAMEPLAN_KEYS_WITH_LEGACY },
     winnerId: { type: mongoose.Schema.Types.ObjectId, ref: "Fighter", default: null },
     loserId: { type: mongoose.Schema.Types.ObjectId, ref: "Fighter", default: null },
     // "draw" included — the engine can produce draws (DRAW chance / even scorecard).

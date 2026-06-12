@@ -7,5 +7,5 @@ export const STAT_TOOLTIPS = {
   GND: "Ground & Pound — Damage from top position; posture control on the ground",
   SUB: "Submissions — Submission offence and defence — applying and escaping chokes and locks",
   CHN: "Chin — Durability vs. strikes; how much punishment before KO/TKO",
-  FIQ: "Fight IQ — Meta-modifier: improves all stat effectiveness by a small % per point; hard to train",
+  FIQ: "Fight IQ — your ring smarts; factors into your Overall Rating and lowers your injury risk. Hard to train.",
 };

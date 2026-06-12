@@ -46,32 +46,54 @@ export const TWISTS = {
   the_marathon:   { name: "The Marathon",    effect: "Decision wins give +20% bonus DP." },
 };
 
+// DISPLAY-ONLY mirror of consts/pvpConfig.GAMEPLAN_WEIGHTS (balance-tuned). Authoritative
+// values live on the backend; this is only for the pre-fight card blurbs.
 export const GAMEPLAN_WEIGHTS = {
-  aggressive: { str: 1.3, spd: 1.2, chn: 0.9, fiq: 0.9 },
+  striking:   { str: 1.07, spd: 1.05, leg: 1.04, chn: 0.93 },
+  wrestling:  { wre: 1.20, gnd: 1.12, chn: 0.96 },
+  submission: { sub: 1.24, gnd: 1.13, chn: 0.98 },
+  counter:    { wre: 1.05, sub: 1.05, str: 0.92, spd: 0.92 },
   balanced:   {},
-  counter:    { fiq: 1.3, chn: 1.2, str: 0.9, spd: 0.9 },
 };
 
 export const GAMEPLAN_META = {
-  aggressive: {
-    label: "Aggressive",
-    desc: "Push the pace. High-risk, high-reward. STR + SPD weighted.",
-    tag: "Finisher bonus",
+  striking: {
+    label: "Striking",
+    desc: "Bang on the feet — STR + SPD + LEG up, chin down.",
+    tag: "Pressure",
     colorKey: "acc",
   },
-  balanced: {
-    label: "Balanced",
-    desc: "No bias. All stats count equally. Consistent output.",
-    tag: "Neutral",
+  wrestling: {
+    label: "Wrestling",
+    desc: "Put it on the mat — WRE + GND up, shoots takedowns often; chin down.",
+    tag: "Takedowns",
     colorKey: "blue",
+  },
+  submission: {
+    label: "Submission",
+    desc: "Hunt the finish — SUB + GND up, chases subs; slight chin down.",
+    tag: "Finisher",
+    colorKey: "purp",
   },
   counter: {
     label: "Counter",
-    desc: "Let them make mistakes. FIQ + CHN weighted.",
+    desc: "Make them miss — takes less strike damage + grappling D up; power + speed down.",
     tag: "Defensive",
     colorKey: "grn",
   },
+  balanced: {
+    label: "Balanced",
+    desc: "No bias — every stat counts equally.",
+    tag: "Neutral",
+    colorKey: "blue",
+  },
 };
+
+/** Tolerant resolver — handles legacy "aggressive" and unknown keys. */
+export function gameplanLabel(key) {
+  if (key === "aggressive") return "Striking";
+  return GAMEPLAN_META[key]?.label ?? (key ? key[0].toUpperCase() + key.slice(1) : "—");
+}
 
 export const SOFT_RESET = {
   prospect: "prospect",

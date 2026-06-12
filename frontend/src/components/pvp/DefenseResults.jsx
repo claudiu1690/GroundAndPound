@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Swords, ChevronLeft } from "lucide-react";
 import { usePvpDefenseResults } from "../../hooks/usePvpDefenseResults";
+import { gameplanLabel } from "./pvpConst";
 import { api } from "../../api";
 
 /**
@@ -9,7 +10,11 @@ import { api } from "../../api";
  */
 export function DefenseResults({ myRecord, onBack, onGameplanChanged }) {
   const { data, loading, error } = usePvpDefenseResults();
-  const [gameplan, setGameplan] = useState(myRecord?.defenseGameplan ?? "balanced");
+  const [gameplan, setGameplan] = useState(
+    myRecord?.defenseGameplan === "aggressive"
+      ? "striking"
+      : (myRecord?.defenseGameplan ?? "balanced")
+  );
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
 
@@ -49,7 +54,7 @@ export function DefenseResults({ myRecord, onBack, onGameplanChanged }) {
           <div className="pvp-def-notice-text">
             <strong>{unreadCount} player{unreadCount !== 1 ? "s" : ""} challenged you</strong> while you were
             offline. Your defense gameplan:{" "}
-            <strong style={{ color: "#C8102E", textTransform: "capitalize" }}>{gameplan}</strong>
+            <strong style={{ color: "#C8102E" }}>{gameplanLabel(gameplan)}</strong>
           </div>
         </div>
       )}
@@ -150,15 +155,14 @@ export function DefenseResults({ myRecord, onBack, onGameplanChanged }) {
           <div className="pvp-gps-info">
             <div className="pvp-gps-title">Your default defense gameplan</div>
             <div className="pvp-gps-btns">
-              {["aggressive", "balanced", "counter"].map((gp) => (
+              {["striking", "wrestling", "submission", "counter", "balanced"].map((gp) => (
                 <button
                   key={gp}
                   className={`pvp-gps-btn ${gameplan === gp ? "pvp-gps-btn-act" : ""}`}
                   onClick={() => handleSetGameplan(gp)}
                   disabled={saving}
-                  style={{ textTransform: "capitalize" }}
                 >
-                  {gp}
+                  {gameplanLabel(gp)}
                 </button>
               ))}
             </div>

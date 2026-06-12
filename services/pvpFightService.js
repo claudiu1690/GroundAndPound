@@ -31,6 +31,7 @@ const energyService = require("./energyService");
 const { computeDp, applyDpAndDivision } = require("./pvpDpService");
 const {
     GAMEPLAN_WEIGHTS,
+    GAMEPLAN_STRATEGY,
     GAMEPLAN_KEYS,
     TWISTS,
     DP,
@@ -316,6 +317,11 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     const engine = resolveFight(weightedAttacker, weightedDefender, {
         playerName: attackerName,
         opponentName: defenderName,
+        // Gameplan → engine strategy. Attacker's chosen gameplan drives playerStrategy;
+        // the defender's stored defenseGameplan drives opponentStrategy. `|| undefined`
+        // so balanced/null/legacy ("aggressive" has no mapping) pass nothing → engine default.
+        playerStrategy: GAMEPLAN_STRATEGY[gameplan] || undefined,
+        opponentStrategy: GAMEPLAN_STRATEGY[defenderRecord.defenseGameplan] || undefined,
         ctx: {
             playerOvr: attacker.overallRating || 0,
             opponentOvr: defender.overallRating || 0,

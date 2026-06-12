@@ -69,13 +69,37 @@ const TWISTS = {
 
 const TWIST_KEYS = Object.keys(TWISTS);
 
+// Balance-tuned via Monte-Carlo against the real engine (resolveFight): on identical
+// fighters, each gameplan wins ~51-57% vs a Balanced mirror — a real but non-deciding
+// edge (no dominant pick, no trap). The engine is a damage race, so multipliers are
+// SMALL (striking/chin especially) and grappling stats (less swingy) carry larger ones.
 const GAMEPLAN_WEIGHTS = {
-    aggressive: { str: 1.3, spd: 1.2, chn: 0.9, fiq: 0.9 },
-    balanced: {}, // identity
-    counter: { fiq: 1.3, chn: 1.2, str: 0.9, spd: 0.9 },
+    striking:   { str: 1.07, spd: 1.05, leg: 1.04, chn: 0.93 },
+    wrestling:  { wre: 1.20, gnd: 1.12, chn: 0.96 },
+    submission: { sub: 1.24, gnd: 1.13, chn: 0.98 },
+    counter:    { wre: 1.05, sub: 1.05, str: 0.92, spd: 0.92 },
+    balanced:   {}, // identity
+};
+
+// Strategy strings consumed by utils/fightResolution.js — must match the engine EXACTLY
+// (consts/fightResolutionConfig.js / fightResolution.js recognize these literals).
+// striking + balanced pass NO strategy: the +10% strike-damage "Pressure Fighter" was
+// wildly overpowered in tuning (~+34 win%), so striking relies on stat weights only.
+const GAMEPLAN_STRATEGY = {
+    striking:   null,
+    wrestling:  "Takedown Heavy",
+    submission: "Submission Hunter",
+    counter:    "Counter Striker",
+    balanced:   null,
 };
 
 const GAMEPLAN_KEYS = Object.keys(GAMEPLAN_WEIGHTS);
+
+// Legacy-tolerant key list for model enums: the 5 live keys plus the retired "aggressive"
+// gameplan, so historical rows + soft-reset re-saves of old documents don't fail enum
+// validation. Write-path validation in services still uses strict GAMEPLAN_KEYS, so
+// "aggressive" is rejected on NEW writes but tolerated on stored/re-saved rows.
+const GAMEPLAN_KEYS_WITH_LEGACY = [...GAMEPLAN_KEYS, "aggressive"];
 
 const REWARDS = {
     prospect: { iron: 500, fame: 500, drinks: 0, badge: null },
@@ -188,7 +212,9 @@ module.exports = {
     TWISTS,
     TWIST_KEYS,
     GAMEPLAN_WEIGHTS,
+    GAMEPLAN_STRATEGY,
     GAMEPLAN_KEYS,
+    GAMEPLAN_KEYS_WITH_LEGACY,
     REWARDS,
     SOFT_RESET,
     SEASON_LENGTH_DAYS,

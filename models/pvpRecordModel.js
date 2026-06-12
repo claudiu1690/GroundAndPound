@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { SEASON_WEIGHT_CLASSES, WEIGHT_CLASSES_PVP, DIVISION_KEYS, GAMEPLAN_KEYS } = require("../consts/pvpConfig");
+const { SEASON_WEIGHT_CLASSES, WEIGHT_CLASSES_PVP, DIVISION_KEYS, GAMEPLAN_KEYS_WITH_LEGACY } = require("../consts/pvpConfig");
 
 const pvpRecordSchema = new mongoose.Schema({
     playerId: { type: mongoose.Schema.Types.ObjectId, ref: "Fighter", required: true },
@@ -24,7 +24,7 @@ const pvpRecordSchema = new mongoose.Schema({
     losses: { type: Number, default: 0 },
     winStreak: { type: Number, default: 0 },
     longestStreak: { type: Number, default: 0 },
-    defenseGameplan: { type: String, enum: GAMEPLAN_KEYS, default: "balanced" },
+    defenseGameplan: { type: String, enum: GAMEPLAN_KEYS_WITH_LEGACY, default: "balanced" },
     lastFightAt: { type: Date, default: null },
     lastActiveAt: { type: Date, default: Date.now },
     // Idempotency markers — see pvpDecayService / pvpRewardService.

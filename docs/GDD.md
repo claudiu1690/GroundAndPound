@@ -593,7 +593,17 @@ Base: **win +120**, attacker **loss −55**, defender **loss −28**. A draw is 
 Clamps: a win always grants **at least +1**; a loss never exceeds **−100**; a loss can't drop you below your division floor.
 
 ### 22.4 Matchmaking & Gameplans
-Matchmaking surfaces up to **5** opponents from your season pool, expanding an OVR window (±5 → ±10 → ±15 → ±20) until it fills, then ranking by DP closeness. Each candidate shows difficulty, any bracket bonus, and belt/rival flags. **Gameplans** reweight your stats for the bout: **Aggressive** (STR/SPD up, CHN/FIQ down), **Balanced** (neutral), **Counter** (FIQ/CHN up, STR/SPD down). You pick your attack gameplan per fight; your defense gameplan is set once and reused.
+Matchmaking surfaces up to **5** opponents from your season pool, expanding an OVR window (±5 → ±10 → ±15 → ±20) until it fills, then ranking by DP closeness. Each candidate shows difficulty, any bracket bonus, and belt/rival flags. **Gameplans** reweight your stats for the bout — **five approaches**, each amplifying a stat cluster and paying a cost, with the grappling/counter plans also nudging fight behaviour via the engine's strategy hooks:
+
+| Gameplan | Boosts | Costs | Behaviour |
+|---|---|---|---|
+| **Striking** | STR · SPD · LEG | CHN | hits harder on the feet |
+| **Wrestling** | WRE · GND | CHN | shoots takedowns far more often |
+| **Submission** | SUB · GND | CHN (slight) | hunts subs + takedowns |
+| **Counter** | WRE · SUB | STR · SPD | takes −10% incoming strike damage |
+| **Balanced** | — | — | engine defaults |
+
+**Balance:** the multipliers are deliberately **small** — the fight engine is a damage race where small edges snowball, so gameplan is tuned to a *modest* swing, not a decider. On identical fighters, the right gameplan wins ~51–57% vs a Balanced mirror (validated by Monte-Carlo against the real engine). Every build has an approach that fits its strengths — strikers, wrestlers, and grapplers all have a real choice (the picker flags the one that suits your stats). You pick your attack gameplan per fight; your **defense gameplan** is set once and is used when you're attacked offline. (FIQ is deliberately untouched by every gameplan — it has no in-combat effect today; a separate FIQ pass is planned.)
 
 ### 22.5 The Belt, Rivalries & Inactivity Decay
 - **The Belt:** the #1 Champion-division player (with at least one fight) at season end is crowned belt holder, entering the Hall of Fame and earning the belt reward.

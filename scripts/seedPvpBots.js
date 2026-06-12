@@ -23,7 +23,7 @@ const { divisionForDp } = require("../consts/pvpConfig");
 
 const DAY = 24 * 3600 * 1000;
 const STYLES = ["Boxer", "Kickboxer", "Wrestler", "Brazilian Jiu-Jitsu", "Muay Thai", "Judo", "Sambo", "Capoeira"];
-const GAMEPLANS = ["balanced", "aggressive", "counter"];
+const GAMEPLANS = ["balanced", "striking", "wrestling", "submission", "counter"];
 const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
 
 // 16 names / classes so a custom count up to 16 still gets variety; we use the first N.
