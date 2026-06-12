@@ -566,10 +566,10 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
           </div>
         )}
 
-        {/* Commentary */}
+        {/* Commentary — full fight play-by-play */}
         {commentary && commentary.length > 0 && (
           <div className="pvp-commentary">
-            {commentary.slice(0, 2).map((line, i) => (
+            {commentary.map((line, i) => (
               <div key={i} className="pvp-commentary-line">{line}</div>
             ))}
           </div>

@@ -90,7 +90,7 @@ export function PlacementResult({ result, onFightAgain, onBackToLadder }) {
         {/* Commentary */}
         {commentary && commentary.length > 0 && (
           <div className="pvp-commentary">
-            {commentary.slice(0, 2).map((line, i) => (
+            {commentary.map((line, i) => (
               <div key={i} className="pvp-commentary-line">{line}</div>
             ))}
           </div>
@@ -161,7 +161,7 @@ export function PlacementResult({ result, onFightAgain, onBackToLadder }) {
       {/* Commentary */}
       {commentary && commentary.length > 0 && (
         <div className="pvp-commentary">
-          {commentary.slice(0, 2).map((line, i) => (
+          {commentary.map((line, i) => (
             <div key={i} className="pvp-commentary-line">{line}</div>
           ))}
         </div>
