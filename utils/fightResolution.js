@@ -217,6 +217,12 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     let grapplingControl = 0;
     let finished = false;
     let outcome = null;
+    // ADDITIVE (Fight Description System): records WHY a KO/TKO outcome happened so the
+    // narrative can pick ko_finish vs tko_finish_strike. Display-only — never read by any
+    // numeric/RNG path. "ko" = clean striking KO (flash / health-to-zero); "tko" =
+    // exhaustion or accumulation stoppage; "submission" set on submission finishes; null
+    // otherwise (decisions, non-finish rounds).
+    let finishCause = null;
     let groundContinued = false; // when true, takedown + striking phases are skipped
     const campCommentary = []; // Camp-specific commentary for this round
 
@@ -367,6 +373,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             if (submissionSuccess(player, opponent)) {
                 finished = true;
                 outcome = "Submission";
+                finishCause = "submission";
             }
         }
     } else if (opponentGoesFirst || (playerGoesFirst && opponentWillShoot)) {
@@ -433,6 +440,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
                 if (subSucceeded) {
                     finished = true;
                     outcome = "Loss (submission)";
+                    finishCause = "submission";
                 }
             }
         }
@@ -453,6 +461,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         const strikingBonus = triggerBonus(sessionBonuses, 'STRIKE_DAMAGE');
         if (strikingBonus > 0) {
             plStrike *= (1 + strikingBonus);
+            campCommentary.push('campStrikingAccuracy');
         }
 
         // GAME_PLAN_STUDY: reduce opponent damage
@@ -500,6 +509,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             if (Math.random() < flashKoChance) {
                 finished = true;
                 outcome = "KO/TKO";
+                finishCause = "ko";
             }
         }
         if (!finished && playerDamage >= CFG.flashKo.minDamage) {
@@ -511,6 +521,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             if (Math.random() < oppFlashKoChance * (ironWillPerk ? CFG.flashKo.ironWillMultiplier : 1)) {
                 finished = true;
                 outcome = "Loss (KO/TKO)";
+                finishCause = "ko";
             }
         }
     }
@@ -522,12 +533,15 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     opponent.stamina = oStamina;
 
     // ── Finish checks (unchanged) ──────────────────────────────────────
-    if (!finished && player.health <= 0) { finished = true; outcome = "Loss (KO/TKO)"; }
-    if (!finished && opponent.health <= 0) { finished = true; outcome = "KO/TKO"; }
-    if (!finished && exhaustionTkoCheck(player, playerDamage, ironWillPerk)) { finished = true; outcome = "Loss (KO/TKO)"; }
-    if (!finished && exhaustionTkoCheck(opponent, opponentDamage, false)) { finished = true; outcome = "KO/TKO"; }
-    if (!finished && player.health < CFG.koCheck.healthWindow.normalWindow && koCheck(player, playerDamage, ironWillPerk, opponent)) { finished = true; outcome = "Loss (KO/TKO)"; }
-    if (!finished && opponent.health < CFG.koCheck.healthWindow.normalWindow && koCheck(opponent, opponentDamage, false, player)) { finished = true; outcome = "KO/TKO"; }
+    // finishCause (ADDITIVE, display-only) mirrors each finish path: health-to-zero is a
+    // clean KO; exhaustion + late koCheck stoppages are TKOs. Setting it never alters the
+    // outcome string, health, or any RNG draw.
+    if (!finished && player.health <= 0) { finished = true; outcome = "Loss (KO/TKO)"; finishCause = "ko"; }
+    if (!finished && opponent.health <= 0) { finished = true; outcome = "KO/TKO"; finishCause = "ko"; }
+    if (!finished && exhaustionTkoCheck(player, playerDamage, ironWillPerk)) { finished = true; outcome = "Loss (KO/TKO)"; finishCause = "tko"; }
+    if (!finished && exhaustionTkoCheck(opponent, opponentDamage, false)) { finished = true; outcome = "KO/TKO"; finishCause = "tko"; }
+    if (!finished && player.health < CFG.koCheck.healthWindow.normalWindow && koCheck(player, playerDamage, ironWillPerk, opponent)) { finished = true; outcome = "Loss (KO/TKO)"; finishCause = "tko"; }
+    if (!finished && opponent.health < CFG.koCheck.healthWindow.normalWindow && koCheck(opponent, opponentDamage, false, player)) { finished = true; outcome = "KO/TKO"; finishCause = "tko"; }
 
     return {
         playerDamage,
@@ -538,6 +552,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         grapplingControl,
         finished,
         outcome,
+        finishCause,
         playerHealth: player.health,
         opponentHealth: opponent.health,
         campCommentary,
@@ -757,6 +772,7 @@ function resolveFight(player, opponent, options = {}) {
             opponentDamage: result.opponentDamage,
             playerHealth: result.playerHealth,
             opponentHealth: result.opponentHealth,
+            campCommentary: result.campCommentary,
         });
 
         // Per-round dynamic tags layered on top of the fight-wide tags.
@@ -806,6 +822,8 @@ function resolveFight(player, opponent, options = {}) {
             const opponentHealthAfter = result.outcome === "KO/TKO" ? 0 : o.health;
             return {
                 outcome: result.outcome, rounds, winner,
+                // ADDITIVE display field — why the (T)KO happened: "ko" | "tko" | "submission".
+                finishCause: result.finishCause ?? null,
                 playerHealthAfter, opponentHealthAfter, playerStaminaAfter: p.stamina,
                 commentary, sessionBonuses, wildcard: wildcard ? { ...wildcard, countered: wildcardCountered } : null,
             };
@@ -837,6 +855,7 @@ function resolveFight(player, opponent, options = {}) {
     if (resultLine) commentary.push(resultLine);
     return {
         outcome, rounds, winner,
+        finishCause: null, // decisions/draws have no finish cause
         playerHealthAfter: p.health, opponentHealthAfter: o.health, playerStaminaAfter: p.stamina,
         commentary, scorecard, sessionBonuses,
         wildcard: wildcard ? { ...wildcard, countered: wildcardCountered } : null,

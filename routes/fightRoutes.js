@@ -153,4 +153,9 @@ router.post("/resolve/:fighterId", fightController.resolveFight);
 router.get("/interview/candidates", fightController.getInterviewCandidates);
 router.post("/:fightId/interview", fightController.postInterview);
 
+// ── Fight Description System — derived round-by-round breakdown ─────────────
+// Registered AFTER all literal GET segments so the :fightId param does not shadow
+// them. Auth-protected via the mount in app.js (actor = req.user.fighterId).
+router.get("/:fightId/breakdown", fightController.getFightBreakdown);
+
 module.exports = router;

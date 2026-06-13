@@ -18,6 +18,9 @@ const PVPRecord = require("../models/pvpRecordModel");
 const PVPFight = require("../models/pvpFightModel");
 const { redis, ensureRedisConnected } = require("../lib/redis");
 const { resolveFight } = require("../utils/fightResolution");
+const { deriveFightDetails } = require("../utils/fightBreakdown");
+const { buildBreakdownResponse } = require("../utils/fightBreakdownView");
+const { FIGHT_RESOLUTION_CONFIG: FIGHT_CFG } = require("../consts/fightResolutionConfig");
 const { isFightBlocked, tickRecoveryForFighter } = require("../utils/injuryUtils");
 const fighterService = require("./fighterService");
 const fightConsequenceService = require("./fightConsequenceService");
@@ -309,6 +312,14 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     const beltHolderId = await pvpRecordService.currentBeltHolderId(season._id, season.weightClass);
     const isBeltHolderFight = beltHolderId != null && String(defenderId) === beltHolderId;
 
+    // ── Grudge signal (any prior wins between these two this season = a rivalry brewing).
+    //    Used for commentary tags AND the Fight Description intro (nemesis-only intros). ─
+    let grudgePriorWins = 0;
+    try {
+        grudgePriorWins = await pvpRivalryService.priorWinCount(season._id, attackerFighterId, defenderId);
+    } catch (_) { /* non-fatal — grudge framing is cosmetic */ }
+    const isGrudgeFight = grudgePriorWins > 0;
+
     // ── Run the engine on throwaway weighted copies. ─────────────────────────
     const weightedAttacker = weightedStats(attacker, gameplan);
     const weightedDefender = weightedStats(defender, defenderRecord.defenseGameplan);
@@ -325,6 +336,11 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         ctx: {
             playerOvr: attacker.overallRating || 0,
             opponentOvr: defender.overallRating || 0,
+            // Commentary parity (additive / balance-neutral — tags only, no numeric path).
+            playerStyle: attacker.style,
+            opponentStyle: defender.style,
+            isTitle: isBeltHolderFight,
+            isGrudge: isGrudgeFight,
         },
     });
 
@@ -473,9 +489,49 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
             console.error("[PVP placement] failed to write fight doc:", err.message);
         }
 
+        // ── Fight Description System — derive + persist breakdown (non-fatal). ──
+        if (fightDoc) {
+            try {
+                const bd = deriveFightDetails(
+                    engine,
+                    {
+                        playerStyle: attacker.style,
+                        opponentStyle: defender.style,
+                        isTitle: isBeltHolderFight,
+                        isGrudge: isGrudgeFight,
+                        isCallout: false,
+                        comeback: false,
+                        playerOvr: attackerOvrBefore,
+                        opponentOvr: defenderOvrBefore,
+                        playerName: attackerName,
+                        opponentName: defenderName,
+                        maxRounds: FIGHT_CFG.defaults.maxRounds,
+                    },
+                    String(fightDoc._id)
+                );
+                fightDoc.breakdown = {
+                    version: 1,
+                    roundStats: bd.roundStats,
+                    eventLog: bd.eventLog,
+                    introTemplateKey: bd.introTemplateKey,
+                    resultContextKey: bd.resultContextKey,
+                };
+                await fightDoc.save();
+            } catch (e) {
+                console.error("[PVP placement] breakdown derive failed:", e.message);
+            }
+        }
+
         // Defender still gets a defense feed (dpChange 0). Attacker placement feed below.
         try {
-            const meta = { seasonId: String(season._id), weightClass: season.weightClass, placement: true };
+            // Defense feed entries carry fightId + kind for the Fight Description drawer.
+            const meta = {
+                seasonId: String(season._id),
+                weightClass: season.weightClass,
+                placement: true,
+                fightId: fightDoc ? String(fightDoc._id) : null,
+                kind: "pvp",
+            };
             if (isDraw) {
                 activityLogService.log(defenderId, "pvp_defended", `PVP draw vs ${attackerName2}`, { ...meta, draw: true });
             } else if (attackerWon) {
@@ -484,11 +540,12 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
                 activityLogService.log(defenderId, "pvp_defended", `Defended against ${attackerName2}`, meta);
             }
             if (placementComplete) {
+                // Not a fight result — no fightId/kind.
                 activityLogService.log(
                     attackerFighterId,
                     "pvp_placement_done",
                     `Placement complete — you enter at ${attackerRecord.division} with ${attackerRecord.dp} DP`,
-                    { ...meta, division: attackerRecord.division, dp: attackerRecord.dp }
+                    { seasonId: String(season._id), weightClass: season.weightClass, placement: true, division: attackerRecord.division, dp: attackerRecord.dp }
                 );
             }
         } catch (_) { /* feed failures never block the fight */ }
@@ -750,6 +807,39 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         console.error("[PVP fight] failed to write fight doc:", err.message);
     }
 
+    // ── Fight Description System — derive + persist breakdown (non-fatal). ────
+    if (fightDoc) {
+        try {
+            const bd = deriveFightDetails(
+                engine,
+                {
+                    playerStyle: attacker.style,
+                    opponentStyle: defender.style,
+                    isTitle: isBeltHolderFight,
+                    isGrudge: isGrudgeFight,
+                    isCallout: false,
+                    comeback: false,
+                    playerOvr: attackerOvrBefore,
+                    opponentOvr: defenderOvrBefore,
+                    playerName: attackerName,
+                    opponentName: defenderName,
+                    maxRounds: FIGHT_CFG.defaults.maxRounds,
+                },
+                String(fightDoc._id)
+            );
+            fightDoc.breakdown = {
+                version: 1,
+                roundStats: bd.roundStats,
+                eventLog: bd.eventLog,
+                introTemplateKey: bd.introTemplateKey,
+                resultContextKey: bd.resultContextKey,
+            };
+            await fightDoc.save();
+        } catch (e) {
+            console.error("[PVP fight] breakdown derive failed:", e.message);
+        }
+    }
+
     // ── Rivalry persistence (after DP write). ────────────────────────────────
     let rivalryFlags = { isRivalryFight: false, isRivalryResolved: false };
     if (attackerWon) {
@@ -781,6 +871,8 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         // Defender real-consequence snapshot → enriches the defense feed meta (injury/HP).
         defenderInjury: defenderCons.injuriesSustained[0] || null,
         defenderHealthAfter: defenderCons.healthAfter,
+        // Fight Description drawer needs the fight id on the feed entry.
+        fightId: fightDoc ? String(fightDoc._id) : null,
     });
 
     // ── Build the FightResult DTO (§3.4). ────────────────────────────────────
@@ -853,28 +945,34 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     };
 }
 
-function writeFeed({ attackerId, defenderId, attackerName, defenderName, attackerWon, isDraw, method, attackerDpChange, defenderDpChange, promoted, rivalryFlags, season, defenderInjury = null, defenderHealthAfter = null }) {
-    const meta = { seasonId: String(season._id), weightClass: season.weightClass };
+function writeFeed({ attackerId, defenderId, attackerName, defenderName, attackerWon, isDraw, method, attackerDpChange, defenderDpChange, promoted, rivalryFlags, season, defenderInjury = null, defenderHealthAfter = null, fightId = null }) {
+    // Fight-result feed entries carry fightId + kind so the Fight Description drawer
+    // can open from the activity feed. pvp_promoted / pvp_rivalry_* do NOT (they are
+    // not a fight result).
+    const meta = { seasonId: String(season._id), weightClass: season.weightClass, fightId, kind: "pvp" };
     // Real-consequence meta for the DEFENDER's feed entries only (the injury they took +
     // their resulting HP). Attacker-facing entries never carry the defender's body state.
     const defMeta = { ...meta, injury: defenderInjury, healthAfter: defenderHealthAfter };
+    // Non-fight-result meta (no fightId/kind).
+    const plainMeta = { seasonId: String(season._id), weightClass: season.weightClass };
     try {
         if (isDraw) {
-            // Both careers log the bout (DP unchanged for both, M-3).
-            activityLogService.log(attackerId, "pvp_loss", `PVP draw vs ${defenderName}`, { ...meta, draw: true });
-            activityLogService.log(defenderId, "pvp_defended", `PVP draw vs ${attackerName}`, { ...defMeta, draw: true });
+            // Both careers log the bout as a draw (DP unchanged for both, M-3) — a neutral
+            // pvp_draw, not a loss/defense, so the feed reads grey like a PvE draw.
+            activityLogService.log(attackerId, "pvp_draw", `PVP draw vs ${defenderName}`, { ...meta, draw: true });
+            activityLogService.log(defenderId, "pvp_draw", `PVP draw vs ${attackerName}`, { ...defMeta, draw: true });
             return;
         }
         if (attackerWon) {
             activityLogService.log(attackerId, "pvp_win", `PVP win vs ${defenderName} by ${method} (${attackerDpChange >= 0 ? "+" : ""}${attackerDpChange} DP)`, meta);
             activityLogService.log(defenderId, "pvp_defense_loss", `Lost a PVP defense to ${attackerName} (${defenderDpChange} DP)`, defMeta);
             if (promoted) {
-                activityLogService.log(attackerId, "pvp_promoted", `Promoted in the Proving Ground`, meta);
+                activityLogService.log(attackerId, "pvp_promoted", `Promoted in the Proving Ground`, plainMeta);
             }
             if (rivalryFlags && rivalryFlags.isRivalryResolved) {
-                activityLogService.log(attackerId, "pvp_rivalry_resolved", `Settled the rivalry with ${defenderName}`, meta);
+                activityLogService.log(attackerId, "pvp_rivalry_resolved", `Settled the rivalry with ${defenderName}`, plainMeta);
             } else if (rivalryFlags && rivalryFlags.isRivalryFight) {
-                activityLogService.log(attackerId, "pvp_rivalry_set", `Rivalry brewing with ${defenderName}`, meta);
+                activityLogService.log(attackerId, "pvp_rivalry_set", `Rivalry brewing with ${defenderName}`, plainMeta);
             }
         } else {
             activityLogService.log(attackerId, "pvp_loss", `PVP loss to ${defenderName} by ${method} (${attackerDpChange} DP)`, meta);
@@ -998,11 +1096,91 @@ async function setDefenseGameplan(fighterId, gameplan) {
     return { defenseGameplan: record.defenseGameplan };
 }
 
+/**
+ * Fight Description System — read the persisted breakdown for one PVP fight,
+ * viewer-relative. Returns null when the fight is missing or the viewer is neither
+ * attacker nor defender (controller maps null → 404). Persisted breakdown is in
+ * ENGINE perspective (player = attacker); when the viewer is the DEFENDER we swap
+ * every pair and flip every actorIsPlayer.
+ */
+async function getFightBreakdown(fightId, viewerFighterId) {
+    const fight = await PVPFight.findById(fightId);
+    if (!fight) return null;
+
+    const isAttacker = String(fight.attackerId) === String(viewerFighterId);
+    const isDefender = String(fight.defenderId) === String(viewerFighterId);
+    if (!isAttacker && !isDefender) return null;
+
+    const perspective = isDefender ? "opponent" : "player";
+
+    // Opponent name = the OTHER fighter from the viewer's seat; playerName = the
+    // VIEWER's own fighter name (templates are third-person — frontend needs both).
+    const oppId = isAttacker ? fight.defenderId : fight.attackerId;
+    const [oppDoc, viewerDoc] = await Promise.all([
+        Fighter.findById(oppId).select("firstName lastName nickname"),
+        Fighter.findById(viewerFighterId).select("firstName lastName nickname"),
+    ]);
+    const opponentName = oppDoc ? pvpRecordService.fighterName(oppDoc) : "Opponent";
+    const playerName = viewerDoc ? pvpRecordService.fighterName(viewerDoc) : "You";
+
+    // Viewer-relative win. Draw → not a win for either.
+    const youWon = String(fight.winnerId || "") === String(viewerFighterId);
+
+    // ── Legacy / not-derived ─────────────────────────────────────────────────
+    if (fight.breakdown?.version == null) {
+        const { classifyPvpMethod } = require("../utils/fightBreakdownView");
+        const cls = classifyPvpMethod(fight.method, youWon);
+        return {
+            fightId: String(fight._id),
+            kind: "pvp",
+            legacy: true,
+            outcome: fight.method,
+            method: cls.method,
+            header: {
+                playerName,
+                opponentName,
+                tier: divisionLabelFor(fight, isAttacker),
+                campGrade: null,
+                weightCut: null,
+                outcomeWord: cls.isDraw ? "DRAW" : youWon ? "VICTORY" : "DEFEAT",
+            },
+            commentary: fight.commentary || [],
+        };
+    }
+
+    return buildBreakdownResponse({
+        breakdown: fight.breakdown,
+        kind: "pvp",
+        fightId: String(fight._id),
+        // PvP "outcome" surfaces the method-ish field; the view maps it to vocabulary.
+        outcome: fight.method,
+        method: fight.method,
+        youWon,
+        perspective,
+        header: {
+            playerName,
+            opponentName,
+            tier: divisionLabelFor(fight, isAttacker),
+            campGrade: null, // PvE only
+            weightCut: null, // PvE only
+        },
+        campOutcomes: [], // PvE only
+        wildcardText: null, // PvE only
+    });
+}
+
+// PvP "division label" for the header — the viewer's own division after the fight.
+function divisionLabelFor(fight, isAttacker) {
+    const div = isAttacker ? fight.attackerDivisionAfter : fight.defenderDivisionAfter;
+    return div || null;
+}
+
 module.exports = {
     resolveFight: resolveFightForAttacker,
     listDefenseResults,
     listFights,
     setDefenseGameplan,
+    getFightBreakdown,
     PvpError,
     weightedStats,
     mapOutcome,

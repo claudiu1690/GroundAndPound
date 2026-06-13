@@ -112,6 +112,8 @@ function checkPromotion(fighter) {
 const fighterService = require("./fighterService");
 const questService = require("./questService");
 const { resolveFight } = require("../utils/fightResolution");
+const { deriveFightDetails } = require("../utils/fightBreakdown");
+const { FIGHT_RESOLUTION_CONFIG: FIGHT_CFG } = require("../consts/fightResolutionConfig");
 const {
     rollForFightInjury,
     buildInjury,
@@ -744,6 +746,31 @@ async function resolveFightAndApply(fighterId) {
     fight.rounds = (result.rounds || []).map(r => `${r.round}: ${r.event} (P ${r.playerHealth} / O ${r.opponentHealth})`);
     fight.commentary = result.commentary || [];
     fight.completedAt = new Date();
+
+    // Fight Description System — derive the round-by-round breakdown from the engine
+    // output. A derive failure must NOT fail the resolve: degrade to legacy (null).
+    try {
+        const bd = deriveFightDetails(
+            result,
+            {
+                ...commentaryCtx,
+                playerName,
+                opponentName,
+                maxRounds: FIGHT_CFG.defaults.maxRounds,
+            },
+            String(fight._id)
+        );
+        fight.breakdown = {
+            version: 1,
+            roundStats: bd.roundStats,
+            eventLog: bd.eventLog,
+            introTemplateKey: bd.introTemplateKey,
+            resultContextKey: bd.resultContextKey,
+        };
+    } catch (e) {
+        console.error("[fight] breakdown derive failed:", e.message);
+    }
+
     await fight.save();
 
     // Post-fight: only health is persisted — stamina is fight-time only and resets next fight.
@@ -1174,10 +1201,12 @@ async function resolveFightAndApply(fighterId) {
         `Beat ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
         { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight,
           winStreak: winStreakAfterWin,
-          streakDrinks: (winStreakAfterWin >= 10 ? streakDrinksGranted : 0) });
+          streakDrinks: (winStreakAfterWin >= 10 ? streakDrinksGranted : 0),
+          fightId: String(fight._id), kind: "pve" });
     if (isLoss) activityLogService.log(fighterId, "FIGHT_LOSS",
         `Lost to ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
-        { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight });
+        { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight,
+          fightId: String(fight._id), kind: "pve" });
     // \u2500\u2500 PVP unlock: 3rd CAREER win opens "The Proving Ground". Fighter-flag flip +
     // feed only \u2014 NO pvp service import (one-way dependency). Guarded save persists it. \u2500\u2500
     if (isWin && fighter.pvpOnboarding && !fighter.pvpOnboarding.unlocked && (fighter.record.wins || 0) >= 3) {
@@ -1190,7 +1219,8 @@ async function resolveFightAndApply(fighterId) {
     }
     if (isDraw) activityLogService.log(fighterId, "FIGHT_DRAW",
         `Drew with ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
-        { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight });
+        { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight,
+          fightId: String(fight._id), kind: "pve" });
     if (nemesisSet) activityLogService.log(fighterId, "NEMESIS_SET",
         `${nemesisName} is now your nemesis`,
         { opponentName: nemesisName, tier: _tier });
@@ -1308,7 +1338,21 @@ async function resolveFightAndApply(fighterId) {
         } : null,
     };
 
-    return { fight, fighter: fighterService.toPublicFighter(fighter), result, summary };
+    // Fight Description System — attach the SHAPED breakdown view (same builder the GET
+    // /breakdown endpoint uses) so the post-fight summary renders the exact same story as
+    // the activity-feed drawer. Viewer = this fight's fighter, perspective "player".
+    // Non-fatal: a failure here just omits breakdownView (frontend falls back to legacy).
+    // NOTE: returned at the TOP LEVEL of the response (alongside fight/fighter/result/summary)
+    // because the frontend reads `response.breakdownView`. Do NOT nest it under `result`.
+    let breakdownView = null;
+    try {
+        breakdownView = await getFightBreakdown(String(fight._id), String(fighter._id));
+    } catch (e) {
+        console.error("[fight] breakdownView build failed:", e.message);
+        breakdownView = null;
+    }
+
+    return { fight, fighter: fighterService.toPublicFighter(fighter), result, summary, breakdownView };
 }
 
 /**
@@ -1317,6 +1361,97 @@ async function resolveFightAndApply(fighterId) {
 async function getOffers(fighterId) {
     const offered = await Fight.find({ fighterId, status: "offered" }).populate("opponentId").sort({ createdAt: -1 }).limit(10);
     return offered;
+}
+
+/**
+ * Fight Description System — read the persisted breakdown for one PvE fight,
+ * viewer-relative. Returns null when the fight is missing or not owned by the
+ * viewer (controller maps null → 404, never leaking existence). PvE viewer is
+ * always the engine-player → perspective "player", no swap.
+ *
+ * Legacy fights (breakdown.version == null) return a thin legacy payload.
+ */
+async function getFightBreakdown(fightId, viewerFighterId) {
+    const fight = await Fight.findById(fightId).populate("opponentId");
+    if (!fight) return null;
+    if (String(fight.fighterId) !== String(viewerFighterId)) return null;
+
+    const opponent = fight.opponentId;
+    const opponentName = opponent
+        ? (opponent.nickname ? `${opponent.name} "${opponent.nickname}"` : opponent.name)
+        : "Opponent";
+
+    // VIEWER (PvE) is always the fight's own fighter. Templates are third-person, so
+    // the frontend needs the viewer's actual fighter name (not "You").
+    const viewerFighter = await Fighter.findById(fight.fighterId)
+        .select("firstName lastName nickname")
+        .lean();
+    const playerName = viewerFighter
+        ? `${viewerFighter.firstName || ""}${viewerFighter.nickname ? ` "${viewerFighter.nickname}"` : ""} ${viewerFighter.lastName || ""}`.trim()
+        : "You";
+
+    // ── Legacy / not-derived ─────────────────────────────────────────────────
+    if (fight.breakdown?.version == null) {
+        const { classifyOutcome } = require("../utils/fightBreakdownView");
+        const cls = classifyOutcome(fight.outcome);
+        const youWon = ["KO/TKO", "Submission", "Decision (unanimous)", "Decision (split)"]
+            .includes(fight.outcome);
+        return {
+            fightId: String(fight._id),
+            kind: "pve",
+            legacy: true,
+            outcome: fight.outcome,
+            method: cls.method,
+            header: {
+                playerName,
+                opponentName,
+                tier: fight.promotionTier || null,
+                campGrade: null,
+                weightCut: null,
+                outcomeWord: cls.isDraw ? "DRAW" : youWon ? "VICTORY" : "DEFEAT",
+            },
+            commentary: fight.commentary || [],
+        };
+    }
+
+    // ── Camp outcomes + wildcard text (reuse the persisted FightCamp the summary used) ─
+    const fightCamp = await FightCamp.findOne({ fightId: fight._id });
+    // Frontend styles lowercase statuses (matched/partial/unmatched). The persisted
+    // matchStatus is UPPERCASE; lowercase it here and fold "WRONG" → "unmatched".
+    const normCampStatus = (s) => {
+        const v = (s || "").toLowerCase();
+        return v === "wrong" ? "unmatched" : v;
+    };
+    const campOutcomes = (fightCamp?.sessionBonuses || []).map((b) => ({
+        name: b.label || b.sessionType || "Session",
+        status: normCampStatus(b.matchStatus),
+        note: b.description || null,
+        triggered: !!b.triggered,
+        triggerCount: b.triggerCount || 0,
+    }));
+    const wildcardText = fightCamp?.wildcard?.description || null;
+
+    const youWon = ["KO/TKO", "Submission", "Decision (unanimous)", "Decision (split)"]
+        .includes(fight.outcome);
+
+    const { buildBreakdownResponse } = require("../utils/fightBreakdownView");
+    return buildBreakdownResponse({
+        breakdown: fight.breakdown,
+        kind: "pve",
+        fightId: String(fight._id),
+        outcome: fight.outcome,
+        youWon,
+        perspective: "player",
+        header: {
+            playerName,
+            opponentName,
+            tier: fight.promotionTier || null,
+            campGrade: fightCamp?.campRating || null,
+            weightCut: { label: fight.weightCut || "easy", roll: fight.weightCutRoll ?? null },
+        },
+        campOutcomes,
+        wildcardText,
+    });
 }
 
 module.exports = {
@@ -1328,4 +1463,5 @@ module.exports = {
     resolveFightAndApply,
     getOffers,
     getTitleShotConfig,
+    getFightBreakdown,
 };

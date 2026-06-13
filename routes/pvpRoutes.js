@@ -13,6 +13,9 @@ router.get("/challenge-eligibility/:playerId", c.getChallengeEligibility);
 router.get("/record/:playerId", c.getRecord);
 router.get("/opponents", c.getOpponents);
 router.post("/fight", c.postFight);
+// Fight Description System — literal /fights/by-id/... MUST precede /fights/:seasonId
+// so the :seasonId param does not shadow it (Express matches in declaration order).
+router.get("/fights/by-id/:fightId/breakdown", c.getPvpFightBreakdown);
 router.get("/fights/:seasonId", c.getFights);
 router.get("/defense-results", c.getDefenseResults);
 router.post("/defense-gameplan", c.setDefenseGameplan);

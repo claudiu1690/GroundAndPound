@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { FIGHT_OUTCOMES } = require("../consts/gameConstants");
+const { eventLogSchema, roundStatsSchema } = require("./fightBreakdownSchema");
 
 const fightSchema = new mongoose.Schema({
     fighterId: { type: mongoose.Schema.Types.ObjectId, ref: "Fighter", required: true },
@@ -34,6 +35,15 @@ const fightSchema = new mongoose.Schema({
         targetOpponentId: { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", default: null },
         fameGained: { type: Number, default: 0 },
         resolvedAt: { type: Date, default: null },
+    },
+    // Fight Description System — derived round-by-round breakdown (ENGINE perspective).
+    // version null = legacy/none; 1 = current. See models/fightBreakdownSchema.js.
+    breakdown: {
+        version: { type: Number, default: null },
+        roundStats: { type: [roundStatsSchema], default: undefined },
+        eventLog: { type: [eventLogSchema], default: undefined },
+        introTemplateKey: { type: String, default: null },
+        resultContextKey: { type: String, default: null },
     },
 }, { timestamps: true });
 

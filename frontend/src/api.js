@@ -335,6 +335,10 @@ export const api = {
   recoverAccount: (email, password) =>
     request("/auth/recover", { method: "POST", body: JSON.stringify({ email, password }) }),
 
+  // ── Fight Breakdown ──────────────────────────────────────
+  getFightBreakdown: (fightId) => request(`/fights/${fightId}/breakdown`),
+  pvpFightBreakdown: (fightId) => request(`/pvp/fights/by-id/${fightId}/breakdown`),
+
   // ── PVP / The Proving Ground ─────────────────────────────
   pvpLadder: ({ seasonId, division, weightClass, page = 1, limit = 20 }) => {
     const p = new URLSearchParams({ seasonId, page: String(page), limit: String(limit) });

@@ -447,6 +447,7 @@ function App() {
   const [loading,  setLoading]                  = useState(true);
   const [resolving, setResolving]               = useState(false);
   const [lastFightCommentary, setLastFightCommentary] = useState([]);
+  const [lastFightBreakdown, setLastFightBreakdown]   = useState(null);
   const [lastFightSummary, setLastFightSummary] = useState(null);
   const [feedRefreshKey, setFeedRefreshKey]     = useState(0);
   const [champions, setChampions]               = useState([]);
@@ -965,11 +966,15 @@ const handleGetOffers = useCallback(async () => {
     setResolving(true);
     setMessage("Fight night…");
     setLastFightCommentary([]);
+    setLastFightBreakdown(null);
     setLastFightSummary(null);
     try {
       const result = await api.resolveFight(fighter._id);
       const commentary = result.fight?.commentary || result.result?.commentary || [];
       setLastFightCommentary(Array.isArray(commentary) ? commentary : []);
+      // prefer the shaped view the backend attaches as breakdownView (same shape
+      // as GET /fights/:id/breakdown); fall back to the raw subdoc for old deploys
+      setLastFightBreakdown(result.breakdownView ?? result.fight?.breakdown ?? null);
       setLastFightSummary(result.summary ?? null);
       if (result.summary?.notorietyTierUp) {
         setTierUpModal(result.summary.notorietyTierUp);
@@ -1468,7 +1473,7 @@ const handleGetOffers = useCallback(async () => {
               ) : lastFightSummary ? (
                 <>
                   <div className="fight-result-screen">
-                    <FightSummary summary={lastFightSummary} description={<FightDescription commentary={lastFightCommentary} />} />
+                    <FightSummary summary={lastFightSummary} description={<FightDescription commentary={lastFightCommentary} breakdown={lastFightBreakdown} playerName={fighter ? `${fighter.firstName} "${fighter.nickname || "—"}" ${fighter.lastName}` : undefined} />} />
                   </div>
                   {/* Post-fight interview is offered only after wins. A loss skips the
                       press conference entirely — no fame opportunity, no flag-writing.

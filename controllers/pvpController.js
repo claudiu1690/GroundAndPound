@@ -473,6 +473,25 @@ async function acknowledgeSeason(req, res) {
     }
 }
 
+// ── GET /pvp/fights/by-id/:fightId/breakdown ─────────────────────────────────
+// Fight Description System — viewer-relative round-by-round breakdown. Viewer must
+// be attacker or defender (service returns null otherwise → 404, no existence leak).
+async function getPvpFightBreakdown(req, res) {
+    try {
+        const { fightId } = req.params;
+        if (!mongoose.isValidObjectId(fightId)) {
+            return res.status(404).json({ message: "Fight not found.", code: "fight_not_found" });
+        }
+        const breakdown = await pvpFightService.getFightBreakdown(fightId, req.user.fighterId);
+        if (!breakdown) {
+            return res.status(404).json({ message: "Fight not found.", code: "fight_not_found" });
+        }
+        return res.json(breakdown);
+    } catch (err) {
+        return handleError(res, err);
+    }
+}
+
 module.exports = {
     getLadder,
     getLadderPosition,
@@ -486,4 +505,5 @@ module.exports = {
     getHof,
     getCurrentSeason,
     acknowledgeSeason,
+    getPvpFightBreakdown,
 };

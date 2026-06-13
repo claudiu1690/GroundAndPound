@@ -37,6 +37,7 @@ const EVENT_CONFIG = {
     // PVP / The Proving Ground
     pvp_win:             { color: GREEN,  Icon: Trophy,        label: "PVP Win" },
     pvp_loss:            { color: RED,    Icon: X,             label: "PVP Loss" },
+    pvp_draw:            { color: GREY,   Icon: Minus,         label: "PVP Draw" },
     pvp_defended:        { color: GREEN,  Icon: ShieldCheck,   label: "Defended" },
     pvp_defense_loss:    { color: RED,    Icon: Shield,        label: "Defense Lost" },
     pvp_promoted:        { color: PURPLE, Icon: ArrowUp,       label: "Promoted" },
@@ -102,7 +103,7 @@ function groupByDate(entries) {
     return Array.from(buckets.values());
 }
 
-export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey }) {
+export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey, onOpenFight, activeFightId }) {
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
@@ -169,8 +170,18 @@ export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey }) {
                             const isTitleFight = entry.type === "TITLE_WON" || !!entry.meta?.isTitleFight;
                             const showTitleTag = isTitleFight && entry.type !== "TITLE_WON";
 
+                            const hasFightId = !!entry.meta?.fightId;
+                            const isActive = hasFightId && activeFightId === entry.meta?.fightId;
+
                             return (
-                                <div className="feed-item" key={entry._id}>
+                                <div
+                                    className={`feed-item${isActive ? " feed-item--active" : ""}${hasFightId ? " feed-item--clickable" : ""}`}
+                                    key={entry._id}
+                                    onClick={hasFightId && onOpenFight ? () => onOpenFight({ fightId: entry.meta.fightId, kind: entry.meta.kind || "pve" }) : undefined}
+                                    role={hasFightId ? "button" : undefined}
+                                    tabIndex={hasFightId ? 0 : undefined}
+                                    onKeyDown={hasFightId && onOpenFight ? (e) => { if (e.key === "Enter" || e.key === " ") onOpenFight({ fightId: entry.meta.fightId, kind: entry.meta.kind || "pve" }); } : undefined}
+                                >
                                     <div className="feed-icon">
                                         <div className="feed-dot" style={{ background: tint(cfg.color, 0.14), color: cfg.color }}>
                                             <Icon size={14} strokeWidth={2} />
@@ -196,6 +207,7 @@ export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey }) {
                                             <div className="feed-right">
                                                 {reward && <div className="feed-reward">{reward}</div>}
                                                 <div className="feed-time">{relativeTime(entry.createdAt)}</div>
+                                                {hasFightId && <span className="fr-caret">›</span>}
                                             </div>
                                         </div>
                                         {sub && <div className="feed-sub">{sub}</div>}

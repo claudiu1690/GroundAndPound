@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { SEASON_WEIGHT_CLASSES, GAMEPLAN_KEYS_WITH_LEGACY } = require("../consts/pvpConfig");
+const { eventLogSchema, roundStatsSchema } = require("./fightBreakdownSchema");
 
 const pvpFightSchema = new mongoose.Schema({
     seasonId: { type: mongoose.Schema.Types.ObjectId, ref: "Season", required: true },
@@ -60,6 +61,15 @@ const pvpFightSchema = new mongoose.Schema({
     // Unread-defense feed: false until the defender views it.
     defenderSeen: { type: Boolean, default: false },
     commentary: { type: [String], default: [] },
+    // Fight Description System — derived round-by-round breakdown (ENGINE perspective:
+    // player = attacker). version null = legacy/none; 1 = current.
+    breakdown: {
+        version: { type: Number, default: null },
+        roundStats: { type: [roundStatsSchema], default: undefined },
+        eventLog: { type: [eventLogSchema], default: undefined },
+        introTemplateKey: { type: String, default: null },
+        resultContextKey: { type: String, default: null },
+    },
     fightAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 

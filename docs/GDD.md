@@ -330,6 +330,15 @@ Multiplied by an outcome modifier: KO/TKO 1.3×, Sub 1.25×, Dec Unanimous 1.1×
 ### 10.4 Iron Earnings
 Base purse = the tier's signing fee, scaled by outcome: **Win 100%**, **Draw 50%**, **Loss 70%**. Modifiers on top: higher notoriety tier +5%→+50%; comeback +30%; active **Respect** flag on opponent (and you win) +15%; callout win +25%; missing weight −20%.
 
+### 10.5 Fight Description (round-by-round breakdown)
+Every fight produces a **round-by-round event feed** rather than a generic paragraph. It is shown in the right column of the post-fight summary and again in the **career-feed drawer** (§20.4). Both render from the same stored data, so a fight reads identically wherever you open it.
+
+- **What it shows per round:** an intro line (set by the stakes — standard / comeback / nemesis / title / callout), 3–6 timestamped event lines (takedowns, clean and hurt strikes, ground-and-pound, submission attempts, knockdowns, camp triggers, the finish), a compact stat bar (**Strikes · Takedowns · Sub att. · Damage**, player vs opponent, cumulative), a 2-px **momentum bar** (green/red split by damage share), and a **round-winner** label (dominant / ahead / even). A closing **result line** is keyed by outcome × context (e.g. a giant-killer win over a much higher-OVR opponent reads differently to a routine decision).
+- **It's derived, not simulated separately.** The fight engine is unchanged — combat is still the same stat-driven round simulation. The description is a faithful, deterministic *retelling* built from what the engine actually produced that round (per-round damage, control, finish, and which camp sessions fired). Strike/takedown/knockdown counts are believable derivations from round damage and control, not a second source of truth — the scorecard remains authoritative for scoring.
+- **Deterministic:** the narrative variation for a given fight is seeded by the fight ID, so re-opening a fight never rewrites its story.
+- **Camp lines** only appear when a camp session actually fired that round and its match status was Matched or Partial — never for an unmatched session.
+- **Applies to both PvE and PvP.** Career fights and Proving Ground fights both generate a breakdown. (Older fights resolved before this system shipped have no breakdown and fall back to the legacy single-line recap.)
+
 ---
 
 ## 11. Post-Fight Interview & Flags

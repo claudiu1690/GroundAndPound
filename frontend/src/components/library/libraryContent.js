@@ -93,9 +93,10 @@ export const LIBRARY_ARTICLES = [
         body: [
             "The Career Feed on your dashboard is a reverse-chronological log of everything significant that has happened in your career. Fight results, promotions, title shots, badges earned, sponsor contracts signed and broken, nemesis events — it's all there.",
             "Think of it as your fighter's autobiography being written in real time. When you win your first title, it's in the feed. When you lose three in a row and freeze your notoriety, that's in there too. The feed doesn't judge — it just records.",
+            "Any fight row — career or Proving Ground — has a › arrow on the right. Click it to open a side drawer with the full round-by-round breakdown of that fight: the event feed, per-round stats, and a Result tab with the camp outcomes and combined stats. It's the same breakdown you saw on the post-fight summary, available forever from your history. Non-fight rows (badges, promotions, nemesis events) don't open a drawer.",
             "The Fame drawer (★ Fame button in the footer) gives you a focused view of fame-only events — every notoriety gain, milestone hit, and fame tier-up in order. Useful when you want to track your fame growth specifically without the noise of everything else.",
         ],
-        keyTakeaway: "The Career Feed is your permanent record. Check it to understand where you've been and what's driven your progress.",
+        keyTakeaway: "The Career Feed is your permanent record. Click any fight's › to re-read its full round-by-round breakdown.",
     },
 
     // ──────────────────────────────────────────────────────────────
@@ -193,9 +194,10 @@ export const LIBRARY_ARTICLES = [
         category: "Fighting",
         title: "The Fight Summary — Understanding What Happened",
         summary: "How to read your post-fight breakdown and what every section means.",
-        tags: ["summary", "camp performance", "diagnostics", "xp"],
+        tags: ["summary", "camp performance", "diagnostics", "xp", "round by round", "fight description"],
         body: [
             "After every fight, the Fight Summary shows you a complete breakdown of what happened. This isn't just a scoreboard — it's a diagnostic tool. Use it to understand your fighter and improve your next camp.",
+            "The right side is the Fight Description — a round-by-round retelling, not a generic paragraph. Each round shows an intro, a handful of timestamped moments (takedowns, big strikes, submission attempts, knockdowns, camp triggers, the finish), a stat bar (Strikes · Takedowns · Sub att. · Damage, you vs them), a momentum bar, and who took the round. A camp line only appears when that session actually fired. It's a faithful retelling of what the engine produced — the same breakdown is saved to your Career Feed, openable any time from a fight's › arrow.",
             "The Camp Performance section is the most valuable part. It shows your camp grade, which sessions triggered, what match status they received, and how your wildcard played out. If you got a D-grade camp and lost, this is where you find out why. If you prepared perfectly and still lost, the wildcard section might hold the answer.",
             "The Notoriety section gives a line-by-line breakdown of every fame modifier that applied — the base fight reward, any streak bonuses, milestone hits, callout bonuses, and beef or respect flag payouts. If your notoriety moved less than expected, this section explains exactly where the shortfall was.",
             "XP gained per stat is shown here too. Fights give XP based on what happened in them — a KO win gives big STR and CHN XP, a submission win rewards SUB and GND. Watching which stats level up from which fights helps you understand how your fighter is naturally developing.",

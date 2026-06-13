@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const fightService = require("../services/fightService");
 const interviewService = require("../services/interviewService");
 
@@ -158,6 +159,23 @@ async function postInterview(req, res) {
     }
 }
 
+async function getFightBreakdown(req, res) {
+    try {
+        const { fightId } = req.params;
+        if (!mongoose.isValidObjectId(fightId)) {
+            return res.status(404).json({ message: "Fight not found", code: "fight_not_found" });
+        }
+        const breakdown = await fightService.getFightBreakdown(fightId, req.user.fighterId);
+        if (!breakdown) {
+            return res.status(404).json({ message: "Fight not found", code: "fight_not_found" });
+        }
+        res.json(breakdown);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 module.exports = {
     getOffers,
     createOffer,
@@ -167,4 +185,5 @@ module.exports = {
     resolveFight,
     getInterviewCandidates,
     postInterview,
+    getFightBreakdown,
 };
