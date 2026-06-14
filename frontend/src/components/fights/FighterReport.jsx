@@ -62,7 +62,7 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
     const styleColor = STYLE_COLORS[report.style] ?? DEFAULT_STYLE_COLOR;
     const isCallout = !!report.isCallout;
     const eyebrow = isTitleFight ? "Championship Bout" : isCallout ? "Callout Intel" : "Fighter Report";
-    const unverified = [...(report.unverifiedAreas ?? []), ...(report.unknownAreas ?? [])];
+    const unknown = report.unknownAreas ?? [];
 
     return createPortal(
         <div className="fr-overlay" role="dialog" aria-modal="true" aria-label="Fighter Report">
@@ -105,11 +105,11 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
                         </div>
                     </div>
 
-                    {unverified.length > 0 && (
+                    {unknown.length > 0 && (
                         <div className="fr-section">
-                            <div className="fr-section-label fr-label-muted">Unverified Intel</div>
+                            <div className="fr-section-label fr-label-muted">Unknown Intel</div>
                             <div className="fr-unverified-list">
-                                {unverified.map((it, i) => (
+                                {unknown.map((it, i) => (
                                     <div className="fr-unverified-item" key={i}>
                                         <span className="fr-unverified-icon">−</span>
                                         <span className="fr-unverified-text">{it.label}</span>

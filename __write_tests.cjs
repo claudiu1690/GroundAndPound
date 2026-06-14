@@ -1,0 +1,13 @@
+﻿const fs = require("fs");
+const f = "D:/Projects/GroundAndPound/tests/services/offerIntel.qa.test.mjs";
+const L = [];
+const a = (s) => L.push(s);
+a("import { test } from 'node:test';");
+a("import assert from 'node:assert';");
+a("import { analyseFightHistory, classifyStat, buildStatIntel, buildThreatTags, buildCardModel, describeOffer, RELIABILITY_TIERS } from '../../frontend/src/components/fights/offerIntel.js';");
+a("");
+a("const mkH = (arr) => arr.map(([r,m]) => ({ result:r, method:m }));");
+a("const edc = { striking:0,grappling:0,submission:0,durability:0,tactical:0 };");
+a("const kdc = { striking:3,grappling:0,submission:0,durability:0,tactical:0 };");
+fs.writeFileSync(f, L.join('\n'), "utf8");
+console.log("written " + L.length + " lines");

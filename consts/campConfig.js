@@ -31,8 +31,7 @@ const MATCH_STATUS_MULTIPLIERS = {
 const RELIABILITY_TIERS = {
     CONFIRMED:  'CONFIRMED',   // Seen in 3+ of last 5 fights — reliable
     SUSPECTED:  'SUSPECTED',   // Seen in 1-2 fights — might apply
-    UNVERIFIED: 'UNVERIFIED',  // Inferred from limited data
-    UNKNOWN:    'UNKNOWN',     // No data at all
+    UNKNOWN:    'UNKNOWN',     // No evidence / inferred from limited data — flying blind
 };
 
 // ── Camp session definitions ────────────────────────────────────────────────

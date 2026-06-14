@@ -4,87 +4,12 @@ import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Trophy, Lo
 import { CalloutModal } from "./CalloutModal";
 import { ContenderChecklist } from "./ContenderChecklist";
 import { TITLE_WINS } from "../../constants/gameConstants";
+import { OfferCard } from "./OfferCard";
+import { buildCardModel } from "./offerIntel";
 
 const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard", TITLE: "TitleShot" };
 
-const TYPE_CLASS = {
-  [OFFER_TYPE.EASY]: "offer-card-easy",
-  [OFFER_TYPE.EVEN]: "offer-card-even",
-  [OFFER_TYPE.HARD]: "offer-card-hard",
-  [OFFER_TYPE.TITLE]: "offer-card-title",
-};
-const BADGE_CLASS = {
-  [OFFER_TYPE.EASY]: "badge-easy",
-  [OFFER_TYPE.EVEN]: "badge-even",
-  [OFFER_TYPE.HARD]: "badge-hard",
-  [OFFER_TYPE.TITLE]: "badge-title",
-};
-const TYPE_META = {
-  [OFFER_TYPE.EASY]: { desc: "3–5 OVR below you · Low risk, low reward" },
-  [OFFER_TYPE.EVEN]: { desc: "Within 3 OVR · Competitive" },
-  [OFFER_TYPE.HARD]: { desc: "2–5 OVR above you · High risk, high reward" },
-  [OFFER_TYPE.TITLE]: { desc: "Championship bout · Fight for the belt" },
-};
-
-const RESULT_STYLE = {
-  win:  { label: "W", className: "offer-result-win" },
-  loss: { label: "L", className: "offer-result-loss" },
-  draw: { label: "D", className: "offer-result-draw" },
-};
-
-function RecordLine({ record }) {
-  if (!record) return <span className="offer-record-empty">Record: —</span>;
-  const { wins = 0, losses = 0, draws = 0 } = record;
-  if (wins === 0 && losses === 0 && draws === 0) return <span className="offer-record-empty">Record: —</span>;
-  return (
-    <span className="offer-record">
-      <span className="offer-record-w">{wins}W</span>
-      {" – "}
-      <span className="offer-record-l">{losses}L</span>
-      {draws > 0 && <>{" – "}<span className="offer-record-d">{draws}D</span></>}
-    </span>
-  );
-}
-
-function LastThree({ fights }) {
-  if (!fights || fights.length === 0) return null;
-  return (
-    <span className="offer-last-three">
-      {fights.map((f, i) => {
-        const rs = RESULT_STYLE[f.result] ?? { label: "?", className: "offer-result-draw" };
-        return (
-          <span
-            key={i}
-            className={`offer-result-pill ${rs.className}`}
-            title={f.method ?? f.result}
-          >
-            {rs.label}
-          </span>
-        );
-      })}
-    </span>
-  );
-}
-
-function StreakBadge({ streak }) {
-  if (!streak) return null;
-  const isWin = streak.result === "win";
-  return (
-    <span className={`offer-streak-badge ${isWin ? "offer-streak-win" : "offer-streak-loss"}`}>
-      {streak.count}-fight {isWin ? "win" : "losing"} streak
-    </span>
-  );
-}
-
-/**
- * Format the player's rank into a {value, label, tone} triple used by the stat tile.
- *   1     → "👑" / CHAMPION
- *   null  → "—"  / UNRANKED
- *   N     → "#N" / RANK
- */
 function rankTileProps(rank) {
-  // `rank` here is the player's display rank (1-N) — the player never sits at the
-  // champion slot in their own tier's rankings, so we don't need a champion branch.
   if (rank == null) return { value: "—", label: "UNRANKED", tone: "unranked" };
   return { value: `#${rank}`, label: "RANK", tone: "rank" };
 }
@@ -98,11 +23,6 @@ function StatTile({ value, label, tone }) {
   );
 }
 
-/**
- * Readiness tile — icon-led card with a progress bar and status sub-line.
- * Used for live values (energy, health) that change between fights.
- * tone: "ok" | "warn" | "danger" | "win" | "loss" | "neutral".
- */
 function ReadinessTile({ icon, value, max, label, sub, tone = "ok" }) {
   const pct = max ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
@@ -121,10 +41,6 @@ function ReadinessTile({ icon, value, max, label, sub, tone = "ok" }) {
   );
 }
 
-/**
- * Streak tile — third readiness slot. No progress bar; tone-coloured value/icon.
- * tone: "win" | "loss" | "neutral".
- */
 function StreakTile({ winStreak, loseStreak }) {
   const tone = winStreak > 0 ? "win" : loseStreak > 0 ? "loss" : "neutral";
   const icon = winStreak > 0 ? <TrendingUp size={22} /> : loseStreak > 0 ? <TrendingDown size={22} /> : <Swords size={22} />;
@@ -179,7 +95,7 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
           value={health}
           max={100}
           label="HEALTH"
-          sub={health >= 80 ? "At full strength" : health >= 50 ? "A bit beat up" : health >= 30 ? "Low \u2014 rest soon" : "Critical"}
+          sub={health >= 80 ? "At full strength" : health >= 50 ? "A bit beat up" : health >= 30 ? "Low — rest soon" : "Critical"}
           tone={health >= 50 ? "ok" : health >= 30 ? "warn" : "danger"}
         />
         <StreakTile winStreak={winStreak} loseStreak={loseStreak} />
@@ -209,7 +125,6 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
       )}
 
       {(() => {
-        // Callout requires top 14 displayed (= DB ranks 2-15 = top 15 fighters including champ).
         const calloutEligible = rank != null && rank <= 14;
         const calloutTooltip = calloutEligible
           ? "Spend fame to force a specific opponent into your next Hard offer"
@@ -240,9 +155,7 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
 }
 
 /**
- * Banner above the offers list — gives the player their bearings:
- *   - Tier badge on the left
- *   - Stat tiles for OVR / Rank / Record in a horizontal grid
+ * Banner above the offers list — tier badge + stat tiles for OVR / Rank / Record.
  */
 function OffersStandingBanner({ fighter }) {
   const rank = fighter.ranking?.rank ?? null;
@@ -295,6 +208,10 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
     return cooldown > 0 || !top5 || wins < titleWins;
   })();
 
+  // Build card model from offers
+  const cardModels = buildCardModel(offers);
+  const isFourCards = cardModels.length === 4;
+
   return (
     <section className="panel fight-offers">
       <h2 className="panel-title">Fight Offers</h2>
@@ -323,132 +240,31 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
           <>
             <OffersStandingBanner fighter={fighter} />
 
-            <ul className="offers-list">
-              {offers.map((o, idx) => {
-                const typeKey = o.type ?? "Even";
-                const meta = TYPE_META[typeKey] ?? {};
-                const ctx = o.context ?? {};
-                const isTitle = typeKey === "TitleShot";
-                const isLocked = !!o.locked;
-                // The Amateur belt is a "turn pro" fight: beating the Amateur
-                // champion promotes you to Regional Pro. Frame it as such.
-                const isProDebut = isTitle && o.titleShotMeta?.targetTier === "Regional Pro";
-                const badgeLabel = isTitle ? (isProDebut ? "Turn Pro" : "Title Shot") : typeKey;
+            <div className={`offers-grid${isFourCards ? " offers-grid--four" : ""}`}>
+              {cardModels.map(({ variant, offer }, idx) => {
+                // Inject the resolved variant onto the offer so OfferCard can read it
+                const enrichedOffer = { ...offer, _variant: variant };
                 return (
-                  <li key={o.opponent?._id ?? typeKey} data-tut={idx === 0 ? "offer-card" : undefined} className={`offer-card ${TYPE_CLASS[typeKey] ?? ""}${o.nemesisMeta ? " offer-card-nemesis" : ""}${o.isCallout ? " offer-card-callout" : ""}${o.beefMatch ? " offer-card-beef" : ""}${o.respectMatch ? " offer-card-respect" : ""}${isLocked ? " offer-card-locked" : ""}`}>
-                    <div className="offer-card-info">
-                      <div className="offer-badge-row">
-                        {isTitle && <Trophy size={12} style={{ color: "#d4a012" }} />}
-                        <span className={`offer-type-badge ${BADGE_CLASS[typeKey] ?? ""}`}>{badgeLabel}</span>
-                        {o.isCallout && (
-                          <span className="offer-type-badge badge-callout">📣 Called out</span>
-                        )}
-                        {o.beefMatch && !o.isCallout && (
-                          <span className="offer-type-badge badge-beef" title={`Beef flag (${o.beefMatch.expiresAfterFights} fights left) — +30% fame on the win`}>
-                            🔥 Beef · +30% fame
-                          </span>
-                        )}
-                        {o.respectMatch && (
-                          <span className="offer-type-badge badge-respect" title={`Respect flag (${o.respectMatch.expiresAfterFights} fights left) — +15% cash on the win`}>
-                            🙇 Respect · +15% cash
-                          </span>
-                        )}
-                        {o.nemesisMeta && (
-                          <span className="offer-type-badge badge-nemesis">{"\u2620"} Nemesis</span>
-                        )}
-                      </div>
-                      <div className="offer-opponent-name">
-                        {o.opponent?.name}
-                        {o.opponent?.nickname && (
-                          <span className="offer-opponent-nickname"> &quot;{o.opponent.nickname}&quot;</span>
-                        )}
-                        {isTitle && <span className="offer-champ-tag">CHAMPION</span>}
-                      </div>
-                      <div className="offer-opponent-meta">
-                        <span className="offer-opponent-ovr">OVR {o.opponent?.overallRating}</span>
-                        {typeof o.opponent?.fixedRank === "number" && (() => {
-                          const rankToShow = typeof o.opponent.displayRank === "number"
-                            ? o.opponent.displayRank
-                            : o.opponent.fixedRank;
-                          return (
-                            <span className="offer-opponent-rank" title={`Currently ranked #${rankToShow} in their tier`}>
-                              {rankToShow === 1 ? " · 👑 #1" : ` · #${rankToShow}`}
-                            </span>
-                          );
-                        })()}
-                        {o.opponent?.style ? ` · ${o.opponent.style}` : ""}
-                        {meta.desc && <>{" · "}<span className="offer-meta-desc">{meta.desc}</span></>}
-                      </div>
-                      {isTitle && o.titleShotMeta && (
-                        <div className="offer-title-meta">
-                          {isProDebut ? (
-                            <>Beat the Amateur champion to turn pro and promote to <strong>{o.titleShotMeta.targetTier}</strong></>
-                          ) : (
-                            <>Win this fight to promote to <strong>{o.titleShotMeta.targetTier}</strong></>
-                          )}
-                        </div>
-                      )}
-                      {o.nemesisMeta && (
-                        <div className="offer-nemesis-meta">
-                          <span className="offer-nemesis-losses">
-                            {o.nemesisMeta.lossCount} loss{o.nemesisMeta.lossCount !== 1 ? "es" : ""} against this fighter — settle the score
-                          </span>
-                          <span className="offer-nemesis-bonus">Win bonus: +150 Notoriety</span>
-                        </div>
-                      )}
-                      <div className="offer-context">
-                        <RecordLine record={o.opponent?.record} />
-                        {ctx.lastThree?.length > 0 && (
-                          <span className="offer-last-three-group">
-                            <span className="offer-last-three-label">Last 3</span>
-                            <LastThree fights={ctx.lastThree} />
-                          </span>
-                        )}
-                        <StreakBadge streak={ctx.streak} />
-                      </div>
-                    </div>
-                    <div className="offer-accept-col">
-                      {isLocked ? (
-                        <>
-                          <Lock size={14} style={{ color: "var(--text-muted)" }} />
-                          <span className="offer-locked-text">
-                            {(() => {
-                              if (o.cooldownRemaining > 0) {
-                                return `${o.cooldownRemaining} win${o.cooldownRemaining !== 1 ? "s" : ""} to rematch`;
-                              }
-                              if (o.winsNeeded > 0) {
-                                return `${o.winsNeeded} win${o.winsNeeded !== 1 ? "s" : ""} to qualify`;
-                              }
-                              if (o.rankNeeded) {
-                                return o.currentRank == null
-                                  ? "Get ranked first"
-                                  : `Reach top 5 (now #${o.currentRank})`;
-                              }
-                              return "Locked";
-                            })()}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            type="button"
-                            data-tut={idx === 0 ? "offer-accept" : undefined}
-                            className={`btn ${isTitle ? "btn-title" : "btn-primary"} btn-sm`}
-                            onClick={() => onAcceptOffer(o.opponent._id, o.type)}
-                          >
-                            {isTitle ? (isProDebut ? "Turn Pro" : "Accept Title Shot") : "Accept"}
-                          </button>
-                          <span className="offer-energy-cost">{energyCost} energy</span>
-                        </>
-                      )}
-                    </div>
-                  </li>
+                  <OfferCard
+                    key={offer.opponent?._id ?? `${variant}-${idx}`}
+                    offer={enrichedOffer}
+                    fighter={fighter}
+                    energyCost={energyCost}
+                    onAccept={(opponentId, type) => onAcceptOffer(opponentId, type)}
+                  />
                 );
               })}
-            </ul>
-            <button type="button" className="btn btn-secondary btn-sm" style={{ marginTop: "0.75rem" }} onClick={onGetOffers}>
-              Refresh offers
-            </button>
+            </div>
+
+            <div className="bottom-row">
+              <button
+                type="button"
+                className="refresh-btn"
+                onClick={onGetOffers}
+              >
+                Refresh Offers
+              </button>
+            </div>
           </>
         )}
       </div>

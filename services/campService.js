@@ -213,29 +213,12 @@ function classifyStat(statKey, statValue, rank, domainCounts, totalFights) {
 
     // Top 2 stats with 3+ fights showing this domain → CONFIRMED
     if (rank <= 2 && domainEvidence >= 3) return RELIABILITY_TIERS.CONFIRMED;
-
-    // Top 2 stats with 1-2 fights → SUSPECTED (strong stat but limited evidence)
+    // Top 2 stats with 1-2 fights → SUSPECTED
     if (rank <= 2 && domainEvidence >= 1) return RELIABILITY_TIERS.SUSPECTED;
-
-    // Top 2 stats with zero evidence → UNVERIFIED
-    if (rank <= 2 && totalFights >= 1) return RELIABILITY_TIERS.UNVERIFIED;
-
     // Bottom 2 stats with evidence of weakness → SUSPECTED
     if (rank >= 7 && domainEvidence >= 1) return RELIABILITY_TIERS.SUSPECTED;
-
-    // Bottom 2 stats with no evidence → UNVERIFIED
-    if (rank >= 7 && totalFights >= 1) return RELIABILITY_TIERS.UNVERIFIED;
-
-    // Middle stats with few fights → UNVERIFIED
-    if (totalFights >= 1 && totalFights < 3) return RELIABILITY_TIERS.UNVERIFIED;
-
-    // No fight history at all → UNKNOWN
-    if (totalFights === 0) return RELIABILITY_TIERS.UNKNOWN;
-
-    // Middle stats with decent history but no evidence in this domain → UNKNOWN
-    if (domainEvidence === 0) return RELIABILITY_TIERS.UNKNOWN;
-
-    return RELIABILITY_TIERS.UNVERIFIED;
+    // Everything else (no domain evidence, thin/zero tape, or middle stats) → UNKNOWN
+    return RELIABILITY_TIERS.UNKNOWN;
 }
 
 // ── Wildcard generation ─────────────────────────────────────────────────────
@@ -329,7 +312,6 @@ async function getFighterReport(fightId) {
     // Classify each stat
     const confirmedStrengths = [];
     const suspectedWeaknesses = [];
-    const unverifiedAreas = [];
     const unknownAreas = [];
 
     for (const [statKey, statValue] of sorted) {
@@ -356,7 +338,7 @@ async function getFighterReport(fightId) {
         if (fullIntel) {
             if (isStrength)      confirmedStrengths.push(entry);
             else if (isWeakness) suspectedWeaknesses.push(entry);
-            else                 unverifiedAreas.push(entry);
+            else                 unknownAreas.push(entry);
             continue;
         }
 
@@ -367,9 +349,6 @@ async function getFighterReport(fightId) {
             case RELIABILITY_TIERS.SUSPECTED:
                 if (isWeakness) suspectedWeaknesses.push(entry);
                 else confirmedStrengths.push({ ...entry, reliability: RELIABILITY_TIERS.SUSPECTED });
-                break;
-            case RELIABILITY_TIERS.UNVERIFIED:
-                unverifiedAreas.push(entry);
                 break;
             case RELIABILITY_TIERS.UNKNOWN:
                 unknownAreas.push(entry);
@@ -404,7 +383,6 @@ async function getFighterReport(fightId) {
         recordDetail: recordDetail || null,
         confirmedStrengths,
         suspectedWeaknesses,
-        unverifiedAreas,
         unknownAreas,
         tendency: tendencyData.tendency,
         warning: tendencyData.warning,

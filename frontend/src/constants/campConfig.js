@@ -28,21 +28,18 @@ export const MATCH_STATUS_COLORS = {
 export const RELIABILITY_TIERS = {
     CONFIRMED:  "CONFIRMED",
     SUSPECTED:  "SUSPECTED",
-    UNVERIFIED: "UNVERIFIED",
     UNKNOWN:    "UNKNOWN",
 };
 
 export const RELIABILITY_LABELS = {
     CONFIRMED:  "Confirmed",
     SUSPECTED:  "Suspected",
-    UNVERIFIED: "Unverified",
     UNKNOWN:    "Unknown",
 };
 
 export const RELIABILITY_COLORS = {
     CONFIRMED:  "#4ade80",
     SUSPECTED:  "#facc15",
-    UNVERIFIED: "#94a3b8",
     UNKNOWN:    "#64748b",
 };
 

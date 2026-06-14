@@ -156,9 +156,9 @@ Game Plan Study is always Partial against any opponent — it's the safe fallbac
 
 *How to interpret scouting intel and use it to build a smarter camp.*
 
-Before you fill your camp slots, you get a Fighter Report — a scouting document that tells you what's known about your opponent's stats and tendencies. Not everything is visible. The report classifies each stat as Confirmed, Suspected, Unverified, or Unknown.
+Before you fill your camp slots, you get a Fighter Report — a scouting document that tells you what's known about your opponent's stats and tendencies. Not everything is visible. The report classifies each stat as Confirmed, Suspected, or Unknown.
 
-Confirmed stats are proven across multiple fights — treat them as fact. Suspected stats are suggested by limited footage — likely but not certain. Unverified means the data exists but isn't backed by enough evidence. Unknown means you're flying blind on that stat.
+Confirmed stats are proven across multiple fights — treat them as fact. Suspected stats are suggested by limited footage — likely but not certain. Unknown means there's no tape, or the evidence is too thin to trust — you're flying blind on that stat.
 
 The key is reading what the report is telling you about their style, not just the numbers. A fighter with Confirmed high WRE and GND is telling you to prepare for takedowns and ground control. A fighter with Suspected high SUB is warning you to prepare submission escapes even if the data isn't locked in.
 

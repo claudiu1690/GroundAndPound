@@ -282,7 +282,7 @@ Each logged session is rated vs. the opponent's actual game: **Matched** 100%, *
 S 90–100, A 75–89, B 55–74, C 35–54, D 15–34, F 0–14.
 
 ### 9.5 The Fighter Report
-Pre-camp scouting classifies each opponent stat: **Confirmed**, **Suspected**, **Unverified**, **Unknown**.
+Pre-camp scouting classifies each opponent stat: **Confirmed**, **Suspected**, **Unknown**.
 
 ### 9.6 Wildcards
 Every opponent has a hidden mid-tier stat tendency (never shown). Counter it with the right session and it's neutralised; otherwise the opponent gains a hidden +15% in that area. The Tactician perk has a 30% chance to reveal it.
