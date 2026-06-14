@@ -834,14 +834,17 @@ function App() {
 
   const handleRankUp = useCallback(
     async (gymId) => {
-      if (!fighter?._id) return;
+      if (!fighter?._id) return { ok: false, error: "No fighter loaded." };
       try {
         const result = await api.rankUpGym(fighter._id, gymId);
         setMessage(result.rankUp?.unlockDescription || "Ranked up!");
         loadFighter(fighter._id, { clearMessage: false });
         loadGyms();
+        return { ok: true };
       } catch (e) {
-        setMessage(e.message || "Rank up failed");
+        // Returned to the gym view so it can show the reason inline (e.g.
+        // "Need $1,500 (have $200)") — there is no global message bar.
+        return { ok: false, error: e.message || "Rank up failed." };
       }
     },
     [fighter?._id, loadFighter, loadGyms]

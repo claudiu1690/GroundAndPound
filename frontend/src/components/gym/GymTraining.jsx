@@ -160,6 +160,10 @@ export const GymTraining = memo(function GymTraining({
         }
     }, [heroUrl]);
 
+    // Inline rank-up error (e.g. "Need $1,500 (have $200)") shown at the CTA —
+    // the app has no global message bar, so the failure is surfaced contextually.
+    const [rankUpError, setRankUpError] = useState("");
+
     if (!fighter || !gym) return null;
 
     const energy = fighter.energy?.current ?? fighter.energy ?? 0;
@@ -320,9 +324,22 @@ export const GymTraining = memo(function GymTraining({
                             )}
                         </div>
                         {gym.progress?.nextRank?.canRankUp && gym.progress.nextRank.needsIron && (
-                            <button type="button" className="rank-up-btn" onClick={() => onRankUp(gym._id)}>
-                                <Trophy size={12} /> Rank Up (${ironCost.toLocaleString()})
-                            </button>
+                            <>
+                                <button
+                                    type="button"
+                                    className="rank-up-btn"
+                                    onClick={async () => {
+                                        setRankUpError("");
+                                        const res = await onRankUp(gym._id);
+                                        if (res && res.ok === false) {
+                                            setRankUpError(res.error || "Rank up failed.");
+                                        }
+                                    }}
+                                >
+                                    <Trophy size={12} /> Rank Up (${ironCost.toLocaleString()})
+                                </button>
+                                {rankUpError && <div className="rank-up-error">{rankUpError}</div>}
+                            </>
                         )}
                     </div>
                 );
