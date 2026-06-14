@@ -11,7 +11,7 @@
  */
 
 const { BADGES, BADGE_CATEGORIES, getBadge } = require("../consts/badgeCatalog");
-const { resolvePvpBadge } = require("../consts/pvpBadges");
+const { resolvePvpBadge, PVP_BADGE_DEFS } = require("../consts/pvpBadges");
 
 let _activityLogService = null;
 function activityLog() {
@@ -146,15 +146,41 @@ function buildBadgeProfile(fighter) {
         return { key: cat.key, label: cat.label, badges };
     });
 
-    // ── Proving Ground (PVP) seasonal badges ─────────────────────────────────
-    // These are awarded imperatively into badgesEarned with deterministic ids that
-    // are NOT in the static catalog (they are unbounded over seasons). Resolve any
-    // pvp_-prefixed earned id the catalog didn't already cover and group them into a
-    // synthesized "Proving Ground" category.
+    // ── Proving Ground (PVP) badges ──────────────────────────────────────────
+    // Render the FIXED achievement catalog like the PvE categories — earned AND
+    // locked — so players can see what's left to chase (locked badges show the
+    // condition, no progress bar). Then append any EARNED seasonal/unbounded pvp
+    // ids (per-season belts and division placements) that aren't in the fixed
+    // catalog — those only exist once earned, so they can't be shown "locked".
     const catalogIds = new Set(BADGES.map((b) => b.id));
     const pvpBadges = [];
+    const fixedIds = new Set();
+
+    for (const def of Object.values(PVP_BADGE_DEFS)) {
+        fixedIds.add(def.id);
+        const entry = earnedMap.get(def.id);
+        const earned = !!entry;
+        if (earned) earnedCount += 1; else lockedCount += 1;
+        pvpBadges.push({
+            id: def.id,
+            name: def.name,
+            description: def.description,
+            category: "proving_ground",
+            subgroup: null,
+            earned,
+            new: earned ? entry.seen === false : false,
+            context: earned ? (entry.context ?? null) : null,
+            progress: null,
+            conditionLabel: def.description,
+            icon: def.icon,
+            color: def.color,
+        });
+    }
+
+    // Earned seasonal / unbounded pvp badges (belts, per-season divisions) — not in
+    // the fixed catalog, only present once earned.
     for (const [id, entry] of earnedMap.entries()) {
-        if (!id.startsWith("pvp_") || catalogIds.has(id)) continue;
+        if (!id.startsWith("pvp_") || catalogIds.has(id) || fixedIds.has(id)) continue;
         const resolved = resolvePvpBadge(id);
         if (!resolved) continue;
         earnedCount += 1;
@@ -173,8 +199,8 @@ function buildBadgeProfile(fighter) {
             color: resolved.color,
         });
     }
+
     if (pvpBadges.length > 0) {
-        pvpBadges.sort((a, b) => a.name.localeCompare(b.name));
         categories.push({ key: "proving_ground", label: "Proving Ground", badges: pvpBadges });
     }
 

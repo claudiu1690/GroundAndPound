@@ -28,7 +28,7 @@ export function BadgePickerModal({ open, onClose, earnedBadges, pinnedIds, onSel
           ) : (
             <div className="badge-picker-grid">
               {earnedBadges.map((badge) => {
-                const { Icon, color, bg } = badgeVisual(badge.id, badge.category);
+                const { Icon, color, bg } = badgeVisual(badge.id, badge.category, badge);
                 const isPinned = pinnedSet.has(badge.id);
                 return (
                   <button

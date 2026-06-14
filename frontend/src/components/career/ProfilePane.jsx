@@ -37,7 +37,7 @@ export function ProfilePane({
     const out = [];
     (data?.badges?.categories ?? []).forEach((cat) => {
       (cat.badges ?? []).forEach((b) => {
-        if (b.earned) out.push({ id: b.id, name: b.name, category: cat.key });
+        if (b.earned) out.push({ id: b.id, name: b.name, category: cat.key, icon: b.icon, color: b.color });
       });
     });
     return out;

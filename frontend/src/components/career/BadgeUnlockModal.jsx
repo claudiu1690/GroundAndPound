@@ -24,7 +24,7 @@ export function BadgeUnlockModal({ badges, onClose }) {
 
         <div className="badge-modal-list">
           {badges.map((b) => {
-            const { Icon, color, bg } = badgeVisual(b.id, b.category);
+            const { Icon, color, bg } = badgeVisual(b.id, b.category, b);
             return (
               <div className="badge-modal-item" key={b.id}>
                 <div className="badge-modal-icon" style={{ background: bg, borderColor: color }}>

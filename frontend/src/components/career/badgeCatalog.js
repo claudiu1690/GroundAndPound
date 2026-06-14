@@ -128,9 +128,64 @@ const CATEGORY_FALLBACK = {
 
 const DEFAULT_VISUAL = make(Star, GOLD);
 
-/** Resolve a badge id → { Icon, color, bg }. Falls back by category, then default. */
-export function badgeVisual(id, categoryKey) {
+// Map from Lucide component name strings (as sent by the server) to the
+// already-imported components. Only names that are imported above are listed.
+const LUCIDE_NAME_MAP = {
+  Trophy,
+  Award,
+  Medal,
+  Flame,
+  Skull,
+  Swords,
+  Crown,
+  Mic,
+  Video,
+  Star,
+  Dumbbell,
+  Shield,
+  Zap,
+  Hand,
+  Heart,
+  HeartHandshake,
+  Target,
+  Gavel,
+  Megaphone,
+  Hammer,
+  Sparkles,
+  Activity,
+  TrendingUp,
+  Clock,
+  Repeat,
+  ShieldCheck,
+  Radio,
+  Users,
+};
+
+/**
+ * Resolve a badge id → { Icon, color, bg }.
+ *
+ * Resolution order:
+ *  1. Hardcoded BADGE_CATALOG entry for the id (PvE badges — unchanged).
+ *  2. Server-provided icon name + color via `serverDescriptor` (e.g. PvP badges).
+ *     Pass the badge object or any `{ icon, color }` shape. The icon value must
+ *     be a Lucide component name string present in LUCIDE_NAME_MAP.
+ *  3. Category fallback from CATEGORY_FALLBACK.
+ *  4. DEFAULT_VISUAL (Star, gold).
+ *
+ * Backward-compatible: existing callers that pass only (id, categoryKey) still work.
+ */
+export function badgeVisual(id, categoryKey, serverDescriptor) {
   if (id && BADGE_CATALOG[id]) return BADGE_CATALOG[id];
+
+  // Honor server-provided icon name + color for badges not in the local catalog.
+  if (serverDescriptor) {
+    const iconName = serverDescriptor.icon;
+    const iconColor = serverDescriptor.color;
+    if (iconName && iconColor && LUCIDE_NAME_MAP[iconName]) {
+      return make(LUCIDE_NAME_MAP[iconName], iconColor);
+    }
+  }
+
   if (categoryKey && CATEGORY_FALLBACK[categoryKey]) return CATEGORY_FALLBACK[categoryKey];
   return DEFAULT_VISUAL;
 }

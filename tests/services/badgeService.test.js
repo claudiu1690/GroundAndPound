@@ -3,6 +3,7 @@ const { test } = require("node:test");
 
 const badgeService = require("../../services/badgeService");
 const { BADGES, getBadge, GYM_BADGE_SLUGS, STAR_THRESHOLD } = require("../../consts/badgeCatalog");
+const { PVP_BADGE_DEFS } = require("../../consts/pvpBadges");
 
 function baseFighter(overrides = {}) {
     return {
@@ -127,11 +128,14 @@ test("B11: progress current never exceeds target", () => {
     assert.equal(p.target, STAR_THRESHOLD);
 });
 
-test("B12: buildBadgeProfile earnedCount + lockedCount = catalog size", () => {
+test("B12: buildBadgeProfile earnedCount + lockedCount = catalog size (PvE catalog + fixed PVP catalog)", () => {
     const f = baseFighter({ record: { wins: 10, koWins: 10 } });
     badgeService.evaluateBadges(f, {});
     const prof = badgeService.buildBadgeProfile(f);
-    assert.equal(prof.earnedCount + prof.lockedCount, BADGES.length);
+    // The Proving Ground fixed catalog is always rendered (earned + locked), like the
+    // PvE categories — so the total is the PvE catalog plus the fixed PVP badge count
+    // (this fighter has no earned seasonal/unbounded pvp ids).
+    assert.equal(prof.earnedCount + prof.lockedCount, BADGES.length + Object.keys(PVP_BADGE_DEFS).length);
 });
 
 test("B13: null-guard — empty/garbage fighter does not throw", () => {

@@ -542,13 +542,14 @@ The **Career** tab has two sub-tabs:
 
 The dashboard player-identity card is clickable and deep-links to the Profile sub-tab.
 
-### 20.2 Badges (~49 across 5 categories)
-Permanent profile markers. Categories: **Career**, **Championships**, **Style**, **Gym**, **Media**. Locked badges show progress bars where applicable; newly-unlocked badges show a **NEW** corner flag (acknowledged by viewing the Profile — no modal). Examples:
+### 20.2 Badges (PvE catalog + synthesized Proving Ground category)
+Permanent profile markers. PvE categories: **Career**, **Championships**, **Style**, **Gym**, **Media**, plus a synthesized **Proving Ground** category for PvP badges (§22.12). Locked badges show progress bars where applicable; newly-unlocked badges show a **NEW** corner flag (acknowledged by viewing the Profile — no modal). Examples:
 - **Career:** First Blood, 10/25/50 Wins, win streaks, Division Dominator, The Long Game, Veteran.
 - **Championships:** Amateur / Regional Pro / National / GCS Contender (non-winnable) / GCS Champion — **derived from promotion tier**; the belts on the Profile mirror these.
 - **Style:** Finisher, KO Artist, Sub Hunter, Decision Machine, Iron Chin, Iron Will, Giant Killer, Comeback Kid, Fight of the Night, Perfect Camp, Called It, Nemesis Slayer, beef/respect badges.
 - **Gym:** Rank-4 mastery badges (one per gym) **plus training-session milestones — Gym Regular (50), Gym Rat (100), Tireless (250)**, driven by lifetime `careerTrainingSessions`.
 - **Media:** On the Mic, Media Star, The Documentary, Controversy, People's Champion, Star Power.
+- **Proving Ground:** PvP achievement badges (§22.12) — onboarding, division/streak milestones, giant-kills, belts, defense, rivalry, and seasonal feats.
 
 Championship and other state-derivable badges **self-heal** on Profile load (silently), so the Profile and the belts always agree without a migration.
 
@@ -677,6 +678,18 @@ A PvP fight resolves with the **same physical and progression consequences as a 
 - **What's NOT shared.** PvP keeps its own economy — DP, season rewards, and the 15-energy attack cost — and does **not** pay the PvE iron purse, notoriety, or trigger nemesis/comeback. The attacker pays 15 energy; the defender pays no energy.
 - **Anti-farm guard.** Stat XP from repeat fights against the same opponent in a week is reduced (×0.5 the 2nd, ×0.25 the 3rd+, mirroring the DP repeat penalty), so trading wins can't farm XP.
 - **Exception — placement.** A placement bout (§22.9) is the one fight where the *defender* takes no physical consequences (they never opted in); the attacker still does.
+
+### 22.12 Proving Ground badges
+Beyond the per-season belt/division badges paid at finalize (§22.6), the Proving Ground awards a catalog of **permanent achievement badges** that live on the Career Profile under a synthesized **Proving Ground** category (§20.2). They are awarded imperatively (idempotent) from two hooks — on PvP fight resolve and at season finalize — and never from PvE events. Placement bouts and draws never award win-gated badges. Batch 1:
+
+- **Onboarding:** First Blood (first PvP win), First Finish (first KO/sub win), Held the Line (first successful offline defense).
+- **Division milestones:** reaching Contender / Challenger / Elite / Champion (one-time, lifetime).
+- **Streaks:** 3 / 5 / 10 PvP wins in a row.
+- **Giant-killing:** Giant Killer (beat an opponent 6–10 OVR above you) and Giant Slayer (11–20 above) — keyed off the bracket bonus, so they reward fighting *up* only.
+- **Rivalry & belt-defense:** Settled It (resolve a rivalry), Belt Defender (hold a defense while belt holder).
+- **Seasonal (finalize):** Twist Master (win under an active season twist), Belt Holder / Two-Belt Champ / Back-to-Back / Open Champion (the one-and-only Season 1 Open belt) / Flawless Champion (win the belt with zero losses), Podium (top-3 finish), Perfect Season (10+ wins, zero losses).
+
+Batch 1 adds **no new persisted fields** — every condition reads existing fight-doc, record, ladder, or `badgesEarned` data. (Tiered lifetime grind badges — career KO/sub/defense/volume counts — are a planned Batch 2 that needs a lifetime counter subdoc.)
 
 ---
 

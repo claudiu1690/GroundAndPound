@@ -18,6 +18,7 @@ const notorietyService = require("./notorietyService");
 const shopService = require("./shopService");
 const activityLogService = require("./activityLogService");
 const pvpSeasonService = require("./pvpSeasonService");
+const pvpBadgeService = require("./pvpBadgeService");
 const {
     REWARDS,
     SOFT_RESET,
@@ -110,6 +111,10 @@ async function finalizeSeason(season) {
         }
     }
 
+    // ── 1-based ladder rank map (ladder is already dp-desc sorted) for top3 badge. ──
+    const rankMap = new Map();
+    ladder.forEach((r, i) => rankMap.set(String(r._id), i + 1));
+
     // ── Rewards loop — per-fighter, dual-idempotent via record.rewardedAt. ───
     let rewarded = 0;
     for (const record of ladder) {
@@ -166,6 +171,16 @@ async function finalizeSeason(season) {
             fighter.markModified("pvpOnboarding");
             firstSeasonBonusPaid = true;
         }
+
+        // ── Batch-1 season badges (mutation only; rides fighter.save() below). ──
+        // applyRewardBundle already minted the per-season belt id for the belt holder,
+        // so belt_first/2/b2b correctly count the current season here.
+        pvpBadgeService.evaluatePvpSeasonBadges(fighter, record, {
+            isBelt,
+            ladderRank: rankMap.get(String(record._id)),
+            weightClass: season.weightClass,
+            seasonNumber: season.seasonNumber,
+        });
 
         try {
             // eslint-disable-next-line no-await-in-loop

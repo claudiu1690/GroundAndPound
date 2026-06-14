@@ -11,7 +11,7 @@ import { BadgeTooltip } from "./BadgeTooltip";
  * `categoryKey` is used as a visual fallback when the id isn't in the catalog.
  */
 export function BadgeIcon({ badge, categoryKey }) {
-  const { Icon, color, bg } = badgeVisual(badge.id, categoryKey);
+  const { Icon, color, bg } = badgeVisual(badge.id, categoryKey, badge);
   const earned = !!badge.earned;
   const progress = !earned && badge.progress && badge.progress.target ? badge.progress : null;
   const pct = progress

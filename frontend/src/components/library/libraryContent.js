@@ -376,14 +376,15 @@ export const LIBRARY_ARTICLES = [
         category: "Career",
         title: "Badges — Permanent Career Marks",
         summary: "Every badge in the game, how to earn it, and what it means for your profile.",
-        tags: ["badges", "achievements", "resilience", "champion", "documentary"],
+        tags: ["badges", "achievements", "resilience", "champion", "documentary", "proving ground", "pvp"],
         body: [
             "Badges are permanent markers earned through career achievements and gym mastery. They appear on your fighter profile and can be pinned to your banner. Once earned, they never go away.",
             "Career badges come from doing exceptional things in your fights: winning while in comeback mode earns the Resilience badge. Your first belt — beating the Amateur champion to turn pro — earns the distinct Amateur Champion badge. Every pro title after it (Regional Pro and up) earns the generic Champion badge. Winning a callout fight earns the Callout Win badge. Recording your documentary at Star fame tier earns the Documentary badge and unlocks the Legacy banner piece.",
             "Gym badges are earned by reaching Rank 4 at each specialty gym — Champion Boxer, BJJ Black Belt, Tactician, Elite Master, and the rest. These are the hardest to earn because they require sustained dedication to one gym across training sessions and specific win types. A fighter with multiple Rank 4 gym badges has put in serious time.",
+            "The Proving Ground has its own badge line, grouped on your profile under Proving Ground. Some are quick first steps (your first PvP win, first finish, first successful defense); others mark real ladder progress (reaching Contender → Champion, win streaks of 3/5/10, beating opponents rated well above you); and the rarest are seasonal prestige — holding a season belt, going back-to-back, winning the belt without a single loss, or finishing a season on the podium. They're awarded as you fight and at season's end, and sit permanently alongside your career badges.",
             "Badges aren't just cosmetic. Several unlock banner pieces for the customizer, and the gym badges come with the Rank 4 utility perks that change how the game works for you permanently.",
         ],
-        keyTakeaway: "Gym badges require the most work but come with permanent perks. Career badges tell the story of your biggest moments.",
+        keyTakeaway: "Gym badges require the most work but come with permanent perks. Career and Proving Ground badges tell the story of your biggest moments in both the cage and on the ladder.",
     },
     {
         id: "banner-customizer",

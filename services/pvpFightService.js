@@ -30,6 +30,7 @@ const activityLogService = require("./activityLogService");
 const pvpRecordService = require("./pvpRecordService");
 const pvpSeasonService = require("./pvpSeasonService");
 const pvpRivalryService = require("./pvpRivalryService");
+const pvpBadgeService = require("./pvpBadgeService");
 const energyService = require("./energyService");
 const { computeDp, applyDpAndDivision } = require("./pvpDpService");
 const {
@@ -730,9 +731,37 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         attacker.energy.lastSyncedAt = now;
     }
 
+    // ── Batch-1 achievement badges (mutation only; rides the saves below). ────
+    // Built once from final post-fight state; per-fighter viewerIsAttacker flips below.
+    // twistApplied is VIEWER-AGNOSTIC: computeDp returns twistApplied:false on the
+    // attacker-loss branch, so a winning DEFENDER under a method-bonus twist would never
+    // earn the badge. Recompute it from the season twist + method, mirroring computeDp's
+    // twist-match condition (DP logic unchanged — defenders still get no DP twist bonus).
+    const twistDef = TWISTS[season.twist];
+    const twistApplied = !!(
+        twistDef &&
+        Array.isArray(twistDef.methods) &&
+        twistDef.methods.includes(method) &&
+        typeof twistDef.pct === "number"
+    );
+    const pvpBadgeCtx = {
+        attackerWon,
+        isDraw,
+        method,
+        bracketTier: bTier,
+        isRivalryResolved,
+        isBeltHolderFight,
+        twistApplied,
+    };
+
     // ── Persist: records → fighters → fight doc → rivalry → feed. ────────────
     await attackerRecord.save();
     await defenderRecord.save();
+    // Attacker badges must ride attacker.save() — mutate badgesEarned BEFORE saving.
+    pvpBadgeService.evaluatePvpFightBadges(attacker, attackerRecord, {
+        ...pvpBadgeCtx,
+        viewerIsAttacker: true,
+    });
     // Attacker: consequences already applied in-place; the per-attacker Redis lock makes
     // this save race-free.
     await attacker.save();
@@ -747,6 +776,12 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
                 fighterService.reconcileHealth(fresh);
                 tickRecoveryForFighter(fresh);
                 fightConsequenceService.applyConsequenceMutation(fresh, defenderMutation);
+                // Defender badges must mutate the FRESH (persisted) doc, not the stale
+                // in-memory `defender`, or they would never persist.
+                pvpBadgeService.evaluatePvpFightBadges(fresh, defenderRecord, {
+                    ...pvpBadgeCtx,
+                    viewerIsAttacker: false,
+                });
             }
         );
     } catch (err) {

@@ -91,7 +91,7 @@ export function PinnedBadgeRow({ fighterId, earnedBadges, pinnedBadges, earnedCo
         )}
         {readOnlyPins.map((id) => {
           const meta = byId.get(id);
-          const { Icon, color, bg } = badgeVisual(id, meta?.category);
+          const { Icon, color, bg } = badgeVisual(id, meta?.category, meta);
           return (
             <span
               key={id}
@@ -127,7 +127,7 @@ export function PinnedBadgeRow({ fighterId, earnedBadges, pinnedBadges, earnedCo
             );
           }
           const meta = byId.get(id);
-          const { Icon, color, bg } = badgeVisual(id, meta?.category);
+          const { Icon, color, bg } = badgeVisual(id, meta?.category, meta);
           return (
             <button
               type="button"
