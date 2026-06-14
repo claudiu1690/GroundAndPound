@@ -345,12 +345,25 @@ export const GymTraining = memo(function GymTraining({
                 );
             })()}
 
-            {/* Max rank achieved */}
-            {!isFree && currentRank >= 4 && (
-                <div className="rank-maxed">
-                    <Trophy size={14} /> Maximum rank achieved — perk active!
-                </div>
-            )}
+            {/* Max rank achieved — name the actual perk (rank-4 unlock) */}
+            {!isFree && currentRank >= 4 && (() => {
+                const maxPerk = gym.ranks?.find((r) => r.rank === 4)?.unlock;
+                return (
+                    <div className="rank-maxed">
+                        <Trophy size={14} />
+                        <div className="rank-maxed-body">
+                            <div className="rank-maxed-title">Maximum rank achieved — perk active</div>
+                            {maxPerk?.perkName && (
+                                <div className="rank-maxed-perk">
+                                    <strong>{maxPerk.perkName}</strong>
+                                    {maxPerk.perkEffect ? ` — ${maxPerk.perkEffect}` : ""}
+                                    {maxPerk.badge ? ` · Badge: ${maxPerk.badge}` : ""}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* STRIP 3 — Flavor */}
             {gym.description && (

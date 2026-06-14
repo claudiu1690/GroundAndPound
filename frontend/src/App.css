@@ -1640,6 +1640,10 @@ code {
 /* Inline rank-up failure (e.g. not enough iron) — full-width row under the CTA. */
 .rank-up-error { flex-basis:100%; text-align:right; font-size:11px; font-weight:600; color:#F87171; margin-top:2px; }
 .rank-maxed { display:flex; align-items:center; gap:8px; padding:10px 24px; border-bottom:1px solid var(--c-border-3); color:var(--c-amber-bright); font-family:var(--font-display); font-weight:700; font-size:12px; flex-shrink:0; }
+.rank-maxed-body { display:flex; flex-direction:column; gap:1px; }
+.rank-maxed-title { color:var(--c-amber-bright); font-weight:700; font-size:12px; }
+.rank-maxed-perk { font-family:var(--font-body, inherit); font-weight:600; font-size:11px; color:var(--c-text-2, #AAAAAA); }
+.rank-maxed-perk strong { color:var(--c-text, #F0F0F0); font-weight:700; }
 
 .flavor-strip { padding:14px 24px; border-bottom:1px solid var(--c-border-3); }
 .flavor-text { font-size:13px; color:var(--text-secondary); line-height:1.7; font-style:italic; }
