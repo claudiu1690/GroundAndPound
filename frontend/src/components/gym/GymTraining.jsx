@@ -382,10 +382,13 @@ export const GymTraining = memo(function GymTraining({
                         const notEnoughEnergy = energy < m.cost;
                         const isRank2Locked = !!m.rank2 && !rank2Unlocked && key === rank2SessionKey;
                         const cardLocked = isRank2Locked || isLocked;
+                        // Conditioning is a no-op once Max Stamina is at the 120 cap —
+                        // surface that explicitly instead of a button that does nothing.
+                        const isStaminaMaxed = key === "strength_conditioning" && (fighter.maxStamina ?? 100) >= 120;
                         // Active "Train" branch: the only state that gets the
                         // quantity control. cardMax floor>=1 here because
                         // notEnoughEnergy already covers floor===0.
-                        const showQtyControl = !isRank2Locked && canTrain && !isLocked && !notEnoughEnergy;
+                        const showQtyControl = !isRank2Locked && canTrain && !isLocked && !notEnoughEnergy && !isStaminaMaxed;
                         const cardMax = Math.min(Math.floor(energy / m.cost), MAX_BATCH);
                         const isSparring = SPARRING_KEYS.has(key);
                         // XP-boosted if a booster is active and covers any of this card's stats.
@@ -450,6 +453,10 @@ export const GymTraining = memo(function GymTraining({
                                         ) : isLocked ? (
                                             <button type="button" className="session-card-btn locked-btn" disabled>
                                                 Injury locked
+                                            </button>
+                                        ) : isStaminaMaxed ? (
+                                            <button type="button" className="session-card-btn inactive" disabled>
+                                                Max Stamina maxed (120)
                                             </button>
                                         ) : notEnoughEnergy ? (
                                             <button type="button" className="session-card-btn inactive" disabled>
