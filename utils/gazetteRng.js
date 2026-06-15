@@ -1,9 +1,10 @@
 /**
  * Deterministic RNG for the Octagon Gazette.
  *
- * Same (date, fighterId) produces the same template selections every time the gazette
- * is rendered — so a player who fetches the gazette on phone and laptop sees identical
- * content, and a re-fetch during the same day doesn't shuffle stories.
+ * Same (issueNumber, fighterId) produces the same template selections every time the
+ * gazette is rendered for that issue — so re-serializing the persisted edition on phone
+ * and laptop yields identical content, and a given issue never reshuffles its stories.
+ * A new issue (incremented issueNumber) reseeds and produces fresh variation.
  */
 
 /**
@@ -35,13 +36,13 @@ function mulberry32(seed) {
 }
 
 /**
- * Create a deterministic RNG for the gazette of a specific fighter on a specific date.
- * @param {string} dateString  YYYY-MM-DD (UTC)
+ * Create a deterministic RNG for the gazette of a specific fighter on a specific issue.
+ * @param {string} seedKey     String(issueNumber) — determinism is per (issueNumber, fighterId)
  * @param {string} fighterId   Mongo ObjectId stringified
  * @returns {{ next: () => number, pick: (arr) => any }} RNG with two helpers
  */
-function makeGazetteRng(dateString, fighterId) {
-    const seed = fnv1a(`${dateString}|${fighterId}`);
+function makeGazetteRng(seedKey, fighterId) {
+    const seed = fnv1a(`${seedKey}|${fighterId}`);
     const next = mulberry32(seed);
     return {
         next,

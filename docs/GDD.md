@@ -560,7 +560,15 @@ Four cosmetic layers — Background (8), Frame (5), Accent Color (7), Pinned Bad
 Reverse-chronological log: fight results, promotions, title eligibility/wins, Nemesis set/cleared, badges earned, sponsor events, callout wins, beef lapses, prediction outcomes, fame milestones.
 
 ### 20.5 The Octagon Gazette
-A daily newspaper that opens automatically on the first login each day (UTC). Templated headlines recapping career/world events; never on a zero-fight account, nor on subsequent same-day logins. Three zones (Lead 1, Secondary 2, In Brief ≤3). Lead picked by priority: Event Result → First Title-Fight Loss → Title Fight Result → First Loss → Promotion → Rank Entry → Win Streak → Rank Jump → Last Fight Result → Division Spotlight. Purely informational.
+A persistent in-game newspaper — **always available, always current**. It is no longer a daily login popup. Instead it lives as a cream **tile in the home dashboard's 3-up top row** (alongside Rankings and Proving Ground tiles); clicking the tile opens the full broadsheet as a modal overlay. Purely informational + navigational (every story links to the relevant tab and closes the paper).
+
+**Generation & storage.** The paper is composed **server-side and persisted on `player.gazette`**, and **regenerated after every meaningful career-feed event** — not on login. Regeneration is triggered from the single career-feed write chokepoint (`activityLogService.log`) via an allowlist of content-bearing event types (fight win/loss/draw, tier promotion, title won, nemesis set/cleared, badge earned, title-shot eligible, and the PvP win/loss/promotion/belt/rivalry-resolved events). A regeneration failure never breaks the feed write. Content selection is deterministic per issue (seeded RNG keyed by `issueNumber|fighterId`), so re-opening the same issue always reads the same; a new event reseeds and prints a fresh issue.
+
+**Issue history.** Each regeneration increments `issueNumber` (starts at 1; volume rolls every 52 issues), giving every fighter an accumulating paper of record shown in the masthead (Vol./No., edition, "Breaking" label, fighter meta, cash/fame meta).
+
+**Layout.** Masthead → **Lead story** (kicker, headline, deck, byline, a dark *result band* [outcome · method+round · record · camp grade, each omitted when unavailable], 1–4 justified paragraphs with a drop cap, and a pull quote) → **4-item Sidebar** (Rankings, Nemesis, Fight Offers, Proving Ground, Injuries, Gym Mastery, Contracts — filled by priority/eligibility; action items show a "Go →" pill) → **3 Secondary stories** (Camp Report, Gym Milestone, Contracts, Badge, Comeback, Record Milestone, with evergreen fillers) → **In Brief** (4–6 one-liners). Lead is picked by priority: Mental-Reset Notice → Event Result → First Title-Fight Loss → Title Fight Result → First Loss → Promotion → Rank Entry → Win Streak → Rank Jump → Last Fight Result → Division Spotlight.
+
+**Empty state.** Brand-new accounts (no fights, `issueNumber` 0) show "Nothing to report yet. Fight your first match and check back." in both the tile and the modal.
 
 ---
 

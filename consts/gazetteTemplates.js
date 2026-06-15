@@ -455,6 +455,73 @@ const TEMPLATES = {
         { headline: "ROCK BOTTOM HAS A BASEMENT — AND A LADDER",
           body: "{FIGHTER} is {LOSS_STREAK} defeats deep. The fall is documented. The climb is the story worth telling." },
     ],
+
+    // ── SIDEBAR GROUPS (v2.0 — seeded headline variation) ──────────────────────
+    // Each variant is { headline } only; body is composed in the builder.
+    sidebar_rankings_ranked: [
+        { headline: "#{RANK} IN THE {TIER} DIVISION" },
+        { headline: "CLIMBING THE {TIER} RANKINGS" },
+        { headline: "{TIER} BOARD: HOLDING AT #{RANK}" },
+    ],
+    sidebar_rankings_unranked: [
+        { headline: "UNRANKED — {N} FIGHTS FROM THE BOARD" },
+        { headline: "KNOCKING ON THE {TIER} RANKINGS" },
+        { headline: "{N} FIGHTS UNTIL THE RANKINGS OPEN" },
+    ],
+    sidebar_nemesis: [
+        { headline: "{OPP} — UNFINISHED BUSINESS" },
+        { headline: "THE GRUDGE AGAINST {OPP} LIVES" },
+        { headline: "REVENGE IS A FIGHT AWAY — {OPP}" },
+    ],
+    sidebar_fight_offers: [
+        { headline: "NEW OFFERS WAITING" },
+        { headline: "OPPONENTS READY TO SIGN" },
+        { headline: "THE MATCHMAKERS HAVE BEEN BUSY" },
+    ],
+    sidebar_pvp: [
+        { headline: "THE LADDER IS CALLING" },
+        { headline: "DIVISION POINTS WON'T EARN THEMSELVES" },
+    ],
+    sidebar_injuries: [
+        { headline: "INJURY ALERT: {LABEL}" },
+        { headline: "RECOVERY MODE — {LABEL}" },
+        { headline: "MEDICAL UPDATE: {LABEL}" },
+    ],
+    sidebar_gym: [
+        { headline: "GYM MASTERY — RANK {RANK}" },
+        { headline: "THE WORK CONTINUES AT THE GYM" },
+        { headline: "MASTERY GRINDS ON — RANK {RANK}" },
+    ],
+    sidebar_contracts: [
+        { headline: "SPONSOR UPDATE: {BRAND}" },
+        { headline: "CONTRACT IN PLAY — {BRAND}" },
+    ],
+    sidebar_fame: [
+        { headline: "FAME: {TIER} TIER" },
+        { headline: "{TIER} TIER — THE NAME IS GROWING" },
+    ],
+    sidebar_spotlight: [
+        { headline: "THE DIVISION KEEPS MOVING" },
+        { headline: "NO FIGHT IS A FIGHT LOST" },
+        { headline: "EVERY DAY IDLE IS A DAY BEHIND" },
+    ],
+
+    // ── SECONDARY GROUPS (v2.0) ────────────────────────────────────────────────
+    secondary_camp_report: [
+        { headline: "CAMP REPORT: THE WORK BEHIND THE WIN" },
+        { headline: "INSIDE THE FIGHT CAMP" },
+        { headline: "PREPARATION TELLS ITS OWN STORY" },
+    ],
+    secondary_gym_milestone: [
+        { headline: "{SESSIONS} TRAINING SESSIONS LOGGED" },
+        { headline: "THE GRIND HITS {SESSIONS} SESSIONS" },
+        { headline: "MILESTONE: {SESSIONS} SESSIONS IN THE GYM" },
+    ],
+    secondary_badge: [
+        { headline: "NEW BADGE EARNED" },
+        { headline: "ACHIEVEMENT UNLOCKED" },
+        { headline: "ANOTHER ONE FOR THE CABINET" },
+    ],
 };
 
 module.exports = { TEMPLATES };

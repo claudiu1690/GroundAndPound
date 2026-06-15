@@ -98,6 +98,21 @@ export const LIBRARY_ARTICLES = [
         ],
         keyTakeaway: "The Career Feed is your permanent record. Click any fight's › to re-read its full round-by-round breakdown.",
     },
+    {
+        id: "octagon-gazette",
+        category: "Getting Started",
+        title: "The Octagon Gazette",
+        summary: "Your career, written up as a newspaper — always on your dashboard, always current.",
+        tags: ["gazette", "newspaper", "dashboard", "headlines", "news"],
+        body: [
+            "The Octagon Gazette is your career written up like a sports newspaper. You'll find it as the cream-coloured tile in the top row of your dashboard, next to Rankings and the Proving Ground. It's always there and always current — there's no daily popup to catch and no edition to miss.",
+            "Click the tile to open the full paper. Up top is the masthead — your issue number, edition, and a 'Breaking' banner. Below it the lead story recaps your latest big moment, complete with a result band (outcome, method, round, record), a couple of paragraphs of write-up, and a pull quote. Down the side, four shorter pieces cover your rankings, nemesis, fight offers, the Proving Ground, injuries, gym work, and sponsor contracts. Three secondary stories and an 'In Brief' rundown round out the page.",
+            "The paper rewrites itself after every meaningful career event — a win or loss, a promotion, a title fight, a badge, a nemesis set or settled, a Proving Ground result. Each rewrite prints a new issue, so your issue number climbs over a career and you build up a paper of record that's entirely your own.",
+            "It isn't just for reading. Most stories are clickable — a story about your rankings jumps you to the Rankings tab, a nemesis story sends you to your fight offers, an injury note opens the Hospital. Items worth acting on right now carry a 'Go →' pill. Tap a link and the paper closes and takes you straight there.",
+            "Brand new and haven't fought yet? The Gazette simply says there's nothing to report — fight your first match and the presses start running.",
+        ],
+        keyTakeaway: "The Gazette is a living newspaper of your career on your dashboard. It refreshes after every big event, and its stories link straight to the tab that matters.",
+    },
 
     // ──────────────────────────────────────────────────────────────
     // FIGHTING

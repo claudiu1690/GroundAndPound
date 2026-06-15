@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useDashboard } from "../../hooks/useDashboard";
 import { statMeterRows } from "../fighterProfile/profileModel";
 import {
@@ -19,9 +19,11 @@ import {
   RotateCcw,
   BarChart3,
   Snowflake,
+  Crosshair,
 } from "lucide-react";
 import { tierLabel } from "../../constants/fame";
 import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
+import { GazetteModal } from "../gazette/GazetteModal";
 
 // ── Time formatting ───────────────────────────────────────────
 function formatEta(minutes) {
@@ -42,6 +44,35 @@ function feedDate(createdAt) {
   if (diffDays === 1) return "Yesterday";
   if (diffDays < 7) return `${diffDays}d ago`;
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+/** Relative time label from an ISO date string — "2h ago", "3d ago", etc. */
+function relativeTime(iso) {
+  if (!iso) return "";
+  try {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 2) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+  } catch { return ""; }
+}
+
+/** Derive result pill text and color class from leadStory.resultBand */
+function gazetteResultPill(leadStory) {
+  const band = leadStory?.resultBand;
+  if (!band?.outcomeLabel) return null;
+  const label = band.outcomeLabel;
+  const method = band.methodRound ? ` · ${band.methodRound}` : "";
+  const text = `${label}${method}`;
+  const l = label.toLowerCase();
+  const cls = l.includes("win") || l.includes("victor") ? "gz-tile-pill--win"
+    : l.includes("loss") || l.includes("defeat") ? "gz-tile-pill--loss"
+    : "gz-tile-pill--draw";
+  return { text, cls };
 }
 
 // ── Small presentational helpers ──────────────────────────────
@@ -127,6 +158,9 @@ export const DashboardTab = memo(function DashboardTab({
   const fighterId = fighter?._id;
   const { data, loading, error, reload } = useDashboard(fighterId, { refreshKey });
 
+  // Gazette modal state — owned here
+  const [gazetteOpen, setGazetteOpen] = useState(false);
+
   const nav = (target) => {
     if (target && typeof onNavigate === "function") onNavigate(target);
   };
@@ -183,8 +217,145 @@ export const DashboardTab = memo(function DashboardTab({
   const sponsorship = data?.sponsorship ?? null;
   const nudge = data?.nudge ?? null;
 
+  // ── Gazette tile data ──────────────────────────────────────────────────────
+  const gazette = fighter?.gazette ?? null;
+  const gazetteEmpty = !gazette?.issueNumber || !gazette?.leadStory;
+  const leadStory = gazette?.leadStory ?? null;
+  const resultPill = gazetteResultPill(leadStory);
+  const gazetteTeaser = leadStory?.bodyParagraphs?.[0]
+    ? leadStory.bodyParagraphs[0].split(/[.!?]/)[0] + "."
+    : (leadStory?.deck ?? null);
+  const secondaryBullets = Array.isArray(gazette?.sidebarItems)
+    ? gazette.sidebarItems.slice(0, 3)
+    : [];
+
   return (
     <section className="dashboard-tab" data-tut="dashboard-root">
+
+      {/* ── 3-UP TOP ROW: Gazette · Rankings · Proving Ground ── */}
+      <div className="dash-top-row">
+
+        {/* Gazette tile */}
+        <div
+          className="dash-gz-tile"
+          onClick={() => setGazetteOpen(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setGazetteOpen(true); } }}
+          aria-label="Open The Octagon Gazette"
+        >
+          {/* top accent bar rendered via CSS ::before */}
+          <div className="dash-gz-masthead">
+            <span className="dash-gz-name">The Octagon Gazette</span>
+            {gazette?.updatedAt && (
+              <span className="dash-gz-date">{relativeTime(gazette.updatedAt)}</span>
+            )}
+          </div>
+
+          {gazetteEmpty ? (
+            <div className="dash-gz-empty">
+              Nothing to report yet. Fight your first match and check back.
+            </div>
+          ) : (
+            <>
+              {resultPill && (
+                <div className={`dash-gz-pill ${resultPill.cls}`}>{resultPill.text}</div>
+              )}
+              {leadStory?.headline && (
+                <div className="dash-gz-headline">{leadStory.headline}</div>
+              )}
+              {gazetteTeaser && (
+                <div className="dash-gz-teaser">{gazetteTeaser}</div>
+              )}
+              {secondaryBullets.length > 0 && (
+                <>
+                  <div className="dash-gz-divider" />
+                  <ul className="dash-gz-bullets">
+                    {secondaryBullets.map((item, i) => (
+                      <li key={i} className="dash-gz-bullet-item">
+                        <span
+                          className="dash-gz-bullet-dot"
+                          style={{ background: item.categoryColor || "var(--c-accent)" }}
+                        />
+                        <span className="dash-gz-bullet-text">{item.headline || item.body}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </>
+          )}
+
+          <div className="dash-gz-footer">
+            <span className="dash-gz-cta">Read Full Paper →</span>
+            {gazette?.updatedAt && (
+              <span className="dash-gz-updated">Updated {relativeTime(gazette.updatedAt)}</span>
+            )}
+          </div>
+        </div>
+
+        {/* Rankings tile */}
+        <div
+          className="dash-top-tile dash-top-tile--rankings"
+          onClick={() => nav("rankings")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("rankings"); } }}
+        >
+          <div className="dash-top-tile-label">
+            <ListOrdered size={13} strokeWidth={2.2} />
+            Rankings
+          </div>
+          {ranking?.rank != null ? (
+            <div className="dash-top-tile-main">
+              <span className="dash-top-tile-big">#{ranking.rank}</span>
+              <span className="dash-top-tile-sub">of {ranking.rosterSize ?? "—"}</span>
+              {ranking.delta != null && ranking.delta !== 0 ? (
+                <span className={`dash-rank-delta ${ranking.delta > 0 ? "up" : "down"}`}>
+                  {ranking.delta > 0
+                    ? <TrendingUp size={12} strokeWidth={2.4} />
+                    : <TrendingDown size={12} strokeWidth={2.4} />}
+                  {Math.abs(ranking.delta)}
+                </span>
+              ) : null}
+            </div>
+          ) : (
+            <div className="dash-top-tile-muted">Unranked</div>
+          )}
+          {ranking?.isTopFive && (
+            <span className="dash-title-badge">Title contender</span>
+          )}
+          <div className="dash-top-tile-cta">View Rankings →</div>
+        </div>
+
+        {/* Proving Ground tile */}
+        <div
+          className="dash-top-tile dash-top-tile--pvp"
+          onClick={() => nav("pvp")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("pvp"); } }}
+        >
+          <div className="dash-top-tile-label">
+            <Crosshair size={13} strokeWidth={2.2} />
+            Proving Ground
+          </div>
+          <div className="dash-top-tile-main">
+            <span className="dash-top-tile-big">PVP</span>
+          </div>
+          <div className="dash-top-tile-desc">Challenge rivals. Earn badges.</div>
+          <div className="dash-top-tile-cta">Enter →</div>
+        </div>
+      </div>
+
+      {/* Gazette modal */}
+      <GazetteModal
+        open={gazetteOpen}
+        gazette={gazette}
+        onClose={() => setGazetteOpen(false)}
+        onNavigate={(t) => { setGazetteOpen(false); nav(t); }}
+      />
+
       {/* ── HERO CTA (priority element; first on mobile) ── */}
       {hero ? (
         <ModuleCard className="dash-hero" stripe="accent" dataTut="dashboard-hero">
@@ -427,7 +598,7 @@ export const DashboardTab = memo(function DashboardTab({
         })()
       ) : null}
 
-      {/* ── LOWER GRID: feed / ranking / resources / sponsorship / nudge ── */}
+      {/* ── LOWER GRID: feed / resources / sponsorship / nudge ── */}
       <div className="dash-grid">
         {/* Career feed */}
         <ModuleCard className="dash-feed" onClick={() => nav("career")}>
@@ -453,44 +624,6 @@ export const DashboardTab = memo(function DashboardTab({
           )}
           <button type="button" className="dash-card-btn" onClick={() => nav("career")}>
             View Career <ChevronRight size={14} strokeWidth={2.4} />
-          </button>
-        </ModuleCard>
-
-        {/* Ranking */}
-        <ModuleCard className="dash-ranking" onClick={() => nav("rankings")}>
-          <div className="dash-card-head">
-            <span className="dash-card-title">
-              <ListOrdered size={14} strokeWidth={2.2} />
-              Ranking
-            </span>
-            {ranking?.isTopFive ? (
-              <span className="dash-title-badge">Title contender</span>
-            ) : null}
-          </div>
-          {ranking && ranking.rank != null ? (
-            <div className="dash-ranking-body">
-              <span className="dash-rank-num">#{ranking.rank}</span>
-              <span className="dash-rank-of">of {ranking.rosterSize ?? "—"}</span>
-              {ranking.delta != null && ranking.delta !== 0 ? (
-                <span
-                  className={`dash-rank-delta ${ranking.delta > 0 ? "up" : "down"}`}
-                >
-                  {ranking.delta > 0 ? (
-                    <TrendingUp size={12} strokeWidth={2.4} />
-                  ) : (
-                    <TrendingDown size={12} strokeWidth={2.4} />
-                  )}
-                  {Math.abs(ranking.delta)}
-                </span>
-              ) : null}
-            </div>
-          ) : (
-            <p className="dash-muted">
-              Unranked — fight 3 in your tier to enter the rankings
-            </p>
-          )}
-          <button type="button" className="dash-card-btn" onClick={() => nav("rankings")}>
-            View Rankings <ChevronRight size={14} strokeWidth={2.4} />
           </button>
         </ModuleCard>
 

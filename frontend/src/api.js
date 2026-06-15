@@ -189,10 +189,6 @@ export const api = {
     request(`/fighters/${fighterId}/rank`),
 
   // ── Octagon Gazette ─────────────────────────────────────
-  getGazette: (fighterId) =>
-    request(`/gazette/${fighterId}`),
-  dismissGazette: (fighterId) =>
-    request(`/gazette/${fighterId}/dismiss`, { method: "POST" }),
   mentalReset: (fighterId) =>
     request(`/fighters/${fighterId}/mental-reset`, { method: "POST" }),
 

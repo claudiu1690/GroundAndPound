@@ -154,19 +154,102 @@ const fighterSchema = new mongoose.Schema({
         fightsInTier:        { type: Number, default: 0 },        // counts every fight in current tier
         entryRecordAtFight3: { type: String, default: null },     // e.g. "3-0" — snapshot on entry
     },
-    // Octagon Gazette v1.0 — daily newspaper state.
-    // lastShownDate: YYYY-MM-DD (UTC) — gazette won't re-fire same day.
-    // lastNotorietyLogged: baseline notoriety from last dismiss, used to compute delta.
-    // rankBeforeLastFight: snapshot of ranking.rank BEFORE the most recent fight resolved,
-    //   used by the Rank Jump story. Set in fightService just before updatePlayerRank fires.
-    // promoBeforeLastLogin / fameTierBeforeLastLogin: snapshots used to detect promotion
-    //   and fame-tier-change since last gazette.
+    // Octagon Gazette v2.0 — PERSISTED edition. Regenerated after every meaningful
+    // career-feed event (see gazetteService.regenerateGazette + activityLogService).
+    // The frontend reads fighter.gazette directly off the serialized fighter payload;
+    // there is no fetch/compose endpoint. issueNumber===0 / leadStory===null is the
+    // empty (no-edition-yet) state. No migration: defaults hydrate on next save.
+    //
+    // Legacy baseline fields RETAINED for delta builders:
+    //   lastShownDate           — vestigial, never read/written again.
+    //   lastNotorietyLogged     — baseline notoriety, used to compute the fame delta.
+    //   rankBeforeLastFight     — ranking.rank BEFORE the last fight (set by fightService).
+    //   tierBeforeLastFight     — promotionTier BEFORE the last fight (set by fightService).
+    //   fameTierBeforeLastLogin — baseline fame tier, used for fame-tier-up story.
     gazette: {
-        lastShownDate:           { type: String, default: null },
-        lastNotorietyLogged:     { type: Number, default: 0 },
-        rankBeforeLastFight:     { type: Number, default: null },
-        tierBeforeLastFight:     { type: String, default: null },
-        fameTierBeforeLastLogin: { type: String, default: null },
+        lastShownDate:               { type: String, default: null },
+        lastNotorietyLogged:         { type: Number, default: 0 },
+        rankBeforeLastFight:         { type: Number, default: null },
+        tierBeforeLastFight:         { type: String, default: null },
+        fameTierBeforeLastLogin:     { type: String, default: null },
+
+        // ── Persisted edition state ──
+        issueNumber:                 { type: Number, default: 0 },
+        volNumber:                   { type: Number, default: null },
+        edition:                     { type: String, default: null },
+        breakingLabel:               { type: String, default: null },
+        fighterMeta:                 { type: String, default: null },
+        cashFameMeta:                { type: String, default: null },
+        updatedAt:                   { type: Date,   default: null },
+        triggeringEventType:         { type: String, default: null },
+        lastGymRankLogged:           { type: Number, default: 0 },
+        lastTrainingMilestoneLogged: { type: Number, default: 0 },
+
+        // ── Lead story ──
+        leadStory: {
+            type: new mongoose.Schema({
+                type:          { type: String, default: null },
+                kicker:        { type: String, default: null },
+                kickerColor:   { type: String, default: null },
+                headline:      { type: String, default: null },
+                deck:          { type: String, default: null },
+                bodyParagraphs:{ type: [String], default: [] },
+                resultBand: {
+                    type: new mongoose.Schema({
+                        outcomeLabel: { type: String, default: null },
+                        methodRound:  { type: String, default: null },
+                        record:       { type: String, default: null },
+                        campGrade:    { type: String, default: null },
+                    }, { _id: false }),
+                    default: null,
+                },
+                pullQuote: {
+                    type: new mongoose.Schema({
+                        text:   { type: String, default: null },
+                        source: { type: String, default: null },
+                    }, { _id: false }),
+                    default: null,
+                },
+                linkTarget:    { type: String, default: null },
+            }, { _id: false }),
+            default: null,
+        },
+
+        // ── Sidebar (builder enforces exactly 4) ──
+        sidebarItems: {
+            type: [new mongoose.Schema({
+                categoryLabel: { type: String, default: null },
+                categoryColor: { type: String, default: null },
+                headline:      { type: String, default: null },
+                body:          { type: String, default: null },
+                linkTarget:    { type: String, default: null },
+                goPill:        { type: Boolean, default: false },
+                goPillLabel:   { type: String, default: null },
+            }, { _id: false })],
+            default: [],
+        },
+
+        // ── Secondary stories (builder enforces exactly 3) ──
+        secondaryStories: {
+            type: [new mongoose.Schema({
+                categoryLabel: { type: String, default: null },
+                categoryColor: { type: String, default: null },
+                headline:      { type: String, default: null },
+                body:          { type: String, default: null },
+                linkTarget:    { type: String, default: null },
+            }, { _id: false })],
+            default: [],
+        },
+
+        // ── In Brief (builder enforces 4..6) ──
+        inBrief: {
+            type: [new mongoose.Schema({
+                text:       { type: String, default: null },
+                linkTarget: { type: String, default: null },
+                pillLabel:  { type: String, default: null },
+            }, { _id: false })],
+            default: [],
+        },
     },
     // Nemesis: the most recent NPC to beat the player (cleared on revenge win)
     nemesis: {

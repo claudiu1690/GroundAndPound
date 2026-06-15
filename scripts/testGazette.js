@@ -1,12 +1,13 @@
 /**
- * Unit tests for the Octagon Gazette composer.
- * Stubs Mongoose models so we can exercise the eligibility + template engine
- * without a DB connection.
+ * Unit tests for the Octagon Gazette v2.0 persisted regeneration engine.
+ *
+ * Stubs Mongoose models (Fighter / Fight / Sponsorship) so we can exercise
+ * regenerateGazette + the activityLogService regen trigger without a DB.
  *
  * Run: node scripts/testGazette.js
  */
 
-// ── Mock the models BEFORE requiring the service ─────────────────────────────
+// ── Mock the models BEFORE requiring the services ────────────────────────────
 const Module = require("module");
 const origResolve = Module._resolveFilename;
 const stubs = {};
@@ -14,7 +15,16 @@ function stub(path, value) {
     stubs[require("path").resolve(__dirname, "..", path) + ".js"] = value;
 }
 
-stub("models/fighterModel", { findById: () => Promise.resolve(null) });
+// Holders the tests mutate per-case.
+global.__savedFighter = null;   // the doc most recently passed to .save()
+global.__nextFighter = null;    // doc returned by Fighter.findById
+global.__nextFight = null;      // doc returned by Fight.findOne(...).lean()
+global.__nextSponsorship = null;
+global.__activityCreateCalls = [];
+
+stub("models/fighterModel", {
+    findById: () => Promise.resolve(global.__nextFighter),
+});
 stub("models/fightModel", {
     findOne: () => ({
         populate: function () { return this; },
@@ -22,11 +32,14 @@ stub("models/fightModel", {
         lean:     () => Promise.resolve(global.__nextFight ?? null),
     }),
 });
-stub("models/mainEventModel", {
+stub("models/sponsorshipModel", {
     findOne: () => ({
         sort: function () { return this; },
-        lean: () => Promise.resolve(global.__nextCard ?? null),
+        lean: () => Promise.resolve(global.__nextSponsorship ?? null),
     }),
+});
+stub("models/activityLogModel", {
+    create: (doc) => { global.__activityCreateCalls.push(doc); return Promise.resolve(doc); },
 });
 
 const origLoad = Module._load;
@@ -36,237 +49,183 @@ Module._load = function (request, parent, ...rest) {
     return origLoad.call(this, request, parent, ...rest);
 };
 
-// ── Now require the service ──────────────────────────────────────────────────
-const { composeGazette } = require("../services/gazetteService");
+// ── Now require the services under test ──────────────────────────────────────
+const gazetteService = require("../services/gazetteService");
+const activityLogService = require("../services/activityLogService");
 const { makeGazetteRng, fnv1a } = require("../utils/gazetteRng");
 
 let pass = 0, fail = 0, failed = [];
 function assert(label, actual, expected) {
     const ok = JSON.stringify(actual) === JSON.stringify(expected);
     if (ok) pass++;
-    else { fail++; failed.push({ label, actual, expected }); console.log(`  ❌ ${label}`); console.log(`     actual: ${JSON.stringify(actual)}`); console.log(`     expected: ${JSON.stringify(expected)}`); }
+    else { fail++; failed.push(label); console.log(`  FAIL ${label}`); console.log(`     actual:   ${JSON.stringify(actual)}`); console.log(`     expected: ${JSON.stringify(expected)}`); }
 }
-function section(t) { console.log(`\n── ${t} ──`); }
+function assertTrue(label, cond) { assert(label, !!cond, true); }
+function section(t) { console.log(`\n-- ${t} --`); }
+
+/** Build a savable mock fighter doc (mimics a Mongoose doc enough for regen). */
 function mkFighter(overrides = {}) {
-    return {
+    const doc = {
         _id: "fighter-1",
         firstName: "Jake", lastName: "Torres",
         promotionTier: "Regional Pro",
+        overallRating: 42,
         winStreak: 0,
         consecutiveLosses: 0,
+        iron: 1500,
         record: { wins: 1, losses: 0, draws: 0, koWins: 0, subWins: 0 },
         ranking: { rank: null, fightsInTier: 1 },
-        notoriety: { score: 100, peakTier: "Unknown" },
-        gazette: { lastShownDate: null, lastNotorietyLogged: 0, rankBeforeLastFight: null, tierBeforeLastFight: null, fameTierBeforeLastLogin: null },
+        notoriety: { score: 100, peakTier: "UNKNOWN" },
+        energy: { current: 100, max: 100 },
+        injuries: [],
+        badgesEarned: [],
+        gymRanks: {},
+        careerTrainingSessions: 0,
+        acceptedFightId: null,
         mentalResetRequired: false,
+        activeGymId: null,
+        nemesis: { opponentName: null, lossCount: 0 },
+        pvpOnboarding: { unlocked: false },
+        gazette: { issueNumber: 0 },
         ...overrides,
     };
+    doc.markModified = function () {};
+    doc.save = function () { global.__savedFighter = this; return Promise.resolve(this); };
+    return doc;
 }
 
-// ── RNG tests ────────────────────────────────────────────────────────────────
-section("Deterministic RNG");
-const r1 = makeGazetteRng("2026-05-12", "abc123");
-const r2 = makeGazetteRng("2026-05-12", "abc123");
-assert("Same seed → same first roll",  r1.next(), r2.next());
-const r3 = makeGazetteRng("2026-05-13", "abc123");
-const v1 = makeGazetteRng("2026-05-12", "abc123").next();
-const v3 = r3.next();
-assert("Different date → different roll", v1 !== v3, true);
+async function regenWith(fighter, type = "FIGHT_WIN", fight = null, sponsorship = null) {
+    global.__nextFighter = fighter;
+    global.__nextFight = fight;
+    global.__nextSponsorship = sponsorship;
+    global.__savedFighter = null;
+    await gazetteService.regenerateGazette(fighter._id, type);
+    return global.__savedFighter ? global.__savedFighter.gazette : null;
+}
 
-const r4 = makeGazetteRng("2026-05-12", "abc123");
-const picks1 = [r4.pick([1,2,3,4,5]), r4.pick([1,2,3,4,5]), r4.pick([1,2,3,4,5])];
-const r5 = makeGazetteRng("2026-05-12", "abc123");
-const picks2 = [r5.pick([1,2,3,4,5]), r5.pick([1,2,3,4,5]), r5.pick([1,2,3,4,5])];
-assert("Deterministic picks repeat", picks1, picks2);
-assert("Empty array pick returns null", r4.pick([]), null);
-assert("FNV-1a is deterministic", fnv1a("hello"), fnv1a("hello"));
+const WIN_KO_FIGHT = {
+    outcome: "KO/TKO",
+    opponentId: { name: "Darius Vance" },
+    opponentRankAtFight: 8,
+    finishRound: 2,
+    rounds: ["r1", "r2"],
+    offerType: "Even",
+};
 
-// ── Composer: spotlight fallback when no fight history ────────────────────────
-section("Composer — fallbacks");
 (async () => {
-    global.__nextFight = null;
-    global.__nextCard = null;
-    const f = mkFighter({ record: { wins: 1, losses: 0, draws: 0 } });
-    const out = await composeGazette(f);
-    assert("Spotlight fallback when no triggers", out.stories[0]?.type, "spotlight");
+    // ── RNG determinism (per issueNumber) ───────────────────────────────────
+    section("Deterministic RNG (per issueNumber)");
+    const a1 = makeGazetteRng("1", "abc123");
+    const a2 = makeGazetteRng("1", "abc123");
+    assert("Same (issue,fighter) -> same first roll", a1.next(), a2.next());
+    const b = makeGazetteRng("2", "abc123");
+    assertTrue("Different issue -> different roll",
+        makeGazetteRng("1", "abc123").next() !== b.next());
+    assert("FNV-1a deterministic", fnv1a("hello"), fnv1a("hello"));
 
-    // ── Mental reset overrides everything ──
-    global.__nextFight = null;
-    const fmr = mkFighter({ mentalResetRequired: true, consecutiveLosses: 3 });
-    const outMr = await composeGazette(fmr);
-    assert("Mental reset is lead", outMr.stories[0]?.type, "mental_reset_required");
-    assert("Mental reset zone is lead", outMr.stories[0]?.zone, "lead");
+    // ── issueNumber increments 0 -> 1 ───────────────────────────────────────
+    section("Issue number increments");
+    const f1 = mkFighter();
+    const g1 = await regenWith(f1, "FIGHT_WIN", WIN_KO_FIGHT);
+    assert("issueNumber 0 -> 1", g1.issueNumber, 1);
+    assertTrue("updatedAt set", g1.updatedAt instanceof Date);
+    assert("triggeringEventType captured", g1.triggeringEventType, "FIGHT_WIN");
 
-    // ── Last fight win KO ──
-    global.__nextFight = {
-        outcome: "KO/TKO",
-        opponentId: { name: "Darius Vance", fixedRank: 8 },
-        opponentRankAtFight: 8,
-        finishRound: 2,
-        rounds: ["r1","r2"],
-        offerType: "Even",
-    };
-    const fwko = mkFighter({ winStreak: 1, record: { wins: 2, losses: 0, draws: 0 } });
-    const outKo = await composeGazette(fwko);
-    assert("Last fight KO renders as last_fight type", outKo.stories[0]?.type, "last_fight");
-    assert("KO headline mentions Round",
-        outKo.stories[0]?.headline?.includes("ROUND") || outKo.stories[0]?.headline?.includes("KO") || outKo.stories[0]?.headline?.includes("KNOCKOUT") || outKo.stories[0]?.headline?.includes("LIGHTS") || outKo.stories[0]?.headline?.includes("CANVAS") || outKo.stories[0]?.headline?.includes("STATEMENT"),
-        true);
+    const f2 = mkFighter({ gazette: { issueNumber: 7 } });
+    const g2 = await regenWith(f2, "FIGHT_WIN", WIN_KO_FIGHT);
+    assert("issueNumber 7 -> 8", g2.issueNumber, 8);
 
-    // ── First Loss (standalone) ──
-    global.__nextFight = {
-        outcome: "Loss (decision)",
-        opponentId: { name: "Marcus Bell", fixedRank: 12 },
-        opponentRankAtFight: 12,
-        finishRound: null,
-        rounds: ["r1","r2","r3"],
-        offerType: "Hard",
-    };
-    const ffl = mkFighter({ winStreak: 0, consecutiveLosses: 1, record: { wins: 4, losses: 1, draws: 0 } });
-    const outFl = await composeGazette(ffl);
-    assert("First loss is lead", outFl.stories[0]?.type, "first_loss");
-
-    // ── First Loss in Title (composite) ──
-    global.__nextFight = {
-        outcome: "Loss (decision)",
-        opponentId: { name: "Marcus Bell", fixedRank: 1 },
-        opponentRankAtFight: 1,
-        finishRound: null,
-        rounds: ["r1","r2","r3"],
-        offerType: "TitleShot",
-    };
-    const fflt = mkFighter({ winStreak: 0, consecutiveLosses: 1, record: { wins: 4, losses: 1, draws: 0 } });
-    const outFlt = await composeGazette(fflt);
-    assert("First loss in title is lead", outFlt.stories[0]?.type, "first_loss_in_title");
-
-    // ── Title win ──
-    global.__nextFight = {
-        outcome: "KO/TKO",
-        opponentId: { name: "Victor Cruz", fixedRank: 1 },
-        opponentRankAtFight: 1,
-        finishRound: 3,
-        rounds: ["r1","r2","r3"],
-        offerType: "TitleShot",
-    };
-    const ftw = mkFighter({ winStreak: 1, record: { wins: 5, losses: 0, draws: 0 } });
-    const outTw = await composeGazette(ftw);
-    assert("Title fight win is lead", outTw.stories[0]?.type, "title_fight");
-
-    // ── Auto-promotion ──
-    global.__nextFight = {
-        outcome: "Decision (unanimous)",
-        opponentId: { name: "Jake Pruitt", fixedRank: 20 },
-        opponentRankAtFight: 20,
-        finishRound: null,
-        rounds: ["r1","r2","r3"],
-        offerType: "Even",
-    };
-    const fap = mkFighter({
-        record: { wins: 5, losses: 1, draws: 0 },
-        promotionTier: "Regional Pro",
-        gazette: { ...mkFighter().gazette, tierBeforeLastFight: "Amateur" },
-    });
-    const outAp = await composeGazette(fap);
-    assert("Auto-promotion is lead", outAp.stories[0]?.type, "auto_promotion");
-
-    // ── Rank entry ──
-    global.__nextFight = {
-        outcome: "Decision (unanimous)",
-        opponentId: { name: "Random NPC", fixedRank: 28 },
-        opponentRankAtFight: 28,
-        finishRound: null,
-        rounds: ["r1","r2","r3"],
-        offerType: "Even",
-    };
-    const fre = mkFighter({
-        record: { wins: 2, losses: 1, draws: 0 },
-        ranking: { rank: 30, fightsInTier: 3, entryRecordAtFight3: "2-1" },
-        gazette: { ...mkFighter().gazette, rankBeforeLastFight: null, tierBeforeLastFight: "Regional Pro" },
-    });
-    const outRe = await composeGazette(fre);
-    assert("Rank entry is lead", outRe.stories[0]?.type, "rank_entry");
-
-    // ── Rank jump (≥5) ──
-    global.__nextFight = {
-        outcome: "KO/TKO",
-        opponentId: { name: "Mid NPC", fixedRank: 10 },
-        opponentRankAtFight: 10,
-        finishRound: 2,
-        rounds: ["r1","r2"],
-        offerType: "Hard",
-    };
-    const frj = mkFighter({
+    // ── Builder cardinality ─────────────────────────────────────────────────
+    section("Builder cardinality");
+    const fc = mkFighter({
         winStreak: 1,
-        record: { wins: 6, losses: 1, draws: 0 },
-        ranking: { rank: 13, fightsInTier: 8 },
-        gazette: { ...mkFighter().gazette, rankBeforeLastFight: 18, tierBeforeLastFight: "Regional Pro" },
+        record: { wins: 2, losses: 0, draws: 0, koWins: 1, subWins: 0 },
+        activeGymId: "gym-1",
+        gymRanks: { ftw: { rank: 2 } },
+        injuries: [{ label: "Bruised Ribs", cannotFight: true, recoveryHoursLeft: 6 }],
+        careerTrainingSessions: 60,
+        pvpOnboarding: { unlocked: true },
+        nemesis: { opponentName: "Karl Wynn", lossCount: 1 },
     });
-    const outRj = await composeGazette(frj);
-    // Could be rank_jump lead or composite — rank_jump beats last_fight in priority
-    assert("Rank jump is lead", outRj.stories[0]?.type, "rank_jump");
+    const gc = await regenWith(fc, "FIGHT_WIN", WIN_KO_FIGHT, { brand: "IronWorks", rewardPerFight: 200, clause: {} });
+    assert("Sidebar exactly 4", gc.sidebarItems.length, 4);
+    assert("Secondary exactly 3", gc.secondaryStories.length, 3);
+    assertTrue("InBrief 4..6", gc.inBrief.length >= 4 && gc.inBrief.length <= 6);
+    assertTrue("Lead story present", gc.leadStory && gc.leadStory.type === "last_fight");
+    assertTrue("Lead has pullQuote", gc.leadStory.pullQuote && gc.leadStory.pullQuote.text);
+    assertTrue("Lead resultBand WIN", gc.leadStory.resultBand && gc.leadStory.resultBand.outcomeLabel === "WIN");
+    assert("campGrade degraded to null", gc.leadStory.resultBand.campGrade, null);
 
-    // ── Win streak milestone ──
-    global.__nextFight = {
-        outcome: "KO/TKO",
-        opponentId: { name: "NPC", fixedRank: 12 },
-        opponentRankAtFight: 12,
-        finishRound: 1,
-        rounds: ["r1"],
-        offerType: "Even",
-    };
-    const fws = mkFighter({
-        winStreak: 5,
-        record: { wins: 5, losses: 0, draws: 0 },
-        ranking: { rank: 10, fightsInTier: 5 },
-        gazette: { ...mkFighter().gazette, rankBeforeLastFight: 11, tierBeforeLastFight: "Regional Pro" },
+    // ── Sparse early-career fighter doesn't crash, still cardinal ────────────
+    section("Sparse early-career fighter");
+    const fsparse = mkFighter({ gazette: { issueNumber: 0 } });
+    const gs = await regenWith(fsparse, "BADGE_EARNED", null, null);
+    assert("Sparse: issue 1", gs.issueNumber, 1);
+    assert("Sparse: sidebar 4", gs.sidebarItems.length, 4);
+    assert("Sparse: secondary 3", gs.secondaryStories.length, 3);
+    assertTrue("Sparse: inBrief 4..6", gs.inBrief.length >= 4 && gs.inBrief.length <= 6);
+    assertTrue("Sparse: spotlight lead fallback", gs.leadStory.type === "spotlight");
+
+    // ── Old/legacy sparse gazette doc doesn't crash ─────────────────────────
+    section("Legacy gazette doc");
+    const flegacy = mkFighter({
+        gazette: {
+            lastShownDate: "2026-01-01", lastNotorietyLogged: 50,
+            rankBeforeLastFight: null, tierBeforeLastFight: null, fameTierBeforeLastLogin: "Unknown",
+            // NO issueNumber / new fields — must default cleanly.
+        },
     });
-    const outWs = await composeGazette(fws);
-    assert("Win streak (5) is lead", outWs.stories[0]?.type, "win_streak");
+    const gl = await regenWith(flegacy, "FIGHT_WIN", WIN_KO_FIGHT);
+    assert("Legacy: issue defaults 0 -> 1", gl.issueNumber, 1);
+    assert("Legacy: rankBeforeLastFight preserved", gl.rankBeforeLastFight, null);
 
-    // ── Notoriety delta in secondary ──
-    global.__nextFight = {
-        outcome: "Decision (unanimous)",
-        opponentId: { name: "NPC", fixedRank: 12 },
-        opponentRankAtFight: 12,
-        finishRound: null,
-        rounds: ["r1","r2","r3"],
-        offerType: "Even",
-    };
-    const fnd = mkFighter({
-        winStreak: 1,
-        record: { wins: 3, losses: 0, draws: 0 },
-        ranking: { rank: 14, fightsInTier: 3 },
-        notoriety: { score: 200, peakTier: "Prospect" },
-        gazette: { ...mkFighter().gazette, lastNotorietyLogged: 100, rankBeforeLastFight: 14, tierBeforeLastFight: "Regional Pro" },
-    });
-    const outNd = await composeGazette(fnd);
-    const hasNotoriety = outNd.stories.some((s) => s.type === "notoriety_gained" && s.zone !== "lead");
-    assert("Notoriety gained appears in secondary/filler", hasNotoriety, true);
+    // ── Missing fighter -> silent (no throw, no save) ───────────────────────
+    section("Missing fighter");
+    global.__nextFighter = null;
+    global.__savedFighter = null;
+    let threw = false;
+    try { await gazetteService.regenerateGazette("nope", "FIGHT_WIN"); }
+    catch (e) { threw = true; }
+    assert("Missing fighter does not throw", threw, false);
+    assert("Missing fighter does not save", global.__savedFighter, null);
 
-    // ── Deterministic stories: same fighter same date = same output ──
-    global.__nextFight = {
-        outcome: "KO/TKO",
-        opponentId: { name: "NPC", fixedRank: 8 },
-        opponentRankAtFight: 8,
-        finishRound: 2,
-        rounds: ["r1","r2"],
-        offerType: "Even",
-    };
-    const fdet = mkFighter({ winStreak: 1, record: { wins: 3, losses: 0, draws: 0 } });
-    const o1 = await composeGazette(fdet);
-    const o2 = await composeGazette(fdet);
-    assert("Same fighter+date = same headlines",
-        o1.stories.map((s) => s.headline),
-        o2.stories.map((s) => s.headline));
+    // ── Never-throw when a builder throws ───────────────────────────────────
+    section("Never-throw on builder error");
+    const fbad = mkFighter();
+    // Poison: make a field a builder reads blow up when accessed.
+    Object.defineProperty(fbad, "record", { get() { throw new Error("boom"); } });
+    let threw2 = false;
+    try { await regenWith(fbad, "FIGHT_WIN", WIN_KO_FIGHT); }
+    catch (e) { threw2 = true; }
+    assert("Builder throw is swallowed", threw2, false);
 
+    // ── activityLogService regen wiring ─────────────────────────────────────
+    section("activityLogService regen triggers");
+    // Allowlisted type -> regen runs (fighter saved).
+    const fAllow = mkFighter();
+    global.__nextFighter = fAllow;
+    global.__nextFight = WIN_KO_FIGHT;
+    global.__nextSponsorship = null;
+    global.__savedFighter = null;
+    global.__activityCreateCalls = [];
+    await activityLogService.log(fAllow._id, "FIGHT_WIN", "won a fight", {});
+    assert("log() wrote feed entry", global.__activityCreateCalls.length, 1);
+    assertTrue("Allowlisted type regenerated (saved)", global.__savedFighter != null);
+
+    // Non-allowlisted type -> NO regen (no save).
+    const fSkip = mkFighter();
+    global.__nextFighter = fSkip;
+    global.__savedFighter = null;
+    global.__activityCreateCalls = [];
+    await activityLogService.log(fSkip._id, "pvp_draw", "a draw", {});
+    assert("Non-allowlisted feed still written", global.__activityCreateCalls.length, 1);
+    assert("Non-allowlisted type did NOT regenerate", global.__savedFighter, null);
+
+    // ── Results ─────────────────────────────────────────────────────────────
     console.log("\n" + "=".repeat(50));
     console.log(`Results: ${pass} passed, ${fail} failed`);
     console.log("=".repeat(50));
-    if (fail > 0) {
-        failed.forEach((f) => console.log(`  - ${f.label}`));
-        process.exit(1);
-    } else {
-        console.log("\n✅ All gazette tests passed.");
-        process.exit(0);
-    }
+    if (fail > 0) { failed.forEach((l) => console.log(`  - ${l}`)); process.exit(1); }
+    console.log("\nAll gazette tests passed.");
+    process.exit(0);
 })();

@@ -1,189 +1,339 @@
-import { Fragment, memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight } from "lucide-react";
-import { api } from "../../api";
-import { storyLabel, pullQuoteFor, mastheadIssue } from "./gazetteContent";
 
 /**
- * The Octagon Gazette — daily newspaper modal (v2 vintage broadsheet).
+ * The Octagon Gazette — pure broadsheet renderer.
  *
- * Fires on the first login of each UTC day (gated by lastShownDate on the fighter).
- * Layout: masthead → "Breaking" headline section with a Last Fight Result score-box,
- * lead headline + deck → up to two labelled story columns (with pull-quotes) → a
- * bottom strip with the tagline and an "Enter the Gym" CTA. Dismiss via the close
- * button, the backdrop, Escape, or the CTA. Tapping a navigable story dismisses and
- * routes to that tab.
+ * Props:
+ *   open       — boolean
+ *   gazette    — fighter.gazette object (may be null / issue 0)
+ *   onClose    — () => void  (no backend call, just close)
+ *   onNavigate — (tab: string) => void  (closes then routes)
+ *
+ * No fetch, no dismiss API call. All data comes from the fighter prop.
  */
-export function GazetteModal({ open, fighterId, onDismiss, onNavigate }) {
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
+export function GazetteModal({ open, gazette, onClose, onNavigate }) {
+  // Escape key to close
+  useEffect(() => {
+    if (!open) return undefined;
+    const handler = (e) => { if (e.key === "Escape") onClose?.(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, onClose]);
 
-    useEffect(() => {
-        if (!open || !fighterId) return;
-        let cancelled = false;
-        setLoading(true);
-        (async () => {
-            try {
-                const res = await api.getGazette(fighterId);
-                if (!cancelled) setData(res);
-            } catch {
-                if (!cancelled) setData(null);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        })();
-        return () => { cancelled = true; };
-    }, [open, fighterId]);
+  if (!open) return null;
 
-    useEffect(() => {
-        if (!open) return undefined;
-        const handler = (e) => { if (e.key === "Escape") handleDismiss(); };
-        window.addEventListener("keydown", handler);
-        return () => window.removeEventListener("keydown", handler);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open]);
+  const isEmpty = !gazette?.issueNumber || !gazette?.leadStory;
 
-    async function handleDismiss(navigateAfter = null) {
-        if (submitting) return;
-        setSubmitting(true);
-        try { await api.dismissGazette(fighterId); } catch {}
-        setSubmitting(false);
-        if (navigateAfter && onNavigate) onNavigate(navigateAfter);
-        if (onDismiss) onDismiss();
-    }
+  // ── helpers ──────────────────────────────────────────────────────────
+  function handleNav(e, tab) {
+    e.stopPropagation();
+    if (tab) { onClose?.(); onNavigate?.(tab); }
+  }
 
-    const stories = data?.stories || [];
-    const lead = stories.find((s) => s.zone === "lead") || null;
-    const columns = stories.filter((s) => s.zone === "secondary").slice(0, 2);
-    const lastResult = data?.lastResult || null;
-    const twoCol = columns.length === 2;
+  function outcomeColor(label) {
+    if (!label) return "rgba(255,255,255,0.55)";
+    const l = label.toLowerCase();
+    if (l.includes("win") || l.includes("victor")) return "#4ADE80";
+    if (l.includes("loss") || l.includes("defeat")) return "#F87171";
+    return "#CBD5E1"; // draw / unknown
+  }
 
-    const dateLabel = useMemo(() => {
-        if (!data?.date) return "";
-        try {
-            const d = new Date(`${data.date}T00:00:00Z`);
-            return d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
-        } catch { return data.date; }
-    }, [data?.date]);
+  // Date from gazette.updatedAt — "Monday, June 15, 2026"
+  function formatDate(iso) {
+    if (!iso) return "";
+    try {
+      return new Date(iso).toLocaleDateString(undefined, {
+        weekday: "long", day: "numeric", month: "long", year: "numeric",
+      });
+    } catch { return ""; }
+  }
 
-    const issueLabel = useMemo(() => mastheadIssue(data?.date), [data?.date]);
+  // Roman numeral for vol number
+  const ROMAN_MAP = [
+    [1000,"M"],[900,"CM"],[500,"D"],[400,"CD"],[100,"C"],[90,"XC"],
+    [50,"L"],[40,"XL"],[10,"X"],[9,"IX"],[5,"V"],[4,"IV"],[1,"I"],
+  ];
+  function toRoman(n) {
+    let num = Math.max(1, Math.floor(n || 1));
+    let out = "";
+    for (const [v, s] of ROMAN_MAP) { while (num >= v) { out += s; num -= v; } }
+    return out;
+  }
 
-    const leadLabel = lead?.type === "event_result" ? "Main Event"
-        : lead?.type === "mental_reset_required" ? "Notice"
-        : "Breaking";
+  const volLabel = gazette?.volNumber != null
+    ? toRoman(gazette.volNumber)
+    : "XII";
 
-    if (!open) return null;
+  // Result band segments — omit null entries
+  function resultBandParts(band) {
+    if (!band) return [];
+    return [band.methodRound, band.record, band.campGrade].filter(Boolean);
+  }
 
-    // Brand-new player or empty gazette — close immediately without rendering.
-    if (!loading && data && stories.length === 0) {
-        setTimeout(() => handleDismiss(), 0);
-        return null;
-    }
+  return createPortal(
+    <div
+      className="gz2-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="The Octagon Gazette"
+      onClick={() => onClose?.()}
+    >
+      <div className="gz2-paper" onClick={(e) => e.stopPropagation()}>
 
-    const rankLine = lastResult
-        ? (lastResult.rankFrom != null && lastResult.rankTo != null && lastResult.rankFrom !== lastResult.rankTo)
-            ? `${lastResult.tier} · #${lastResult.rankFrom} → #${lastResult.rankTo}`
-            : (lastResult.rankTo != null ? `${lastResult.tier} · #${lastResult.rankTo}` : lastResult.tier)
-        : "";
+        {/* CLOSE */}
+        <button type="button" className="gz2-close" aria-label="Close" onClick={() => onClose?.()}>✕</button>
 
-    const resultLine = lastResult
-        ? (lastResult.isDraw
-            ? `${lastResult.winnerName} drew with ${lastResult.loserName}`
-            : `${lastResult.winnerName} def. ${lastResult.loserName}`)
-        : "";
+        {/* MASTHEAD */}
+        <div className="gz2-masthead">
+          <div className="gz2-mh-row1">
+            <div className="gz2-mh-meta">
+              <div>{isEmpty ? "Vol. — · No. —" : `Vol. ${volLabel} · No. ${gazette?.issueNumber ?? 1}`}</div>
+              <div>Established 2026</div>
+            </div>
+            <div className="gz2-mh-center">
+              <div className="gz2-mh-est">— The Fight Game's Paper of Record —</div>
+              <div className="gz2-mh-title">The Octagon Gazette</div>
+              <span className="gz2-mh-tagline">Every Career. Every Fight. Every Consequence.</span>
+            </div>
+            <div className="gz2-mh-meta gz2-mh-meta-right">
+              <div>{formatDate(gazette?.updatedAt)}</div>
+              <div>{gazette?.edition ?? ""}</div>
+            </div>
+          </div>
+          {!isEmpty && (
+            <div className="gz2-mh-strip">
+              <div className="gz2-mh-strip-text">{gazette?.fighterMeta ?? ""}</div>
+              <div className="gz2-mh-breaking">{gazette?.breakingLabel ?? "Breaking"}</div>
+              <div className="gz2-mh-strip-text">{gazette?.cashFameMeta ?? ""}</div>
+            </div>
+          )}
+        </div>
 
-    return createPortal(
-        <div className="gazette-modal-root" role="dialog" aria-modal="true" aria-label="The Octagon Gazette">
-            <div className="gazette-modal-backdrop" onClick={() => handleDismiss()} />
-            <div className="gz-paper">
-                <button type="button" className="gz-close" aria-label="Close" onClick={() => handleDismiss()}>✕</button>
+        {/* BODY */}
+        <div className="gz2-body">
 
-                <header className="gz-header">
-                    <div className="gz-established">— Established 2026 —</div>
-                    <div className="gz-name">The Octagon Gazette</div>
-                    <div className="gz-meta-bar">
-                        <span className="gz-meta-item">{issueLabel}</span>
-                        <span className="gz-date">{dateLabel}</span>
-                        <span className="gz-meta-item">The fight game's paper of record</span>
+          {/* ── EMPTY STATE ── */}
+          {isEmpty ? (
+            <div className="gz2-empty">
+              Nothing to report yet. Fight your first match and check back.
+            </div>
+          ) : (
+            <>
+              {/* ── LEAD ── */}
+              {(() => {
+                const lead = gazette.leadStory;
+                const band = lead?.resultBand ?? null;
+                const pq = lead?.pullQuote ?? null;
+                const bodyParas = Array.isArray(lead?.bodyParagraphs) ? lead.bodyParagraphs : [];
+                return (
+                  <>
+                    <div className="gz2-sec-rule">
+                      <span className="gz2-sec-rule-lbl">Last Fight Result</span>
+                      <div className="gz2-sec-rule-line" />
                     </div>
-                </header>
 
-                {loading && <div className="gz-loading">Printing the morning edition…</div>}
-
-                {!loading && (
-                    <div className="gz-body">
-                        <div className="gz-headline-section">
-                            <div className="gz-headline-label">{leadLabel}</div>
-
-                            {lastResult && (
-                                <div className="gz-score-box">
-                                    <div>
-                                        <div className="gz-score-label">Last Fight Result</div>
-                                        <div className="gz-score-result">{resultLine}</div>
-                                    </div>
-                                    <div className="gz-score-right">
-                                        <div className="gz-score-method">{lastResult.methodLabel}</div>
-                                        <div className="gz-score-label gz-score-sub">{rankLine}</div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {lead && (
-                                <div
-                                    className={lead.navigateTo ? "gz-lead-link" : undefined}
-                                    onClick={() => lead.navigateTo && handleDismiss(lead.navigateTo)}
-                                    style={lead.navigateTo ? { cursor: "pointer" } : undefined}
-                                >
-                                    <div className="gz-headline-hl">{lead.headline}</div>
-                                    {lead.body && <div className="gz-headline-deck">{lead.body}</div>}
-                                </div>
-                            )}
+                    <div className="gz2-lead-layout">
+                      {/* Lead main */}
+                      <div className="gz2-lead-main">
+                        {lead?.kicker && (
+                          <div className="gz2-lead-kicker" style={{ color: lead.kickerColor || "var(--gz2-acc)" }}>
+                            {lead.kicker}
+                          </div>
+                        )}
+                        {lead?.headline && <div className="gz2-lead-hl">{lead.headline}</div>}
+                        {lead?.deck && <div className="gz2-lead-deck">{lead.deck}</div>}
+                        <div className="gz2-lead-byline">
+                          Staff Reporter · {gazette?.fighterMeta ? gazette.fighterMeta.split("·")[0]?.trim() : ""} Bureau
                         </div>
 
-                        {columns.length > 0 && (
-                            <div className={`gz-stories-grid${twoCol ? " gz-two-col" : ""}`}>
-                                {columns.map((s, i) => {
-                                    const quote = pullQuoteFor(s, lastResult);
-                                    return (
-                                        <Fragment key={`col-${i}`}>
-                                            {twoCol && i === 1 && <div className="gz-col-divider" />}
-                                            <article
-                                                className={`gz-story${s.navigateTo ? " is-tappable" : ""}`}
-                                                onClick={() => s.navigateTo && handleDismiss(s.navigateTo)}
-                                            >
-                                                <div className="gz-story-label">{storyLabel(s.type)}</div>
-                                                <div className="gz-story-hl">{s.headline}</div>
-                                                {s.body && <div className="gz-story-body">{s.body}</div>}
-                                                {quote && (
-                                                    <div className="gz-pull-quote">
-                                                        <div className="gz-pull-quote-text">{quote}</div>
-                                                    </div>
-                                                )}
-                                            </article>
-                                        </Fragment>
-                                    );
-                                })}
-                            </div>
+                        {/* Result band */}
+                        {band && (
+                          <div className="gz2-result-band">
+                            {band.outcomeLabel && (
+                              <span className="gz2-rb-outcome" style={{ color: outcomeColor(band.outcomeLabel) }}>
+                                {band.outcomeLabel}
+                              </span>
+                            )}
+                            {resultBandParts(band).map((part, i) => (
+                              <span key={i}>
+                                <span className="gz2-rb-sep">·</span>
+                                <span className="gz2-rb-detail">{part}</span>
+                              </span>
+                            ))}
+                          </div>
                         )}
-                    </div>
-                )}
 
-                <div className="gz-bottom-strip">
-                    <div className="gz-bottom-tagline">The fight game's paper of record.</div>
-                    <button
-                        type="button"
-                        className="gz-enter-btn"
-                        onClick={() => handleDismiss()}
-                        disabled={submitting}
+                        {/* Body paragraphs with drop cap on first */}
+                        <div className="gz2-body-copy">
+                          {bodyParas.map((para, i) => (
+                            <p key={i} className={i === 0 ? "gz2-body-p gz2-drop-cap" : "gz2-body-p"}>
+                              {para}
+                            </p>
+                          ))}
+                          {pq && (
+                            <div className="gz2-pull-quote">
+                              <div className="gz2-pq-text">"{pq.text}"</div>
+                              {pq.source && <div className="gz2-pq-src">— {pq.source}</div>}
+                            </div>
+                          )}
+                        </div>
+
+                        {lead?.linkTarget && (
+                          <button
+                            type="button"
+                            className="gz2-inline-link"
+                            onClick={(e) => handleNav(e, lead.linkTarget)}
+                          >
+                            Full report →
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Sidebar */}
+                      <div className="gz2-lead-sidebar">
+                        {(Array.isArray(gazette.sidebarItems) ? gazette.sidebarItems.slice(0, 4) : []).map((item, i) => (
+                          <div key={i} className="gz2-lsb">
+                            {item.categoryLabel && (
+                              <div className="gz2-lsb-lbl" style={{ color: item.categoryColor || "var(--gz2-acc)" }}>
+                                {item.categoryLabel}
+                              </div>
+                            )}
+                            {item.headline && <div className="gz2-lsb-hl">{item.headline}</div>}
+                            {item.body && (
+                              <div
+                                className="gz2-lsb-body"
+                                dangerouslySetInnerHTML={{ __html: item.body }}
+                              />
+                            )}
+                            {item.goPill ? (
+                              <button
+                                type="button"
+                                className="gz2-go-pill"
+                                onClick={(e) => handleNav(e, item.linkTarget)}
+                              >
+                                {item.goPillLabel ?? "Go"} →
+                              </button>
+                            ) : item.linkTarget ? (
+                              <button
+                                type="button"
+                                className="gz2-inline-link"
+                                onClick={(e) => handleNav(e, item.linkTarget)}
+                              >
+                                View →
+                              </button>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+
+              {/* ── SECONDARY STORIES ── */}
+              {Array.isArray(gazette.secondaryStories) && gazette.secondaryStories.length > 0 && (() => {
+                const stories = gazette.secondaryStories.slice(0, 3);
+                // Build: [story, divider, story, divider, story] — insert dividers between
+                const cells = [];
+                stories.forEach((story, i) => {
+                  if (i > 0) cells.push({ type: "divider", key: `d${i}` });
+                  cells.push({ type: "story", story, key: `s${i}` });
+                });
+                return (
+                  <>
+                    <div className="gz2-sec-rule">
+                      <span className="gz2-sec-rule-lbl">Also in today's paper</span>
+                      <div className="gz2-sec-rule-line" />
+                    </div>
+                    <div
+                      className="gz2-secondary-row"
+                      style={{ gridTemplateColumns: cells.map((c) => c.type === "divider" ? "1px" : "1fr").join(" ") }}
                     >
-                        Enter the Gym
-                        <ArrowRight size={14} aria-hidden="true" />
-                    </button>
+                      {cells.map((cell) =>
+                        cell.type === "divider" ? (
+                          <div key={cell.key} className="gz2-ss-divider" />
+                        ) : (
+                          <div key={cell.key} className="gz2-ss">
+                            {cell.story.categoryLabel && (
+                              <div className="gz2-ss-lbl" style={{ color: cell.story.categoryColor || "var(--gz2-acc)" }}>
+                                {cell.story.categoryLabel}
+                              </div>
+                            )}
+                            {cell.story.headline && <div className="gz2-ss-hl">{cell.story.headline}</div>}
+                            {cell.story.body && (
+                              <div
+                                className="gz2-ss-body"
+                                dangerouslySetInnerHTML={{ __html: cell.story.body }}
+                              />
+                            )}
+                            {cell.story.linkTarget && (
+                              <button
+                                type="button"
+                                className="gz2-inline-link"
+                                onClick={(e) => handleNav(e, cell.story.linkTarget)}
+                              >
+                                Read more →
+                              </button>
+                            )}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+
+              {/* ── IN BRIEF ── */}
+              {Array.isArray(gazette.inBrief) && gazette.inBrief.length > 0 && (
+                <div className="gz2-in-brief">
+                  <div className="gz2-ib-head">In Brief</div>
+                  <div className="gz2-ib-grid">
+                    {gazette.inBrief.map((item, i) => (
+                      <div key={i} className="gz2-ib-item">
+                        <span className="gz2-ib-bull">■</span>
+                        <span>
+                          <span dangerouslySetInnerHTML={{ __html: item.text }} />
+                          {item.pillLabel && (
+                            <button
+                              type="button"
+                              className="gz2-go-pill gz2-go-pill-sm"
+                              onClick={(e) => handleNav(e, item.linkTarget)}
+                            >
+                              {item.pillLabel}
+                            </button>
+                          )}
+                          {!item.pillLabel && item.linkTarget && (
+                            <button
+                              type="button"
+                              className="gz2-inline-link"
+                              onClick={(e) => handleNav(e, item.linkTarget)}
+                            >
+                              →
+                            </button>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-            </div>
+              )}
+            </>
+          )}
         </div>
-    , document.body);
+
+        {/* FOOTER */}
+        <div className="gz2-footer">
+          <div className="gz2-gf-l">The fight game's paper of record.</div>
+          <button type="button" className="gz2-gf-close" onClick={() => onClose?.()}>
+            Close
+          </button>
+        </div>
+
+      </div>
+    </div>,
+    document.body
+  );
 }
 
 export default memo(GazetteModal);
