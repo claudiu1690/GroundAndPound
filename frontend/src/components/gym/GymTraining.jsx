@@ -163,6 +163,8 @@ export const GymTraining = memo(function GymTraining({
     // Inline rank-up error (e.g. "Need $1,500 (have $200)") shown at the CTA —
     // the app has no global message bar, so the failure is surfaced contextually.
     const [rankUpError, setRankUpError] = useState("");
+    // Inline join error (e.g. "Not enough cash — need $1,500"), same rationale.
+    const [joinError, setJoinError] = useState("");
 
     if (!fighter || !gym) return null;
 
@@ -248,9 +250,22 @@ export const GymTraining = memo(function GymTraining({
                             <Zap size={12} /> {energy}
                         </div>
                         {!isFree && !isActive && (
-                            <button type="button" className="gym-join-btn" onClick={() => onSwitchGym(gym._id)}>
-                                Join — ${gym.weeklyCost} / week
-                            </button>
+                            <div className="gym-join-wrap">
+                                <button
+                                    type="button"
+                                    className="gym-join-btn"
+                                    onClick={async () => {
+                                        setJoinError("");
+                                        const res = await onSwitchGym(gym._id);
+                                        if (res && res.ok === false) {
+                                            setJoinError(res.error || "Couldn't join this gym.");
+                                        }
+                                    }}
+                                >
+                                    Join — ${gym.weeklyCost} / week
+                                </button>
+                                {joinError && <div className="gym-join-error">{joinError}</div>}
+                            </div>
                         )}
                         {isActive && (
                             <span className="gym-membership-badge">

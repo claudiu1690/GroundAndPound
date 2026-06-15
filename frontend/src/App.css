@@ -1264,7 +1264,7 @@ code {
 /* ── PAPER ──────────────────────────────────────────────────── */
 .gz2-paper {
   position: relative;
-  width: 100%; max-width: 800px;
+  width: 100%; max-width: 1120px;
   background: var(--paper);
   border-radius: 3px;
   overflow: hidden;
@@ -1354,7 +1354,7 @@ code {
 
 /* ── LEAD LAYOUT ────────────────────────────────────────────── */
 .gz2-lead-layout {
-  display: grid; grid-template-columns: 1fr 190px;
+  display: grid; grid-template-columns: 1fr 260px;
   gap: 0; padding-bottom: 14px;
   border-bottom: 2px solid var(--ink2); margin-bottom: 14px;
 }
@@ -1821,6 +1821,8 @@ code {
 .gym-energy-lbl { font-size:10px; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; }
 .gym-join-btn { all:unset; box-sizing:border-box; font-family:var(--font-display); font-weight:800; font-size:13px; letter-spacing:1px; text-transform:uppercase; background:var(--c-accent); color:#FFF; border-radius:4px; padding:8px 20px; cursor:pointer; }
 .gym-join-btn:hover { background:#E8102E; }
+.gym-join-wrap { display:inline-flex; flex-direction:column; align-items:flex-end; gap:4px; }
+.gym-join-error { font-size:11px; font-weight:600; color:#F87171; text-align:right; max-width:220px; }
 .gym-membership-badge { font-family:var(--font-display); font-weight:700; font-size:12px; color:#3A9A4A; display:flex; align-items:center; gap:5px; }
 
 .rank-strip { background:var(--c-bg-tile); border-bottom:1px solid var(--c-border); padding:12px 24px; display:flex; align-items:center; gap:16px; flex-shrink:0; }
@@ -11036,6 +11038,8 @@ code {
   /* Training header wraps; energy pill + join button keep their place. */
   .gym-header-row2 { gap: 10px; }
   .gym-training .gym-join-btn { width: 100%; min-height: 44px; text-align: center; }
+  .gym-training .gym-join-wrap { width: 100%; align-items: stretch; }
+  .gym-training .gym-join-error { text-align: center; max-width: none; }
   /* Rank stepper is a strip — scroll-x only, never widens main content. */
   .gym-training .rank-strip { flex-wrap: wrap; }
   .gym-training .rank-strip-steps {

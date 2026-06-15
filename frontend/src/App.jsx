@@ -797,15 +797,17 @@ function App() {
 
   const handleSwitchGym = useCallback(
     async (gymId) => {
-      if (!fighter?._id) return;
-      setMessage("Joining gym...");
+      if (!fighter?._id) return { ok: false, error: "No fighter loaded." };
       try {
         const result = await api.switchGym(fighter._id, gymId);
         setMessage(result.message || "Gym membership activated.");
         loadFighter(fighter._id, { clearMessage: false });
         loadGyms();
+        return { ok: true };
       } catch (e) {
-        setMessage(e.message || "Failed to join gym");
+        // Returned to the gym view so it can show the reason inline (e.g.
+        // "Not enough cash — need $1,500") — there is no global message bar.
+        return { ok: false, error: e.message || "Couldn't join this gym." };
       }
     },
     [fighter?._id, loadFighter, loadGyms]
