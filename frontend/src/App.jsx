@@ -599,6 +599,17 @@ function App() {
     return () => clearInterval(t);
   }, [fighter?._id, loadFighter]);
 
+  // Surface the transient `message` state as an auto-dismissing notice toast.
+  // Many handlers (hospital, training, camp, account, etc.) call setMessage/onMessage
+  // on both error and success paths, but the app had no global surface for it — so
+  // those messages (e.g. "Not enough cash…") were silently dropped. This renders the
+  // latest one and clears it after a few seconds.
+  useEffect(() => {
+    if (!message) return undefined;
+    const t = setTimeout(() => setMessage(""), 4500);
+    return () => clearTimeout(t);
+  }, [message]);
+
   // One-time contender announcement — fire when pendingPromotion goes from
   // absent → set, once per (fighter, targetTier) lifecycle. The persistent
   // ContenderChecklist panel carries the info afterwards.
@@ -1089,6 +1100,22 @@ const handleGetOffers = useCallback(async () => {
 
       {/* ── POST-TRAINING TOASTS (after train, no message bar) ── */}
       <ToastContainer toasts={toasts} onDismiss={beginDismiss} />
+
+      {/* ── GLOBAL NOTICE TOAST — surfaces the `message` state (errors + key
+          successes from handlers across the app that have no inline surface). ── */}
+      {message && (
+        <div className="app-msg-toast" role="status" aria-live="polite">
+          <span className="app-msg-toast-text">{message}</span>
+          <button
+            type="button"
+            className="app-msg-toast-close"
+            aria-label="Dismiss"
+            onClick={() => setMessage("")}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <TierUpOverlay
         open={!!tierUpModal}

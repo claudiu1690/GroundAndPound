@@ -3361,6 +3361,29 @@ code {
   position: fixed; bottom: 52px; right: 20px; z-index: 1000;
   display: flex; flex-direction: column; gap: 12px; pointer-events: none;
 }
+
+/* ── Global notice toast (renders the App `message` state) ── */
+.app-msg-toast {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 9500; max-width: min(92vw, 540px);
+  display: flex; align-items: center; gap: 12px;
+  background: #1A1A1A; color: #F0F0F0;
+  border: 1px solid #2A2A2A; border-left: 3px solid var(--c-accent, #C8102E);
+  border-radius: 6px; padding: 11px 15px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  font-size: 13px; line-height: 1.4;
+  animation: appMsgIn 0.18s ease-out;
+}
+.app-msg-toast-text { flex: 1; }
+.app-msg-toast-close {
+  background: none; border: none; color: #888; cursor: pointer;
+  font-size: 13px; line-height: 1; padding: 2px; flex-shrink: 0;
+}
+.app-msg-toast-close:hover { color: #F0F0F0; }
+@keyframes appMsgIn {
+  from { opacity: 0; transform: translate(-50%, -8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
 .train-toast {
   background:#1E1E1E; border:1px solid #2A2A2A; border-left:5px solid #3A9A4A;
   border-radius:11px; padding:19px 22px; width:456px; pointer-events:all;
