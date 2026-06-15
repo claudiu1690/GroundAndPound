@@ -13894,6 +13894,16 @@ code {
   margin-top: 1px;
 }
 
+/* Clean slate — every offline challenge was repelled, nothing lost: positive (green) tone. */
+.pvp-odb-clean {
+  background: rgba(58, 154, 74, 0.07);
+  border-bottom-color: rgba(58, 154, 74, 0.2);
+}
+.pvp-odb-clean .pvp-odb-icon { color: #3A9A4A; }
+.pvp-odb-clean .pvp-odb-lead { color: #4ADE80; }
+.pvp-odb-clean .pvp-odb-link { color: #3A9A4A; }
+.pvp-odb-clean .pvp-odb-link:hover { color: #4ADE80; }
+
 .pvp-odb-content {
   font-size: 12px;
   color: #AAAAAA;

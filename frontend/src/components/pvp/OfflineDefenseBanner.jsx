@@ -14,6 +14,9 @@ export function OfflineDefenseBanner({ summary, onViewReport }) {
 
   const { heldCount, lostCount, totalDpChange, injuries } = summary;
 
+  // Tone: a clean slate (nothing lost) reads positive (green), not a red alarm.
+  const clean = (lostCount ?? 0) === 0;
+
   // DP string — use Unicode minus sign (U+2212) for negatives, never ASCII hyphen
   const dpStr =
     totalDpChange === 0
@@ -41,7 +44,7 @@ export function OfflineDefenseBanner({ summary, onViewReport }) {
   }
 
   return (
-    <div className="pvp-odb">
+    <div className={`pvp-odb${clean ? " pvp-odb-clean" : ""}`}>
       <Swords size={14} strokeWidth={2} className="pvp-odb-icon" />
       <div className="pvp-odb-content">
         <span className="pvp-odb-lead">{leadLine}</span>
