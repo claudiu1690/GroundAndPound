@@ -687,6 +687,12 @@ A PvP fight resolves with the **same physical and progression consequences as a 
 - **Anti-farm guard.** Stat XP from repeat fights against the same opponent in a week is reduced (×0.5 the 2nd, ×0.25 the 3rd+, mirroring the DP repeat penalty), so trading wins can't farm XP.
 - **Exception — placement.** A placement bout (§22.9) is the one fight where the *defender* takes no physical consequences (they never opted in); the attacker still does.
 
+### 22.11a Offline-defense notification
+Because attacks resolve while you're away, the game surfaces what happened the next time you're around — without auto-clearing before you've actually looked. Any unread defense result (a fight where you were the defender, not yet acknowledged) drives two indicators:
+- A small **red dot on the "Proving Ground" nav item** (every nav surface — topbar, sidebar, mobile) whenever you have unread defense results.
+- A **summary banner at the top of the Proving Ground Hub**: "⚔ Challenged while offline · N held · N lost · −X DP · You sustained a [injury]." (injury line only when one was sustained; multiple injuries are listed). It links **"View defense report →"**, which opens the **Career feed with the most consequential defense's breakdown drawer auto-opened** (the most recent loss; or, if every defense held, the most recent defense).
+The dot and banner **persist until you click "View defense report"** — merely opening the Hub or the Defense tab does not clear them, so a meaningful loss can't be missed. Reads are a peek (no acknowledgement); the click is the only action that marks the results seen. The summary rides the polled fighter payload (`fighter.pvpDefense`), so no extra request is needed for the dot.
+
 ### 22.12 Proving Ground badges
 Beyond the per-season belt/division badges paid at finalize (§22.6), the Proving Ground awards a catalog of **permanent achievement badges** that live on the Career Profile under a synthesized **Proving Ground** category (§20.2). They are awarded imperatively (idempotent) from two hooks — on PvP fight resolve and at season finalize — and never from PvE events. Placement bouts and draws never award win-gated badges. Batch 1:
 

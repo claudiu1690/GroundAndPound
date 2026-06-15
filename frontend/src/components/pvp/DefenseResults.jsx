@@ -87,12 +87,19 @@ export function DefenseResults({ myRecord, fighter, onBack, onGameplanChanged })
               const hasPhysCost  = healthBefore != null && healthAfter != null;
               const hpLost       = hasPhysCost ? healthBefore - healthAfter : 0;
 
+              // Outcome label — placement rows carry no DP/result, draws aren't a loss.
+              const isDraw    = r.method === "draw";
+              const isNeutral = isPlacement || isDraw;
+              const outcomeLabel = isPlacement ? "Placement" : isDraw ? "Draw" : won ? "Held" : "Lost";
+              const stripeColor  = isNeutral ? "#888888" : won ? "#3A9A4A" : "#C8102E";
+              const outcomeClass = isNeutral ? "" : won ? "pvp-def-outcome-w" : "pvp-def-outcome-l";
+
               return (
                 <div key={r.fightId} className="pvp-def-result-card">
-                  <div className="pvp-def-stripe" style={{ background: won ? "#3A9A4A" : "#C8102E" }} />
+                  <div className="pvp-def-stripe" style={{ background: stripeColor }} />
                   <div className="pvp-def-content">
-                    <div className={`pvp-def-outcome ${won ? "pvp-def-outcome-w" : "pvp-def-outcome-l"}`}>
-                      {won ? "Held" : "Lost"}
+                    <div className={`pvp-def-outcome ${outcomeClass}`}>
+                      {outcomeLabel}
                     </div>
                     <div className="pvp-def-info">
                       <div className="pvp-def-opp">{r.attackerName} challenged you</div>

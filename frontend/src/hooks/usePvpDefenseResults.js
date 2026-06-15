@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../api";
 
 /**
- * Fetches GET /pvp/defense-results (auto-acks on read)
+ * Fetches GET /pvp/defense-results with ack=false (peek — does not mark seen).
+ * The unread state is only cleared when the user explicitly clicks "View defense report"
+ * in the OfflineDefenseBanner, which calls api.pvpDefenseResults(true) directly.
  * Silent-refetch: loading only on first load (no prior data).
  */
 export function usePvpDefenseResults() {
@@ -19,7 +21,7 @@ export function usePvpDefenseResults() {
     }
     setError(null);
     try {
-      const res = await api.pvpDefenseResults();
+      const res = await api.pvpDefenseResults(false);
       setData(res);
     } catch (e) {
       setError(e.message || "Could not load defense results.");

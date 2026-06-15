@@ -1035,6 +1035,14 @@ const handleGetOffers = useCallback(async () => {
     setActiveTab("career");
   }, []);
 
+  // Deep-link: open a specific fight's breakdown drawer in the Career feed.
+  // Set by onOpenCareerFight (passed to PvpHub), consumed by CareerPage.
+  const [careerInitialFight, setCareerInitialFight] = useState(null);
+  const onOpenCareerFight = useCallback((fightId, kind = "pvp") => {
+    setCareerInitialFight({ fightId, kind });
+    setActiveTab("career");
+  }, []);
+
   // Show auth page if not logged in. When the user arrived via the
   // password-reset email link we land directly on the forgot-password "apply"
   // form by passing the token through.
@@ -1055,6 +1063,8 @@ const handleGetOffers = useCallback(async () => {
 
   const injuryCount = fighter?.injuries?.length ?? 0;
   const campActive  = !!fighter?.acceptedFightId;
+  // Unread offline-defense dot — derived from the fighter prop (updated by the 60s poll)
+  const pvpUnread = (fighter?.pvpDefense?.unreadCount ?? 0) > 0;
 
   return (
     <div className="app">
@@ -1212,6 +1222,7 @@ const handleGetOffers = useCallback(async () => {
                 >
                   <span className="nav-icon">{item.icon}</span>
                   {item.label}
+                  {item.id === "pvp" && pvpUnread && <span className="nav-dot" aria-label="Unread defense report" />}
                 </button>
               ) : (
                 <span key={i} className="tni disabled">
@@ -1256,6 +1267,7 @@ const handleGetOffers = useCallback(async () => {
                 >
                   <span className="nav-icon">{item.icon}</span>
                   {item.label}
+                  {item.id === "pvp" && pvpUnread && <span className="nav-dot" aria-label="Unread defense report" />}
                 </a>
               ) : (
                 <div key={i} className="sb-menu-item disabled">
@@ -1314,6 +1326,8 @@ const handleGetOffers = useCallback(async () => {
                 onRefreshFighter={loadFighter}
                 subTab={careerSubTab}
                 onSubTabChange={setCareerSubTab}
+                initialFight={careerInitialFight}
+                onInitialFightConsumed={() => setCareerInitialFight(null)}
               />
             </div>
           )}
@@ -1417,6 +1431,7 @@ const handleGetOffers = useCallback(async () => {
                 fighter={fighter}
                 onNavigate={handleNavTab}
                 onRefreshFighter={loadFighter}
+                onOpenCareerFight={onOpenCareerFight}
               />
             </div>
           )}
@@ -1529,6 +1544,7 @@ const handleGetOffers = useCallback(async () => {
         </button>
         <button type="button" className={`m-nav-item ${activeTab === "pvp" ? "act" : ""}`} onClick={() => handleNavTab("pvp")}>
           <Crosshair size={17} strokeWidth={2.2} /><span>PVP</span>
+          {pvpUnread && <span className="nav-dot" aria-label="Unread defense report" />}
         </button>
         <button type="button" className={`m-nav-item ${mobileDrawerOpen ? "act" : ""}`} onClick={() => setMobileDrawerOpen(true)}>
           <Menu size={17} strokeWidth={2.2} /><span>More</span>
@@ -1577,6 +1593,7 @@ const handleGetOffers = useCallback(async () => {
                     >
                       <span className="nav-icon">{item.icon}</span>
                       {item.label}
+                      {item.id === "pvp" && pvpUnread && <span className="nav-dot" aria-label="Unread defense report" />}
                     </a>
                   ) : (
                     <div key={i} className="sb-menu-item disabled">

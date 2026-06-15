@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CareerSubTabs } from "./CareerSubTabs";
 import { CareerFeed } from "../CareerFeed";
 import { ProfilePane } from "./ProfilePane";
@@ -12,7 +12,7 @@ import { FightDrawer } from "../fights/breakdown/FightDrawer";
  * Drawer mount: push-left layout (flex row). Feed flex:1, drawer fixed 420px.
  * On mobile the drawer becomes a bottom-sheet overlay.
  */
-export function CareerPage({ fighter, fighterId, refreshKey, onMessage, onRefreshFighter, subTab, onSubTabChange }) {
+export function CareerPage({ fighter, fighterId, refreshKey, onMessage, onRefreshFighter, subTab, onSubTabChange, initialFight, onInitialFightConsumed }) {
   // Controlled when subTab/onSubTabChange are provided (e.g. deep-link from the
   // dashboard "open profile" click); otherwise self-managed, default "feed".
   const [internal, setInternal] = useState("feed");
@@ -21,6 +21,18 @@ export function CareerPage({ fighter, fighterId, refreshKey, onMessage, onRefres
 
   // Fight drawer state — null = closed, { fightId, kind } = open
   const [openFight, setOpenFight] = useState(null);
+
+  // Deep-link: when App passes an initialFight (from PvpHub's "View defense report"),
+  // force the feed sub-tab and open the drawer for that fight, then immediately
+  // consume it so closing the drawer doesn't re-open it.
+  useEffect(() => {
+    if (initialFight) {
+      setTab("feed");
+      setOpenFight(initialFight);
+      onInitialFightConsumed?.();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFight]);
 
   const handleOpenFight = (fightRef) => {
     setOpenFight(fightRef);

@@ -1064,6 +1064,99 @@ async function listDefenseResults(fighterId, ack = true) {
 }
 
 /**
+ * Aggregate a list of unread defense-result rows (as produced by
+ * {@link listDefenseResults}) into a compact summary for the nav dot + PVP-Hub
+ * banner. Pure — no I/O, fully unit-testable.
+ *
+ * Classification per row (newest-first input):
+ *  - placement/neutral: `isPlacement || noDpAtStake` — counts toward unreadCount
+ *    only; neither held nor lost; 0 DP; no injuries collected.
+ *  - held: not placement AND (`youWon === true` OR `method === "draw"`).
+ *  - lost: not placement AND `youWon === false` AND `method !== "draw"` —
+ *    contributes its (≤0) `dpChange` and its injuries.
+ *
+ * @param {Array<Object>} results newest-first defense rows.
+ * @returns {{
+ *   unreadCount: number,
+ *   heldCount: number,
+ *   lostCount: number,
+ *   totalDpChange: number,   // integer, always <= 0
+ *   injuries: string[],      // distinct, first-seen order, from lost rows only
+ *   reportFightId: string|null,
+ *   reportFightKind: "pvp"|null
+ * }}
+ */
+function buildDefenseSummary(results) {
+    if (!Array.isArray(results) || results.length === 0) {
+        return {
+            unreadCount: 0,
+            heldCount: 0,
+            lostCount: 0,
+            totalDpChange: 0,
+            injuries: [],
+            reportFightId: null,
+            reportFightKind: null,
+        };
+    }
+
+    let heldCount = 0;
+    let lostCount = 0;
+    let totalDpChange = 0;
+    const injurySet = new Set(); // preserves first-seen order
+    let firstLostRow = null;
+
+    for (const r of results) {
+        const isPlacement = r.isPlacement || r.noDpAtStake;
+        if (isPlacement) {
+            // neutral / informational row — unreadCount only.
+            continue;
+        }
+
+        const isHeld = r.youWon === true || r.method === "draw";
+        const isLost = r.youWon === false && r.method !== "draw";
+
+        if (isHeld) {
+            heldCount++;
+        } else if (isLost) {
+            lostCount++;
+            totalDpChange += Number(r.dpChange) || 0;
+            for (const inj of (r.injuriesSustained || [])) {
+                injurySet.add(inj);
+            }
+            if (!firstLostRow) {
+                firstLostRow = r; // newest-first input → first lost = most recent loss
+            }
+        }
+    }
+
+    // Most impactful loss = most recent lost row; fall back to most recent unread.
+    const reportRow = firstLostRow || results[0];
+
+    return {
+        unreadCount: results.length,
+        heldCount,
+        lostCount,
+        totalDpChange,
+        injuries: [...injurySet],
+        reportFightId: reportRow ? String(reportRow.fightId) : null,
+        reportFightKind: reportRow ? "pvp" : null,
+    };
+}
+
+/**
+ * Peek a fighter's unread offline-defense results (ack=false — does NOT mark
+ * them seen) and aggregate them into a summary. `listDefenseResults` is the
+ * single producer of the row shape; this only aggregates.
+ *
+ * @param {string} fighterId
+ * @returns {Promise<ReturnType<typeof buildDefenseSummary>>}
+ */
+async function summarizeUnreadDefenses(fighterId) {
+    const { results } = await listDefenseResults(fighterId, false);
+    return buildDefenseSummary(results);
+}
+
+/**
  * Paginated fight history (attacker + defender rows) for a fighter in a season.
  */
 async function listFights(seasonId, fighterId, { page = 1, limit = 25 } = {}) {
@@ -1213,6 +1306,8 @@ function divisionLabelFor(fight, isAttacker) {
 module.exports = {
     resolveFight: resolveFightForAttacker,
     listDefenseResults,
+    buildDefenseSummary,
+    summarizeUnreadDefenses,
     listFights,
     setDefenseGameplan,
     getFightBreakdown,

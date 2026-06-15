@@ -12,6 +12,7 @@ import { DefenseResults } from "./DefenseResults";
 import { SeasonEndModal } from "./SeasonEndModal";
 import { NewSeasonModal } from "./NewSeasonModal";
 import { ReadOnlyProfile } from "./ReadOnlyProfile";
+import { OfflineDefenseBanner } from "./OfflineDefenseBanner";
 import { api } from "../../api";
 
 const TABS = [
@@ -32,7 +33,7 @@ const TABS = [
  * button). Dismissing either calls POST /pvp/acknowledge-season so the
  * banner doesn't reappear on subsequent visits.
  */
-export function PvpHub({ fighter, onNavigate, onRefreshFighter }) {
+export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFight }) {
   const weightClass = fighter?.weightClass ?? "featherweight";
   const fighterId = fighter?._id;
 
@@ -44,6 +45,8 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter }) {
   const [showSeasonEnd, setShowSeasonEnd] = useState(false);
   const [showNewSeason, setShowNewSeason] = useState(false);
   const [ackDone, setAckDone] = useState(false);
+  // Optimistic hide: banner disappears instantly on click before the refetch lands
+  const [defenseAcked, setDefenseAcked] = useState(false);
 
   // Profile view-swap state
   const [viewingProfileId, setViewingProfileId] = useState(null);
@@ -105,6 +108,22 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter }) {
     // Refresh the global fighter so the energy bar reflects the 15-energy PVP cost
     // immediately, instead of waiting for the next 60s energy poll.
     if (onRefreshFighter && fighter?._id) onRefreshFighter(fighter._id, { clearMessage: false });
+  }
+
+  /**
+   * Called from the OfflineDefenseBanner "View defense report →" button.
+   * This is the ONLY path that acks (marks defense results as read).
+   * Optimistically hides the banner, acks via the API, then refreshes the
+   * fighter so the unread dot clears app-wide on the next render.
+   * If reportFightId is available, navigates to the Career feed with the
+   * fight drawer auto-opened.
+   */
+  async function handleViewDefenseReport() {
+    const d = fighter?.pvpDefense;
+    setDefenseAcked(true);                              // optimistic hide
+    try { await api.pvpDefenseResults(true); } catch {} // ACK — the ONLY ack path
+    if (onRefreshFighter && fighter?._id) onRefreshFighter(fighter._id, { clearMessage: false }); // clears dot app-wide on next render
+    if (onOpenCareerFight && d?.reportFightId) onOpenCareerFight(d.reportFightId, d.reportFightKind || "pvp");
   }
 
   /**
@@ -298,6 +317,12 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter }) {
               </div>
             </div>
           </div>
+
+          {/* Offline defense banner — only shown when there are unread results */}
+          <OfflineDefenseBanner
+            summary={defenseAcked ? null : fighter?.pvpDefense}
+            onViewReport={handleViewDefenseReport}
+          />
 
           {/* Tabs */}
           <div className="pvp-tabs">

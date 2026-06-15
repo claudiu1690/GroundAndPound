@@ -404,7 +404,7 @@ pvpRecord:(playerId)=>request(`/pvp/record/${playerId}`),
 pvpOpponents:()=>request(`/pvp/opponents`),
 pvpFight:(body)=>request(`/pvp/fight`,{method:"POST",body:JSON.stringify(body)}),
 pvpFights:(seasonId,page=1,limit=25)=>request(`/pvp/fights/${seasonId}?page=${page}&limit=${limit}`),
-pvpDefenseResults:()=>request(`/pvp/defense-results`),
+pvpDefenseResults:(ack=true)=>request(`/pvp/defense-results?ack=${ack?"true":"false"}`), // ack=false peeks (no mark-seen); used for the offline-defense nav dot/banner. ack=true marks seen — called only on "View defense report".
 pvpSetDefenseGameplan:(gameplan)=>request(`/pvp/defense-gameplan`,{method:"POST",body:JSON.stringify({gameplan})}),
 pvpHof:(wc)=>request(wc?`/pvp/hof?weightClass=${wc}`:`/pvp/hof`),
 pvpCurrentSeason:(wc)=>request(`/pvp/season/current/${wc}`),

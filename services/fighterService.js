@@ -256,7 +256,29 @@ async function getFighterById(id) {
     // Energy lives in Redis (authoritative) + in-memory snapshot; no version guard
     // needed. Reconcile on the final winning doc before serializing.
     await reconcileEnergy(fighter);
-    return toPublicFighter(fighter);
+
+    const pub = toPublicFighter(fighter);
+    // Attach the unread offline-defense summary so the nav dot + PVP-Hub banner
+    // read it off the fighter payload with no extra request and no ack. This is
+    // the most-hit endpoint, so a defense-query failure must NEVER break the load
+    // — fall back to an all-zero summary. LAZY require avoids the circular dep
+    // (pvpFightService already requires fighterService at the top level).
+    try {
+        const pvpFightService = require("./pvpFightService");
+        pub.pvpDefense = await pvpFightService.summarizeUnreadDefenses(String(id));
+    } catch (e) {
+        console.error("[fighter] pvpDefense summary failed:", e.message);
+        pub.pvpDefense = {
+            unreadCount: 0,
+            heldCount: 0,
+            lostCount: 0,
+            totalDpChange: 0,
+            injuries: [],
+            reportFightId: null,
+            reportFightKind: null,
+        };
+    }
+    return pub;
 }
 
 /**

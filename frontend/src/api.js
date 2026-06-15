@@ -352,8 +352,8 @@ export const api = {
     request(`/pvp/fight`, { method: "POST", body: JSON.stringify(body) }),
   pvpFights: (seasonId, page = 1, limit = 25) =>
     request(`/pvp/fights/${seasonId}?page=${page}&limit=${limit}`),
-  pvpDefenseResults: () =>
-    request(`/pvp/defense-results`),
+  pvpDefenseResults: (ack = true) =>
+    request(`/pvp/defense-results?ack=${ack ? "true" : "false"}`),
   pvpSetDefenseGameplan: (gameplan) =>
     request(`/pvp/defense-gameplan`, { method: "POST", body: JSON.stringify({ gameplan }) }),
   pvpHof: (wc) =>
