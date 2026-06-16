@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, AlertTriangle, Lock, FileX } from "lucide-react";
+import { X, AlertTriangle, Lock, FileX, Zap } from "lucide-react";
 import { api } from "../../api";
 
 function formatIron(n) {
@@ -222,7 +222,7 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
 // Shared rewards block (Active + Offer)
 // ───────────────────────────────────────────────────────────────
 
-function RewardsBlock({ perFight, onComplete, fame, penalty }) {
+function RewardsBlock({ perFight, onComplete, fame, penalty, drinks = 0 }) {
     return (
         <>
             <div className="contract-rewards">
@@ -239,6 +239,14 @@ function RewardsBlock({ perFight, onComplete, fame, penalty }) {
                 <span className="contract-reward-label">On Complete</span>
                 <span className="contract-reward-val positive-fame">+{fame} <span>fame</span></span>
             </div>
+            {drinks > 0 && (
+                <div className="contract-reward contract-reward-drinks">
+                    <span className="contract-reward-label">On Complete</span>
+                    <span className="contract-reward-val positive-drinks">
+                        <Zap size={11} /> +{drinks} <span>energy shot{drinks !== 1 ? "s" : ""}</span>
+                    </span>
+                </div>
+            )}
             <div className="contract-penalty"><AlertTriangle size={12} /> If broken — −{penalty} fame</div>
         </>
     );
@@ -331,6 +339,7 @@ function ActiveCard({ contract, onDrop, busy }) {
                     onComplete={contract.rewardBonus}
                     fame={contract.fameBonusOnComplete}
                     penalty={contract.famePenaltyOnBreak}
+                    drinks={contract.rewardDrinks}
                 />
                 <div className="contract-earned">
                     <span className="contract-earned-label">Earned so far</span>
@@ -360,6 +369,7 @@ function OfferCard({ offer, onAccept, busy, slotsFull }) {
                     onComplete={offer.rewardBonus}
                     fame={offer.fameBonusOnComplete}
                     penalty={offer.famePenaltyOnBreak}
+                    drinks={offer.rewardDrinks}
                 />
                 <div className="contract-meta-row">
                     <span className="contract-meta-label">Duration</span>

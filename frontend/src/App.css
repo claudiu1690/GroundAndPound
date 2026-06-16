@@ -6215,6 +6215,8 @@ code {
 }
 .contracts-tab .contract-reward-val.positive { color: var(--c-amber-bright); }
 .contracts-tab .contract-reward-val.positive-fame { color: #4ADE80; }
+.contracts-tab .contract-reward-val.positive-drinks { color: #3B82F6; display: inline-flex; align-items: center; gap: 4px; }
+.contracts-tab .contract-reward-val.positive-drinks svg { color: #3B82F6; }
 .contracts-tab .contract-reward-val .contract-reward-unit,
 .contracts-tab .contract-reward-val span {
   font-size: 11px;
