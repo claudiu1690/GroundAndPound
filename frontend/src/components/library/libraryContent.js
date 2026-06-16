@@ -686,7 +686,7 @@ export const LIBRARY_ARTICLES = [
             "When a season ends, everyone who fought at least once is paid by the division they finished in. The belt holder's reward replaces the Champion reward — it doesn't stack on top of it.",
             {
                 type: "table",
-                headers: ["Final division", "Iron", "Fame", "Energy drinks", "Badge"],
+                headers: ["Final division", "Cash", "Fame", "Energy drinks", "Badge"],
                 rows: [
                     ["Prospect", "500", "500", "0", "—"],
                     ["Contender", "1,200", "1,200", "0", "—"],

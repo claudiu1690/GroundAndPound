@@ -12,7 +12,7 @@ specialty gyms, prepares for fights in a training camp, and competes through fiv
 promotion tiers — from unknown amateur to GCS champion.
 
 **Design pillars**
-- Every action costs a resource (energy, iron/cash, or fame) and returns something measurable.
+- Every action costs a resource (energy, cash, or fame) and returns something measurable.
 - Progression is stat-driven and continuous — no XP levels, no prestige resets, **no retirement / no end state**.
 - Fights are deterministic simulations driven by stats, camp preparation, and weight-cut gambles.
 - The player is never permanently locked out: injuries always heal over time, and new fighters are protected from fight-blocking injuries.
@@ -24,7 +24,7 @@ promotion tiers — from unknown amateur to GCS champion.
 Single-page web client. Top to bottom: a collapsible **Message Bar**, the **App Body**
 (left sidebar + content panel), and a fixed **App Footer**.
 
-- **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — iron, fame, rank, class, gym, backstory — badges, stat meters, active injuries) and the nav menu: **Home, Training, Fight, Career, Rankings, Contracts, Hospital, Shop, Events, Media, Proving Ground**.
+- **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — cash, fame, rank, class, gym, backstory — badges, stat meters, active injuries) and the nav menu: **Home, Training, Fight, Career, Rankings, Contracts, Hospital, Shop, Events, Media, Proving Ground**.
 - **Footer:** game wordmark, contextual status badges (injury count → Hospital, camp → Fight, Fame → Fame drawer), Sign Out.
 - **Overlays:** Training toast stack, Tier-Up / Belt-Won overlays, Fight-block popup (energy / injury), Fame drawer, Octagon Gazette, Onboarding Tutorial, Fighter Report, Camp Summary, Badge-unlock celebration.
 
@@ -96,7 +96,7 @@ Energy is the universal action resource. Max **100**, regenerates **+1/min** of 
 
 Five tiers. A tier's **signing fee is its base fight purse** (no fee is ever paid).
 
-| Tier | Overall Range | Fight Energy Cost | Base Purse (Iron) |
+| Tier | Overall Range | Fight Energy Cost | Base Purse (Cash) |
 |---|---|---|---|
 | Amateur | 0–30 | 10 | 400 |
 | Regional Pro | 30–48 | 15 | 2,000 |
@@ -122,7 +122,7 @@ energy (each fight costs the tier's energy amount above; energy regenerates 1/mi
 ## 6. Gym & Training System
 
 One free community gym is always available; **ten** specialty gyms require a weekly
-iron membership. Only one paid membership is active at a time (paying a new gym
+cash membership. Only one paid membership is active at a time (paying a new gym
 cancels the previous). **Ranks earned at a gym persist permanently**, even after switching.
 
 ### 6.1 The Free Gym
@@ -158,7 +158,7 @@ No stat caps from gyms — any gym can train any stat toward the global 95 train
 | 3 | +5% XP to focus stats, permanently. |
 | 4 | A utility perk plus a permanent profile badge. |
 
-Wins count toward ranks only at the **active paid gym**, and only if the win type matches the gym's discipline (KO/TKO for striking gyms, Submission for BJJ, Decision for tactical gyms, etc.). Ranks 3 and 4 require an iron payment on top of the training/win thresholds.
+Wins count toward ranks only at the **active paid gym**, and only if the win type matches the gym's discipline (KO/TKO for striking gyms, Submission for BJJ, Decision for tactical gyms, etc.). Ranks 3 and 4 require an cash payment on top of the training/win thresholds.
 
 ### 6.5 Rank-4 Perks & Badges
 | Gym | Badge | Perk Effect |
@@ -233,7 +233,7 @@ Spend **fame** to force a specific opponent into the next Hard slot.
 | Same Tier | 200 fame | +50 each |
 | Stretch (+1 Tier) | 800 fame | +75 each |
 
-Cost capped at 3,000 fame, min 100. An active callout can be cancelled for a **full fame refund** before the fight. The called-out opponent appears in the next Hard slot with a gold border and full Fighter Report intel. A callout **win**: +25% iron, +30% fame (grudge), and the **Called It** badge. Losing only burns the spent fame.
+Cost capped at 3,000 fame, min 100. An active callout can be cancelled for a **full fame refund** before the fight. The called-out opponent appears in the next Hard slot with a gold border and full Fighter Report intel. A callout **win**: +25% cash, +30% fame (grudge), and the **Called It** badge. Losing only burns the spent fame.
 
 ---
 
@@ -311,7 +311,7 @@ Before every fight the player picks a weight-cut strategy — a stamina gamble w
 | Moderate | −5 to +10 (random) | 5% |
 | Aggressive | −12 to +18 (random) | 20% |
 
-**On a missed weight:** the stamina roll is forced **negative-only** (you can never gain stamina *and* miss), the iron purse is cut **−20%**, and you take a **−200 fame penalty**. The Titan **Strength Reserve** perk raises the bad-roll floor by 3.
+**On a missed weight:** the stamina roll is forced **negative-only** (you can never gain stamina *and* miss), the cash purse is cut **−20%**, and you take a **−200 fame penalty**. The Titan **Strength Reserve** perk raises the bad-roll floor by 3.
 
 ### 10.2 Fight Outcomes
 KO/TKO (win), Submission (win), Decision Unanimous (win), Decision Split (win), Draw, Loss — Decision, Loss — KO/TKO (health → 0), Loss — Submission.
@@ -327,7 +327,7 @@ KO/TKO (win), Submission (win), Decision Unanimous (win), Decision Split (win), 
 
 Multiplied by an outcome modifier: KO/TKO 1.3×, Sub 1.25×, Dec Unanimous 1.1×, Dec Split 1.05×, Draw 1.0×, Loss by Decision 0.8×, Loss by Finish 0.7×. A win in **comeback mode** adds ×1.5.
 
-### 10.4 Iron Earnings
+### 10.4 Cash Earnings
 Base purse = the tier's signing fee, scaled by outcome: **Win 100%**, **Draw 50%**, **Loss 70%**. Modifiers on top: higher notoriety tier +5%→+50%; comeback +30%; active **Respect** flag on opponent (and you win) +15%; callout win +25%; missing weight −20%.
 
 ### 10.5 Fight Description (round-by-round breakdown)
@@ -358,7 +358,7 @@ Silent contracts with rivals, created by interview tones **or** Podcast segments
 | Flag | Window | On Win | On Lapse |
 |---|---|---|---|
 | Beef | 4 fights | +30% fame (grudge) | −150 fame |
-| Respect | 6 fights | +15% iron purse | Silent expiry |
+| Respect | 6 fights | +15% cash purse | Silent expiry |
 
 Every completed fight decrements unmatched flags. Meeting the flagged opponent — win or lose — consumes the flag (no penalty even on a loss). Lifetime beefs-started drives the **Controversy** / **Serial Beefcake** badges.
 
@@ -366,10 +366,10 @@ Every completed fight decrements unmatched flags. Meeting the flagged opponent �
 
 ## 12. Notoriety (Fame)
 
-Career fame score. Sets per-fight iron bonuses and unlocks recognition. Never fully resets — floored at the fighter's peak tier.
+Career fame score. Sets per-fight cash bonuses and unlocks recognition. Never fully resets — floored at the fighter's peak tier.
 
 ### 12.1 Tiers
-| Tier | Score Range | Iron Bonus |
+| Tier | Score Range | Cash Bonus |
 |---|---|---|
 | Unknown | 0–999 | +0% |
 | Prospect | 1,000–4,999 | +5% |
@@ -404,13 +404,13 @@ Winning a Title Shot +200; Defeating the Nemesis +150; Comeback win +150; First 
 
 ## 13. Sponsorship Contracts
 
-Sign sponsor deals that pay per-fight iron + lump-sum clause bonuses.
+Sign sponsor deals that pay per-fight cash + lump-sum clause bonuses.
 
 ### 13.1 Slot Cap by Fame Tier
 Unknown 0, Prospect 1, Rising Star 2, Contender 2, Star 3, Legend 4.
 
 ### 13.2 How Contracts Work
-A pool of **4 sponsor offers refreshes every 7 days**, gated by fame tier. Active contracts pay per-fight iron; completing the clause pays bonus iron + fame and closes successfully; breaking ends with a fame penalty; time-limited clauses expire silently. Dropping costs half the break penalty. Sponsors completed/broken/dropped this week don't reappear until the next rotation (anti-farm). Some contracts also award **Energy Drinks** (`rewardDrinks` 2–4) — see §15.
+A pool of **4 sponsor offers refreshes every 7 days**, gated by fame tier. Active contracts pay per-fight cash; completing the clause pays bonus cash + fame and closes successfully; breaking ends with a fame penalty; time-limited clauses expire silently. Dropping costs half the break penalty. Sponsors completed/broken/dropped this week don't reappear until the next rotation (anti-farm). Some contracts also award **Energy Drinks** (`rewardDrinks` 2–4) — see §15.
 
 ### 13.3 Clause Types
 Win Next N · Finish Next N · Win Any N · Land One KO · No Weight Miss · No Finish Loss.
@@ -419,16 +419,16 @@ Win Next N · Finish Next N · Win Any N · Land One KO · No Weight Miss · No 
 
 ## 14. Events: Fight Card Predictions
 
-The Events tab runs a weekly NPC fight card the player bets on for fame and iron; it resolves automatically at the end of its 7-day window.
+The Events tab runs a weekly NPC fight card the player bets on for fame and cash; it resolves automatically at the end of its 7-day window.
 
 - **The card:** 5 fights from non-champion GCS fighters — 2 Prelim (OVR 70–87), 2 Main Card (OVR 88+), 1 Headliner (highest combined-OVR pair).
 - **Predictions:** pick a side (A / Draw / B) and a method (KO/TKO, Sub, Decision); locks are final; any subset may be locked.
 
 | Slot | Exact (Winner+Method) | Winner Only | Wrong Winner |
 |---|---|---|---|
-| Prelim | +100 fame, +200 iron | +30 fame | −20 fame |
-| Main Card | +200 fame, +400 iron | +75 fame | −40 fame |
-| Headliner | +300 fame, +500 iron | +100 fame | −50 fame |
+| Prelim | +100 fame, +200 cash | +30 fame | −20 fame |
+| Main Card | +200 fame, +400 cash | +75 fame | −40 fame |
+| Headliner | +300 fame, +500 cash | +100 fame | −50 fame |
 
 On resolution, every NPC fighter's record and history update (the GCS roster accumulates real history). A multi-fight reveal modal shows results on the first Events visit after resolution.
 
@@ -436,10 +436,10 @@ On resolution, every NPC fighter's record and history update (the GCS roster acc
 
 ## 15. The Shop & Premium Items
 
-The Shop sells consumables for cash (iron). A separate premium currency, the **Energy Drink**, is mostly *earned* through play and can also be bought in bundles.
+The Shop sells consumables for cash. A separate premium currency, the **Energy Drink**, is mostly *earned* through play and can also be bought in bundles.
 
 ### 15.1 Cash Items
-| Item | Effect | Price (Iron) |
+| Item | Effect | Price (Cash) |
 |---|---|---|
 | Energy Shot | +30 energy, instant | 600 |
 | Training Boosters | +X% XP to focus stats for N training sessions | 500–1,900 (by tier) |
@@ -468,7 +468,7 @@ Each episode picks **two** segments from the catalog (auto-generates an episode 
 
 | Segment | Reward | Notes |
 |---|---|---|
-| Recap | +100 fame, +150 iron | After ≥1 completed fight. |
+| Recap | +100 fame, +150 cash | After ≥1 completed fight. |
 | Breakdown | +200 fame | Technical division analysis. |
 | Trash a Rival | +300 fame | Writes a **Beef** flag on a same-tier target. |
 | Show Respect | +100 fame | Writes a **Respect** flag on a target. |
@@ -506,7 +506,7 @@ Read-only history of podcast episodes, documentary, appearances, and post-fight 
 | Torn Ligament | Sparring | −10 STR, −10 LEG | 6 days | Fighting |
 | Concussion | KO/TKO or Sub loss | −2 CHN | 4 days | Fighting + sparring |
 
-**Healing model:** every injury ticks down once per 24h and auto-clears — **no permanent dead ends**. The Hospital shows a live countdown. Auto-heal injuries clear free over time (iron can skip the wait); doctor-required injuries (Cut, Broken Nose, Concussion, Torn Ligament) also auto-heal but block fighting/sparring while active, so waiting has a real cost.
+**Healing model:** every injury ticks down once per 24h and auto-clears — **no permanent dead ends**. The Hospital shows a live countdown. Auto-heal injuries clear free over time (cash can skip the wait); doctor-required injuries (Cut, Broken Nose, Concussion, Torn Ligament) also auto-heal but block fighting/sparring while active, so waiting has a real cost.
 
 ### 17.2 New-Fighter Injury Grace
 During a fighter's **first 3 fights**, no fight-blocking injury (Concussion, Cut, Torn Ligament) is ever inflicted (fights or sparring). Non-blocking injuries can still occur. After 3 recorded fights the grace expires.
@@ -515,10 +515,10 @@ During a fighter's **first 3 fights**, no fight-blocking injury (Concussion, Cut
 
 ## 18. The Hospital
 
-Iron-paid services to skip recovery, fast-clear blocking injuries, or restore HP.
+Cash-paid services to skip recovery, fast-clear blocking injuries, or restore HP.
 
 - **Doctor Visit:** clears one doctor-required injury — Cut (10E/200), Broken Nose (10E/400), Concussion (20E/1,500), Torn Ligament (20E/2,000).
-- **Skip Recovery:** clears one auto-heal injury — Bruised Rib 600, Sprained Ankle 800, Broken Hand 1,200 (iron only).
+- **Skip Recovery:** clears one auto-heal injury — Bruised Rib 600, Sprained Ankle 800, Broken Hand 1,200 (cash only).
 - **Health Restoration:** Quick Patch (+25 HP / 250), Recovery Bay (+50 HP / 400), Full Restoration (→100 HP / 700). Cost pro-rates to HP actually delivered.
 - **Full Recovery Package:** heals every active injury at a 15% bulk discount (2+ injuries).
 
@@ -528,7 +528,7 @@ No tier gating on any service.
 
 ## 19. Comeback Mode & The Nemesis System
 
-- **Comeback Mode:** any loss activates it. Next fight's XP ×1.5 and iron +30%; winning earns the **Comeback Kid** badge (once per career) and clears the mode. No "Mental Reset" — a losing streak only freezes fame (§12.5) and activates comeback.
+- **Comeback Mode:** any loss activates it. Next fight's XP ×1.5 and cash +30%; winning earns the **Comeback Kid** badge (once per career) and clears the mode. No "Mental Reset" — a losing streak only freezes fame (§12.5) and activates comeback.
 - **Nemesis:** an opponent who beats you becomes your Nemesis (only one at a time). They appear in offers and promise **+150 fame** for the rematch win (even while fame is frozen). Two straight title-shot losses make that champion the Nemesis. Defeating them clears the flag; promotion past a lower-tier Nemesis clears it automatically.
 
 ---
@@ -538,7 +538,7 @@ No tier gating on any service.
 ### 20.1 Career Page
 The **Career** tab has two sub-tabs:
 - **Feed** — reverse-chronological timeline (see §20.4).
-- **Profile** — the player's full profile: the customized banner (same cosmetic banner as the sidebar; no avatar), pinned badges, a "Customize Banner" entry, three cards (Stats / Career / **Championship Belts**), the full **Badge grid**, plus Media Career and PVP History (empty — PVP is not implemented).
+- **Profile** — the player's full profile: the customized banner (same cosmetic banner as the sidebar; no avatar), pinned badges, a "Customize Banner" entry, three cards (Stats / Career / **Championship Belts**), the full **Badge grid**, plus Media Career and **PvP History** (your Proving Ground record + recent fights — see §22.13).
 
 The dashboard player-identity card is clickable and deep-links to the Profile sub-tab.
 
@@ -574,7 +574,7 @@ A persistent in-game newspaper — **always available, always current**. It is n
 
 ## 21. Onboarding Tutorial
 
-New accounts run a guided tooltip sequence through the core loop: fighter profile → gym → first training session → request/read a fight offer → camp (Fighter Report, session selection, weight cut) → fight result and fame → rankings → events → hospital. Ends with a completion modal granting a **500-iron signing bonus**. Legacy accounts are marked complete and never see it.
+New accounts run a guided tooltip sequence through the core loop: fighter profile → gym → first training session → request/read a fight offer → camp (Fighter Report, session selection, weight cut) → fight result and fame → rankings → events → hospital. Ends with a completion modal granting a **$500 signing bonus**. Legacy accounts are marked complete and never see it.
 
 ---
 
@@ -631,7 +631,7 @@ Matchmaking surfaces up to **5** opponents from your season pool, expanding an O
 ### 22.6 Seasons, Twists & Rewards
 Seasons run **70 days**. Each season carries one **twist** that rewards a style of finish: *Iron Circuit* (standard), *Blood Sport* (KO/sub +25%), *Iron Fist* (KO +30%), *Ground War* (sub +30%), *The Marathon* (decision +20%), *The Contenders* (streak bonus from 3 wins). At season end, every player with at least one fight is paid by their final division; the belt reward **replaces** the Champion reward (no stack):
 
-| Final division | Iron | Fame | Energy drinks | Badge |
+| Final division | Cash | Fame | Energy drinks | Badge |
 |---|---|---|---|---|
 | Prospect | 500 | 500 | 0 | — |
 | Contender | 1,200 | 1,200 | 0 | — |
@@ -664,7 +664,7 @@ A staged entry path softens the cold start so a newcomer is never farmed or hope
 - **Placement matches.** A player's **first 3 PvP fights ever** are placement bouts: they run the real fight engine but award **0 DP to both sides**, with no streak, no rivalry, and no repeat-penalty contribution — and the **defender's record is left completely untouched** (placement players can only be attackers; they're hidden from matchmaking as defenders). After fight 3 the player is seeded by their placement record: **3 wins → Contender / 400 DP, 2 → Prospect / 200, 1 → Prospect / 100, 0 → Prospect / 0**. *(Season-1 exception: skipped — Season-1 entrants start Prospect / 0 immediately.)*
 - **New Competitor Shield.** Granted once, at placement completion: the player **cannot be challenged for 7 days or until they make their first attack**, whichever comes first (going on offense forfeits the protection). Shielded players still appear on opponent cards with a "Protected" pill but can't be challenged. *(Season-1 exception: not granted.)*
 - **Mid-season catch-up.** A player whose record is created **more than 14 days after season start** gets a 7-day window in which **DP gains are ×2** (the final multiplier in the DP chain; gains only, never losses). **Capped: it does not apply once the player reaches Elite or Champion**, so it accelerates a late joiner to mid-ladder without rocketing them into belt contention. *(Season-1 exception: not applied — everyone joins together.)*
-- **First-season bonus.** The first time a player completes any PvP season (≥1 fight) they receive a one-time **+500 iron / +100 fame** on top of their normal division rewards. *(Applies in Season 1.)*
+- **First-season bonus.** The first time a player completes any PvP season (≥1 fight) they receive a one-time **+500 cash / +100 fame** on top of their normal division rewards. *(Applies in Season 1.)*
 
 **Season-1 exception summary:** unlock gate APPLIES; placement, shield, and catch-up are SKIPPED; first-season bonus APPLIES. Detected via `season.seasonNumber === 1` at record creation.
 
@@ -683,7 +683,7 @@ A PvP fight resolves with the **same physical and progression consequences as a 
 - **Injuries.** Both fighters roll the **same injury system** as PvE: a KO/sub loss guarantees a Concussion; otherwise a single fight-injury roll (FIQ- and tier-weighted). These are **real injuries** — they appear in the Hospital, heal over time, and a fight-blocking injury gates **both** your PvP fights *and* your PvE career until it heals or you visit the doctor. The new-fighter injury grace (§17.2) still applies.
 - **Stat XP.** Both fighters earn post-fight stat XP from the same §10.3 table — so PvP is a real (if uncontrollable, all-stats) progression avenue, including the 96–99 fight-XP-only band.
 - **Applied to both fighters, online or offline.** A defender takes full HP loss, injury rolls, and XP even while logged out (their defense-results screen reports what it cost them). The defender is reconciled to their true current state before the fight; a fighter with a fight-blocking injury **cannot be challenged** (shown "Recovering"), which also caps how badly an offline player can be ground down.
-- **What's NOT shared.** PvP keeps its own economy — DP, season rewards, and the 15-energy attack cost — and does **not** pay the PvE iron purse, notoriety, or trigger nemesis/comeback. The attacker pays 15 energy; the defender pays no energy.
+- **What's NOT shared.** PvP keeps its own economy — DP, season rewards, and the 15-energy attack cost — and does **not** pay the PvE cash purse, notoriety, or trigger nemesis/comeback. The attacker pays 15 energy; the defender pays no energy.
 - **Anti-farm guard.** Stat XP from repeat fights against the same opponent in a week is reduced (×0.5 the 2nd, ×0.25 the 3rd+, mirroring the DP repeat penalty), so trading wins can't farm XP.
 - **Exception — placement.** A placement bout (§22.9) is the one fight where the *defender* takes no physical consequences (they never opted in); the attacker still does.
 
@@ -705,15 +705,24 @@ Beyond the per-season belt/division badges paid at finalize (§22.6), the Provin
 
 Batch 1 adds **no new persisted fields** — every condition reads existing fight-doc, record, ladder, or `badgesEarned` data. (Tiered lifetime grind badges — career KO/sub/defense/volume counts — are a planned Batch 2 that needs a lifetime counter subdoc.)
 
+### 22.13 PvP history & records
+Every Proving Ground fight is recorded and surfaced in three places:
+
+- **Proving Ground → History tab.** A reverse-chronological log of your PvP fights — both your attacks and the defenses that resolved against you while offline — each row showing outcome + method, the opponent, and the DP swing, with the full round-by-round breakdown openable per fight.
+- **Career Profile → PvP History card.** The Profile sub-tab carries a PvP record + recent-fights card (reads `GET /pvp/record/:fighterId`), so your ladder history sits alongside your PvE career on one profile. Viewing another fighter's read-only profile (§22.10) shows their PvP history too.
+- **Career Feed.** PvP results also write to the unified career feed (§20.4) as `pvp_*` entries, and those fight rows open the same breakdown drawer as PvE fights — so the Octagon Gazette and feed treat a Proving Ground bout as a first-class career event.
+
+Defense results additionally drive the offline-defense banner + nav dot (§22.11a) until you open the report.
+
 ---
 
 ## 23. System Interconnections
 
-The core loop: spend energy to train at a gym → training earns XP → XP raises stats → higher stats raise Overall → a higher rating qualifies for better gyms and title shots. Before each fight, run a camp (conditional bonuses) and pick a weight-cut gamble; the fight pays iron, notoriety, and XP.
+The core loop: spend energy to train at a gym → training earns XP → XP raises stats → higher stats raise Overall → a higher rating qualifies for better gyms and title shots. Before each fight, run a camp (conditional bonuses) and pick a weight-cut gamble; the fight pays cash, notoriety, and XP.
 
-Notoriety is both a meter and an economy: spent on callouts (forced matchups with full intel), it gates sponsorship slots, and it's earned/lost through fights, event predictions, and media. Beef/Respect flags create grudge and rematch incentives across the division. The Shop and earned Energy Drinks let the player convert iron/achievement into tempo (energy, XP, fight buffs).
+Notoriety is both a meter and an economy: spent on callouts (forced matchups with full intel), it gates sponsorship slots, and it's earned/lost through fights, event predictions, and media. Beef/Respect flags create grudge and rematch incentives across the division. The Shop and earned Energy Drinks let the player convert cash/achievement into tempo (energy, XP, fight buffs).
 
-The **Proving Ground** (§22) is a parallel economy: the same trained stats and OVR that drive the PvE career also determine PvP matchmaking and fight outcomes, and season-end PvP rewards pay back into the shared currencies (iron, fame, energy drinks, badges) — so ladder climbing feeds the career and vice versa, without either path gating the other.
+The **Proving Ground** (§22) is a parallel economy: the same trained stats and OVR that drive the PvE career also determine PvP matchmaking and fight outcomes, and season-end PvP rewards pay back into the shared currencies (cash, fame, energy drinks, badges) — so ladder climbing feeds the career and vice versa, without either path gating the other.
 
 ---
 
