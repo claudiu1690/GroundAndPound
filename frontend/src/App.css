@@ -1695,6 +1695,144 @@ code {
 .hospital-tab .full-recovery-btn { padding: 8px 16px; font-size: 12px; }
 .hospital-tab .treat-cost { font-size: 11px; color: var(--text-muted); text-align: center; }
 
+/* ── HOLOGRAPHIC BODY MAP (Active Injuries) ─────────────────── */
+.hospital-tab .bm-card {
+  position: relative;
+  max-width: 760px;
+  margin: 0 auto;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0E0E0E;
+}
+.hospital-tab .bm-bg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;           /* full figure, scaled small + centred */
+  object-position: center;
+  opacity: 0.55;
+  z-index: 0;
+  user-select: none;
+}
+.hospital-tab .bm-vignette {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% 45%, transparent 40%, rgba(14,14,14,0.55) 100%),
+    linear-gradient(to bottom,
+      rgba(20,20,20,0.6) 0%, transparent 14%,
+      transparent 88%, rgba(14,14,14,0.9) 100%);
+}
+.hospital-tab .bm-svg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 2; pointer-events: none; overflow: visible;
+}
+.hospital-tab .bm-head {
+  position: relative; z-index: 4;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(59,130,246,0.18);
+  background: linear-gradient(180deg, rgba(10,14,20,0.85), rgba(10,14,20,0.2));
+}
+.hospital-tab .bm-head-title {
+  font-family: var(--font-display); font-weight: 800; font-size: 10px;
+  letter-spacing: 2.5px; text-transform: uppercase; color: #7DC0FF;
+}
+.hospital-tab .bm-head-count {
+  font-family: var(--font-display); font-weight: 700; font-size: 9px;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted);
+}
+.hospital-tab .bm-body {
+  position: relative; z-index: 3;
+  display: grid; grid-template-columns: 1fr 230px 1fr;
+  align-items: stretch;
+  min-height: 400px;
+  padding: 14px 0;
+}
+.hospital-tab .inj-col {
+  display: flex; flex-direction: column; justify-content: space-between;
+  gap: 10px; padding: 8px 12px;
+}
+.hospital-tab .sil-center { pointer-events: none; }
+
+/* Injury card on the body map */
+.hospital-tab .inj-card {
+  position: relative;
+  background: rgba(16,16,18,0.9);
+  border: 1px solid var(--c-border);
+  border-left-width: 3px;
+  border-radius: 6px;
+  padding: 9px 11px;
+  backdrop-filter: blur(2px);
+}
+.hospital-tab .inj-card.major    { border-left-color: #C8102E; }
+.hospital-tab .inj-card.moderate { border-left-color: #C87A10; }
+.hospital-tab .inj-card-name-row { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+.hospital-tab .inj-card-name {
+  font-family: var(--font-display); font-weight: 800; font-size: 13px;
+  text-transform: uppercase; letter-spacing: .5px; color: #F0F0F0;
+}
+.hospital-tab .inj-card-sev {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 2px;
+}
+.hospital-tab .inj-card.major .inj-card-sev   { background: rgba(200,16,46,.12); color: #F87171; border: 1px solid rgba(200,16,46,.25); }
+.hospital-tab .inj-card.moderate .inj-card-sev { background: rgba(200,122,16,.14); color: var(--c-amber-bright); border: 1px solid rgba(200,122,16,.25); }
+.hospital-tab .inj-card-blocks { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+.hospital-tab .inj-card-blocks:empty { display: none; }
+.hospital-tab .inj-card-block {
+  font-size: 8.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 2px;
+  background: rgba(200,16,46,.1); color: var(--c-accent); border: 1px solid rgba(200,16,46,.2);
+}
+.hospital-tab .inj-card-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 5px; }
+.hospital-tab .inj-card-timer { font-size: 10px; color: var(--text-muted); margin-bottom: 7px; }
+.hospital-tab .inj-card-timer strong { color: var(--c-amber-bright); }
+.hospital-tab .inj-card-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.hospital-tab .inj-card-actions:empty { display: none; }
+.hospital-tab .inj-card .treat-btn { padding: 6px 11px; font-size: 10px; letter-spacing: .5px; }
+.hospital-tab .treat-cost-inline { font-weight: 600; font-size: 9px; opacity: .8; letter-spacing: .3px; }
+
+/* Connector dots (anchor where the SVG dashed line terminates) */
+.hospital-tab .inj-card[data-side="left"]::after,
+.hospital-tab .inj-card[data-side="right"]::before {
+  content: ''; position: absolute; top: 50%;
+  width: 10px; height: 10px; border-radius: 50%; border: 2px solid;
+  transform: translateY(-50%);
+}
+.hospital-tab .inj-card[data-side="left"]::after  { right: -6px; }
+.hospital-tab .inj-card[data-side="right"]::before { left: -6px; }
+.hospital-tab .inj-card.major[data-side="left"]::after,
+.hospital-tab .inj-card.major[data-side="right"]::before     { border-color: #C8102E; background: rgba(200,16,46,0.3); }
+.hospital-tab .inj-card.moderate[data-side="left"]::after,
+.hospital-tab .inj-card.moderate[data-side="right"]::before  { border-color: #C87A10; background: rgba(200,122,16,0.25); }
+/* Cards with no anatomical anchor (unmapped injury type) hide their connector dot. */
+.hospital-tab .inj-card.no-anchor::after,
+.hospital-tab .inj-card.no-anchor::before { display: none; }
+
+/* Healthy empty state (replaces the body map when there are no injuries) */
+.hospital-tab .bm-healthy {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--c-bg-tile); border: 1px solid rgba(58,154,74,.3);
+  border-left: 3px solid #3A9A4A; border-radius: 7px; padding: 18px 20px;
+}
+.hospital-tab .bm-healthy-icon { color: #3A9A4A; flex-shrink: 0; display: flex; }
+.hospital-tab .bm-healthy-text { display: flex; flex-direction: column; gap: 2px; }
+.hospital-tab .bm-healthy-text strong { font-size: 14px; color: #F0F0F0; }
+.hospital-tab .bm-healthy-text span { font-size: 12px; color: var(--text-muted); }
+
+/* Mobile: drop the figure, stack the cards as a simple list */
+@media (max-width: 640px) {
+  .hospital-tab .bm-bg,
+  .hospital-tab .bm-vignette,
+  .hospital-tab .bm-svg { display: none; }
+  .hospital-tab .bm-body { grid-template-columns: 1fr; min-height: auto; padding: 14px; }
+  .hospital-tab .sil-center { display: none; }
+  .hospital-tab .inj-col { justify-content: flex-start; gap: 10px; padding: 0; }
+  .hospital-tab .inj-card[data-side="left"]::after,
+  .hospital-tab .inj-card[data-side="right"]::before { display: none; }
+}
+
 /* Services */
 .hospital-tab .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
 .hospital-tab .svc { background: var(--c-bg-tile); border: 1px solid var(--c-border); border-radius: 7px; overflow: hidden; }

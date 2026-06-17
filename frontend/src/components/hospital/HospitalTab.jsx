@@ -1,13 +1,13 @@
 import { memo, useCallback, useEffect, useState } from "react";
-import { Stethoscope, Timer, HeartPulse, Package, Coins } from "lucide-react";
+import { Stethoscope, HeartPulse, Package, Coins, ShieldCheck } from "lucide-react";
 import { api } from "../../api";
-import { formatRecoveryRemaining } from "../../utils/injuryDisplay";
+import { InjuryBodyMap } from "./InjuryBodyMap";
 
 /**
  * Hospital tab — dedicated screen for everything iron-paid medical.
  *
  * Sections:
- *   A. Active Injuries  — list with the iron-paid actions (Treat Now / Skip Recovery)
+ *   A. Active Injuries  — body map with the cash-paid Treat Now action per injury
  *   B. Services         — short read of what the hospital can do
  *   C. Health Restoration — three packages (Quick Patch / Recovery Bay / Full Restoration)
  */
@@ -136,21 +136,22 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
                     </div>
 
                     {!hasInjuries && (
-                        <div className="hp-empty">No active injuries.</div>
+                        <div className="bm-healthy">
+                            <span className="bm-healthy-icon"><ShieldCheck size={22} /></span>
+                            <div className="bm-healthy-text">
+                                <strong>No active injuries.</strong>
+                                <span>Cleared to train, spar, and fight at full capacity.</span>
+                            </div>
+                        </div>
                     )}
 
                     {hasInjuries && (
-                        <div className="injury-list">
-                            {injuries.map((inj, index) => (
-                                <HospitalInjuryRow
-                                    key={`${inj.type ?? inj.label ?? "injury"}-${index}`}
-                                    injury={inj}
-                                    busy={busyId === inj.type}
-                                    onDoctorVisit={() => handleDoctorVisit(inj.type)}
-                                    onSkipRecovery={() => handleSkipRecovery(inj.type)}
-                                />
-                            ))}
-                        </div>
+                        <InjuryBodyMap
+                            injuries={injuries}
+                            busyId={busyId}
+                            onDoctorVisit={handleDoctorVisit}
+                            onSkipRecovery={handleSkipRecovery}
+                        />
                     )}
                 </section>
 
@@ -261,25 +262,10 @@ const ServicesSection = memo(function ServicesSection() {
                             <span className="svc-name">Treatment</span>
                         </div>
                         <p className="svc-desc">
-                            Doctor-required injuries heal on their own within a day. Pay cash + energy to
-                            clear one instantly and skip the wait.
+                            Every injury heals on its own over time. In a hurry? Pay to clear one
+                            instantly with <strong>Treat Now</strong> — the cost depends on the injury.
                         </p>
                         <div className="svc-price"><Coins size={12} /> From $200</div>
-                    </div>
-                </div>
-
-                <div className="svc">
-                    <div className="svc-stripe svc-stripe--amber" />
-                    <div className="svc-body">
-                        <div className="svc-top">
-                            <span className="svc-icon svc-icon--amber"><Timer size={16} /></span>
-                            <span className="svc-name">Skip Recovery</span>
-                        </div>
-                        <p className="svc-desc">
-                            Auto-heal injuries clear within hours on their own. Pay cash to skip the wait
-                            and get back to training right away.
-                        </p>
-                        <div className="svc-price"><Coins size={12} /> From $600</div>
                     </div>
                 </div>
 
@@ -317,63 +303,3 @@ const ServicesSection = memo(function ServicesSection() {
     );
 });
 
-const HospitalInjuryRow = memo(function HospitalInjuryRow({
-    injury: inj,
-    busy,
-    onDoctorVisit,
-    onSkipRecovery,
-}) {
-    const needsDoctor = inj.requiresDoctorVisit && !inj.doctorVisited;
-    const hoursLeft = inj.recoveryHoursLeft > 0 ? inj.recoveryHoursLeft : (inj.recoveryDaysLeft || 0) * 24;
-    const isAutoHealing = !inj.requiresDoctorVisit && hoursLeft > 0;
-    const ticking = hoursLeft > 0 && !inj.doctorVisited;
-
-    return (
-        <div className={`injury-card ${inj.severity === "major" ? "is-major" : "is-minor"}`}>
-            <div className="injury-card-left">
-                <div className="injury-name-row">
-                    <span className="injury-name">{inj.label}</span>
-                    <span className="inj-sev">{inj.severity}</span>
-                    {inj.cannotFight && <span className="inj-block">Blocks Fighting</span>}
-                    {inj.cannotSpar && <span className="inj-block">Blocks Sparring</span>}
-                    {inj.cannotBagWork && <span className="inj-block">Blocks Bag/Pad Work</span>}
-                </div>
-                <p className="injury-desc">{inj.effect}</p>
-                {ticking && (
-                    <p className="injury-timer">
-                        Auto-heals in <strong>{formatRecoveryRemaining(inj)}</strong>
-                    </p>
-                )}
-            </div>
-
-            <div className="injury-card-right">
-                {needsDoctor && (
-                    <>
-                        <button
-                            type="button"
-                            className="treat-btn"
-                            disabled={busy}
-                            onClick={onDoctorVisit}
-                        >
-                            Treat Now
-                        </button>
-                        <div className="treat-cost">${inj.docVisitIron} + {inj.docVisitEnergy} energy</div>
-                    </>
-                )}
-                {isAutoHealing && inj.recoverySkipIron > 0 && (
-                    <>
-                        <button
-                            type="button"
-                            className="treat-btn treat-btn--ghost"
-                            disabled={busy}
-                            onClick={onSkipRecovery}
-                        >
-                            Skip Recovery
-                        </button>
-                        <div className="treat-cost">${inj.recoverySkipIron}</div>
-                    </>
-                )}
-            </div>
-        </div>
-    );
-});

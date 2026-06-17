@@ -22,7 +22,7 @@ export const FighterInjuriesPanel = memo(function FighterInjuriesPanel({ injurie
       {injuries.map((inj, index) => (
         <InjuryCard key={`${inj.type ?? inj.label ?? "injury"}-${index}`} injury={inj} />
       ))}
-      <p className="injuries-hint">Visit the 🏥 Hospital tab to treat injuries.</p>
+      <p className="injuries-hint">Visit the Hospital tab to treat injuries.</p>
     </div>
   );
 });
