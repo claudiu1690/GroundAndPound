@@ -12663,24 +12663,37 @@ code {
 .pvp-hub-loading, .pvp-hub-error { padding: 40px 22px; text-align: center; }
 
 /* ── Hero ── */
-.pvp-hero { background: #080808; border-bottom: 1px solid #2A2A2A; position: relative; overflow: hidden; flex-shrink: 0; }
-.pvp-glow { position: absolute; inset: 0; background: radial-gradient(ellipse at 65% 50%, rgba(200,16,46,0.08) 0%, transparent 65%); pointer-events: none; }
-.pvp-inner { padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; flex-wrap: wrap; gap: 12px; }
-.pvp-eye { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #C8102E; margin-bottom: 4px; }
-.pvp-title { font-family: var(--font-display); font-weight: 800; font-size: 26px; text-transform: uppercase; color: #F0F0F0; margin-bottom: 5px; letter-spacing: 1px; }
+.pvp-hero { background: #080808; background-size: 60%; background-position: center; background-repeat: no-repeat; border-bottom: 1px solid #2A2A2A; position: relative; overflow: hidden; flex-shrink: 0; }
+.pvp-hero-overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8,8,8,0.6) 0%, rgba(8,8,8,0.35) 45%, rgba(8,8,8,0.2) 72%, rgba(8,8,8,0.35) 100%), linear-gradient(0deg, rgba(8,8,8,0.45) 0%, transparent 55%); pointer-events: none; z-index: 0; }
+.pvp-inner { padding: 22px 24px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; flex-wrap: wrap; gap: 16px; }
+.pvp-eye { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: #C8102E; margin-bottom: 6px; }
+.pvp-title { font-family: var(--font-display); font-weight: 800; font-size: 34px; text-transform: uppercase; color: #F5F5F5; margin-bottom: 9px; letter-spacing: 1.5px; line-height: 0.95; text-shadow: 0 2px 18px rgba(0,0,0,0.6); }
 .pvp-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.pvp-s-badge { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 2px 8px; border-radius: 2px; background: rgba(200,16,46,0.12); color: #C8102E; border: 1px solid rgba(200,16,46,0.2); }
-.pvp-twist-pill { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; border-radius: 2px; background: rgba(212,168,32,0.1); color: #D4A820; border: 1px solid rgba(212,168,32,0.2); }
-.pvp-stats { display: flex; gap: 18px; align-items: center; flex-shrink: 0; }
-.pvp-pvs { text-align: center; }
-.pvp-pvs-v { font-family: var(--font-display); font-weight: 800; font-size: 24px; line-height: 1; color: #F0F0F0; }
+.pvp-s-badge { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 9px; border-radius: 2px; background: rgba(200,16,46,0.16); color: #E84A60; border: 1px solid rgba(200,16,46,0.3); }
+.pvp-twist-pill { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 9px; border-radius: 2px; background: rgba(212,168,32,0.12); color: #D4A820; border: 1px solid rgba(212,168,32,0.25); }
+.pvp-stats { display: flex; gap: 8px; align-items: stretch; flex-shrink: 0; }
+.pvp-pvs { text-align: center; min-width: 62px; padding: 9px 12px; border-radius: 7px; background: rgba(18,18,18,0.55); border: 1px solid rgba(255,255,255,0.07); backdrop-filter: blur(4px); display: flex; flex-direction: column; justify-content: center; }
+.pvp-pvs-v { font-family: var(--font-display); font-weight: 800; font-size: 26px; line-height: 1; color: #F0F0F0; }
 .pvp-pvs-v.pvp-pvs-g { color: #4ADE80; }
-.pvp-pvs-v.pvp-pvs-r { color: #C8102E; }
+.pvp-pvs-v.pvp-pvs-r { color: #E84A60; }
 .pvp-pvs-v.pvp-pvs-gold { color: #D4A820; }
 .pvp-pvs-v.pvp-pvs-blue { color: #3B82F6; }
-.pvp-pvs-l { font-size: 9px; color: #555; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
-.pvp-pvs-s { font-size: 9px; color: #555; margin-top: 1px; }
-.pvp-div-line { width: 1px; height: 36px; background: #1E1E1E; }
+.pvp-pvs-l { font-size: 9px; color: #888; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px; }
+.pvp-pvs-s { font-size: 9px; color: #777; margin-top: 2px; }
+
+/* Hero — phone/tablet: a centered 60% image floats awkwardly, so fill the
+   banner edge-to-edge instead. */
+@media (max-width: 900px) {
+  .pvp-hero { background-size: cover; background-position: center 38%; }
+}
+/* Portrait phone: stack the title above a full-width row of stat cards. */
+@media (max-width: 600px) {
+  .pvp-inner { flex-direction: column; align-items: flex-start; padding: 16px; gap: 14px; }
+  .pvp-title { font-size: 26px; }
+  .pvp-stats { width: 100%; gap: 6px; }
+  .pvp-pvs { flex: 1 1 0; min-width: 0; padding: 8px 4px; }
+  .pvp-pvs-v { font-size: 21px; }
+}
 
 /* ── Tabs ── */
 .pvp-tabs { background: #141414; border-bottom: 1px solid #2A2A2A; display: flex; flex-shrink: 0; overflow-x: auto; }

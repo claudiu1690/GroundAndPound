@@ -253,8 +253,11 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
       {!viewingProfileId && !showDefense && !showSeasonEnd && !showNewSeason && (
         <>
           {/* Hero */}
-          <div className="pvp-hero">
-            <div className="pvp-glow" />
+          <div
+            className="pvp-hero"
+            style={{ backgroundImage: "url(/pvp/octagon.webp)" }}
+          >
+            <div className="pvp-hero-overlay" aria-hidden="true" />
             <div className="pvp-inner">
               <div>
                 <div className="pvp-eye">Competitive</div>
@@ -295,12 +298,10 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
                   <div className="pvp-pvs-v pvp-pvs-g">{yourRecord?.wins ?? 0}</div>
                   <div className="pvp-pvs-l">Wins</div>
                 </div>
-                <div className="pvp-div-line" />
                 <div className="pvp-pvs">
                   <div className="pvp-pvs-v pvp-pvs-r">{yourRecord?.losses ?? 0}</div>
                   <div className="pvp-pvs-l">Losses</div>
                 </div>
-                <div className="pvp-div-line" />
                 <div className="pvp-pvs">
                   <div className="pvp-pvs-v pvp-pvs-gold">{(yourRecord?.dp ?? 0).toLocaleString()}</div>
                   <div className="pvp-pvs-l">DP</div>
@@ -308,7 +309,6 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
                     <div className="pvp-pvs-s">×1.25 streak</div>
                   )}
                 </div>
-                <div className="pvp-div-line" />
                 <div className="pvp-pvs">
                   <div className="pvp-pvs-v pvp-pvs-blue">{energyCur}</div>
                   <div className="pvp-pvs-l">Energy</div>
