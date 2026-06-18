@@ -358,7 +358,7 @@ export const DashboardTab = memo(function DashboardTab({
 
       {/* ── HERO CTA (priority element; first on mobile) ── */}
       {hero ? (
-        <ModuleCard className="dash-hero" stripe="accent" dataTut="dashboard-hero">
+        <ModuleCard className="dash-hero" stripe={hero?.key === "comeback_fight" || hero?.key === "comeback_nemesis" ? "amber" : "accent"} dataTut="dashboard-hero">
           <div className="dash-hero-text">
             <div className="dash-hero-label">{hero.label}</div>
             {hero.sublabel ? (

@@ -62,6 +62,8 @@ function signingFeeFor(tier) {
  * @param {Array<{type:string,locked?:boolean}>} input.offers
  * @param {number} input.energyCurrent
  * @param {number} input.fightEnergyCost
+ * @param {boolean} input.comebackActive
+ * @param {string|null} input.nemesisName
  * @returns {{key:string,label:string,sublabel:string,linkTarget:string}}
  */
 function computeHeroAction(input) {
@@ -73,6 +75,8 @@ function computeHeroAction(input) {
         offers = [],
         energyCurrent = 0,
         fightEnergyCost = 0,
+        comebackActive = false,
+        nemesisName = null,
     } = input || {};
 
     // 1. Mental reset required
@@ -126,7 +130,25 @@ function computeHeroAction(input) {
         };
     }
 
-    // 6. Regular fight offers waiting
+    // 6. Comeback bonuses live
+    if (comebackActive === true) {
+        if (nemesisName) {
+            return {
+                key: "comeback_nemesis",
+                label: "Settle the Score",
+                sublabel: `Fight ${nemesisName} for revenge and +150 fame — paid even if fame is frozen.`,
+                linkTarget: "fights",
+            };
+        }
+        return {
+            key: "comeback_fight",
+            label: "Comeback Fight Waiting",
+            sublabel: "Your next win pays +30% cash and ×1.5 XP. Get back in the cage.",
+            linkTarget: "fights",
+        };
+    }
+
+    // 7. Regular fight offers waiting
     const nonTitle = Array.isArray(offers)
         ? offers.filter((o) => o && o.type !== "TitleShot")
         : [];
@@ -140,7 +162,7 @@ function computeHeroAction(input) {
         };
     }
 
-    // 7. Low energy
+    // 8. Low energy
     if (energyCurrent < fightEnergyCost) {
         return {
             key: "recover_energy",
@@ -150,7 +172,7 @@ function computeHeroAction(input) {
         };
     }
 
-    // 8. Default — train
+    // 9. Default — train
     return {
         key: "train",
         label: "Hit the Gym",
@@ -411,7 +433,14 @@ function buildNudge(fighter, ranking) {
     if (!isTopFive && rank != null) {
         return { text: "Break into the top 5 to unlock a title shot.", linkTarget: "rankings" };
     }
-    // e. Default.
+    // e. Comeback bonuses live — low-priority fallback.
+    if (fighter.comebackMode) {
+        return {
+            text: "Comeback bonuses are live — +30% cash and ×1.5 XP on your next win.",
+            linkTarget: "fights",
+        };
+    }
+    // f. Default.
     return { text: "Keep training to raise your OVR.", linkTarget: "gym" };
 }
 
@@ -450,6 +479,9 @@ async function buildDashboard(id) {
     const injuries = buildInjuries(fighter);
     const vitals = buildVitals(fighter);
 
+    const comebackActive = !!fighter.comebackMode;
+    const nemesisName = fighter.nemesis?.opponentName ?? null;
+
     const heroAction = computeHeroAction({
         mentalResetRequired: !!fighter.mentalResetRequired,
         injuries,
@@ -458,6 +490,8 @@ async function buildDashboard(id) {
         offers: offersData.offers,
         energyCurrent: vitals.energy.current,
         fightEnergyCost: fightEnergyCostFor(tier),
+        comebackActive,
+        nemesisName,
     });
 
     const record = fighter.record || {};
@@ -478,7 +512,8 @@ async function buildDashboard(id) {
                 draws: record.draws ?? 0,
             },
             photoIndex: fighterPhotoIndex(fighter._id),
-            isBeaten: !!(fighter.comebackMode || (fighter.consecutiveLosses ?? 0) > 0),
+            comebackActive,
+            nemesisName,
         },
         vitals,
         heroAction,

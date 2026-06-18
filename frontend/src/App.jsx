@@ -956,6 +956,25 @@ const handleGetOffers = useCallback(async () => {
     }
   }, [fighter?._id, fighter?.acceptedFightId, loadCampState]);
 
+  // Resume path for an already-finalised but unresolved camp. The Camp Summary
+  // (which holds the only "Begin Fight" button) lives in ephemeral state that is
+  // lost on reload — so a camp finalised in a prior session, or one where the
+  // finalise response errored after the server set finalisedAt, would otherwise
+  // be a dead end. Rebuild the summary from the persisted camp state and reopen it.
+  const handleProceedFinalisedCamp = useCallback(() => {
+    if (!campState?.finalisedAt) return;
+    setCampSummaryData({
+      campRating: campState.campRating,
+      campBreakdown: campState.campBreakdown ?? [],
+      sessionBonuses: campState.sessionBonuses ?? [],
+      wasSkipped: campState.wasSkipped ?? false,
+      injuryPenalty: campState.injuryPenalty ?? null,
+      injuryChoice: campState.injuryChoice ?? null,
+      sessions: campState.sessions ?? [],
+    });
+    setShowCampSummary(true);
+  }, [campState]);
+
   const handleResolve = useCallback(async () => {
     if (!fighter?._id) return;
     setResolving(true);
@@ -1477,6 +1496,7 @@ const handleGetOffers = useCallback(async () => {
                   onRemoveSession={handleRemoveCampSession}
                   onResolveInjury={handleResolveCampInjury}
                   onFinalise={() => handleFinaliseCamp(false)}
+                  onProceedToFight={handleProceedFinalisedCamp}
                   onViewReport={() => { setReportFromCamp(true); setShowFighterReport(true); }}
                   addingSession={addingSession}
                   finalising={resolving}

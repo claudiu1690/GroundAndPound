@@ -85,6 +85,7 @@ export const FightCamp = memo(function FightCamp({
     onRemoveSession,
     onResolveInjury,
     onFinalise,
+    onProceedToFight,
     onViewReport,
     addingSession,
     finalising,
@@ -295,7 +296,16 @@ export const FightCamp = memo(function FightCamp({
 
                 {isFinalised && (
                     <div className="camp-finalised-notice">
-                        Camp finalised — camp summary shown before fight.
+                        <span>Camp finalised — review your summary and step into the cage.</span>
+                        {onProceedToFight && (
+                            <button
+                                type="button"
+                                className="camp-finalise-btn"
+                                onClick={onProceedToFight}
+                            >
+                                Proceed to Fight →
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

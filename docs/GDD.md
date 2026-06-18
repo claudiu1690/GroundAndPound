@@ -530,6 +530,7 @@ No tier gating on any service.
 
 - **Comeback Mode:** any loss activates it. Next fight's XP ×1.5 and cash +30%; winning earns the **Comeback Kid** badge (once per career) and clears the mode. No "Mental Reset" — a losing streak only freezes fame (§12.5) and activates comeback.
 - **Nemesis:** an opponent who beats you becomes your Nemesis (only one at a time). They appear in offers and promise **+150 fame** for the rematch win (even while fame is frozen). Two straight title-shot losses make that champion the Nemesis. Defeating them clears the flag; promotion past a lower-tier Nemesis clears it automatically.
+- **Dashboard surfacing:** while Comeback Mode is active, the dashboard hero CTA changes to an amber-striped call to action that spells out the live bonuses instead of the generic "pick a fight" prompt — *"Comeback Fight Waiting — your next win pays +30% cash and ×1.5 XP."* If a Nemesis is set, it upgrades to *"Settle the Score — fight {name} for revenge and +150 fame."* It sits just below the title-shot CTA in priority (a belt fight still wins), above regular offers, and a matching fallback nudge appears when no higher-priority nudge applies. The hero payload also exposes `identity.comebackActive` and `identity.nemesisName`. Purely a visibility layer — it changes no numbers.
 
 ---
 
