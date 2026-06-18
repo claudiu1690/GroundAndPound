@@ -69,6 +69,7 @@ export function LadderTable({
             row={row}
             season={season}
             onOpenProfile={onOpenProfile}
+            showDivisionBadge={division == null}
           />
         ))
       )}

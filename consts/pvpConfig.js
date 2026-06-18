@@ -33,7 +33,7 @@ const OPEN_WEIGHT_CLASS = "Open";
 const SEASON_WEIGHT_CLASSES = [...WEIGHT_CLASSES_PVP, OPEN_WEIGHT_CLASS];
 
 const DIVISIONS = [
-    { key: "prospect", floor: 0, promoteAt: 300, ovrMin: 10, ovrMax: 20, color: "#888" },
+    { key: "prospect", floor: 0, promoteAt: 300, ovrMin: 10, ovrMax: 20, color: "#888888" },
     { key: "contender", floor: 300, promoteAt: 1200, ovrMin: 18, ovrMax: 30, color: "#93C5FD" },
     { key: "challenger", floor: 1200, promoteAt: 2500, ovrMin: 25, ovrMax: 40, color: "#C4B5FD" },
     { key: "elite", floor: 2500, promoteAt: 5000, ovrMin: 35, ovrMax: 55, color: "#5EEAD4" },

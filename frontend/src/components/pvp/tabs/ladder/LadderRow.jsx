@@ -1,4 +1,4 @@
-import { lastActiveColor, relativeTime, wcAbbrev } from "../../pvpConst";
+import { divisionLabel, lastActiveColor, relativeTime, wcAbbrev } from "../../pvpConst";
 
 /**
  * LadderRow — one row in the full ladder table.
@@ -11,7 +11,7 @@ import { lastActiveColor, relativeTime, wcAbbrev } from "../../pvpConst";
  * Tag priority (max 2 shown):
  *   Belt Holder > Rival > You > Protected > Streak (≥3) > Cross-weight [WC]
  */
-export function LadderRow({ row, season, onOpenProfile }) {
+export function LadderRow({ row, season, onOpenProfile, showDivisionBadge = false }) {
   const {
     rank,
     playerId,
@@ -57,6 +57,19 @@ export function LadderRow({ row, season, onOpenProfile }) {
 
   const tags = tagCandidates.slice(0, 2);
 
+  // ── division badge (shown only in All-divisions view) ─────────
+  let divBadgeStyle;
+  if (showDivisionBadge && divisionColor) {
+    const r = parseInt(divisionColor.slice(1, 3), 16);
+    const g = parseInt(divisionColor.slice(3, 5), 16);
+    const b = parseInt(divisionColor.slice(5, 7), 16);
+    divBadgeStyle = {
+      color: divisionColor,
+      background: `rgba(${r},${g},${b},0.12)`,
+      border: `1px solid rgba(${r},${g},${b},0.2)`,
+    };
+  }
+
   // ── meta line ──────────────────────────────────────────────────
   const metaParts = [];
   if (isCrossWc && realWeightClass) metaParts.push(wcAbbrev(realWeightClass));
@@ -92,8 +105,17 @@ export function LadderRow({ row, season, onOpenProfile }) {
             <span key={t.key} className={t.cls}>{t.label}</span>
           ))}
         </div>
-        {metaParts.length > 0 && (
-          <div className="lt-cn-meta">{metaParts.join(" · ")}</div>
+        {(showDivisionBadge || metaParts.length > 0) && (
+          <div className="lt-cn-meta">
+            {showDivisionBadge && divBadgeStyle && (
+              <span className="lt-div-badge" style={divBadgeStyle}>
+                {divisionLabel(division)}
+              </span>
+            )}
+            {metaParts.length > 0 && (
+              <span>{metaParts.join(" · ")}</span>
+            )}
+          </div>
         )}
       </div>
 
