@@ -1706,16 +1706,23 @@ code {
   background: #0E0E0E;
 }
 .hospital-tab .bm-bg {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: contain;           /* full figure, scaled small + centred */
-  object-position: center;
-  opacity: 0.7;
-  /* The image is a full rectangular sci-fi scene, not an isolated figure on
-     black — with `contain` its rectangle edges would sit visibly on the dark
-     card. `screen` blends the near-black areas into the card background so only
-     the glowing hologram/UI shows, with no visible box. */
-  mix-blend-mode: screen;
+  /* Tightly wrap the image (height-driven, centred) so the element box equals
+     the rendered image — otherwise `contain` letterboxes it and the mask below
+     can't reach the real edges. */
+  position: absolute; top: 0; bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  height: 100%; width: auto;
+  opacity: 0.55;
+  /* Feather all four image edges fully and evenly: a horizontal and a vertical
+     linear fade, intersected, so every edge dissolves into the card. */
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 13%, #000 87%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 13%, #000 87%, transparent 100%);
+  mask-composite: intersect;
   z-index: 0;
   user-select: none;
 }
