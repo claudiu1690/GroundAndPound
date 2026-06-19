@@ -200,6 +200,8 @@ const fighterSchema = new mongoose.Schema({
                         methodRound:  { type: String, default: null },
                         record:       { type: String, default: null },
                         campGrade:    { type: String, default: null },
+                        ranking:      { type: String, default: null },
+                        context:      { type: String, default: null },
                     }, { _id: false }),
                     default: null,
                 },

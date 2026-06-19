@@ -65,12 +65,6 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
     ? toRoman(gazette.volNumber)
     : "XII";
 
-  // Result band segments — omit null entries
-  function resultBandParts(band) {
-    if (!band) return [];
-    return [band.methodRound, band.record, band.campGrade].filter(Boolean);
-  }
-
   return createPortal(
     <div
       className="gz2-overlay"
@@ -92,7 +86,7 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
               <div>Established 2026</div>
             </div>
             <div className="gz2-mh-center">
-              <div className="gz2-mh-est">— The Fight Game's Paper of Record —</div>
+              <div className="gz2-mh-est">◆ — The Fight Game's Paper of Record — ◆</div>
               <div className="gz2-mh-title">The Octagon Gazette</div>
               <span className="gz2-mh-tagline">Every Career. Every Fight. Every Consequence.</span>
             </div>
@@ -101,6 +95,7 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
               <div>{gazette?.edition ?? ""}</div>
             </div>
           </div>
+          <div className="gz2-masthead-rule" />
           {!isEmpty && (
             <div className="gz2-mh-strip">
               <div className="gz2-mh-strip-text">{gazette?.fighterMeta ?? ""}</div>
@@ -109,6 +104,59 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
             </div>
           )}
         </div>
+
+        {/* HERO RESULT BAND — only when non-empty and resultBand.outcomeLabel is present */}
+        {!isEmpty && (() => {
+          const band = gazette.leadStory?.resultBand ?? null;
+          if (!band || !band.outcomeLabel) return null;
+
+          // Build stat boxes — only include those with non-null values
+          const statBoxes = [
+            { val: band.record,    lbl: "Record" },
+            { val: band.campGrade, lbl: "Camp Grade" },
+            { val: band.ranking,   lbl: "Ranking" },
+          ].filter((s) => s.val != null && s.val !== "");
+
+          return (
+            <div className="gz2-hero">
+              {/* Left: kicker + outcome word + method.
+                  Kicker = "{Tier} · {WeightClass} · Fight N" (band.context),
+                  falling back to the lead's breaking-label kicker. */}
+              <div className="gz2-hero-left">
+                {(band.context || gazette.leadStory?.kicker) && (
+                  <div className="gz2-hero-kicker">{band.context || gazette.leadStory.kicker}</div>
+                )}
+                <div
+                  className="gz2-hero-outcome"
+                  style={{ color: outcomeColor(band.outcomeLabel) }}
+                >
+                  {band.outcomeLabel}
+                </div>
+                {band.methodRound && (
+                  <div className="gz2-hero-method">{band.methodRound}</div>
+                )}
+              </div>
+
+              {/* Stats column — only rendered when at least one stat has data */}
+              {statBoxes.length > 0 && (
+                <>
+                  <div className="gz2-hero-stat-div gz2-hero-stat-div--main" />
+                  <div className="gz2-hero-stats">
+                    {statBoxes.map((box, i) => (
+                      <div key={box.lbl} className="gz2-hero-stat-wrap">
+                        {i > 0 && <div className="gz2-hero-stat-div" />}
+                        <div className="gz2-hero-stat">
+                          <div className="gz2-hero-stat-val">{box.val}</div>
+                          <div className="gz2-hero-stat-lbl">{box.lbl}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })()}
 
         {/* BODY */}
         <div className="gz2-body">
@@ -123,7 +171,6 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
               {/* ── LEAD ── */}
               {(() => {
                 const lead = gazette.leadStory;
-                const band = lead?.resultBand ?? null;
                 const pq = lead?.pullQuote ?? null;
                 const bodyParas = Array.isArray(lead?.bodyParagraphs) ? lead.bodyParagraphs : [];
                 return (
@@ -147,23 +194,6 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
                           Staff Reporter · {gazette?.fighterMeta ? gazette.fighterMeta.split("·")[0]?.trim() : ""} Bureau
                         </div>
 
-                        {/* Result band */}
-                        {band && (
-                          <div className="gz2-result-band">
-                            {band.outcomeLabel && (
-                              <span className="gz2-rb-outcome" style={{ color: outcomeColor(band.outcomeLabel) }}>
-                                {band.outcomeLabel}
-                              </span>
-                            )}
-                            {resultBandParts(band).map((part, i) => (
-                              <span key={i}>
-                                <span className="gz2-rb-sep">·</span>
-                                <span className="gz2-rb-detail">{part}</span>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
                         {/* Body paragraphs with drop cap on first */}
                         <div className="gz2-body-copy">
                           {bodyParas.map((para, i) => (
@@ -173,7 +203,7 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
                           ))}
                           {pq && (
                             <div className="gz2-pull-quote">
-                              <div className="gz2-pq-text">"{pq.text}"</div>
+                              <div className="gz2-pq-text">&ldquo;{pq.text}&rdquo;</div>
                               {pq.source && <div className="gz2-pq-src">— {pq.source}</div>}
                             </div>
                           )}
@@ -325,9 +355,13 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
         {/* FOOTER */}
         <div className="gz2-footer">
           <div className="gz2-gf-l">The fight game's paper of record.</div>
-          <button type="button" className="gz2-gf-close" onClick={() => onClose?.()}>
-            Close
-          </button>
+          <div className="gz2-gf-orn">◆ ◆ ◆</div>
+          <div className="gz2-gf-r">
+            <span className="gz2-gf-upd">Updated after every career event</span>
+            <button type="button" className="gz2-gf-close" onClick={() => onClose?.()}>
+              Close
+            </button>
+          </div>
         </div>
 
       </div>

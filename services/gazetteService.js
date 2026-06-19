@@ -23,6 +23,7 @@
  */
 const Fighter = require("../models/fighterModel");
 const Fight = require("../models/fightModel");
+const FightCamp = require("../models/fightCampModel");
 const Sponsorship = require("../models/sponsorshipModel");
 const { TEMPLATES } = require("../consts/gazetteTemplates");
 const { makeGazetteRng } = require("../utils/gazetteRng");
@@ -142,7 +143,8 @@ function isWinOutcome(outcome) {
 function methodRoundLabel(lastFight) {
     if (!lastFight) return null;
     const method = methodFromOutcome(lastFight.outcome);
-    const round = lastFight.finishRound;
+    const round = lastFight.finishRound
+        ?? (Array.isArray(lastFight.rounds) ? lastFight.rounds.length : null);
     if (method === "Decision" || round == null) {
         return method === "Decision" ? "Decision" : method;
     }
@@ -340,36 +342,48 @@ function buildSpotlightStory(ctx) {
 // ── LEAD: result band + masthead helpers ─────────────────────────────────────
 
 function buildResultBand(lead, ctx) {
-    const { fighter, lastFight } = ctx;
+    const { fighter, lastFight, lastCampGrade } = ctx;
     const record = recordString(fighter);
     const mr = methodRoundLabel(lastFight);
-    // campGrade: not persisted on the Fight doc — degrade to null everywhere.
+    // campGrade for the bout — sourced from the FightCamp doc (ctx.lastCampGrade).
+    const campGrade = lastCampGrade ?? null;
+    // ranking: current career ladder rank as a "#N" display string, or null if unranked.
+    const rk = fighter && fighter.ranking && fighter.ranking.rank != null
+        ? (toDisplayRank(fighter.ranking.rank) ?? fighter.ranking.rank)
+        : null;
+    const ranking = rk != null ? `#${rk}` : null;
+    // context kicker: "{Tier} · {WeightClass} · Fight {N}" (N = total bouts on record).
+    const r = fighter.record || {};
+    const fightNo = (r.wins || 0) + (r.losses || 0) + (r.draws || 0);
+    const tier = fighter.promotionTier || "Amateur";
+    const wc = fighter.weightClass || "";
+    const context = [tier, wc, fightNo > 0 ? `Fight ${fightNo}` : null].filter(Boolean).join(" · ");
     switch (lead.type) {
         case "title_fight":
             return lead._won
-                ? { outcomeLabel: "WIN — TITLE CAPTURED", methodRound: mr, record, campGrade: null }
-                : { outcomeLabel: "LOSS — TITLE FIGHT", methodRound: mr, record, campGrade: null };
+                ? { outcomeLabel: "WIN — TITLE CAPTURED", methodRound: mr, record, campGrade, ranking, context }
+                : { outcomeLabel: "LOSS — TITLE FIGHT", methodRound: mr, record, campGrade, ranking, context };
         case "first_loss_in_title":
-            return { outcomeLabel: "LOSS — TITLE FIGHT", methodRound: mr, record, campGrade: null };
+            return { outcomeLabel: "LOSS — TITLE FIGHT", methodRound: mr, record, campGrade, ranking, context };
         case "first_loss":
-            return { outcomeLabel: "LOSS — FIRST DEFEAT", methodRound: mr, record, campGrade: null };
+            return { outcomeLabel: "LOSS — FIRST DEFEAT", methodRound: mr, record, campGrade, ranking, context };
         case "last_fight":
             return {
                 outcomeLabel: lead._playerWon ? "WIN" : "LOSS",
-                methodRound: mr, record, campGrade: null,
+                methodRound: mr, record, campGrade, ranking, context,
             };
         case "auto_promotion":
-            return { outcomeLabel: "PROMOTION", methodRound: null, record, campGrade: null };
+            return { outcomeLabel: "PROMOTION", methodRound: null, record, campGrade: null, ranking, context };
         case "rank_entry":
-            return { outcomeLabel: "RANKED", methodRound: null, record: null, campGrade: null };
+            return { outcomeLabel: "RANKED", methodRound: null, record: null, campGrade: null, ranking, context };
         case "rank_jump":
-            return { outcomeLabel: "RANKING UPDATE", methodRound: null, record: null, campGrade: null };
+            return { outcomeLabel: "RANKING UPDATE", methodRound: null, record: null, campGrade: null, ranking, context };
         case "win_streak":
-            return { outcomeLabel: "WIN STREAK", methodRound: null, record: null, campGrade: null };
+            return { outcomeLabel: "WIN STREAK", methodRound: null, record: null, campGrade: null, ranking, context };
         case "mental_reset_required":
-            return { outcomeLabel: "ACTION REQUIRED", methodRound: null, record: null, campGrade: null };
+            return { outcomeLabel: "ACTION REQUIRED", methodRound: null, record: null, campGrade: null, ranking: null, context };
         case "spotlight":
-            return { outcomeLabel: null, methodRound: null, record, campGrade: null };
+            return { outcomeLabel: null, methodRound: null, record, campGrade: null, ranking, context };
         default:
             return null;
     }
@@ -420,6 +434,82 @@ function volNumberFromYear() {
 
 // ── LEAD ASSEMBLY ────────────────────────────────────────────────────────────
 
+/**
+ * Compose the lead's body paragraphs. The template's one-liner stays as the deck
+ * (standfirst); this builds the fuller article beneath it from real fight/career
+ * context so the main column doesn't read as a single repeated sentence. Variants
+ * are picked via the seeded rng so successive issues don't read identically.
+ */
+function composeLeadBody(spec, ctx, rng) {
+    const { fighter, lastFight } = ctx;
+    const name = fighterDisplayName(fighter);
+    const tier = fighter.promotionTier || "Amateur";
+    const record = recordString(fighter);
+    const rankDisp = fighter.ranking?.rank != null
+        ? `#${toDisplayRank(fighter.ranking.rank) ?? fighter.ranking.rank}`
+        : null;
+    const rankClause = rankDisp ? `, ranked ${rankDisp} in the ${tier} division` : ` in the ${tier} division`;
+
+    const isFightLead = ["last_fight", "title_fight", "first_loss", "first_loss_in_title"].includes(spec.type);
+    if (isFightLead && lastFight) {
+        const opp = lastFight.opponentId?.name || "their opponent";
+        const won = isWinOutcome(lastFight.outcome);
+        const method = methodFromOutcome(lastFight.outcome); // KO | Submission | Decision
+        const m = method.toLowerCase();
+        const round = lastFight.finishRound ?? (Array.isArray(lastFight.rounds) ? lastFight.rounds.length : null);
+        const isFinish = method !== "Decision" && round != null;
+        const paras = [];
+
+        // P1 — the bout itself
+        if (isFinish) {
+            paras.push(won
+                ? rng.pick([
+                    `${name} ended matters against ${opp} in round ${round}, the ${m} arriving the moment the opening appeared.`,
+                    `There was nothing left for the judges to weigh — ${name} found the ${m} on ${opp} in round ${round} and never looked back.`,
+                  ])
+                : rng.pick([
+                    `It was ${opp} who landed the decisive sequence, the ${m} closing the show on ${name} in round ${round}.`,
+                    `${name} could find no way out as ${opp} forced the ${m} in round ${round}.`,
+                  ]));
+        } else {
+            paras.push(won
+                ? rng.pick([
+                    `No finish came, but across the full distance ${name} did enough on the cards to leave ${opp} with nothing to show for the effort.`,
+                    `It went the distance, and when the scorecards were read it was ${name} who had out-worked ${opp}.`,
+                  ])
+                : rng.pick([
+                    `It went the distance, but the cards favoured ${opp}; ${name} came up short over the full fight.`,
+                    `${name} pushed ${opp} the full fight yet finished on the wrong side of the judges' math.`,
+                  ]));
+        }
+
+        // P2 — where it leaves them
+        paras.push(rng.pick([
+            `The result moves ${name} to ${record}${rankClause}.`,
+            `${name} now stands at ${record}${rankClause}.`,
+        ]));
+
+        // P3 — forward look
+        paras.push(won
+            ? rng.pick([
+                `Attention turns to who steps up next; every win tightens the chase at the top of the division.`,
+                `The momentum is real — the only question now is how far up the card ${name} can climb.`,
+              ])
+            : rng.pick([
+                `The response is what matters now. Careers are measured as much by the bounce-back as the setback.`,
+                `There is work to do, but a single result rarely defines a division campaign.`,
+              ]));
+        return paras;
+    }
+
+    // Non-fight leads (rankings/promotion/spotlight): one supporting paragraph
+    // beneath the template deck.
+    return [rng.pick([
+        `It is the kind of move that reshapes a division's pecking order, and ${name} sits squarely in the conversation.`,
+        `The picture in the ${tier} division shifts again, with ${name} at the centre of it.`,
+    ])];
+}
+
 function assembleLead(rng, ctx) {
     const builders = [
         buildMentalResetStory,      // 0
@@ -458,8 +548,8 @@ function assembleLead(rng, ctx) {
         kicker: breakingLabelForLead(spec),
         kickerColor: COLOR.rankings,
         headline,
-        deck: body,                       // one-line deck under the headline
-        bodyParagraphs: body ? [body] : [],
+        deck: body,                       // one-line deck (standfirst) under the headline
+        bodyParagraphs: composeLeadBody(spec, ctx, rng),
         resultBand,
         pullQuote,
         linkTarget: spec.type === "mental_reset_required" ? "fights" : "career",
@@ -878,8 +968,13 @@ async function regenerateGazette(fighterId, triggeringEventType) {
         const sponsorship = await Sponsorship.findOne({ fighterId: fighter._id, status: "active" })
             .sort({ createdAt: -1 })
             .lean();
+        // Camp grade for the last fight — lives on the FightCamp doc (keyed by fightId),
+        // not the Fight doc, so the hero result band can surface it.
+        const lastCamp = lastFight
+            ? await FightCamp.findOne({ fightId: lastFight._id }).select("campRating").lean()
+            : null;
 
-        const ctx = { fighter, lastFight, sponsorship };
+        const ctx = { fighter, lastFight, sponsorship, lastCampGrade: lastCamp?.campRating ?? null };
 
         // 5. Builders.
         const leadStory = assembleLead(rng, ctx);

@@ -1289,47 +1289,129 @@ code {
 
 /* ── MASTHEAD ───────────────────────────────────────────────── */
 .gz2-masthead {
-  padding: 14px 24px 10px;
-  border-bottom: 3px double var(--ink2);
+  padding: 14px 24px 0;
   background: var(--paper);
 }
-.gz2-mh-row1 { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+.gz2-mh-row1 {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 8px; padding-right: 32px;
+}
 .gz2-mh-meta {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
-  color: var(--ink3); line-height: 1.6;
+  font-size: 8.5px; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--ink3); line-height: 1.7;
 }
 .gz2-mh-meta-right { text-align: right; }
-.gz2-mh-center { text-align: center; }
+.gz2-mh-center { flex: 1; text-align: center; padding: 0 18px; }
 .gz2-mh-est {
   font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 400; font-size: 8px; letter-spacing: 3px;
-  text-transform: uppercase; color: var(--ink3); margin-bottom: 3px;
+  font-weight: 400; font-size: 8px; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--ink3); margin-bottom: 0;
+}
+/* Thin rule before the title */
+.gz2-mh-center::before {
+  content: '';
+  display: block;
+  height: 1px;
+  background: var(--ink);
+  margin: 6px 0 7px;
 }
 .gz2-mh-title {
   font-family: 'Playfair Display', serif;
-  font-weight: 800; font-size: 38px; color: var(--ink);
-  letter-spacing: -1px; line-height: 1;
+  font-weight: 800; font-size: 48px; color: var(--ink);
+  letter-spacing: -2px; line-height: 1;
+  margin-bottom: 6px;
 }
 .gz2-mh-tagline {
   font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 400; font-size: 10px; letter-spacing: 2.5px;
-  text-transform: uppercase; color: var(--ink3);
-  border-top: 1px solid var(--ink3); border-bottom: 1px solid var(--ink3);
-  padding: 2px 0; margin-top: 4px; display: block;
+  font-weight: 400; font-size: 9px; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--ink2);
+  border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
+  padding: 3px 0; display: block;
+}
+/* Double rule below tagline / above strip */
+.gz2-masthead-rule {
+  border-top: 3px double var(--ink);
+  margin: 0;
 }
 .gz2-mh-strip {
   display: flex; align-items: center; justify-content: space-between;
-  padding-top: 6px; border-top: 1px solid var(--paper-dark); margin-top: 6px;
+  padding: 5px 0; border-bottom: 1px solid var(--paper-dark);
 }
 .gz2-mh-strip-text {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink3);
+  font-size: 8.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink3);
 }
 .gz2-mh-breaking {
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 800; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
-  background: var(--gz2-acc); color: #fff; padding: 2px 8px; border-radius: 1px;
+  background: var(--gz2-acc); color: #fff; padding: 2px 10px; border-radius: 1px;
+  white-space: nowrap;
+}
+
+/* ── HERO RESULT BAND ───────────────────────────────────────── */
+.gz2-hero {
+  background: var(--ink);
+  padding: 16px 24px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 24px;
+  border-bottom: 3px solid var(--gz2-acc);
+}
+/* Each side takes half the banner and centers its own content, so the outcome
+   sits centered in the left half and the stats centered in the right half —
+   balanced whitespace instead of one big gap or a tight central cluster. */
+.gz2-hero-left { flex: 1; text-align: center; }
+.gz2-hero-kicker {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600; font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(255,255,255,0.38); margin-bottom: 5px;
+}
+.gz2-hero-outcome {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800; font-size: 46px;
+  letter-spacing: -1.5px; line-height: 1.05;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+.gz2-hero-method {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: rgba(255,255,255,0.58);
+}
+/* Vertical divider between left section and stats.
+   Double-class selector so it outranks the base .gz2-hero-stat-div that follows
+   it in source order (equal single-class specificity would otherwise win). */
+.gz2-hero-stat-div.gz2-hero-stat-div--main {
+  width: 1px; height: 64px;
+  margin: 0;
+  background: rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+.gz2-hero-stats {
+  display: flex; gap: 0; align-items: center; flex: 1; justify-content: center;
+}
+.gz2-hero-stat-wrap {
+  display: flex; align-items: center; gap: 0;
+}
+/* Thin vertical divider between adjacent stat boxes */
+.gz2-hero-stat-div {
+  width: 1px; height: 40px;
+  background: rgba(255,255,255,0.1);
+  flex-shrink: 0;
+  margin: 0 28px;
+}
+.gz2-hero-stat {
+  text-align: center;
+}
+.gz2-hero-stat-val {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800; font-size: 28px; color: #F0F0F0;
+  line-height: 1; margin-bottom: 4px;
+}
+.gz2-hero-stat-lbl {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: rgba(255,255,255,0.32);
 }
 
 /* ── BODY ───────────────────────────────────────────────────── */
@@ -1344,7 +1426,7 @@ code {
 }
 
 /* ── SECTION RULE ───────────────────────────────────────────── */
-.gz2-sec-rule { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.gz2-sec-rule { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .gz2-sec-rule-lbl {
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 800; font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase;
@@ -1366,48 +1448,32 @@ code {
 }
 .gz2-lead-hl {
   font-family: 'Playfair Display', serif;
-  font-weight: 800; font-size: 23px; line-height: 1.15;
-  color: var(--ink); margin-bottom: 5px;
+  font-weight: 800; font-size: 25px; line-height: 1.12;
+  color: var(--ink); margin-bottom: 7px;
 }
 .gz2-lead-deck {
   font-family: 'Playfair Display', serif;
   font-style: italic; font-weight: 400; font-size: 13px;
   color: var(--ink2); line-height: 1.5;
-  border-bottom: 1px solid var(--paper-dark); padding-bottom: 7px; margin-bottom: 7px;
+  border-bottom: 1px solid var(--paper-dark); padding-bottom: 7px; margin-bottom: 8px;
 }
 .gz2-lead-byline {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
-  color: var(--ink3); margin-bottom: 8px;
+  color: var(--ink3); margin-bottom: 10px;
   display: flex; align-items: center; gap: 6px;
 }
 .gz2-lead-byline::after { content: ''; flex: 1; height: 1px; background: var(--paper-dark); }
 
-/* ── RESULT BAND ────────────────────────────────────────────── */
-.gz2-result-band {
-  background: var(--ink); border-radius: 2px; padding: 6px 10px;
-  display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;
-}
-.gz2-rb-outcome {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 800; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
-  color: #4ADE80; /* overridden by inline style */
-}
-.gz2-rb-sep { color: rgba(255,255,255,0.2); font-size: 10px; }
-.gz2-rb-detail {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 600; font-size: 11px; color: rgba(255,255,255,0.55); letter-spacing: 0.5px;
-}
-
 /* ── BODY COPY ──────────────────────────────────────────────── */
-.gz2-body-copy { margin-top: 4px; }
+.gz2-body-copy { display: flow-root; margin-top: 4px; }
 .gz2-body-p {
   font-size: 11.5px; color: var(--ink2); line-height: 1.78;
   margin-bottom: 7px; text-align: justify; hyphens: auto;
 }
 .gz2-drop-cap::first-letter {
   font-family: 'Playfair Display', serif;
-  font-size: 40px; font-weight: 800;
+  font-size: 44px; font-weight: 800;
   float: left; line-height: 0.78;
   margin-right: 5px; margin-top: 6px;
   color: var(--ink);
@@ -1416,18 +1482,18 @@ code {
 
 /* ── PULL QUOTE ─────────────────────────────────────────────── */
 .gz2-pull-quote {
-  border-left: 3px solid var(--gz2-acc);
-  padding: 6px 10px; margin: 9px 0;
-  background: rgba(200,16,46,0.04);
+  text-align: center;
+  padding: 10px 20px; margin: 10px 0;
+  border-top: 1px solid var(--ink2); border-bottom: 1px solid var(--ink2);
 }
 .gz2-pq-text {
   font-family: 'Playfair Display', serif;
-  font-weight: 700; font-style: italic; font-size: 13px;
-  color: var(--ink); line-height: 1.4; margin-bottom: 3px;
+  font-weight: 700; font-style: italic; font-size: 15.5px;
+  color: var(--ink); line-height: 1.35; margin-bottom: 5px;
 }
 .gz2-pq-src {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink3);
+  font-size: 8.5px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink3);
 }
 
 /* ── SIDEBAR ────────────────────────────────────────────────── */
@@ -1474,10 +1540,16 @@ code {
 .gz2-ss-body strong { font-weight: 700; color: var(--ink2); }
 
 /* ── IN BRIEF ───────────────────────────────────────────────── */
+.gz2-in-brief {
+  background: rgba(0,0,0,0.035);
+  border: 1px solid var(--paper-dark);
+  border-radius: 2px;
+  padding: 10px 14px;
+}
 .gz2-ib-head {
   font-family: 'Playfair Display', serif;
   font-weight: 700; font-size: 14px; color: var(--ink);
-  margin-bottom: 7px; display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
 }
 .gz2-ib-head::after { content: ''; flex: 1; height: 1px; background: var(--paper-dark); }
 .gz2-ib-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
@@ -1511,19 +1583,31 @@ code {
 
 /* ── FOOTER ─────────────────────────────────────────────────── */
 .gz2-footer {
-  background: var(--ink); padding: 7px 24px;
+  background: var(--ink); padding: 8px 24px;
   display: flex; align-items: center; justify-content: space-between;
 }
 .gz2-gf-l {
   font-family: 'Playfair Display', serif;
-  font-style: italic; font-size: 10px; color: rgba(255,255,255,0.35);
+  font-style: italic; font-size: 10px; color: rgba(255,255,255,0.3);
+}
+.gz2-gf-orn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; color: rgba(255,255,255,0.18); letter-spacing: 4px;
+}
+.gz2-gf-r {
+  display: flex; align-items: center; gap: 14px;
+}
+.gz2-gf-upd {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
 }
 .gz2-gf-close {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
-  color: rgba(255,255,255,0.35); background: none; border: none; cursor: pointer;
+  color: rgba(255,255,255,0.45); background: none; border: none; cursor: pointer;
 }
-.gz2-gf-close:hover { color: rgba(255,255,255,0.7); }
+.gz2-gf-close:hover { color: rgba(255,255,255,0.8); }
 
 /* ── LANDSCAPE — scale the whole paper up (~30%) so the bigger sheet is filled
    with bigger type/spacing instead of empty cream. Height is content-driven so
@@ -1532,7 +1616,7 @@ code {
   .gz2-overlay { padding: 16px 16px 24px; }
 
   /* Spacing scales with the type */
-  .gz2-masthead { padding: 18px 32px 13px; }
+  .gz2-masthead { padding: 18px 32px 0; }
   .gz2-body { padding: 22px 34px 30px; }
   .gz2-footer { padding: 10px 32px; }
   .gz2-lead-main { padding-right: 22px; }
@@ -1543,12 +1627,22 @@ code {
   .gz2-ib-grid { gap: 0 28px; }
 
   /* Masthead */
-  .gz2-mh-title    { font-size: 50px; }
+  .gz2-mh-title    { font-size: 64px; letter-spacing: -3px; }
   .gz2-mh-meta     { font-size: 12px; }
   .gz2-mh-est      { font-size: 10px; }
-  .gz2-mh-tagline  { font-size: 13px; }
+  .gz2-mh-tagline  { font-size: 12px; }
   .gz2-mh-strip-text { font-size: 12px; }
   .gz2-mh-breaking { font-size: 12px; padding: 3px 11px; }
+
+  /* Hero band */
+  .gz2-hero        { padding: 20px 32px; gap: 28px; }
+  .gz2-hero-kicker { font-size: 11px; }
+  .gz2-hero-outcome { font-size: 60px; }
+  .gz2-hero-method { font-size: 16px; }
+  .gz2-hero-stat-div { height: 52px; margin: 0 32px; }
+  .gz2-hero-stat-div.gz2-hero-stat-div--main { height: 80px; margin: 0; }
+  .gz2-hero-stat-val { font-size: 36px; }
+  .gz2-hero-stat-lbl { font-size: 10px; }
 
   /* Lead story */
   .gz2-empty       { font-size: 19px; padding: 60px 0; }
@@ -1557,13 +1651,10 @@ code {
   .gz2-lead-hl     { font-size: 31px; }
   .gz2-lead-deck   { font-size: 17px; }
   .gz2-lead-byline { font-size: 12px; }
-  .gz2-rb-outcome  { font-size: 16px; }
-  .gz2-rb-sep      { font-size: 13px; }
-  .gz2-rb-detail   { font-size: 14px; }
   .gz2-body-p      { font-size: 15px; margin-bottom: 9px; }
-  .gz2-drop-cap::first-letter { font-size: 54px; }
-  .gz2-pq-text     { font-size: 17px; }
-  .gz2-pq-src      { font-size: 12px; }
+  .gz2-drop-cap::first-letter { font-size: 58px; }
+  .gz2-pq-text     { font-size: 20px; }
+  .gz2-pq-src      { font-size: 11px; }
 
   /* Sidebar + secondary + in brief */
   .gz2-lsb-lbl     { font-size: 11px; }
@@ -1580,20 +1671,37 @@ code {
   .gz2-go-pill     { font-size: 11px; }
   .gz2-go-pill-sm  { font-size: 11px; }
   .gz2-gf-l        { font-size: 13px; }
+  .gz2-gf-upd      { font-size: 11px; }
   .gz2-gf-close    { font-size: 12px; }
 }
 
 /* ── MOBILE ─────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .gz2-overlay { padding: 10px 8px 32px; }
-  .gz2-mh-title { font-size: 26px; }
+  .gz2-mh-row1 { padding-right: 28px; }
+  .gz2-mh-title { font-size: 26px; letter-spacing: -1px; }
+  .gz2-mh-tagline { font-size: 7px; }
+
+  /* Hero band stacks vertically */
+  .gz2-hero {
+    flex-direction: column; align-items: flex-start; gap: 12px;
+    padding: 12px 16px;
+  }
+  .gz2-hero-outcome { font-size: 32px; }
+  .gz2-hero-stat-div--main { display: none; }
+  .gz2-hero-stats { flex-wrap: wrap; gap: 0; }
+  .gz2-hero-stat-div { height: 32px; margin: 0 16px; }
+
+
   .gz2-lead-layout { grid-template-columns: 1fr; }
   .gz2-lead-main { padding-right: 0; border-right: none; border-bottom: 1px solid var(--paper-dark); padding-bottom: 10px; margin-bottom: 10px; }
   .gz2-lead-sidebar { padding-left: 0; }
-  .gz2-secondary-row { grid-template-columns: 1fr; }
+  .gz2-secondary-row { grid-template-columns: 1fr !important; }
   .gz2-ss-divider { height: 1px; width: 100%; }
   .gz2-ss { padding: 10px 0; }
   .gz2-ib-grid { grid-template-columns: 1fr; }
+  .gz2-gf-upd { display: none; }
+  .gz2-gf-orn { display: none; }
 }
 
 /* ============================================================
