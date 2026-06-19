@@ -12679,7 +12679,7 @@ code {
 .pvp-hero-overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8,8,8,0.6) 0%, rgba(8,8,8,0.35) 45%, rgba(8,8,8,0.2) 72%, rgba(8,8,8,0.35) 100%), linear-gradient(0deg, rgba(8,8,8,0.45) 0%, transparent 55%); pointer-events: none; z-index: 0; }
 .pvp-inner { padding: 22px 24px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; flex-wrap: wrap; gap: 16px; }
 .pvp-eye { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: #C8102E; margin-bottom: 6px; }
-.pvp-title { font-family: var(--font-display); font-weight: 800; font-size: 34px; text-transform: uppercase; color: #F5F5F5; margin-bottom: 9px; letter-spacing: 1.5px; line-height: 0.95; text-shadow: 0 2px 18px rgba(0,0,0,0.6); }
+.pvp-title { font-family: var(--font-display); font-weight: 800; font-size: 38px; text-transform: uppercase; color: #F5F5F5; margin-bottom: 9px; letter-spacing: 1.5px; line-height: 0.95; text-shadow: 0 2px 18px rgba(0,0,0,0.6); }
 .pvp-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .pvp-s-badge { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 9px; border-radius: 2px; background: rgba(200,16,46,0.16); color: #E84A60; border: 1px solid rgba(200,16,46,0.3); }
 .pvp-twist-pill { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 9px; border-radius: 2px; background: rgba(212,168,32,0.12); color: #D4A820; border: 1px solid rgba(212,168,32,0.25); }
@@ -13324,12 +13324,12 @@ code {
 
 /* ── Ladder Table ── */
 .lt-table { background: #1A1A1A; border: 1px solid #2A2A2A; border-radius: 8px; overflow: hidden; }
-.lt-head { display: grid; grid-template-columns: 44px 1fr 80px 70px 60px 80px; gap: 0; padding: 8px 14px; border-bottom: 1px solid #1E1E1E; background: #111; }
+.lt-head { display: grid; grid-template-columns: 48px 1fr 88px 82px 52px 96px; gap: 0; padding: 8px 14px; border-bottom: 1px solid #1E1E1E; background: #111; }
 .lt-head-cell { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #555; }
 .lt-head-r { text-align: right; }
 
 /* ── Ladder Row ── */
-.lt-row { display: grid; grid-template-columns: 44px 1fr 80px 70px 60px 80px; gap: 0; padding: 9px 14px; border-bottom: 1px solid #1E1E1E; align-items: center; cursor: pointer; transition: background 0.1s; }
+.lt-row { display: grid; grid-template-columns: 48px 1fr 88px 82px 52px 96px; gap: 0; padding: 9px 14px; border-bottom: 1px solid #1E1E1E; border-left: 3px solid transparent; align-items: center; cursor: pointer; transition: background 0.1s; }
 .lt-row:last-child { border-bottom: none; }
 .lt-row:hover { background: rgba(255,255,255,0.02); }
 .lt-row-you { background: rgba(200,16,46,0.05); border-left: 3px solid #C8102E; padding-left: 11px; }
@@ -13373,6 +13373,102 @@ code {
 .lt-rop-challenge-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .lt-rop-elig-loading { font-size: 11px; color: #555; }
 .lt-rop-elig-error { font-size: 11px; color: #C8102E; }
+
+/* ============================================================
+   PVP REDESIGN — Proving Ground layout additions
+   ============================================================ */
+
+/* ── Hero stat-bar (replaces 4 separate glass cards) ── */
+.pvp-statbar { display: flex; flex-shrink: 0; background: #111; border: 1px solid #2A2A2A; border-radius: 6px; overflow: hidden; }
+.pvp-sb-cell { text-align: center; padding: 12px 20px; display: flex; flex-direction: column; gap: 2px; }
+.pvp-sb-cell-dp { background: rgba(212,168,32,0.04); }
+.pvp-sb-div { width: 1px; background: #1E1E1E; flex-shrink: 0; }
+.pvp-sb-v { font-family: var(--font-display); font-weight: 800; font-size: 30px; line-height: 1; color: #F0F0F0; }
+.pvp-sb-v-g { color: #4ADE80; }
+.pvp-sb-v-r { color: #E84A60; }
+.pvp-sb-v-gold { color: #D4A820; }
+.pvp-sb-v-blue { color: #3B82F6; }
+.pvp-sb-l { font-size: 9px; color: #555; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+.pvp-sb-s { font-size: 9px; color: #777; margin-top: 1px; }
+/* DP cell streak sub gets gold color */
+.pvp-sb-cell-dp .pvp-sb-s { color: #D4A820; }
+
+/* ── Position card redesign (lt-pos- extensions) ── */
+/* Updated inner: bigger rank, vertical dividers */
+.lt-pos-rank-big { font-size: 54px; width: 80px; }
+.lt-pos-vdiv { width: 1px; height: 58px; background: #2A2A2A; flex-shrink: 0; margin: 0 18px; }
+.lt-pos-inner { padding: 14px 18px; gap: 0; }
+
+/* ── Multi-tier progress track ── */
+.lt-pos-tier-wrap { padding: 0 18px 26px; }
+
+/* Tier labels row */
+.lt-pos-tier-labels { display: flex; margin-bottom: 5px; }
+.lt-pos-tier-label-cell { text-align: center; overflow: hidden; }
+.lt-pos-tier-label-txt { font-family: var(--font-display); font-size: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #444; white-space: nowrap; }
+
+/* Track bar — overflow visible so the YOU dot marker can pop above the bar */
+.lt-pos-tier-track { display: flex; height: 5px; border-radius: 3px; overflow: visible; gap: 2px; position: relative; margin-bottom: 8px; }
+.lt-pos-tier-seg { position: relative; overflow: visible; height: 5px; background: #1E1E1E; }
+.lt-pos-tier-seg-done { background: transparent; }
+.lt-pos-tier-seg-future { background: #222; }
+.lt-pos-tier-fill { position: absolute; top: 0; left: 0; height: 100%; border-radius: 0; }
+/* YOU dot marker — pops above the bar */
+.lt-pos-tier-you { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 11px; height: 11px; border-radius: 50%; z-index: 2; flex-shrink: 0; }
+
+/* Foot line (legacy — kept for any other consumer) */
+.lt-pos-tier-foot { display: flex; align-items: center; justify-content: space-between; }
+.lt-pos-tier-foot span { font-size: 10px; color: #666; }
+
+/* DP-needed marker — anchored at the next-division boundary, below the track.
+   Arrow points up at the boundary; text flows right into the next-division zone. */
+.lt-pos-tier-needed { position: absolute; top: 11px; transform: translateX(-3px); display: flex; align-items: center; gap: 3px; white-space: nowrap; pointer-events: none; }
+.lt-pos-tier-needed-arrow { color: #C8102E; font-size: 8px; line-height: 1; }
+.lt-pos-tier-needed-txt { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 0.5px; color: #C8102E; }
+
+/* ── Division Spectrum Strip ── */
+.lt-ds-strip-wrap { display: flex; flex-direction: column; }
+.lt-ds-strip { display: flex; height: 22px; border-radius: 3px; overflow: hidden; gap: 1px; }
+.lt-ds-seg { display: flex; align-items: center; justify-content: center; cursor: pointer; transition: opacity 0.1s; overflow: hidden; }
+.lt-ds-seg:hover { opacity: 0.85; }
+.lt-ds-seg-act { opacity: 1; }
+.lt-ds-seg-lbl { font-family: var(--font-display); font-size: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+
+/* YOU marker row below the strip */
+.lt-ds-you-row { position: relative; height: 16px; margin-top: 2px; }
+.lt-ds-you-marker { position: absolute; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.lt-ds-you-tick { width: 1px; height: 6px; background: #C8102E; }
+.lt-ds-you-lbl { font-family: var(--font-display); font-size: 8px; font-weight: 800; color: #C8102E; letter-spacing: 1px; white-space: nowrap; }
+
+/* ── Rival row ── */
+.lt-row-rival { background: rgba(200,122,16,0.03); }
+.lt-row-rival:hover { background: rgba(200,122,16,0.06); }
+
+/* ── Challenge button (6th cell) ── */
+.lt-challenge-btn { font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; background: rgba(200,16,46,0.10); border: 1px solid rgba(200,16,46,0.2); color: #C8102E; cursor: pointer; justify-self: end; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+.lt-challenge-btn:hover { background: rgba(200,16,46,0.20); color: #E84A60; }
+
+/* ── Responsive additions ── */
+@media (max-width: 600px) {
+  /* Stat-bar: full width, cells grow equally */
+  .pvp-statbar { width: 100%; }
+  .pvp-sb-cell { flex: 1; padding: 10px 6px; }
+  .pvp-sb-v { font-size: 21px; }
+
+  /* Position card inner: wrap */
+  .lt-pos-inner { flex-wrap: wrap; }
+  .lt-pos-vdiv { display: none; }
+  .lt-pos-right { width: 100%; align-items: flex-start; padding-top: 8px; border-top: 1px solid #222; }
+
+  /* Tier track stays full width — no special override needed */
+}
+@media (max-width: 900px) {
+  /* Stat-bar cells tighten a bit */
+  .pvp-sb-cell { padding: 10px 12px; }
+}
+
+/* ── Dead old pill classes — kept so no errors if referenced elsewhere ── */
+/* .lt-ds-pill, .lt-ds-count, .lt-ds-lbl defined above; still valid */
 
 /* ============================================================
    PVP CONSEQUENCES BLOCK — pvp-cons- namespace

@@ -178,3 +178,66 @@ export function seasonWeightClassLabel(season) {
   return season?.weightClassLabel
     || (season?.crossWeightClass ? OPEN_LABEL : season?.weightClass);
 }
+
+/**
+ * tierTrackSegments(dp, divisionKey) — DISPLAY ONLY
+ *
+ * Returns an array of 5 segment descriptors for the multi-tier progress track
+ * in PositionCard. Each segment reflects one division in order.
+ *
+ * Signature:
+ *   tierTrackSegments(dp: number, divisionKey: string) =>
+ *     Array<{
+ *       key:        string,   // division key
+ *       label:      string,   // display label
+ *       color:      string,   // hex color
+ *       weight:     number,   // flex weight (DP range; champion uses nominal 2000)
+ *       state:      'done' | 'current' | 'future',
+ *       fillFrac:   number,   // 0..1 fill fraction (only meaningful when state==='current')
+ *     }>
+ *
+ * Guards:
+ *   - Champion tier: promoteAt is null → uses nominal weight of 2000 DP
+ *   - No divide-by-zero: if range is 0, fillFrac stays 0
+ *   - fillFrac clamped to 0..1
+ */
+export function tierTrackSegments(dp, divisionKey) {
+  const CHAMPION_NOMINAL = 2000;
+
+  return DIVISIONS.map((div) => {
+    const floor = div.floor ?? 0;
+    const promoteAt = div.promoteAt;
+    const range = promoteAt != null ? promoteAt - floor : CHAMPION_NOMINAL;
+    const weight = range > 0 ? range : CHAMPION_NOMINAL;
+
+    let state;
+    let fillFrac = 0;
+
+    const divIndex = DIVISIONS.findIndex((d) => d.key === divisionKey);
+    const segIndex = DIVISIONS.findIndex((d) => d.key === div.key);
+
+    if (divIndex < 0) {
+      // Unknown division — treat everything as future
+      state = "future";
+    } else if (segIndex < divIndex) {
+      state = "done";
+      fillFrac = 1;
+    } else if (segIndex === divIndex) {
+      state = "current";
+      if (range > 0) {
+        fillFrac = Math.min(1, Math.max(0, (dp - floor) / range));
+      }
+    } else {
+      state = "future";
+    }
+
+    return {
+      key: div.key,
+      label: div.label,
+      color: div.color,
+      weight,
+      state,
+      fillFrac,
+    };
+  });
+}

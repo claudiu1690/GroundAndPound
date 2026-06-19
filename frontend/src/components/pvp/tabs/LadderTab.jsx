@@ -36,6 +36,7 @@ function NewCompetitorShieldBanner({ expiresAt }) {
  *   myFighterId    {string}
  *   onboarding     {object|null}
  *   onOpenProfile  {fn(playerId)}
+ *   onChallenge    {fn(playerId)}   threaded from PvpHub.handleChallengeFromProfile
  */
 export function LadderTab({ season, myFighterId, onboarding, onOpenProfile }) {
   const seasonId = season?.id;
@@ -91,17 +92,18 @@ export function LadderTab({ season, myFighterId, onboarding, onOpenProfile }) {
         total={total}
       />
 
-      {/* Division summary pills */}
-      <DivisionSummary
-        divisionCounts={divisionCounts}
-        division={division}
-        setDivision={setDivision}
-      />
-
       {/* Your position (pinned — independent of filters) */}
       {!posLoading && (
         <PositionCard position={position} />
       )}
+
+      {/* Division spectrum strip */}
+      <DivisionSummary
+        divisionCounts={divisionCounts}
+        division={division}
+        setDivision={setDivision}
+        myPosition={position}
+      />
 
       {/* Full ladder table */}
       <LadderTable

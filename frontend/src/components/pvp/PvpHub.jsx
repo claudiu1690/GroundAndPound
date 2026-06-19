@@ -293,26 +293,29 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
                   </div>
                 )}
               </div>
-              <div className="pvp-stats">
-                <div className="pvp-pvs">
-                  <div className="pvp-pvs-v pvp-pvs-g">{yourRecord?.wins ?? 0}</div>
-                  <div className="pvp-pvs-l">Wins</div>
+              <div className="pvp-statbar">
+                <div className="pvp-sb-cell">
+                  <div className="pvp-sb-v pvp-sb-v-g">{yourRecord?.wins ?? 0}</div>
+                  <div className="pvp-sb-l">Wins</div>
                 </div>
-                <div className="pvp-pvs">
-                  <div className="pvp-pvs-v pvp-pvs-r">{yourRecord?.losses ?? 0}</div>
-                  <div className="pvp-pvs-l">Losses</div>
+                <div className="pvp-sb-div" aria-hidden="true" />
+                <div className="pvp-sb-cell">
+                  <div className="pvp-sb-v pvp-sb-v-r">{yourRecord?.losses ?? 0}</div>
+                  <div className="pvp-sb-l">Losses</div>
                 </div>
-                <div className="pvp-pvs">
-                  <div className="pvp-pvs-v pvp-pvs-gold">{(yourRecord?.dp ?? 0).toLocaleString()}</div>
-                  <div className="pvp-pvs-l">DP</div>
+                <div className="pvp-sb-div" aria-hidden="true" />
+                <div className="pvp-sb-cell pvp-sb-cell-dp">
+                  <div className="pvp-sb-v pvp-sb-v-gold">{(yourRecord?.dp ?? 0).toLocaleString()}</div>
+                  <div className="pvp-sb-l">DP</div>
                   {yourRecord?.winStreak >= 3 && (
-                    <div className="pvp-pvs-s">×1.25 streak</div>
+                    <div className="pvp-sb-s">&times;1.25 streak</div>
                   )}
                 </div>
-                <div className="pvp-pvs">
-                  <div className="pvp-pvs-v pvp-pvs-blue">{energyCur}</div>
-                  <div className="pvp-pvs-l">Energy</div>
-                  <div className="pvp-pvs-s">15E / fight</div>
+                <div className="pvp-sb-div" aria-hidden="true" />
+                <div className="pvp-sb-cell">
+                  <div className="pvp-sb-v pvp-sb-v-blue">{energyCur}</div>
+                  <div className="pvp-sb-l">Energy</div>
+                  <div className="pvp-sb-s">15E / fight</div>
                 </div>
               </div>
             </div>

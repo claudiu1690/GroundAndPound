@@ -3,6 +3,9 @@ import { LadderRow } from "./LadderRow";
 /**
  * LadderTable — column header + rows + Load More block.
  *
+ * Grid: 48px 1fr 88px 82px 52px 96px
+ *   #  |  Fighter  |  DP  |  Record  |  OVR  |  Last Active
+ *
  * Props:
  *   rows           {array}
  *   total          {number}
@@ -69,7 +72,6 @@ export function LadderTable({
             row={row}
             season={season}
             onOpenProfile={onOpenProfile}
-            showDivisionBadge={division == null}
           />
         ))
       )}

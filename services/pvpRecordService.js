@@ -555,11 +555,16 @@ async function getPositionForViewer(viewerId, season) {
         weightClass: season.weightClass,
         division: record.division,
     };
-    const [higher, totalInDivision] = await Promise.all([
+    // Overall rank spans ALL divisions in the season+weight-class pool (no division
+    // filter) — this is the headline "where do I stand in the whole ladder" number.
+    const seasonFilter = { seasonId: season._id, weightClass: season.weightClass };
+    const [higher, totalInDivision, overallHigher] = await Promise.all([
         PVPRecord.countDocuments({ ...divFilter, dp: { $gt: record.dp } }),
         PVPRecord.countDocuments(divFilter),
+        PVPRecord.countDocuments({ ...seasonFilter, dp: { $gt: record.dp } }),
     ]);
     const rank = higher + 1;
+    const overallRank = overallHigher + 1;
 
     const nextDiv = nextDivision(record.division); // null at champion
     const threshold = meta.promoteAt; // null at champion
@@ -604,6 +609,7 @@ async function getPositionForViewer(viewerId, season) {
             winStreak: record.winStreak,
             streakActive: record.winStreak >= 3,
             rank,
+            overallRank,
             totalInDivision,
             nextDivision: nextDiv,
             nextDivisionThreshold: threshold,

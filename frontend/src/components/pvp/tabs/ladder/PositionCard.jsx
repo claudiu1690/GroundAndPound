@@ -1,11 +1,17 @@
-import { divisionColor, divisionLabel, wcAbbrev } from "../../pvpConst";
+import { divisionColor, divisionLabel, wcAbbrev, tierTrackSegments } from "../../pvpConst";
 
 /**
- * PositionCard — pinned "Your Position" card fed by usePvpPosition.
- * Never re-renders on filter change because it's driven by its own hook
- * (passed as the `position` prop, not from the ladder hook).
+ * PositionCard — pinned "Your Season" card fed by usePvpPosition.
+ * Never re-renders on filter change because it's driven by its own hook.
  *
- * Renders null if position is null.
+ * Layout:
+ *   ┌─────────────────────────────────────────────────────┐
+ *   │  #rank │ vdiv │ name/tags/meta  │ vdiv │ dp block  │
+ *   ├─────────────────────────────────────────────────────┤
+ *   │  multi-tier track (5 segments)                      │
+ *   │  tier labels                                        │
+ *   │  foot: dp/threshold · dpToPromotion                 │
+ *   └─────────────────────────────────────────────────────┘
  *
  * Props:
  *   position  {object|null}  from usePvpPosition
@@ -25,6 +31,7 @@ export function PositionCard({ position }) {
     winStreak,
     streakActive,
     rank,
+    overallRank,
     nextDivision,
     nextDivisionThreshold,
     divisionFloor,
@@ -34,6 +41,7 @@ export function PositionCard({ position }) {
     championRank,
     totalChampions,
     weeksRemaining,
+    fightingStyle,
   } = position;
 
   const isChampion = division === "champion";
@@ -42,29 +50,49 @@ export function PositionCard({ position }) {
   const g = parseInt(color.slice(3, 5), 16);
   const b = parseInt(color.slice(5, 7), 16);
 
-  // Progress bar percentage
-  const floor = divisionFloor ?? 0;
-  const threshold = nextDivisionThreshold ?? 0;
-  const progressPct =
-    threshold > floor
-      ? Math.min(100, Math.max(0, ((dp - floor) / (threshold - floor)) * 100))
-      : 0;
-
   const wcDisplay = realWeightClass ? wcAbbrev(realWeightClass) : null;
 
-  // New Competitor Shield badge (shown to brand-new players; not granted in Season 1).
-  const shieldLabel = shieldActive ? "🛡 New Competitor Shield" : null;
   const shieldTip =
     "New Competitor Shield: as a new player you can't be challenged for a short grace period after joining — it ends when it expires or when you throw your first attack.";
 
+  // ── Multi-tier track segments ────────────────────────────────────────────
+  const segments = tierTrackSegments(dp ?? 0, division);
+
+  // Boundary between the current tier and the next = the right edge of the current
+  // segment, as a % across the whole track. The "DP needed" marker sits here so it
+  // reads as "this much DP to enter the next division" right where that tier begins.
+  const totalWeight = segments.reduce((s, x) => s + (x.weight || 0), 0) || 1;
+  let boundaryPct = null;
+  let cumWeight = 0;
+  for (const seg of segments) {
+    cumWeight += seg.weight || 0;
+    if (seg.state === "current") {
+      boundaryPct = (cumWeight / totalWeight) * 100;
+      break;
+    }
+  }
+
+  // ── Tier labels line — current tier highlighted in division color ─────────
+  // For the "current" tier we use its own color; others are dimmed.
+
   return (
     <div className="lt-pos-card">
+      {/* Top row: rank · vdiv · info · vdiv · dp */}
       <div className="lt-pos-inner">
-        <div className="lt-pos-rank-big">#{rank ?? "—"}</div>
+        {/* Big rank — overall standing across ALL divisions in the season pool */}
+        <div className="lt-pos-rank-big">#{overallRank ?? rank ?? "—"}</div>
+
+        {/* Vertical divider */}
+        <div className="lt-pos-vdiv" aria-hidden="true" />
+
+        {/* Name / tags / meta */}
         <div className="lt-pos-info">
           <div className="lt-pos-name">
             {name}
             <span className="lt-tag lt-tag-you">You</span>
+            {winStreak >= 3 && (
+              <span className="lt-tag lt-tag-streak">🔥 {winStreak}-win streak</span>
+            )}
           </div>
           <div className="lt-pos-meta">
             <span
@@ -77,20 +105,29 @@ export function PositionCard({ position }) {
             >
               {divisionLabel(division)}
             </span>
+            {wcDisplay && (
+              <>
+                <span style={{ color: "#555" }}>·</span>
+                <span>{wcDisplay}</span>
+              </>
+            )}
+            {fightingStyle && (
+              <>
+                <span style={{ color: "#555" }}>·</span>
+                <span>{fightingStyle}</span>
+              </>
+            )}
             <span style={{ color: "#555" }}>·</span>
-            {wcDisplay && <span>{wcDisplay}</span>}
-            {wcDisplay && <span style={{ color: "#555" }}>·</span>}
             <span>OVR {ovr ?? "—"}</span>
             <span style={{ color: "#555" }}>·</span>
             <span>{wins ?? 0}W · {losses ?? 0}L</span>
-            {winStreak >= 3 && (
-              <>
-                <span style={{ color: "#555" }}>·</span>
-                <span style={{ color: "#D4A820" }}>🔥 {winStreak}-win streak</span>
-              </>
-            )}
           </div>
         </div>
+
+        {/* Vertical divider */}
+        <div className="lt-pos-vdiv" aria-hidden="true" />
+
+        {/* DP block */}
         <div className="lt-pos-right">
           <div className="lt-pos-dp-v">{(dp ?? 0).toLocaleString()}</div>
           <div className="lt-pos-dp-l">Division Points</div>
@@ -100,25 +137,95 @@ export function PositionCard({ position }) {
           {catchUpActive && (
             <div className="lt-pos-catchup">×2 catch-up active</div>
           )}
-          {shieldLabel && (
-            <div className="lt-pos-shield" title={shieldTip}>{shieldLabel}</div>
+          {shieldActive && (
+            <div className="lt-pos-shield" title={shieldTip}>🛡 Shield</div>
           )}
         </div>
       </div>
 
-      {/* Progress bar */}
-      {!isChampion && nextDivision && (
-        <>
-          <div className="lt-pos-bar-track">
-            <div className="lt-pos-bar-fill" style={{ width: `${progressPct}%` }} />
+      {/* ── Multi-tier track (non-champion) ── */}
+      {!isChampion && (
+        <div className="lt-pos-tier-wrap">
+          {/* Tier name labels */}
+          <div className="lt-pos-tier-labels">
+            {segments.map((seg) => (
+              <div
+                key={seg.key}
+                className="lt-pos-tier-label-cell"
+                style={{ flex: seg.weight }}
+              >
+                <span
+                  className="lt-pos-tier-label-txt"
+                  style={seg.state === "current" ? { color: seg.color, fontWeight: 800 } : undefined}
+                >
+                  {seg.label}
+                </span>
+              </div>
+            ))}
           </div>
-          <div className="lt-pos-bar-foot">
-            <span>
-              {(dp ?? 0).toLocaleString()} / {(nextDivisionThreshold ?? 0).toLocaleString()} DP to {divisionLabel(nextDivision)}
-            </span>
-            <span>{(dpToPromotion ?? 0).toLocaleString()} DP needed</span>
+
+          {/* Track bar */}
+          <div className="lt-pos-tier-track">
+            {segments.map((seg, idx) => {
+              const isFirst = idx === 0;
+              const isLast = idx === segments.length - 1;
+              let extraClass = "";
+              if (seg.state === "done") extraClass = " lt-pos-tier-seg-done";
+              else if (seg.state === "future") extraClass = " lt-pos-tier-seg-future";
+
+              return (
+                <div
+                  key={seg.key}
+                  className={`lt-pos-tier-seg${extraClass}`}
+                  style={{
+                    flex: seg.weight,
+                    borderRadius: isFirst ? "3px 0 0 3px" : isLast ? "0 3px 3px 0" : 0,
+                    position: "relative",
+                    overflow: "visible",
+                  }}
+                >
+                  {seg.state === "current" && (
+                    <>
+                      {/* Filled portion */}
+                      <div
+                        className="lt-pos-tier-fill"
+                        style={{
+                          width: `${seg.fillFrac * 100}%`,
+                          background: seg.color,
+                        }}
+                      />
+                      {/* YOU marker dot */}
+                      <div
+                        className="lt-pos-tier-you"
+                        style={{
+                          left: `${seg.fillFrac * 100}%`,
+                          background: seg.color,
+                          boxShadow: `0 0 8px ${seg.color}`,
+                        }}
+                      />
+                    </>
+                  )}
+                  {seg.state === "done" && (
+                    <div
+                      className="lt-pos-tier-fill"
+                      style={{ width: "100%", background: `rgba(${r},${g},${b},0.35)` }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+
+            {/* DP-needed marker at the next-division boundary */}
+            {nextDivision && boundaryPct != null && (
+              <div className="lt-pos-tier-needed" style={{ left: `${boundaryPct}%` }}>
+                <span className="lt-pos-tier-needed-arrow">▲</span>
+                <span className="lt-pos-tier-needed-txt">
+                  {(dpToPromotion ?? 0).toLocaleString()} DP to {divisionLabel(nextDivision)}
+                </span>
+              </div>
+            )}
           </div>
-        </>
+        </div>
       )}
 
       {/* Champion branch */}
