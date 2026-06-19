@@ -239,10 +239,10 @@ export function AuthPage({ onAuthenticated, initialResetToken = null }) {
               <form className="auth-form" onSubmit={handleRegister}>
                 <div className="auth-step-label">Step 2 of 2 — Build your fighter</div>
                 <div className="auth-row">
-                  <div className="auth-field"><label>First Name</label><input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Conor" required /></div>
-                  <div className="auth-field"><label>Last Name</label><input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="McGregor" required /></div>
+                  <div className="auth-field"><label>First Name</label><input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Alex" required /></div>
+                  <div className="auth-field"><label>Last Name</label><input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Stone" required /></div>
                 </div>
-                <div className="auth-field"><label>Nickname <span className="auth-hint">(optional)</span></label><input value={nickname} onChange={e => setNickname(e.target.value)} placeholder="The Notorious" /></div>
+                <div className="auth-field"><label>Nickname <span className="auth-hint">(optional)</span></label><input value={nickname} onChange={e => setNickname(e.target.value)} placeholder="The Hammer" /></div>
                 <div className="auth-row">
                   <div className="auth-field"><label>Weight Class</label><select value={weightClass} onChange={e => setWeightClass(e.target.value)}>{WEIGHT_CLASSES.map(wc => <option key={wc}>{wc}</option>)}</select></div>
                   <div className="auth-field"><label>Fighting Style</label><select value={style} onChange={e => setStyle(e.target.value)}>{STYLES.map(s => <option key={s}>{s}</option>)}</select></div>

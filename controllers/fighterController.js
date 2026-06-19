@@ -17,7 +17,9 @@ async function create(req, res) {
         const fighter = await fighterService.createFighter(req.body);
         res.status(201).json(fighter);
     } catch (err) {
-        if (err.message && err.message.includes("required")) {
+        // Surface client-fixable validation errors (missing fields, profane name)
+        // with their message; everything else is a server error.
+        if (err.statusCode === 400 || err.validation || (err.message && err.message.includes("required"))) {
             return res.status(400).json({ message: err.message });
         }
         console.error(err);

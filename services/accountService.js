@@ -103,6 +103,7 @@ async function changeNickname(accountId, nickname) {
     if (!NICKNAME_RE.test(trimmed)) {
         throw new Error("Nickname can only contain letters, numbers, spaces, hyphens and apostrophes");
     }
+    require("../utils/profanity").assertCleanName(trimmed, "Nickname");
     const user = await User.findById(accountId);
     if (!user || user.deleted) throw new Error("Account not found");
     if (!user.fighterId) throw new Error("No fighter linked to this account");

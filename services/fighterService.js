@@ -134,6 +134,12 @@ async function createFighter(data) {
     if (!firstName || !lastName || !weightClass || !style) {
         throw new Error("firstName, lastName, weightClass, and style are required");
     }
+    // Names are visible to every other player (ladders, gazette, Hall of Fame) —
+    // reject profane first/last name or nickname.
+    const { assertCleanName } = require("../utils/profanity");
+    assertCleanName(firstName, "First name");
+    assertCleanName(lastName, "Last name");
+    if (nickname) assertCleanName(nickname, "Nickname");
     const built = buildStartingStats(style, backstory || null);
     const maxStamina = 100 + (built.maxStaminaBonus || 0);
     delete built.maxStaminaBonus;
