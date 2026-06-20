@@ -7,6 +7,7 @@ import {
     boosterAffectsStat,
     pctLabel,
 } from "../shop/shopConstants";
+import { t } from "@/lib/i18n";
 
 // Full session metadata matching backend TRAINING_SESSIONS + rank 2 sessions
 export const SESSION_META = {
@@ -81,11 +82,11 @@ function SessionTrainControl({ sessionKey, cost, energy, cardMax, isSparring, bu
                 </div>
             )}
             <div className="session-qty-row">
-                <div className="session-stepper" role="group" aria-label="Sessions">
+                <div className="session-stepper" role="group" aria-label={t("gym.sessions.ariaStepperGroup")}>
                     <button
                         type="button"
                         className="session-stepper-btn"
-                        aria-label="One fewer session"
+                        aria-label={t("gym.sessions.ariaOneFewer")}
                         disabled={safeN <= 1 || busy}
                         onClick={() => setN((p) => Math.max(1, Math.min(p, cardMax) - 1))}
                     >
@@ -95,7 +96,7 @@ function SessionTrainControl({ sessionKey, cost, energy, cardMax, isSparring, bu
                     <button
                         type="button"
                         className="session-stepper-btn"
-                        aria-label="One more session"
+                        aria-label={t("gym.sessions.ariaOneMore")}
                         disabled={safeN >= cardMax || busy}
                         onClick={() => setN((p) => Math.min(cardMax, Math.min(p, cardMax) + 1))}
                     >
@@ -120,7 +121,7 @@ function SessionTrainControl({ sessionKey, cost, energy, cardMax, isSparring, bu
                         disabled={busy}
                         onClick={() => setN(cardMax)}
                     >
-                        Max
+                        {t("gym.sessions.maxBtn")}
                     </button>
                 </div>
             </div>
@@ -133,7 +134,7 @@ function SessionTrainControl({ sessionKey, cost, energy, cardMax, isSparring, bu
                 disabled={busy}
                 onClick={() => onTrain(sessionKey, safeN)}
             >
-                {safeN > 1 ? `Train ×${safeN}` : "Train"}
+                {safeN > 1 ? t("gym.sessions.trainMultiple", { n: safeN }) : t("gym.sessions.trainSingle")}
             </button>
         </div>
     );
@@ -207,10 +208,10 @@ export const GymTraining = memo(function GymTraining({
     function rankUnlockText(r) {
         if (!r.unlock) return null;
         switch (r.unlock.type) {
-            case "access": return "Sessions unlocked";
+            case "access": return t("gym.rankUnlock.access");
             case "session": return SESSION_META[r.unlock.sessionKey]?.label ?? r.unlock.sessionKey;
-            case "xpBonus": return `+${r.unlock.xpBonusPct}% XP bonus`;
-            case "perk": return "Corner perk + badge";
+            case "xpBonus": return t("gym.rankUnlock.xpBonus", { pct: r.unlock.xpBonusPct });
+            case "perk": return t("gym.rankUnlock.perk");
             default: return null;
         }
     }
@@ -226,7 +227,7 @@ export const GymTraining = memo(function GymTraining({
                 <div className="gym-header-overlay" aria-hidden="true" />
                 <div className="gym-header-row1">
                     <button type="button" className="gym-back" onClick={onBack}>
-                        <ChevronLeft size={12} /> All Gyms
+                        <ChevronLeft size={12} /> {t("gym.header.allGyms")}
                     </button>
                 </div>
                 <div className="gym-header-row2">
@@ -241,12 +242,12 @@ export const GymTraining = memo(function GymTraining({
                             </>
                         ) : null}
                         {isFree && (
-                            <span className="gym-tag gym-tag-all">All Stats · {gym.xpMultiplier}×</span>
+                            <span className="gym-tag gym-tag-all">{t("gym.card.allStats", { mult: gym.xpMultiplier })}</span>
                         )}
                     </div>
                     <div className="gym-header-right">
                         <div className="gym-energy-pill" data-tut="energy">
-                            <span className="gym-energy-lbl">Energy</span>
+                            <span className="gym-energy-lbl">{t("gym.header.energy")}</span>
                             <Zap size={12} /> {energy}
                         </div>
                         {!isFree && !isActive && (
@@ -262,14 +263,14 @@ export const GymTraining = memo(function GymTraining({
                                         }
                                     }}
                                 >
-                                    Join — ${gym.weeklyCost} / week
+                                    {t("gym.header.joinBtn", { cost: gym.weeklyCost })}
                                 </button>
                                 {joinError && <div className="gym-join-error">{joinError}</div>}
                             </div>
                         )}
                         {isActive && (
                             <span className="gym-membership-badge">
-                                <Check size={11} /> {gym.membership.daysLeft}d left
+                                <Check size={11} /> {t("gym.header.membershipLeft", { days: gym.membership.daysLeft })}
                             </span>
                         )}
                     </div>
@@ -279,7 +280,7 @@ export const GymTraining = memo(function GymTraining({
             {/* STRIP 2 — Rank strip */}
             {!isFree && gym.ranks?.length > 0 && (
                 <div className="rank-strip">
-                    <div className="rank-strip-label">Gym Rank</div>
+                    <div className="rank-strip-label">{t("gym.rankStrip.label")}</div>
                     <div className="rank-strip-steps">
                         {sortedRanks.map((r, i) => {
                             const done = currentRank > r.rank;
@@ -315,13 +316,13 @@ export const GymTraining = memo(function GymTraining({
                 return (
                     <div className="rank-upcta">
                         <div className="rank-upcta-head">
-                            <span className="rank-upcta-eyebrow">Next Rank</span>
+                            <span className="rank-upcta-eyebrow">{t("gym.rankUp.nextRank")}</span>
                             <span className="rank-upcta-name">{next.name}</span>
                         </div>
                         <div className="rank-reqs">
                             <span className={`rank-req-chip${tDone ? " is-done" : ""}`}>
                                 {tDone && <Check size={11} />}
-                                <span className="rank-req-label">Training</span>
+                                <span className="rank-req-label">{t("gym.rankUp.reqTraining")}</span>
                                 <span className="rank-req-val">{Math.min(gym.progress.trainingSessions, tReq)}/{tReq}</span>
                             </span>
                             {wReq > 0 && (
@@ -333,7 +334,7 @@ export const GymTraining = memo(function GymTraining({
                             )}
                             {ironCost > 0 && (
                                 <span className="rank-req-chip rank-req-chip--fee">
-                                    <span className="rank-req-label">Cost</span>
+                                    <span className="rank-req-label">{t("gym.rankUp.reqCost")}</span>
                                     <span className="rank-req-val">${ironCost.toLocaleString()}</span>
                                 </span>
                             )}
@@ -351,7 +352,7 @@ export const GymTraining = memo(function GymTraining({
                                         }
                                     }}
                                 >
-                                    <Trophy size={12} /> Rank Up (${ironCost.toLocaleString()})
+                                    <Trophy size={12} /> {t("gym.rankUp.rankUpBtn", { cost: ironCost.toLocaleString() })}
                                 </button>
                                 {rankUpError && <div className="rank-up-error">{rankUpError}</div>}
                             </>
@@ -367,7 +368,7 @@ export const GymTraining = memo(function GymTraining({
                     <div className="rank-maxed">
                         <Trophy size={14} />
                         <div className="rank-maxed-body">
-                            <div className="rank-maxed-title">Maximum rank achieved — perk active</div>
+                            <div className="rank-maxed-title">{t("gym.rankUp.maxTitle")}</div>
                             {maxPerk?.perkName && (
                                 <div className="rank-maxed-perk">
                                     <strong>{maxPerk.perkName}</strong>
@@ -389,7 +390,7 @@ export const GymTraining = memo(function GymTraining({
 
             {/* STRIP 4 — Sessions */}
             <div className="sessions-area">
-                <div className="sessions-label">Training Sessions</div>
+                <div className="sessions-label">{t("gym.sessions.label")}</div>
                 {activeBooster && (
                     <div className="booster-banner">
                         <TrendingUp size={14} className="booster-banner-icon" />
@@ -397,7 +398,7 @@ export const GymTraining = memo(function GymTraining({
                         <span className="booster-banner-pct">+{pctLabel(activeBooster.pct)}% XP</span>
                         <span className="booster-banner-scope">{boosterEffectLine(activeBooster)}</span>
                         <span className="booster-banner-left">
-                            {activeBooster.sessionsLeft} session{activeBooster.sessionsLeft === 1 ? "" : "s"} left
+                            {t("gym.booster.sessionsLeft", { n: activeBooster.sessionsLeft, plural: activeBooster.sessionsLeft === 1 ? "" : "s" })}
                         </span>
                     </div>
                 )}
@@ -472,23 +473,23 @@ export const GymTraining = memo(function GymTraining({
                                         </div>
                                         {isRank2Locked ? (
                                             <button type="button" className="session-card-btn locked-btn" disabled>
-                                                <Lock size={10} /> Rank 2
+                                                <Lock size={10} /> {t("gym.sessions.rank2Locked")}
                                             </button>
                                         ) : !canTrain ? (
                                             <button type="button" className="session-card-btn inactive" disabled>
-                                                Join to Train
+                                                {t("gym.sessions.joinToTrain")}
                                             </button>
                                         ) : isLocked ? (
                                             <button type="button" className="session-card-btn locked-btn" disabled>
-                                                Injury locked
+                                                {t("gym.sessions.injuryLocked")}
                                             </button>
                                         ) : isStaminaMaxed ? (
                                             <button type="button" className="session-card-btn inactive" disabled>
-                                                Max Stamina maxed (120)
+                                                {t("gym.sessions.staminaMaxed")}
                                             </button>
                                         ) : notEnoughEnergy ? (
                                             <button type="button" className="session-card-btn inactive" disabled>
-                                                Need {m.cost}E
+                                                {t("gym.sessions.needEnergy", { cost: m.cost })}
                                             </button>
                                         ) : (
                                             <SessionTrainControl
@@ -510,7 +511,7 @@ export const GymTraining = memo(function GymTraining({
 
                 {!isFree && otherSessions.length > 0 && (
                     <>
-                        <div className="other-section-label">Available at Other Gyms</div>
+                        <div className="other-section-label">{t("gym.sessions.availableAtOtherGyms")}</div>
                         {otherSessions.map((key) => {
                             const m = SESSION_META[key];
                             const gymName = findGymForSession(key);
@@ -521,7 +522,7 @@ export const GymTraining = memo(function GymTraining({
                                             <span className="other-session-name">{m.label}</span>
                                             <span className="other-session-tag">{m.stats?.[0] ?? m.special}</span>
                                         </div>
-                                        {gymName && <div className="other-session-gym">Available at {gymName}</div>}
+                                        {gymName && <div className="other-session-gym">{t("gym.sessions.availableAt", { gymName })}</div>}
                                     </div>
                                 </div>
                             );

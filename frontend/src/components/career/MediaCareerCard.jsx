@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { listenersFromScore, formatListeners } from "../media/mediaFormat";
 
 const DOC_FAME_TARGET = 40000;
@@ -18,20 +19,20 @@ export function MediaCareerCard({ fighter }) {
   if (recorded) {
     const at = fighter?.media?.documentaryRecordedAt;
     const dateStr = at ? new Date(at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "";
-    docValue = `Recorded${dateStr ? ` · ${dateStr}` : ""}`;
+    docValue = `${t("career.media.docRecorded")}${dateStr ? ` · ${dateStr}` : ""}`;
     docClass = "gold";
   } else {
-    docValue = `Not yet · ${score.toLocaleString()} / ${DOC_FAME_TARGET.toLocaleString()} fame`;
+    docValue = t("career.media.docNotYet", { score: score.toLocaleString(), target: DOC_FAME_TARGET.toLocaleString() });
     docClass = "muted";
   }
 
   return (
     <div className="p-card">
-      <div className="p-card-lbl">Media Career</div>
-      <div className="cr"><span className="cl">Podcast episodes</span><span className="cv">{episodes}</span></div>
-      <div className="cr"><span className="cl">Listeners</span><span className="cv" style={{ color: "var(--ts, #AAA)" }}>{listeners}</span></div>
+      <div className="p-card-lbl">{t("career.media.cardLabel")}</div>
+      <div className="cr"><span className="cl">{t("career.media.podcastEpisodes")}</span><span className="cv">{episodes}</span></div>
+      <div className="cr"><span className="cl">{t("career.media.listeners")}</span><span className="cv" style={{ color: "var(--ts, #AAA)" }}>{listeners}</span></div>
       <div className="cr">
-        <span className="cl">Documentary</span>
+        <span className="cl">{t("career.media.documentary")}</span>
         <span className={`cv${docClass === "gold" ? " gold" : ""}`} style={docClass === "muted" ? { color: "var(--tm, #555)", fontSize: 11 } : { fontSize: 11 }}>
           {docValue}
         </span>

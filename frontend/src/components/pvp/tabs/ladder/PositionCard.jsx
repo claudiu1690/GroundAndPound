@@ -1,4 +1,5 @@
 import { divisionColor, divisionLabel, wcAbbrev, tierTrackSegments } from "../../pvpConst";
+import { t } from "../../../../lib/i18n";
 
 /**
  * PositionCard — pinned "Your Season" card fed by usePvpPosition.
@@ -52,8 +53,7 @@ export function PositionCard({ position }) {
 
   const wcDisplay = realWeightClass ? wcAbbrev(realWeightClass) : null;
 
-  const shieldTip =
-    "New Competitor Shield: as a new player you can't be challenged for a short grace period after joining — it ends when it expires or when you throw your first attack.";
+  const shieldTip = t("pvp.ladder.shieldTip");
 
   // ── Multi-tier track segments ────────────────────────────────────────────
   const segments = tierTrackSegments(dp ?? 0, division);
@@ -89,7 +89,7 @@ export function PositionCard({ position }) {
         <div className="lt-pos-info">
           <div className="lt-pos-name">
             {name}
-            <span className="lt-tag lt-tag-you">You</span>
+            <span className="lt-tag lt-tag-you">{t("pvp.ladder.youTag")}</span>
             {winStreak >= 3 && (
               <span className="lt-tag lt-tag-streak">🔥 {winStreak}-win streak</span>
             )}
@@ -130,15 +130,15 @@ export function PositionCard({ position }) {
         {/* DP block */}
         <div className="lt-pos-right">
           <div className="lt-pos-dp-v">{(dp ?? 0).toLocaleString()}</div>
-          <div className="lt-pos-dp-l">Division Points</div>
+          <div className="lt-pos-dp-l">{t("pvp.ladder.divisionPoints")}</div>
           {streakActive && (
-            <div className="lt-pos-streak">×1.25 multiplier active</div>
+            <div className="lt-pos-streak">{t("pvp.ladder.streakMultiplier")}</div>
           )}
           {catchUpActive && (
-            <div className="lt-pos-catchup">×2 catch-up active</div>
+            <div className="lt-pos-catchup">{t("pvp.ladder.catchupMultiplier")}</div>
           )}
           {shieldActive && (
-            <div className="lt-pos-shield" title={shieldTip}>🛡 Shield</div>
+            <div className="lt-pos-shield" title={shieldTip}>{t("pvp.ladder.shieldPill")}</div>
           )}
         </div>
       </div>
@@ -220,7 +220,7 @@ export function PositionCard({ position }) {
               <div className="lt-pos-tier-needed" style={{ left: `${boundaryPct}%` }}>
                 <span className="lt-pos-tier-needed-arrow">▲</span>
                 <span className="lt-pos-tier-needed-txt">
-                  {(dpToPromotion ?? 0).toLocaleString()} DP to {divisionLabel(nextDivision)}
+                  {t("pvp.ladder.dpToPromotion", { amount: (dpToPromotion ?? 0).toLocaleString(), division: divisionLabel(nextDivision) })}
                 </span>
               </div>
             )}
@@ -234,8 +234,8 @@ export function PositionCard({ position }) {
           <span>{(dp ?? 0).toLocaleString()} DP</span>
           {championRank != null && (
             <span>
-              {championRank} of {totalChampions} Champion
-              {weeksRemaining != null ? ` · ${weeksRemaining} weeks remaining` : ""}
+              {t("pvp.ladder.championBranch", { count: championRank, total: totalChampions })}
+              {weeksRemaining != null ? ` · ${t("pvp.ladder.championWeeks", { n: weeksRemaining })}` : ""}
             </span>
           )}
         </div>

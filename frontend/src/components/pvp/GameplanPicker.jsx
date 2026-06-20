@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Flame, Grab, Lock, Shield, Scale } from "lucide-react";
 import { GAMEPLAN_META } from "./pvpConst";
+import { t } from "../../lib/i18n";
 
 /** Lucide icons for each gameplan key. */
 export const GP_ICONS = {
@@ -92,7 +93,7 @@ export function GameplanPicker({ selected, onSelect, fighter, disabled }) {
               {meta.tag}
             </span>
             {suited && (
-              <span className="pvp-gp-suited-pill">Suits your build</span>
+              <span className="pvp-gp-suited-pill">{t("pvp.gameplan.suitedPill")}</span>
             )}
           </button>
         );

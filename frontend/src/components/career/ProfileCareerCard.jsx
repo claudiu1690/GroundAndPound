@@ -1,3 +1,5 @@
+import { t } from "@/lib/i18n";
+
 /**
  * Career summary rows: rank, record, finishes, streak, gym, style, fame.
  */
@@ -19,7 +21,7 @@ export function ProfileCareerCard({ fighter }) {
   const rankNum = fighter?.ranking?.rank;
   const rankValue = rankNum != null
     ? `#${rankNum}${fighter?.promotionTier ? ` ${fighter.promotionTier}` : ""}`
-    : "Unranked";
+    : t("career.careerCard.unranked");
 
   const winStreak = Number(fighter?.winStreak ?? 0);
   const lossStreak = Number(fighter?.consecutiveLosses ?? 0);
@@ -30,16 +32,16 @@ export function ProfileCareerCard({ fighter }) {
 
   return (
     <div className="p-card">
-      <div className="p-card-lbl">Career</div>
-      <Row label="Rank" value={rankValue} valueClass="acc" />
-      <Row label="Record" value={recordStr} />
-      <Row label="KOs" value={rec.koWins ?? 0} />
-      <Row label="Submissions" value={rec.subWins ?? 0} />
-      <Row label="Decisions" value={rec.decisionWins ?? 0} />
-      <Row label={winStreak > 0 || lossStreak <= 0 ? "Win streak" : "Loss streak"} value={streakLabel.value} valueClass={streakLabel.valueClass} />
-      <Row label="Gym" value={fighter?.gymId?.name || "—"} small />
-      <Row label="Style" value={fighter?.style || "—"} small />
-      <Row label="Fame" value={fighter?.notoriety?.tierLabel || "—"} valueClass="gold" small />
+      <div className="p-card-lbl">{t("career.careerCard.cardLabel")}</div>
+      <Row label={t("career.careerCard.rank")} value={rankValue} valueClass="acc" />
+      <Row label={t("career.careerCard.record")} value={recordStr} />
+      <Row label={t("career.careerCard.kos")} value={rec.koWins ?? 0} />
+      <Row label={t("career.careerCard.submissions")} value={rec.subWins ?? 0} />
+      <Row label={t("career.careerCard.decisions")} value={rec.decisionWins ?? 0} />
+      <Row label={winStreak > 0 || lossStreak <= 0 ? t("career.careerCard.winStreak") : t("career.careerCard.lossStreak")} value={streakLabel.value} valueClass={streakLabel.valueClass} />
+      <Row label={t("career.careerCard.gym")} value={fighter?.gymId?.name || "—"} small />
+      <Row label={t("career.careerCard.style")} value={fighter?.style || "—"} small />
+      <Row label={t("career.careerCard.fame")} value={fighter?.notoriety?.tierLabel || "—"} valueClass="gold" small />
     </div>
   );
 }

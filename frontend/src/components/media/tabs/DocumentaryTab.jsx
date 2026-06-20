@@ -1,35 +1,41 @@
 import { useCallback, useState } from "react";
 import { Video, Lock, Coins, Star, Clock } from "lucide-react";
 import { api } from "../../../api";
+import { t } from "@/lib/i18n";
 
 // Local label/description maps — backend sends bare enum keys.
+// Names and descs are now resolved via i18n at render time.
 const FOCUS = [
-  { key: "FIGHTER",    name: "The Fighter",   desc: "Your fighting journey. Broad fame appeal." },
-  { key: "UNDERDOG",   name: "The Underdog",  desc: "Losses and comebacks. More cash payout." },
-  { key: "TECHNICIAN", name: "The Technician",desc: "Gym mastery focus. Unlocks special perk." },
+  { key: "FIGHTER",    nameKey: "media.documentary.focusOptions.FIGHTER",    descKey: "media.documentary.focusDescs.FIGHTER" },
+  { key: "UNDERDOG",   nameKey: "media.documentary.focusOptions.UNDERDOG",   descKey: "media.documentary.focusDescs.UNDERDOG" },
+  { key: "TECHNICIAN", nameKey: "media.documentary.focusOptions.TECHNICIAN", descKey: "media.documentary.focusDescs.TECHNICIAN" },
 ];
 const TONE = [
-  { key: "INSPIRATIONAL", name: "Inspirational", desc: "Casual fans. Broad fame reach." },
-  { key: "RAW",           name: "Raw & Honest",  desc: "Hardcore fans. Deeper fame bonus." },
-  { key: "CONTROVERSIAL", name: "Controversial", desc: "Big spike. Creates one Beef flag." },
+  { key: "INSPIRATIONAL", nameKey: "media.documentary.toneOptions.INSPIRATIONAL", descKey: "media.documentary.toneDescs.INSPIRATIONAL" },
+  { key: "RAW",           nameKey: "media.documentary.toneOptions.RAW",           descKey: "media.documentary.toneDescs.RAW" },
+  { key: "CONTROVERSIAL", nameKey: "media.documentary.toneOptions.CONTROVERSIAL", descKey: "media.documentary.toneDescs.CONTROVERSIAL" },
 ];
 const TIMING = [
-  { key: "NOW",          name: "Release now",      desc: "Immediate standard reward." },
-  { key: "BEFORE_TITLE", name: "Before title shot",desc: "Amplified if you win the belt." },
-  { key: "AFTER_TITLE",  name: "After title win",  desc: "Maximum reward. Must win first." },
+  { key: "NOW",          nameKey: "media.documentary.timingOptions.NOW",          descKey: "media.documentary.timingDescs.NOW" },
+  { key: "BEFORE_TITLE", nameKey: "media.documentary.timingOptions.BEFORE_TITLE", descKey: "media.documentary.timingDescs.BEFORE_TITLE" },
+  { key: "AFTER_TITLE",  nameKey: "media.documentary.timingOptions.AFTER_TITLE",  descKey: "media.documentary.timingDescs.AFTER_TITLE" },
 ];
-
-const LABEL = {};
-[...FOCUS, ...TONE, ...TIMING].forEach((o) => { LABEL[o.key] = o.name; });
 
 // Backend DOCUMENTARY_PENDING_MAX_FIGHTS — a pending doc falls back to base after this many fights.
 const PENDING_MAX_FIGHTS = 10;
 
-function StepColumn({ num, title, options, value, onPick, readOnly }) {
+/** Resolve a backend enum key to its localised name, falling back to the raw key. */
+function docLabel(key) {
+  const all = [...FOCUS, ...TONE, ...TIMING];
+  const entry = all.find((o) => o.key === key);
+  return entry ? t(entry.nameKey) : (key || "");
+}
+
+function StepColumn({ num, titleKey, options, value, onPick, readOnly }) {
   return (
     <div className={`media-doc-step${value ? " act" : ""}`}>
-      <div className="media-doc-step-num">Step {num} of 3</div>
-      <div className="media-doc-step-title">{title}</div>
+      <div className="media-doc-step-num">{t("media.documentary.stepLabel", { n: num })}</div>
+      <div className="media-doc-step-title">{t(titleKey)}</div>
       <div className="media-doc-opts">
         {options.map((o) => (
           <div
@@ -37,8 +43,8 @@ function StepColumn({ num, title, options, value, onPick, readOnly }) {
             className={`media-doc-opt${value === o.key ? " sel" : ""}`}
             onClick={() => { if (!readOnly) onPick(o.key); }}
           >
-            <div className="media-doc-opt-name">{o.name}</div>
-            <div className="media-doc-opt-desc">{o.desc}</div>
+            <div className="media-doc-opt-name">{t(o.nameKey)}</div>
+            <div className="media-doc-opt-desc">{t(o.descKey)}</div>
           </div>
         ))}
       </div>
@@ -71,7 +77,7 @@ export function DocumentaryTab({ fighter, hub, onMessage, onRefreshFighter, onAf
       await onAfterAction?.();
       setWizard(false);
     } catch (e) {
-      onMessage?.(e.message || "Could not record the documentary.");
+      onMessage?.(e.message || t("media.documentary.recordError"));
     } finally {
       setBusy(false);
     }
@@ -85,10 +91,9 @@ export function DocumentaryTab({ fighter, hub, onMessage, onRefreshFighter, onAf
         <div className="media-doc-locked">
           <div className="media-doc-icon"><Video size={24} /></div>
           <div className="media-doc-info">
-            <div className="media-doc-title">Career Documentary — Locked</div>
+            <div className="media-doc-title">{t("media.documentary.lockedTitle")}</div>
             <div className="media-doc-desc">
-              A production company wants to tell your story. Unlocks at {(doc.unlockTier || "Star")
-                .replace("_", " ").toLowerCase()} fame tier. One time only — pick your moment.
+              {t("media.documentary.lockedDesc", { tier: (doc.unlockTier || "Star").replace("_", " ").toLowerCase() })}
             </div>
             <div className="media-doc-progress">
               <div className="media-doc-prog-track">
@@ -102,11 +107,11 @@ export function DocumentaryTab({ fighter, hub, onMessage, onRefreshFighter, onAf
         </div>
 
         <div>
-          <div className="media-slbl media-slbl--muted">Preview — three decisions you'll make when it unlocks</div>
+          <div className="media-slbl media-slbl--muted">{t("media.documentary.previewLabel")}</div>
           <div className="media-doc-steps">
-            <StepColumn num={1} title="Focus" options={FOCUS} value={FOCUS[0].key} readOnly />
-            <StepColumn num={2} title="Tone" options={TONE} value={TONE[1].key} readOnly />
-            <StepColumn num={3} title="Release timing" options={TIMING} value={TIMING[2].key} readOnly />
+            <StepColumn num={1} titleKey="media.documentary.focus" options={FOCUS} value={FOCUS[0].key} readOnly />
+            <StepColumn num={2} titleKey="media.documentary.tone" options={TONE} value={TONE[1].key} readOnly />
+            <StepColumn num={3} titleKey="media.documentary.releaseTiming" options={TIMING} value={TIMING[2].key} readOnly />
           </div>
         </div>
       </div>
@@ -123,14 +128,14 @@ export function DocumentaryTab({ fighter, hub, onMessage, onRefreshFighter, onAf
         <div className="media-doc-memorial">
           <div className="media-doc-icon"><Video size={24} /></div>
           <div className="media-doc-info">
-            <div className="media-doc-title">Career Documentary — Released</div>
+            <div className="media-doc-title">{t("media.documentary.recordedTitle")}</div>
             <div className="media-doc-memorial-choices">
-              {LABEL[choices.focus] || choices.focus} · {LABEL[choices.tone] || choices.tone} · {LABEL[choices.timing] || choices.timing}
+              {docLabel(choices.focus)} · {docLabel(choices.tone)} · {docLabel(choices.timing)}
             </div>
             <div className="media-doc-memorial-reward">
               {reward.fame ? <span className="media-reward-chip gold"><Star size={11} /> +{reward.fame} fame</span> : null}
               {reward.cash ? <span className="media-reward-chip green"><Coins size={11} /> +${reward.cash}</span> : null}
-              {reward.boosterGranted ? <span className="media-reward-chip">Booster granted</span> : null}
+              {reward.boosterGranted ? <span className="media-reward-chip">{t("media.documentary.boosterGranted")}</span> : null}
             </div>
             {doc.recordedAt && (
               <div className="media-doc-memorial-date">
@@ -148,8 +153,8 @@ export function DocumentaryTab({ fighter, hub, onMessage, onRefreshFighter, onAf
             <div className="media-doc-pending">
               <Clock size={14} />
               <span>
-                Reward deferred — releases {pending?.timing ? (LABEL[pending.timing] || pending.timing) : "later"}
-                {remaining != null && ` · ${remaining} fight${remaining === 1 ? "" : "s"} remaining`}
+                {t("media.documentary.pendingLabel", { timing: pending?.timing ? docLabel(pending.timing) : "later" })}
+                {remaining != null && ` · ${remaining === 1 ? t("media.documentary.pendingFightsRemaining", { n: remaining }) : t("media.documentary.pendingFightsRemainingPlural", { n: remaining })}`}
               </span>
             </div>
           );
@@ -165,12 +170,12 @@ export function DocumentaryTab({ fighter, hub, onMessage, onRefreshFighter, onAf
         <div className="media-doc-locked media-doc-locked--ready">
           <div className="media-doc-icon"><Video size={24} /></div>
           <div className="media-doc-info">
-            <div className="media-doc-title">Career Documentary — Available</div>
+            <div className="media-doc-title">{t("media.documentary.availableTitle")}</div>
             <div className="media-doc-desc">
-              A production company is ready to roll. One time only — three decisions shape the final cut.
+              {t("media.documentary.availableDesc")}
             </div>
             <button type="button" className="media-record-btn" onClick={() => setWizard(true)}>
-              Begin Documentary
+              {t("media.documentary.beginBtn")}
             </button>
           </div>
         </div>
@@ -182,18 +187,18 @@ export function DocumentaryTab({ fighter, hub, onMessage, onRefreshFighter, onAf
   const ready = focus && tone && timing;
   return (
     <div className="media-pane">
-      <div className="media-slbl">Make your three calls</div>
+      <div className="media-slbl">{t("media.documentary.wizardLabel")}</div>
       <div className="media-doc-steps">
-        <StepColumn num={1} title="Focus" options={FOCUS} value={focus} onPick={setFocus} />
-        <StepColumn num={2} title="Tone" options={TONE} value={tone} onPick={setTone} />
-        <StepColumn num={3} title="Release timing" options={TIMING} value={timing} onPick={setTiming} />
+        <StepColumn num={1} titleKey="media.documentary.focus" options={FOCUS} value={focus} onPick={setFocus} />
+        <StepColumn num={2} titleKey="media.documentary.tone" options={TONE} value={tone} onPick={setTone} />
+        <StepColumn num={3} titleKey="media.documentary.releaseTiming" options={TIMING} value={timing} onPick={setTiming} />
       </div>
       <div className="media-record-row">
-        <button type="button" className="media-mini-btn" onClick={() => setWizard(false)} disabled={busy}>Cancel</button>
+        <button type="button" className="media-mini-btn" onClick={() => setWizard(false)} disabled={busy}>{t("common.cancel")}</button>
         <button type="button" className="media-record-btn" disabled={!ready || busy} onClick={submit}>
-          {busy ? "Recording…" : "Confirm & Record"}
+          {busy ? t("media.documentary.recordingBusy") : t("media.documentary.confirmRecord")}
         </button>
-        {!ready && <span className="media-record-hint">Pick one option per step.</span>}
+        {!ready && <span className="media-record-hint">{t("media.documentary.pickHint")}</span>}
       </div>
     </div>
   );

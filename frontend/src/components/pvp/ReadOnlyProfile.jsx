@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { api } from "../../api";
 import { ProfilePane } from "../career/ProfilePane";
+import { t } from "../../lib/i18n";
 
 /**
  * ReadOnlyProfile — renders another fighter's profile (read-only) within the
@@ -44,9 +45,9 @@ export function ReadOnlyProfile({ fighterId, viewerFighter, season, onBack, onCh
   const isEnabled = eligibility?.eligible === true;
   const disabledTooltip =
     reason === "protected"
-      ? "Protected"
+      ? t("pvp.readOnlyProfile.tooltipProtected")
       : reason === "out_of_range"
-        ? "Out of range — OVR gap too large to challenge directly"
+        ? t("pvp.readOnlyProfile.tooltipOutOfRange")
         : null;
 
   return (
@@ -55,7 +56,7 @@ export function ReadOnlyProfile({ fighterId, viewerFighter, season, onBack, onCh
       <div className="lt-rop-header">
         <button className="lt-rop-back-btn" onClick={onBack}>
           <ChevronLeft size={14} strokeWidth={2} />
-          Back to Ladder
+          {t("pvp.readOnlyProfile.backToLadder")}
         </button>
 
         {!eligLoading && !hideButton && (
@@ -66,12 +67,12 @@ export function ReadOnlyProfile({ fighterId, viewerFighter, season, onBack, onCh
             onClick={() => isEnabled && onChallenge(fighterId)}
             style={!isEnabled ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
           >
-            Challenge
+            {t("pvp.readOnlyProfile.challengeBtn")}
           </button>
         )}
 
         {eligLoading && (
-          <span className="lt-rop-elig-loading">Checking eligibility…</span>
+          <span className="lt-rop-elig-loading">{t("pvp.readOnlyProfile.checkingEligibility")}</span>
         )}
 
         {eligError && !eligLoading && (

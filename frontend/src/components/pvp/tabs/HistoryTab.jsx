@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { usePvpHistory } from "../../../hooks/usePvpHistory";
+import { t } from "../../../lib/i18n";
 
 function relativeTime(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -31,11 +32,11 @@ export function HistoryTab({ season }) {
   return (
     <div className="pvp-history-wrap">
       {loading && fights.length === 0 ? (
-        <div className="pvp-loading">Loading history…</div>
+        <div className="pvp-loading">{t("pvp.history.loading")}</div>
       ) : error ? (
         <div className="pvp-error-note">{error}</div>
       ) : fights.length === 0 ? (
-        <div className="pvp-empty-history">No fights this season yet.</div>
+        <div className="pvp-empty-history">{t("pvp.history.empty")}</div>
       ) : (
         <>
           <div className="pvp-hist-list">
@@ -48,20 +49,20 @@ export function HistoryTab({ season }) {
                   <div className="pvp-hist-body">
                     <div className="pvp-hist-top">
                       <span className={`pvp-hist-result ${won ? "pvp-hist-result-w" : "pvp-hist-result-l"}`}>
-                        {won ? "Win" : "Loss"}
+                        {won ? t("pvp.history.win") : t("pvp.history.loss")}
                       </span>
                       <span className="pvp-hist-opp">vs {f.opponentName}</span>
                       {f.isRivalryFight && (
-                        <span className="pvp-hist-tag pvp-hist-tag-rival">Rival</span>
+                        <span className="pvp-hist-tag pvp-hist-tag-rival">{t("pvp.history.tagRival")}</span>
                       )}
                       {f.isBeltHolderFight && (
-                        <span className="pvp-hist-tag pvp-hist-tag-belt">🏆 Champ</span>
+                        <span className="pvp-hist-tag pvp-hist-tag-belt">{t("pvp.history.tagChamp")}</span>
                       )}
                     </div>
                     <div className="pvp-hist-sub">
                       {methodLabel(f.method)} · {f.divisionAfter}
                       {f.role === "defender" && (
-                        <span className="pvp-hist-tag pvp-hist-tag-def">Defense</span>
+                        <span className="pvp-hist-tag pvp-hist-tag-def">{t("pvp.history.tagDefense")}</span>
                       )}
                     </div>
                   </div>
@@ -84,15 +85,15 @@ export function HistoryTab({ season }) {
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
               >
-                Prev
+                {t("pvp.history.prevBtn")}
               </button>
-              <span className="pvp-page-info">Page {page} / {data.totalPages}</span>
+              <span className="pvp-page-info">{t("pvp.history.pageInfo", { page, total: data.totalPages })}</span>
               <button
                 className="pvp-page-btn"
                 onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
                 disabled={page >= data.totalPages}
               >
-                Next
+                {t("pvp.history.nextBtn")}
               </button>
             </div>
           )}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api";
+import { t } from "../../lib/i18n";
 
 /**
  * Top-of-app banner shown while the user's email is unconfirmed.
@@ -24,10 +25,10 @@ export function EmailVerifyBanner({ email, accountId, initialCooldown = 0, onMes
 
     useEffect(() => {
         if (resendIn <= 0) return;
-        const t = setInterval(() => {
+        const timer = setInterval(() => {
             setResendIn((n) => (n <= 1 ? 0 : n - 1));
         }, 1000);
-        return () => clearInterval(t);
+        return () => clearInterval(timer);
     }, [resendIn]);
 
     const resend = async () => {
@@ -47,7 +48,7 @@ export function EmailVerifyBanner({ email, accountId, initialCooldown = 0, onMes
                 // URL param flow.
                 onMessage?.("Your email is already verified.");
             } else {
-                onMessage?.(e.message || "Could not resend verification email.");
+                onMessage?.(e.message || t("common.error"));
             }
         }
         setBusy(false);
@@ -57,18 +58,18 @@ export function EmailVerifyBanner({ email, accountId, initialCooldown = 0, onMes
         <div className="email-verify-banner" role="status">
             <span className="evb-icon" aria-hidden="true">✉</span>
             <div className="evb-text">
-                Confirm your email
-                {email ? <> at <strong>{email}</strong></> : null} to enable
-                password recovery and email change.
+                {email
+                    ? t("account.emailVerifyBanner.confirmEmailAt", { email })
+                    : t("account.emailVerifyBanner.confirmEmailGeneric")}
             </div>
             <button
                 type="button"
                 className="evb-btn"
                 onClick={resend}
                 disabled={busy || resendIn > 0}
-                title={resendIn > 0 ? `Wait ${resendIn}s before sending another link` : undefined}
+                title={resendIn > 0 ? t("account.emailVerifyBanner.resendTitle", { n: resendIn }) : undefined}
             >
-                {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend link"}
+                {resendIn > 0 ? t("account.emailVerifyBanner.resendIn", { n: resendIn }) : t("account.emailVerifyBanner.resendLink")}
             </button>
         </div>
     );

@@ -3,10 +3,11 @@ import { Clock, Flame, Heart } from "lucide-react";
 import { api } from "../../../api";
 import { appearanceMeta, appearanceDescription, refreshesInLabel, daysLeftLabel } from "../mediaFormat";
 import { TargetPicker } from "../TargetPicker";
+import { t } from "@/lib/i18n";
 
 const GUEST_TONES = [
-  { key: "TRASH", label: "Beef", Icon: Flame },
-  { key: "RESPECT", label: "Respect", Icon: Heart },
+  { key: "TRASH", labelKey: "media.appearances.toneBeef", Icon: Flame },
+  { key: "RESPECT", labelKey: "media.appearances.toneRespect", Icon: Heart },
 ];
 
 function rewardTags(app) {
@@ -60,14 +61,14 @@ function AppearanceCard({ app, fighterId, busy, onTake }) {
           {needsTone && open && (
             <div className="media-app-picker">
               <div className="media-tone-row">
-                {GUEST_TONES.map(({ key, label, Icon: TIcon }) => (
+                {GUEST_TONES.map(({ key, labelKey, Icon: TIcon }) => (
                   <button
                     type="button"
                     key={key}
                     className={`media-tone-btn${tone === key ? " sel" : ""}`}
                     onClick={() => setTone(key)}
                   >
-                    <TIcon size={11} /> {label}
+                    <TIcon size={11} /> {t(labelKey)}
                   </button>
                 ))}
               </div>
@@ -83,7 +84,7 @@ function AppearanceCard({ app, fighterId, busy, onTake }) {
             title={app.available ? undefined : app.lockReason}
             onClick={act}
           >
-            {busy ? "…" : (needsTone && open ? "Confirm" : app.actionLabel || "Take")}
+            {busy ? t("media.appearances.busyBtn") : (needsTone && open ? t("media.appearances.confirmBtn") : app.actionLabel || t("media.appearances.takeBtn"))}
           </button>
         </div>
       </div>
@@ -106,7 +107,7 @@ export function AppearancesTab({ fighter, onMessage, onRefreshFighter }) {
       const res = await api.getAppearances(fighterId);
       setData(res);
     } catch (e) {
-      if (!silent) setError(e.message || "Could not load appearances.");
+      if (!silent) setError(e.message || t("media.appearances.error"));
     } finally {
       if (!silent) setLoading(false);
     }
@@ -130,19 +131,19 @@ export function AppearancesTab({ fighter, onMessage, onRefreshFighter }) {
       if (onRefreshFighter && fighterId) await onRefreshFighter(fighterId);
       await load({ silent: true });
     } catch (e) {
-      onMessage?.(e.message || "Could not take that appearance.");
+      onMessage?.(e.message || t("media.appearances.takeError"));
     } finally {
       setBusyId(null);
     }
   }, [fighterId, busyId, onMessage, onRefreshFighter, load]);
 
-  if (loading) return <div className="media-pane"><div className="media-state">Loading opportunities…</div></div>;
+  if (loading) return <div className="media-pane"><div className="media-state">{t("media.appearances.loading")}</div></div>;
   if (error) {
     return (
       <div className="media-pane">
         <div className="media-state media-state--error">
           {error}
-          <button type="button" className="media-mini-btn" onClick={() => load()}>Retry</button>
+          <button type="button" className="media-mini-btn" onClick={() => load()}>{t("common.retry")}</button>
         </div>
       </div>
     );
@@ -154,13 +155,13 @@ export function AppearancesTab({ fighter, onMessage, onRefreshFighter }) {
     <div className="media-pane">
       <div className="media-app-header">
         <div className="media-slbl media-slbl--inline">
-          This week's opportunities — {refreshesInLabel(data?.refreshesAt)}
+          {t("media.appearances.thisWeek", { refreshesIn: refreshesInLabel(data?.refreshesAt) })}
         </div>
-        <span className="media-app-count">{appearances.length} available</span>
+        <span className="media-app-count">{t("media.appearances.countAvailable", { n: appearances.length })}</span>
       </div>
 
       {appearances.length === 0 ? (
-        <div className="media-state">No appearances available right now. Check back after the next refresh.</div>
+        <div className="media-state">{t("media.appearances.empty")}</div>
       ) : (
         <div className="media-app-grid">
           {appearances.map((app) => (

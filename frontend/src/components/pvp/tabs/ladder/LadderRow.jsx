@@ -1,4 +1,5 @@
 import { divisionLabel, lastActiveColor, relativeTime, wcAbbrev } from "../../pvpConst";
+import { t } from "../../../../lib/i18n";
 
 /**
  * LadderRow — one row in the full ladder table.
@@ -71,11 +72,11 @@ export function LadderRow({ row, season, onOpenProfile }) {
 
   // ── tags (max 2) ───────────────────────────────────────────────
   const tagCandidates = [];
-  if (isBeltHolder) tagCandidates.push({ key: "belt", label: "Belt Holder", cls: "lt-tag lt-tag-belt" });
-  if (isRivalWithViewer) tagCandidates.push({ key: "rival", label: "Rival", cls: "lt-tag lt-tag-rival" });
-  if (isViewer) tagCandidates.push({ key: "you", label: "You", cls: "lt-tag lt-tag-you" });
-  if (isProtected) tagCandidates.push({ key: "protected", label: "🛡 Protected", cls: "lt-tag lt-tag-protected" });
-  if ((winStreak ?? 0) >= 3) tagCandidates.push({ key: "streak", label: "🔥 ×1.25", cls: "lt-tag lt-tag-streak" });
+  if (isBeltHolder) tagCandidates.push({ key: "belt", label: t("pvp.ladder.tagBeltHolder"), cls: "lt-tag lt-tag-belt" });
+  if (isRivalWithViewer) tagCandidates.push({ key: "rival", label: t("pvp.ladder.tagRival"), cls: "lt-tag lt-tag-rival" });
+  if (isViewer) tagCandidates.push({ key: "you", label: t("pvp.ladder.tagYou"), cls: "lt-tag lt-tag-you" });
+  if (isProtected) tagCandidates.push({ key: "protected", label: t("pvp.ladder.tagProtected"), cls: "lt-tag lt-tag-protected" });
+  if ((winStreak ?? 0) >= 3) tagCandidates.push({ key: "streak", label: t("pvp.ladder.tagStreak"), cls: "lt-tag lt-tag-streak" });
   if (isCrossWc && realWeightClass)
     tagCandidates.push({ key: "xw", label: wcAbbrev(realWeightClass), cls: "lt-tag lt-tag-xw" });
 
@@ -97,7 +98,7 @@ export function LadderRow({ row, season, onOpenProfile }) {
   // ── meta line ──────────────────────────────────────────────────
   const metaParts = [];
   if (fightingStyle) metaParts.push(fightingStyle);
-  if (isProtected) metaParts.push("New competitor");
+  if (isProtected) metaParts.push(t("pvp.ladder.newCompetitor"));
 
   const activeColor = lastActiveColor(lastActiveAt);
   const activeText = relativeTime(lastActiveAt);

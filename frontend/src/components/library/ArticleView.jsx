@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { ArrowLeft, Lightbulb } from "lucide-react";
 import { slugFor } from "./libraryContent";
+import { t } from "@/lib/i18n";
 
 /**
  * Full article view — category label, title, italic summary, body (paragraphs
@@ -16,7 +17,7 @@ export const ArticleView = memo(function ArticleView({ article, onBack }) {
         <div className="library-article">
             <nav className="article-nav">
                 <button type="button" className="back-btn" onClick={onBack}>
-                    <ArrowLeft size={14} /> Back to Library
+                    <ArrowLeft size={14} /> {t("library.backToLibrary")}
                 </button>
                 <span className={`article-nav-cat cat-${slug}`}>{article.category}</span>
             </nav>
@@ -63,7 +64,7 @@ export const ArticleView = memo(function ArticleView({ article, onBack }) {
 
                     {article.keyTakeaway && (
                         <div className="key-takeaway">
-                            <div className="key-takeaway-label"><Lightbulb size={12} /> Key Takeaway</div>
+                            <div className="key-takeaway-label"><Lightbulb size={12} /> {t("library.keyTakeaway")}</div>
                             <div className="key-takeaway-text">{article.keyTakeaway}</div>
                         </div>
                     )}

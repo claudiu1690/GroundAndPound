@@ -5,6 +5,7 @@ import { tutorialBus } from "../../utils/tutorialBus";
 import { TUTORIAL_STEPS } from "../../constants/tutorialSteps";
 import { TutorialTooltip } from "./TutorialTooltip";
 import { TutorialCompleteModal } from "./TutorialCompleteModal";
+import { t } from "../../lib/i18n";
 import "./tutorial.css";
 
 /** Padding (px) around the focal element when cutting the scrim hole. */
@@ -267,11 +268,11 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
     }
 
     const isLastTooltip = tooltipIndex >= tooltips.length - 1;
-    let buttonLabel = "Got it";
+    let buttonLabel = t("tutorial.overlay.gotIt");
     if (isLastTooltip) {
         buttonLabel = phase?.advance?.type === "tooltipButton"
             ? (phase.advance.label || "Continue")
-            : "Let's go";
+            : t("tutorial.overlay.letsGo");
     }
 
     let body = currentTooltip?.body || "";

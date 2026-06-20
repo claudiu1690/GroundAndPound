@@ -1,4 +1,5 @@
 import { divisionColor } from "../../pvpConst";
+import { t } from "../../../../lib/i18n";
 
 const DIV_ORDER = [
   { key: "prospect",   label: "Prospect" },
@@ -113,7 +114,7 @@ export function DivisionSummary({ divisionCounts, division, setDivision, myPosit
 
       {/* YOU marker row */}
       {youFrac != null && (
-        <div className="lt-ds-you-row" aria-label={`Your position: rank #${myPosition?.overallRank ?? myPosition?.rank}`}>
+        <div className="lt-ds-you-row" aria-label={t("pvp.ladder.posYouMarkerAriaLabel", { rank: myPosition?.overallRank ?? myPosition?.rank })}>
           <div
             className="lt-ds-you-marker"
             style={{ left: `${youFrac * 100}%` }}

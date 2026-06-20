@@ -3,11 +3,12 @@ import { createPortal } from "react-dom";
 import { api } from "../../api";
 import { BannerPreview } from "./BannerPreview";
 import { MAX_BADGE_SLOTS } from "./bannerCatalog";
+import { t } from "../../lib/i18n";
 
 const KIND_TABS = [
-    { key: "background", label: "Background" },
-    { key: "frame",      label: "Frame" },
-    { key: "accent",     label: "Accent" },
+    { key: "background", labelKey: "banner.editor.tabs.background" },
+    { key: "frame",      labelKey: "banner.editor.tabs.frame" },
+    { key: "accent",     labelKey: "banner.editor.tabs.accent" },
     // "Badges" tab hidden — badge-pinning logic remains; will return as achievements.
 ];
 
@@ -36,7 +37,7 @@ export function BannerEditor({ fighter, open, onClose, onSaved, onMessage }) {
             setConfig(data.current);
             setDirty(false);
         } catch (e) {
-            onMessage?.(e.message || "Could not load banner catalog");
+            onMessage?.(e.message || t("common.error"));
         }
         setLoading(false);
     }, [fighterId, onMessage]);
@@ -96,7 +97,7 @@ export function BannerEditor({ fighter, open, onClose, onSaved, onMessage }) {
             onSaved?.(res.banner);
             onClose?.();
         } catch (e) {
-            onMessage?.(e.message || "Could not save banner");
+            onMessage?.(e.message || t("common.error"));
         }
         setSaving(false);
     }, [fighterId, config, onClose, onSaved, onMessage]);
@@ -106,12 +107,12 @@ export function BannerEditor({ fighter, open, onClose, onSaved, onMessage }) {
     const fighterForPreview = fighter ? { ...fighter, banner: config || fighter.banner } : null;
 
     return createPortal(
-        <div className="banner-editor-root" role="dialog" aria-modal="true" aria-label="Banner editor">
+        <div className="banner-editor-root" role="dialog" aria-modal="true" aria-label={t("banner.editor.ariaLabel")}>
             <div className="banner-editor-backdrop" onClick={onClose} />
             <div className="banner-editor-shell">
                 <header className="banner-editor-header">
-                    <h2>Customize Banner</h2>
-                    <button type="button" className="banner-editor-close" onClick={onClose} aria-label="Close">✕</button>
+                    <h2>{t("banner.editor.title")}</h2>
+                    <button type="button" className="banner-editor-close" onClick={onClose} aria-label={t("banner.editor.closeAriaLabel")}>✕</button>
                 </header>
 
                 <div className="banner-editor-body">
@@ -120,7 +121,7 @@ export function BannerEditor({ fighter, open, onClose, onSaved, onMessage }) {
                         <div className="banner-editor-preview-wrap">
                             {fighterForPreview
                                 ? <BannerPreview fighter={fighterForPreview} banner={config} size="full" />
-                                : <div className="banner-editor-loading">Loading…</div>}
+                                : <div className="banner-editor-loading">{t("banner.editor.loading")}</div>}
                         </div>
 
                         <div className="banner-editor-actions">
@@ -130,7 +131,7 @@ export function BannerEditor({ fighter, open, onClose, onSaved, onMessage }) {
                                 onClick={resetToDefault}
                                 disabled={loading || saving}
                             >
-                                Reset to default
+                                {t("banner.editor.resetToDefault")}
                             </button>
                             <div className="banner-editor-action-right">
                                 <button
@@ -139,7 +140,7 @@ export function BannerEditor({ fighter, open, onClose, onSaved, onMessage }) {
                                     onClick={onClose}
                                     disabled={saving}
                                 >
-                                    Cancel
+                                    {t("common.cancel")}
                                 </button>
                                 <button
                                     type="button"
@@ -147,7 +148,7 @@ export function BannerEditor({ fighter, open, onClose, onSaved, onMessage }) {
                                     onClick={save}
                                     disabled={saving || loading || !dirty}
                                 >
-                                    {saving ? "Saving…" : "Save banner"}
+                                    {saving ? t("banner.editor.saving") : t("banner.editor.saveBtn")}
                                 </button>
                             </div>
                         </div>
@@ -156,24 +157,26 @@ export function BannerEditor({ fighter, open, onClose, onSaved, onMessage }) {
                     {/* ── Palette column ── */}
                     <section className="banner-editor-palette-col">
                         <nav className="banner-editor-tabs">
-                            {KIND_TABS.map((t) => (
+                            {KIND_TABS.map((tab) => (
                                 <button
                                     type="button"
-                                    key={t.key}
-                                    className={`banner-editor-tab ${activeKind === t.key ? "active" : ""}`}
-                                    onClick={() => setActive(t.key)}
+                                    key={tab.key}
+                                    className={`banner-editor-tab ${activeKind === tab.key ? "active" : ""}`}
+                                    onClick={() => setActive(tab.key)}
                                 >
-                                    {t.label}
+                                    {t(tab.labelKey)}
                                 </button>
                             ))}
                         </nav>
 
-                        {loading && <div className="banner-editor-loading">Loading catalog…</div>}
+                        {loading && <div className="banner-editor-loading">{t("banner.editor.loadingCatalog")}</div>}
 
                         {!loading && activeKind === "badge" && (
                             <div className="banner-editor-hint">
-                                Pin up to {MAX_BADGE_SLOTS} badges. Click to add or remove.
-                                {config?.badgeSlots?.length ? ` (${config.badgeSlots.length}/${MAX_BADGE_SLOTS})` : ""}
+                                {t("banner.editor.badgeHint", { max: MAX_BADGE_SLOTS })}
+                                {config?.badgeSlots?.length
+                                    ? " " + t("banner.editor.badgeCount", { count: config.badgeSlots.length, max: MAX_BADGE_SLOTS })
+                                    : ""}
                             </div>
                         )}
 

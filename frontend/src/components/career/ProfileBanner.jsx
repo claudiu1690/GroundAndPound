@@ -1,4 +1,5 @@
 import { Pencil } from "lucide-react";
+import { t } from "@/lib/i18n";
 import { BannerPreview } from "../banner/BannerPreview";
 import { PinnedBadgeRow } from "./PinnedBadgeRow";
 
@@ -31,7 +32,7 @@ export function ProfileBanner({
             fighter={fighter}
             size="full"
             onClick={readOnly ? undefined : onCustomizeBanner}
-            title={readOnly ? undefined : "Click to customize your banner"}
+            title={readOnly ? undefined : t("career.banner.clickTitle")}
           />
         </div>
 
@@ -47,7 +48,7 @@ export function ProfileBanner({
           />
           {!readOnly && (
             <button type="button" className="customize-btn" onClick={onCustomizeBanner}>
-              <Pencil size={11} /> Customize Banner
+              <Pencil size={11} /> {t("career.banner.customizeBtn")}
             </button>
           )}
         </div>

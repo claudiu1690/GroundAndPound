@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { badgeVisual } from "./badgeCatalog";
 import { BadgeTooltip } from "./BadgeTooltip";
 
@@ -20,7 +21,7 @@ export function BadgeIcon({ badge, categoryKey }) {
 
   return (
     <div className="bw">
-      {badge.new && <span className="badge-new-dot" title="Newly unlocked">NEW</span>}
+      {badge.new && <span className="badge-new-dot" title={t("career.badges.newDotTitle")}>{t("career.badges.newDotLabel")}</span>}
       <div
         className={`bi${earned ? "" : " locked"}`}
         style={earned

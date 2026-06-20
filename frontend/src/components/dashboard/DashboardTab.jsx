@@ -1,4 +1,5 @@
 import { memo, useState } from "react";
+import { t } from "@/lib/i18n";
 import { useDashboard } from "../../hooks/useDashboard";
 import { statMeterRows } from "../fighterProfile/profileModel";
 import {
@@ -195,13 +196,13 @@ export const DashboardTab = memo(function DashboardTab({
 
   let fameContext, fameBarFull;
   if (nextTh == null) {
-    fameContext = "Top tier reached";
+    fameContext = t("dashboard.moneyFame.topTierReached");
     fameBarFull = true;
   } else if (nextKey == null) {
-    fameContext = "Keep fighting to build fame.";
+    fameContext = t("dashboard.moneyFame.keepFighting");
     fameBarFull = false;
   } else {
-    fameContext = `${Math.max(0, nextTh - fameScore).toLocaleString()} to ${tierLabel(nextKey)}`;
+    fameContext = t("dashboard.moneyFame.toNextTier", { remaining: Math.max(0, nextTh - fameScore).toLocaleString(), tier: tierLabel(nextKey) });
     fameBarFull = false;
   }
   const fameBarWidth = fameBarFull ? 100 : progress;
@@ -242,11 +243,11 @@ export const DashboardTab = memo(function DashboardTab({
           role="button"
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setGazetteOpen(true); } }}
-          aria-label="Open The Octagon Gazette"
+          aria-label={t("dashboard.gazette.openAriaLabel")}
         >
           {/* top accent bar rendered via CSS ::before */}
           <div className="dash-gz-masthead">
-            <span className="dash-gz-name">The Octagon Gazette</span>
+            <span className="dash-gz-name">{t("dashboard.gazette.mastheadName")}</span>
             {gazette?.updatedAt && (
               <span className="dash-gz-date">{relativeTime(gazette.updatedAt)}</span>
             )}
@@ -254,7 +255,7 @@ export const DashboardTab = memo(function DashboardTab({
 
           {gazetteEmpty ? (
             <div className="dash-gz-empty">
-              Nothing to report yet. Fight your first match and check back.
+              {t("dashboard.gazette.empty")}
             </div>
           ) : (
             <>
@@ -287,9 +288,9 @@ export const DashboardTab = memo(function DashboardTab({
           )}
 
           <div className="dash-gz-footer">
-            <span className="dash-gz-cta">Read Full Paper →</span>
+            <span className="dash-gz-cta">{t("dashboard.gazette.footerCta")}</span>
             {gazette?.updatedAt && (
-              <span className="dash-gz-updated">Updated {relativeTime(gazette.updatedAt)}</span>
+              <span className="dash-gz-updated">{t("dashboard.gazette.footerUpdated", { time: relativeTime(gazette.updatedAt) })}</span>
             )}
           </div>
         </div>
@@ -304,12 +305,12 @@ export const DashboardTab = memo(function DashboardTab({
         >
           <div className="dash-top-tile-label">
             <ListOrdered size={13} strokeWidth={2.2} />
-            Rankings
+            {t("dashboard.rankings.label")}
           </div>
           {ranking?.rank != null ? (
             <div className="dash-top-tile-main">
               <span className="dash-top-tile-big">#{ranking.rank}</span>
-              <span className="dash-top-tile-sub">of {ranking.rosterSize ?? "—"}</span>
+              <span className="dash-top-tile-sub">{t("dashboard.rankings.ofTotal", { n: ranking.rosterSize ?? "—" })}</span>
               {ranking.delta != null && ranking.delta !== 0 ? (
                 <span className={`dash-rank-delta ${ranking.delta > 0 ? "up" : "down"}`}>
                   {ranking.delta > 0
@@ -320,12 +321,12 @@ export const DashboardTab = memo(function DashboardTab({
               ) : null}
             </div>
           ) : (
-            <div className="dash-top-tile-muted">Unranked</div>
+            <div className="dash-top-tile-muted">{t("dashboard.rankings.unranked")}</div>
           )}
           {ranking?.isTopFive && (
-            <span className="dash-title-badge">Title contender</span>
+            <span className="dash-title-badge">{t("dashboard.rankings.titleContender")}</span>
           )}
-          <div className="dash-top-tile-cta">View Rankings →</div>
+          <div className="dash-top-tile-cta">{t("dashboard.rankings.viewCta")}</div>
         </div>
 
         {/* Proving Ground tile */}
@@ -338,13 +339,13 @@ export const DashboardTab = memo(function DashboardTab({
         >
           <div className="dash-top-tile-label">
             <Crosshair size={13} strokeWidth={2.2} />
-            Proving Ground
+            {t("dashboard.provingGround.label")}
           </div>
           <div className="dash-top-tile-main">
-            <span className="dash-top-tile-big">PVP</span>
+            <span className="dash-top-tile-big">{t("dashboard.provingGround.big")}</span>
           </div>
-          <div className="dash-top-tile-desc">Challenge rivals. Earn badges.</div>
-          <div className="dash-top-tile-cta">Enter →</div>
+          <div className="dash-top-tile-desc">{t("dashboard.provingGround.desc")}</div>
+          <div className="dash-top-tile-cta">{t("dashboard.provingGround.cta")}</div>
         </div>
       </div>
 
@@ -370,7 +371,7 @@ export const DashboardTab = memo(function DashboardTab({
             className="dash-hero-btn"
             onClick={() => nav(hero.linkTarget)}
           >
-            {hero.label || "Continue"}
+            {hero.label || t("dashboard.hero.defaultLabel")}
             <ChevronRight size={16} strokeWidth={2.4} />
           </button>
         </ModuleCard>
@@ -433,11 +434,11 @@ export const DashboardTab = memo(function DashboardTab({
                 return (
                   <VitalBar
                     icon={<Zap size={13} strokeWidth={2.2} />}
-                    label="Energy"
+                    label={t("dashboard.vitals.energyLabel")}
                     pct={pct}
                     stateClass={`dash-energy ${stateClass}`}
                     statusText={`${cur}/${max}`}
-                    etaText={eta ? `Full in ${eta}` : "Rested"}
+                    etaText={eta ? t("dashboard.vitals.energyFullIn", { eta }) : t("dashboard.vitals.energyRested")}
                   />
                 );
               })()}
@@ -452,18 +453,18 @@ export const DashboardTab = memo(function DashboardTab({
                       ? "is-hurt"
                       : "is-ok";
                 const hLabel = h.injuriesActive
-                  ? "Injured"
+                  ? t("dashboard.vitals.healthInjured")
                   : h.state === "hurt" || h.state === "critical"
-                    ? "Banged up"
-                    : "Healthy";
+                    ? t("dashboard.vitals.healthBangedUp")
+                    : t("dashboard.vitals.healthHealthy");
                 return (
                   <VitalBar
                     icon={<HeartPulse size={13} strokeWidth={2.2} />}
-                    label="Health"
+                    label={t("dashboard.vitals.healthLabel")}
                     pct={val}
                     stateClass={`dash-health ${stateClass}`}
                     statusText={hLabel}
-                    etaText={eta ? `Full in ${eta}` : null}
+                    etaText={eta ? t("dashboard.vitals.healthFullIn", { eta }) : null}
                     onClick={() => nav("hospital")}
                   />
                 );
@@ -474,7 +475,7 @@ export const DashboardTab = memo(function DashboardTab({
                   className="dash-flag-chip"
                   onClick={() => nav("hospital")}
                 >
-                  <Brain size={12} strokeWidth={2.2} /> Mental reset required
+                  <Brain size={12} strokeWidth={2.2} /> {t("dashboard.vitals.mentalResetChip")}
                 </button>
               ) : null}
             </>
@@ -484,7 +485,7 @@ export const DashboardTab = memo(function DashboardTab({
               <div className="dash-skel-line" />
             </>
           ) : (
-            <p className="dash-muted">Vitals unavailable.</p>
+            <p className="dash-muted">{t("dashboard.vitals.unavailable")}</p>
           )}
         </ModuleCard>
       </div>
@@ -496,7 +497,7 @@ export const DashboardTab = memo(function DashboardTab({
             <AlertTriangle size={14} strokeWidth={2.2} /> {error}
           </span>
           <button type="button" className="dash-retry-btn" onClick={reload}>
-            <RotateCcw size={13} strokeWidth={2.2} /> Retry
+            <RotateCcw size={13} strokeWidth={2.2} /> {t("dashboard.error.retry")}
           </button>
         </ModuleCard>
       ) : null}
@@ -511,19 +512,19 @@ export const DashboardTab = memo(function DashboardTab({
           <div className="dash-card-head">
             <span className="dash-card-title">
               <Tent size={14} strokeWidth={2.2} />
-              Fight Camp
+              {t("dashboard.camp.title")}
             </span>
-            {camp.isTitleFight ? <span className="dash-title-badge">Title Fight</span> : null}
+            {camp.isTitleFight ? <span className="dash-title-badge">{t("dashboard.camp.titleFightBadge")}</span> : null}
           </div>
           <div className="dash-camp-progress">
-            Sessions: {camp.slotsUsed ?? 0}/{camp.maxSlots ?? 0}
+            {t("dashboard.camp.sessions", { used: camp.slotsUsed ?? 0, max: camp.maxSlots ?? 0 })}
             {camp.previewGrade ? (
-              <span className="dash-camp-grade"> · Grade {camp.previewGrade}</span>
+              <span className="dash-camp-grade"> · {t("dashboard.camp.grade", { grade: camp.previewGrade })}</span>
             ) : null}
-            {camp.finalised ? <span className="dash-camp-final"> · Finalised</span> : null}
+            {camp.finalised ? <span className="dash-camp-final"> · {t("dashboard.camp.finalised")}</span> : null}
           </div>
           <button type="button" className="dash-card-btn" onClick={() => nav("fights")}>
-            Go to Camp <ChevronRight size={14} strokeWidth={2.4} />
+            {t("dashboard.camp.cta")} <ChevronRight size={14} strokeWidth={2.4} />
           </button>
         </ModuleCard>
       ) : null}
@@ -534,9 +535,9 @@ export const DashboardTab = memo(function DashboardTab({
           <div className="dash-card-head">
             <span className="dash-card-title">
               <BarChart3 size={14} strokeWidth={2.2} />
-              Stats &amp; XP
+              {t("dashboard.stats.title")}
             </span>
-            <span className="dash-stats-ovr">OVR {ovr}</span>
+            <span className="dash-stats-ovr">{t("dashboard.stats.ovrLabel", { ovr })}</span>
           </div>
           <div className="dash-stats-grid">
             {statRows.map((r) => (
@@ -578,20 +579,20 @@ export const DashboardTab = memo(function DashboardTab({
               <div className="dash-card-head">
                 <span className="dash-card-title">
                   <Stethoscope size={14} strokeWidth={2.2} />
-                  {injuries.length} Injur{injuries.length === 1 ? "y" : "ies"}
+                  {injuries.length} {injuries.length === 1 ? t("dashboard.injuries.titleSingular") : t("dashboard.injuries.titlePlural")}
                 </span>
                 {anyCannotFight ? (
-                  <span className="dash-warn-badge">Cannot fight</span>
+                  <span className="dash-warn-badge">{t("dashboard.injuries.cannotFightBadge")}</span>
                 ) : null}
               </div>
               <div className="dash-injuries-worst">
-                {worst?.label ?? worst?.type ?? "Injury"}
+                {worst?.label ?? worst?.type ?? t("dashboard.injuries.titleSingular")}
                 {worst?.recoveryHoursLeft != null
-                  ? ` · recovers in ${Math.ceil(worst.recoveryHoursLeft)}h`
+                  ? ` · ${t("dashboard.injuries.recoversIn", { h: Math.ceil(worst.recoveryHoursLeft) })}`
                   : ""}
               </div>
               <button type="button" className="dash-card-btn" onClick={() => nav("hospital")}>
-                Visit Hospital <ChevronRight size={14} strokeWidth={2.4} />
+                {t("dashboard.injuries.cta")} <ChevronRight size={14} strokeWidth={2.4} />
               </button>
             </ModuleCard>
           );
@@ -605,7 +606,7 @@ export const DashboardTab = memo(function DashboardTab({
           <div className="dash-card-head">
             <span className="dash-card-title">
               <FileText size={14} strokeWidth={2.2} />
-              Recent Career
+              {t("dashboard.feed.title")}
             </span>
           </div>
           {feed.length ? (
@@ -620,27 +621,27 @@ export const DashboardTab = memo(function DashboardTab({
           ) : loading && !data ? (
             <div className="dash-skel-line" />
           ) : (
-            <p className="dash-muted">No career events yet…</p>
+            <p className="dash-muted">{t("dashboard.feed.noEvents")}</p>
           )}
           <button type="button" className="dash-card-btn" onClick={() => nav("career")}>
-            View Career <ChevronRight size={14} strokeWidth={2.4} />
+            {t("dashboard.feed.cta")} <ChevronRight size={14} strokeWidth={2.4} />
           </button>
         </ModuleCard>
 
         {/* Money & Fame — display only */}
         <ModuleCard className="dash-money" stripe="gold">
           <div className="dash-card-head">
-            <span className="dash-card-title">Money &amp; Fame</span>
+            <span className="dash-card-title">{t("dashboard.moneyFame.title")}</span>
             {(fameFrozen || fameDecaying) ? (
               <span className="dash-money-chips">
                 {fameFrozen ? (
                   <span className="dash-money-chip is-frozen">
-                    <Snowflake size={11} strokeWidth={2.2} /> Frozen
+                    <Snowflake size={11} strokeWidth={2.2} /> {t("dashboard.moneyFame.frozen")}
                   </span>
                 ) : null}
                 {fameDecaying ? (
                   <span className="dash-money-chip is-decay">
-                    <AlertTriangle size={11} strokeWidth={2.2} /> Fame decaying
+                    <AlertTriangle size={11} strokeWidth={2.2} /> {t("dashboard.moneyFame.fameDecaying")}
                   </span>
                 ) : null}
               </span>
@@ -650,7 +651,7 @@ export const DashboardTab = memo(function DashboardTab({
           <div className="dash-money-iron">
             <Coins size={16} strokeWidth={2.2} />
             <span className="dash-iron-num">{Number(ironVal).toLocaleString()}</span>
-            <span className="dash-iron-label">Cash</span>
+            <span className="dash-iron-label">{t("dashboard.moneyFame.cashLabel")}</span>
           </div>
 
           <div className="dash-fame-block">
@@ -664,7 +665,7 @@ export const DashboardTab = memo(function DashboardTab({
             </div>
             <div className="dash-fame-context">{fameContext}</div>
             {pursePct > 0 ? (
-              <div className="dash-fame-purse">+{pursePct}% fight purses</div>
+              <div className="dash-fame-purse">{t("dashboard.moneyFame.pursePct", { pct: pursePct })}</div>
             ) : null}
           </div>
         </ModuleCard>
@@ -679,7 +680,7 @@ export const DashboardTab = memo(function DashboardTab({
             <div className="dash-card-head">
               <span className="dash-card-title">
                 <ScrollText size={14} strokeWidth={2.2} />
-                Sponsorship
+                {t("dashboard.sponsorship.title")}
               </span>
             </div>
             <div className="dash-sponsor-brand">{sponsorship.brand}</div>
@@ -688,11 +689,11 @@ export const DashboardTab = memo(function DashboardTab({
             ) : null}
             {sponsorship.rewardPerFight != null ? (
               <div className="dash-sponsor-reward">
-                {sponsorship.rewardPerFight} / fight
+                {t("dashboard.sponsorship.rewardPerFight", { reward: sponsorship.rewardPerFight })}
               </div>
             ) : null}
             <button type="button" className="dash-card-btn" onClick={() => nav("contracts")}>
-              View Contracts <ChevronRight size={14} strokeWidth={2.4} />
+              {t("dashboard.sponsorship.cta")} <ChevronRight size={14} strokeWidth={2.4} />
             </button>
           </ModuleCard>
         ) : null}

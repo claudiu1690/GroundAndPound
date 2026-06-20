@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../../api";
+import { t } from "../../lib/i18n";
 
 /**
  * Permanent-account-deletion modal.
@@ -38,7 +39,7 @@ export function DeleteAccountModal({ open, accountId, fighterFullName, onClose, 
             await api.deleteAccount(accountId, typed.trim());
             onDeleted?.();
         } catch (e) {
-            onMessage?.(e.message || "Could not delete account");
+            onMessage?.(e.message || t("common.error"));
             setBusy(false);
         }
     };
@@ -47,21 +48,19 @@ export function DeleteAccountModal({ open, accountId, fighterFullName, onClose, 
         <div className="account-modal-backdrop" onClick={onClose}>
             <div className="account-modal" onClick={(e) => e.stopPropagation()}>
                 <header className="account-modal-head">
-                    <h3 className="account-modal-title">Delete account</h3>
-                    <button type="button" className="account-modal-x" onClick={onClose} aria-label="Close">×</button>
+                    <h3 className="account-modal-title">{t("account.deleteModal.title")}</h3>
+                    <button type="button" className="account-modal-x" onClick={onClose} aria-label={t("account.deleteModal.closeAriaLabel")}>×</button>
                 </header>
                 <div className="account-modal-body">
                     <p className="account-modal-warn">
-                        This will <strong>permanently delete</strong> your account, fighter, cash, career history,
-                        rankings, and saved progress. This action is <strong>final after 30 days</strong>.
+                        {t("account.deleteModal.warn")}
                     </p>
                     <p className="account-modal-warn-sub">
-                        If you change your mind, you can recover your account by logging in within the next 30 days.
-                        After that the data is destroyed.
+                        {t("account.deleteModal.warnSub")}
                     </p>
                     <div className="account-modal-confirm">
                         <label className="account-modal-label">
-                            To confirm, type your fighter's full name:&nbsp;
+                            {t("account.deleteModal.confirmLabel")}&nbsp;
                             <strong>{expected || "—"}</strong>
                         </label>
                         <input
@@ -75,9 +74,9 @@ export function DeleteAccountModal({ open, accountId, fighterFullName, onClose, 
                     </div>
                 </div>
                 <footer className="account-modal-actions">
-                    <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>Cancel</button>
+                    <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>{t("common.cancel")}</button>
                     <button type="button" className="btn btn-danger" onClick={submit} disabled={!canDelete}>
-                        {busy ? "Deleting…" : "Delete my account"}
+                        {busy ? t("account.deleteModal.deleting") : t("account.deleteModal.deleteBtn")}
                     </button>
                 </footer>
             </div>

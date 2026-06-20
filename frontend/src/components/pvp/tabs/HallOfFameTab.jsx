@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "../../../api";
 import { Crown } from "lucide-react";
+import { t } from "../../../lib/i18n";
 
 export function HallOfFameTab({ season }) {
   const [data, setData] = useState(null);
@@ -13,7 +14,7 @@ export function HallOfFameTab({ season }) {
     setError(null);
     api.pvpHof(season?.weightClass)
       .then((res) => { if (!cancelled) setData(res); })
-      .catch((e) => { if (!cancelled) setError(e.message || "Could not load Hall of Fame."); })
+      .catch((e) => { if (!cancelled) setError(e.message || t("common.error")); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [season?.weightClass]);
@@ -25,15 +26,15 @@ export function HallOfFameTab({ season }) {
       <div className="pvp-hof-card">
         <div className="pvp-hof-head">
           <Crown size={15} strokeWidth={2} style={{ color: "#D4A820" }} />
-          <div className="pvp-hof-title">Season Belt Holders</div>
+          <div className="pvp-hof-title">{t("pvp.hof.title")}</div>
         </div>
 
         {loading ? (
-          <div className="pvp-hof-empty">Loading…</div>
+          <div className="pvp-hof-empty">{t("pvp.hof.loading")}</div>
         ) : error ? (
           <div className="pvp-hof-empty pvp-hof-error">{error}</div>
         ) : entries.length === 0 ? (
-          <div className="pvp-hof-empty">No belt holders yet.</div>
+          <div className="pvp-hof-empty">{t("pvp.hof.noHolders")}</div>
         ) : (
           entries.map((entry) => {
             const isCurrent = season && entry.seasonNumber === season.seasonNumber;
@@ -45,7 +46,7 @@ export function HallOfFameTab({ season }) {
                 <div className="pvp-hof-wc">{entry.weightClass}</div>
                 <div className="pvp-hof-fighter">{entry.beltHolderName}</div>
                 <div className={`pvp-hof-detail ${isCurrent ? "" : "pvp-hof-detail-gold"}`}>
-                  {isCurrent ? "Current" : `${(entry.finalDp ?? 0).toLocaleString()} DP`}
+                  {isCurrent ? t("pvp.hof.currentLabel") : `${(entry.finalDp ?? 0).toLocaleString()} DP`}
                 </div>
               </div>
             );
@@ -58,10 +59,10 @@ export function HallOfFameTab({ season }) {
         <div className="pvp-hof-card">
           <div className="pvp-hof-head">
             <span style={{ fontSize: 15, color: "#AAAAAA" }}>★</span>
-            <div className="pvp-hof-title">All-Time Records</div>
+            <div className="pvp-hof-title">{t("pvp.hof.allTimeTitle")}</div>
           </div>
           <div style={{ padding: "10px 13px" }}>
-            <div className="pvp-hof-sub-lbl">Most Season Belts</div>
+            <div className="pvp-hof-sub-lbl">{t("pvp.hof.mostBeltsLabel")}</div>
             {buildBeltCounts(entries).slice(0, 3).map((rec, i) => (
               <div key={rec.name} className="pvp-hof-record-row">
                 <div className="pvp-hof-record-count" style={{ color: i === 0 ? "#D4A820" : "#888" }}>

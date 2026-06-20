@@ -1,30 +1,31 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../../api";
 import { archiveKindMeta, relativeTime, formatListeners } from "../mediaFormat";
+import { t } from "@/lib/i18n";
 
 const FILTERS = [
-  { key: "all", label: "All" },
-  { key: "podcast", label: "Podcast" },
-  { key: "postfight", label: "Post-fight" },
-  { key: "appearances", label: "Appearances" },
+  { key: "all",         labelKey: "media.archive.filters.all" },
+  { key: "podcast",     labelKey: "media.archive.filters.podcast" },
+  { key: "postfight",   labelKey: "media.archive.filters.postfight" },
+  { key: "appearances", labelKey: "media.archive.filters.appearances" },
 ];
 
 function entryView(entry) {
   switch (entry.kind) {
     case "podcast":
       return {
-        pill: `Podcast Ep ${entry.episodeNumber}`,
+        pill: t("media.archive.podcastPill", { n: entry.episodeNumber }),
         title: `"${entry.title}"`,
         sub: [
           (entry.segments || []).join(" · "),
-          entry.listenersAtTime != null ? `${formatListeners(entry.listenersAtTime)} listeners` : null,
+          entry.listenersAtTime != null ? `${formatListeners(entry.listenersAtTime)} ${t("media.archive.listenersLabel")}` : null,
         ].filter(Boolean).join(" · "),
         reward: rewardStr(entry.fameEarned, entry.cashEarned),
       };
     case "postfight":
       return {
-        pill: "Post-fight",
-        title: `Interview — vs ${entry.opponentName}`,
+        pill: t("media.archive.pills.postfight"),
+        title: t("media.archive.postfightTitle", { opponent: entry.opponentName }),
         sub: [
           entry.outcome,
           entry.choice ? `${entry.choice}` : null,
@@ -33,15 +34,15 @@ function entryView(entry) {
       };
     case "appearance":
       return {
-        pill: "Appearance",
+        pill: t("media.archive.pills.appearance"),
         title: entry.label || entry.appearanceType,
         sub: entry.appearanceType ? entry.appearanceType.replace(/_/g, " ").toLowerCase() : "",
         reward: rewardStr(entry.fameEarned, entry.cashEarned),
       };
     case "documentary":
       return {
-        pill: "Documentary",
-        title: "Career Documentary",
+        pill: t("media.archive.pills.documentary"),
+        title: t("media.archive.docTitle"),
         sub: (entry.choices ? Object.values(entry.choices) : []).join(" · "),
         reward: rewardStr(entry.reward?.fame, entry.reward?.cash),
       };
@@ -85,7 +86,7 @@ export function ArchiveTab({ fighter, onMessage }) {
         setPage(res.page || 1);
         setHasMore(!!res.hasMore);
       } catch (e) {
-        if (alive) setError(e.message || "Could not load the archive.");
+        if (alive) setError(e.message || t("media.archive.error"));
       } finally {
         if (alive) setLoading(false);
       }
@@ -103,7 +104,7 @@ export function ArchiveTab({ fighter, onMessage }) {
       setPage(res.page || next);
       setHasMore(!!res.hasMore);
     } catch (e) {
-      onMessage?.(e.message || "Could not load more entries.");
+      onMessage?.(e.message || t("media.archive.loadMoreError"));
     } finally {
       setLoadingMore(false);
     }
@@ -119,22 +120,22 @@ export function ArchiveTab({ fighter, onMessage }) {
             className={`media-arch-f${filter === f.key ? " act" : ""}`}
             onClick={() => setFilter(f.key)}
           >
-            {f.label}
+            {t(f.labelKey)}
           </button>
         ))}
       </div>
 
       {/* Full "Loading…" only on the first load; a filter switch keeps the
           current list visible and swaps it in when the new page arrives. */}
-      {loading && entries.length === 0 && <div className="media-state">Loading archive…</div>}
+      {loading && entries.length === 0 && <div className="media-state">{t("media.archive.loading")}</div>}
       {!loading && error && (
         <div className="media-state media-state--error">
           {error}
-          <button type="button" className="media-mini-btn" onClick={() => setFilter((x) => x)}>Retry</button>
+          <button type="button" className="media-mini-btn" onClick={() => setFilter((x) => x)}>{t("common.retry")}</button>
         </div>
       )}
       {!loading && !error && entries.length === 0 && (
-        <div className="media-state">Nothing logged here yet. Record podcasts, take appearances and give interviews to fill your archive.</div>
+        <div className="media-state">{t("media.archive.empty")}</div>
       )}
 
       {entries.length > 0 && (
@@ -164,7 +165,7 @@ export function ArchiveTab({ fighter, onMessage }) {
           {hasMore && (
             <div className="media-arch-more">
               <button type="button" className="media-mini-btn" onClick={loadMore} disabled={loadingMore}>
-                {loadingMore ? "Loading…" : "Load more"}
+                {loadingMore ? t("media.archive.loadingMore") : t("media.archive.loadMore")}
               </button>
             </div>
           )}

@@ -7,6 +7,7 @@ import {
     MATCH_STATUS_COLORS,
 } from "../../constants/campConfig";
 import { BUFF_DISPLAY, buffStatTags } from "../shop/shopConstants";
+import { t } from "@/lib/i18n";
 
 const MATCH_ICON = {
     MATCHED: "✓",
@@ -20,24 +21,24 @@ const WC_TONE = { easy: "safe", moderate: "moderate", aggressive: "aggressive" }
 const WEIGHT_CUT_OPTIONS = [
     {
         key: "easy",
-        label: "Easy Cut",
+        labelKey: "fights.campSummary.wcEasyCutLabel",
         staminaRange: "+0",
         missRisk: "0%",
-        description: "No gamble — enter the fight at full stamina",
+        descKey: "fights.campSummary.wcEasyCutDesc",
     },
     {
         key: "moderate",
-        label: "Moderate Cut",
+        labelKey: "fights.campSummary.wcModerateCutLabel",
         staminaRange: "-5 to +10",
         missRisk: "5%",
-        description: "Small gamble — could gain an edge or lose a little",
+        descKey: "fights.campSummary.wcModerateCutDesc",
     },
     {
         key: "aggressive",
-        label: "Aggressive Cut",
+        labelKey: "fights.campSummary.wcAggressiveCutLabel",
         staminaRange: "-12 to +18",
         missRisk: "20%",
-        description: "High stakes — big upside, real downside",
+        descKey: "fights.campSummary.wcAggressiveCutDesc",
     },
 ];
 
@@ -82,17 +83,17 @@ export const CampSummary = memo(function CampSummary({
                     </div>
                     <div className="cs-grade-text">
                         <div className="cs-grade-eyebrow">
-                            {isTitleFight ? "Championship Bout" : "Pre-Fight Camp Summary"}
+                            {isTitleFight ? t("fights.campSummary.eyebrowChampionship") : t("fights.campSummary.eyebrowPreFight")}
                         </div>
                         <div className="cs-grade-title" style={{ color: heroColor }}>{ratingCfg.label}</div>
-                        <div className="cs-grade-sub">Both bonuses activate during the fight when conditions are met.</div>
-                        {wasSkipped && <span className="cs-skipped-tag">Camp skipped</span>}
+                        <div className="cs-grade-sub">{t("fights.campSummary.subBonuses")}</div>
+                        {wasSkipped && <span className="cs-skipped-tag">{t("fights.campSummary.skippedTag")}</span>}
                     </div>
                 </div>
 
                 {campBreakdown.length > 0 && (
                     <div className="cs-section">
-                        <div className="cs-section-label">Session Breakdown</div>
+                        <div className="cs-section-label">{t("fights.campSummary.sectionBreakdown")}</div>
                         {campBreakdown.map((item, i) => {
                             const cfg = CAMP_SESSIONS[item.sessionType];
                             const statusColor = MATCH_STATUS_COLORS[item.matchStatus] ?? "#94a3b8";
@@ -119,10 +120,10 @@ export const CampSummary = memo(function CampSummary({
 
                 <div className="cs-section">
                     <div className="cs-supp-row">
-                        <span className="cs-supp-label">Pre-Fight Supplement</span>
+                        <span className="cs-supp-label">{t("fights.campSummary.suppLabel")}</span>
                         <div className="cs-supp-right">
                             <span className={`cs-supp-val${buffName ? " cs-supp-val--active" : ""}`}>
-                                {buffName || "None selected"}
+                                {buffName || t("fights.campSummary.suppNone")}
                             </span>
                             {buffTags.length > 0 && (
                                 <div className="cs-supp-tags">
@@ -139,18 +140,15 @@ export const CampSummary = memo(function CampSummary({
                     <div className="cs-injury-penalty">
                         <span className="cs-injury-icon">{"⚠"}</span>
                         <span>
-                            Pushed through camp injury — fight penalties:{" "}
-                            {Object.entries(injuryPenalty)
-                                .map(([k, v]) => `${k.toUpperCase()} ${Math.round(v * 100)}%`)
-                                .join(", ")}
+                            {t("fights.campSummary.injuryPenaltyLabel", { penalties: Object.entries(injuryPenalty).map(([k, v]) => `${k.toUpperCase()} ${Math.round(v * 100)}%`).join(", ") })}
                         </span>
                     </div>
                 )}
 
                 <div className="cs-wc-section">
-                    <div className="cs-section-label">Weight Cut Strategy</div>
+                    <div className="cs-section-label">{t("fights.campSummary.wcSection")}</div>
                     <div className="cs-wc-explanation">
-                        Each cut rolls a random stamina swing when the cage door closes — bigger gambles mean bigger upside. Miss weight and the cut backfires: your stamina crashes and you lose 20% of your purse plus 200 fame.
+                        {t("fights.campSummary.wcExplanation")}
                     </div>
                     <div className="cs-wc-grid" data-tut="weight-cut">
                         {WEIGHT_CUT_OPTIONS.map((opt) => {
@@ -165,17 +163,17 @@ export const CampSummary = memo(function CampSummary({
                                     disabled={resolving}
                                 >
                                     <div className="cs-wc-card-inner">
-                                        <div className="cs-wc-name">{opt.label}</div>
+                                        <div className="cs-wc-name">{t(opt.labelKey)}</div>
                                         <div className="cs-wc-stat">
-                                            <div className="cs-wc-stat-label">Stamina Roll</div>
+                                            <div className="cs-wc-stat-label">{t("fights.campSummary.wcStaminaRoll")}</div>
                                             <div className="cs-wc-stat-val">{opt.staminaRange}</div>
                                         </div>
                                         <div className="cs-wc-stat">
-                                            <div className="cs-wc-stat-label">Miss Risk</div>
+                                            <div className="cs-wc-stat-label">{t("fights.campSummary.wcMissRisk")}</div>
                                             <div className="cs-wc-stat-val">{opt.missRisk}</div>
                                         </div>
                                         <div className="cs-wc-divider" />
-                                        <div className="cs-wc-desc">{opt.description}</div>
+                                        <div className="cs-wc-desc">{t(opt.descKey)}</div>
                                     </div>
                                 </button>
                             );
@@ -190,9 +188,9 @@ export const CampSummary = memo(function CampSummary({
                         onClick={onBeginFight}
                         disabled={!canFight}
                     >
-                        {resolving ? "Fight night…" : <>{"🔥"} Begin Fight</>}
+                        {resolving ? t("fights.campSummary.fightNight") : <>{t("fights.campSummary.beginFight")}</>}
                     </button>
-                    {!weightCut && <div className="cs-wc-hint">Select a strategy to continue</div>}
+                    {!weightCut && <div className="cs-wc-hint">{t("fights.campSummary.wcHint")}</div>}
                 </div>
             </div>
         </div>

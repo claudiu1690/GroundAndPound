@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Trophy } from "lucide-react";
 import { api } from "../../api";
+import { t } from "@/lib/i18n";
 
 const TIER_ORDER = ["Amateur", "Regional Pro", "National", "GCS Contender", "GCS"];
 
@@ -28,7 +29,7 @@ export function RankingsTab({ fighter, onMessage }) {
             const res = await api.getRankings(tier, playerWc, fighter._id);
             setData(res);
         } catch (e) {
-            onMessage?.(e.message || "Failed to load rankings");
+            onMessage?.(e.message || t("rankings.loadError"));
             setData(null);
         }
         setLoading(false);
@@ -77,34 +78,34 @@ export function RankingsTab({ fighter, onMessage }) {
             <div className="rank-header">
                 <div className="rank-header-top">
                     <div className="rank-title-row">
-                        <h2 className="rank-title">Rankings</h2>
+                        <h2 className="rank-title">{t("rankings.title")}</h2>
                         <span className="rank-division">{playerWc}</span>
                     </div>
                 </div>
                 <div className="tier-tabs">
-                    {TIER_ORDER.map((t) => (
-                        <button key={t} type="button"
-                            className={`tier-tab ${t === tier ? "active" : ""} ${t === playerTier ? "is-player-tier" : ""}`}
-                            onClick={() => setTier(t)}>
-                            {t}{t === playerTier && <span className="you-dot">YOU</span>}
+                    {TIER_ORDER.map((tr) => (
+                        <button key={tr} type="button"
+                            className={`tier-tab ${tr === tier ? "active" : ""} ${tr === playerTier ? "is-player-tier" : ""}`}
+                            onClick={() => setTier(tr)}>
+                            {tr}{tr === playerTier && <span className="you-dot">{t("rankings.tiers.youLabel")}</span>}
                         </button>
                     ))}
                 </div>
                 {titleShotAvailable && tier === playerTier && (
-                    <div className="rank-title-shot"><Trophy size={13} strokeWidth={2.5} aria-hidden="true" /> Title Shot Zone — you're in the top 5</div>
+                    <div className="rank-title-shot"><Trophy size={13} strokeWidth={2.5} aria-hidden="true" /> {t("rankings.titleShotBanner")}</div>
                 )}
             </div>
 
-            {loading && <div className="rank-loading">Loading roster…</div>}
+            {loading && <div className="rank-loading">{t("rankings.loading")}</div>}
 
             {!loading && data && (
                 <div className="rank-table" data-tut="rankings-table">
                     <div className="rank-table-header">
-                        <div className="th">#</div>
-                        <div className="th">Fighter</div>
-                        <div className="th right">OVR</div>
-                        <div className="th">Style</div>
-                        <div className="th right">Record</div>
+                        <div className="th">{t("rankings.table.colRank")}</div>
+                        <div className="th">{t("rankings.table.colFighter")}</div>
+                        <div className="th right">{t("rankings.table.colOvr")}</div>
+                        <div className="th">{t("rankings.table.colStyle")}</div>
+                        <div className="th right">{t("rankings.table.colRecord")}</div>
                     </div>
                     {(() => {
                         const showDividers = tier === playerTier;
@@ -114,10 +115,10 @@ export function RankingsTab({ fighter, onMessage }) {
                             const rank = row.rank;
                             const isRanked = rank != null;
                             if (showDividers && isRanked) {
-                                if (!titleShotEmitted && rank >= 4) { out.push(<div className="rank-section-div" key="div-ts"><span className="rank-section-div-label">Top 5 — Title Shot Eligible</span></div>); titleShotEmitted = true; }
+                                if (!titleShotEmitted && rank >= 4) { out.push(<div className="rank-section-div" key="div-ts"><span className="rank-section-div-label">{t("rankings.dividers.titleShot")}</span></div>); titleShotEmitted = true; }
                                 if (!rankedEmitted && rank >= 6) {
-                                    if (!titleShotEmitted) { out.push(<div className="rank-section-div" key="div-ts"><span className="rank-section-div-label">Top 5 — Title Shot Eligible</span></div>); titleShotEmitted = true; }
-                                    out.push(<div className="rank-section-div" key="div-ranked"><span className="rank-section-div-label">Ranked</span></div>); rankedEmitted = true;
+                                    if (!titleShotEmitted) { out.push(<div className="rank-section-div" key="div-ts"><span className="rank-section-div-label">{t("rankings.dividers.titleShot")}</span></div>); titleShotEmitted = true; }
+                                    out.push(<div className="rank-section-div" key="div-ranked"><span className="rank-section-div-label">{t("rankings.dividers.ranked")}</span></div>); rankedEmitted = true;
                                 }
                             }
                             const isChampion = row.isChampion;
@@ -129,8 +130,8 @@ export function RankingsTab({ fighter, onMessage }) {
                                     <div className={`rank-num ${(isChampion || rank === 1) ? "top1" : isTop3 ? "top3" : ""} ${isPlayer ? "mine" : ""}`}>{isChampion ? "C" : isUnranked ? "—" : rank}</div>
                                     <div className="rank-fighter">
                                         <span className={`rank-fighter-name ${isPlayer ? "mine" : ""}`}>{row.nickname ? `${row.name} "${row.nickname}"` : row.name}</span>
-                                        {isChampion && <span className="rank-champ-badge">Champion</span>}
-                                        {isPlayer && <span className="rank-you-badge">You</span>}
+                                        {isChampion && <span className="rank-champ-badge">{t("rankings.champion")}</span>}
+                                        {isPlayer && <span className="rank-you-badge">{t("rankings.you")}</span>}
                                     </div>
                                     <div className={`rank-ovr ${isPlayer ? "mine" : ""}`}>{row.ovr}</div>
                                     <div className="rank-style">{row.style}</div>
@@ -144,7 +145,7 @@ export function RankingsTab({ fighter, onMessage }) {
             )}
 
             {!loading && tier !== playerTier && (
-                <div className="rank-foreign-note">Viewing another tier — your row only appears in your current tier ({playerTier}).</div>
+                <div className="rank-foreign-note">{t("rankings.foreignNote", { tier: playerTier })}</div>
             )}
         </div>
     );

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { t } from "@/lib/i18n";
 import { badgeVisual } from "./badgeCatalog";
 
 /**
@@ -15,16 +16,16 @@ export function BadgePickerModal({ open, onClose, earnedBadges, pinnedIds, onSel
   if (!open) return null;
 
   return createPortal(
-    <div className="badge-picker-root" role="dialog" aria-modal="true" aria-label="Pin a badge">
+    <div className="badge-picker-root" role="dialog" aria-modal="true" aria-label={t("career.badges.pickerAriaLabel")}>
       <div className="badge-picker-backdrop" onClick={onClose} />
       <div className="badge-picker-shell">
         <header className="badge-picker-header">
-          <h2>Pin a badge</h2>
-          <button type="button" className="badge-picker-close" onClick={onClose} aria-label="Close"><X size={18} /></button>
+          <h2>{t("career.badges.pickerTitle")}</h2>
+          <button type="button" className="badge-picker-close" onClick={onClose} aria-label={t("career.badges.pickerCloseAriaLabel")}><X size={18} /></button>
         </header>
         <div className="badge-picker-body">
           {(!earnedBadges || earnedBadges.length === 0) ? (
-            <div className="career-empty">No earned badges yet. Win fights to earn badges.</div>
+            <div className="career-empty">{t("career.badges.pickerEmpty")}</div>
           ) : (
             <div className="badge-picker-grid">
               {earnedBadges.map((badge) => {
@@ -42,7 +43,7 @@ export function BadgePickerModal({ open, onClose, earnedBadges, pinnedIds, onSel
                       <Icon size={24} color={color} strokeWidth={1.8} aria-hidden="true" />
                     </span>
                     <span className="badge-picker-name">{badge.name}</span>
-                    {isPinned && <span className="badge-picker-pinned-tag">Pinned</span>}
+                    {isPinned && <span className="badge-picker-pinned-tag">{t("career.badges.pickerPinnedTag")}</span>}
                   </button>
                 );
               })}

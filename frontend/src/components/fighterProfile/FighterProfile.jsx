@@ -7,13 +7,14 @@ import { FighterStatMeters } from "./FighterStatMeters";
 import { ProfileActionsSection } from "./ProfileActionsSection";
 import { BannerPreview } from "../banner/BannerPreview";
 import { BannerEditor } from "../banner/BannerEditor";
+import { t } from "@/lib/i18n";
 
 function FighterProfileLoading() {
   return (
     <section className="panel fighter-profile" data-tut="fighter-profile">
-      <h2 className="panel-title">Fighter</h2>
+      <h2 className="panel-title">{t("fighterProfile.panelTitle")}</h2>
       <div className="panel-body">
-        <p className="panel-empty">Loading fighter data…</p>
+        <p className="panel-empty">{t("fighterProfile.loading")}</p>
       </div>
     </section>
   );
@@ -55,22 +56,22 @@ export const FighterProfile = memo(function FighterProfile({
 
   return (
     <section className="panel fighter-profile" data-tut="fighter-profile">
-      <h2 className="panel-title">Fighter</h2>
+      <h2 className="panel-title">{t("fighterProfile.panelTitle")}</h2>
 
       <div className="fighter-profile-banner-wrap">
         <BannerPreview
           fighter={fighter}
           size="compact"
           onClick={() => setBannerEditorOpen(true)}
-          title="Click to customize your banner"
+          title={t("fighterProfile.bannerCustomizeTitle")}
         />
         <button
           type="button"
           className="banner-customize-btn"
           onClick={() => setBannerEditorOpen(true)}
-          title="Customize banner"
+          title={t("fighterProfile.bannerCustomizeBtnTitle")}
         >
-          ✎ Customize
+          {t("fighterProfile.bannerCustomizeBtn")}
         </button>
       </div>
 

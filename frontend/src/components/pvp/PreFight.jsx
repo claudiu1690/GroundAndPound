@@ -3,6 +3,7 @@ import { Zap, ChevronLeft } from "lucide-react";
 import { gameplanLabel } from "./pvpConst";
 import { GameplanPicker } from "./GameplanPicker";
 import { api } from "../../api";
+import { t } from "../../lib/i18n";
 
 /**
  * Screen 2 — Pre-Fight.
@@ -29,8 +30,8 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
 
   const bracketLabel = {
     none: null,
-    plus10: "+10% bonus DP — expanded bracket",
-    plus25: "+25% bonus DP — large bracket",
+    plus10: t("pvp.preFight.bracketPlus10"),
+    plus25: t("pvp.preFight.bracketPlus25"),
   }[candidate?.bracketBonus ?? "none"];
 
   async function handleFight() {
@@ -49,20 +50,20 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
       const code = e.code ?? e.errorCode ?? null;
       setError(
         code === "attacker_injured"
-          ? "You're injured — visit the Hospital before fighting."
+          ? t("pvp.preFight.errInjured")
           : code === "defender_recovering"
-            ? "This fighter is recovering and can't be challenged right now."
+            ? t("pvp.preFight.errDefenderRecovering")
             : e.status === 402
-              ? "Not enough energy — PVP fights cost 15 energy."
+              ? t("pvp.preFight.errNotEnoughEnergy")
               : e.status === 403
                 ? e.message?.toLowerCase().includes("injur") || code?.includes("injur")
-                  ? "You're injured — visit the Hospital before fighting."
-                  : "The Proving Ground unlocks at 3 career wins."
+                  ? t("pvp.preFight.errInjured")
+                  : t("pvp.preFight.errLocked")
                 : e.status === 409
                   ? e.message?.toLowerCase().includes("recover")
-                    ? "This fighter is recovering and can't be challenged right now."
-                    : "This fighter is protected and can't be challenged right now."
-                  : e.message || "Fight failed. Try again."
+                    ? t("pvp.preFight.errDefenderRecovering")
+                    : t("pvp.preFight.errProtected")
+                  : e.message || t("pvp.preFight.errDefault")
       );
     } finally {
       setFighting(false);
@@ -74,11 +75,11 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
       {/* Nav */}
       <div className="pvp-card-nav">
         <button className="pvp-cnav-back" onClick={onBack}>
-          <ChevronLeft size={14} strokeWidth={2.5} /> Back
+          <ChevronLeft size={14} strokeWidth={2.5} /> {t("common.back")}
         </button>
-        <div className="pvp-cnav-title">PVP Challenge</div>
+        <div className="pvp-cnav-title">{t("pvp.preFight.navTitle")}</div>
         <div className="pvp-cnav-right">
-          <Zap size={12} strokeWidth={2} /> {energyCur} energy
+          <Zap size={12} strokeWidth={2} /> {t("pvp.preFight.energyDisplay", { n: energyCur })}
         </div>
       </div>
 
@@ -133,12 +134,12 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
         <div className="pvp-pf-flags">
           {candidate.isRival && (
             <span className="pvp-pf-flag pvp-pf-flag-rival">
-              Rival match — win for Rivalry Resolved + bonus DP
+              {t("pvp.preFight.rivalFlag")}
             </span>
           )}
           {candidate.isBeltHolder && (
             <span className="pvp-pf-flag pvp-pf-flag-belt">
-              Belt Holder — +50 bonus DP if you win
+              {t("pvp.preFight.beltFlag")}
             </span>
           )}
           {bracketLabel && (
@@ -151,7 +152,7 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
       <div className="pvp-pf-body">
         {/* Gameplan picker */}
         <div>
-          <div className="pvp-section-lbl" style={{ marginBottom: 8 }}>Pick your gameplan</div>
+          <div className="pvp-section-lbl" style={{ marginBottom: 8 }}>{t("pvp.preFight.gameplanLabel")}</div>
           <GameplanPicker
             selected={gameplan}
             onSelect={setGameplan}
@@ -161,28 +162,28 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
 
         {/* Opponent intel */}
         <div className="pvp-intel-card">
-          <div className="pvp-intel-title">Opponent Intel — {candidate.name}</div>
+          <div className="pvp-intel-title">{t("pvp.preFight.opponentIntelTitle", { name: candidate.name })}</div>
           <div className="pvp-intel-grid">
             <div className="pvp-ig">
               <div className="pvp-ig-v">{candidate.wins ?? 0}-{candidate.losses ?? 0}</div>
-              <div className="pvp-ig-l">W-L</div>
-              <div className="pvp-ig-hint">{candidate.wins ?? 0}-{candidate.losses ?? 0} this season</div>
+              <div className="pvp-ig-l">{t("pvp.preFight.intelWL")}</div>
+              <div className="pvp-ig-hint">{t("pvp.preFight.intelWLHint", { wins: candidate.wins ?? 0, losses: candidate.losses ?? 0 })}</div>
             </div>
             <div className="pvp-ig">
               <div className="pvp-ig-v">{candidate.overallRating ?? "—"}</div>
-              <div className="pvp-ig-l">OVR</div>
+              <div className="pvp-ig-l">{t("pvp.preFight.intelOvr")}</div>
               <div className={`pvp-ig-hint ${candidate.difficulty === "hard" ? "pvp-ig-r" : candidate.difficulty === "easy" ? "pvp-ig-w" : ""}`}>
-                {candidate.difficulty === "hard" ? "Tough matchup" : candidate.difficulty === "easy" ? "Easier matchup" : "Even match"}
+                {candidate.difficulty === "hard" ? t("pvp.preFight.intelDiffHard") : candidate.difficulty === "easy" ? t("pvp.preFight.intelDiffEasy") : t("pvp.preFight.intelDiffEven")}
               </div>
             </div>
             <div className="pvp-ig">
               <div className="pvp-ig-v">{(candidate.dp ?? 0).toLocaleString()}</div>
-              <div className="pvp-ig-l">DP</div>
+              <div className="pvp-ig-l">{t("pvp.preFight.intelDp")}</div>
             </div>
             <div className="pvp-ig">
               <div className="pvp-ig-v">{gameplanLabel(candidate.defenseGameplan)}</div>
-              <div className="pvp-ig-l">Defense</div>
-              <div className="pvp-ig-hint">Their default plan</div>
+              <div className="pvp-ig-l">{t("pvp.preFight.intelDefense")}</div>
+              <div className="pvp-ig-hint">{t("pvp.preFight.intelDefenseHint")}</div>
             </div>
           </div>
         </div>
@@ -191,9 +192,9 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
         {isInjuryBlocked && (
           <div className="pvp-pf-injury-block">
             <span className="pvp-pf-injury-block-icon">+</span>
-            Recovering — visit the Hospital before your next PVP fight.
+            {t("pvp.preFight.injuryBlockMsg")}
             <div className="pvp-pf-injury-block-sub">
-              {blockingInjury.label ?? "Injury"} must be treated before you can fight.
+              {t("pvp.preFight.injuryBlockSub", { label: blockingInjury.label ?? "Injury" })}
             </div>
           </div>
         )}
@@ -201,7 +202,7 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
         {/* Low HP advisory — does not block fighting */}
         {isLowHp && (
           <div className="pvp-pf-low-hp">
-            Low HP ({health}/100) — you will start this fight hurt. Consider visiting the Hospital first.
+            {t("pvp.preFight.lowHpMsg", { hp: health })}
           </div>
         )}
 
@@ -217,15 +218,15 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
           disabled={!canFight}
           style={!canFight ? { opacity: 0.5, cursor: "not-allowed" } : {}}
         >
-          {fighting ? "Resolving…" : "Fight · 15 energy"}
+          {fighting ? t("pvp.preFight.fightBtnFighting") : t("pvp.preFight.fightBtnReady")}
         </button>
         <div className="pvp-energy-note">
           {isInjuryBlocked
-            ? "Can't fight while recovering from injury"
+            ? t("pvp.preFight.energyNoteInjured")
             : canFight
-              ? `${energyAfter} energy remaining after this fight`
+              ? t("pvp.preFight.energyNoteAfter", { n: energyAfter })
               : energyCur < 15
-                ? "Not enough energy (need 15)"
+                ? t("pvp.preFight.energyNoteLow")
                 : ""}
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { CAMP_INJURY_LABELS, getRatingConfig } from "../../constants/campConfig";
+import { t } from "@/lib/i18n";
 
 export const CampInjury = memo(function CampInjury({
     injuryType,
@@ -21,47 +22,47 @@ export const CampInjury = memo(function CampInjury({
         <div className="camp-injury-banner">
             <div className="camp-injury-header">
                 <span className="camp-injury-icon">⚠</span>
-                <span className="camp-injury-title">Injury in Camp</span>
+                <span className="camp-injury-title">{t("fights.campInjury.title")}</span>
             </div>
             <p className="camp-injury-desc">
-                You sustained a <strong>{injuryLabel}</strong> during sparring.
+                {t("fights.campInjury.desc", { injury: injuryLabel })}
                 {slotsRemaining > 0 && (
-                    <> You have <strong>{slotsRemaining} slot{slotsRemaining > 1 ? "s" : ""} remaining</strong>.</>
+                    <> {t("fights.campInjury.slotsRemaining", { n: slotsRemaining, plural: slotsRemaining > 1 ? "s" : "" })}</>
                 )}
             </p>
 
             <div className="camp-injury-options">
                 {/* STOP CAMP */}
                 <div className="camp-injury-option camp-injury-stop">
-                    <div className="cio-heading">Option A — Stop Camp</div>
+                    <div className="cio-heading">{t("fights.campInjury.optionStopHeading")}</div>
                     <ul className="cio-list">
-                        <li>Remaining {slotsRemaining} slot{slotsRemaining !== 1 ? "s" : ""} unused</li>
+                        <li>{t("fights.campInjury.stopSlotUnused", { n: slotsRemaining, plural: slotsRemaining !== 1 ? "s" : "" })}</li>
                         <li>
-                            Camp Rating drops: {" "}
+                            {t("fights.campInjury.stopRatingDrop")}{" "}
                             <span style={{ color: ratingCfg.color }}>{currentGrade}</span>
                             {" → "}
                             <span style={{ color: stoppedRatingCfg.color }}>{stoppedGrade}</span>
                         </li>
-                        <li>You enter the fight healthy</li>
+                        <li>{t("fights.campInjury.stopHealthy")}</li>
                     </ul>
                     <button className="btn btn-secondary" onClick={onStop}>
-                        Stop Camp
+                        {t("fights.campInjury.stopBtn")}
                     </button>
                 </div>
 
                 {/* PUSH THROUGH */}
                 <div className="camp-injury-option camp-injury-push">
-                    <div className="cio-heading">Option B — Push Through</div>
+                    <div className="cio-heading">{t("fights.campInjury.optionPushHeading")}</div>
                     <ul className="cio-list">
-                        <li>Complete remaining {slotsRemaining} slot{slotsRemaining !== 1 ? "s" : ""} as planned</li>
+                        <li>{t("fights.campInjury.pushCompleteSlots", { n: slotsRemaining, plural: slotsRemaining !== 1 ? "s" : "" })}</li>
                         <li>
-                            Camp Rating maintained at{" "}
+                            {t("fights.campInjury.pushRatingMaintained")}{" "}
                             <span style={{ color: ratingCfg.color }}>{currentGrade}</span>
                         </li>
-                        <li>Enter fight with <strong>{injuryLabel}</strong> — stat penalties apply</li>
+                        <li>{t("fights.campInjury.pushEnterWithInjury", { injury: injuryLabel })}</li>
                     </ul>
                     <button className="btn btn-danger" onClick={onPushThrough}>
-                        Push Through
+                        {t("fights.campInjury.pushBtn")}
                     </button>
                 </div>
             </div>

@@ -3,6 +3,7 @@ import { Mic, Lock, Disc3, CalendarDays, Flame, Heart } from "lucide-react";
 import { api } from "../../../api";
 import { segmentMeta, formatListeners, daysAgo } from "../mediaFormat";
 import { TargetPicker } from "../TargetPicker";
+import { t } from "@/lib/i18n";
 
 /** Build the reward label string straight from the catalog row. */
 function rewardLabel(seg) {
@@ -47,8 +48,8 @@ function SegmentCard({ seg, selected, disabled, onToggle, children }) {
 }
 
 const GUEST_TONES = [
-  { key: "TRASH", label: "Beef", Icon: Flame },
-  { key: "RESPECT", label: "Respect", Icon: Heart },
+  { key: "TRASH", labelKey: "media.podcast.toneBeef", Icon: Flame },
+  { key: "RESPECT", labelKey: "media.podcast.toneRespect", Icon: Heart },
 ];
 
 export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNavigate, onAfterAction }) {
@@ -118,7 +119,7 @@ export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNaviga
       if (onRefreshFighter && fighterId) await onRefreshFighter(fighterId);
       await onAfterAction?.();
     } catch (e) {
-      onMessage?.(e.message || "Could not record the episode.");
+      onMessage?.(e.message || t("media.podcast.recordError"));
     } finally {
       setBusy(false);
     }
@@ -130,11 +131,11 @@ export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNaviga
   const last = podcast.lastEpisode;
 
   let recordHint;
-  if (!canRecord) recordHint = "Already recorded today · resets midnight";
-  else if (selected.length < 2) recordHint = `${selected.length}/2 segments selected · ${podcast.energyCost ?? 0} energy`;
-  else if (!allTargetsSet) recordHint = "Pick a target (and a tone for Guest) for each flagged segment";
-  else if (duplicateTarget) recordHint = "Pick two different fighters — you can't target the same guy twice";
-  else recordHint = `2 segments selected · ${podcast.energyCost ?? 0} energy · resets midnight`;
+  if (!canRecord) recordHint = t("media.podcast.hintAlreadyRecorded");
+  else if (selected.length < 2) recordHint = t("media.podcast.hintSegmentCount", { n: selected.length, energy: podcast.energyCost ?? 0 });
+  else if (!allTargetsSet) recordHint = t("media.podcast.hintNeedTarget");
+  else if (duplicateTarget) recordHint = t("media.podcast.hintDuplicateTarget");
+  else recordHint = t("media.podcast.hintReady", { energy: podcast.energyCost ?? 0 });
 
   return (
     <div className="media-pane">
@@ -142,21 +143,21 @@ export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNaviga
       <div className="media-pod-header">
         <div className="media-pod-avatar"><Mic size={24} /></div>
         <div className="media-pod-info">
-          <div className="media-pod-name">{podcast.podcastName || "Untitled Podcast"}</div>
+          <div className="media-pod-name">{podcast.podcastName || t("media.podcast.podcastNameFallback")}</div>
           <div className="media-pod-meta">
-            <span className="media-pod-listeners"><span>{listeners}</span> listeners</span>
+            <span className="media-pod-listeners"><span>{listeners}</span> {t("media.podcast.listenersLabel")}</span>
             <span className="media-pod-sep">·</span>
-            <span>Episode {epNum} · {canRecord ? "ready to record" : "recorded today"}</span>
+            <span>{t("media.podcast.episodeLabel", { n: epNum })} · {canRecord ? t("media.podcast.readyToRecord") : t("media.podcast.recordedToday")}</span>
           </div>
         </div>
         {canRecord
-          ? <span className="media-pod-ready">Ready today</span>
-          : <span className="media-pod-used">Used</span>}
+          ? <span className="media-pod-ready">{t("media.podcast.readyToday")}</span>
+          : <span className="media-pod-used">{t("media.podcast.used")}</span>}
       </div>
 
       {/* Segments */}
       <div>
-        <div className="media-slbl">Pick your segments — choose 2</div>
+        <div className="media-slbl">{t("media.podcast.pickSegments")}</div>
         <div className="media-segments-grid">
           {segments.map((seg) => {
             const isSel = selected.includes(seg.key);
@@ -173,14 +174,14 @@ export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNaviga
                   <div className="media-seg-target" onClick={(e) => e.stopPropagation()}>
                     {isGuest && (
                       <div className="media-tone-row">
-                        {GUEST_TONES.map(({ key, label, Icon }) => (
+                        {GUEST_TONES.map(({ key, labelKey, Icon }) => (
                           <button
                             type="button"
                             key={key}
                             className={`media-tone-btn${targets[seg.key]?.tone === key ? " sel" : ""}`}
                             onClick={() => setTarget(seg.key, { tone: key })}
                           >
-                            <Icon size={11} /> {label}
+                            <Icon size={11} /> {t(labelKey)}
                           </button>
                         ))}
                       </div>
@@ -201,7 +202,7 @@ export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNaviga
       {/* Record row */}
       <div className="media-record-row">
         <button type="button" className="media-record-btn" disabled={!readyToRecord} onClick={record}>
-          <Disc3 size={14} /> {busy ? "Recording…" : `Record Episode ${epNum}`}
+          <Disc3 size={14} /> {busy ? t("media.podcast.recording") : t("media.podcast.recordBtn", { n: epNum })}
         </button>
         <span className="media-record-hint">{recordHint}</span>
       </div>
@@ -209,10 +210,10 @@ export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNaviga
       {/* Last episode */}
       {last && (
         <div className="media-last-ep">
-          <div className="media-last-ep-lbl">Last episode</div>
+          <div className="media-last-ep-lbl">{t("media.podcast.lastEpisodeLabel")}</div>
           <div className="media-last-ep-row">
             <div className="media-last-ep-main">
-              <div className="media-last-ep-title">Ep {last.episodeNumber} — "{last.title}"</div>
+              <div className="media-last-ep-title">{t("media.podcast.lastEpTitleFmt", { n: last.episodeNumber, title: last.title })}</div>
               <div className="media-last-ep-sub">
                 {(last.segments || []).join(" · ")}
                 {last.listenersAtTime != null && ` · ${formatListeners(last.listenersAtTime)} listeners`}
@@ -226,7 +227,10 @@ export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNaviga
               <div className="media-last-ep-time">
                 {(() => {
                   const d = daysAgo(last.recordedAt);
-                  return d === 0 ? "today" : `${d} day${d === 1 ? "" : "s"} ago`;
+                  if (d === 0) return t("media.podcast.todayLabel");
+                  return d === 1
+                    ? t("media.podcast.daysAgoLabel", { n: d })
+                    : t("media.podcast.daysAgoLabelPlural", { n: d });
                 })()}
               </div>
             </div>

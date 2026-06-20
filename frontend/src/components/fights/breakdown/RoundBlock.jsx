@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { renderEvent, renderRoundWinner } from "./renderEvent.js";
+import { t } from "@/lib/i18n";
 
 /**
  * Renders one round: header + winner line, events, stat row, momentum bar.
@@ -81,7 +82,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
             if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded((v) => !v); }
           }}
         >
-          <span className={`round-badge r${round.round}`}>Round {round.round}</span>
+          <span className={`round-badge r${round.round}`}>{t("fights.roundBlock.roundLabel", { n: round.round })}</span>
           <span
             style={{ fontSize: "10px", fontWeight: 600 }}
             className={winnerClass === "win" ? "rw-win" : winnerClass === "loss" ? "rw-loss" : "rw-even"}
@@ -108,7 +109,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
         <div className="rs-stats">
           <div className="rss-inner">
             <div className="rss-item">
-              <span className="rss-lbl">Strikes</span>
+              <span className="rss-lbl">{t("fights.roundBlock.strikes")}</span>
               &nbsp;
               <span className={`rss-val ${valClass(pStrikes, oStrikes) === "win" ? "win" : valClass(pStrikes, oStrikes) === "loss" ? "loss" : "neu"}`}>{pStrikes}</span>
               <span className="rss-sep">—</span>
@@ -116,7 +117,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
             </div>
             <div className="rss-divider" />
             <div className="rss-item">
-              <span className="rss-lbl">TD</span>
+              <span className="rss-lbl">{t("fights.roundBlock.td")}</span>
               &nbsp;
               <span className={`rss-val ${valClass(pTd, oTd) === "win" ? "win" : valClass(pTd, oTd) === "loss" ? "loss" : "neu"}`}>{pTd}</span>
               <span className="rss-sep">—</span>
@@ -126,7 +127,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
               <>
                 <div className="rss-divider" />
                 <div className="rss-item">
-                  <span className="rss-lbl">Sub att.</span>
+                  <span className="rss-lbl">{t("fights.roundBlock.subAtt")}</span>
                   &nbsp;
                   <span className={`rss-val ${valClass(pSub, oSub) === "win" ? "win" : "neu"}`}>{pSub}</span>
                   <span className="rss-sep">—</span>
@@ -138,7 +139,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
               <>
                 <div className="rss-divider" />
                 <div className="rss-item">
-                  <span className="rss-lbl">KD</span>
+                  <span className="rss-lbl">{t("fights.roundBlock.kd")}</span>
                   &nbsp;
                   <span className={`rss-val ${valClass(pKd, oKd) === "win" ? "win" : "neu"}`}>{pKd}</span>
                   <span className="rss-sep">—</span>
@@ -148,7 +149,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
             )}
             <div className="rss-divider" />
             <div className="rss-item">
-              <span className="rss-lbl">Damage</span>
+              <span className="rss-lbl">{t("fights.roundBlock.damage")}</span>
               &nbsp;
               <span className={`rss-val ${valClass(pDmg, oDmg) === "win" ? "win" : valClass(pDmg, oDmg) === "loss" ? "loss" : "neu"}`}>{pDmg}%</span>
               <span className="rss-sep">—</span>
@@ -158,7 +159,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
               <>
                 <div className="rss-divider" />
                 <div className="rss-item">
-                  <span className="rss-lbl">Ctrl</span>
+                  <span className="rss-lbl">{t("fights.roundBlock.ctrl")}</span>
                   &nbsp;
                   <span className={`rss-val ${valClass(pCtrl, oCtrl) === "win" ? "win" : valClass(pCtrl, oCtrl) === "loss" ? "loss" : "neu"}`}>{fmtCtrl(pCtrl)}</span>
                   <span className="rss-sep">—</span>
@@ -201,7 +202,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
   return (
     <div className="round-block">
       <div className="round-head">
-        <span className="rh-name">Round {round.round}</span>
+        <span className="rh-name">{t("fights.roundBlock.roundLabel", { n: round.round })}</span>
         <span className={`rh-winner ${winnerClass}`}>
           {winnerArrow} {winnerLabel}
         </span>
@@ -227,7 +228,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
               <span className="sg-sep">—</span>
               <span className={`sv ${valClass(oStrikes, pStrikes)}`}>{oStrikes}</span>
             </div>
-            <div className="sg-lbl">Strikes</div>
+            <div className="sg-lbl">{t("fights.roundBlock.strikes")}</div>
           </div>
           <div className="sg">
             <div className="sg-val">
@@ -235,7 +236,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
               <span className="sg-sep">—</span>
               <span className={`sv ${valClass(oTd, pTd)}`}>{oTd}</span>
             </div>
-            <div className="sg-lbl">Takedowns</div>
+            <div className="sg-lbl">{t("fights.roundBlock.takedowns")}</div>
           </div>
           <div className="sg">
             <div className="sg-val">
@@ -243,7 +244,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
               <span className="sg-sep">—</span>
               <span className={`sv ${valClass(oDmg, pDmg)}`}>{oDmg}%</span>
             </div>
-            <div className="sg-lbl">Damage</div>
+            <div className="sg-lbl">{t("fights.roundBlock.damage")}</div>
           </div>
           {showSubAttempts && (
             <div className="sg">
@@ -252,7 +253,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
                 <span className="sg-sep">—</span>
                 <span className={`sv ${valClass(oSub, pSub)}`}>{oSub}</span>
               </div>
-              <div className="sg-lbl">Sub att.</div>
+              <div className="sg-lbl">{t("fights.roundBlock.subAtt")}</div>
             </div>
           )}
           {showKnockdowns && (
@@ -262,7 +263,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
                 <span className="sg-sep">—</span>
                 <span className={`sv ${valClass(oKd, pKd)}`}>{oKd}</span>
               </div>
-              <div className="sg-lbl">KDs</div>
+              <div className="sg-lbl">{t("fights.roundBlock.kds")}</div>
             </div>
           )}
           {showControl && (
@@ -272,7 +273,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
                 <span className="sg-sep">—</span>
                 <span className={`sv ${valClass(oCtrl, pCtrl)}`}>{fmtCtrl(oCtrl)}</span>
               </div>
-              <div className="sg-lbl">Control</div>
+              <div className="sg-lbl">{t("fights.roundBlock.control")}</div>
             </div>
           )}
         </div>

@@ -2,6 +2,7 @@ import { memo } from "react";
 import { createPortal } from "react-dom";
 import { Trophy } from "lucide-react";
 import { TITLE_WINS } from "../../constants/gameConstants";
+import { t } from "@/lib/i18n";
 
 /**
  * One-time announcement shown the moment a fighter becomes a title CONTENDER
@@ -29,23 +30,23 @@ export const ContenderModal = memo(function ContenderModal({
   const titleWins = TITLE_WINS[currentTier] ?? 3;
 
   const heading = isProDebut
-    ? "You're ready to turn pro"
-    : `You're a ${currentTier} title contender`;
+    ? t("fights.contenderModal.headingPro")
+    : t("fights.contenderModal.headingBelt", { tier: currentTier });
 
   const body = isProDebut
-    ? "Your rating has reached pro level. Beat the Amateur champion to turn pro and promote to Regional Pro."
-    : `Your rating has reached championship level. ${champName || "The champion"} holds the ${currentTier} belt — beat them and it's yours.`;
+    ? t("fights.contenderModal.bodyPro")
+    : t("fights.contenderModal.bodyBelt", { champ: champName || "The champion", tier: currentTier });
 
   const step1 = isProDebut
-    ? "Be ranked top 5 as an Amateur"
-    : `Be ranked top 5 in the ${currentTier} division`;
+    ? t("fights.contenderModal.step1Pro")
+    : t("fights.contenderModal.step1Belt", { tier: currentTier });
   const step2 = isProDebut
-    ? `Win ${titleWins} fights at Amateur`
-    : `Win ${titleWins} fights in this tier`;
+    ? t("fights.contenderModal.step2Pro", { n: titleWins })
+    : t("fights.contenderModal.step2Belt", { n: titleWins });
 
   const closer = isProDebut
-    ? "When both are met, a Turn Pro card appears in your Fight Offers."
-    : "When both are met, a Title Shot card appears in your Fight Offers.";
+    ? t("fights.contenderModal.closerPro")
+    : t("fights.contenderModal.closerBelt");
 
   return createPortal(
     <div className="contender-modal-overlay" role="dialog" aria-modal="true" aria-label="Title contender">
@@ -53,11 +54,11 @@ export const ContenderModal = memo(function ContenderModal({
         <div className="contender-modal-crest">
           <Trophy size={26} />
         </div>
-        <div className="contender-modal-eyebrow">CONTENDER</div>
+        <div className="contender-modal-eyebrow">{t("fights.contenderModal.eyebrow")}</div>
         <h2 className="contender-modal-heading">{heading}</h2>
         <p className="contender-modal-body">{body}</p>
 
-        <div className="contender-modal-steps-label">To earn your shot:</div>
+        <div className="contender-modal-steps-label">{t("fights.contenderModal.stepsLabel")}</div>
         <ol className="contender-modal-steps">
           <li>
             <span className="cms-num">1</span>
@@ -72,7 +73,7 @@ export const ContenderModal = memo(function ContenderModal({
         <p className="contender-modal-closer">{closer}</p>
 
         <button type="button" className="btn btn-title contender-modal-btn" onClick={onClose}>
-          Got it — show my path
+          {t("fights.contenderModal.gotIt")}
         </button>
       </div>
     </div>,

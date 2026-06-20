@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { INJURY_SEVERITY_CLASS } from "./constants";
 import { formatRecoveryRemaining } from "../../utils/injuryDisplay";
+import { t } from "@/lib/i18n";
 
 function severityClass(severity) {
   return INJURY_SEVERITY_CLASS[severity] ?? "";
@@ -18,11 +19,11 @@ export const FighterInjuriesPanel = memo(function FighterInjuriesPanel({ injurie
 
   return (
     <div className="injuries-panel">
-      <h3 className="injuries-title">Active Injuries</h3>
+      <h3 className="injuries-title">{t("fighterProfile.injuries.sectionTitle")}</h3>
       {injuries.map((inj, index) => (
         <InjuryCard key={`${inj.type ?? inj.label ?? "injury"}-${index}`} injury={inj} />
       ))}
-      <p className="injuries-hint">Visit the Hospital tab to treat injuries.</p>
+      <p className="injuries-hint">{t("fighterProfile.injuries.hint")}</p>
     </div>
   );
 });
@@ -40,7 +41,7 @@ const InjuryCard = memo(function InjuryCard({ injury: inj }) {
       <p className="injury-effect">{inj.effect}</p>
       {ticking && (
         <p className="injury-recovery">
-          Heals in: <strong>{formatRecoveryRemaining(inj)}</strong>
+          {t("fighterProfile.injuries.healsIn")} <strong>{formatRecoveryRemaining(inj)}</strong>
         </p>
       )}
     </div>

@@ -1,3 +1,5 @@
+import { t } from "@/lib/i18n";
+
 /**
  * Hover tooltip for a badge (positioned above its tile via CSS .b-tip).
  * Shows: name, description, then an earned line ("✓ Earned · {context}"),
@@ -9,7 +11,7 @@ export function BadgeTooltip({ badge }) {
   let footer = null;
   if (earned) {
     footer = (
-      <div className="tt-e">✓ Earned{context ? ` · ${context}` : ""}</div>
+      <div className="tt-e">{t("career.badges.tooltipEarned")}{context ? ` · ${context}` : ""}</div>
     );
   } else if (progress && progress.target != null) {
     const unit = progress.unit ? ` ${progress.unit}` : "";

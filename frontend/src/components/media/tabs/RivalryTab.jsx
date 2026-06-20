@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Skull, Flame, Handshake, Megaphone } from "lucide-react";
 import { api } from "../../../api";
+import { t } from "@/lib/i18n";
 
 function RivRow({ Icon, iconColor, borderColor, name, tag, tagStyle, sub, bonus, bonusColor, window }) {
   return (
@@ -34,7 +35,7 @@ export function RivalryTab({ fighter, onMessage }) {
     try {
       setData(await api.getRivalry(fighterId));
     } catch (e) {
-      setError(e.message || "Could not load the rivalry board.");
+      setError(e.message || t("media.rivalry.error"));
     } finally {
       setLoading(false);
     }
@@ -42,13 +43,13 @@ export function RivalryTab({ fighter, onMessage }) {
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading) return <div className="media-pane"><div className="media-state">Loading rivalries…</div></div>;
+  if (loading) return <div className="media-pane"><div className="media-state">{t("media.rivalry.loading")}</div></div>;
   if (error) {
     return (
       <div className="media-pane">
         <div className="media-state media-state--error">
           {error}
-          <button type="button" className="media-mini-btn" onClick={load}>Retry</button>
+          <button type="button" className="media-mini-btn" onClick={load}>{t("common.retry")}</button>
         </div>
       </div>
     );
@@ -62,12 +63,11 @@ export function RivalryTab({ fighter, onMessage }) {
 
   return (
     <div className="media-pane">
-      <div className="media-slbl">Active storylines</div>
+      <div className="media-slbl">{t("media.rivalry.activeStorylinesLabel")}</div>
 
       {empty ? (
         <div className="media-state">
-          No active rivalries. Set beef flags via the Podcast or post-fight interviews.
-          Call out opponents from the Fight tab.
+          {t("media.rivalry.empty")}
         </div>
       ) : (
         <div className="media-riv-list">
@@ -76,13 +76,13 @@ export function RivalryTab({ fighter, onMessage }) {
               Icon={Skull}
               iconColor="var(--c-accent, #C8102E)"
               borderColor="rgba(200,16,46,0.25)"
-              name={`Nemesis: ${nemesis.opponentName}`}
-              tag="Nemesis"
+              name={t("media.rivalry.nemesisPrefix", { name: nemesis.opponentName })}
+              tag={t("media.rivalry.nemesisTag")}
               tagStyle={{ background: "rgba(200,16,46,0.1)", color: "var(--c-accent, #C8102E)", border: "1px solid rgba(200,16,46,0.2)" }}
-              sub={`Beat you ${nemesis.lossCount} time${nemesis.lossCount === 1 ? "" : "s"} · appears in your fight offers`}
+              sub={`${nemesis.lossCount === 1 ? t("media.rivalry.nemesisSub", { n: nemesis.lossCount }) : t("media.rivalry.nemesisSubPlural", { n: nemesis.lossCount })}${t("media.rivalry.nemesisSubSuffix")}`}
               bonus={nemesis.fameBonus ? `+${nemesis.fameBonus} fame` : null}
               bonusColor="var(--c-accent, #C8102E)"
-              window="on win"
+              window={t("media.rivalry.nemesisWindow")}
             />
           )}
 
@@ -92,12 +92,12 @@ export function RivalryTab({ fighter, onMessage }) {
               Icon={Flame}
               iconColor="#F87171"
               borderColor="rgba(200,16,46,0.2)"
-              name={`Beef with ${b.opponentName}`}
-              tag="Beef"
+              name={t("media.rivalry.beefPrefix", { name: b.opponentName })}
+              tag={t("media.rivalry.beefTag")}
               tagStyle={{ background: "rgba(200,16,46,0.1)", color: "#F87171", border: "1px solid rgba(200,16,46,0.15)" }}
-              sub={b.source ? `Set via ${b.source}` : "Grudge match bonus on a win"}
+              sub={b.source ? t("media.rivalry.beefSubSource", { source: b.source }) : t("media.rivalry.beefSubDefault")}
               bonusColor="#F87171"
-              window={`${b.expiresAfterFights} fight${b.expiresAfterFights === 1 ? "" : "s"} left`}
+              window={b.expiresAfterFights === 1 ? t("media.rivalry.beefFightLeft", { n: b.expiresAfterFights }) : t("media.rivalry.beefFightsLeft", { n: b.expiresAfterFights })}
             />
           ))}
 
@@ -107,12 +107,12 @@ export function RivalryTab({ fighter, onMessage }) {
               Icon={Handshake}
               iconColor="#93C5FD"
               borderColor="rgba(59,130,246,0.2)"
-              name={`Respect for ${r.opponentName}`}
-              tag="Respect"
+              name={t("media.rivalry.respectPrefix", { name: r.opponentName })}
+              tag={t("media.rivalry.respectTag")}
               tagStyle={{ background: "rgba(59,130,246,0.1)", color: "#93C5FD", border: "1px solid rgba(59,130,246,0.2)" }}
-              sub={r.source ? `Set via ${r.source}` : "Cash bonus on a win against them"}
+              sub={r.source ? t("media.rivalry.respectSubSource", { source: r.source }) : t("media.rivalry.respectSubDefault")}
               bonusColor="#93C5FD"
-              window={`${r.expiresAfterFights} fight${r.expiresAfterFights === 1 ? "" : "s"} left`}
+              window={r.expiresAfterFights === 1 ? t("media.rivalry.respectFightLeft", { n: r.expiresAfterFights }) : t("media.rivalry.respectFightsLeft", { n: r.expiresAfterFights })}
             />
           ))}
 
@@ -121,13 +121,13 @@ export function RivalryTab({ fighter, onMessage }) {
               Icon={Megaphone}
               iconColor="var(--c-gold, #D4A820)"
               borderColor="rgba(212,168,32,0.2)"
-              name={`Callout: ${callout.opponentName}`}
-              tag="Called out"
+              name={t("media.rivalry.calloutPrefix", { name: callout.opponentName })}
+              tag={t("media.rivalry.calloutTag")}
               tagStyle={{ background: "rgba(212,168,32,0.1)", color: "var(--c-gold, #D4A820)", border: "1px solid rgba(212,168,32,0.2)" }}
-              sub={callout.isStretch ? "Stretch callout · appears in a tougher offer slot" : "Appears in your next offer slot"}
+              sub={callout.isStretch ? t("media.rivalry.calloutSubStretch") : t("media.rivalry.calloutSubDefault")}
               bonus={callout.pursePct ? `+${callout.pursePct}% cash` : null}
               bonusColor="var(--c-gold, #D4A820)"
-              window="next offer"
+              window={t("media.rivalry.calloutWindow")}
             />
           )}
         </div>

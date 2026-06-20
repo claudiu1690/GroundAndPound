@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { badgeVisual, beltTierLabel } from "./badgeCatalog";
 
 /**
@@ -16,7 +17,7 @@ function BeltSlot({ slot }) {
       <div
         className={`belt-img${won ? " belt-img--won" : " belt-img--locked"}`}
         style={won ? { background: bg, borderColor: color } : undefined}
-        title={won ? `${label} champion` : `${label} — not won`}
+        title={won ? t("career.belts.wonTitle", { label }) : t("career.belts.lockedTitle", { label })}
       >
         <Icon size={26} color={won ? color : "#888"} strokeWidth={1.8} aria-hidden="true" />
       </div>
@@ -29,10 +30,10 @@ export function ChampionshipBeltsCard({ belts }) {
   const slots = Array.isArray(belts) ? belts : [];
   return (
     <div className="p-card">
-      <div className="p-card-lbl">Championship Belts</div>
+      <div className="p-card-lbl">{t("career.belts.cardLabel")}</div>
       <div className="belts-row">
         {slots.length === 0 ? (
-          <div className="career-empty">No belt data.</div>
+          <div className="career-empty">{t("career.belts.noBeltData")}</div>
         ) : (
           slots.map((slot) => <BeltSlot key={slot.tier || slot.badgeId} slot={slot} />)
         )}

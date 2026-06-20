@@ -13,6 +13,7 @@ import {
   describeOffer,
 } from "./offerIntel";
 import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
+import { t } from "@/lib/i18n";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -24,9 +25,9 @@ function ovrPillColor(variant) {
 }
 
 function formatOvrGap(gap) {
-  if (gap === 0) return { text: "Matched", cls: "ss-val gold" };
-  if (gap < 0)  return { text: `${Math.abs(gap)} below you`, cls: "ss-val grn" };
-  return { text: `+${gap} above you`, cls: "ss-val red" };
+  if (gap === 0) return { text: t("fights.offerCard.ovrMatched"), cls: "ss-val gold" };
+  if (gap < 0)  return { text: t("fights.offerCard.ovrBelow", { n: Math.abs(gap) }), cls: "ss-val grn" };
+  return { text: t("fights.offerCard.ovrAbove", { n: gap }), cls: "ss-val red" };
 }
 
 function RankDisplay({ opp }) {
@@ -51,7 +52,7 @@ function Last3Dots({ lastThree }) {
 
 function StreakChip({ count }) {
   if (!count || count < 4) return null;
-  return <span className="streak-chip">{count}-Fight Streak</span>;
+  return <span className="streak-chip">{t("fights.offerCard.streakChip", { n: count })}</span>;
 }
 
 function FogBar({ value, reliability }) {
@@ -77,12 +78,12 @@ function FogBar({ value, reliability }) {
 
 function FogTag({ reliability }) {
   const map = {
-    [RELIABILITY_TIERS.CONFIRMED]:  { cls: "fog-tag confirmed", text: "Confirmed" },
-    [RELIABILITY_TIERS.SUSPECTED]:  { cls: "fog-tag suspected", text: "Suspected" },
-    [RELIABILITY_TIERS.UNKNOWN]:    { cls: "fog-tag unknown",    text: "Unknown" },
+    [RELIABILITY_TIERS.CONFIRMED]:  { cls: "fog-tag confirmed", textKey: "fights.offerCard.fogConfirmed" },
+    [RELIABILITY_TIERS.SUSPECTED]:  { cls: "fog-tag suspected", textKey: "fights.offerCard.fogSuspected" },
+    [RELIABILITY_TIERS.UNKNOWN]:    { cls: "fog-tag unknown",    textKey: "fights.offerCard.fogUnknown" },
   };
-  const { cls, text } = map[reliability] ?? map[RELIABILITY_TIERS.UNKNOWN];
-  return <span className={cls}>{text}</span>;
+  const { cls, textKey } = map[reliability] ?? map[RELIABILITY_TIERS.UNKNOWN];
+  return <span className={cls}>{t(textKey)}</span>;
 }
 
 function ThreatTag({ label, tone }) {
@@ -92,15 +93,15 @@ function ThreatTag({ label, tone }) {
 
 // ── Locked title card ─────────────────────────────────────────────────────────
 function LockedOverlay({ offer }) {
-  let message = "Locked";
+  let message = t("fights.offerCard.lockedDefault");
   if (offer.cooldownRemaining > 0) {
-    message = `${offer.cooldownRemaining} win${offer.cooldownRemaining !== 1 ? "s" : ""} to rematch`;
+    message = t("fights.offerCard.lockedWinsRematch", { n: offer.cooldownRemaining, plural: offer.cooldownRemaining !== 1 ? "s" : "" });
   } else if (offer.winsNeeded > 0) {
-    message = `${offer.winsNeeded} win${offer.winsNeeded !== 1 ? "s" : ""} to qualify`;
+    message = t("fights.offerCard.lockedWinsQualify", { n: offer.winsNeeded, plural: offer.winsNeeded !== 1 ? "s" : "" });
   } else if (offer.rankNeeded) {
     message = offer.currentRank == null
-      ? "Get ranked first"
-      : `Reach top 5 (now #${offer.currentRank})`;
+      ? t("fights.offerCard.lockedGetRanked")
+      : t("fights.offerCard.lockedReachTop5", { rank: offer.currentRank });
   }
   return (
     <div className="accept-section">
@@ -136,12 +137,12 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
 
   // ── Diff badge ──
   const diffBadgeMap = {
-    easy:    { cls: "diff-badge easy",    text: "Easy" },
-    even:    { cls: "diff-badge even",    text: "Even" },
-    hard:    { cls: "diff-badge hard",    text: "Hard" },
-    title:   { cls: "diff-badge title",   text: "Title Shot" },
-    callout: { cls: "diff-badge callout", text: "📣 Called Out" },
-    nemesis: { cls: "diff-badge nemesis", text: "☠ Nemesis" },
+    easy:    { cls: "diff-badge easy",    textKey: "fights.offerCard.diffEasy" },
+    even:    { cls: "diff-badge even",    textKey: "fights.offerCard.diffEven" },
+    hard:    { cls: "diff-badge hard",    textKey: "fights.offerCard.diffHard" },
+    title:   { cls: "diff-badge title",   textKey: "fights.offerCard.diffTitle" },
+    callout: { cls: "diff-badge callout", textKey: "fights.offerCard.diffCallout" },
+    nemesis: { cls: "diff-badge nemesis", textKey: "fights.offerCard.diffNemesis" },
   };
   const badge = diffBadgeMap[variant] ?? diffBadgeMap.even;
 
@@ -154,8 +155,8 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
         <div className="special-banner title">
           <span className="sb-icon">🏆</span>
           <div className="sb-text">
-            <div className="sb-title title">{tier} Championship</div>
-            <div className="sb-sub">Win to promote to {targetTier} · Full 5-slot camp · +200 fame on win</div>
+            <div className="sb-title title">{t("fights.offerCard.specialTitleBout", { tier })}</div>
+            <div className="sb-sub">{t("fights.offerCard.specialTitleSub", { targetTier })}</div>
           </div>
         </div>
       );
@@ -165,8 +166,8 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
         <div className="special-banner callout">
           <span className="sb-icon">📣</span>
           <div className="sb-text">
-            <div className="sb-title callout">Your Callout</div>
-            <div className="sb-sub">You called this fight out. Full intel unlocked · +25% cash · +30% fame on win</div>
+            <div className="sb-title callout">{t("fights.offerCard.specialCalloutTitle")}</div>
+            <div className="sb-sub">{t("fights.offerCard.specialCalloutSub")}</div>
           </div>
         </div>
       );
@@ -177,8 +178,8 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
         <div className="special-banner nemesis">
           <span className="sb-icon">☠</span>
           <div className="sb-text">
-            <div className="sb-title nemesis">Nemesis Match</div>
-            <div className="sb-sub">{opp.name} beat you {n} time{n !== 1 ? "s" : ""}. Win for +150 fame — even if fame is frozen.</div>
+            <div className="sb-title nemesis">{t("fights.offerCard.specialNemesisTitle")}</div>
+            <div className="sb-sub">{t("fights.offerCard.specialNemesisSub", { name: opp.name, n, plural: n !== 1 ? "s" : "" })}</div>
           </div>
         </div>
       );
@@ -194,10 +195,10 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
         <RankDisplay opp={opp} />
         {opp.style && <span className="op style">{opp.style}</span>}
         {opp.weightClass && !isNemesis && <span className="op wc">{opp.weightClass}</span>}
-        {isTitle && <span className="op champ">Champion</span>}
-        {isCallout && <span className="op callout-target">Callout Target</span>}
-        {offer.beefMatch && <span className="op op-grudge" title={`Grudge match — +30% fame on win (${offer.beefMatch.expiresAfterFights} fights left)`}>Grudge</span>}
-        {offer.respectMatch && <span className="op op-respect" title={`Respect match — +15% cash on win (${offer.respectMatch.expiresAfterFights} fights left)`}>Respect</span>}
+        {isTitle && <span className="op champ">{t("fights.offerCard.pillChampion")}</span>}
+        {isCallout && <span className="op callout-target">{t("fights.offerCard.pillCalloutTarget")}</span>}
+        {offer.beefMatch && <span className="op op-grudge" title={t("fights.offerCard.grudgeTitle", { n: offer.beefMatch.expiresAfterFights })}>{t("fights.offerCard.grudgeLabel")}</span>}
+        {offer.respectMatch && <span className="op op-respect" title={t("fights.offerCard.respectTitle", { n: offer.respectMatch.expiresAfterFights })}>{t("fights.offerCard.respectLabel")}</span>}
       </div>
     );
   }
@@ -210,11 +211,11 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
     return (
       <div className="stats-section">
         <div className="ss-item">
-          <div className="ss-lbl">Record</div>
+          <div className="ss-lbl">{t("fights.offerCard.statsRecord")}</div>
           <div className="ss-val">{recordText}</div>
         </div>
         <div className="ss-item">
-          <div className="ss-lbl">Last 3</div>
+          <div className="ss-lbl">{t("fights.offerCard.statsLast3")}</div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <Last3Dots lastThree={lastThree} />
             {hasStreak && <StreakChip count={winStreak} />}
@@ -222,14 +223,14 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
         </div>
         {finishes && (
           <div className="ss-item">
-            <div className="ss-lbl">Finishes</div>
+            <div className="ss-lbl">{t("fights.offerCard.statsFinishes")}</div>
             <div className={`ss-val${finishes.ko > 0 ? " red" : ""}`}>
               KO {finishes.ko} · Sub {finishes.sub}
             </div>
           </div>
         )}
         <div className="ss-item">
-          <div className="ss-lbl">OVR Gap</div>
+          <div className="ss-lbl">{t("fights.offerCard.statsOvrGap")}</div>
           <div className={ovrGapFmt.cls}>{ovrGapFmt.text}</div>
         </div>
       </div>
@@ -241,10 +242,10 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
     // Champion title fight: restricted intel
     const isChampion = !!opp.isChampion;
     const intelHeader = isTitle
-      ? "Fighter Intel — Restricted"
+      ? t("fights.offerCard.intelRestricted")
       : isCallout
-        ? "Fighter Intel — Full Access"
-        : "Fighter Intel";
+        ? t("fights.offerCard.intelFullAccess")
+        : t("fights.offerCard.intelHeader");
 
     // Unified display rule across ALL cards: a CONFIRMED stat shows its real
     // number; anything less reliable shows the reliability word + an obscured
@@ -269,16 +270,14 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
         {isTitle && isChampion && (
           <div className="restricted-intel">
             <span className="ri-icon">⚠</span>
-            <span className="ri-text">
-              Champion tape is restricted — only <strong>2 fight logs</strong> visible. Use Game Plan Study or Sparring as safety nets.
-            </span>
+            <span className="ri-text">{t("fights.offerCard.intelChampionNote")}</span>
           </div>
         )}
         {isCallout && (
           <div className="full-intel-note">
             <div className="fi-row">
               <span className="fi-icon">🔍</span>
-              <span className="fi-text">Callout unlocked <strong>full intel</strong> — every stat confirmed. No fog of war.</span>
+              <span className="fi-text">{t("fights.offerCard.intelCalloutNote")}</span>
             </div>
           </div>
         )}
@@ -293,10 +292,10 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
       const targetTier = offer.titleShotMeta?.targetTier ?? "National";
       return (
         <div className="stakes-section">
-          <div className="stakes-lbl">If you win</div>
+          <div className="stakes-lbl">{t("fights.offerCard.stakesIfYouWin")}</div>
           <div className="stakes-row">
-            <span className="stake gold">🏆 {tier} Champion</span>
-            <span className="stake grn">Promote to {targetTier}</span>
+            <span className="stake gold">🏆 {t("fights.offerCard.stakesTitleChampion", { tier })}</span>
+            <span className="stake grn">{t("fights.offerCard.stakesTitlePromote", { targetTier })}</span>
             <span className="stake gold">+200 fame</span>
           </div>
         </div>
@@ -305,11 +304,11 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
     if (isCallout) {
       return (
         <div className="stakes-section">
-          <div className="stakes-lbl">Callout bonuses on win</div>
+          <div className="stakes-lbl">{t("fights.offerCard.stakesCalloutBonuses")}</div>
           <div className="stakes-row">
-            <span className="stake blue">📣 Called It badge</span>
-            <span className="stake grn">+25% cash purse</span>
-            <span className="stake grn">+30% fame</span>
+            <span className="stake blue">{t("fights.offerCard.stakesCalloutBadge")}</span>
+            <span className="stake grn">{t("fights.offerCard.stakesCalloutCash")}</span>
+            <span className="stake grn">{t("fights.offerCard.stakesCalloutFame")}</span>
           </div>
         </div>
       );
@@ -317,11 +316,11 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
     if (isNemesis) {
       return (
         <div className="stakes-section">
-          <div className="stakes-lbl">If you win</div>
+          <div className="stakes-lbl">{t("fights.offerCard.stakesIfYouWin")}</div>
           <div className="stakes-row">
-            <span className="stake grn">☠ Nemesis cleared</span>
-            <span className="stake grn">+150 fame bonus</span>
-            <span className="stake blue">Nemesis Slayer badge</span>
+            <span className="stake grn">{t("fights.offerCard.stakesNemesisCleared")}</span>
+            <span className="stake grn">{t("fights.offerCard.stakesNemesisFame")}</span>
+            <span className="stake blue">{t("fights.offerCard.stakesNemesisBadge")}</span>
           </div>
         </div>
       );
@@ -336,12 +335,12 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
     return (
       <div className="nemesis-record">
         <div className="nr-row">
-          <span className="nr-lbl">Your record vs {opp.name}</span>
+          <span className="nr-lbl">{t("fights.offerCard.nemesisRecordLabel", { name: opp.name })}</span>
           <span className="nr-val">0W · {n}L</span>
         </div>
         <div className="nr-row" style={{ marginTop: "4px" }}>
-          <span className="nr-lbl">Win bonus</span>
-          <span className="nr-bonus">★ +150 fame (always applies)</span>
+          <span className="nr-lbl">{t("fights.offerCard.nemesisWinBonusLabel")}</span>
+          <span className="nr-bonus">{t("fights.offerCard.nemesisWinBonusValue")}</span>
         </div>
       </div>
     );
@@ -354,13 +353,13 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
     }
 
     let btnCls = `accept-btn ${variant}`;
-    let btnLabel = "Accept";
-    if (isTitle) btnLabel = "Accept Title Shot";
-    if (isCallout) btnLabel = "Accept Callout";
+    let btnLabel = t("fights.offerCard.acceptDefault");
+    if (isTitle) btnLabel = t("fights.offerCard.acceptTitle");
+    if (isCallout) btnLabel = t("fights.offerCard.acceptCallout");
 
     const energyLabel = isTitle
-      ? `⚡ ${cost} energy · Full camp required`
-      : `⚡ ${cost} energy`;
+      ? t("fights.offerCard.energyFull", { n: cost })
+      : t("fights.offerCard.energy", { n: cost });
 
     return (
       <div className="accept-section">
@@ -381,7 +380,7 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
 
   return (
     <div className={cardCls}>
-      <span className={badge.cls}>{badge.text}</span>
+      <span className={badge.cls}>{t(badge.textKey)}</span>
 
       <SpecialBanner />
 
@@ -409,7 +408,7 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
         <div className="context-section">
           <div className="context-note">
             <span className="context-note-icon" style={{ color: "var(--c-amber-bright, #D4A820)" }}>★</span>
-            <span>Giant Killer opportunity — {opp.name} is +{Math.abs(ovrGap)} OVR above you. Win for +300 fame bonus.</span>
+            <span>{t("fights.offerCard.giantKillerNote", { name: opp.name, n: Math.abs(ovrGap) })}</span>
           </div>
         </div>
       )}

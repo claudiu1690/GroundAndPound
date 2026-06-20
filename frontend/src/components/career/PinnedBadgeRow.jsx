@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
+import { t } from "@/lib/i18n";
 import { api } from "../../api";
 import { badgeVisual } from "./badgeCatalog";
 import { BadgePickerModal } from "./BadgePickerModal";
@@ -43,7 +44,7 @@ export function PinnedBadgeRow({ fighterId, earnedBadges, pinnedBadges, earnedCo
       onPinnedChange?.(res.pinnedBadges ?? nextPins);
     } catch (e) {
       onPinnedChange?.(prev); // revert
-      onMessage?.(e.code === "BADGE_NOT_EARNED" ? "That badge isn't earned yet." : (e.message || "Could not update pinned badges."));
+      onMessage?.(e.code === "BADGE_NOT_EARNED" ? t("career.pinnedBadges.badgeNotEarned") : (e.message || t("career.pinnedBadges.updateError")));
     } finally {
       setSaving(false);
     }
@@ -85,9 +86,9 @@ export function PinnedBadgeRow({ fighterId, earnedBadges, pinnedBadges, earnedCo
     const readOnlyPins = pins.filter(Boolean);
     return (
       <div className="pinned-row">
-        <span className="pin-lbl">Pinned</span>
+        <span className="pin-lbl">{t("career.pinnedBadges.label")}</span>
         {readOnlyPins.length === 0 && (
-          <span style={{ fontSize: 10, color: "#555" }}>None</span>
+          <span style={{ fontSize: 10, color: "#555" }}>{t("career.pinnedBadges.none")}</span>
         )}
         {readOnlyPins.map((id) => {
           const meta = byId.get(id);
@@ -110,7 +111,7 @@ export function PinnedBadgeRow({ fighterId, earnedBadges, pinnedBadges, earnedCo
   return (
     <>
       <div className="pinned-row">
-        <span className="pin-lbl">Pinned</span>
+        <span className="pin-lbl">{t("career.pinnedBadges.label")}</span>
         {slots.map((id, i) => {
           if (id == null) {
             return (
@@ -119,7 +120,7 @@ export function PinnedBadgeRow({ fighterId, earnedBadges, pinnedBadges, earnedCo
                 key={`empty-${i}`}
                 className="pin-empty"
                 onClick={() => setPickerSlot(i)}
-                aria-label="Pin a badge"
+                aria-label={t("career.pinnedBadges.pinAriaLabel")}
                 disabled={saving}
               >
                 <Plus size={11} color="var(--tm, #555)" />
@@ -144,7 +145,7 @@ export function PinnedBadgeRow({ fighterId, earnedBadges, pinnedBadges, earnedCo
         })}
       </div>
       <div className="pin-sub">
-        {earnedCount} badge{earnedCount === 1 ? "" : "s"} earned · tap to pin up to {MAX_PINS}
+        {t("career.pinnedBadges.subLine", { count: earnedCount, plural: earnedCount === 1 ? "" : "s", max: MAX_PINS })}
       </div>
 
       <BadgePickerModal

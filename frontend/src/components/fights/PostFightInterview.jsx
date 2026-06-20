@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../api";
+import { t } from "@/lib/i18n";
 
 /**
  * Flavor text shown on the DONE state, with 3 variants per tone so the press
@@ -211,27 +212,26 @@ export function PostFightInterview({
         return (
             <section className="interview-section" data-tut="post-fight-interview">
                 <header className="pfi-header">
-                    <h3 className="pfi-title">Who are you trash talking?</h3>
+                    <h3 className="pfi-title">{t("fights.interview.pickTargetTitle")}</h3>
                     <button
                         type="button"
                         className="pfi-back"
                         onClick={() => { setSelectedTarget(null); setMode("PICK_TONE"); }}
                     >
-                        ← Back
+                        {t("fights.interview.back")}
                     </button>
                 </header>
 
                 <p className="pfi-hint">
-                    Only fighters you could realistically face in your next few offers are shown.
-                    For stretch-tier targets, use the <strong>Call Out</strong> button in the Fight tab (spends fame).
+                    {t("fights.interview.pickTargetHint")}
                 </p>
 
                 {candidatesLoading && (
-                    <div className="pfi-empty">Loading roster…</div>
+                    <div className="pfi-empty">{t("fights.interview.loadingRoster")}</div>
                 )}
                 {!candidatesLoading && candidates.length === 0 && (
                     <div className="pfi-empty">
-                        No callout targets in your OVR range right now. Skip this interview or pick a different tone.
+                        {t("fights.interview.emptyCandidates")}
                     </div>
                 )}
 
@@ -269,7 +269,7 @@ export function PostFightInterview({
                         disabled={!selectedTarget || submitting}
                         onClick={() => submit("CALLOUT", selectedTarget.id)}
                     >
-                        {submitting ? "Going on air…" : selectedTarget ? `Trash talk ${selectedTarget.name}` : "Select a fighter"}
+                        {submitting ? t("fights.interview.goingOnAir") : selectedTarget ? t("fights.interview.trashTalkBtn", { name: selectedTarget.name }) : t("fights.interview.selectFighter")}
                     </button>
                 </div>
             </section>
@@ -280,13 +280,13 @@ export function PostFightInterview({
     return (
         <section className="interview-section" data-tut="post-fight-interview">
             <header className="interview-header">
-                <h3 className="interview-title">Post-Fight Interview</h3>
+                <h3 className="interview-title">{t("fights.interview.pickToneTitle")}</h3>
                 <button type="button" className="interview-skip" onClick={skip} disabled={submitting}>
-                    Skip interview →
+                    {t("fights.interview.skipInterview")}
                 </button>
             </header>
             <p className="interview-sub">
-                {opponentName ? `You've just fought ${opponentName}. ` : ""}Press mic's up. What do you say?
+                {opponentName ? t("fights.interview.subWithOpponent", { name: opponentName }) : t("fights.interview.subNoOpponent")}
             </p>
 
             <div className="interview-grid">
@@ -296,11 +296,11 @@ export function PostFightInterview({
                     onClick={() => submit("HUMBLE")}
                     disabled={submitting}
                 >
-                    <div className="interview-name">Humble</div>
-                    <div className="interview-desc">Pay respect. Take the high road.</div>
-                    <div className="interview-fame">+100 fame</div>
+                    <div className="interview-name">{t("fights.interview.humbleName")}</div>
+                    <div className="interview-desc">{t("fights.interview.humbleDesc")}</div>
+                    <div className="interview-fame">{t("fights.interview.humbleFame")}</div>
                     <div className="interview-consequence">
-                        Respect flag — <strong>+15% cash</strong> on your rematch win <span className="pfi-tone-window">(6-fight window)</span>.
+                        {t("fights.interview.humbleConsequence")}
                     </div>
                 </button>
 
@@ -310,11 +310,11 @@ export function PostFightInterview({
                     onClick={() => submit("CONFIDENT")}
                     disabled={submitting}
                 >
-                    <div className="interview-name">Confident</div>
-                    <div className="interview-desc">Take credit. Let the division hear you.</div>
-                    <div className="interview-fame">+150 fame</div>
+                    <div className="interview-name">{t("fights.interview.confidentName")}</div>
+                    <div className="interview-desc">{t("fights.interview.confidentDesc")}</div>
+                    <div className="interview-fame">{t("fights.interview.confidentFame")}</div>
                     <div className="interview-consequence interview-consequence--muted">
-                        Pure fame. No flags, no strings.
+                        {t("fights.interview.confidentConsequence")}
                     </div>
                 </button>
 
@@ -324,11 +324,11 @@ export function PostFightInterview({
                     onClick={() => setMode("PICK_TARGET")}
                     disabled={submitting}
                 >
-                    <div className="interview-name">Trash Talk</div>
-                    <div className="interview-desc">Name a rival. Put them on notice.</div>
-                    <div className="interview-fame">+200 fame</div>
+                    <div className="interview-name">{t("fights.interview.trashTalkName")}</div>
+                    <div className="interview-desc">{t("fights.interview.trashTalkDesc")}</div>
+                    <div className="interview-fame">{t("fights.interview.trashTalkFame")}</div>
                     <div className="interview-consequence">
-                        Beef flag — <strong>+30% fame</strong> on the win, <strong className="neg">−150 fame</strong> if you never face them <span className="pfi-tone-window">(4-fight window)</span>.
+                        {t("fights.interview.trashTalkConsequence")}
                     </div>
                 </button>
             </div>

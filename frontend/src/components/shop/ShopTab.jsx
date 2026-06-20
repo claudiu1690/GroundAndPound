@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useState } from "react";
 import { Coins, Zap, TrendingUp, ShoppingBag, Info, Check } from "lucide-react";
 import { api } from "../../api";
+import { t } from "@/lib/i18n";
 import {
   buffStatTags,
   boosterStatTags,
@@ -17,17 +18,18 @@ function StatTag({ slug, text }) {
 }
 
 /** A cash buy button that folds "Not enough cash" into its own disabled state. */
-function BuyButton({ canAfford, busy, onClick, label = "Buy", className = "shop-buy-btn" }) {
+function BuyButton({ canAfford, busy, onClick, label, className = "shop-buy-btn" }) {
+  const buyLabel = label ?? t("shop.buy.label");
   if (!canAfford) {
     return (
-      <button type="button" className={`${className} shop-buy-btn--cant`} disabled title="Not enough cash">
-        Not enough cash
+      <button type="button" className={`${className} shop-buy-btn--cant`} disabled title={t("shop.buy.notEnoughCashTitle")}>
+        {t("shop.buy.notEnoughCash")}
       </button>
     );
   }
   return (
     <button type="button" className={className} onClick={onClick} disabled={busy}>
-      {busy ? "…" : label}
+      {busy ? "…" : buyLabel}
     </button>
   );
 }
@@ -46,19 +48,19 @@ function EnergyCard({ item, busy, onBuy, onGetMore }) {
         <div className="shop-energy-info">
           <div className="shop-energy-name">
             {item.name}
-            {isPremium && <span className="shop-energy-premium-tag">Premium</span>}
+            {isPremium && <span className="shop-energy-premium-tag">{t("shop.energy.premiumTag")}</span>}
           </div>
-          <div className="shop-energy-desc">Restores {item.energy} energy instantly.</div>
+          <div className="shop-energy-desc">{t("shop.energy.restoresDesc", { energy: item.energy })}</div>
           <div className="shop-energy-balance">
-            You have <span className={isPremium ? "shop-energy-bal--gold" : "shop-energy-bal--blue"}>{item.owned ?? 0}</span> in inventory
+            {t("shop.energy.inInventoryPrefix")}<span className={isPremium ? "shop-energy-bal--gold" : "shop-energy-bal--blue"}>{item.owned ?? 0}</span>{t("shop.energy.inInventorySuffix")}
           </div>
         </div>
         <div className="shop-energy-action">
           {isPremium ? (
             <>
-              <div className="shop-energy-cost shop-energy-cost--muted">Real money →</div>
+              <div className="shop-energy-cost shop-energy-cost--muted">{t("shop.energy.realMoneyLabel")}</div>
               <button type="button" className="shop-buy-btn shop-buy-btn--gold" onClick={onGetMore}>
-                Get More
+                {t("shop.energy.getMore")}
               </button>
             </>
           ) : (
@@ -90,21 +92,21 @@ function BoosterCard({ booster, dimmed, busy, onBuy }) {
     <div className={`shop-xp-card${isStack ? " shop-xp-card--stack" : ""}${blocked ? " shop-xp-card--disabled" : ""}`}>
       <div className="shop-xp-stripe" />
       <div className="shop-xp-body">
-        {isStack && <span className="shop-stack-tag">Best Value</span>}
+        {isStack && <span className="shop-stack-tag">{t("shop.booster.bestValue")}</span>}
         <div className="shop-xp-top">
           <div className="shop-xp-name">{booster.name}</div>
-          <span className="shop-xp-sessions">{booster.sessions} sessions</span>
+          <span className="shop-xp-sessions">{booster.sessions} {t("shop.booster.sessionsSuffix")}</span>
         </div>
         <div className="shop-xp-boost">+{pctLabel(booster.pct)}%</div>
         <div className="shop-xp-boost-lbl">{boosterEffectLine(booster)}</div>
         <div className="shop-xp-tags">
-          {tags.map((t, i) => <StatTag key={i} {...t} />)}
+          {tags.map((tg, i) => <StatTag key={i} {...tg} />)}
         </div>
         <div className="shop-xp-footer">
           <div className="shop-xp-price"><Coins size={11} /> {booster.price}</div>
           {booster.locked ? (
-            <button type="button" className="shop-buy-btn shop-buy-btn--ghost" disabled title="Locked">
-              Locked
+            <button type="button" className="shop-buy-btn shop-buy-btn--ghost" disabled title={t("shop.booster.locked")}>
+              {t("shop.booster.locked")}
             </button>
           ) : (
             <BuyButton canAfford={booster.canAfford} busy={busy} onClick={onBuy} className="shop-buy-btn shop-buy-btn--ghost" />
@@ -120,19 +122,19 @@ function BoosterCard({ booster, dimmed, busy, onBuy }) {
 function BuffCard({ buff, busy, onBuy }) {
   const tags = buffStatTags(buff);
   const effect = buff.injuryMult != null
-    ? "Tougher skin, better recovery. Injuries sustained are less severe."
-    : "Consumed after your next fight resolves.";
+    ? t("shop.buff.effectToughSkin")
+    : t("shop.buff.effectConsumed");
   return (
     <div className="shop-buff-card">
       <div className="shop-buff-stripe" style={tagStripeStyle(tags)} />
       <div className="shop-buff-body">
         <div className="shop-buff-top">
           <div className="shop-buff-name">{buff.name}</div>
-          <span className="shop-buff-duration">1 fight</span>
+          <span className="shop-buff-duration">{t("shop.buff.duration")}</span>
         </div>
         <div className="shop-buff-effect">{effect}</div>
         <div className="shop-buff-tags">
-          {tags.map((t, i) => <StatTag key={i} {...t} />)}
+          {tags.map((tg, i) => <StatTag key={i} {...tg} />)}
         </div>
         <div className="shop-buff-footer">
           <div className="shop-buff-price"><Coins size={11} /> {buff.price}</div>
@@ -177,17 +179,17 @@ function BundleCard({ bundle, smallest, busy, onBuy }) {
   }
   return (
     <div className={`shop-bundle-card${bundle.popular ? " shop-bundle-card--popular" : ""}`}>
-      {bundle.popular && <div className="shop-bundle-popular">Most Popular</div>}
+      {bundle.popular && <div className="shop-bundle-popular">{t("shop.bundle.mostPopular")}</div>}
       <div className="shop-bundle-icon"><Zap size={26} /></div>
       <div className="shop-bundle-drinks">{bundle.drinks}</div>
-      <div className="shop-bundle-unit">Energy Drinks</div>
+      <div className="shop-bundle-unit">{t("shop.bundle.energyDrinks")}</div>
       <div className="shop-bundle-price">{bundle.priceLabel}</div>
       <div className={`shop-bundle-per${savings != null ? " shop-bundle-per--savings" : ""}`}>
-        {perDrink != null ? `$${perDrink.toFixed(2)} per drink` : ""}
-        {savings != null && savings > 0 ? ` · save ${savings}%` : ""}
+        {perDrink != null ? `$${perDrink.toFixed(2)} ${t("shop.bundle.perDrinkSuffix")}` : ""}
+        {savings != null && savings > 0 ? ` · ${t("shop.bundle.save", { pct: savings })}` : ""}
       </div>
       <button type="button" className="shop-bundle-btn" onClick={onBuy} disabled={busy}>
-        {busy ? "…" : "Buy"}
+        {busy ? "…" : t("shop.bundle.buy")}
       </button>
     </div>
   );
@@ -207,8 +209,8 @@ function InventoryEnergyRow({ item, energyFull, busy, onUse }) {
   const noneOwned = owned <= 0;
   const disabled = noneOwned || energyFull || busy;
   let title;
-  if (noneOwned) title = "You don't own any";
-  else if (energyFull) title = "Already full";
+  if (noneOwned) title = t("shop.camp.notOwned");
+  else if (energyFull) title = t("shop.sidebar.alreadyFull");
   return (
     <div className="shop-inv-row">
       <div className={`shop-energy-icon ${item.premium ? "shop-energy-icon--gold" : "shop-energy-icon--blue"}`}>
@@ -216,11 +218,11 @@ function InventoryEnergyRow({ item, energyFull, busy, onUse }) {
       </div>
       <div className="shop-inv-row-info">
         <div className="shop-inv-row-name">{item.name}</div>
-        <div className="shop-inv-row-desc">Restores {item.energy} energy instantly.</div>
+        <div className="shop-inv-row-desc">{t("shop.energy.restoresDesc", { energy: item.energy })}</div>
       </div>
       <div className="shop-inv-row-owned">
         <span className="shop-inv-owned-num">{owned}</span>
-        <span className="shop-inv-owned-lbl">owned</span>
+        <span className="shop-inv-owned-lbl">{t("shop.inventory.owned")}</span>
       </div>
       <button
         type="button"
@@ -229,7 +231,7 @@ function InventoryEnergyRow({ item, energyFull, busy, onUse }) {
         title={title}
         onClick={onUse}
       >
-        {busy ? "…" : "Use"}
+        {busy ? "…" : t("shop.inventory.use")}
       </button>
     </div>
   );
@@ -247,7 +249,7 @@ function InventoryBoosterCard({ booster }) {
         <span className="shop-inv-booster-name">{booster.name}</span>
         <span className="shop-inv-booster-big">{left}</span>
       </div>
-      <div className="shop-inv-booster-sub">sessions left of {total}</div>
+      <div className="shop-inv-booster-sub">{t("shop.inventory.sessionsLeft", { total })}</div>
       <div className="shop-inv-booster-track">
         <div className="shop-inv-booster-fill" style={{ width: `${pct}%` }} />
       </div>
@@ -277,7 +279,7 @@ export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMess
       const data = await api.getShopCatalog(fighterId);
       setCatalog(data);
     } catch (e) {
-      if (!silent) setError(e.message || "Failed to load the shop.");
+      if (!silent) setError(e.message || t("shop.loadError"));
     } finally {
       if (!silent) setLoading(false);
     }
@@ -295,10 +297,10 @@ export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMess
     setBusyId(itemId);
     try {
       const res = await api.buyItem(fighterId, itemId, 1);
-      if (onMessage) onMessage(res.message || "Purchase complete.");
+      if (onMessage) onMessage(res.message || t("shop.messages.purchaseComplete"));
       await afterMutation();
     } catch (e) {
-      if (onMessage) onMessage(e.message || "Purchase failed.");
+      if (onMessage) onMessage(e.message || t("shop.messages.purchaseFailed"));
     } finally {
       setBusyId(null);
     }
@@ -311,11 +313,11 @@ export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMess
     try {
       const res = await api.buyPremium(fighterId, bundleId);
       // Stub: grant nothing, surface the message. No balance change.
-      const msg = res.message || "Premium purchases are not available yet.";
+      const msg = res.message || t("shop.messages.premiumUnavailable");
       setPremiumNotice(msg);
       if (onMessage) onMessage(msg);
     } catch (e) {
-      const msg = e.message || "Premium purchase unavailable.";
+      const msg = e.message || t("shop.messages.premiumPurchaseUnavailable");
       setPremiumNotice(msg);
       if (onMessage) onMessage(msg);
     } finally {
@@ -328,10 +330,10 @@ export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMess
     setBusyId(itemId);
     try {
       const res = await api.useEnergyItem(fighterId, itemId);
-      if (onMessage) onMessage(res.message || `Restored ${res.restored ?? ""} energy.`);
+      if (onMessage) onMessage(res.message || t("shop.messages.restoredEnergy", { restored: res.restored ?? "" }));
       await afterMutation();
     } catch (e) {
-      if (onMessage) onMessage(e.message || "Could not use item.");
+      if (onMessage) onMessage(e.message || t("shop.messages.couldNotUse"));
     } finally {
       setBusyId(null);
     }
@@ -345,32 +347,32 @@ export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMess
   return (
     <div className="shop-tab">
       <div className="shop-page-header">
-        <div className="shop-page-eye">Store</div>
-        <div className="shop-page-title">Shop</div>
-        <div className="shop-page-sub">Consumables, pre-fight buffs, XP boosters and energy. Spend Cash or go premium.</div>
+        <div className="shop-page-eye">{t("shop.pageEye")}</div>
+        <div className="shop-page-title">{t("shop.pageTitle")}</div>
+        <div className="shop-page-sub">{t("shop.pageSub")}</div>
       </div>
 
       <div className="shop-tabs">
         <button type="button" className={`shop-tab-btn${tab === "cash" ? " act" : ""}`} onClick={() => setTab("cash")}>
-          <Coins size={13} /> Cash Store
+          <Coins size={13} /> {t("shop.tabs.cash")}
         </button>
         <button type="button" className={`shop-tab-btn${tab === "premium" ? " act" : ""}`} onClick={() => setTab("premium")}>
-          <Zap size={13} /> Premium
-          <span className="shop-tab-badge">Energy Drinks</span>
+          <Zap size={13} /> {t("shop.tabs.premium")}
+          <span className="shop-tab-badge">{t("shop.tabs.premiumBadge")}</span>
         </button>
         <button type="button" className={`shop-tab-btn${tab === "inventory" ? " act" : ""}`} onClick={() => setTab("inventory")}>
-          <ShoppingBag size={13} /> My Inventory
+          <ShoppingBag size={13} /> {t("shop.tabs.inventory")}
           {invCount > 0 && <span className="shop-tab-badge">{invCount}</span>}
         </button>
       </div>
 
       <div className="shop-body">
-        {loading && <div className="shop-state shop-state--loading">Loading the shop…</div>}
+        {loading && <div className="shop-state shop-state--loading">{t("shop.loading")}</div>}
 
         {!loading && error && (
           <div className="shop-state shop-state--error">
             {error}
-            <button type="button" className="shop-buy-btn shop-buy-btn--ghost" onClick={loadCatalog}>Retry</button>
+            <button type="button" className="shop-buy-btn shop-buy-btn--ghost" onClick={loadCatalog}>{t("common.retry")}</button>
           </div>
         )}
 
@@ -417,7 +419,7 @@ function CashStore({ catalog, busyId, onBuy, onGetMore }) {
     <>
       {/* Energy */}
       <section className="shop-section">
-        <div className="shop-section-label">Energy</div>
+        <div className="shop-section-label">{t("shop.sections.energy")}</div>
         <div className="shop-energy-row">
           {energyItems.map((item) => (
             <EnergyCard
@@ -434,18 +436,18 @@ function CashStore({ catalog, busyId, onBuy, onGetMore }) {
       {/* XP boosters */}
       <section className="shop-section">
         <div className="shop-section-label">
-          XP Boosters <span className="shop-section-sub">· one active at a time · cash cost</span>
+          {t("shop.sections.xpBoosters")} <span className="shop-section-sub">{t("shop.sections.xpBoostersSub")}</span>
         </div>
 
         {activeBooster && (
           <div className="shop-active-banner">
             <TrendingUp size={16} className="shop-active-icon" />
             <div className="shop-active-text">
-              <strong>{activeBooster.name} active</strong>
+              <strong>{t("shop.activeBooster.banner", { name: activeBooster.name })}</strong>
             </div>
             <div className="shop-active-right">
               <div className="shop-active-sessions">{activeBooster.sessionsLeft}</div>
-              <div className="shop-active-sessions-lbl">sessions left</div>
+              <div className="shop-active-sessions-lbl">{t("shop.activeBooster.sessionsLeft")}</div>
             </div>
           </div>
         )}
@@ -466,7 +468,7 @@ function CashStore({ catalog, busyId, onBuy, onGetMore }) {
       {/* Pre-fight buffs */}
       <section className="shop-section">
         <div className="shop-section-label">
-          Pre-Fight Buffs <span className="shop-section-sub">· 1 fight only · one per category</span>
+          {t("shop.sections.preFightBuffs")} <span className="shop-section-sub">{t("shop.sections.preFightBuffsSub")}</span>
         </div>
         <div className="shop-grid-3">
           {buffs.map((bf) => (
@@ -492,16 +494,15 @@ function PremiumStore({ catalog, fighter, busyId, notice, onBuy }) {
     <section className="shop-premium">
       <div className="shop-premium-hero">
         <div>
-          <div className="shop-premium-eye">Premium</div>
-          <div className="shop-premium-title">Energy Drinks</div>
+          <div className="shop-premium-eye">{t("shop.premium.eye")}</div>
+          <div className="shop-premium-title">{t("shop.premium.title")}</div>
           <div className="shop-premium-desc">
-            Restore 50 energy instantly. Never let a full energy bar go to waste. Earn them through
-            gameplay or buy a bundle — buying is always optional.
+            {t("shop.premium.desc")}
           </div>
         </div>
         <div className="shop-premium-balance">
           <div className="shop-premium-bal-val">{drinks}</div>
-          <div className="shop-premium-bal-lbl">Drinks in inventory</div>
+          <div className="shop-premium-bal-lbl">{t("shop.premium.drinksInInventory")}</div>
         </div>
       </div>
 
@@ -520,8 +521,7 @@ function PremiumStore({ catalog, fighter, busyId, notice, onBuy }) {
       <div className="shop-premium-earn">
         <Info size={14} className="shop-premium-earn-icon" />
         <div className="shop-premium-earn-text">
-          You can also earn Energy Drinks for free through <strong>contract completions</strong>,{" "}
-          <strong>win streaks</strong> and <strong>tier promotions</strong>. Buying is always optional.
+          {t("shop.premium.earnNote")}
         </div>
       </div>
     </section>
@@ -548,7 +548,7 @@ function InventoryView({ catalog, fighter, busyId, onUse, onGoCash }) {
     <>
       {/* Energy */}
       <section className="shop-section">
-        <div className="shop-section-label">Energy</div>
+        <div className="shop-section-label">{t("shop.sections.energy")}</div>
         <div className="shop-inv-energy">
           {energyItems.map((item) => (
             <InventoryEnergyRow
@@ -560,25 +560,25 @@ function InventoryView({ catalog, fighter, busyId, onUse, onGoCash }) {
             />
           ))}
         </div>
-        {energyFull && <div className="shop-inv-note">Energy is full — nothing to restore right now.</div>}
+        {energyFull && <div className="shop-inv-note">{t("shop.inventory.energyFull")}</div>}
       </section>
 
       {/* XP booster */}
       <section className="shop-section">
-        <div className="shop-section-label">XP Booster</div>
+        <div className="shop-section-label">{t("shop.sections.xpBoosters")}</div>
         {activeBooster ? (
           <InventoryBoosterCard booster={activeBooster} />
         ) : (
           <div className="shop-inv-empty">
-            No active XP booster.{" "}
-            <button type="button" className="shop-inline-link" onClick={onGoCash}>Browse the Cash Store →</button>
+            {t("shop.inventory.noBooster")}{" "}
+            <button type="button" className="shop-inline-link" onClick={onGoCash}>{t("shop.inventory.browseStore")}</button>
           </div>
         )}
       </section>
 
       {/* Pre-fight buffs */}
       <section className="shop-section">
-        <div className="shop-section-label">Pre-Fight Buffs</div>
+        <div className="shop-section-label">{t("shop.sections.preFightBuffs")}</div>
         {ownedBuffs.length > 0 ? (
           <div className="shop-inv-buff-grid">
             {ownedBuffs.map((b) => (
@@ -586,18 +586,18 @@ function InventoryView({ catalog, fighter, busyId, onUse, onGoCash }) {
                 <div className="shop-inv-buff-name">{b.name}</div>
                 <div className="shop-inv-buff-tags">
                   {b.count > 1 && <span className="shop-inv-buff-count">×{b.count}</span>}
-                  <span className="shop-inv-buff-unused"><Check size={10} /> Unused</span>
+                  <span className="shop-inv-buff-unused"><Check size={10} /> {t("shop.inventory.unused")}</span>
                 </div>
               </div>
             ))}
           </div>
         ) : (
           <div className="shop-inv-empty">
-            No pre-fight buffs owned.{" "}
-            <button type="button" className="shop-inline-link" onClick={onGoCash}>Browse the Cash Store →</button>
+            {t("shop.inventory.noBuffs")}{" "}
+            <button type="button" className="shop-inline-link" onClick={onGoCash}>{t("shop.inventory.browseStore")}</button>
           </div>
         )}
-        <div className="shop-inv-note">Pre-fight buffs are selected in Fight Camp, before a fight.</div>
+        <div className="shop-inv-note">{t("shop.inventory.buffNote")}</div>
       </section>
     </>
   );

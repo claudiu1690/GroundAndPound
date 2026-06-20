@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
 import { api } from "../../api";
 import { useCareerProfile } from "../../hooks/useCareerProfile";
 import { BannerEditor } from "../banner/BannerEditor";
@@ -69,7 +70,7 @@ export function ProfilePane({
   }, [fighterId, hasNew, readOnly]);
 
   if (loading) {
-    return <div className="career-state">Loading profile…</div>;
+    return <div className="career-state">{t("career.profile.loading")}</div>;
   }
 
   if (error) {
@@ -77,7 +78,7 @@ export function ProfilePane({
       <div className="career-state career-state--error">
         {error}
         <button type="button" className="career-retry-btn" onClick={() => reload()}>
-          Retry
+          {t("career.profile.retry")}
         </button>
       </div>
     );

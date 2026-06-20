@@ -2,6 +2,7 @@ import { memo } from "react";
 import { IntroRow } from "./breakdown/IntroRow.jsx";
 import { RoundBlock } from "./breakdown/RoundBlock.jsx";
 import { ResultRow } from "./breakdown/ResultRow.jsx";
+import { t } from "@/lib/i18n";
 
 /**
  * FightDescription — right column of FightSummary.
@@ -52,7 +53,7 @@ export const FightDescription = memo(function FightDescription({ commentary, bre
 
     return (
       <div className="card" style={{ height: "fit-content" }}>
-        <div className="card-label">Fight Description</div>
+        <div className="card-label">{t("fights.fightDescription.cardLabel")}</div>
         <div className="right-col fd-new">
           <IntroRow
             introTemplateKey={introTemplateKey}
@@ -102,7 +103,7 @@ export const FightDescription = memo(function FightDescription({ commentary, bre
 
   return (
     <div className="card" style={{ height: "fit-content" }}>
-      <div className="card-label">Fight Description</div>
+      <div className="card-label">{t("fights.fightDescription.cardLabel")}</div>
       <div className="round-list">
         {lines.map((line, i) => {
           const isResult = i === n - 1 && n > 1 ? true : n === 1;
@@ -111,7 +112,7 @@ export const FightDescription = memo(function FightDescription({ commentary, bre
           if (isResult) {
             return (
               <div key={i} className="round-row">
-                <span className="round-label">Result</span>
+                <span className="round-label">{t("fights.fightDescription.resultLabel")}</span>
                 <span className="round-text round-text--final">{line}</span>
               </div>
             );
@@ -120,7 +121,7 @@ export const FightDescription = memo(function FightDescription({ commentary, bre
           if (isIntro) {
             return (
               <div key={i} className="round-row">
-                <span className="round-label">Intro</span>
+                <span className="round-label">{t("fights.fightDescription.introLabel")}</span>
                 <span className="round-text">{line}</span>
               </div>
             );
@@ -130,7 +131,7 @@ export const FightDescription = memo(function FightDescription({ commentary, bre
           if (match) {
             return (
               <div key={i} className="round-row">
-                <span className="round-label">Round {match[1]}</span>
+                <span className="round-label">{t("fights.fightDescription.roundLabel", { n: match[1] })}</span>
                 <span className="round-text">{line.slice(match[0].length)}</span>
               </div>
             );

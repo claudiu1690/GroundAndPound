@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { t } from "@/lib/i18n";
 import { api } from "../../api";
 
 const TIER_ORDER = ["UNKNOWN", "PROSPECT", "RISING_STAR", "CONTENDER", "STAR", "LEGEND"];
@@ -116,8 +117,8 @@ export function FameDrawer({ open, fighter, onClose, onNavigate }) {
             />
             <aside className="fame-drawer open" aria-hidden={false}>
                 <header className="fame-drawer-header">
-                    <h2>Fame</h2>
-                    <button type="button" className="fame-drawer-close" onClick={onClose} aria-label="Close">✕</button>
+                    <h2>{t("fame.drawerTitle")}</h2>
+                    <button type="button" className="fame-drawer-close" onClick={onClose} aria-label={t("fame.closeAriaLabel")}>✕</button>
                 </header>
 
                 <div className="fame-drawer-body">
@@ -132,13 +133,13 @@ export function FameDrawer({ open, fighter, onClose, onNavigate }) {
                                     <div className="fame-progress-fill" style={{ width: `${progressPct}%` }} />
                                 </div>
                                 <div className="fame-progress-label">
-                                    <span>{progressPct}% to {TIER_LABEL[nextTierKey] || "next tier"}</span>
-                                    <span>{(nextThreshold - score).toLocaleString()} to go</span>
+                                    <span>{t("fame.progressTo", { pct: progressPct, tier: TIER_LABEL[nextTierKey] || t("fame.nextTierFallback") })}</span>
+                                    <span>{t("fame.toGo", { remaining: (nextThreshold - score).toLocaleString() })}</span>
                                 </div>
                             </>
                         ) : (
                             <div className="fame-progress-label fame-capped">
-                                <span>Top tier reached.</span>
+                                <span>{t("fame.topTierReached")}</span>
                             </div>
                         )}
                     </section>
@@ -146,27 +147,27 @@ export function FameDrawer({ open, fighter, onClose, onNavigate }) {
                     {/* Status chips */}
                     <section className="fame-chips">
                         {isFrozen && (
-                            <span className="fame-chip fame-chip-warn" title="Losses do not reduce notoriety while frozen. Win to resume growth.">
-                                ❄ Frozen
+                            <span className="fame-chip fame-chip-warn" title={t("fame.frozenTitle")}>
+                                ❄ {t("fame.frozen")}
                             </span>
                         )}
                         {decayWarning && (
-                            <span className="fame-chip fame-chip-warn" title="20+ days since your last fame-relevant action. Notoriety is decaying 1% daily until you act.">
-                                ⏳ Decay active
+                            <span className="fame-chip fame-chip-warn" title={t("fame.decayTitle")}>
+                                ⏳ {t("fame.decayActive")}
                             </span>
                         )}
-                        <span className="fame-chip" title="Notoriety cannot drop below the floor of your peak tier.">
-                            Floor: {tierFloorValue.toLocaleString()}
+                        <span className="fame-chip" title={t("fame.floorTitle")}>
+                            {t("fame.floorLabel", { value: tierFloorValue.toLocaleString() })}
                         </span>
                     </section>
 
                     {/* This week */}
                     <section className="fame-section">
-                        <div className="fame-section-title">Recent fame events</div>
+                        <div className="fame-section-title">{t("fame.recentEvents")}</div>
                         <div className="fame-event-list">
-                            {loading && <div className="fame-empty">Loading…</div>}
+                            {loading && <div className="fame-empty">{t("fame.eventsLoading")}</div>}
                             {!loading && events.length === 0 && (
-                                <div className="fame-empty">No fame events yet. Fight, train, and build your name.</div>
+                                <div className="fame-empty">{t("fame.eventsEmpty")}</div>
                             )}
                             {!loading && events.map((e) => {
                                 const meta = CODE_META[e.code] || { icon: "•", tone: "neu", label: e.code };
@@ -188,39 +189,39 @@ export function FameDrawer({ open, fighter, onClose, onNavigate }) {
 
                     {/* Deep links — placeholders for now, wired in later phases */}
                     <section className="fame-section">
-                        <div className="fame-section-title">Spend & earn</div>
+                        <div className="fame-section-title">{t("fame.spendEarn")}</div>
                         <div className="fame-links">
                             <button
                                 type="button"
                                 className="fame-link-btn"
                                 onClick={() => { onNavigate?.("contracts"); onClose?.(); }}
                             >
-                                📜 Contracts
-                                <span className="fame-link-hint">Active sponsor deals</span>
+                                📜 {t("fame.links.contracts")}
+                                <span className="fame-link-hint">{t("fame.links.contractsHint")}</span>
                             </button>
                             <button
                                 type="button"
                                 className="fame-link-btn"
                                 onClick={() => { onNavigate?.("fights"); onClose?.(); }}
                             >
-                                📣 Call Out a Fighter
-                                <span className="fame-link-hint">Spend fame to force a matchup</span>
+                                📣 {t("fame.links.callOut")}
+                                <span className="fame-link-hint">{t("fame.links.callOutHint")}</span>
                             </button>
                             <button
                                 type="button"
                                 className="fame-link-btn"
                                 onClick={() => { onNavigate?.("media"); onClose?.(); }}
                             >
-                                🎙 Media Hub
-                                <span className="fame-link-hint">Podcast, documentary, interviews</span>
+                                🎙 {t("fame.links.mediaHub")}
+                                <span className="fame-link-hint">{t("fame.links.mediaHubHint")}</span>
                             </button>
                             <button
                                 type="button"
                                 className="fame-link-btn"
                                 onClick={() => { onNavigate?.("events"); onClose?.(); }}
                             >
-                                📅 Events
-                                <span className="fame-link-hint">Predict the main event of the week</span>
+                                📅 {t("fame.links.events")}
+                                <span className="fame-link-hint">{t("fame.links.eventsHint")}</span>
                             </button>
                         </div>
                     </section>
@@ -232,16 +233,16 @@ export function FameDrawer({ open, fighter, onClose, onNavigate }) {
                             className="fame-help-toggle"
                             onClick={() => setHowOpen((v) => !v)}
                         >
-                            {howOpen ? "▾" : "▸"} How fame works
+                            {howOpen ? "▾" : "▸"} {t("fame.howFame")}
                         </button>
                         {howOpen && (
                             <div className="fame-help-body">
-                                <p><strong>Fame</strong> is your career reputation. Higher fame means bigger purses and unlocks new content.</p>
+                                <p><strong>{t("fame.drawerTitle")}</strong> {t("fame.howFameBody.intro")}</p>
                                 <ul>
-                                    <li>Win fights, especially by finish, to earn fame.</li>
-                                    <li>Losses reduce fame — unless your notoriety is frozen.</li>
-                                    <li>Fame can decay if you go 20+ days without a fame-relevant action.</li>
-                                    <li>Your score never drops below the floor of your peak tier.</li>
+                                    <li>{t("fame.howFameBody.bullet1")}</li>
+                                    <li>{t("fame.howFameBody.bullet2")}</li>
+                                    <li>{t("fame.howFameBody.bullet3")}</li>
+                                    <li>{t("fame.howFameBody.bullet4")}</li>
                                 </ul>
                             </div>
                         )}

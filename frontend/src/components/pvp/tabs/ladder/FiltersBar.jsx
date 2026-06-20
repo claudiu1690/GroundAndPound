@@ -1,4 +1,5 @@
 import { divisionColor } from "../../pvpConst";
+import { t } from "../../../../lib/i18n";
 
 const DIVISIONS = [
   { key: "prospect",   label: "Prospect" },
@@ -26,27 +27,27 @@ export function FiltersBar({ division, setDivision, weightClass, setWeightClass,
 
   const divLabel = division
     ? DIVISIONS.find((d) => d.key === division)?.label ?? division
-    : "All";
+    : t("pvp.ladder.filterAllDivisions");
 
   const wcLabel = isCrossWc
-    ? (weightClass && weightClass !== "All" ? weightClass : "All weights")
+    ? (weightClass && weightClass !== "All" ? weightClass : t("pvp.ladder.filterAllWeights"))
     : null;
 
   const summaryParts = [
-    `${total ?? 0} fighters`,
+    t("pvp.ladder.filterSummary", { count: total ?? 0 }),
     divLabel,
     ...(wcLabel ? [wcLabel] : []),
   ];
 
   return (
     <div className="lt-filters-bar">
-      <span className="lt-filter-lbl">Division</span>
+      <span className="lt-filter-lbl">{t("pvp.ladder.filterDivisionLabel")}</span>
       <div className="lt-filter-group">
         <button
           className={`lt-fb${!division ? " lt-fb-act" : ""}`}
           onClick={() => setDivision(null)}
         >
-          All
+          {t("pvp.ladder.filterAllDivisions")}
         </button>
         {DIVISIONS.map(({ key, label }) => {
           const isActive = division === key;
@@ -69,7 +70,7 @@ export function FiltersBar({ division, setDivision, weightClass, setWeightClass,
       {isCrossWc && (
         <>
           <div className="lt-filter-sep" />
-          <span className="lt-filter-lbl">Weight</span>
+          <span className="lt-filter-lbl">{t("pvp.ladder.filterWeightLabel")}</span>
           <div className="lt-filter-group">
             {WC_OPTIONS.map((wc) => {
               const isActive = (weightClass ?? "All") === wc;

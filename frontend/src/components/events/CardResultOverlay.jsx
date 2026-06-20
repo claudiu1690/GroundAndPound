@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { t } from "@/lib/i18n";
 
 /**
  * Multi-fight reveal modal shown the first time the player visits the Events tab
@@ -27,12 +28,12 @@ export const CardResultOverlay = memo(function CardResultOverlay({
 
     const grade = (() => {
         const ratio = totals.won / Math.max(1, totals.total);
-        if (totals.won === totals.total) return "Perfect Card";
-        if (ratio >= 0.8) return "Sharp Night";
-        if (ratio >= 0.6) return "Decent Night";
-        if (ratio >= 0.4) return "Mixed Bag";
-        if (ratio > 0)    return "Rough Night";
-        return "Brutal";
+        if (totals.won === totals.total) return t("events.overlay.grades.perfect");
+        if (ratio >= 0.8) return t("events.overlay.grades.sharp");
+        if (ratio >= 0.6) return t("events.overlay.grades.decent");
+        if (ratio >= 0.4) return t("events.overlay.grades.mixed");
+        if (ratio > 0)    return t("events.overlay.grades.rough");
+        return t("events.overlay.grades.brutal");
     })();
 
     // Sort headliner → main → prelim regardless of original fight index order.
@@ -50,12 +51,12 @@ export const CardResultOverlay = memo(function CardResultOverlay({
     let stagger = 0;
 
     return createPortal(
-        <div className="card-result-overlay" role="dialog" aria-modal="true" aria-label="Card results">
+        <div className="card-result-overlay" role="dialog" aria-modal="true" aria-label={t("events.overlay.dialogLabel")}>
             <div className="card-result-modal">
-                <div className="card-result-kicker">Fight Night #{card.cardNumber} — Results</div>
+                <div className="card-result-kicker">{t("events.overlay.kicker", { cardNumber: card.cardNumber })}</div>
                 <div className="card-result-grade-row">
                     <span className="card-result-grade">{grade}</span>
-                    <span className="card-result-record">{totals.won}/{totals.total} bets won</span>
+                    <span className="card-result-record">{t("events.overlay.record", { won: totals.won, total: totals.total })}</span>
                 </div>
 
                 {/* ── Headliner hero ── */}
@@ -70,7 +71,7 @@ export const CardResultOverlay = memo(function CardResultOverlay({
                 {/* ── Main card section ── */}
                 {mainCard.length > 0 && (
                     <div className="card-result-section">
-                        <div className="card-result-section-title">Main Card</div>
+                        <div className="card-result-section-title">{t("events.overlay.mainCard")}</div>
                         {mainCard.map((f) => (
                             <CompactResultRow
                                 key={f.id || f._origIndex}
@@ -86,7 +87,7 @@ export const CardResultOverlay = memo(function CardResultOverlay({
                 {/* ── Prelim section ── */}
                 {prelims.length > 0 && (
                     <div className="card-result-section">
-                        <div className="card-result-section-title">Prelims</div>
+                        <div className="card-result-section-title">{t("events.overlay.prelims")}</div>
                         {prelims.map((f) => (
                             <CompactResultRow
                                 key={f.id || f._origIndex}
@@ -101,15 +102,15 @@ export const CardResultOverlay = memo(function CardResultOverlay({
 
                 <div className="card-result-totals">
                     <div className="card-result-total-row">
-                        <span className="card-result-total-label">Staked</span>
+                        <span className="card-result-total-label">{t("events.overlay.stakedLabel")}</span>
                         <span className="card-result-total-value">${totals.staked.toLocaleString()}</span>
                     </div>
                     <div className="card-result-total-row">
-                        <span className="card-result-total-label">Paid back</span>
+                        <span className="card-result-total-label">{t("events.overlay.paidBackLabel")}</span>
                         <span className="card-result-total-value pos">${totals.payout.toLocaleString()}</span>
                     </div>
                     <div className={`card-result-total-row card-result-total-row-net ${totals.netDelta >= 0 ? "pos" : "neg"}`}>
-                        <span className="card-result-total-label">Net</span>
+                        <span className="card-result-total-label">{t("events.overlay.netLabel")}</span>
                         <span className="card-result-total-value">
                             {totals.netDelta >= 0 ? "+$" : "-$"}{Math.abs(totals.netDelta).toLocaleString()}
                         </span>
@@ -117,7 +118,7 @@ export const CardResultOverlay = memo(function CardResultOverlay({
                 </div>
 
                 <button type="button" className="btn btn-primary card-result-continue" onClick={onClose}>
-                    Continue
+                    {t("events.overlay.continue")}
                 </button>
             </div>
         </div>
@@ -137,9 +138,9 @@ function HeadlinerHero({ fight, prediction, delay }) {
 
     return (
         <div className="card-hero-result" style={{ animationDelay: `${delay}ms` }}>
-            <div className="card-hero-tag">★ HEADLINER</div>
+            <div className="card-hero-tag">{t("events.overlay.headlinerTag")}</div>
             {isDraw ? (
-                <div className="card-hero-headline card-hero-draw">It's a draw</div>
+                <div className="card-hero-headline card-hero-draw">{t("events.overlay.draw")}</div>
             ) : (
                 <div className="card-hero-headline">
                     <span className="card-hero-winner">{winner.name}</span>
@@ -223,7 +224,7 @@ function PredictionLine({ prediction, fight }) {
     if (!prediction) {
         return (
             <div className="card-hero-pick card-hero-pick-skip">
-                You didn't bet on this one.
+                {t("events.overlay.didntBet")}
             </div>
         );
     }
@@ -237,7 +238,7 @@ function PredictionLine({ prediction, fight }) {
         <div className={`card-hero-pick card-hero-pick-${tone}`}>
             <span className={`card-hero-pick-icon card-hero-pick-icon-${tone}`}>{icon}</span>
             <span className="card-hero-pick-text">
-                Bet <strong>{pickedName}</strong>
+                {t("events.overlay.betPrefix")} <strong>{pickedName}</strong>
                 {prediction.betType === "EXACT" && prediction.pickedSide !== "DRAW" && prediction.pickedMethod && (
                     <span className="muted"> · {prediction.pickedMethod}</span>
                 )}
@@ -254,7 +255,7 @@ function PredictionLine({ prediction, fight }) {
 
 function PredictionPill({ prediction }) {
     if (!prediction) {
-        return <span className="card-pred-pill card-pred-pill-skip">No bet</span>;
+        return <span className="card-pred-pill card-pred-pill-skip">{t("events.overlay.noBet")}</span>;
     }
     const r = prediction.resolution || {};
     const tone = r.won ? "pos" : "neg";

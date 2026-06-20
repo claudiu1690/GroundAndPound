@@ -1,4 +1,5 @@
 import { LadderRow } from "./LadderRow";
+import { t } from "../../../../lib/i18n";
 
 /**
  * LadderTable — column header + rows + Load More block.
@@ -33,7 +34,7 @@ export function LadderTable({
   if (loading && rows.length === 0) {
     return (
       <div className="lt-table">
-        <div className="lt-empty">Loading ladder…</div>
+        <div className="lt-empty">{t("pvp.ladder.tableLoadingLadder")}</div>
       </div>
     );
   }
@@ -50,20 +51,20 @@ export function LadderTable({
     <div className="lt-table">
       {/* Column headers */}
       <div className="lt-head">
-        <div className="lt-head-cell">#</div>
-        <div className="lt-head-cell">Fighter</div>
-        <div className="lt-head-cell lt-head-r">DP</div>
-        <div className="lt-head-cell lt-head-r">Record</div>
-        <div className="lt-head-cell lt-head-r">OVR</div>
-        <div className="lt-head-cell lt-head-r">Last Active</div>
+        <div className="lt-head-cell">{t("pvp.ladder.tableColRank")}</div>
+        <div className="lt-head-cell">{t("pvp.ladder.tableColFighter")}</div>
+        <div className="lt-head-cell lt-head-r">{t("pvp.ladder.tableColDp")}</div>
+        <div className="lt-head-cell lt-head-r">{t("pvp.ladder.tableColRecord")}</div>
+        <div className="lt-head-cell lt-head-r">{t("pvp.ladder.tableColOvr")}</div>
+        <div className="lt-head-cell lt-head-r">{t("pvp.ladder.tableColLastActive")}</div>
       </div>
 
       {/* Rows */}
       {rows.length === 0 && !loading ? (
         <div className="lt-empty">
           {division
-            ? `No fighters in ${division.charAt(0).toUpperCase() + division.slice(1)} yet.`
-            : "No fighters yet."}
+            ? t("pvp.ladder.tableNoFightersDiv", { division: division.charAt(0).toUpperCase() + division.slice(1) })
+            : t("pvp.ladder.tableNoFighters")}
         </div>
       ) : (
         rows.map((row) => (
@@ -80,7 +81,7 @@ export function LadderTable({
       {hasMore && (
         <>
           <div className="lt-sep">
-            <span className="lt-sep-text">· · · {total - rows.length} more fighters · · ·</span>
+            <span className="lt-sep-text">· · · {t("pvp.ladder.loadMoreSep", { n: total - rows.length })} · · ·</span>
           </div>
           <div className="lt-load-more-wrap">
             <button
@@ -88,7 +89,7 @@ export function LadderTable({
               onClick={loadMore}
               disabled={loadingMore}
             >
-              {loadingMore ? "Loading…" : "Load More"}
+              {loadingMore ? t("pvp.ladder.loadingMoreBtn") : t("pvp.ladder.loadMoreBtn")}
             </button>
           </div>
         </>

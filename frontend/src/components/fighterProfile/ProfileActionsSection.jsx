@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { t } from "@/lib/i18n";
 
 /** Nickname / gym editor. */
 export const ProfileActionsSection = memo(function ProfileActionsSection({
@@ -18,23 +19,23 @@ export const ProfileActionsSection = memo(function ProfileActionsSection({
     return (
       <div className="profile-edit">
         <div className="form-row">
-          <label>Nickname</label>
+          <label>{t("fighterProfile.edit.nicknameLabel")}</label>
           <input
             type="text"
             value={editNickname}
             onChange={(e) => setEditNickname(e.target.value)}
-            placeholder="The Destroyer"
+            placeholder={t("fighterProfile.edit.nicknamePlaceholder")}
             className="form-input"
           />
         </div>
         <div className="form-row">
-          <label>Home gym</label>
+          <label>{t("fighterProfile.edit.homeGymLabel")}</label>
           <select
             value={editGymId}
             onChange={(e) => setEditGymId(e.target.value)}
             className="form-select"
           >
-            <option value="">None</option>
+            <option value="">{t("fighterProfile.edit.homeGymNone")}</option>
             {(gyms || []).map((g) => (
               <option key={g._id} value={g._id}>
                 {g.name}
@@ -44,14 +45,14 @@ export const ProfileActionsSection = memo(function ProfileActionsSection({
         </div>
         <div className="edit-actions">
           <button type="button" className="btn btn-primary btn-sm" onClick={onSaveProfile}>
-            Save
+            {t("common.save")}
           </button>
           <button
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={() => setEditing(false)}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { usePvpDefenseResults } from "../../hooks/usePvpDefenseResults";
 import { gameplanLabel } from "./pvpConst";
 import { GameplanPicker } from "./GameplanPicker";
 import { api } from "../../api";
+import { t } from "../../lib/i18n";
 
 /**
  * Screen 4 — Defense Report.
@@ -31,7 +32,7 @@ export function DefenseResults({ myRecord, fighter, onBack, onGameplanChanged })
       setSaveMsg("Saved");
       if (onGameplanChanged) onGameplanChanged(gp);
     } catch (e) {
-      setSaveMsg(e.message || "Failed to save.");
+      setSaveMsg(e.message || t("common.error"));
     } finally {
       setSaving(false);
     }
@@ -42,19 +43,19 @@ export function DefenseResults({ myRecord, fighter, onBack, onGameplanChanged })
       <div className="pvp-card-nav">
         {onBack && (
           <button className="pvp-cnav-back" onClick={onBack}>
-            <ChevronLeft size={14} strokeWidth={2.5} /> Ladder
+            <ChevronLeft size={14} strokeWidth={2.5} /> {t("pvp.defense.backBtn")}
           </button>
         )}
-        <div className="pvp-cnav-title">Defense Report</div>
-        <div className="pvp-cnav-right">While you were away</div>
+        <div className="pvp-cnav-title">{t("pvp.defense.navTitle")}</div>
+        <div className="pvp-cnav-right">{t("pvp.defense.navRight")}</div>
       </div>
 
       {unreadCount > 0 && (
         <div className="pvp-def-notice">
           <Swords size={14} strokeWidth={2} style={{ color: "#C87A10" }} />
           <div className="pvp-def-notice-text">
-            <strong>{unreadCount} player{unreadCount !== 1 ? "s" : ""} challenged you</strong> while you were
-            offline. Your defense gameplan:{" "}
+            <strong>{unreadCount !== 1 ? t("pvp.defense.noticeTextPlural", { n: unreadCount }) : t("pvp.defense.noticeText", { n: unreadCount })}</strong>{" "}
+            {t("pvp.defense.noticeOffline")}{" "}
             <strong style={{ color: "#C8102E" }}>{gameplanLabel(gameplan)}</strong>
           </div>
         </div>
@@ -62,17 +63,16 @@ export function DefenseResults({ myRecord, fighter, onBack, onGameplanChanged })
 
       <div className="pvp-def-body">
         {loading ? (
-          <div className="pvp-loading">Loading defense results…</div>
+          <div className="pvp-loading">{t("pvp.defense.loadingResults")}</div>
         ) : error ? (
           <div className="pvp-error-note">{error}</div>
         ) : results.length === 0 ? (
           <div className="pvp-def-empty">
-            No recent defense challenges. Set your default defense gameplan below —
-            it's used automatically whenever someone challenges you while you're offline.
+            {t("pvp.defense.emptyResults")}
           </div>
         ) : (
           <>
-            <div className="pvp-section-lbl">Results</div>
+            <div className="pvp-section-lbl">{t("pvp.defense.resultsLabel")}</div>
             {results.map((r) => {
               const won = r.youWon;
               const dp = r.dpChange ?? 0;
@@ -90,7 +90,7 @@ export function DefenseResults({ myRecord, fighter, onBack, onGameplanChanged })
               // Outcome label — placement rows carry no DP/result, draws aren't a loss.
               const isDraw    = r.method === "draw";
               const isNeutral = isPlacement || isDraw;
-              const outcomeLabel = isPlacement ? "Placement" : isDraw ? "Draw" : won ? "Held" : "Lost";
+              const outcomeLabel = isPlacement ? t("pvp.defense.outcomePlacement") : isDraw ? t("pvp.defense.outcomeDraw") : won ? t("pvp.defense.outcomeHeld") : t("pvp.defense.outcomeLost");
               const stripeColor  = isNeutral ? "#888888" : won ? "#3A9A4A" : "#C8102E";
               const outcomeClass = isNeutral ? "" : won ? "pvp-def-outcome-w" : "pvp-def-outcome-l";
 
@@ -102,10 +102,10 @@ export function DefenseResults({ myRecord, fighter, onBack, onGameplanChanged })
                       {outcomeLabel}
                     </div>
                     <div className="pvp-def-info">
-                      <div className="pvp-def-opp">{r.attackerName} challenged you</div>
+                      <div className="pvp-def-opp">{t("pvp.defense.challengedBy", { name: r.attackerName })}</div>
                       <div className="pvp-def-sub">
-                        {r.method ? (r.method === "ko" ? "KO" : r.method === "submission" ? "Submission" : "Decision") : "—"}
-                        {r.halfRate ? " · Half-rate loss" : ""}
+                        {r.method ? (r.method === "ko" ? t("pvp.defense.methodKo") : r.method === "submission" ? t("pvp.defense.methodSub") : t("pvp.defense.methodDecision")) : "—"}
+                        {r.halfRate ? ` · ${t("pvp.defense.halfRateLoss")}` : ""}
                       </div>
                     </div>
                     <div>
@@ -113,7 +113,7 @@ export function DefenseResults({ myRecord, fighter, onBack, onGameplanChanged })
                         {dp === 0 ? "+0 DP" : `${dp} DP`}
                       </div>
                       <div className="pvp-def-note">
-                        {won ? "Defense win = no DP change" : "Half rate on defense losses"}
+                        {won ? t("pvp.defense.defenseWinNote") : t("pvp.defense.defenseLossNote")}
                       </div>
                     </div>
                   </div>
@@ -121,17 +121,17 @@ export function DefenseResults({ myRecord, fighter, onBack, onGameplanChanged })
                   {/* Physical cost row */}
                   {isPlacement ? (
                     <div className="pvp-def-phys-cost pvp-def-phys-placement">
-                      No physical cost (placement)
+                      {t("pvp.defense.physNoPhysCost")}
                     </div>
                   ) : hasPhysCost ? (
                     <div className="pvp-def-phys-cost">
                       <div className="pvp-def-phys-hp">
-                        <span className="pvp-def-phys-lbl">HP</span>
+                        <span className="pvp-def-phys-lbl">{t("pvp.defense.physHpLabel")}</span>
                         <span className="pvp-def-phys-range">{healthBefore} → {healthAfter}</span>
                         {hpLost > 0 ? (
-                          <span className="pvp-def-phys-lost">−{hpLost} HP</span>
+                          <span className="pvp-def-phys-lost">{t("pvp.consequences.hpLost", { n: hpLost })}</span>
                         ) : (
-                          <span className="pvp-def-phys-ok">No damage</span>
+                          <span className="pvp-def-phys-ok">{t("pvp.defense.physNoDamage")}</span>
                         )}
                       </div>
                       {injuries.length > 0 && (
@@ -164,9 +164,9 @@ export function DefenseResults({ myRecord, fighter, onBack, onGameplanChanged })
         {/* Gameplan selector */}
         <div className="pvp-gameplan-set">
           <div className="pvp-gps-info">
-            <div className="pvp-gps-title">Your default defense gameplan</div>
+            <div className="pvp-gps-title">{t("pvp.defense.gameplanSetTitle")}</div>
             <div className="pvp-gps-sub">
-              The gameplan your fighter uses when challenged while you're offline. Pick the one that fits your build.
+              {t("pvp.defense.gameplanSetSub")}
             </div>
             <GameplanPicker
               selected={gameplan}
@@ -177,7 +177,7 @@ export function DefenseResults({ myRecord, fighter, onBack, onGameplanChanged })
             {saveMsg && (
               <div className={`pvp-gps-save ${saveMsg === "Saved" ? "pvp-gps-save-ok" : "pvp-gps-save-err"}`}>
                 {saveMsg === "Saved" && <Check size={13} strokeWidth={3} />}
-                {saveMsg === "Saved" ? "Defense gameplan saved" : saveMsg}
+                {saveMsg === "Saved" ? t("pvp.defense.gameplanSaved") : saveMsg}
               </div>
             )}
           </div>
@@ -185,7 +185,7 @@ export function DefenseResults({ myRecord, fighter, onBack, onGameplanChanged })
 
         {onBack && (
           <button className="pvp-fight-btn" style={{ background: "#3B82F6" }} onClick={onBack}>
-            Back to Ladder
+            {t("pvp.defense.backToLadderBtn")}
           </button>
         )}
       </div>

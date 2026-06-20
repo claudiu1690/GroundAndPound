@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { CookiePolicyModal } from "./CookiePolicyModal";
+import { t } from "../../lib/i18n";
 
 const CONSENT_KEY = "gnp_cookie_consent";
 const CONSENT_VALUE = "acknowledged-v1";
@@ -61,10 +62,9 @@ export function CookieConsent() {
   return (
     <>
       {showBanner && (
-        <div className="cookie-consent" role="region" aria-label="Cookie notice">
+        <div className="cookie-consent" role="region" aria-label={t("legal.cookieConsent.bannerAriaLabel")}>
           <p className="cookie-consent-text">
-            We use essential browser storage to keep you signed in and load your fighter.
-            We don't use tracking or advertising cookies.
+            {t("legal.cookieConsent.text")}
           </p>
           <div className="cookie-consent-actions">
             <button
@@ -72,10 +72,10 @@ export function CookieConsent() {
               className="cookie-consent-link"
               onClick={() => setPolicyOpen(true)}
             >
-              Cookie Policy
+              {t("legal.cookieConsent.policyLink")}
             </button>
             <button type="button" className="btn btn-primary cookie-consent-accept" onClick={acknowledge}>
-              Got it
+              {t("legal.cookieConsent.acceptBtn")}
             </button>
           </div>
         </div>

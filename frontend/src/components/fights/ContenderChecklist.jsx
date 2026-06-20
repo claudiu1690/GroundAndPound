@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Check, X, Trophy } from "lucide-react";
 import { TITLE_WINS } from "../../constants/gameConstants";
+import { t } from "@/lib/i18n";
 
 /**
  * Always-visible "Path to the belt" checklist shown at the top of the Fight
@@ -51,23 +52,23 @@ export const ContenderChecklist = memo(function ContenderChecklist({ fighter, of
     titleOffer?.opponent?.name
     ?? (isProDebut ? "the Amateur champion" : "the champion");
 
-  const header = isProDebut ? "Path to Turning Pro" : `Path to the ${currentTier} Belt`;
+  const header = isProDebut ? t("fights.contenderChecklist.pathToPro") : t("fights.contenderChecklist.pathToBelt", { tier: currentTier });
   const subLine = isProDebut
-    ? "Beat the Amateur champion to turn pro."
-    : `Beat ${champName} to claim the ${currentTier} belt.`;
+    ? t("fights.contenderChecklist.subLinePro")
+    : t("fights.contenderChecklist.subLineBelt", { champ: champName, tier: currentTier });
 
   // Top-5 row content.
   let top5State;
   let top5Text;
   if (top5) {
     top5State = "met";
-    top5Text = `Ranked top 5 (currently #${rank})`;
+    top5Text = t("fights.contenderChecklist.rowTop5Met", { rank });
   } else if (rank != null) {
     top5State = "unmet";
-    top5Text = `Ranked top 5 — currently #${rank}`;
+    top5Text = t("fights.contenderChecklist.rowTop5Unmet", { rank });
   } else {
     top5State = "unmet";
-    top5Text = "Ranked top 5 — get ranked first (keep fighting in this tier)";
+    top5Text = t("fights.contenderChecklist.rowTop5Unranked");
   }
 
   const winsMet = wins >= titleWins;
@@ -75,15 +76,17 @@ export const ContenderChecklist = memo(function ContenderChecklist({ fighter, of
   // Footer — a single actionable line, matching the locked-card precedence.
   let footer;
   if (cooldown > 0) {
-    footer = `Title shot locked — win ${plural(cooldown, "fight")} to earn a rematch (${2 - cooldown}/2).`;
+    footer = t("fights.contenderChecklist.footerCooldown", { n: cooldown, plural: cooldown === 1 ? "" : "s", done: 2 - cooldown });
   } else if (!top5) {
     footer = isProDebut
-      ? "Break into the top 5 to unlock your Turn Pro fight."
-      : "Break into the top 5 to unlock your title shot.";
+      ? t("fights.contenderChecklist.footerTop5Pro")
+      : t("fights.contenderChecklist.footerTop5Belt");
   } else if (wins < titleWins) {
-    footer = `Win ${plural(titleWins - wins, "fight")} in this tier to unlock your ${isProDebut ? "Turn Pro fight." : "title shot."}`;
+    footer = isProDebut
+      ? t("fights.contenderChecklist.footerWinsPro", { n: titleWins - wins, plural: (titleWins - wins) === 1 ? "" : "s" })
+      : t("fights.contenderChecklist.footerWinsBelt", { n: titleWins - wins, plural: (titleWins - wins) === 1 ? "" : "s" });
   } else {
-    footer = `Your shot is ready — request offers and ${isProDebut ? "turn pro." : "take the title shot."}`;
+    footer = isProDebut ? t("fights.contenderChecklist.footerReadyPro") : t("fights.contenderChecklist.footerReadyBelt");
   }
 
   return (
@@ -97,14 +100,14 @@ export const ContenderChecklist = memo(function ContenderChecklist({ fighter, of
       </div>
 
       <ul className="cc-list">
-        <ChecklistRow state="met">Rating — championship level reached</ChecklistRow>
+        <ChecklistRow state="met">{t("fights.contenderChecklist.rowRating")}</ChecklistRow>
         <ChecklistRow state={top5State}>{top5Text}</ChecklistRow>
         <ChecklistRow state={winsMet ? "met" : "pending"}>
-          Win {titleWins} fights in tier ({wins}/{titleWins})
+          {t("fights.contenderChecklist.rowWins", { n: titleWins, current: wins, total: titleWins })}
         </ChecklistRow>
         {cooldown > 0 && (
           <ChecklistRow state="pending">
-            Recover from your title loss — win {cooldown} more ({2 - cooldown}/2)
+            {t("fights.contenderChecklist.rowCooldown", { n: cooldown, done: 2 - cooldown })}
           </ChecklistRow>
         )}
       </ul>

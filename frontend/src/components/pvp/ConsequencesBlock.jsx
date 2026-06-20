@@ -1,3 +1,5 @@
+import { t } from "../../lib/i18n";
+
 /**
  * ConsequencesBlock — shared sub-component rendered after the DP breakdown.
  * Shows HP lost, injuries sustained, XP gained, stat level-ups, and a
@@ -18,8 +20,8 @@ export function ConsequencesBlock({ consequences, defender, isPlacement }) {
   if (!consequences && isPlacement) {
     return (
       <div className="pvp-cons">
-        <div className="pvp-cons-title">Physical Cost</div>
-        <div className="pvp-cons-placement-note">No physical cost (placement)</div>
+        <div className="pvp-cons-title">{t("pvp.consequences.placementTitle")}</div>
+        <div className="pvp-cons-placement-note">{t("pvp.consequences.placementNote")}</div>
       </div>
     );
   }
@@ -39,19 +41,19 @@ export function ConsequencesBlock({ consequences, defender, isPlacement }) {
 
   // Defender flavor
   const defenderFlavor = defender?.tookInjury
-    ? "You hurt your opponent."
+    ? t("pvp.consequences.defenderInjured")
     : defender?.wasHurt
-      ? "Your opponent is banged up."
+      ? t("pvp.consequences.defenderHurt")
       : null;
 
   return (
     <div className="pvp-cons">
-      <div className="pvp-cons-title">Your Physical Cost</div>
+      <div className="pvp-cons-title">{t("pvp.consequences.title")}</div>
 
       {/* HP bar — before → after */}
       <div className="pvp-cons-hp-block">
         <div className="pvp-cons-hp-row">
-          <span className="pvp-cons-hp-lbl">HP</span>
+          <span className="pvp-cons-hp-lbl">{t("pvp.consequences.hpLabel")}</span>
           <div className="pvp-cons-hp-track">
             {/* before fill (ghost) */}
             <div
@@ -71,9 +73,9 @@ export function ConsequencesBlock({ consequences, defender, isPlacement }) {
             {healthBefore} → {healthAfter}
           </span>
           {hpLost > 0 ? (
-            <span className="pvp-cons-hp-lost">−{hpLost} HP</span>
+            <span className="pvp-cons-hp-lost">{t("pvp.consequences.hpLost", { n: hpLost })}</span>
           ) : (
-            <span className="pvp-cons-hp-ok">No damage taken</span>
+            <span className="pvp-cons-hp-ok">{t("pvp.consequences.noDamageTaken")}</span>
           )}
         </div>
       </div>
@@ -81,14 +83,14 @@ export function ConsequencesBlock({ consequences, defender, isPlacement }) {
       {/* Injury card */}
       {injuries.length > 0 && (
         <div className="pvp-cons-injury-card">
-          <div className="pvp-cons-injury-header">Injuries sustained</div>
+          <div className="pvp-cons-injury-header">{t("pvp.consequences.injuriesHeader")}</div>
           <div className="pvp-cons-injury-list">
             {injuries.map((inj, i) => (
               <span key={i} className="pvp-cons-injury-chip">{inj}</span>
             ))}
           </div>
           <div className="pvp-cons-injury-note">
-            These injuries may block career fights. Treat them at the Hospital.
+            {t("pvp.consequences.injuriesNote")}
           </div>
         </div>
       )}
@@ -96,7 +98,7 @@ export function ConsequencesBlock({ consequences, defender, isPlacement }) {
       {/* XP gained */}
       {xpEntries.length > 0 && (
         <div className="pvp-cons-xp-row">
-          <span className="pvp-cons-xp-lbl">XP gained</span>
+          <span className="pvp-cons-xp-lbl">{t("pvp.consequences.xpGainedLabel")}</span>
           <span className="pvp-cons-xp-vals">
             {xpEntries.map(([stat, val], i) => (
               <span key={stat}>

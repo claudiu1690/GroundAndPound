@@ -1,4 +1,5 @@
 import { createPortal } from "react-dom";
+import { t } from "../../lib/i18n";
 
 /**
  * Cookie Policy modal.
@@ -18,18 +19,15 @@ export function CookiePolicyModal({ open, onClose }) {
   const STORED = [
     {
       key: "gnp_token",
-      purpose:
-        "A sign-in token (JWT) that keeps you logged in between visits so you don't have to re-enter your password each time.",
+      purpose: t("legal.cookiePolicy.whatWeStore.items.gnp_token"),
     },
     {
       key: "gnp_fighter_id",
-      purpose:
-        "The ID of your fighter, so the game knows which character to load when you return.",
+      purpose: t("legal.cookiePolicy.whatWeStore.items.gnp_fighter_id"),
     },
     {
       key: "gnp_cookie_consent",
-      purpose:
-        "Remembers that you've seen and acknowledged this notice, so the banner doesn't show again on every visit.",
+      purpose: t("legal.cookiePolicy.whatWeStore.items.gnp_cookie_consent"),
     },
   ];
 
@@ -40,99 +38,83 @@ export function CookiePolicyModal({ open, onClose }) {
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Cookie Policy"
+        aria-label={t("legal.cookiePolicy.modalAriaLabel")}
       >
         <header className="account-modal-head">
-          <h3 className="account-modal-title">Cookie Policy</h3>
-          <button type="button" className="account-modal-x" onClick={onClose} aria-label="Close">
+          <h3 className="account-modal-title">{t("legal.cookiePolicy.title")}</h3>
+          <button type="button" className="account-modal-x" onClick={onClose} aria-label={t("legal.cookiePolicy.closeAriaLabel")}>
             ×
           </button>
         </header>
 
         <div className="account-modal-body cookie-policy-body">
-          <p className="cookie-policy-updated">Last updated: 2 June 2026</p>
+          <p className="cookie-policy-updated">{t("legal.cookiePolicy.lastUpdated")}</p>
 
           <section className="cookie-policy-section">
-            <h4 className="cookie-policy-h">What this policy covers</h4>
+            <h4 className="cookie-policy-h">{t("legal.cookiePolicy.whatCovers.heading")}</h4>
             <p className="cookie-policy-text">
-              This policy explains how Ground &amp; Pound uses cookies and similar
-              technologies (such as browser local storage) while you play.
+              {t("legal.cookiePolicy.whatCovers.body")}
             </p>
           </section>
 
           <section className="cookie-policy-section">
-            <h4 className="cookie-policy-h">Do we use cookies?</h4>
+            <h4 className="cookie-policy-h">{t("legal.cookiePolicy.doCookies.heading")}</h4>
             <p className="cookie-policy-text">
-              No. Ground &amp; Pound does <strong>not</strong> use traditional HTTP
-              cookies, third-party cookies, advertising cookies, or any
-              analytics/tracking technology. We do not profile you, and we do not
-              share your data with advertisers.
+              {t("legal.cookiePolicy.doCookies.body1")}
             </p>
             <p className="cookie-policy-text">
-              The game uses only your own browser's <strong>local storage</strong> to
-              hold a few essential values on your device. This data stays in your
-              browser and is sent to our servers only as the sign-in token needed to
-              authenticate your requests.
+              {t("legal.cookiePolicy.doCookies.body2")}
             </p>
           </section>
 
           <section className="cookie-policy-section">
-            <h4 className="cookie-policy-h">What we store</h4>
+            <h4 className="cookie-policy-h">{t("legal.cookiePolicy.whatWeStore.heading")}</h4>
             <ul className="cookie-policy-list">
               {STORED.map((item) => (
                 <li key={item.key} className="cookie-policy-item">
                   <code className="cookie-policy-key">{item.key}</code>
                   <span className="cookie-policy-purpose">{item.purpose}</span>
-                  <span className="cookie-policy-tag">Strictly necessary / essential</span>
+                  <span className="cookie-policy-tag">{t("legal.cookiePolicy.whatWeStore.tag")}</span>
                 </li>
               ))}
             </ul>
             <p className="cookie-policy-text cookie-policy-note">
-              These values persist until you sign out or clear your browser data.
+              {t("legal.cookiePolicy.whatWeStore.persistNote")}
             </p>
           </section>
 
           <section className="cookie-policy-section">
-            <h4 className="cookie-policy-h">Why it's essential</h4>
+            <h4 className="cookie-policy-h">{t("legal.cookiePolicy.whyEssential.heading")}</h4>
             <p className="cookie-policy-text">
-              Without this storage you couldn't stay signed in or load your fighter —
-              the game simply wouldn't work. Because every value above is strictly
-              necessary to deliver the service you asked for, there is nothing
-              non-essential to switch off, so no opt-out is offered.
+              {t("legal.cookiePolicy.whyEssential.body")}
             </p>
           </section>
 
           <section className="cookie-policy-section">
-            <h4 className="cookie-policy-h">Managing or removing it</h4>
+            <h4 className="cookie-policy-h">{t("legal.cookiePolicy.managing.heading")}</h4>
             <p className="cookie-policy-text">
-              You can clear this storage at any time through your browser's settings
-              (clearing site data for this game), or by <strong>signing out</strong>,
-              which removes your sign-in token and fighter ID. Note that clearing this
-              data will sign you out, and you'll need to log in again to keep playing.
+              {t("legal.cookiePolicy.managing.body")}
             </p>
           </section>
 
           <section className="cookie-policy-section">
-            <h4 className="cookie-policy-h">Changes to this policy</h4>
+            <h4 className="cookie-policy-h">{t("legal.cookiePolicy.changes.heading")}</h4>
             <p className="cookie-policy-text">
-              We may update this policy from time to time. When we do, we'll revise the
-              "Last updated" date above and, where appropriate, show the notice again so
-              you can review the changes.
+              {t("legal.cookiePolicy.changes.body")}
             </p>
           </section>
 
           <section className="cookie-policy-section">
-            <h4 className="cookie-policy-h">Contact</h4>
+            <h4 className="cookie-policy-h">{t("legal.cookiePolicy.contact.heading")}</h4>
             <p className="cookie-policy-text">
-              If you have any questions about this policy or your data, please contact us
-              through your account or our support channels.
+              {t("legal.cookiePolicy.contact.body")}
             </p>
           </section>
         </div>
 
         <footer className="account-modal-actions">
           <button type="button" className="btn btn-primary" onClick={onClose}>
-            Close
+            {t("legal.cookiePolicy.closeBtn")}
           </button>
         </footer>
       </div>

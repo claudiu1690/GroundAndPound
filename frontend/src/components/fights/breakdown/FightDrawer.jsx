@@ -3,6 +3,7 @@ import { useFightBreakdown } from "../../../hooks/useFightBreakdown.js";
 import { RoundBlock } from "./RoundBlock.jsx";
 import { IntroRow } from "./IntroRow.jsx";
 import { ResultRow } from "./ResultRow.jsx";
+import { t } from "@/lib/i18n";
 
 /**
  * FightDrawer — side panel that shows a full fight breakdown.
@@ -49,13 +50,13 @@ export const FightDrawer = memo(function FightDrawer({ fightId, kind, onClose })
           {kind !== "pvp" && header.campGrade && (
             <>
               <span className="dh-sep">·</span>
-              <span className="dh-pill grade">Camp: {header.campGrade}</span>
+              <span className="dh-pill grade">{t("fights.drawer.campGrade", { grade: header.campGrade })}</span>
             </>
           )}
           {kind !== "pvp" && header.weightCut && (
             <>
               <span className="dh-sep">·</span>
-              <span className="dh-pill cut">Cut {header.weightCut.label}</span>
+              <span className="dh-pill cut">{t("fights.drawer.cutLabel", { label: header.weightCut.label })}</span>
             </>
           )}
         </div>
@@ -70,7 +71,7 @@ export const FightDrawer = memo(function FightDrawer({ fightId, kind, onClose })
         <div className="drawer-header">
           <div className="dh-row1">
             <div className="dh-icon" style={{ background: "var(--c-bg-tile)" }} />
-            <div className="dh-title" style={{ color: "var(--text-muted)" }}>Loading…</div>
+            <div className="dh-title" style={{ color: "var(--text-muted)" }}>{t("fights.drawer.loading")}</div>
             <button type="button" className="dh-close" onClick={onClose}>✕</button>
           </div>
         </div>
@@ -89,7 +90,7 @@ export const FightDrawer = memo(function FightDrawer({ fightId, kind, onClose })
       <div className="drawer-side">
         <div className="drawer-header">
           <div className="dh-row1">
-            <div className="dh-title" style={{ color: "var(--text-muted)" }}>Fight breakdown</div>
+            <div className="dh-title" style={{ color: "var(--text-muted)" }}>{t("fights.drawer.errorTitle")}</div>
             <button type="button" className="dh-close" onClick={onClose}>✕</button>
           </div>
         </div>
@@ -118,9 +119,9 @@ export const FightDrawer = memo(function FightDrawer({ fightId, kind, onClose })
               const match = line.match(/^Round (\d+):\s*/);
               return (
                 <div key={i} className={`fd-legacy-line${isResult ? " fd-legacy-result" : isIntro ? " fd-legacy-intro" : ""}`}>
-                  {isIntro && <span className="fd-legacy-badge">Intro</span>}
-                  {isResult && <span className="fd-legacy-badge">Result</span>}
-                  {match && <span className="fd-legacy-badge">Round {match[1]}</span>}
+                  {isIntro && <span className="fd-legacy-badge">{t("fights.fightDescription.introLabel")}</span>}
+                  {isResult && <span className="fd-legacy-badge">{t("fights.fightDescription.resultLabel")}</span>}
+                  {match && <span className="fd-legacy-badge">{t("fights.fightDescription.roundLabel", { n: match[1] })}</span>}
                   <span>{match ? line.slice(match[0].length) : line}</span>
                 </div>
               );
@@ -198,14 +199,14 @@ export const FightDrawer = memo(function FightDrawer({ fightId, kind, onClose })
           className={`dtab${activeTab === "rounds" ? " act" : ""}`}
           onClick={() => setActiveTab("rounds")}
         >
-          Rounds
+          {t("fights.drawer.tabRounds")}
         </button>
         <button
           type="button"
           className={`dtab${activeTab === "result" ? " act" : ""}`}
           onClick={() => setActiveTab("result")}
         >
-          Result
+          {t("fights.drawer.tabResult")}
         </button>
       </div>
 
@@ -271,10 +272,10 @@ export const FightDrawer = memo(function FightDrawer({ fightId, kind, onClose })
           {kind !== "pvp" && campOutcomes && campOutcomes.length > 0 && (
             <div className="camp-block">
               <div className="cb-head">
-                <span className="cb-title">Camp Outcomes</span>
+                <span className="cb-title">{t("fights.drawer.campOutcomes")}</span>
                 {header.campGrade && (
                   <span className="cb-grade" style={header.campGrade === "A" ? { color: "#4ADE80" } : { color: "var(--c-amber-bright)" }}>
-                    Grade {header.campGrade}
+                    {t("fights.drawer.gradeLabel", { grade: header.campGrade })}
                   </span>
                 )}
               </div>
@@ -307,37 +308,37 @@ export const FightDrawer = memo(function FightDrawer({ fightId, kind, onClose })
               <div className="sb-head">
                 <div className="sb-head-row">
                   <span></span>
-                  <span>You</span>
+                  <span>{t("fights.drawer.statYou")}</span>
                   <span>{opponentName}</span>
                 </div>
               </div>
               <div className="sb-row">
-                <span className="sb-lbl">Total strikes</span>
+                <span className="sb-lbl">{t("fights.drawer.statStrikes")}</span>
                 <span className={`sb-val ${sbValClass(pTotStr, oTotStr)}`}>{pTotStr}</span>
                 <span className={`sb-val ${sbValClass(oTotStr, pTotStr)}`}>{oTotStr}</span>
               </div>
               <div className="sb-row">
-                <span className="sb-lbl">Takedowns</span>
+                <span className="sb-lbl">{t("fights.drawer.statTakedowns")}</span>
                 <span className={`sb-val ${sbValClass(pTotTd, oTotTd)}`}>{pTotTd}</span>
                 <span className={`sb-val ${sbValClass(oTotTd, pTotTd)}`}>{oTotTd}</span>
               </div>
               <div className="sb-row">
-                <span className="sb-lbl">Sub attempts</span>
+                <span className="sb-lbl">{t("fights.drawer.statSubAttempts")}</span>
                 <span className={`sb-val ${sbValClass(pTotSub, oTotSub)}`}>{pTotSub}</span>
                 <span className={`sb-val ${sbValClass(oTotSub, pTotSub)}`}>{oTotSub}</span>
               </div>
               <div className="sb-row">
-                <span className="sb-lbl">Knockdowns</span>
+                <span className="sb-lbl">{t("fights.drawer.statKnockdowns")}</span>
                 <span className={`sb-val ${sbValClass(pTotKd, oTotKd)}`}>{pTotKd}</span>
                 <span className={`sb-val ${sbValClass(oTotKd, pTotKd)}`}>{oTotKd}</span>
               </div>
               <div className="sb-row">
-                <span className="sb-lbl">Total damage</span>
+                <span className="sb-lbl">{t("fights.drawer.statDamage")}</span>
                 <span className={`sb-val ${sbValClass(pTotDmg, oTotDmg)}`}>{pTotDmg}%</span>
                 <span className={`sb-val ${sbValClass(oTotDmg, pTotDmg)}`}>{oTotDmg}%</span>
               </div>
               <div className="sb-row">
-                <span className="sb-lbl">Control time</span>
+                <span className="sb-lbl">{t("fights.drawer.statControlTime")}</span>
                 <span className={`sb-val ${sbValClass(pCtrl, oCtrl)}`}>{fmtSeconds(pCtrl)}</span>
                 <span className={`sb-val ${sbValClass(oCtrl, pCtrl)}`}>{fmtSeconds(oCtrl)}</span>
               </div>

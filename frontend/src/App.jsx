@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { api, authStorage } from "./api";
+import { t } from "@/lib/i18n";
 import "./App.css";
 import { FighterProfile } from "./components/fighterProfile/FighterProfile";
 import { GymTraining, SESSION_META } from "./components/gym/GymTraining";
@@ -63,20 +64,25 @@ import {
 } from "lucide-react";
 
 // ── Navigation definition ──────────────────────────────────
-const NAV_ITEMS = [
-  { id: "home",      label: "Home",      icon: <LayoutDashboard size={13} strokeWidth={2.2} />, active: true },
-  { id: "gym",       label: "Training",  icon: <Dumbbell size={13} strokeWidth={2.2} />,    active: true },
-  { id: "fights",    label: "Fight",     icon: <Swords size={13} strokeWidth={2.2} />,      active: true },
-  { id: "career",    label: "Career",    icon: <FileText size={13} strokeWidth={2.2} />,    active: true },
-  { id: "pvp",       label: "Proving Ground", icon: <Crosshair size={13} strokeWidth={2.2} />, active: true },
-  { id: "rankings",  label: "Rankings",  icon: <ListOrdered size={13} strokeWidth={2.2} />, active: true },
-  { id: "contracts", label: "Contracts", icon: <ScrollText size={13} strokeWidth={2.2} />,  active: true },
-  { id: "hospital",  label: "Hospital",  icon: <Cross size={13} strokeWidth={2.2} />,       active: true },
-  { id: "shop",      label: "Shop",      icon: <ShoppingBag size={13} strokeWidth={2.2} />, active: true },
-  { id: "events",    label: "Events",    icon: <CalendarDays size={13} strokeWidth={2.2} />,active: true },
-  { id: "media",     label: "Media",     icon: <Mic size={13} strokeWidth={2.2} />,         active: true },
-  { id: "library",   label: "Library",   icon: <BookOpen size={13} strokeWidth={2.2} />,    active: true },
-];
+// Labels are resolved lazily at render time via t() so this array is safe
+// to define at module scope (i18n is sync / no async loading).
+function buildNavItems() {
+  return [
+    { id: "home",      label: t("layout.nav.home"),          icon: <LayoutDashboard size={13} strokeWidth={2.2} />, active: true },
+    { id: "gym",       label: t("layout.nav.training"),      icon: <Dumbbell size={13} strokeWidth={2.2} />,       active: true },
+    { id: "fights",    label: t("layout.nav.fight"),         icon: <Swords size={13} strokeWidth={2.2} />,         active: true },
+    { id: "career",    label: t("layout.nav.career"),        icon: <FileText size={13} strokeWidth={2.2} />,       active: true },
+    { id: "pvp",       label: t("layout.nav.provingGround"), icon: <Crosshair size={13} strokeWidth={2.2} />,      active: true },
+    { id: "rankings",  label: t("layout.nav.rankings"),      icon: <ListOrdered size={13} strokeWidth={2.2} />,    active: true },
+    { id: "contracts", label: t("layout.nav.contracts"),     icon: <ScrollText size={13} strokeWidth={2.2} />,     active: true },
+    { id: "hospital",  label: t("layout.nav.hospital"),      icon: <Cross size={13} strokeWidth={2.2} />,          active: true },
+    { id: "shop",      label: t("layout.nav.shop"),          icon: <ShoppingBag size={13} strokeWidth={2.2} />,    active: true },
+    { id: "events",    label: t("layout.nav.events"),        icon: <CalendarDays size={13} strokeWidth={2.2} />,   active: true },
+    { id: "media",     label: t("layout.nav.media"),         icon: <Mic size={13} strokeWidth={2.2} />,            active: true },
+    { id: "library",   label: t("layout.nav.library"),       icon: <BookOpen size={13} strokeWidth={2.2} />,       active: true },
+  ];
+}
+const NAV_ITEMS = buildNavItems();
 
 // ── Tier ladder for display ────────────────────────────────
 const TIER_LADDER_DISPLAY = [
@@ -130,19 +136,19 @@ function FighterCard({ fighter }) {
         <div className="fighter-card-name">
           {fighter
             ? `${fighter.firstName} "${fighter.nickname || "—"}" ${fighter.lastName}`
-            : "No fighter selected"}
+            : t("layout.fighterCard.noFighterSelected")}
         </div>
 
         <div className="fighter-card-meta">
-          <span>Record: <strong>{rec.wins ?? 0}W – {rec.losses ?? 0}L</strong></span>
-          <span>OVR: <strong className="text-red">{fighter?.overallRating ?? "—"}</strong></span>
+          <span>{t("layout.fighterCard.record")} <strong>{rec.wins ?? 0}W – {rec.losses ?? 0}L</strong></span>
+          <span>{t("layout.fighterCard.ovr")} <strong className="text-red">{fighter?.overallRating ?? "—"}</strong></span>
           <span>{fighter?.promotionTier ?? "Amateur"}</span>
         </div>
 
         <div className="fighter-card-bars">
           {[
-            { label: "Energy", val: fighter?.energy ?? 100, max: 100, color: "#3b82f6" },
-            { label: "Health", val: fighter?.health ?? 100, max: 100, color: "#e31837" },
+            { label: t("layout.fighterCard.energy"), val: fighter?.energy ?? 100, max: 100, color: "#3b82f6" },
+            { label: t("layout.fighterCard.health"), val: fighter?.health ?? 100, max: 100, color: "#e31837" },
           ].map(({ label, val, max, color }) => {
             const pct = Math.min(100, Math.round((val / max) * 100));
             return (
@@ -175,10 +181,10 @@ function FighterCard({ fighter }) {
 const QuickActions = memo(function QuickActions({ onNavigate }) {
   return (
     <div className="quick-actions-section">
-      <div className="quick-actions-title">Quick Actions</div>
+      <div className="quick-actions-title">{t("layout.quickActions.title")}</div>
       <div className="quick-actions">
-        <button className="qa-btn qa-train" onClick={() => onNavigate("gym")}>Train</button>
-        <button className="qa-btn qa-fight" onClick={() => onNavigate("fights")}>Fight</button>
+        <button className="qa-btn qa-train" onClick={() => onNavigate("gym")}>{t("layout.quickActions.train")}</button>
+        <button className="qa-btn qa-fight" onClick={() => onNavigate("fights")}>{t("layout.quickActions.fight")}</button>
       </div>
     </div>
   );
@@ -213,20 +219,20 @@ const TierProgress = memo(function TierProgress({ fighter, champions }) {
 
   return (
     <section className="rp-panel">
-      <h3 className="panel-title">Tier Competition</h3>
+      <h3 className="panel-title">{t("layout.tierProgress.title")}</h3>
       <div className="panel-body">
         <div className="tier-steps">
-          {TIER_LADDER_DISPLAY.map((t, i) => {
+          {TIER_LADDER_DISPLAY.map((tier, i) => {
             const done   = i < currentIdx;
-            const active = t.id === currentTier;
-            const champ = (champions ?? []).find((c) => c.championTier === t.id);
+            const active = tier.id === currentTier;
+            const champ = (champions ?? []).find((c) => c.championTier === tier.id);
             return (
-              <div key={t.id} className={`tier-step ${active ? "tier-active" : done ? "tier-done" : "tier-locked"}`}>
-                {done ? <CheckCircle2 size={10} /> : active ? <ChevronRight size={10} /> : <Circle size={10} />} {t.label}
-                {!done && !active && t.minOvr > 0 && <span style={{ color: "var(--text-muted)", marginLeft: "0.3rem", fontSize: "9px" }}>OVR {t.minOvr}+</span>}
-                {GATED_TIERS.has(t.id) && champ && !done && (
+              <div key={tier.id} className={`tier-step ${active ? "tier-active" : done ? "tier-done" : "tier-locked"}`}>
+                {done ? <CheckCircle2 size={10} /> : active ? <ChevronRight size={10} /> : <Circle size={10} />} {tier.label}
+                {!done && !active && tier.minOvr > 0 && <span style={{ color: "var(--text-muted)", marginLeft: "0.3rem", fontSize: "9px" }}>OVR {tier.minOvr}+</span>}
+                {GATED_TIERS.has(tier.id) && champ && !done && (
                   <span style={{ color: "var(--gold-bright)", marginLeft: "0.3rem", fontSize: "9px" }}>
-                    Champ: {champ.name} ({champ.overallRating})
+                    {t("layout.tierProgress.champLabel", { name: champ.name, ovr: champ.overallRating })}
                   </span>
                 )}
               </div>
@@ -237,17 +243,17 @@ const TierProgress = memo(function TierProgress({ fighter, champions }) {
         {/* Title shot status messages */}
         {titleReady && (
           <div className="tier-title-status tier-title-ready">
-            <Trophy size={12} /> Title shot available — fight for the belt!
+            <Trophy size={12} /> {t("layout.tierProgress.titleShotAvailable")}
           </div>
         )}
         {titleCooldown && (
           <div className="tier-title-status tier-title-cooldown">
-            Title shot lost — {cooldown} more win{cooldown !== 1 ? "s" : ""} to retry
+            {t("layout.tierProgress.titleShotCooldown", { count: cooldown, suffix: cooldown !== 1 ? "s" : "" })}
           </div>
         )}
         {titleWinsNeeded && (
           <div className="tier-title-status tier-title-wins">
-            OVR reached — {titleWins - wins} more win{titleWins - wins !== 1 ? "s" : ""} to earn title shot
+            {t("layout.tierProgress.titleWinsNeeded", { count: titleWins - wins, suffix: titleWins - wins !== 1 ? "s" : "" })}
           </div>
         )}
 
@@ -264,7 +270,7 @@ const TierProgress = memo(function TierProgress({ fighter, champions }) {
           </div>
         ) : !pending && !next ? (
           <div style={{ fontSize: "12px", color: "var(--gold-bright)", fontWeight: 700, marginTop: "0.5rem" }}>
-            GCS Champion — top tier reached.
+            {t("layout.tierProgress.gcsChampion")}
           </div>
         ) : null}
       </div>
@@ -282,47 +288,47 @@ const RightPanels = memo(function RightPanels({ fighter, lastFightSummary, campS
     <>
       {/* Latest Fight Result */}
       <section className="rp-panel">
-        <h3 className="panel-title">Latest Fight Result</h3>
+        <h3 className="panel-title">{t("layout.rightPanels.latestFight.title")}</h3>
         <div className="panel-body">
           {lastFightSummary ? (
             <>
               <div className={`rp-outcome ${["KO/TKO","Submission","Decision (unanimous)","Decision (split)"].includes(lastFightSummary.outcome) ? "rp-win" : "rp-loss"}`}>
                 {lastFightSummary.outcome}
               </div>
-              <div className="rp-detail">Record: {lastFightSummary.recordAfter}</div>
-              <div className="rp-detail">Cash earned: +${lastFightSummary.ironEarned ?? 0}</div>
-              <div className="rp-detail">XP ×{lastFightSummary.xpMultiplier}</div>
+              <div className="rp-detail">{t("layout.rightPanels.latestFight.recordLabel", { record: lastFightSummary.recordAfter })}</div>
+              <div className="rp-detail">{t("layout.rightPanels.latestFight.cashEarned", { amount: lastFightSummary.ironEarned ?? 0 })}</div>
+              <div className="rp-detail">{t("layout.rightPanels.latestFight.xpMultiplier", { xp: lastFightSummary.xpMultiplier })}</div>
               {lastFightSummary.promoted && (
-                <div className="rp-promoted">⬆ Promoted to {lastFightSummary.promoted.to}!</div>
+                <div className="rp-promoted">{t("layout.rightPanels.latestFight.promoted", { tier: lastFightSummary.promoted.to })}</div>
               )}
               {lastFightSummary.injuriesSustained?.length > 0 && (
                 <div className="rp-detail" style={{ color: "#fbbf24", marginTop: "0.25rem" }}>
-                  Injury: {lastFightSummary.injuriesSustained.join(", ")}
+                  {t("layout.rightPanels.latestFight.injury", { injuries: lastFightSummary.injuriesSustained.join(", ") })}
                 </div>
               )}
             </>
           ) : (
-            <p className="panel-hint">No recent fight data.</p>
+            <p className="panel-hint">{t("layout.rightPanels.latestFight.noData")}</p>
           )}
         </div>
       </section>
 
       {/* Status */}
       <section className="rp-panel">
-        <h3 className="panel-title">Game News</h3>
+        <h3 className="panel-title">{t("layout.rightPanels.gameNews.title")}</h3>
         <div className="panel-body">
           <ul className="status-list">
             <li className={`sl-item ${inCamp ? "sl-active" : ""}`}>
-              ● Fight camp: {inCamp ? `${campSessions} session${campSessions === 1 ? "" : "s"} logged` : "None"}
+              {t("layout.rightPanels.gameNews.fightCamp", { status: inCamp ? t("layout.rightPanels.gameNews.fightCampSessions", { count: campSessions, suffix: campSessions === 1 ? "" : "s" }) : t("layout.rightPanels.gameNews.fightCampNone") })}
             </li>
             <li className={`sl-item ${fighter?.comebackMode ? "sl-warn" : ""}`}>
-              ● Comeback mode: {fighter?.comebackMode ? "Active — ×1.5 XP on next fight" : "—"}
+              {t("layout.rightPanels.gameNews.comebackMode", { status: fighter?.comebackMode ? t("layout.rightPanels.gameNews.comebackActive") : t("layout.rightPanels.gameNews.comebackInactive") })}
             </li>
             <li className={`sl-item ${hasInjuries ? "sl-danger" : ""}`}>
-              ● Injuries: {hasInjuries ? fighter.injuries.map((i) => i.label).join(", ") : "None"}
+              {t("layout.rightPanels.gameNews.injuries", { status: hasInjuries ? fighter.injuries.map((i) => i.label).join(", ") : t("layout.rightPanels.gameNews.injuriesNone") })}
             </li>
             <li className="sl-item">
-              ● Energy: +1 per minute (auto-regen)
+              {t("layout.rightPanels.gameNews.energyRegen")}
             </li>
           </ul>
         </div>
@@ -509,7 +515,7 @@ function App() {
     const shouldPopup = (errorCode && blockingCodes.has(errorCode))
       || fallbackByMessage.some((p) => msg.includes(p));
     if (shouldPopup) {
-      setFightLimitPopup({ open: true, message: rawMessage || "Action unavailable right now." });
+      setFightLimitPopup({ open: true, message: rawMessage || t("app.actionUnavailable") });
     }
     return shouldPopup;
   }, []);
@@ -657,16 +663,16 @@ function App() {
   // the message bar, then strip the params so a refresh doesn't repeat it.
   useEffect(() => {
     if (bootParams.emailUpdated) {
-      setMessage("Email address confirmed and updated.");
+      setMessage(t("app.emailUpdated"));
       clearBootParams();
     } else if (bootParams.emailUpdateError) {
       const map = {
-        invalid_token:     "That email-confirmation link is invalid.",
-        token_expired:     "That email-confirmation link has expired — please request a new one from your account page.",
-        email_taken:       "That email is already in use by another account.",
-        already_confirmed: "This email change has already been applied.",
+        invalid_token:     t("app.emailError.invalidToken"),
+        token_expired:     t("app.emailError.tokenExpired"),
+        email_taken:       t("app.emailError.emailTaken"),
+        already_confirmed: t("app.emailError.alreadyConfirmed"),
       };
-      setMessage(map[bootParams.emailUpdateError] || "Email confirmation failed.");
+      setMessage(map[bootParams.emailUpdateError] || t("app.emailError.confirmFailed"));
       clearBootParams();
     }
   }, [bootParams.emailUpdated, bootParams.emailUpdateError]);
@@ -675,15 +681,15 @@ function App() {
   // local accountStatus so the banner disappears without needing a refetch.
   useEffect(() => {
     if (bootParams.emailVerified) {
-      setMessage("Email verified — you're all set.");
+      setMessage(t("app.emailVerified"));
       setAccountStatus((prev) => prev ? { ...prev, emailConfirmed: true, emailVerifyCooldown: 0 } : prev);
       clearBootParams();
     } else if (bootParams.emailVerifyError) {
       const map = {
-        invalid_token: "That verification link is invalid or has already been used.",
-        expired:       "That verification link has expired — request a new one from the banner at the top of the app.",
+        invalid_token: t("app.emailError.verifyInvalid"),
+        expired:       t("app.emailError.verifyExpired"),
       };
-      setMessage(map[bootParams.emailVerifyError] || "Email verification failed.");
+      setMessage(map[bootParams.emailVerifyError] || t("app.emailError.verifyFailed"));
       clearBootParams();
     }
   }, [bootParams.emailVerified, bootParams.emailVerifyError]);
@@ -715,7 +721,7 @@ function App() {
       try {
         await api.updateFighter(id, body);
         await loadFighter(id);
-        setMessage("Profile updated.");
+        setMessage(t("app.profileUpdated"));
       } catch (e) {
         setMessage(e.message || "Update failed");
       }
@@ -726,7 +732,7 @@ function App() {
   const handleTrain = useCallback(
     async (trainGym, trainSession, quantity = 1) => {
       if (!fighter?._id || !trainGym) {
-        setMessage("Select a fighter and a gym.");
+        setMessage(t("app.noFighterSelected"));
         return;
       }
       // One click can now spend up to 25× energy — block re-entry while a
@@ -844,11 +850,11 @@ function App() {
 
 const handleGetOffers = useCallback(async () => {
     if (!fighter?._id) return;
-    setMessage("Loading offers…");
+    setMessage(t("app.loadingOffers"));
     try {
       const list = await api.getOffers(fighter._id);
       setOffers(Array.isArray(list) ? list : []);
-      setMessage(list?.length ? `${list.length} offer(s) ready.` : "No offers. Seed opponents?");
+      setMessage(list?.length ? t("app.offersReady", { count: list.length }) : t("app.noOffers"));
     } catch (e) {
       const errMsg = e.message || "Failed to get offers";
       maybeShowBlockPopup(errMsg, e.code);
@@ -860,7 +866,7 @@ const handleGetOffers = useCallback(async () => {
   const handleAcceptOffer = useCallback(
     async (opponentId, offerType = "Even") => {
       if (!fighter?._id) return;
-      setMessage("Accepting fight…");
+      setMessage(t("app.fightAccepting"));
       try {
         const fight = await api.createOffer(fighter._id, { opponentId, offerType });
         await api.acceptOffer(fighter._id, fight._id);
@@ -875,7 +881,7 @@ const handleGetOffers = useCallback(async () => {
         setCampState(state);
         setReportFromCamp(false);
         setShowFighterReport(true);
-        setMessage("Fight accepted — review your opponent before camp.");
+        setMessage(t("app.fightAccepted"));
         loadFighter(fighter._id, { clearMessage: false });
         setActiveTab("fights");
         tutorialBus.emit("fight_accepted");
@@ -904,9 +910,9 @@ const handleGetOffers = useCallback(async () => {
       const result = await api.addCampSession(fightId, fighter._id, sessionType);
       setCampState(result.camp ? { ...result.camp, slotsUsed: result.slotsUsed, slotsRemaining: result.slotsRemaining, previewRating: result.previewRating } : null);
       if (result.injuryTriggered) {
-        setMessage(`Injury in camp: ${result.injuryTriggered.label} — make a choice.`);
+        setMessage(t("app.campInjury", { label: result.injuryTriggered.label }));
       } else {
-        setMessage(`Session added: ${sessionType.replace(/_/g, " ").toLowerCase()}.`);
+        setMessage(t("app.campSession", { session: sessionType.replace(/_/g, " ").toLowerCase() }));
       }
       loadFighter(fighter._id, { clearMessage: false });
     } catch (e) {
@@ -921,7 +927,7 @@ const handleGetOffers = useCallback(async () => {
     try {
       const result = await api.removeCampSession(fightId, fighter._id, slotIndex);
       setCampState(result.camp ? { ...result.camp, slotsUsed: result.slotsUsed, slotsRemaining: result.slotsRemaining, previewRating: result.previewRating } : null);
-      setMessage("Session removed — energy refunded.");
+      setMessage(t("app.sessionRemoved"));
       loadFighter(fighter._id, { clearMessage: false });
     } catch (e) {
       setMessage(e.message || "Failed to remove session");
@@ -934,7 +940,7 @@ const handleGetOffers = useCallback(async () => {
     try {
       await api.resolveCampInjury(fightId, fighter._id, choice);
       await loadCampState(fightId);
-      setMessage(choice === "STOP" ? "Camp stopped — entering fight healthy." : "Pushing through — injury penalty will apply at fight time.");
+      setMessage(choice === "STOP" ? t("app.campStopped") : t("app.pushingThrough"));
     } catch (e) {
       setMessage(e.message || "Failed to resolve injury");
     }
@@ -950,7 +956,7 @@ const handleGetOffers = useCallback(async () => {
       await loadCampState(fightId);
       setShowCampSummary(true);
       tutorialBus.emit("camp_finalised");
-      setMessage(skip ? "Camp skipped — entering fight underprepared." : `Camp finalised — Rating: ${summary.campRating}`);
+      setMessage(skip ? t("app.campSkipped") : t("app.campFinalised", { rating: summary.campRating }));
     } catch (e) {
       setMessage(e.message || "Failed to finalise camp");
     }
@@ -978,7 +984,7 @@ const handleGetOffers = useCallback(async () => {
   const handleResolve = useCallback(async () => {
     if (!fighter?._id) return;
     setResolving(true);
-    setMessage("Fight night…");
+    setMessage(t("app.fightNight"));
     setLastFightCommentary([]);
     setLastFightBreakdown(null);
     setLastFightSummary(null);
@@ -1005,7 +1011,7 @@ const handleGetOffers = useCallback(async () => {
       const rec = result.fighter?.record;
       // First-fight hint: show once after first career win
       const isFirstWin = rec && rec.wins === 1 && result.summary?.recordChange === "W";
-      const firstWinHint = isFirstWin ? " | Build your record and raise your OVR to earn a title shot. Win the belt to move up." : "";
+      const firstWinHint = isFirstWin ? t("app.firstWinHint") : "";
       setMessage(`${out} — +$${iron}${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}${firstWinHint}`);
       // Badge-unlock toasts — one per newly earned badge from the fight resolve.
       const newBadges = result.summary?.newlyEarnedBadges;
@@ -1043,7 +1049,7 @@ const handleGetOffers = useCallback(async () => {
     try {
       await api.setWeightCut(fighter._id, fighter.acceptedFightId, weightCut);
     } catch (e) {
-      setMessage(e.message || "Failed to set weight cut");
+      setMessage(e.message || t("app.weightCutFailed"));
       return;
     }
     setShowCampSummary(false);
@@ -1088,7 +1094,7 @@ const handleGetOffers = useCallback(async () => {
         {/* Keep the consent notice visible during the load spinner so a
             first-time player isn't shown an un-acknowledged screen, then a pop-in. */}
         <CookieConsent />
-        <div className="app-loading">Loading…</div>
+        <div className="app-loading">{t("app.loading")}</div>
       </div>
     );
   }
@@ -1128,7 +1134,7 @@ const handleGetOffers = useCallback(async () => {
           <button
             type="button"
             className="app-msg-toast-close"
-            aria-label="Dismiss"
+            aria-label={t("app.dismissNotice")}
             onClick={() => setMessage("")}
           >
             ✕
@@ -1214,8 +1220,8 @@ const handleGetOffers = useCallback(async () => {
 
       {/* ── MOBILE TOP BAR ── (hidden on desktop via CSS) */}
       <header className="m-topbar">
-        <div className="tlogo m-tlogo">GROUND <span>&amp;</span> POUND</div>
-        <button type="button" className="m-hamburger" aria-label="Open menu" onClick={() => setMobileDrawerOpen(true)}>
+        <div className="tlogo m-tlogo">{t("layout.topbar.brandName")}</div>
+        <button type="button" className="m-hamburger" aria-label={t("layout.topbar.openMenu")} onClick={() => setMobileDrawerOpen(true)}>
           <Menu size={22} strokeWidth={2.2} />
         </button>
       </header>
@@ -1258,7 +1264,7 @@ const handleGetOffers = useCallback(async () => {
       {/* ── TOP BAR ── */}
       <header className="topbar">
         <div className="topbar-inner">
-          <div className="tlogo">GROUND <span>&amp;</span> POUND</div>
+          <div className="tlogo">{t("layout.topbar.brandName")}</div>
           <nav className="topbar-nav">
             {NAV_ITEMS.map((item, i) => (
               item.active ? (
@@ -1270,7 +1276,7 @@ const handleGetOffers = useCallback(async () => {
                 >
                   <span className="nav-icon">{item.icon}</span>
                   {item.label}
-                  {item.id === "pvp" && pvpUnread && <span className="nav-dot" aria-label="Unread defense report" />}
+                  {item.id === "pvp" && pvpUnread && <span className="nav-dot" aria-label={t("layout.topbar.unreadDefenseReport")} />}
                 </button>
               ) : (
                 <span key={i} className="tni disabled">
@@ -1303,7 +1309,7 @@ const handleGetOffers = useCallback(async () => {
             onMessage={setMessage}
           />
           <nav className="sidebar-menu sb-menu">
-            <div className="nav-section-label">Menu</div>
+            <div className="nav-section-label">{t("layout.nav.menu")}</div>
             {NAV_ITEMS.map((item, i) => (
               item.active ? (
                 <a
@@ -1315,7 +1321,7 @@ const handleGetOffers = useCallback(async () => {
                 >
                   <span className="nav-icon">{item.icon}</span>
                   {item.label}
-                  {item.id === "pvp" && pvpUnread && <span className="nav-dot" aria-label="Unread defense report" />}
+                  {item.id === "pvp" && pvpUnread && <span className="nav-dot" aria-label={t("layout.topbar.unreadDefenseReport")} />}
                 </a>
               ) : (
                 <div key={i} className="sb-menu-item disabled">
@@ -1344,7 +1350,7 @@ const handleGetOffers = useCallback(async () => {
           {/* ── MY FIGHTER ── (profile lives in left nav) */}
           {activeTab === "fighter" && (
             <div className="fighter-page fighter-page-nav-only">
-              <p className="panel-hint" style={{ padding: "1.5rem" }}>Fighter details are in the left panel.</p>
+              <p className="panel-hint" style={{ padding: "1.5rem" }}>{t("app.fighterPageHint")}</p>
             </div>
           )}
 
@@ -1555,7 +1561,7 @@ const handleGetOffers = useCallback(async () => {
                       className="btn btn-primary continue-btn"
                       onClick={() => { setLastFightSummary(null); tutorialBus.emit("result_dismissed"); }}
                     >
-                      Continue
+                      {t("app.continueBtn")}
                     </button>
                   </div>
                 </>
@@ -1580,23 +1586,23 @@ const handleGetOffers = useCallback(async () => {
       {/* ── MOBILE BOTTOM NAV ── (hidden on desktop via CSS) */}
       <nav className="m-bottom-nav">
         <button type="button" className={`m-nav-item ${activeTab === "gym" ? "act" : ""}`} onClick={() => handleNavTab("gym")}>
-          <Dumbbell size={17} strokeWidth={2.2} /><span>Train</span>
+          <Dumbbell size={17} strokeWidth={2.2} /><span>{t("layout.nav.train")}</span>
         </button>
         <button type="button" className={`m-nav-item ${activeTab === "fights" ? "act" : ""}`} onClick={() => handleNavTab("fights")}>
-          <Swords size={17} strokeWidth={2.2} /><span>Fight</span>
+          <Swords size={17} strokeWidth={2.2} /><span>{t("layout.nav.fight")}</span>
         </button>
         <button type="button" className={`m-nav-item ${activeTab === "career" ? "act" : ""}`} onClick={() => handleNavTab("career")}>
-          <FileText size={17} strokeWidth={2.2} /><span>Career</span>
+          <FileText size={17} strokeWidth={2.2} /><span>{t("layout.nav.career")}</span>
         </button>
         <button type="button" className={`m-nav-item ${activeTab === "rankings" ? "act" : ""}`} onClick={() => handleNavTab("rankings")}>
-          <ListOrdered size={17} strokeWidth={2.2} /><span>Rank</span>
+          <ListOrdered size={17} strokeWidth={2.2} /><span>{t("layout.nav.rank")}</span>
         </button>
         <button type="button" className={`m-nav-item ${activeTab === "pvp" ? "act" : ""}`} onClick={() => handleNavTab("pvp")}>
-          <Crosshair size={17} strokeWidth={2.2} /><span>PVP</span>
-          {pvpUnread && <span className="nav-dot" aria-label="Unread defense report" />}
+          <Crosshair size={17} strokeWidth={2.2} /><span>{t("layout.nav.pvp")}</span>
+          {pvpUnread && <span className="nav-dot" aria-label={t("layout.topbar.unreadDefenseReport")} />}
         </button>
         <button type="button" className={`m-nav-item ${mobileDrawerOpen ? "act" : ""}`} onClick={() => setMobileDrawerOpen(true)}>
-          <Menu size={17} strokeWidth={2.2} /><span>More</span>
+          <Menu size={17} strokeWidth={2.2} /><span>{t("layout.nav.more")}</span>
         </button>
       </nav>
 
@@ -1610,7 +1616,7 @@ const handleGetOffers = useCallback(async () => {
                 {fighter?.firstName} {fighter?.lastName}
                 {fighter?.nickname && <em>"{fighter.nickname}"</em>}
               </span>
-              <button type="button" className="m-drawer-close" aria-label="Close menu" onClick={() => setMobileDrawerOpen(false)}>
+              <button type="button" className="m-drawer-close" aria-label={t("layout.drawer.closeMenu")} onClick={() => setMobileDrawerOpen(false)}>
                 <X size={20} strokeWidth={2.2} />
               </button>
             </div>
@@ -1630,7 +1636,7 @@ const handleGetOffers = useCallback(async () => {
                 onMessage={setMessage}
               />
               <nav className="sidebar-menu sb-menu m-drawer-menu">
-                <div className="nav-section-label">Menu</div>
+                <div className="nav-section-label">{t("layout.nav.menu")}</div>
                 {NAV_ITEMS.map((item, i) => (
                   item.active ? (
                     <a
@@ -1642,7 +1648,7 @@ const handleGetOffers = useCallback(async () => {
                     >
                       <span className="nav-icon">{item.icon}</span>
                       {item.label}
-                      {item.id === "pvp" && pvpUnread && <span className="nav-dot" aria-label="Unread defense report" />}
+                      {item.id === "pvp" && pvpUnread && <span className="nav-dot" aria-label={t("layout.topbar.unreadDefenseReport")} />}
                     </a>
                   ) : (
                     <div key={i} className="sb-menu-item disabled">
@@ -1660,21 +1666,21 @@ const handleGetOffers = useCallback(async () => {
       {/* ── FULL-WIDTH BOTTOM BAR ── */}
       <footer className="bottombar">
         <div className="bottombar-inner">
-          <span className="bb-brand">GROUND <span>&amp;</span> POUND</span>
-          <span className="bb-copyright">© {new Date().getFullYear()} Digital Olive. All rights reserved.</span>
+          <span className="bb-brand">{t("layout.bottombar.brandName")}</span>
+          <span className="bb-copyright">{t("layout.bottombar.copyright", { year: new Date().getFullYear() })}</span>
           {injuryCount > 0 && (
             <button type="button" className="bb-pill bb-pill-injury" onClick={() => handleNavTab("hospital")}>
-              🩹 {injuryCount} injur{injuryCount === 1 ? "y" : "ies"}
+              🩹 {t(injuryCount === 1 ? "layout.bottombar.injurySingular" : "layout.bottombar.injuryPlural", { count: injuryCount })}
             </button>
           )}
           {campActive && (
             <button type="button" className="bb-pill bb-pill-camp" onClick={() => handleNavTab("fights")}>
-              ⛺ Camp — {campState?.slotsUsed ?? fighter.trainingCampActions ?? 0} sessions
+              ⛺ {t("layout.bottombar.campSessions", { count: campState?.slotsUsed ?? fighter.trainingCampActions ?? 0 })}
             </button>
           )}
           {fighter && (
             <button type="button" className="bb-pill bb-pill-fame" onClick={() => setFameDrawerOpen(true)}>
-              ★ Fame
+              {t("layout.bottombar.fame")}
             </button>
           )}
           <div className="bb-right">
@@ -1682,19 +1688,19 @@ const handleGetOffers = useCallback(async () => {
               type="button"
               className={`bb-btn ${activeTab === "account" ? "active" : ""}`}
               onClick={() => handleNavTab("account")}
-              title="Account settings"
+              title={t("layout.bottombar.accountSettings")}
             >
-              <UserCircle2 size={12} strokeWidth={2.2} /> Account
+              <UserCircle2 size={12} strokeWidth={2.2} /> {t("layout.bottombar.account")}
             </button>
             <button
               type="button"
               className="bb-btn"
               onClick={() => window.dispatchEvent(new CustomEvent("open-cookie-policy"))}
-              title="Cookie Policy"
+              title={t("layout.bottombar.cookiePolicyTitle")}
             >
-              Cookie Policy
+              {t("layout.bottombar.cookiePolicy")}
             </button>
-            <button type="button" className="bb-btn" onClick={handleLogout} title="Sign out">Sign Out</button>
+            <button type="button" className="bb-btn" onClick={handleLogout} title={t("layout.bottombar.signOutTitle")}>{t("layout.bottombar.signOut")}</button>
           </div>
         </div>
       </footer>

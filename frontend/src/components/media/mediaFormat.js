@@ -19,6 +19,7 @@ import {
   Swords,
   HeartHandshake,
 } from "lucide-react";
+import { t } from "@/lib/i18n";
 
 // ── Listeners ───────────────────────────────────────────────
 
@@ -110,53 +111,43 @@ export const C = {
 
 // ── Segment flag → stripe color + tag class + icon ──────────
 // Catalog-driven: the backend tells us the `flag`, we map presentation.
-export const SEGMENT_FLAG_META = {
-  beef:    { color: C.accent, tagClass: "beef",    Icon: Flame, tagLabel: "Beef flag" },
-  respect: { color: C.blue,   tagClass: "respect", Icon: Heart, tagLabel: "Respect flag" },
-  fame:    { color: C.gold,   tagClass: "fame",    Icon: Star,  tagLabel: "Fame" },
-  cash:    { color: C.green,  tagClass: "cash",    Icon: Coins, tagLabel: "Cash + fame" },
-  predict: { color: C.gold,   tagClass: "fame",    Icon: BarChart3, tagLabel: "Events" },
-  guest:   { color: C.purple, tagClass: "respect", Icon: Users, tagLabel: "Guest" },
+// tagLabel is resolved at call time so it picks up the i18n value.
+const SEGMENT_FLAG_STATIC = {
+  beef:    { color: C.accent, tagClass: "beef",    Icon: Flame,     tagLabelKey: "media.segmentTags.beef" },
+  respect: { color: C.blue,   tagClass: "respect", Icon: Heart,     tagLabelKey: "media.segmentTags.respect" },
+  fame:    { color: C.gold,   tagClass: "fame",    Icon: Star,      tagLabelKey: "media.segmentTags.fame" },
+  cash:    { color: C.green,  tagClass: "cash",    Icon: Coins,     tagLabelKey: "media.segmentTags.cash" },
+  predict: { color: C.gold,   tagClass: "fame",    Icon: BarChart3, tagLabelKey: "media.segmentTags.predict" },
+  guest:   { color: C.purple, tagClass: "respect", Icon: Users,     tagLabelKey: "media.segmentTags.guest" },
 };
 
 export function segmentMeta(flag) {
-  return SEGMENT_FLAG_META[flag] || { color: C.gold, tagClass: "fame", Icon: Star, tagLabel: "Fame" };
+  const base = SEGMENT_FLAG_STATIC[flag] || { color: C.gold, tagClass: "fame", Icon: Star, tagLabelKey: "media.segmentTags.fame" };
+  return { ...base, tagLabel: t(base.tagLabelKey) };
 }
 
 // ── Appearance type → icon + stripe + bg tint + description ─────────
 // The frontend owns presentation (icon/color/description); the backend emits
 // label, fame, cash, energyCost, etc. keyed by `type`.
-export const APPEARANCE_META = {
-  MAGAZINE_COVER: {
-    Icon: Camera, color: C.gold, bg: "rgba(212,168,32,0.1)",
-    description: "Pose for a glossy cover shoot. A clean fame bump.",
-  },
-  UNDERCARD_FEATURE: {
-    Icon: Star, color: C.accent, bg: "rgba(200,16,46,0.1)",
-    description: "Sign up for a spotlight slot — pays off on your next fight.",
-  },
-  PODCAST_GUEST: {
-    Icon: Mic2, color: C.accent, bg: "rgba(200,16,46,0.1)",
-    description: "Guest on a big show. Pick a rival and your tone — beef or respect.",
-  },
-  BRAND_DEAL_CLIP: {
-    Icon: MonitorPlay, color: C.blue, bg: "rgba(59,130,246,0.1)",
-    description: "Film a sponsor clip for a quick cash payout.",
-  },
-  CHARITY_EXHIBITION: {
-    Icon: HeartHandshake, color: C.green, bg: "rgba(58,154,74,0.1)",
-    description: "Headline a charity exhibition bout. Pure fame, no energy.",
-  },
+// Descriptions are resolved at call time so they pick up i18n values.
+const APPEARANCE_META_STATIC = {
+  MAGAZINE_COVER:    { Icon: Camera,        color: C.gold,   bg: "rgba(212,168,32,0.1)", descKey: "media.appearanceDescriptions.MAGAZINE_COVER" },
+  UNDERCARD_FEATURE: { Icon: Star,          color: C.accent, bg: "rgba(200,16,46,0.1)",  descKey: "media.appearanceDescriptions.UNDERCARD_FEATURE" },
+  PODCAST_GUEST:     { Icon: Mic2,          color: C.accent, bg: "rgba(200,16,46,0.1)",  descKey: "media.appearanceDescriptions.PODCAST_GUEST" },
+  BRAND_DEAL_CLIP:   { Icon: MonitorPlay,   color: C.blue,   bg: "rgba(59,130,246,0.1)", descKey: "media.appearanceDescriptions.BRAND_DEAL_CLIP" },
+  CHARITY_EXHIBITION:{ Icon: HeartHandshake,color: C.green,  bg: "rgba(58,154,74,0.1)",  descKey: "media.appearanceDescriptions.CHARITY_EXHIBITION" },
 };
 
 export function appearanceMeta(type, stripeColor) {
-  const base = APPEARANCE_META[type] || { Icon: Star, color: C.gold, bg: "rgba(212,168,32,0.1)" };
-  return stripeColor ? { ...base, color: stripeColor } : base;
+  const base = APPEARANCE_META_STATIC[type] || { Icon: Star, color: C.gold, bg: "rgba(212,168,32,0.1)", descKey: null };
+  const resolved = stripeColor ? { ...base, color: stripeColor } : base;
+  return resolved;
 }
 
 /** Local description for an appearance type (the backend does not emit one). */
 export function appearanceDescription(type) {
-  return APPEARANCE_META[type]?.description || "";
+  const entry = APPEARANCE_META_STATIC[type];
+  return entry?.descKey ? t(entry.descKey) : "";
 }
 
 // Win-outcome strings the backend emits (mirror of WIN_OUTCOMES in fightService).

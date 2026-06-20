@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Check, X, TrendingUp, AlertTriangle, ShieldCheck } from "lucide-react";
 import { STAT_CHIP_CLASS } from "./GymTraining";
+import { t } from "@/lib/i18n";
 
 /**
  * Single post-training toast (presentational).
@@ -26,12 +27,12 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
         <div className="train-toast-top">
           <div className="train-toast-title">
             <ShieldCheck size={19} className="train-toast-badge-icon" />
-            <span>Badge Unlocked: {toast.badgeName}</span>
+            <span>{t("gym.toast.badgeUnlocked", { name: toast.badgeName })}</span>
           </div>
           <button
             type="button"
             className="train-toast-close"
-            aria-label="Dismiss"
+            aria-label={t("gym.toast.dismiss")}
             onClick={() => onDismiss(toast.id)}
           >
             <X size={18} />
@@ -75,14 +76,14 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
   let rollBadge = null;
   if (completed <= 1) {
     if (rollTier === "great") {
-      rollBadge = <span className="train-toast-badge train-toast-badge--great">Great session!</span>;
+      rollBadge = <span className="train-toast-badge train-toast-badge--great">{t("gym.toast.greatSession")}</span>;
     } else if (rollTier === "sluggish") {
-      rollBadge = <span className="train-toast-badge train-toast-badge--sluggish">Sluggish</span>;
+      rollBadge = <span className="train-toast-badge train-toast-badge--sluggish">{t("gym.toast.sluggish")}</span>;
     }
   } else if (greatCount > 0) {
     rollBadge = (
       <span className="train-toast-badge train-toast-badge--great">
-        {greatCount} great session{greatCount > 1 ? "s" : ""}
+        {t("gym.toast.greatCount", { n: greatCount, plural: greatCount > 1 ? "s" : "" })}
       </span>
     );
   }
@@ -98,13 +99,13 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
       <div className="train-toast-top">
         <div className="train-toast-title">
           <Check size={19} className="train-toast-check" />
-          <span>{sessionName} Complete</span>
+          <span>{t("gym.toast.sessionComplete", { name: sessionName })}</span>
           {rollBadge}
         </div>
         <button
           type="button"
           className="train-toast-close"
-          aria-label="Dismiss"
+          aria-label={t("gym.toast.dismiss")}
           onClick={() => onDismiss(id)}
         >
           <X size={18} />
@@ -114,7 +115,7 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
       {/* XP / conditioning row */}
       <div className="train-toast-xp">
         <span className="train-toast-xp-label">
-          {showCapLabel ? "Max Stamina at cap" : "XP gained"}
+          {showCapLabel ? t("gym.toast.maxStaminaAtCap") : t("gym.toast.xpGained")}
         </span>
         {hasXp &&
           xpGained.map(({ stat, amount }) => (
@@ -123,7 +124,7 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
             </span>
           ))}
         {showStaminaChip && (
-          <span className="train-toast-chip train-toast-chip-stam">STAM +{maxStaminaGained}</span>
+          <span className="train-toast-chip train-toast-chip-stam">{t("gym.toast.staminaGained", { amount: maxStaminaGained })}</span>
         )}
       </div>
 
@@ -132,7 +133,7 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
       {levelUps.map(({ stat, oldValue, newValue }) => (
         <div key={`lvl-${stat}`} className="train-toast-levelup-row">
           <TrendingUp size={18} className="train-toast-levelup-icon" />
-          <span className="train-toast-levelup-text">{stat} levelled up</span>
+          <span className="train-toast-levelup-text">{t("gym.toast.levelledUp", { stat })}</span>
           <span className="train-toast-levelup-value">{oldValue} → {newValue}</span>
         </div>
       ))}
@@ -141,9 +142,9 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
       {injuries.map(({ label, round }, i) => (
         <div key={`inj-${i}-${label}`} className="train-toast-injury-row">
           <AlertTriangle size={19} className="train-toast-injury-icon" />
-          <span className="train-toast-injury-text">Injured: {label}</span>
+          <span className="train-toast-injury-text">{t("gym.toast.injured", { label })}</span>
           {isBatch && round != null && (
-            <span className="train-toast-injury-round">round {round}</span>
+            <span className="train-toast-injury-round">{t("gym.toast.round", { round })}</span>
           )}
         </div>
       ))}
@@ -158,10 +159,10 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
             {booster.pct ? ` +${booster.pct <= 1 ? Math.round(booster.pct * 100) : Math.round(booster.pct)}%` : ""}
           </span>
           {booster.depletedThisBatch ? (
-            <span className="train-toast-booster-depleted">Booster depleted</span>
+            <span className="train-toast-booster-depleted">{t("gym.toast.boosterDepleted")}</span>
           ) : (
             <span className="train-toast-booster-left">
-              {booster.sessionsLeftAfter} session{booster.sessionsLeftAfter === 1 ? "" : "s"} left
+              {t("gym.toast.boosterLeft", { n: booster.sessionsLeftAfter, plural: booster.sessionsLeftAfter === 1 ? "" : "s" })}
             </span>
           )}
         </div>
@@ -170,10 +171,10 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
       {/* Meta row */}
       <div className="train-toast-meta">
         <span className="train-toast-meta-left">
-          ⚡ <span className="train-toast-energy">{energyRemaining}E</span> remaining
+          ⚡ <span className="train-toast-energy">{t("gym.toast.energyRemaining", { energy: energyRemaining })}</span>
         </span>
         <span className="train-toast-meta-right">
-          <span className="train-toast-sessions">{sessionsToday}</span> sessions today
+          <span className="train-toast-sessions">{t("gym.toast.sessionsToday", { n: sessionsToday })}</span>
         </span>
       </div>
 

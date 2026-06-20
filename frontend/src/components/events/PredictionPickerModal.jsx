@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { t } from "@/lib/i18n";
 
 const METHOD_OPTIONS = ["KO/TKO", "Submission", "Decision"];
 
@@ -100,15 +101,15 @@ export function PredictionPickerModal({
     // Stake validation message — shown subtly below the stake row when relevant.
     let stakeHint = "";
     if (playerIron < limits.min) {
-        stakeHint = `You need $${limits.min} to bet at this tier. Available: $${playerIron}.`;
+        stakeHint = t("events.picker.hints.needMinimum", { min: limits.min, available: playerIron });
     } else if (stakeInput && !Number.isFinite(stakeNum)) {
-        stakeHint = "Enter a whole number.";
+        stakeHint = t("events.picker.hints.wholeNumber");
     } else if (stakeNum < limits.min) {
-        stakeHint = `Below the $${limits.min} minimum.`;
+        stakeHint = t("events.picker.hints.belowMinimum", { min: limits.min });
     } else if (stakeNum > limits.max) {
-        stakeHint = `Above the $${limits.max} tier cap.`;
+        stakeHint = t("events.picker.hints.aboveCap", { max: limits.max });
     } else if (stakeNum > playerIron) {
-        stakeHint = `Only $${playerIron} available.`;
+        stakeHint = t("events.picker.hints.insufficientFunds", { available: playerIron });
     }
 
     const sliderMax = Math.min(limits.max, playerIron);
@@ -122,7 +123,7 @@ export function PredictionPickerModal({
     };
 
     return createPortal(
-        <div className="picker-modal-root" role="dialog" aria-modal="true" aria-label="Bet picker">
+        <div className="picker-modal-root" role="dialog" aria-modal="true" aria-label={t("events.picker.dialogLabel")}>
             <div className="picker-modal-backdrop" onClick={onClose} />
             <div className={`picker-modal-shell picker-modal-${slotKey.toLowerCase()}`}>
                 {/* Compact header — slot/class + inline matchup line, no big poster. */}
@@ -133,10 +134,10 @@ export function PredictionPickerModal({
                     </div>
                     <div className="slip-matchup">
                         <span className="slip-fighter slip-fighter-a">{fight.fighterA.name}</span>
-                        <span className="slip-vs">vs</span>
+                        <span className="slip-vs">{t("events.picker.vs")}</span>
                         <span className="slip-fighter slip-fighter-b">{fight.fighterB.name}</span>
                     </div>
-                    <button type="button" className="picker-modal-close" onClick={onClose} aria-label="Close">✕</button>
+                    <button type="button" className="picker-modal-close" onClick={onClose} aria-label={t("events.picker.closeLabel")}>✕</button>
                 </header>
 
                 <div className="slip-body">
@@ -147,14 +148,14 @@ export function PredictionPickerModal({
                             className={`slip-bettype-pill ${betType === "WINNER" ? "selected" : ""}`}
                             onClick={() => { setBetType("WINNER"); setPickedMethod(null); }}
                         >
-                            Winner
+                            {t("events.picker.betTypeWinner")}
                         </button>
                         <button
                             type="button"
                             className={`slip-bettype-pill ${betType === "EXACT" ? "selected" : ""}`}
                             onClick={() => setBetType("EXACT")}
                         >
-                            Exact outcome
+                            {t("events.picker.betTypeExact")}
                         </button>
                     </div>
 
@@ -184,8 +185,8 @@ export function PredictionPickerModal({
                             className={`slip-pick slip-pick-draw ${pickedSide === "DRAW" ? "selected" : ""}`}
                             onClick={() => { setPickedSide("DRAW"); setPickedMethod(null); }}
                         >
-                            <span className="slip-pick-name">Draw</span>
-                            <span className="slip-pick-meta slip-pick-meta-muted">no winner</span>
+                            <span className="slip-pick-name">{t("events.picker.draw")}</span>
+                            <span className="slip-pick-meta slip-pick-meta-muted">{t("events.picker.noWinner")}</span>
                             <span className="slip-pick-odds">×{drawOdds?.toFixed(2)}</span>
                         </button>
 
@@ -242,15 +243,15 @@ export function PredictionPickerModal({
                                 max={sliderMax}
                                 step="10"
                                 disabled={playerIron < limits.min}
-                                aria-label="Stake amount"
+                                aria-label={t("events.picker.stakeLabel")}
                             />
                         </div>
                         <div className="slip-stake-chips">
-                            <button type="button" onClick={stepFor(-10)}  disabled={playerIron < limits.min}>−10</button>
-                            <button type="button" onClick={stepFor(+10)}  disabled={playerIron < limits.min}>+10</button>
-                            <button type="button" onClick={setPercent(0.25)} disabled={playerIron < limits.min}>25%</button>
-                            <button type="button" onClick={setPercent(0.50)} disabled={playerIron < limits.min}>50%</button>
-                            <button type="button" onClick={setPercent(1.00)} disabled={playerIron < limits.min}>Max</button>
+                            <button type="button" onClick={stepFor(-10)}  disabled={playerIron < limits.min}>{t("events.picker.chips.minus10")}</button>
+                            <button type="button" onClick={stepFor(+10)}  disabled={playerIron < limits.min}>{t("events.picker.chips.plus10")}</button>
+                            <button type="button" onClick={setPercent(0.25)} disabled={playerIron < limits.min}>{t("events.picker.chips.pct25")}</button>
+                            <button type="button" onClick={setPercent(0.50)} disabled={playerIron < limits.min}>{t("events.picker.chips.pct50")}</button>
+                            <button type="button" onClick={setPercent(1.00)} disabled={playerIron < limits.min}>{t("events.picker.chips.max")}</button>
                         </div>
                     </div>
 
@@ -259,24 +260,24 @@ export function PredictionPickerModal({
                         <div className="slip-stake-hint">{stakeHint}</div>
                     ) : currentOdds != null && potentialPayout != null ? (
                         <div className="slip-summary">
-                            Wallet <strong className="slip-wallet">${playerIron.toLocaleString()}</strong>
+                            {t("events.picker.walletLabel")} <strong className="slip-wallet">${playerIron.toLocaleString()}</strong>
                             <span className="slip-sep">·</span>
-                            Returns <strong className="slip-returns">${potentialPayout.toLocaleString()}</strong>
+                            {t("events.picker.returnsLabel")} <strong className="slip-returns">${potentialPayout.toLocaleString()}</strong>
                             <span className="slip-sep">·</span>
-                            Profit <strong className="slip-profit">+${(potentialProfit ?? 0).toLocaleString()}</strong>
+                            {t("events.picker.profitLabel")} <strong className="slip-profit">+${(potentialProfit ?? 0).toLocaleString()}</strong>
                         </div>
                     ) : (
                         <div className="slip-summary slip-summary-empty">
-                            Wallet <strong className="slip-wallet">${playerIron.toLocaleString()}</strong>
+                            {t("events.picker.walletLabel")} <strong className="slip-wallet">${playerIron.toLocaleString()}</strong>
                             <span className="slip-sep">·</span>
-                            Pick an option to see the payout.
+                            {t("events.picker.pickToSeePayout")}
                         </div>
                     )}
                 </div>
 
                 <footer className="picker-modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>
-                        Cancel
+                        {t("common.cancel")}
                     </button>
                     <button
                         type="button"
@@ -284,7 +285,11 @@ export function PredictionPickerModal({
                         onClick={submit}
                         disabled={!canSubmit}
                     >
-                        {submitting ? "Locking…" : stakeValid ? `Place bet · $${stakeNum.toLocaleString()}` : "Place bet"}
+                        {submitting
+                            ? t("events.picker.locking")
+                            : stakeValid
+                                ? t("events.picker.placeBetWithAmount", { amount: stakeNum.toLocaleString() })
+                                : t("events.picker.placeBet")}
                     </button>
                 </footer>
             </div>

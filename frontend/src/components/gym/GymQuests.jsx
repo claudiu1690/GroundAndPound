@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, memo, useCallback } from "react";
 import { api } from "../../api";
+import { t } from "@/lib/i18n";
 
 /** Shallow compare quest payload for memo — avoids re-rendering unchanged cards after refetch. */
 function questPropsEqual(prev, next) {
@@ -36,28 +37,28 @@ const QuestItem = memo(
       >
         <div className="quest-header">
           <span className="quest-title">{q.title}</span>
-          {isDone && <span className="quest-badge quest-badge-done">✓ Done</span>}
+          {isDone && <span className="quest-badge quest-badge-done">{t("gym.quests.doneBadge")}</span>}
           {isMembershipLocked && (
             <span className="quest-badge" style={{ background: "var(--bg-hover)", color: "var(--text-muted)" }}>
-              ⊗ Membership
+              {t("gym.quests.membershipBadge")}
             </span>
           )}
           {isPrereqLocked && (
             <span className="quest-badge" style={{ background: "var(--bg-hover)", color: "var(--text-muted)" }}>
-              🔒 Locked
+              {t("gym.quests.lockedBadge")}
             </span>
           )}
-          {!isDone && !dimmed && <span className="quest-badge quest-badge-active">Active</span>}
+          {!isDone && !dimmed && <span className="quest-badge quest-badge-active">{t("gym.quests.activeBadge")}</span>}
         </div>
         <p className="quest-description">{q.description}</p>
         {isMembershipLocked && (
           <p style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "0.4rem" }}>
-            Pay monthly membership at this gym to progress these quests.
+            {t("gym.quests.membershipHint")}
           </p>
         )}
         {isPrereqLocked && q.requiresQuest && (
           <p style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "0.4rem" }}>
-            Requires: complete the previous quest first.
+            {t("gym.quests.prereqHint")}
           </p>
         )}
         {!hideConditions && (
@@ -78,9 +79,9 @@ const QuestItem = memo(
             ))}
           </div>
         )}
-        <p className="quest-reward">Reward: {q.reward}</p>
+        <p className="quest-reward">{t("gym.quests.rewardLabel", { reward: q.reward })}</p>
         {q.completedAt && (
-          <p className="quest-completed-at">Completed {new Date(q.completedAt).toLocaleDateString()}</p>
+          <p className="quest-completed-at">{t("gym.quests.completedAt", { date: new Date(q.completedAt).toLocaleDateString() })}</p>
         )}
       </div>
     );
@@ -151,11 +152,11 @@ export const GymQuests = memo(function GymQuests({ fighter, gymId, refreshKey = 
 
   return (
     <section className="panel gym-quests">
-      <h2 className="panel-title">Gym Quests</h2>
+      <h2 className="panel-title">{t("gym.quests.title")}</h2>
       <div className="panel-body">
-        {initialLoading && <p className="panel-hint">Loading quests…</p>}
+        {initialLoading && <p className="panel-hint">{t("gym.quests.loading")}</p>}
         {!initialLoading && quests.length === 0 && (
-          <p className="panel-hint">No quests available at this gym yet. Train here to unlock progress.</p>
+          <p className="panel-hint">{t("gym.quests.empty")}</p>
         )}
         <div className="quests-grid">
           {quests.map((q) => (

@@ -1,4 +1,5 @@
 import { memo, useEffect, useState } from "react";
+import { t } from "@/lib/i18n";
 import { api } from "../api";
 import {
     Trophy, X, Minus, ArrowUp, Crown, Flame, Swords, ShieldCheck, Target,
@@ -132,11 +133,11 @@ export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey, onOp
     return (
         <div className="feed-wrap">
             {loading && entries.length === 0 ? (
-                <div className="career-empty">Loading…</div>
+                <div className="career-empty">{t("career.feed.loading")}</div>
             ) : error && entries.length === 0 ? (
-                <div className="career-empty">Could not load your career feed.</div>
+                <div className="career-empty">{t("career.feed.error")}</div>
             ) : entries.length === 0 ? (
-                <div className="career-empty">No career history yet. Step into the cage.</div>
+                <div className="career-empty">{t("career.feed.empty")}</div>
             ) : (
                 groups.map((group) => (
                     <div key={group.label}>
@@ -156,7 +157,7 @@ export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey, onOp
                                         ? (entry.meta?.drinksGranted ?? 0)
                                         : 0;
                             const metaParts = [...rest];
-                            if (drinks > 0) metaParts.push(`+${drinks} Energy Drink${drinks === 1 ? "" : "s"}`);
+                            if (drinks > 0) metaParts.push(drinks === 1 ? t("career.feed.energyDrinkSingular", { n: drinks }) : t("career.feed.energyDrinkPlural", { n: drinks }));
                             const sub = metaParts.join(" · ") || null;
 
                             // Reward line (fame / cash) if present on meta.
@@ -194,7 +195,7 @@ export const CareerFeed = memo(function CareerFeed({ fighterId, refreshKey, onOp
                                                 {first}
                                                 {showTitleTag && (
                                                     <span className="feed-title-fight-tag">
-                                                        <Crown size={11} strokeWidth={2.4} /> Title Fight
+                                                        <Crown size={11} strokeWidth={2.4} /> {t("career.feed.titleFightTag")}
                                                     </span>
                                                 )}
                                                 <span

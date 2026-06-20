@@ -1,6 +1,7 @@
 import { Shield } from "lucide-react";
 import { divisionLabel } from "./pvpConst";
 import { ConsequencesBlock } from "./ConsequencesBlock";
+import { t } from "../../lib/i18n";
 
 /**
  * PlacementResult — shown when result.isPlacement is true.
@@ -53,8 +54,8 @@ export function PlacementResult({ result, onFightAgain, onBackToLadder }) {
     return (
       <div className="pvp-card">
         <div className="pvp-card-nav">
-          <div className="pvp-cnav-title">Placement Complete</div>
-          <div className="pvp-cnav-right">The Proving Ground</div>
+          <div className="pvp-cnav-title">{t("pvp.placementResult.navTitleComplete")}</div>
+          <div className="pvp-cnav-right">{t("pvp.placementResult.navRight")}</div>
         </div>
 
         {/* Completion hero */}
@@ -64,10 +65,12 @@ export function PlacementResult({ result, onFightAgain, onBackToLadder }) {
             <Shield size={28} strokeWidth={1.5} style={{ color: "#3B82F6", marginBottom: 6 }} />
           </div>
           <div className="pvp-rh-outcome-row">
-            <span className="pvp-rh-outcome pvp-rh-outcome-win">Placement Complete</span>
+            <span className="pvp-rh-outcome pvp-rh-outcome-win">{t("pvp.placementResult.completeBadgeOutcome")}</span>
           </div>
           <div className="pvp-rh-sub">
-            {wins} win{wins !== 1 ? "s" : ""} out of {totalFights}
+            {wins !== 1
+              ? t("pvp.placementResult.completeSubPlural", { wins, total: totalFights })
+              : t("pvp.placementResult.completeSub", { wins, total: totalFights })}
           </div>
         </div>
 
@@ -75,16 +78,16 @@ export function PlacementResult({ result, onFightAgain, onBackToLadder }) {
         <div className="pvp-placement-summary-card">
           <div className="pvp-ps-row">
             <div className="pvp-ps-item">
-              <div className="pvp-ps-lbl">Starting Position</div>
+              <div className="pvp-ps-lbl">{t("pvp.placementResult.startingPositionLabel")}</div>
               <div className="pvp-ps-val">
-                Division {divisionLabel(divisionAfter)} &middot; {(dpAfter ?? 0).toLocaleString()} DP
+                {t("pvp.placementResult.startingPositionValue", { division: divisionLabel(divisionAfter), dp: (dpAfter ?? 0).toLocaleString() })}
               </div>
             </div>
           </div>
           <div className="pvp-shield-banner" style={{ marginTop: 10 }}>
             <Shield size={13} strokeWidth={2} style={{ color: "#3B82F6", flexShrink: 0 }} />
             <div className="pvp-shield-text">
-              <strong>New Competitor Shield active</strong> — 7 days of protection from challenges.
+              {t("pvp.placementResult.shieldBanner")}
             </div>
           </div>
         </div>
@@ -99,7 +102,7 @@ export function PlacementResult({ result, onFightAgain, onBackToLadder }) {
         )}
 
         <div className="pvp-ra">
-          <button className="pvp-ra-btn-prim" onClick={onBackToLadder}>Enter the Ladder</button>
+          <button className="pvp-ra-btn-prim" onClick={onBackToLadder}>{t("pvp.placementResult.enterLadderBtn")}</button>
         </div>
       </div>
     );
@@ -109,8 +112,8 @@ export function PlacementResult({ result, onFightAgain, onBackToLadder }) {
   return (
     <div className="pvp-card">
       <div className="pvp-card-nav">
-        <div className="pvp-cnav-title">Placement Match</div>
-        <div className="pvp-cnav-right">Bout {fightNumber} of {totalFights}</div>
+        <div className="pvp-cnav-title">{t("pvp.placementResult.navTitleMatch")}</div>
+        <div className="pvp-cnav-right">{t("pvp.placementResult.boutOf", { n: fightNumber, total: totalFights })}</div>
       </div>
 
       {/* Result hero — no DP swing */}
@@ -119,12 +122,12 @@ export function PlacementResult({ result, onFightAgain, onBackToLadder }) {
 
         {/* Placement bout label replaces DP number */}
         <div className="pvp-placement-bout-label">
-          Placement Bout {fightNumber} of {totalFights}
+          {t("pvp.placementResult.placementBoutLabel", { n: fightNumber, total: totalFights })}
         </div>
 
         <div className="pvp-rh-outcome-row">
           <span className={`pvp-rh-outcome pvp-rh-outcome-${outcome}`}>
-            {isDraw ? "Draw" : youWon ? "Victory" : "Defeat"}
+            {isDraw ? t("pvp.fightResult.outcomeDraw") : youWon ? t("pvp.fightResult.outcomeWin") : t("pvp.fightResult.outcomeLoss")}
           </span>
           <span className={`pvp-rh-method pvp-rh-method-${outcome}`}>
             {methodLabel(method)}
@@ -134,28 +137,30 @@ export function PlacementResult({ result, onFightAgain, onBackToLadder }) {
         <div className="pvp-rh-sub">vs {opponentName}</div>
 
         <div className="pvp-rh-context">
-          <span className="pvp-rh-ctx-pill pvp-rh-ctx-pill-base">No DP change</span>
+          <span className="pvp-rh-ctx-pill pvp-rh-ctx-pill-base">{t("pvp.placementResult.noDpChange")}</span>
         </div>
       </div>
 
       {/* Placement progress */}
       <div className="pvp-dpb">
-        <div className="pvp-dpb-title">Placement Progress</div>
+        <div className="pvp-dpb-title">{t("pvp.placementResult.placementProgressTitle")}</div>
         <div className="pvp-dpb-rows">
           <div className="pvp-dpb-row">
-            <span className="pvp-dpb-lbl">Bout</span>
+            <span className="pvp-dpb-lbl">{t("pvp.placementResult.boutLabel")}</span>
             <span className="pvp-dpb-val pvp-dpb-val-base">{fightNumber} of {totalFights}</span>
           </div>
           <div className="pvp-dpb-row">
-            <span className="pvp-dpb-lbl">Wins</span>
+            <span className="pvp-dpb-lbl">{t("pvp.placementResult.winsLabel")}</span>
             <span className="pvp-dpb-val pvp-dpb-val-win">{wins}</span>
           </div>
         </div>
         <div className="pvp-dpb-divider" />
         <div className="pvp-dpb-total">
-          <span className="pvp-dpb-total-lbl">Remaining</span>
+          <span className="pvp-dpb-total-lbl">{t("pvp.placementResult.remainingLabel")}</span>
           <span className="pvp-dpb-total-val pvp-dpb-total-val-draw">
-            {remaining} placement fight{remaining !== 1 ? "s" : ""}
+            {remaining !== 1
+              ? t("pvp.placementResult.remainingFightPlural", { n: remaining })
+              : t("pvp.placementResult.remainingFight", { n: remaining })}
           </span>
         </div>
       </div>
@@ -178,13 +183,13 @@ export function PlacementResult({ result, onFightAgain, onBackToLadder }) {
 
       {energyRemaining != null && (
         <div className="pvp-energy-remaining">
-          Energy remaining: {energyRemaining}
+          {t("pvp.fightResult.energyRemaining", { n: energyRemaining })}
         </div>
       )}
 
       <div className="pvp-ra">
-        <button className="pvp-ra-btn-prim" onClick={onFightAgain}>Next Placement Fight</button>
-        <button className="pvp-ra-btn-sec" onClick={onBackToLadder}>Back to Ladder</button>
+        <button className="pvp-ra-btn-prim" onClick={onFightAgain}>{t("pvp.placementResult.nextPlacementBtn")}</button>
+        <button className="pvp-ra-btn-sec" onClick={onBackToLadder}>{t("pvp.placementResult.backToLadderBtn")}</button>
       </div>
     </div>
   );

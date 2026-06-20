@@ -1,5 +1,6 @@
 import { createPortal } from "react-dom";
 import { Sparkles } from "lucide-react";
+import { t } from "@/lib/i18n";
 import { badgeVisual } from "./badgeCatalog";
 
 /**
@@ -14,12 +15,12 @@ export function BadgeUnlockModal({ badges, onClose }) {
   const multiple = badges.length > 1;
 
   return createPortal(
-    <div className="badge-modal-root" role="dialog" aria-modal="true" aria-label="Badges unlocked">
+    <div className="badge-modal-root" role="dialog" aria-modal="true" aria-label={t("career.badges.unlockModalAriaLabel")}>
       <div className="badge-modal-backdrop" onClick={onClose} />
       <div className="badge-modal-card">
         <div className="badge-modal-head">
           <Sparkles size={18} className="badge-modal-spark" />
-          <span>{multiple ? `${badges.length} Badges Unlocked` : "Badge Unlocked"}</span>
+          <span>{multiple ? t("career.badges.unlockMultipleTitle", { n: badges.length }) : t("career.badges.unlockSingleTitle")}</span>
         </div>
 
         <div className="badge-modal-list">
@@ -40,7 +41,7 @@ export function BadgeUnlockModal({ badges, onClose }) {
         </div>
 
         <button type="button" className="badge-modal-btn" onClick={onClose}>
-          {multiple ? "Awesome" : "Nice"}
+          {multiple ? t("career.badges.unlockDismissMultiple") : t("career.badges.unlockDismissSingle")}
         </button>
       </div>
     </div>,

@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useState } from "react";
 import { Stethoscope, HeartPulse, Package, Coins, ShieldCheck } from "lucide-react";
 import { api } from "../../api";
 import { InjuryBodyMap } from "./InjuryBodyMap";
+import { t } from "@/lib/i18n";
 
 /**
  * Hospital tab — dedicated screen for everything iron-paid medical.
@@ -106,31 +107,29 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
         setBusyHealth(null);
     }
 
+
     return (
         <div className="hospital-tab">
             <header className="page-header">
-                <div className="page-eyebrow">Medical Centre</div>
-                <h1 className="page-title">Hospital</h1>
-                <p className="page-sub">
-                    Cash-paid medical services. Doctor visits clear blocking injuries instantly.
-                    Health packages restore HP without waiting.
-                </p>
+                <div className="page-eyebrow">{t("hospital.eyebrow")}</div>
+                <h1 className="page-title">{t("hospital.title")}</h1>
+                <p className="page-sub">{t("hospital.subtitle")}</p>
             </header>
 
             <div className="body">
                 {/* ── SECTION A — ACTIVE INJURIES ── */}
                 <section data-tut="hospital-injuries">
                     <div className="slbl-row">
-                        <div className="slbl">Active Injuries</div>
+                        <div className="slbl">{t("hospital.injuries.sectionLabel")}</div>
                         {hasInjuries && quote && quote.count > 1 && (
                             <button
                                 type="button"
                                 className="treat-btn full-recovery-btn"
                                 disabled={busyFull}
-                                title={`Heal all ${quote.count} injuries — 15% bulk discount`}
+                                title={t("hospital.injuries.fullRecoveryTitle", { count: quote.count })}
                                 onClick={handleFullRecovery}
                             >
-                                <Package size={14} /> Full Recovery — ${quote.iron} + {quote.energy}E
+                                <Package size={14} /> {t("hospital.injuries.fullRecoveryBtn", { iron: quote.iron, energy: quote.energy })}
                             </button>
                         )}
                     </div>
@@ -139,8 +138,8 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
                         <div className="bm-healthy">
                             <span className="bm-healthy-icon"><ShieldCheck size={22} /></span>
                             <div className="bm-healthy-text">
-                                <strong>No active injuries.</strong>
-                                <span>Cleared to train, spar, and fight at full capacity.</span>
+                                <strong>{t("hospital.injuries.healthyIcon")}</strong>
+                                <span>{t("hospital.injuries.healthyText")}</span>
                             </div>
                         </div>
                     )}
@@ -160,17 +159,17 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
 
                 {/* ── SECTION C — HEALTH RESTORATION ── */}
                 <section>
-                    <div className="slbl">Health Restoration</div>
+                    <div className="slbl">{t("hospital.healthRestore.sectionLabel")}</div>
                     <div className="hp-card" data-tut="hospital-health">
                         <div className="hp-header">
-                            <span className="hp-lbl">Current HP</span>
+                            <span className="hp-lbl">{t("hospital.healthRestore.currentHp")}</span>
                             <div className="hp-nums">
                                 <span className="hp-big">{currentHealth}</span>
-                                <span className="hp-of">/ 100</span>
+                                <span className="hp-of">{t("hospital.healthRestore.hpOf")}</span>
                             </div>
                             {!healthFull && (
                                 <span className="hp-regen">
-                                    +1 HP every 5 min passively · full in ~{Math.max(0, (100 - currentHealth) * 5)}m
+                                    {t("hospital.healthRestore.passiveRegen", { minutes: Math.max(0, (100 - currentHealth) * 5) })}
                                 </span>
                             )}
                         </div>
@@ -182,7 +181,7 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
                         </div>
 
                         {healthFull ? (
-                            <div className="hp-empty">Health is already full.</div>
+                            <div className="hp-empty">{t("hospital.healthRestore.alreadyFull")}</div>
                         ) : (
                             <div className="hp-pkgs" data-tut="hospital-restore">
                                 {(() => {
@@ -207,10 +206,10 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
                                         const isPartial = actualHeal < pkg.hp;
                                         const disabled = busy || cantAfford || dominated;
                                         const titleText = dominated
-                                            ? "A cheaper package delivers the same HP — pick that one instead."
+                                            ? t("hospital.healthRestore.dominatedTitle")
                                             : cantAfford
-                                                ? `Need $${proRatedIron}`
-                                                : `Pay $${proRatedIron} for ${actualHeal} HP`;
+                                                ? t("hospital.healthRestore.cantAffordTitle", { iron: proRatedIron })
+                                                : t("hospital.healthRestore.payTitle", { iron: proRatedIron, hp: actualHeal });
                                         return (
                                             <div
                                                 key={pkg.key}
@@ -219,10 +218,10 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
                                                 <div className="hp-pkg-left">
                                                     <div className="hp-pkg-name">
                                                         {pkg.label}
-                                                        {pkg.key === "recovery_bay" && <span className="best-tag">Best</span>}
+                                                        {pkg.key === "recovery_bay" && <span className="best-tag">{t("hospital.healthRestore.bestTag")}</span>}
                                                     </div>
                                                     <div className="hp-pkg-hp">+{actualHeal} HP</div>
-                                                    <div className="hp-pkg-hplbl">{isPartial ? "partial restore" : "fills to 100"}</div>
+                                                    <div className="hp-pkg-hplbl">{isPartial ? t("hospital.healthRestore.partialRestore") : t("hospital.healthRestore.fillsTo100")}</div>
                                                     <div className="hp-pkg-desc">{pkg.hint}</div>
                                                 </div>
                                                 <div className="hp-pkg-right">
@@ -252,20 +251,17 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
 const ServicesSection = memo(function ServicesSection() {
     return (
         <section>
-            <div className="slbl">Services</div>
+            <div className="slbl">{t("hospital.services.sectionLabel")}</div>
             <div className="services-grid">
                 <div className="svc">
                     <div className="svc-stripe svc-stripe--red" />
                     <div className="svc-body">
                         <div className="svc-top">
                             <span className="svc-icon svc-icon--red"><Stethoscope size={16} /></span>
-                            <span className="svc-name">Treatment</span>
+                            <span className="svc-name">{t("hospital.services.treatment.name")}</span>
                         </div>
-                        <p className="svc-desc">
-                            Every injury heals on its own over time. In a hurry? Pay to clear one
-                            instantly with <strong>Treat Now</strong> — the cost depends on the injury.
-                        </p>
-                        <div className="svc-price"><Coins size={12} /> From $200</div>
+                        <p className="svc-desc">{t("hospital.services.treatment.desc")}</p>
+                        <div className="svc-price"><Coins size={12} /> {t("hospital.services.treatment.price")}</div>
                     </div>
                 </div>
 
@@ -274,13 +270,10 @@ const ServicesSection = memo(function ServicesSection() {
                     <div className="svc-body">
                         <div className="svc-top">
                             <span className="svc-icon svc-icon--blue"><HeartPulse size={16} /></span>
-                            <span className="svc-name">Health Restoration</span>
+                            <span className="svc-name">{t("hospital.services.healthRestoration.name")}</span>
                         </div>
-                        <p className="svc-desc">
-                            HP regenerates passively at +1 every 5 minutes. Skip the wait with Quick Patch,
-                            Recovery Bay, or Full Restoration.
-                        </p>
-                        <div className="svc-price"><Coins size={12} /> From $200</div>
+                        <p className="svc-desc">{t("hospital.services.healthRestoration.desc")}</p>
+                        <div className="svc-price"><Coins size={12} /> {t("hospital.services.healthRestoration.price")}</div>
                     </div>
                 </div>
 
@@ -289,13 +282,10 @@ const ServicesSection = memo(function ServicesSection() {
                     <div className="svc-body">
                         <div className="svc-top">
                             <span className="svc-icon svc-icon--gold"><Package size={16} /></span>
-                            <span className="svc-name">Full Recovery</span>
+                            <span className="svc-name">{t("hospital.services.fullRecovery.name")}</span>
                         </div>
-                        <p className="svc-desc">
-                            Heal every active injury in one transaction. Available with two or more active
-                            injuries.
-                        </p>
-                        <div className="svc-discount">Bulk Discount — 15%</div>
+                        <p className="svc-desc">{t("hospital.services.fullRecovery.desc")}</p>
+                        <div className="svc-discount">{t("hospital.services.fullRecovery.discount")}</div>
                     </div>
                 </div>
             </div>

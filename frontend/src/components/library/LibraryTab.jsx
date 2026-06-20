@@ -3,6 +3,7 @@ import { Search, X } from "lucide-react";
 import { LIBRARY_ARTICLES, LIBRARY_CATEGORIES, articleSearchText, slugFor } from "./libraryContent";
 import { ArticleCard } from "./ArticleCard";
 import { ArticleView } from "./ArticleView";
+import { t } from "@/lib/i18n";
 
 /**
  * Library — in-game knowledge base.
@@ -93,12 +94,12 @@ export function LibraryTab() {
     return (
         <div className="library-tab" ref={rootRef}>
             <header className="lib-header">
-                <div className="lib-eyebrow">Knowledge Base</div>
+                <div className="lib-eyebrow">{t("library.eyebrow")}</div>
                 <div className="lib-title-row">
-                    <h2 className="lib-title">Library</h2>
-                    <span className="lib-count">{LIBRARY_ARTICLES.length} articles</span>
+                    <h2 className="lib-title">{t("library.title")}</h2>
+                    <span className="lib-count">{t("library.articleCount", { count: LIBRARY_ARTICLES.length })}</span>
                 </div>
-                <p className="lib-sub">Every system in the game, explained.</p>
+                <p className="lib-sub">{t("library.subtitle")}</p>
             </header>
 
             <div className="lib-controls">
@@ -107,7 +108,7 @@ export function LibraryTab() {
                     <input
                         type="search"
                         className="search-input"
-                        placeholder="Search articles…"
+                        placeholder={t("library.searchPlaceholder")}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         autoComplete="off"
@@ -117,14 +118,14 @@ export function LibraryTab() {
                             type="button"
                             className="search-clear"
                             onClick={() => setQuery("")}
-                            aria-label="Clear search"
+                            aria-label={t("library.searchClearLabel")}
                         >
                             <X size={14} aria-hidden="true" />
                         </button>
                     )}
                 </div>
 
-                <div className="filters" role="tablist" aria-label="Library categories">
+                <div className="filters" role="tablist" aria-label={t("library.categoriesLabel")}>
                     {tabs.map((c) => {
                         const isAll = c === "All";
                         const slug = isAll ? "all" : slugFor(c);
@@ -148,8 +149,8 @@ export function LibraryTab() {
             {filtered.length === 0 ? (
                 <div className="library-empty">
                     {query
-                        ? <>Nothing found for &quot;{query}&quot;. Try a different word or browse by category.</>
-                        : "No articles in this category."}
+                        ? t("library.emptySearch", { query })
+                        : t("library.emptyCategory")}
                 </div>
             ) : (
                 <div className="article-grid">

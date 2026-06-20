@@ -1,4 +1,5 @@
 import { DIVISIONS, REWARDS } from "../pvpConst";
+import { t } from "../../../lib/i18n";
 
 /**
  * Season Rewards tab — static display only.
@@ -18,10 +19,10 @@ export function SeasonRewardsTab({ season, yourRecord }) {
   return (
     <div className="pvp-rewards-wrap">
       <div className="pvp-section-lbl">
-        {season?.name ? `${season.name} End Rewards` : "Season End Rewards"}
+        {season?.name ? t("pvp.rewards.sectionLabelNamed", { name: season.name }) : t("pvp.rewards.sectionLabel")}
         {season?.endDate && (
           <span style={{ color: "#555", marginLeft: 8, fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 11 }}>
-            · {Math.max(0, Math.ceil((new Date(season.endDate) - Date.now()) / (7 * 86400000)))} weeks remaining
+            · {t("pvp.rewards.weeksRemaining", { n: Math.max(0, Math.ceil((new Date(season.endDate) - Date.now()) / (7 * 86400000))) })}
           </span>
         )}
       </div>
@@ -57,24 +58,26 @@ export function SeasonRewardsTab({ season, yourRecord }) {
               </div>
               <div className="pvp-rw-prizes">
                 <span className="pvp-rw-prize pvp-rw-prize-cash">
-                  {reward.iron.toLocaleString()} cash
+                  {t("pvp.rewards.cash", { amount: reward.iron.toLocaleString() })}
                 </span>
                 <span className="pvp-rw-prize pvp-rw-prize-fame">
-                  +{reward.fame.toLocaleString()} fame
+                  {t("pvp.rewards.fame", { amount: reward.fame.toLocaleString() })}
                 </span>
                 {reward.drinks > 0 && (
                   <span className="pvp-rw-prize pvp-rw-prize-drink">
-                    {reward.drinks} drink{reward.drinks !== 1 ? "s" : ""}
+                    {reward.drinks !== 1
+                      ? t("pvp.rewards.drinks", { n: reward.drinks })
+                      : t("pvp.rewards.drink", { n: reward.drinks })}
                   </span>
                 )}
               </div>
               <div className="pvp-rw-extras">
                 {reward.badge && (
                   <span className="pvp-rw-extra-pill pvp-rw-extra-badge">
-                    {div.label} Badge
+                    {t("pvp.rewards.divBadge", { division: div.label })}
                   </span>
                 )}
-                {isCurrent && <span className="pvp-you-here">You are here</span>}
+                {isCurrent && <span className="pvp-you-here">{t("pvp.rewards.youAreHere")}</span>}
               </div>
             </div>
           </div>
@@ -87,27 +90,27 @@ export function SeasonRewardsTab({ season, yourRecord }) {
         <div className="pvp-rw-body">
           <div className="pvp-rw-div">
             <div style={{ fontSize: 16, marginBottom: 2 }}>🏆</div>
-            <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 10, textTransform: "uppercase", color: "#D4A820" }}>Belt Holder</div>
-            <div style={{ fontSize: 9, color: "#555" }}>#1 at season end</div>
+            <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 10, textTransform: "uppercase", color: "#D4A820" }}>{t("pvp.rewards.beltHolderLabel")}</div>
+            <div style={{ fontSize: 9, color: "#555" }}>{t("pvp.rewards.beltHolderSub")}</div>
           </div>
           <div className="pvp-rw-prizes">
-            <span className="pvp-rw-prize pvp-rw-prize-cash">15,000 cash</span>
-            <span className="pvp-rw-prize pvp-rw-prize-fame">+15,000 fame</span>
-            <span className="pvp-rw-prize pvp-rw-prize-drink">7 drinks</span>
+            <span className="pvp-rw-prize pvp-rw-prize-cash">{t("pvp.rewards.beltCash")}</span>
+            <span className="pvp-rw-prize pvp-rw-prize-fame">{t("pvp.rewards.beltFame")}</span>
+            <span className="pvp-rw-prize pvp-rw-prize-drink">{t("pvp.rewards.beltDrinks")}</span>
           </div>
           <div className="pvp-rw-extras">
             <span className="pvp-rw-extra-pill" style={{ background: "rgba(212,168,32,0.1)", color: "#D4A820", border: "1px solid rgba(212,168,32,0.2)" }}>
-              Season Belt Badge
+              {t("pvp.rewards.beltBadge")}
             </span>
             <span className="pvp-rw-extra-pill" style={{ background: "rgba(212,168,32,0.1)", color: "#D4A820", border: "1px solid rgba(212,168,32,0.2)" }}>
-              Hall of Fame
+              {t("pvp.rewards.beltHof")}
             </span>
           </div>
         </div>
       </div>
 
       <div className="pvp-rewards-note">
-        Rewards require at least 1 fight. Finish the season in your current division to claim.
+        {t("pvp.rewards.rewardNote")}
       </div>
     </div>
   );

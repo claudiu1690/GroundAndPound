@@ -1,5 +1,6 @@
 import { memo, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { t } from "@/lib/i18n";
 
 /**
  * The Octagon Gazette — pure broadsheet renderer.
@@ -70,25 +71,25 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
       className="gz2-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label="The Octagon Gazette"
+      aria-label={t("gazette.ariaLabel")}
       onClick={() => onClose?.()}
     >
       <div className="gz2-paper" onClick={(e) => e.stopPropagation()}>
 
         {/* CLOSE */}
-        <button type="button" className="gz2-close" aria-label="Close" onClick={() => onClose?.()}>✕</button>
+        <button type="button" className="gz2-close" aria-label={t("gazette.closeAriaLabel")} onClick={() => onClose?.()}>✕</button>
 
         {/* MASTHEAD */}
         <div className="gz2-masthead">
           <div className="gz2-mh-row1">
             <div className="gz2-mh-meta">
               <div>{isEmpty ? "Vol. — · No. —" : `Vol. ${volLabel} · No. ${gazette?.issueNumber ?? 1}`}</div>
-              <div>Established 2026</div>
+              <div>{t("gazette.masthead.established")}</div>
             </div>
             <div className="gz2-mh-center">
-              <div className="gz2-mh-est">◆ — The Fight Game's Paper of Record — ◆</div>
+              <div className="gz2-mh-est">{t("gazette.masthead.est")}</div>
               <div className="gz2-mh-title">The Octagon Gazette</div>
-              <span className="gz2-mh-tagline">Every Career. Every Fight. Every Consequence.</span>
+              <span className="gz2-mh-tagline">{t("gazette.masthead.tagline")}</span>
             </div>
             <div className="gz2-mh-meta gz2-mh-meta-right">
               <div>{formatDate(gazette?.updatedAt)}</div>
@@ -112,9 +113,9 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
 
           // Build stat boxes — only include those with non-null values
           const statBoxes = [
-            { val: band.record,    lbl: "Record" },
-            { val: band.campGrade, lbl: "Camp Grade" },
-            { val: band.ranking,   lbl: "Ranking" },
+            { val: band.record,    lbl: t("gazette.statLabels.record") },
+            { val: band.campGrade, lbl: t("gazette.statLabels.campGrade") },
+            { val: band.ranking,   lbl: t("gazette.statLabels.ranking") },
           ].filter((s) => s.val != null && s.val !== "");
 
           return (
@@ -164,7 +165,7 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
           {/* ── EMPTY STATE ── */}
           {isEmpty ? (
             <div className="gz2-empty">
-              Nothing to report yet. Fight your first match and check back.
+              {t("gazette.emptyState")}
             </div>
           ) : (
             <>
@@ -176,7 +177,7 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
                 return (
                   <>
                     <div className="gz2-sec-rule">
-                      <span className="gz2-sec-rule-lbl">Last Fight Result</span>
+                      <span className="gz2-sec-rule-lbl">{t("gazette.sections.lastFightResult")}</span>
                       <div className="gz2-sec-rule-line" />
                     </div>
 
@@ -191,7 +192,7 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
                         {lead?.headline && <div className="gz2-lead-hl">{lead.headline}</div>}
                         {lead?.deck && <div className="gz2-lead-deck">{lead.deck}</div>}
                         <div className="gz2-lead-byline">
-                          Staff Reporter · {gazette?.fighterMeta ? gazette.fighterMeta.split("·")[0]?.trim() : ""} Bureau
+                          {t("gazette.bylineRole")} · {gazette?.fighterMeta ? gazette.fighterMeta.split("·")[0]?.trim() : ""} {t("gazette.bylineSuffix")}
                         </div>
 
                         {/* Body paragraphs with drop cap on first */}
@@ -215,7 +216,7 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
                             className="gz2-inline-link"
                             onClick={(e) => handleNav(e, lead.linkTarget)}
                           >
-                            Full report →
+                            {t("gazette.links.fullReport")}
                           </button>
                         )}
                       </div>
@@ -242,7 +243,7 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
                                 className="gz2-go-pill"
                                 onClick={(e) => handleNav(e, item.linkTarget)}
                               >
-                                {item.goPillLabel ?? "Go"} →
+                                {item.goPillLabel ?? t("gazette.links.go")} →
                               </button>
                             ) : item.linkTarget ? (
                               <button
@@ -250,7 +251,7 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
                                 className="gz2-inline-link"
                                 onClick={(e) => handleNav(e, item.linkTarget)}
                               >
-                                View →
+                                {t("gazette.links.view")}
                               </button>
                             ) : null}
                           </div>
@@ -273,7 +274,7 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
                 return (
                   <>
                     <div className="gz2-sec-rule">
-                      <span className="gz2-sec-rule-lbl">Also in today's paper</span>
+                      <span className="gz2-sec-rule-lbl">{t("gazette.sections.alsoInTodaysPaper")}</span>
                       <div className="gz2-sec-rule-line" />
                     </div>
                     <div
@@ -303,7 +304,7 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
                                 className="gz2-inline-link"
                                 onClick={(e) => handleNav(e, cell.story.linkTarget)}
                               >
-                                Read more →
+                                {t("gazette.links.readMore")}
                               </button>
                             )}
                           </div>
@@ -317,7 +318,7 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
               {/* ── IN BRIEF ── */}
               {Array.isArray(gazette.inBrief) && gazette.inBrief.length > 0 && (
                 <div className="gz2-in-brief">
-                  <div className="gz2-ib-head">In Brief</div>
+                  <div className="gz2-ib-head">{t("gazette.sections.inBrief")}</div>
                   <div className="gz2-ib-grid">
                     {gazette.inBrief.map((item, i) => (
                       <div key={i} className="gz2-ib-item">
@@ -354,12 +355,12 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
 
         {/* FOOTER */}
         <div className="gz2-footer">
-          <div className="gz2-gf-l">The fight game's paper of record.</div>
+          <div className="gz2-gf-l">{t("gazette.footer.tagline")}</div>
           <div className="gz2-gf-orn">◆ ◆ ◆</div>
           <div className="gz2-gf-r">
-            <span className="gz2-gf-upd">Updated after every career event</span>
+            <span className="gz2-gf-upd">{t("gazette.footer.updatedNote")}</span>
             <button type="button" className="gz2-gf-close" onClick={() => onClose?.()}>
-              Close
+              {t("gazette.footer.close")}
             </button>
           </div>
         </div>

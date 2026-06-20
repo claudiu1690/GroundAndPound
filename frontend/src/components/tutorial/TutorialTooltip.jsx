@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import { t } from "../../lib/i18n";
 
 /**
  * A single tutorial tooltip card — a white card floating above the scrim,
@@ -82,7 +83,7 @@ export function TutorialTooltip({
                 )}
                 {onSkip && (
                     <button type="button" className="tut-tooltip-skip" onClick={onSkip}>
-                        Skip tutorial
+                        {t("tutorial.tooltip.skipTutorial")}
                     </button>
                 )}
                 <button type="button" className="tut-tooltip-btn" onClick={onButton}>

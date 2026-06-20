@@ -1,5 +1,6 @@
 import { X, RotateCcw } from "lucide-react";
 import { divisionColor, divisionLabel, OPEN_LABEL, seasonWeightClassLabel } from "./pvpConst";
+import { t } from "../../lib/i18n";
 
 /**
  * Screen 5 — Season End Modal.
@@ -52,13 +53,13 @@ export function SeasonEndModal({ lastSeasonRecord, nextSeason, onClose, onViewLe
         <div className="pvp-modal-stripe" />
         <div className="pvp-modal-header">
           <div>
-            <div className="pvp-modal-eye">Season Over</div>
+            <div className="pvp-modal-eye">{t("pvp.seasonEnd.eyebrow")}</div>
             <div className="pvp-modal-title">
               Season {seasonNumber}{seasonName ? ` — ${seasonName}` : ""}
             </div>
-            <div className="pvp-modal-season">Final results · {endedSeasonWcLabel} Division</div>
+            <div className="pvp-modal-season">{t("pvp.seasonEnd.finalResults", { weightClass: endedSeasonWcLabel })}</div>
           </div>
-          <button className="pvp-modal-close" onClick={onClose} aria-label="Close">
+          <button className="pvp-modal-close" onClick={onClose} aria-label={t("pvp.seasonEnd.closeAriaLabel")}>
             <X size={14} strokeWidth={2} />
           </button>
         </div>
@@ -77,42 +78,44 @@ export function SeasonEndModal({ lastSeasonRecord, nextSeason, onClose, onViewLe
               {rank != null && (
                 <>
                   <div className="pvp-finish-rank">#{rank}</div>
-                  <div className="pvp-finish-rank-lbl">Final rank</div>
+                  <div className="pvp-finish-rank-lbl">{t("pvp.seasonEnd.finalRankLabel")}</div>
                 </>
               )}
             </div>
             <div className="pvp-finish-info">
               {(wins != null && losses != null) && (
                 <div className="pvp-finish-record">
-                  Season record: <strong>{wins}W · {losses}L</strong>
-                  {wins + losses > 0 ? ` · ${Math.round((wins / (wins + losses)) * 100)}% win rate` : ""}
+                  {t("pvp.seasonEnd.seasonRecord")} <strong>{wins}W · {losses}L</strong>
+                  {wins + losses > 0 ? ` · ${t("pvp.seasonEnd.winRate", { pct: Math.round((wins / (wins + losses)) * 100) })}` : ""}
                 </div>
               )}
               <div className="pvp-finish-rewards">
                 {iron > 0 && (
                   <div className="pvp-reward-line pvp-reward-line-cash">
-                    {iron.toLocaleString()} cash earned
+                    {t("pvp.seasonEnd.cashEarned", { amount: iron.toLocaleString() })}
                   </div>
                 )}
                 {fame > 0 && (
                   <div className="pvp-reward-line pvp-reward-line-fame">
-                    +{fame.toLocaleString()} fame earned
+                    {t("pvp.seasonEnd.fameEarned", { amount: fame.toLocaleString() })}
                   </div>
                 )}
                 {drinks > 0 && (
                   <div className="pvp-reward-line pvp-reward-line-drinks">
-                    {drinks} Energy Drink{drinks !== 1 ? "s" : ""} earned
+                    {drinks !== 1
+                      ? t("pvp.seasonEnd.drinksEarnedPlural", { n: drinks })
+                      : t("pvp.seasonEnd.drinksEarned", { n: drinks })}
                   </div>
                 )}
                 {badge && (
                   <div className="pvp-reward-line">
-                    Season {seasonNumber} {divisionLabel(division)} Badge unlocked
+                    {t("pvp.seasonEnd.badgeUnlocked", { seasonNumber, division: divisionLabel(division) })}
                   </div>
                 )}
                 {/* First Season Bonus — shown only when flag is set */}
                 {firstSeasonBonusPaid && (
                   <div className="pvp-first-season-bonus-row">
-                    <span className="pvp-fsb-label">First Season Bonus</span>
+                    <span className="pvp-fsb-label">{t("pvp.seasonEnd.firstSeasonBonusLabel")}</span>
                     <span className="pvp-fsb-value">
                       +{(firstSeasonBonus?.iron ?? 500).toLocaleString()} cash &middot; +{(firstSeasonBonus?.fame ?? 100).toLocaleString()} fame
                     </span>
@@ -128,10 +131,10 @@ export function SeasonEndModal({ lastSeasonRecord, nextSeason, onClose, onViewLe
               <span style={{ fontSize: 18 }}>🏆</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 13, textTransform: "uppercase", color: "#D4A820", marginBottom: 2 }}>
-                  Season Belt Holder
+                  {t("pvp.seasonEnd.beltHolderTitle")}
                 </div>
                 <div style={{ fontSize: 12, color: "#AAAAAA" }}>
-                  You held the belt at season end · Hall of Fame entry earned
+                  {t("pvp.seasonEnd.beltHolderSub")}
                 </div>
               </div>
             </div>
@@ -140,9 +143,9 @@ export function SeasonEndModal({ lastSeasonRecord, nextSeason, onClose, onViewLe
           {/* Placement for next season */}
           <div className="pvp-placement-card">
             <div className="pvp-placement-header">
-              <div className="pvp-placement-title">Season {nextSeasonNumber} Placement</div>
+              <div className="pvp-placement-title">{t("pvp.seasonEnd.nextSeasonPlacementTitle", { n: nextSeasonNumber })}</div>
               {nextSeason?.name && (
-                <div className="pvp-placement-season">{nextSeason.name} · starts soon</div>
+                <div className="pvp-placement-season">{nextSeason.name} · {t("pvp.seasonEnd.nextSeasonStartsSoon")}</div>
               )}
             </div>
             <div className="pvp-placement-row">
@@ -167,13 +170,13 @@ export function SeasonEndModal({ lastSeasonRecord, nextSeason, onClose, onViewLe
                     {newDp.toLocaleString()} DP
                   </div>
                   <div style={{ fontSize: 10, color: "#555", letterSpacing: 1, textTransform: "uppercase" }}>
-                    Starting DP
+                    {t("pvp.seasonEnd.nextSeasonStartingDpLabel")}
                   </div>
                 </div>
               )}
             </div>
             <div className="pvp-placement-note">
-              You drop divisions but carry forward experience and badges.
+              {t("pvp.seasonEnd.placementNote")}
             </div>
           </div>
 
@@ -185,11 +188,11 @@ export function SeasonEndModal({ lastSeasonRecord, nextSeason, onClose, onViewLe
                   Season {nextSeason.seasonNumber}{nextSeason.name ? ` — ${nextSeason.name}` : ""}
                 </div>
               </div>
-              <div className="pvp-ns-season-name">10 weeks · {seasonWeightClassLabel(nextSeason) ?? weightClass} · Belt unclaimed</div>
+              <div className="pvp-ns-season-name">{t("pvp.seasonEnd.nextSeasonLabel", { weightClass: seasonWeightClassLabel(nextSeason) ?? weightClass })}</div>
               {nextSeason.twistName && (
                 <div className="pvp-ns-twist">
                   <div className="pvp-ns-twist-text">
-                    <strong>Season twist: {nextSeason.twistName}.</strong>{" "}
+                    <strong>{t("pvp.seasonEnd.nextSeasonTwistPrefix")} {nextSeason.twistName}.</strong>{" "}
                     {nextSeason.twistEffect ?? ""}
                   </div>
                 </div>
@@ -201,19 +204,18 @@ export function SeasonEndModal({ lastSeasonRecord, nextSeason, onClose, onViewLe
           <div className="pvp-reset-note">
             <RotateCcw size={14} strokeWidth={2} className="pvp-rn-icon" />
             <div className="pvp-rn-text">
-              <strong>Season {nextSeasonNumber} soft reset:</strong> You finished{" "}
-              {divisionLabel(division)}, so you start Season {nextSeasonNumber} in{" "}
-              <strong>{divisionLabel(resetDiv)}</strong>. Your badges and career stats carry over.
+              <strong>{t("pvp.seasonEnd.resetNote", { n: nextSeasonNumber })}</strong>{" "}
+              {t("pvp.seasonEnd.resetNoteBody", { fromDivision: divisionLabel(division), n: nextSeasonNumber, toDivision: divisionLabel(resetDiv) })}
             </div>
           </div>
         </div>
 
         <div className="pvp-modal-footer">
           <button className="pvp-mf-btn pvp-mf-btn-sec" onClick={onViewLeaderboard}>
-            View Leaderboard
+            {t("pvp.seasonEnd.viewLeaderboardBtn")}
           </button>
           <button className="pvp-mf-btn pvp-mf-btn-prim" onClick={onStartNewSeason}>
-            Start Season {nextSeasonNumber}
+            {t("pvp.seasonEnd.startSeasonBtn", { n: nextSeasonNumber })}
           </button>
         </div>
       </div>

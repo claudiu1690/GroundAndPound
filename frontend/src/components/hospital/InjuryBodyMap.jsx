@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useRef } from "react";
 import { formatRecoveryRemaining } from "../../utils/injuryDisplay";
+import { t } from "@/lib/i18n";
 
 /**
  * Holographic body-map for the Hospital's Active Injuries card.
@@ -194,8 +195,8 @@ export const InjuryBodyMap = memo(function InjuryBodyMap({
             <div className="bm-vignette" />
             <svg className="bm-svg" ref={svgRef} />
             <div className="bm-head">
-                <span className="bm-head-title">Diagnostic Scan</span>
-                <span className="bm-head-count">{injuries.length} active</span>
+                <span className="bm-head-title">{t("hospital.injuries.diagnosticScan")}</span>
+                <span className="bm-head-count">{t("hospital.injuries.activeCount", { count: injuries.length })}</span>
             </div>
             <div className="bm-body">
                 <div className="inj-col inj-col-left">
@@ -255,25 +256,25 @@ const BodyInjuryCard = memo(function BodyInjuryCard({
                 <span className="inj-card-sev">{inj.severity}</span>
             </div>
             <div className="inj-card-blocks">
-                {inj.cannotFight && <span className="inj-card-block">Blocks Fighting</span>}
-                {inj.cannotSpar && <span className="inj-card-block">Blocks Sparring</span>}
-                {inj.cannotBagWork && <span className="inj-card-block">Blocks Bag/Pad</span>}
+                {inj.cannotFight && <span className="inj-card-block">{t("hospital.injuries.blocksLabel.fighting")}</span>}
+                {inj.cannotSpar && <span className="inj-card-block">{t("hospital.injuries.blocksLabel.sparring")}</span>}
+                {inj.cannotBagWork && <span className="inj-card-block">{t("hospital.injuries.blocksLabel.bagWork")}</span>}
             </div>
             <p className="inj-card-desc">{inj.effect}</p>
             {ticking && (
                 <p className="inj-card-timer">
-                    Auto-heals in <strong>{formatRecoveryRemaining(inj)}</strong>
+                    {t("hospital.injuries.autoHealsIn")} <strong>{formatRecoveryRemaining(inj)}</strong>
                 </p>
             )}
             <div className="inj-card-actions">
                 {needsDoctor && (
                     <button type="button" className="treat-btn" disabled={busy} onClick={onDoctorVisit}>
-                        Treat Now <span className="treat-cost-inline">${inj.docVisitIron} + {inj.docVisitEnergy}E</span>
+                        {t("hospital.injuries.treatNow")} <span className="treat-cost-inline">${inj.docVisitIron} + {inj.docVisitEnergy}E</span>
                     </button>
                 )}
                 {isAutoHealing && inj.recoverySkipIron > 0 && (
                     <button type="button" className="treat-btn" disabled={busy} onClick={onSkipRecovery}>
-                        Treat Now <span className="treat-cost-inline">${inj.recoverySkipIron}</span>
+                        {t("hospital.injuries.treatNow")} <span className="treat-cost-inline">${inj.recoverySkipIron}</span>
                     </button>
                 )}
             </div>

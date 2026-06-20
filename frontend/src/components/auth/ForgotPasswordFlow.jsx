@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api";
+import { t } from "../../lib/i18n";
 
 /**
  * Two-mode unauthenticated password-reset flow.
@@ -36,7 +37,7 @@ function RequestReset({ onCancel }) {
 
     const submit = async (e) => {
         e.preventDefault();
-        if (!valid) { setError("Enter a valid email address."); return; }
+        if (!valid) { setError(t("auth.validation.invalidEmail")); return; }
         setBusy(true); setError("");
         try {
             await api.forgotPassword(email.trim().toLowerCase());
@@ -45,49 +46,47 @@ function RequestReset({ onCancel }) {
             // The server intentionally always returns 200 to avoid confirming
             // account existence; a 4xx/5xx means a rate-limit or transport
             // error, not a "wrong email." Show the message verbatim.
-            setError(err.message || "Could not request a reset.");
+            setError(err.message || t("common.error"));
         }
         setBusy(false);
     };
 
     return (
         <form className="auth-form" onSubmit={submit} autoComplete="on">
-            <div className="auth-step-label">Reset your password</div>
+            <div className="auth-step-label">{t("auth.forgot.stepLabel")}</div>
 
             {sent ? (
                 <>
                     <div className="auth-success">
-                        If an account exists for that email, we&apos;ve sent a reset link.
-                        Check your inbox and follow the link to choose a new password.
+                        {t("auth.forgot.successMsg")}
                     </div>
                     <button type="button" className="auth-submit" onClick={onCancel}>
-                        Back to login
+                        {t("auth.forgot.backToLoginBtn")}
                     </button>
                 </>
             ) : (
                 <>
                     <p className="auth-desc">
-                        Enter the email associated with your account and we&apos;ll send a
-                        reset link. The link expires in 1 hour.
+                        {t("auth.forgot.emailDesc")}
                     </p>
                     <div className="auth-field">
-                        <label>Email</label>
+                        <label>{t("auth.forgot.emailLabel")}</label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="fighter@example.com"
+                            placeholder={t("auth.forgot.emailPlaceholder")}
                             required
                             autoComplete="email"
                         />
                     </div>
                     {error && <div className="auth-error">{error}</div>}
                     <button className="auth-submit" type="submit" disabled={!valid || busy}>
-                        {busy ? "Sending…" : "Send reset link"}
+                        {busy ? t("auth.forgot.sending") : t("auth.forgot.sendBtn")}
                     </button>
                     <p className="auth-switch">
                         <button type="button" className="auth-link" onClick={onCancel}>
-                            ← Back to login
+                            {t("auth.forgot.backToLogin")}
                         </button>
                     </p>
                 </>
@@ -117,7 +116,7 @@ function ApplyReset({ token, onResetSuccess, onCancel }) {
                 await api.checkResetToken(token);
                 if (!cancelled) setTokenValid(true);
             } catch (e) {
-                if (!cancelled) setError(e.message || "This reset link is invalid or has expired.");
+                if (!cancelled) setError(e.message || t("auth.forgot.invalidLink"));
             }
             if (!cancelled) setChecking(false);
         })();
@@ -136,7 +135,7 @@ function ApplyReset({ token, onResetSuccess, onCancel }) {
             await api.resetPassword(token, next);
             setDone(true);
         } catch (err) {
-            setError(err.message || "Could not reset password.");
+            setError(err.message || t("common.error"));
         }
         setBusy(false);
     };
@@ -144,8 +143,8 @@ function ApplyReset({ token, onResetSuccess, onCancel }) {
     if (checking) {
         return (
             <form className="auth-form">
-                <div className="auth-step-label">Reset your password</div>
-                <p className="auth-desc">Checking your reset link…</p>
+                <div className="auth-step-label">{t("auth.forgot.stepLabel")}</div>
+                <p className="auth-desc">{t("auth.forgot.checkingLink")}</p>
             </form>
         );
     }
@@ -153,10 +152,10 @@ function ApplyReset({ token, onResetSuccess, onCancel }) {
     if (!tokenValid) {
         return (
             <form className="auth-form">
-                <div className="auth-step-label">Reset your password</div>
-                <div className="auth-error">{error || "This reset link is invalid or has expired."}</div>
+                <div className="auth-step-label">{t("auth.forgot.stepLabel")}</div>
+                <div className="auth-error">{error || t("auth.forgot.invalidLink")}</div>
                 <button type="button" className="auth-submit" onClick={onCancel}>
-                    Request a new link
+                    {t("auth.forgot.requestNewLink")}
                 </button>
             </form>
         );
@@ -165,26 +164,26 @@ function ApplyReset({ token, onResetSuccess, onCancel }) {
     if (done) {
         return (
             <form className="auth-form">
-                <div className="auth-step-label">Password updated</div>
+                <div className="auth-step-label">{t("auth.forgot.updatedLabel")}</div>
                 <div className="auth-success">
-                    Your password has been updated. You can now log in with your new password.
+                    {t("auth.forgot.updatedMsg")}
                 </div>
                 <button type="button" className="auth-submit" onClick={onResetSuccess}>
-                    Go to login
+                    {t("auth.forgot.goToLogin")}
                 </button>
             </form>
         );
     }
 
     let inlineError = null;
-    if (next.length > 0 && !nextValid) inlineError = "Min 8 characters and at least one number.";
-    else if (confirm.length > 0 && !matches) inlineError = "Passwords don't match.";
+    if (next.length > 0 && !nextValid) inlineError = t("auth.forgot.validationMinChars");
+    else if (confirm.length > 0 && !matches) inlineError = t("auth.forgot.validationMismatch");
 
     return (
         <form className="auth-form" onSubmit={submit} autoComplete="off">
-            <div className="auth-step-label">Choose a new password</div>
+            <div className="auth-step-label">{t("auth.forgot.choosePasswordLabel")}</div>
             <div className="auth-field">
-                <label>New password <span className="auth-hint">(min 8 chars, one number)</span></label>
+                <label>{t("auth.forgot.newPasswordLabel")} <span className="auth-hint">{t("auth.forgot.newPasswordHint")}</span></label>
                 <input
                     type={show ? "text" : "password"}
                     value={next}
@@ -195,7 +194,7 @@ function ApplyReset({ token, onResetSuccess, onCancel }) {
                 />
             </div>
             <div className="auth-field">
-                <label>Confirm new password</label>
+                <label>{t("auth.forgot.confirmPasswordLabel")}</label>
                 <input
                     type={show ? "text" : "password"}
                     value={confirm}
@@ -207,15 +206,15 @@ function ApplyReset({ token, onResetSuccess, onCancel }) {
             </div>
             <label className="auth-show-pw">
                 <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />
-                Show passwords
+                {t("auth.forgot.showPasswords")}
             </label>
             {(inlineError || error) && <div className="auth-error">{inlineError || error}</div>}
             <button className="auth-submit" type="submit" disabled={!canSubmit}>
-                {busy ? "Updating…" : "Update password"}
+                {busy ? t("auth.forgot.updating") : t("auth.forgot.updateBtn")}
             </button>
             <p className="auth-switch">
                 <button type="button" className="auth-link" onClick={onCancel}>
-                    ← Back to login
+                    {t("auth.forgot.backToLogin")}
                 </button>
             </p>
         </form>

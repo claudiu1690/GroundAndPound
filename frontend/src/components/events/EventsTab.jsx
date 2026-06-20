@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Star, Check, X, Coins } from "lucide-react";
 import { api } from "../../api";
+import { t } from "@/lib/i18n";
 import { CardResultOverlay } from "./CardResultOverlay";
 import { PredictionPickerModal } from "./PredictionPickerModal";
 
@@ -55,7 +56,7 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDel
             setData(res);
             setOverlayDismissed(false);
         } catch (e) {
-            onMessage?.(e.message || "Could not load fight card");
+            onMessage?.(e.message || t("events.loadError"));
             setData(null);
         }
         setLoading(false);
@@ -75,7 +76,7 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDel
                 pickedMethod: betType === "EXACT" && pickedSide !== "DRAW" ? pickedMethod : null,
                 stake,
             });
-            onMessage?.(`Bet locked — $${stake} staked.`);
+            onMessage?.(t("events.picker.betLocked", { stake }));
             setPickerFight(null);
 
             // Local state patch — no full reload. The whole app would re-render if we
@@ -95,7 +96,7 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDel
             }
             if (onLocalIronDelta) onLocalIronDelta(-stake);
         } catch (e) {
-            onMessage?.(e.message || "Could not place bet");
+            onMessage?.(e.message || t("events.picker.betError"));
         }
         setSubmitting(false);
     }, [data, fighterId, onMessage, onLocalIronDelta]);
@@ -111,7 +112,7 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDel
     if (loading || !data) {
         return (
             <section className="events-tab">
-                <div className="events-loading">Loading fight card…</div>
+                <div className="events-loading">{t("events.loading")}</div>
             </section>
         );
     }
@@ -120,7 +121,7 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDel
     if (!current) {
         return (
             <section className="events-tab">
-                <div className="events-empty">No fight card scheduled right now. Check back soon.</div>
+                <div className="events-empty">{t("events.noCard")}</div>
             </section>
         );
     }
@@ -220,7 +221,7 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDel
                 {/* ── Main Card ── */}
                 {mainFights.length > 0 && (
                     <section className="card-section">
-                        <div className="slbl">Main Card</div>
+                        <div className="slbl">{t("events.card.mainCard")}</div>
                         <div className="fight-rows">
                             {mainFights.map((f) => (
                                 <CompactFightCard
@@ -238,7 +239,7 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDel
                 {/* ── Prelims ── */}
                 {prelimFights.length > 0 && (
                     <section className="card-section">
-                        <div className="slbl">Prelims</div>
+                        <div className="slbl">{t("events.card.prelims")}</div>
                         <div className="fight-rows">
                             {prelimFights.map((f) => (
                                 <CompactFightCard
@@ -255,13 +256,13 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDel
 
                 {/* ── Card potential ── */}
                 <section className="card-section">
-                    <div className="slbl">Card Bets</div>
+                    <div className="slbl">{t("events.potential.sectionLabel")}</div>
                     <PotentialBar potential={potential} />
                 </section>
 
                 {/* ── Your bet history ── */}
                 <section className="card-section">
-                    <div className="slbl">Your Bets</div>
+                    <div className="slbl">{t("events.yourBets.sectionLabel")}</div>
                     <div className="your-bets">
                         <div className="your-bets-summary">
                             {summaryStats.total > 0
@@ -272,14 +273,14 @@ export function EventsTab({ fighter, onMessage, onRefreshFighter, onLocalIronDel
                                         <span className={summaryStats.totalNet >= 0 ? "yb-pos" : "yb-neg"}>
                                             {summaryStats.totalNet >= 0 ? "+$" : "-$"}{Math.abs(summaryStats.totalNet).toLocaleString()}
                                         </span>
-                                        {" net across "}
-                                        ${summaryStats.totalStake.toLocaleString()} staked
+                                        {" "}{t("events.yourBets.summaryNet")}{" "}
+                                        ${summaryStats.totalStake.toLocaleString()} {t("events.yourBets.summaryStaked")}
                                     </>
                                 )
-                                : "No resolved bets yet."}
+                                : t("events.yourBets.noResolved")}
                         </div>
                         {history.length === 0 ? (
-                            <div className="your-bets-empty">No resolved bets yet. Your past bets will appear here after they resolve.</div>
+                            <div className="your-bets-empty">{t("events.yourBets.emptyHistory")}</div>
                         ) : (
                             <div className="yb-list">
                                 {history.slice(0, 15).map((p) => (
@@ -316,9 +317,9 @@ function HeadlinerBand({ fight, cardNumber, resolvesAt, prediction, onPick }) {
         >
             <div className="headliner-inner">
                 <div className="headliner-top">
-                    <div className="event-eyebrow">Fight Night</div>
-                    <div className="event-name">#{cardNumber} — {fight.weightClass}</div>
-                    <div className="event-sub">Resolves {relativeTime(resolvesAt)}</div>
+                    <div className="event-eyebrow">{t("events.headliner.eyebrow")}</div>
+                    <div className="event-name">{t("events.headliner.eventName", { cardNumber, weightClass: fight.weightClass })}</div>
+                    <div className="event-sub">{t("events.headliner.resolvesAt", { time: relativeTime(resolvesAt) })}</div>
                 </div>
 
                 <div className="headliner-fighters">
@@ -352,7 +353,7 @@ function HeadlinerBand({ fight, cardNumber, resolvesAt, prediction, onPick }) {
 
                 {locked ? (
                     <div className="headliner-locked-pick">
-                        <span className="hlp-tag">Locked</span>
+                        <span className="hlp-tag">{t("events.headliner.locked")}</span>
                         <span className="hlp-name">{pickedName}</span>
                         {prediction.pickedSide !== "DRAW" && prediction.pickedMethod && (
                             <span className="hlp-method">{prediction.pickedMethod}</span>
@@ -363,7 +364,7 @@ function HeadlinerBand({ fight, cardNumber, resolvesAt, prediction, onPick }) {
                     </div>
                 ) : (
                     <div className="headliner-bet-btn">
-                        <Star size={15} /> Click to Bet on the Headliner
+                        <Star size={15} /> {t("events.headliner.clickToBet")}
                     </div>
                 )}
             </div>
@@ -401,7 +402,7 @@ function CompactFightCard({ fight, tone, prediction, onPick }) {
 
             <div className="fr-vs">
                 <span className="fr-vs-text">VS</span>
-                {!locked && <span className="fr-bet-link">Bet →</span>}
+                {!locked && <span className="fr-bet-link">{t("events.card.bet")}</span>}
             </div>
 
             <div className="fr-fighter right">
@@ -442,7 +443,7 @@ function PotentialBar({ potential }) {
     return (
         <section className="bets-status" data-tut="event-potential">
             <div className="bets-status-top">
-                <span className="bets-status-label">Bets Locked</span>
+                <span className="bets-status-label">{t("events.potential.betsLocked")}</span>
                 <span className="bets-progress">{lockedCount} / {total}</span>
             </div>
 
@@ -453,28 +454,30 @@ function PotentialBar({ potential }) {
             {hasLocked ? (
                 <div className="bets-rows">
                     <div className="bets-row">
-                        <span>Total staked</span>
+                        <span>{t("events.potential.totalStaked")}</span>
                         <span className="bets-val"><Coins size={13} />{staked.toLocaleString()}</span>
                     </div>
                     <div className="bets-row">
-                        <span>If all bets land</span>
+                        <span>{t("events.potential.ifAllLand")}</span>
                         <span className="bets-val pos">
                             <Coins size={13} />{potentialPayout.toLocaleString()}
-                            <em>+{potentialProfit.toLocaleString()} profit</em>
+                            <em>+{potentialProfit.toLocaleString()} {t("events.potential.profitSuffix")}</em>
                         </span>
                     </div>
                     <div className="bets-row">
-                        <span>If all bets lose</span>
+                        <span>{t("events.potential.ifAllLose")}</span>
                         <span className="bets-val neg">−{staked.toLocaleString()}</span>
                     </div>
                 </div>
             ) : (
-                <div className="bets-hint">No bets placed yet — click a fight to place one.</div>
+                <div className="bets-hint">{t("events.potential.noBetsHint")}</div>
             )}
 
             {unpickedCount > 0 && (
                 <div className="bets-hint bets-open">
-                    {unpickedCount} fight{unpickedCount === 1 ? "" : "s"} still open.
+                    {unpickedCount === 1
+                        ? t("events.potential.fightsOpen", { count: unpickedCount })
+                        : t("events.potential.fightsOpenPlural", { count: unpickedCount })}
                 </div>
             )}
         </section>
@@ -491,10 +494,10 @@ function JustResolvedSummary({ card, predictions }) {
     return (
         <div className="events-just-banner">
             <span>
-                Last Card — Fight Night #{card.cardNumber} — {won}/{predictions.length} bets won
+                {t("events.justResolved.banner", { cardNumber: card.cardNumber, won, total: predictions.length })}
             </span>
             <span className={totalNet >= 0 ? "ej-positive" : "ej-negative"}>
-                {totalNet >= 0 ? `+$${totalNet.toLocaleString()}` : `-$${Math.abs(totalNet).toLocaleString()}`} net
+                {totalNet >= 0 ? `+$${totalNet.toLocaleString()}` : `-$${Math.abs(totalNet).toLocaleString()}`} {t("events.justResolved.net")}
             </span>
         </div>
     );
@@ -516,7 +519,7 @@ function HistoryRow({ prediction }) {
                 {SLOT_LABEL[prediction.fightSlot] || prediction.fightSlot}
             </span>
             <span className="yb-bet-type">
-                {prediction.betType === "EXACT" ? "Exact" : "Winner"}
+                {prediction.betType === "EXACT" ? t("events.history.exact") : t("events.history.winner")}
             </span>
             <span className="yb-pick">
                 <strong>{pickedWinner}</strong>
@@ -528,7 +531,7 @@ function HistoryRow({ prediction }) {
                 {prediction.matchup?.aName} vs {prediction.matchup?.bName}
             </span>
             <span className="yb-actual">
-                Actual: <strong>{actualWinner}</strong>{r.actualMethod && r.actualSide !== "DRAW" ? ` · ${r.actualMethod}` : ""}
+                {t("events.history.actual", { winner: actualWinner })}{r.actualMethod && r.actualSide !== "DRAW" ? ` · ${r.actualMethod}` : ""}
             </span>
             <span className={`yb-delta yb-delta-${tone}`}>
                 {r.won ? <Check size={14} /> : <X size={14} />}

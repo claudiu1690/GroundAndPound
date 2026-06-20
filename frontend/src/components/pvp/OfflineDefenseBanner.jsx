@@ -1,4 +1,5 @@
 import { Swords } from "lucide-react";
+import { t } from "../../lib/i18n";
 
 /**
  * Banner shown in PvpHub when the player was challenged while offline
@@ -40,7 +41,7 @@ export function OfflineDefenseBanner({ summary, onViewReport }) {
       const last = all.pop();
       phrase = all.join(", ") + ", and " + last;
     }
-    injurySentence = `You sustained ${phrase}.`;
+    injurySentence = t("pvp.offlineBanner.injurySustained", { phrase });
   }
 
   return (
@@ -57,7 +58,7 @@ export function OfflineDefenseBanner({ summary, onViewReport }) {
           className="pvp-odb-link"
           onClick={onViewReport}
         >
-          View defense report &rarr;
+          {t("pvp.offlineBanner.viewReportBtn")}
         </button>
       </div>
     </div>

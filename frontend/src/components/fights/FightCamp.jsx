@@ -1,5 +1,6 @@
 import { memo, useCallback, useState } from "react";
 import { Zap } from "lucide-react";
+import { t } from "@/lib/i18n";
 import {
     CAMP_SESSIONS,
     CAMP_SESSION_KEYS,
@@ -48,8 +49,8 @@ function CampSessionCard({ sessionKey, energyAvailable, isInjuredPending, alread
     const blocked = notEnoughEnergy || isInjuredPending || loading;
 
     let tooltip = "";
-    if (isInjuredPending) tooltip = "Resolve camp injury first";
-    else if (notEnoughEnergy) tooltip = `Need ${session.energy}E (have ${energyAvailable ?? 0}E)`;
+    if (isInjuredPending) tooltip = t("fights.camp.sessionResolveInjury");
+    else if (notEnoughEnergy) tooltip = t("fights.camp.sessionNeedEnergy", { need: session.energy, have: energyAvailable ?? 0 });
 
     return (
         <div className={`camp-session-card${blocked ? " camp-session-card--disabled" : ""}`}>
@@ -61,8 +62,8 @@ function CampSessionCard({ sessionKey, energyAvailable, isInjuredPending, alread
                 </div>
                 <div className={`camp-session-effect camp-effect-${color}`}>{session.effectLabel}</div>
                 <div className="camp-session-targets">{session.recommendedAgainst}</div>
-                {session.injuryRisk && <div className="camp-session-risk">{"⚠"} Injury risk</div>}
-                {alreadyLogged && <span className="camp-session-added">{"✓"} Added</span>}
+                {session.injuryRisk && <div className="camp-session-risk">{t("fights.camp.sessionInjuryRisk")}</div>}
+                {alreadyLogged && <span className="camp-session-added">{t("fights.camp.sessionAdded")}</span>}
                 <button
                     type="button"
                     className="camp-add-btn"
@@ -70,7 +71,7 @@ function CampSessionCard({ sessionKey, energyAvailable, isInjuredPending, alread
                     title={tooltip || undefined}
                     onClick={() => !blocked && onAddSession(sessionKey)}
                 >
-                    {loading ? "Adding…" : "Add to Camp"}
+                    {loading ? t("fights.camp.sessionAdding") : t("fights.camp.sessionAddBtn")}
                 </button>
             </div>
         </div>
@@ -132,11 +133,11 @@ export const FightCamp = memo(function FightCamp({
         <div className={`fight-camp${isTitleFight ? " fight-camp--title" : ""}`} data-tut="fight-camp">
             <div className="camp-header">
                 <button type="button" className="camp-tab camp-tab--active">
-                    {isTitleFight ? "Title Fight Camp" : "Fight Camp"}
+                    {isTitleFight ? t("fights.camp.titleFightTab") : t("fights.camp.regularTab")}
                 </button>
                 {campReport && (
                     <button type="button" className="camp-tab" onClick={onViewReport}>
-                        View Report
+                        {t("fights.camp.viewReport")}
                     </button>
                 )}
             </div>
@@ -144,11 +145,11 @@ export const FightCamp = memo(function FightCamp({
             <div className="camp-status">
                 <CampSlotDots maxSlots={maxSlots} slotsUsed={slotsUsed} canRemove={canRemove} onRemove={onRemoveSession} />
                 <span className="camp-slot-text">
-                    <strong>{slotsUsed}/{maxSlots}</strong> slots used
-                    {slotsRemaining > 0 && !isFinalised ? <> &middot; <strong>{slotsRemaining}</strong> remaining</> : null}
+                    <strong>{t("fights.camp.slotsUsed", { used: slotsUsed, max: maxSlots })}</strong>
+                    {slotsRemaining > 0 && !isFinalised ? <> &middot; <strong>{slotsRemaining}</strong> {t("fights.camp.slotsRemaining", { n: slotsRemaining })}</> : null}
                 </span>
                 <span className="camp-energy-pill">
-                    <span className="lbl">Energy</span>
+                    <span className="lbl">{t("fights.camp.energy")}</span>
                     <Zap size={13} /> {energyAvailable}
                 </span>
             </div>
@@ -166,10 +167,7 @@ export const FightCamp = memo(function FightCamp({
 
                 {injuryChoice === "PUSH_THROUGH" && injuryPenalty && (
                     <div className="camp-injury-pushed">
-                        {"⚠"} Pushing through injury — fight penalties active:{" "}
-                        {Object.entries(injuryPenalty)
-                            .map(([k, v]) => `${k.toUpperCase()} ${Math.round(v * 100)}%`)
-                            .join(", ")}
+                        {t("fights.camp.injuryPushed", { penalties: Object.entries(injuryPenalty).map(([k, v]) => `${k.toUpperCase()} ${Math.round(v * 100)}%`).join(", ") })}
                     </div>
                 )}
 
@@ -190,11 +188,10 @@ export const FightCamp = memo(function FightCamp({
                 )}
 
                 <div className="camp-logged-section">
-                    <div className="camp-logged-label">Sessions Logged</div>
+                    <div className="camp-logged-label">{t("fights.camp.campLoggedLabel")}</div>
                     {!isFinalised && (
                         <div className="camp-logged-hint">
-                            Read the Fighter Report to plan — how well each session counters your
-                            opponent is revealed when you finalise camp.
+                            {t("fights.camp.campLoggedHint")}
                         </div>
                     )}
                     <div className="camp-logged-slots">
@@ -203,7 +200,7 @@ export const FightCamp = memo(function FightCamp({
                             if (!s) {
                                 return (
                                     <div key={i} className="camp-logged-slot camp-empty-slot">
-                                        Empty — add a session above
+                                        {t("fights.camp.emptySlot")}
                                     </div>
                                 );
                             }
@@ -223,13 +220,13 @@ export const FightCamp = memo(function FightCamp({
                                             {MATCH_STATUS_LABELS[s.matchStatus] ?? s.matchStatus}
                                         </span>
                                     ) : (
-                                        <span className="camp-matched-badge camp-matched-badge--pending">Logged</span>
+                                        <span className="camp-matched-badge camp-matched-badge--pending">{t("fights.camp.logged")}</span>
                                     )}
                                     {canRemove && (
                                         <button
                                             type="button"
                                             className="camp-logged-remove"
-                                            title="Remove this session"
+                                            title={t("fights.camp.removeSession")}
                                             onClick={() => onRemoveSession(i)}
                                         >
                                             &times;
@@ -256,7 +253,7 @@ export const FightCamp = memo(function FightCamp({
                         {showEmptyConfirm ? (
                             <div className="camp-empty-confirm">
                                 <span className="camp-empty-confirm-msg">
-                                    Are you sure you want to finalise camp without any sessions?
+                                    {t("fights.camp.emptyConfirmMsg")}
                                 </span>
                                 <div className="camp-empty-confirm-btns">
                                     <button
@@ -264,13 +261,13 @@ export const FightCamp = memo(function FightCamp({
                                         onClick={() => { setShowEmptyConfirm(false); onFinalise(); }}
                                         disabled={finalising}
                                     >
-                                        {finalising ? "Finalising…" : "Yes, finalise empty"}
+                                        {finalising ? t("fights.camp.finalising") : t("fights.camp.emptyFinalise")}
                                     </button>
                                     <button
                                         className="btn btn-ghost btn-sm"
                                         onClick={() => setShowEmptyConfirm(false)}
                                     >
-                                        Cancel
+                                        {t("common.cancel")}
                                     </button>
                                 </div>
                             </div>
@@ -282,11 +279,11 @@ export const FightCamp = memo(function FightCamp({
                                     onClick={handleFinaliseClick}
                                     disabled={!canFinalise || finalising}
                                 >
-                                    {finalising ? "Finalising…" : "Finalise Camp"}
+                                    {finalising ? t("fights.camp.finalising") : t("fights.camp.finalise")}
                                 </button>
                                 {slotsRemaining > 0 && (
                                     <span className="camp-finalise-hint">
-                                        You can still add {slotsRemaining} more session{slotsRemaining !== 1 ? "s" : ""} before finalising
+                                        {t("fights.camp.addMoreHint", { n: slotsRemaining, plural: slotsRemaining !== 1 ? "s" : "" })}
                                     </span>
                                 )}
                             </>
@@ -296,14 +293,14 @@ export const FightCamp = memo(function FightCamp({
 
                 {isFinalised && (
                     <div className="camp-finalised-notice">
-                        <span>Camp finalised — review your summary and step into the cage.</span>
+                        <span>{t("fights.camp.finalisedNotice")}</span>
                         {onProceedToFight && (
                             <button
                                 type="button"
                                 className="camp-finalise-btn"
                                 onClick={onProceedToFight}
                             >
-                                Proceed to Fight →
+                                {t("fights.camp.proceedToFight")}
                             </button>
                         )}
                     </div>

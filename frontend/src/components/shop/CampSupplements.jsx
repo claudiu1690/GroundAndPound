@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useState } from "react";
 import { FlaskConical, ShoppingBag, X } from "lucide-react";
 import { api } from "../../api";
+import { t } from "@/lib/i18n";
 import { buffStatTags } from "./shopConstants";
 
 /**
@@ -38,7 +39,7 @@ export const CampSupplements = memo(function CampSupplements({
     setError("");
     api.getShopCatalog(fighterId)
       .then((data) => { if (live) setCatalog(data); })
-      .catch((e) => { if (live) setError(e.message || "Failed to load supplements."); })
+      .catch((e) => { if (live) setError(e.message || t("shop.camp.loadError")); })
       .finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
   }, [fighterId]);
@@ -56,7 +57,7 @@ export const CampSupplements = memo(function CampSupplements({
       if (onMessage && res.message) onMessage(res.message);
     } catch (e) {
       setLocalSel(prev); // revert on failure
-      if (onMessage) onMessage(e.message || "Could not set supplement.");
+      if (onMessage) onMessage(e.message || t("shop.camp.cannotSet"));
     } finally {
       setSaving(false);
     }
@@ -71,14 +72,14 @@ export const CampSupplements = memo(function CampSupplements({
       <div className="camp-supps-head">
         <div className="camp-supps-head-text">
           <div className="camp-supps-title">
-            <FlaskConical size={13} /> Supplements
+            <FlaskConical size={13} /> {t("shop.camp.supplementsTitle")}
           </div>
-          <div className="camp-supps-sub">Optional pre-fight buffs — consumed after the fight resolves</div>
+          <div className="camp-supps-sub">{t("shop.camp.supplementsSub")}</div>
         </div>
-        <span className="camp-supps-badge">Max 1 per fight</span>
+        <span className="camp-supps-badge">{t("shop.camp.maxBadge")}</span>
       </div>
 
-      {loading && <div className="camp-supps-state">Loading supplements…</div>}
+      {loading && <div className="camp-supps-state">{t("shop.camp.loading")}</div>}
       {!loading && error && (
         <div className="camp-supps-state camp-supps-state--error">{error}</div>
       )}
@@ -94,8 +95,8 @@ export const CampSupplements = memo(function CampSupplements({
               disabled={saving || disabled}
             >
               <span className="camp-supp-none-icon"><X size={16} /></span>
-              <span className="camp-supp-name">No supplement</span>
-              <span className="camp-supp-none-desc">Enter the fight without a buff</span>
+              <span className="camp-supp-name">{t("shop.camp.noSupplement")}</span>
+              <span className="camp-supp-none-desc">{t("shop.camp.noSupplementDesc")}</span>
             </button>
 
             {buffs.map((bf) => {
@@ -109,19 +110,19 @@ export const CampSupplements = memo(function CampSupplements({
                   className={`camp-supp-card${selected ? " camp-supp-card--selected" : ""}${owned ? "" : " camp-supp-card--locked"}`}
                   onClick={() => owned ? select(bf.id) : onNavigateShop && onNavigateShop()}
                   disabled={saving || disabled}
-                  title={owned ? undefined : "Not owned"}
+                  title={owned ? undefined : t("shop.camp.notOwned")}
                 >
                   <div className="camp-supp-top">
                     <span className="camp-supp-name">{bf.name}</span>
                     {owned ? (
-                      <span className="camp-supp-owned">Owned ×{ownedMap[bf.id]}</span>
+                      <span className="camp-supp-owned">{t("shop.camp.ownedCount", { count: ownedMap[bf.id] })}</span>
                     ) : (
-                      <span className="camp-supp-buy"><ShoppingBag size={10} /> Buy →</span>
+                      <span className="camp-supp-buy"><ShoppingBag size={10} /> {t("shop.camp.buyLink")}</span>
                     )}
                   </div>
                   <div className="camp-supp-tags">
-                    {tags.map((t, i) => (
-                      <span key={i} className={`shop-bt shop-bt-${t.slug}`}>{t.text}</span>
+                    {tags.map((tg, i) => (
+                      <span key={i} className={`shop-bt shop-bt-${tg.slug}`}>{tg.text}</span>
                     ))}
                   </div>
                 </button>
@@ -130,9 +131,9 @@ export const CampSupplements = memo(function CampSupplements({
           </div>
 
           <div className="camp-supps-summary">
-            <span className="camp-supps-summary-lbl">Selected</span>
+            <span className="camp-supps-summary-lbl">{t("shop.camp.selectedLabel")}</span>
             <span className="camp-supps-summary-val">
-              {selectedBuff ? selectedBuff.name : "No supplement"}
+              {selectedBuff ? selectedBuff.name : t("shop.camp.noSupplementSelected")}
             </span>
           </div>
         </>

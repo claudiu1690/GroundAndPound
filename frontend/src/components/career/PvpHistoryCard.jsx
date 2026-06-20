@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { t } from "@/lib/i18n";
 import { api } from "../../api";
 import { divisionColor, divisionLabel } from "../pvp/pvpConst";
 
@@ -35,14 +36,14 @@ export function PvpHistoryCard({ fighterId }) {
 
   return (
     <div className="p-card">
-      <div className="p-card-lbl">PVP History</div>
+      <div className="p-card-lbl">{t("career.pvpHistory.cardLabel")}</div>
 
       {loading && !data ? (
-        <div className="career-empty">Loading PVP history…</div>
+        <div className="career-empty">{t("career.pvpHistory.loading")}</div>
       ) : error ? (
         <div className="career-empty" style={{ color: "#C8102E" }}>{error}</div>
       ) : history.length === 0 ? (
-        <div className="career-empty">No PVP history yet</div>
+        <div className="career-empty">{t("career.pvpHistory.noHistory")}</div>
       ) : (
         <div className="pvp-hist-card-list">
           {history.map((row) => {
@@ -95,8 +96,8 @@ export function PvpHistoryCard({ fighterId }) {
           {record && (
             <div className="pvp-hist-card-active">
               <span style={{ fontSize: 11, color: "#555" }}>
-                This season: {record.wins ?? 0}W · {record.losses ?? 0}L
-                {record.winStreak >= 3 ? ` · 🔥 ${record.winStreak}-streak` : ""}
+                {t("career.pvpHistory.thisSeason", { wins: record.wins ?? 0, losses: record.losses ?? 0 })}
+                {record.winStreak >= 3 ? ` · 🔥 ${t("career.pvpHistory.winStreak", { n: record.winStreak })}` : ""}
               </span>
             </div>
           )}

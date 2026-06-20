@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { BadgeIcon } from "./BadgeIcon";
 
 /**
@@ -12,12 +13,12 @@ export function BadgeGrid({ badges }) {
   return (
     <div className="badges-full">
       <div className="badges-header">
-        <div className="badges-title">Badges</div>
-        <div className="badges-count">{earnedCount} earned · {lockedCount} locked</div>
+        <div className="badges-title">{t("career.badges.title")}</div>
+        <div className="badges-count">{t("career.badges.earnedLocked", { earned: earnedCount, locked: lockedCount })}</div>
       </div>
       <div className="badges-body">
         {categories.length === 0 ? (
-          <div className="career-empty">No badges available yet.</div>
+          <div className="career-empty">{t("career.badges.noCategories")}</div>
         ) : (
           categories.map((cat) => (
             <div key={cat.key}>

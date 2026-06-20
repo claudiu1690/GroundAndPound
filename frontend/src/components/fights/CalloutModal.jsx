@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../../api";
+import { t } from "@/lib/i18n";
 
 /**
  * Callout roster modal (Phase 4).
@@ -55,7 +56,7 @@ export function CalloutModal({ open, fighter, onClose, onCalledOut, onCancelled,
 
     const cancel = useCallback(async () => {
         if (!fighterId) return;
-        if (!window.confirm("Cancel the active callout? Your fame will be refunded.")) return;
+        if (!window.confirm(t("fights.callout.confirmCancel"))) return;
         setSubmitting(true);
         try {
             const res = await api.cancelCallout(fighterId);
@@ -87,26 +88,26 @@ export function CalloutModal({ open, fighter, onClose, onCalledOut, onCancelled,
             <div className="callout-modal-shell">
                 <header className="callout-modal-header">
                     <div>
-                        <h2>Call Out a Fighter</h2>
+                        <h2>{t("fights.callout.title")}</h2>
                         <div className="callout-header-sub">
-                            Your fame: <strong>{fame.toLocaleString()}</strong>
-                            {currentRank != null && <> · Rank <strong>#{currentRank}</strong></>}
+                            {t("fights.callout.yourFame", { fame: fame.toLocaleString() })}
+                            {currentRank != null && <> · {t("fights.callout.yourRank", { rank: currentRank })}</>}
                         </div>
                     </div>
-                    <button type="button" className="callout-modal-close" onClick={onClose} aria-label="Close">✕</button>
+                    <button type="button" className="callout-modal-close" onClick={onClose} aria-label={t("common.close")}>✕</button>
                 </header>
 
                 {!loading && !eligible && (
                     <div className="callout-locked-banner">
-                        🔒 {lockedReason || "Callouts locked"}
+                        {t("fights.callout.lockedBanner", { reason: lockedReason || t("fights.callout.lockedDefault") })}
                     </div>
                 )}
 
                 {active && (
                     <div className="callout-active-bar">
-                        <span>📣 Active callout: <strong>{active.opponentName}</strong> — {active.cost.toLocaleString()} fame spent</span>
+                        <span>{t("fights.callout.activeCallout", { name: active.opponentName, cost: active.cost.toLocaleString() })}</span>
                         <button type="button" className="btn btn-secondary btn-sm" onClick={cancel} disabled={submitting}>
-                            Cancel & refund
+                            {t("fights.callout.cancelRefund")}
                         </button>
                     </div>
                 )}
@@ -118,7 +119,7 @@ export function CalloutModal({ open, fighter, onClose, onCalledOut, onCancelled,
                             className={`callout-tab ${tab === "same" ? "active" : ""}`}
                             onClick={() => { setTab("same"); setSelected(null); }}
                         >
-                            Same tier ({sameTier.length})
+                            {t("fights.callout.tabSameTier", { count: sameTier.length })}
                         </button>
                         <button
                             type="button"
@@ -126,21 +127,21 @@ export function CalloutModal({ open, fighter, onClose, onCalledOut, onCancelled,
                             onClick={() => { setTab("stretch"); setSelected(null); }}
                             disabled={!stretchLabel || stretchTier.length === 0}
                         >
-                            Stretch: {stretchLabel || "—"} ({stretchTier.length})
+                            {t("fights.callout.tabStretch", { label: stretchLabel || t("fights.callout.tabStretchFallback"), count: stretchTier.length })}
                         </button>
                     </nav>
 
-                    {loading && <div className="callout-loading">Loading roster…</div>}
+                    {loading && <div className="callout-loading">{t("fights.callout.loading")}</div>}
 
                     {!loading && roster.length === 0 && (
                         <div className="callout-empty">
                             {!eligible
-                                ? "Climb the rankings to unlock callout targets."
+                                ? t("fights.callout.emptyNotEligible")
                                 : tab === "stretch"
-                                    ? "No stretch-tier opponents available."
+                                    ? t("fights.callout.emptyStretch")
                                     : currentRank === 2
-                                        ? "No same-tier targets — only the champion is ranked above you. Use a title shot."
-                                        : "No opponents available to call out right now."}
+                                        ? t("fights.callout.emptyChampOnly")
+                                        : t("fights.callout.emptyDefault")}
                         </div>
                     )}
 
@@ -162,7 +163,7 @@ export function CalloutModal({ open, fighter, onClose, onCalledOut, onCancelled,
                                                 <span className="callout-rank-pill" title={`Ranked #${o.rank} in ${o.promotionTier}`}>#{o.rank}</span>
                                             )}
                                             <span className="callout-name">{o.name}{o.nickname ? ` "${o.nickname}"` : ""}</span>
-                                            {o.isStretch && <span className="callout-stretch-badge">+1 Tier</span>}
+                                            {o.isStretch && <span className="callout-stretch-badge">{t("fights.callout.isStretchBadge")}</span>}
                                         </div>
                                         <div className="callout-card-meta">
                                             <span>{o.style}</span>
@@ -182,21 +183,21 @@ export function CalloutModal({ open, fighter, onClose, onCalledOut, onCancelled,
                 <footer className="callout-modal-footer">
                     <div className="callout-footer-info">
                         {selected
-                            ? `Selected: ${selected.name} — ${selected.cost.toLocaleString()} fame`
-                            : "Pick a fighter to call out. They'll appear in your next Hard offer with full intel."}
+                            ? t("fights.callout.selectedInfo", { name: selected.name, cost: selected.cost.toLocaleString() })
+                            : t("fights.callout.pickHint")}
                     </div>
                     <div className="callout-footer-actions">
                         <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>
-                            Close
+                            {t("fights.callout.btnClose")}
                         </button>
                         <button
                             type="button"
                             className="btn btn-primary"
                             onClick={submit}
                             disabled={!selected || !canAfford || submitting || !!active}
-                            title={active ? "You already have an active callout" : (!canAfford ? "Not enough fame" : undefined)}
+                            title={active ? t("fights.callout.alreadyActiveTitle") : (!canAfford ? t("fights.callout.notEnoughFame") : undefined)}
                         >
-                            {submitting ? "Calling out…" : selected ? `Spend ${selected.cost.toLocaleString()} fame` : "Select a fighter"}
+                            {submitting ? t("fights.callout.btnCallingOut") : selected ? t("fights.callout.btnSpendFame", { cost: selected.cost.toLocaleString() }) : t("fights.callout.btnSelectFighter")}
                         </button>
                     </div>
                 </footer>

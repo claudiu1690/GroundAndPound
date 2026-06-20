@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Mic, Video, Star, Swords, Archive } from "lucide-react";
 import { api } from "../../api";
+import { t } from "@/lib/i18n";
 import { PodcastTab } from "./tabs/PodcastTab";
 import { DocumentaryTab } from "./tabs/DocumentaryTab";
 import { AppearancesTab } from "./tabs/AppearancesTab";
@@ -8,11 +9,11 @@ import { RivalryTab } from "./tabs/RivalryTab";
 import { ArchiveTab } from "./tabs/ArchiveTab";
 
 const TABS = [
-  { id: "podcast",      label: "Podcast",       Icon: Mic },
-  { id: "documentary",  label: "Documentary",   Icon: Video },
-  { id: "appearances",  label: "Appearances",   Icon: Star },
-  { id: "rivalry",      label: "Rivalry Board", Icon: Swords },
-  { id: "archive",      label: "Archive",       Icon: Archive },
+  { id: "podcast",      labelKey: "media.tabs.podcast",      Icon: Mic },
+  { id: "documentary",  labelKey: "media.tabs.documentary",  Icon: Video },
+  { id: "appearances",  labelKey: "media.tabs.appearances",  Icon: Star },
+  { id: "rivalry",      labelKey: "media.tabs.rivalry",      Icon: Swords },
+  { id: "archive",      labelKey: "media.tabs.archive",      Icon: Archive },
 ];
 
 /**
@@ -35,7 +36,7 @@ export function MediaHub({ fighter, onMessage, onRefreshFighter, onNavigate }) {
       const data = await api.getMediaState(fighterId);
       setHub(data);
     } catch (e) {
-      if (!silent) setError(e.message || "Could not load the Media Hub.");
+      if (!silent) setError(e.message || t("media.hub.error"));
     } finally {
       if (!silent) setLoading(false);
     }
@@ -50,32 +51,32 @@ export function MediaHub({ fighter, onMessage, onRefreshFighter, onNavigate }) {
   return (
     <section className="media-hub">
       <header className="media-page-hdr">
-        <div className="media-page-eye">Media</div>
-        <h1 className="media-page-title">Media Hub</h1>
-        <div className="media-page-sub">Build your public persona. Create storylines. Control the narrative.</div>
+        <div className="media-page-eye">{t("media.hub.eyebrow")}</div>
+        <h1 className="media-page-title">{t("media.hub.title")}</h1>
+        <div className="media-page-sub">{t("media.hub.subtitle")}</div>
       </header>
 
       <div className="media-tabs">
-        {TABS.map(({ id, label, Icon }) => (
+        {TABS.map(({ id, labelKey, Icon }) => (
           <button
             type="button"
             key={id}
             className={`media-mt${tab === id ? " act" : ""}`}
             onClick={() => setTab(id)}
           >
-            <Icon size={13} /> {label}
+            <Icon size={13} /> {t(labelKey)}
             {id === "podcast" && podcastReady && <span className="media-mt-dot" />}
           </button>
         ))}
       </div>
 
       <div className="media-body">
-        {loading && <div className="media-state">Loading the Media Hub…</div>}
+        {loading && <div className="media-state">{t("media.hub.loading")}</div>}
 
         {!loading && error && (
           <div className="media-state media-state--error">
             {error}
-            <button type="button" className="media-mini-btn" onClick={() => loadHub()}>Retry</button>
+            <button type="button" className="media-mini-btn" onClick={() => loadHub()}>{t("common.retry")}</button>
           </div>
         )}
 

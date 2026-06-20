@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
 import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Trophy, Lock, Megaphone } from "lucide-react";
+import { t } from "@/lib/i18n";
 import { CalloutModal } from "./CalloutModal";
 import { ContenderChecklist } from "./ContenderChecklist";
 import { TITLE_WINS } from "../../constants/gameConstants";
@@ -10,8 +11,8 @@ import { buildCardModel } from "./offerIntel";
 const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard", TITLE: "TitleShot" };
 
 function rankTileProps(rank) {
-  if (rank == null) return { value: "—", label: "UNRANKED", tone: "unranked" };
-  return { value: `#${rank}`, label: "RANK", tone: "rank" };
+  if (rank == null) return { value: "—", label: t("fights.hub.unranked"), tone: "unranked" };
+  return { value: `#${rank}`, label: t("fights.hub.rankLabel"), tone: "rank" };
 }
 
 function StatTile({ value, label, tone }) {
@@ -45,12 +46,12 @@ function StreakTile({ winStreak, loseStreak }) {
   const tone = winStreak > 0 ? "win" : loseStreak > 0 ? "loss" : "neutral";
   const icon = winStreak > 0 ? <TrendingUp size={22} /> : loseStreak > 0 ? <TrendingDown size={22} /> : <Swords size={22} />;
   const value = winStreak > 0 ? `${winStreak}W` : loseStreak > 0 ? `${loseStreak}L` : "—";
-  const sub = winStreak > 0 ? `${winStreak}-fight win streak` : loseStreak > 0 ? `${loseStreak}-fight losing streak` : "No active streak";
+  const sub = winStreak > 0 ? t("fights.hub.streakWin", { n: winStreak }) : loseStreak > 0 ? t("fights.hub.streakLoss", { n: loseStreak }) : t("fights.hub.streakNone");
   return (
     <div className={`readiness-tile readiness-tile-streak readiness-tile-${tone}`}>
       <div className="readiness-tile-icon">{icon}</div>
       <div className="readiness-tile-value">{value}</div>
-      <div className="readiness-tile-label">STREAK</div>
+      <div className="readiness-tile-label">{t("fights.hub.streak")}</div>
       <div className="readiness-tile-sub">{sub}</div>
     </div>
   );
@@ -72,13 +73,13 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
 
   return (
     <div className="fight-hub">
-      <div className="page-title">Fight Offers</div>
+      <div className="page-title">{t("fights.hub.pageTitle")}</div>
       <div className="tier-label fight-hub-tier-strip">{tier}</div>
 
       <div className="fight-hub-stat-grid">
-        <StatTile value={fighter.overallRating ?? 0} label="Overall Rating" tone="ovr" />
-        <StatTile value={rankTile.value} label="Division Rank" tone={rankTile.tone} />
-        <StatTile value={recordText} label="Record" tone="default" />
+        <StatTile value={fighter.overallRating ?? 0} label={t("fights.hub.overallRating")} tone="ovr" />
+        <StatTile value={rankTile.value} label={t("fights.hub.divisionRank")} tone={rankTile.tone} />
+        <StatTile value={recordText} label={t("fights.hub.record")} tone="default" />
       </div>
 
       <div className="fight-hub-readiness">
@@ -86,16 +87,16 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
           icon={<Zap size={20} />}
           value={energy}
           max={100}
-          label="ENERGY"
-          sub={hasEnergy ? `Ready · ${energyCost} energy per fight` : `Need ${energyCost - energy} more`}
+          label={t("fights.hub.energy")}
+          sub={hasEnergy ? t("fights.hub.energyReady", { cost: energyCost }) : t("fights.hub.energyNeed", { need: energyCost - energy })}
           tone={hasEnergy ? "ok" : "warn"}
         />
         <ReadinessTile
           icon={<Heart size={20} />}
           value={health}
           max={100}
-          label="HEALTH"
-          sub={health >= 80 ? "At full strength" : health >= 50 ? "A bit beat up" : health >= 30 ? "Low — rest soon" : "Critical"}
+          label={t("fights.hub.health")}
+          sub={health >= 80 ? t("fights.hub.healthFull") : health >= 50 ? t("fights.hub.healthBeatUp") : health >= 30 ? t("fights.hub.healthLow") : t("fights.hub.healthCritical")}
           tone={health >= 50 ? "ok" : health >= 30 ? "warn" : "danger"}
         />
         <StreakTile winStreak={winStreak} loseStreak={loseStreak} />
@@ -105,36 +106,36 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
 
       {fighter.mentalResetRequired && (
         <div className="fight-hub-alert fight-hub-alert--danger">
-          <AlertTriangle size={12} /> Mental reset required before next fight
+          <AlertTriangle size={12} /> {t("fights.hub.alertMentalReset")}
         </div>
       )}
       {blockingInjury && (
         <div className="fight-hub-alert fight-hub-alert--danger">
-          <AlertTriangle size={12} /> Doctor visit required: {blockingInjury.label}
+          <AlertTriangle size={12} /> {t("fights.hub.alertBlockingInjury", { label: blockingInjury.label })}
         </div>
       )}
       {health < 30 && !blocked && (
         <div className="fight-hub-alert fight-hub-alert--warn">
-          <AlertTriangle size={12} /> Low health — consider resting before your next fight
+          <AlertTriangle size={12} /> {t("fights.hub.alertLowHealth")}
         </div>
       )}
       {fighter.comebackMode && (
         <div className="fight-hub-alert fight-hub-alert--info">
-          Comeback mode active — x1.5 XP on next win
+          {t("fights.hub.alertComeback")}
         </div>
       )}
 
       {(() => {
         const calloutEligible = rank != null && rank <= 14;
         const calloutTooltip = calloutEligible
-          ? "Spend fame to force a specific opponent into your next Hard offer"
+          ? t("fights.hub.calloutTooltipEligible")
           : rank == null
-            ? "Reach the rankings first (3 fights in this tier)"
-            : `Reach top 14 to unlock callouts — currently #${rank}`;
+            ? t("fights.hub.calloutTooltipUnranked")
+            : t("fights.hub.calloutTooltipRank", { rank });
         return (
           <div className="fight-hub-cta">
             <button type="button" className="btn btn-primary fight-hub-btn" onClick={onGetOffers} disabled={blocked} data-tut="request-offers">
-              <Swords size={14} /> Request Offers
+              <Swords size={14} /> {t("fights.hub.requestOffers")}
             </button>
             <button
               type="button"
@@ -143,10 +144,10 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
               disabled={blocked || !calloutEligible}
               title={calloutTooltip}
             >
-              <Megaphone size={14} /> Call Out
+              <Megaphone size={14} /> {t("fights.hub.callOut")}
               {!calloutEligible && <Lock size={10} style={{ marginLeft: 4, opacity: 0.7 }} />}
             </button>
-            <span className="fight-hub-cost">{energyCost} energy per fight</span>
+            <span className="fight-hub-cost">{t("fights.hub.energyCost", { cost: energyCost })}</span>
           </div>
         );
       })()}
@@ -167,9 +168,9 @@ function OffersStandingBanner({ fighter }) {
     <div className="offers-standing-banner">
       <div className="standing-tier-tag">{tier}</div>
       <div className="standing-stat-grid">
-        <StatTile value={fighter.overallRating ?? 0} label="OVR" tone="ovr" />
+        <StatTile value={fighter.overallRating ?? 0} label={t("fights.hub.standingOvr")} tone="ovr" />
         <StatTile value={rankTile.value} label={rankTile.label} tone={rankTile.tone} />
-        <StatTile value={recordText} label="RECORD" tone="default" />
+        <StatTile value={recordText} label={t("fights.hub.standingRecord")} tone="default" />
       </div>
     </div>
   );
@@ -181,10 +182,10 @@ function ActiveCalloutBanner({ activeCallout, onOpenCallout }) {
     <div className="active-callout-banner" role="status">
       <Megaphone size={14} />
       <span>
-        Callout active: <strong>{activeCallout.opponentName}</strong> will appear in your next Hard offer with full intel.
+        {t("fights.offers.activeCalloutBanner", { name: activeCallout.opponentName })}
       </span>
       <button type="button" className="btn btn-secondary btn-sm" onClick={onOpenCallout}>
-        Manage
+        {t("fights.offers.manage")}
       </button>
     </div>
   );
@@ -214,7 +215,7 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
 
   return (
     <section className="panel fight-offers">
-      <h2 className="panel-title">Fight Offers</h2>
+      <h2 className="panel-title">{t("fights.offers.panelTitle")}</h2>
       <div className="panel-body">
         {showChecklist && <ContenderChecklist fighter={fighter} offers={offers} />}
 
@@ -262,7 +263,7 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                 className="refresh-btn"
                 onClick={onGetOffers}
               >
-                Refresh Offers
+                {t("fights.hub.refreshOffers")}
               </button>
             </div>
           </>

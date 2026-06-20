@@ -1,4 +1,5 @@
 import { divisionLabel, divisionColor, seasonWeightClassLabel, OPEN_LABEL } from "./pvpConst";
+import { t } from "../../lib/i18n";
 
 /**
  * Screen 6 — New Season Start modal.
@@ -26,22 +27,22 @@ export function NewSeasonModal({ season, newDivision, newDp, previousDivision, o
       <div className="pvp-modal">
         <div className="pvp-ns-hero">
           <div className="pvp-ns-glow" />
-          <div className="pvp-ns-eyebrow">New Season</div>
+          <div className="pvp-ns-eyebrow">{t("pvp.newSeason.eyebrow")}</div>
           <div className="pvp-ns-title">
             Season {season.seasonNumber}
             {season.name ? ` — ${season.name}` : ""}
           </div>
           <div className="pvp-ns-sub">
-            {weeksLeft} weeks · {seasonWeightClassLabel(season)} · Starting from {divisionLabel(resetDiv)}
+            {t("pvp.newSeason.sub", { weeks: weeksLeft, weightClass: seasonWeightClassLabel(season), division: divisionLabel(resetDiv) })}
           </div>
 
           {/* Belt unclaimed */}
           <div className="pvp-ns-belt-unclaimed">
             <div className="pvp-nbu-icon">🏆</div>
             <div className="pvp-nbu-info">
-              <div className="pvp-nbu-title">Belt Unclaimed — Season {season.seasonNumber}</div>
+              <div className="pvp-nbu-title">{t("pvp.newSeason.beltUnclaimedTitle", { n: season.seasonNumber })}</div>
               <div className="pvp-nbu-sub">
-                The {seasonWeightClassLabel(season)} belt is vacant. First fighter to reach #1 Champion at season end claims it.
+                {t("pvp.newSeason.beltUnclaimedSub", { weightClass: seasonWeightClassLabel(season) })}
               </div>
             </div>
           </div>
@@ -51,7 +52,7 @@ export function NewSeasonModal({ season, newDivision, newDp, previousDivision, o
             <div className="pvp-ns-twist">
               <div>⚔</div>
               <div>
-                <div className="pvp-nt-label">Season Twist</div>
+                <div className="pvp-nt-label">{t("pvp.newSeason.twistLabel")}</div>
                 <div className="pvp-nt-name">{season.twistName}</div>
                 <div className="pvp-nt-desc">{season.twistEffect ?? ""}</div>
               </div>
@@ -60,10 +61,10 @@ export function NewSeasonModal({ season, newDivision, newDp, previousDivision, o
         </div>
 
         <div className="pvp-modal-body">
-          <div className="pvp-section-lbl">Your reset position</div>
+          <div className="pvp-section-lbl">{t("pvp.newSeason.resetSectionLabel")}</div>
           <div className="pvp-ns-reset-grid">
             <div className="pvp-ns-reset-item">
-              <div className="pvp-nsri-label">Division</div>
+              <div className="pvp-nsri-label">{t("pvp.newSeason.resetDivisionLabel")}</div>
               <div className="pvp-nsri-val">
                 <span
                   className="pvp-div-badge"
@@ -73,24 +74,24 @@ export function NewSeasonModal({ season, newDivision, newDp, previousDivision, o
                 </span>
               </div>
               {previousDivision && previousDivision !== resetDiv && (
-                <div className="pvp-nsri-sub">Reset from {divisionLabel(previousDivision)}</div>
+                <div className="pvp-nsri-sub">{t("pvp.newSeason.resetFromSub", { division: divisionLabel(previousDivision) })}</div>
               )}
             </div>
             <div className="pvp-ns-reset-item">
-              <div className="pvp-nsri-label">Starting DP</div>
+              <div className="pvp-nsri-label">{t("pvp.newSeason.resetDpLabel")}</div>
               <div className="pvp-nsri-val">{startingDp.toLocaleString()}</div>
-              <div className="pvp-nsri-sub">Floor of {divisionLabel(resetDiv)}</div>
+              <div className="pvp-nsri-sub">{t("pvp.newSeason.resetDpFloor", { division: divisionLabel(resetDiv) })}</div>
             </div>
             <div className="pvp-ns-reset-item">
-              <div className="pvp-nsri-label">Carries over</div>
+              <div className="pvp-nsri-label">{t("pvp.newSeason.resetCarriesLabel")}</div>
               <div className="pvp-nsri-val" style={{ color: "#4ADE80", fontSize: 11 }}>
-                All badges · career record · Hall of Fame
+                {t("pvp.newSeason.resetCarriesValue")}
               </div>
             </div>
             <div className="pvp-ns-reset-item">
-              <div className="pvp-nsri-label">Resets</div>
+              <div className="pvp-nsri-label">{t("pvp.newSeason.resetResetsLabel")}</div>
               <div className="pvp-nsri-val" style={{ color: "#C8102E", fontSize: 11 }}>
-                DP · season W/L · streak · shield
+                {t("pvp.newSeason.resetResetsValue")}
               </div>
             </div>
           </div>
@@ -98,7 +99,7 @@ export function NewSeasonModal({ season, newDivision, newDp, previousDivision, o
 
         <div className="pvp-modal-footer">
           <button className="pvp-mf-btn pvp-mf-btn-prim" onClick={onEnter} style={{ flex: 1 }}>
-            Enter the Ladder
+            {t("pvp.newSeason.enterLadderBtn")}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { t } from "@/lib/i18n";
 
 /**
  * Stat values + XP bars in a 2-column grid.
@@ -7,7 +8,7 @@ import { memo } from "react";
 export const FighterStatMeters = memo(function FighterStatMeters({ rows }) {
   return (
     <div className="stat-meters" data-tut="profile-stats">
-      <h3 className="stat-meters-title">Stats &amp; XP</h3>
+      <h3 className="stat-meters-title">{t("fighterProfile.statsTitle")}</h3>
       <div className="stat-meters-grid">
         {rows.map(({ name, value, pct, xpLine, tooltip }) => (
           <div

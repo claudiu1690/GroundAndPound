@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useState } from "react";
 import { Lock, Pencil, Mail, Key, Bell, Trash2, LogOut } from "lucide-react";
 import { api, authStorage } from "../../api";
 import { DeleteAccountModal } from "./DeleteAccountModal";
+import { t } from "../../lib/i18n";
 
 /**
  * Account settings page. Six sections, single scrollable layout (no tabs):
@@ -23,7 +24,7 @@ export function AccountTab({ onMessage, onLogout, onFighterRefresh }) {
             const res = await api.getAccountProfile(profile?.accountId || decodeAccountIdFromToken());
             setProfile(res);
         } catch (e) {
-            onMessage?.(e.message || "Could not load account");
+            onMessage?.(e.message || t("account.unavailable"));
         } finally {
             setLoading(false);
         }
@@ -40,22 +41,22 @@ export function AccountTab({ onMessage, onLogout, onFighterRefresh }) {
                 const res = await api.getAccountProfile(id);
                 setProfile(res);
             } catch (e) {
-                onMessage?.(e.message || "Could not load account");
+                onMessage?.(e.message || t("account.unavailable"));
             } finally {
                 setLoading(false);
             }
         })();
     }, [onMessage]);
 
-    if (loading) return <div className="account-loading">Loading account…</div>;
-    if (!profile) return <div className="account-error">Account unavailable.</div>;
+    if (loading) return <div className="account-loading">{t("account.loading")}</div>;
+    if (!profile) return <div className="account-error">{t("account.unavailable")}</div>;
 
     return (
         <div className="account-tab">
             <header className="page-header">
-                <div className="page-eyebrow">Settings</div>
-                <h2 className="page-title">Account</h2>
-                <p className="page-sub">Manage your credentials, email, and account lifecycle.</p>
+                <div className="page-eyebrow">{t("account.settings.eyebrow")}</div>
+                <h2 className="page-title">{t("account.settings.title")}</h2>
+                <p className="page-sub">{t("account.settings.subtitle")}</p>
             </header>
 
             <div className="body">
@@ -125,17 +126,17 @@ function FighterInfo({ profile }) {
     if (!f) return null;
     return (
         <Section
-            title="Fighter Info"
-            subtitle="Fighter name, weight class and backstory are permanent and cannot be changed."
+            title={t("account.fighterInfo.title")}
+            subtitle={t("account.fighterInfo.subtitle")}
             icon={Lock}
             iconTone="lock"
         >
             <div className="info-rows">
-                <InfoRow label="Fighter name"  value={f.fullName}    permanent />
-                <InfoRow label="Nickname"      value={f.nickname || "—"} />
-                <InfoRow label="Weight class"  value={f.weightClass} permanent />
-                <InfoRow label="Style"         value={f.style}       permanent />
-                <InfoRow label="Backstory"     value={f.backstory || "—"} permanent />
+                <InfoRow label={t("account.fighterInfo.fighterNameLabel")}  value={f.fullName}    permanent />
+                <InfoRow label={t("account.fighterInfo.nicknameLabel")}      value={f.nickname || "—"} />
+                <InfoRow label={t("account.fighterInfo.weightClassLabel")}  value={f.weightClass} permanent />
+                <InfoRow label={t("account.fighterInfo.styleLabel")}         value={f.style}       permanent />
+                <InfoRow label={t("account.fighterInfo.backstoryLabel")}     value={f.backstory || "—"} permanent />
             </div>
         </Section>
     );
@@ -147,7 +148,7 @@ function InfoRow({ label, value, permanent }) {
             <span className="info-label">{label}</span>
             <span className="info-value">
                 {value}
-                {permanent && <span className="permanent-badge">Permanent</span>}
+                {permanent && <span className="permanent-badge">{t("account.fighterInfo.permanent")}</span>}
             </span>
         </div>
     );
@@ -171,31 +172,31 @@ function ChangeNickname({ profile, accountId, onSaved, onMessage }) {
             const res = await api.changeNickname(accountId, trimmed);
             onSaved?.(res.nickname);
         } catch (e) {
-            onMessage?.(e.message || "Could not update nickname");
+            onMessage?.(e.message || t("account.unavailable"));
         }
         setBusy(false);
     };
 
     let hint = null;
-    if (tooShort && trimmed.length > 0) hint = "Minimum 2 characters.";
-    else if (tooLong) hint = "Maximum 20 characters.";
-    else if (invalidChars) hint = "Letters, numbers, spaces, hyphens, apostrophes only.";
+    if (tooShort && trimmed.length > 0) hint = t("account.changeNickname.hintTooShort");
+    else if (tooLong) hint = t("account.changeNickname.hintTooLong");
+    else if (invalidChars) hint = t("account.changeNickname.hintInvalidChars");
 
     return (
-        <Section title="Change Nickname" icon={Pencil} iconTone="edit">
+        <Section title={t("account.changeNickname.title")} icon={Pencil} iconTone="edit">
             <div className="form-body">
                 <div className="form-row">
                     <div className="form-group">
-                        <label className="form-label">Nickname</label>
+                        <label className="form-label">{t("account.changeNickname.label")}</label>
                         <input
                             type="text"
                             className="form-input"
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
                             maxLength={20}
-                            placeholder="The Surgeon"
+                            placeholder={t("account.changeNickname.placeholder")}
                         />
-                        <span className="form-hint">{trimmed.length} / 20 characters</span>
+                        <span className="form-hint">{t("account.changeNickname.charCount", { n: trimmed.length })}</span>
                     </div>
                     <button
                         type="button"
@@ -203,7 +204,7 @@ function ChangeNickname({ profile, accountId, onSaved, onMessage }) {
                         onClick={save}
                         disabled={!canSave}
                     >
-                        {busy ? "Saving…" : "Save"}
+                        {busy ? t("account.changeNickname.saving") : t("common.save")}
                     </button>
                 </div>
                 {hint && <span className="form-hint neg">{hint}</span>}
@@ -233,10 +234,10 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
     // itself when it hits zero so we're not eating a setInterval forever.
     useEffect(() => {
         if (resendIn <= 0) return;
-        const t = setInterval(() => {
+        const timer = setInterval(() => {
             setResendIn((n) => (n <= 1 ? 0 : n - 1));
         }, 1000);
-        return () => clearInterval(t);
+        return () => clearInterval(timer);
     }, [resendIn]);
 
     // When the parent reload swaps in a fresh profile (e.g. after cancel), pick
@@ -255,7 +256,7 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
             setResendIn(60); // arm cooldown immediately — server stamps the same
             await onChanged?.();
         } catch (e) {
-            onMessage?.(e.message || "Could not request email change");
+            onMessage?.(e.message || t("common.error"));
         }
         setBusy(false);
     };
@@ -273,7 +274,7 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
                 setResendIn(e.retryAfter);
                 onMessage?.(`Please wait ${e.retryAfter}s before requesting another link.`);
             } else {
-                onMessage?.(e.message || "Could not resend");
+                onMessage?.(e.message || t("common.error"));
             }
         }
         setBusy(false);
@@ -286,27 +287,27 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
             setResendIn(0);
             await onChanged?.();
         } catch (e) {
-            onMessage?.(e.message || "Could not cancel");
+            onMessage?.(e.message || t("common.error"));
         }
         setBusy(false);
     };
 
     return (
-        <Section title="Change Email" icon={Mail} iconTone="email">
+        <Section title={t("account.changeEmail.title")} icon={Mail} iconTone="email">
             <div className="form-body">
                 <div className="form-current">
-                    Current email: <span>{masked}</span>
-                    {!verified && <span className="permanent-badge" style={{ marginLeft: "0.4rem" }}>unverified</span>}
+                    {t("account.changeEmail.currentEmail")} <span>{masked}</span>
+                    {!verified && <span className="permanent-badge" style={{ marginLeft: "0.4rem" }}>{t("account.changeEmail.unverified")}</span>}
                 </div>
                 {!verified && !pending && (
                     <span className="form-hint neg">
-                        Verify your current email first (use the banner at the top of the app).
+                        {t("account.changeEmail.verifyFirst")}
                     </span>
                 )}
                 {pending ? (
                     <div className="account-pending-banner">
                         <div>
-                            Pending confirmation at <strong>{pending}</strong>. Check that inbox for the link.
+                            {t("account.changeEmail.pendingConfirmation", { email: pending })}
                         </div>
                         <div className="account-pending-actions">
                             <button
@@ -314,23 +315,23 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
                                 className="btn btn-secondary btn-sm"
                                 onClick={resend}
                                 disabled={busy || resendIn > 0}
-                                title={resendIn > 0 ? `Wait ${resendIn}s before sending another link` : undefined}
+                                title={resendIn > 0 ? t("account.changeEmail.resendTitle", { n: resendIn }) : undefined}
                             >
-                                {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend link"}
+                                {resendIn > 0 ? t("account.changeEmail.resendIn", { n: resendIn }) : t("account.changeEmail.resendLink")}
                             </button>
-                            <button type="button" className="btn btn-secondary btn-sm" onClick={cancel} disabled={busy}>Cancel</button>
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={cancel} disabled={busy}>{t("common.cancel")}</button>
                         </div>
                     </div>
                 ) : (
                     <div className="form-row">
                         <div className="form-group">
-                            <label className="form-label">New Email Address</label>
+                            <label className="form-label">{t("account.changeEmail.newEmailLabel")}</label>
                             <input
                                 type="email"
                                 className="form-input"
                                 value={newEmail}
                                 onChange={(e) => setNewEmail(e.target.value)}
-                                placeholder={verified ? "new@example.com" : "Verify current email first"}
+                                placeholder={verified ? t("account.changeEmail.newEmailPlaceholder") : t("account.changeEmail.newEmailPlaceholderUnverified")}
                                 autoComplete="email"
                                 disabled={!verified}
                             />
@@ -340,9 +341,9 @@ function ChangeEmail({ profile, accountId, onChanged, onMessage }) {
                             className="save-btn"
                             onClick={request}
                             disabled={!dirty || busy || !verified}
-                            title={!verified ? "Verify your current email before changing it" : undefined}
+                            title={!verified ? t("account.changeEmail.verifyBeforeChange") : undefined}
                         >
-                            {busy ? "Sending…" : "Save"}
+                            {busy ? t("account.changeNickname.saving") : t("common.save")}
                         </button>
                     </div>
                 )}
@@ -363,8 +364,8 @@ function ChangePassword({ accountId, onMessage }) {
     const canSave = current.length > 0 && nextValid && matches && !busy;
 
     let inlineError = null;
-    if (next.length > 0 && !nextValid) inlineError = "New password needs ≥ 8 characters and at least one number.";
-    else if (confirm.length > 0 && !matches) inlineError = "New passwords don't match.";
+    if (next.length > 0 && !nextValid) inlineError = t("account.changePassword.errorWeak");
+    else if (confirm.length > 0 && !matches) inlineError = t("account.changePassword.errorMismatch");
 
     const save = async () => {
         if (!canSave) return;
@@ -383,37 +384,37 @@ function ChangePassword({ accountId, onMessage }) {
             if (e.code === "incorrect_password") {
                 onMessage?.("Current password is incorrect.");
             } else {
-                onMessage?.(e.message || "Could not update password");
+                onMessage?.(e.message || t("common.error"));
             }
         }
         setBusy(false);
     };
 
     return (
-        <Section title="Change Password" icon={Key} iconTone="pw">
+        <Section title={t("account.changePassword.title")} icon={Key} iconTone="pw">
             <div className="form-body">
                 <div className="form-group">
-                    <label className="form-label">Current Password</label>
-                    <PasswordInput value={current} onChange={setCurrent} placeholder="Current password" show={showAll} />
+                    <label className="form-label">{t("account.changePassword.currentLabel")}</label>
+                    <PasswordInput value={current} onChange={setCurrent} placeholder={t("account.changePassword.currentPlaceholder")} show={showAll} />
                 </div>
                 <div className="form-group">
-                    <label className="form-label">New Password</label>
-                    <PasswordInput value={next} onChange={setNext} placeholder="New password" show={showAll} />
+                    <label className="form-label">{t("account.changePassword.newLabel")}</label>
+                    <PasswordInput value={next} onChange={setNext} placeholder={t("account.changePassword.newPlaceholder")} show={showAll} />
                 </div>
                 <div className="form-group">
-                    <label className="form-label">Confirm New Password</label>
-                    <PasswordInput value={confirm} onChange={setConfirm} placeholder="Confirm new" show={showAll} />
+                    <label className="form-label">{t("account.changePassword.confirmLabel")}</label>
+                    <PasswordInput value={confirm} onChange={setConfirm} placeholder={t("account.changePassword.confirmPlaceholder")} show={showAll} />
                 </div>
                 <div className="checkbox-row">
                     <label className="checkbox-label">
                         <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
-                        Show passwords
+                        {t("account.changePassword.showPasswords")}
                     </label>
-                    <span className="checkbox-hint">· Min 8 chars, at least one number.</span>
+                    <span className="checkbox-hint">{t("account.changePassword.hint")}</span>
                 </div>
                 {inlineError && <span className="form-hint neg">{inlineError}</span>}
                 <button type="button" className="update-btn" onClick={save} disabled={!canSave}>
-                    {busy ? "Updating…" : "Update Password"}
+                    {busy ? t("account.changePassword.updating") : t("account.changePassword.updateBtn")}
                 </button>
             </div>
         </Section>
@@ -442,15 +443,15 @@ function NotificationsSection({ profile, accountId, onSaved, onMessage }) {
             onSaved?.(next);
             onMessage?.(next ? "Email notifications enabled." : "Email notifications disabled.");
         } catch (e) {
-            onMessage?.(e.message || "Could not update");
+            onMessage?.(e.message || t("common.error"));
         }
     };
     return (
-        <Section title="Notifications" icon={Bell} iconTone="bell">
+        <Section title={t("account.notifications.title")} icon={Bell} iconTone="bell">
             <div className="account-toggle-row">
                 <div>
-                    <div className="account-toggle-label">Email Notifications</div>
-                    <div className="account-toggle-sub">Receive email updates about your account and career.</div>
+                    <div className="account-toggle-label">{t("account.notifications.emailLabel")}</div>
+                    <div className="account-toggle-sub">{t("account.notifications.emailSub")}</div>
                 </div>
                 <button
                     type="button"
@@ -468,25 +469,25 @@ function NotificationsSection({ profile, accountId, onSaved, onMessage }) {
 
 function DangerZone({ onLogoutClick, onDeleteClick }) {
     return (
-        <Section title="Danger Zone" className="danger-card">
+        <Section title={t("account.dangerZone.title")} className="danger-card">
             <div className="danger-section">
                 <div className="danger-header">
-                    <h4 className="danger-title">Danger Zone</h4>
+                    <h4 className="danger-title">{t("account.dangerZone.title")}</h4>
                 </div>
                 <div className="danger-body">
                     <div className="danger-desc">
-                        Log out of this device — clears your session here, you can log back in any time.
+                        {t("account.dangerZone.logoutDesc")}
                     </div>
                     <button className="danger-btn neutral" onClick={onLogoutClick}>
-                        <LogOut size={14} /> Log Out
+                        <LogOut size={14} /> {t("account.dangerZone.logoutBtn")}
                     </button>
                 </div>
                 <div className="danger-body">
                     <div className="danger-desc">
-                        Permanently deletes your fighter, all progress, cash, and career history.
+                        {t("account.dangerZone.deleteDesc")}
                     </div>
                     <button className="danger-btn" onClick={onDeleteClick}>
-                        <Trash2 size={14} /> Delete Account
+                        <Trash2 size={14} /> {t("account.dangerZone.deleteBtn")}
                     </button>
                 </div>
             </div>

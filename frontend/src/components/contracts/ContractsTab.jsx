@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, AlertTriangle, Lock, FileX, Zap } from "lucide-react";
 import { api } from "../../api";
+import { t } from "@/lib/i18n";
 
 function formatIron(n) {
     if (n == null) return "0";
@@ -66,7 +67,7 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
             const res = await api.getSponsorships(fighterId);
             setData(res);
         } catch (e) {
-            onMessage?.(e.message || "Could not load contracts");
+            onMessage?.(e.message || t("contracts.loadError"));
             if (!silent) setData(null);
         }
         if (!silent) setLoading(false);
@@ -79,13 +80,13 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
         setBusyId(sponsorId);
         try {
             await api.acceptSponsor(fighterId, sponsorId);
-            onMessage?.("Contract signed.");
+            onMessage?.(t("contracts.messages.signed"));
             // Signing creates a sponsorship only — it never changes the fighter's
             // cash/energy/fame, so we skip the global fighter refresh (which would
             // re-render the whole app) and just silently refresh the contracts data.
             await load({ silent: true });
         } catch (e) {
-            onMessage?.(e.message || "Could not accept contract");
+            onMessage?.(e.message || t("contracts.messages.acceptError"));
         }
         setBusyId(null);
     }, [fighterId, load, onMessage]);
@@ -105,13 +106,13 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
         setDropCandidate(null);
         try {
             await api.dropSponsor(fighterId, sponsorshipId);
-            onMessage?.("Contract dropped.");
+            onMessage?.(t("contracts.messages.dropped"));
             await load({ silent: true });
             // Dropping applies a fame penalty, so the fighter (sidebar fame) does
             // need refreshing here — unlike accepting.
             if (onRefreshFighter) onRefreshFighter(fighterId);
         } catch (e) {
-            onMessage?.(e.message || "Could not drop contract");
+            onMessage?.(e.message || t("contracts.messages.dropError"));
         }
         setBusyId(null);
     }, [fighterId, dropCandidate, load, onMessage, onRefreshFighter]);
@@ -119,7 +120,7 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
     if (loading || !data) {
         return (
             <section className="contracts-tab">
-                <div className="contracts-loading">Loading contracts…</div>
+                <div className="contracts-loading">{t("contracts.loading")}</div>
             </section>
         );
     }
@@ -132,23 +133,23 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
         <section className="contracts-tab">
             <header className="page-header">
                 <div className="page-header-left">
-                    <div className="page-eyebrow">Sponsorships</div>
-                    <h1 className="page-title">Contracts</h1>
+                    <div className="page-eyebrow">{t("contracts.header.eyebrow")}</div>
+                    <h1 className="page-title">{t("contracts.header.title")}</h1>
                 </div>
                 <div className="slots-badge">
-                    <span className="slots-label">Slots Used</span>
+                    <span className="slots-label">{t("contracts.header.slotsLabel")}</span>
                     <span className="slots-val">{available?.slots?.used ?? 0} / {available?.slots?.max ?? 0}</span>
-                    <span className="slots-hint">Raise your fame tier to unlock more</span>
+                    <span className="slots-hint">{t("contracts.header.slotsHint")}</span>
                 </div>
             </header>
 
             <div className="contracts-grid">
                 {/* ── ACTIVE ────────────────────────────────────── */}
                 <section className="contracts-col">
-                    <div className="col-label">Active</div>
+                    <div className="col-label">{t("contracts.columns.active")}</div>
                     {active.length === 0 ? (
                         <div className="empty-state">
-                            <span className="empty-state-text">No active contracts. Pick one from the offers to start earning on every fight.</span>
+                            <span className="empty-state-text">{t("contracts.empty.noActive")}</span>
                         </div>
                     ) : active.map((c) => (
                         <ActiveCard
@@ -163,23 +164,24 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
                 {/* ── AVAILABLE ─────────────────────────────────── */}
                 <section className="contracts-col">
                     <div className="col-label">
-                        Available
+                        {t("contracts.columns.available")}
                         {available?.rotationEndsAt && (
-                            <span className="col-label-sub"> · new offers {formatCountdown(available.rotationEndsAt)}</span>
+                            <span className="col-label-sub">{t("contracts.columns.newOffers", { countdown: formatCountdown(available.rotationEndsAt) })}</span>
                         )}
                     </div>
 
                     {fameTier === "UNKNOWN" && (
                         <div className="empty-state">
-                            <span className="empty-state-text">Reach <strong>Prospect</strong> fame tier to attract your first sponsors.</span>
+                            <span className="empty-state-text">{t("contracts.empty.unknownFame")}</span>
                         </div>
                     )}
 
                     {fameTier !== "UNKNOWN" && available.offers.length === 0 && (
                         <div className="empty-state">
                             <span className="empty-state-text">
-                                No new offers right now. Sponsors you've already signed, dropped, or broken this week won't re-appear until the pool refreshes
-                                {available?.rotationEndsAt ? ` ${formatCountdown(available.rotationEndsAt)}.` : " next week."}
+                                {available?.rotationEndsAt
+                                    ? t("contracts.empty.noOffers", { countdown: formatCountdown(available.rotationEndsAt) })
+                                    : t("contracts.empty.noOffersNextWeek")}
                             </span>
                         </div>
                     )}
@@ -197,11 +199,11 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
 
                 {/* ── HISTORY ───────────────────────────────────── */}
                 <section className="contracts-col">
-                    <div className="col-label">History</div>
+                    <div className="col-label">{t("contracts.columns.history")}</div>
                     {history.length === 0 ? (
                         <div className="empty-state">
                             <FileX size={20} />
-                            <span className="empty-state-text">No completed contracts yet. Finish your first contract to see it here.</span>
+                            <span className="empty-state-text">{t("contracts.empty.noHistory")}</span>
                         </div>
                     ) : history.map((c) => (
                         <HistoryCard key={c.id} contract={c} />
@@ -227,27 +229,27 @@ function RewardsBlock({ perFight, onComplete, fame, penalty, drinks = 0 }) {
         <>
             <div className="contract-rewards">
                 <div className="contract-reward">
-                    <span className="contract-reward-label">Per Fight</span>
+                    <span className="contract-reward-label">{t("contracts.rewards.perFight")}</span>
                     <span className="contract-reward-val positive">+${formatIron(perFight)}</span>
                 </div>
                 <div className="contract-reward">
-                    <span className="contract-reward-label">On Complete</span>
+                    <span className="contract-reward-label">{t("contracts.rewards.onComplete")}</span>
                     <span className="contract-reward-val positive">+${formatIron(onComplete)}</span>
                 </div>
             </div>
             <div className="contract-reward contract-reward-fame">
-                <span className="contract-reward-label">On Complete</span>
+                <span className="contract-reward-label">{t("contracts.rewards.onComplete")}</span>
                 <span className="contract-reward-val positive-fame">+{fame} <span>fame</span></span>
             </div>
             {drinks > 0 && (
                 <div className="contract-reward contract-reward-drinks">
-                    <span className="contract-reward-label">On Complete</span>
+                    <span className="contract-reward-label">{t("contracts.rewards.onComplete")}</span>
                     <span className="contract-reward-val positive-drinks">
-                        <Zap size={11} /> +{drinks} <span>energy shot{drinks !== 1 ? "s" : ""}</span>
+                        <Zap size={11} /> +{drinks} <span>{drinks !== 1 ? t("contracts.rewards.energyShots") : t("contracts.rewards.energyShot")}</span>
                     </span>
                 </div>
             )}
-            <div className="contract-penalty"><AlertTriangle size={12} /> If broken — −{penalty} fame</div>
+            <div className="contract-penalty"><AlertTriangle size={12} /> {t("contracts.rewards.penalty", { fame: penalty })}</div>
         </>
     );
 }
@@ -271,12 +273,12 @@ function DropContractConfirm({ contract, onCancel, onConfirm }) {
     const penalty = Math.round((contract.famePenaltyOnBreak || 0) / 2);
 
     return createPortal(
-        <div className="drop-confirm-root" role="dialog" aria-modal="true" aria-label="Drop contract">
+        <div className="drop-confirm-root" role="dialog" aria-modal="true" aria-label={t("contracts.dropConfirm.dialogLabel")}>
             <div className="drop-confirm-backdrop" onClick={onCancel} />
             <div className="drop-confirm-shell">
                 <header className="drop-confirm-header">
-                    <h3>Drop this contract?</h3>
-                    <button type="button" className="drop-confirm-close" onClick={onCancel} aria-label="Close"><X size={16} /></button>
+                    <h3>{t("contracts.dropConfirm.title")}</h3>
+                    <button type="button" className="drop-confirm-close" onClick={onCancel} aria-label={t("contracts.dropConfirm.closeLabel")}><X size={16} /></button>
                 </header>
 
                 <div className="drop-confirm-body">
@@ -288,27 +290,26 @@ function DropContractConfirm({ contract, onCancel, onConfirm }) {
                     <div className="drop-confirm-clause">{contract.clauseText}</div>
 
                     <div className="drop-confirm-penalty">
-                        <div className="drop-confirm-penalty-label"><AlertTriangle size={12} /> Fame penalty</div>
+                        <div className="drop-confirm-penalty-label"><AlertTriangle size={12} /> {t("contracts.dropConfirm.famePenaltyLabel")}</div>
                         <div className="drop-confirm-penalty-value">−{penalty.toLocaleString()} fame</div>
                         <div className="drop-confirm-penalty-hint">
-                            Half of the break penalty ({contract.famePenaltyOnBreak} fame). You'll still
-                            keep any cash already earned on this contract.
+                            {t("contracts.dropConfirm.famePenaltyHint", { fame: contract.famePenaltyOnBreak })}
                         </div>
                     </div>
 
                     {contract.totals?.ironEarned > 0 && (
                         <div className="drop-confirm-earned">
-                            Earned so far: <strong>+${(contract.totals.ironEarned || 0).toLocaleString()}</strong>
+                            {t("contracts.dropConfirm.earnedSoFar")}<strong>{(contract.totals.ironEarned || 0).toLocaleString()}</strong>
                         </div>
                     )}
                 </div>
 
                 <footer className="drop-confirm-footer">
                     <button type="button" className="btn btn-secondary" onClick={onCancel}>
-                        Keep contract
+                        {t("contracts.dropConfirm.keepContract")}
                     </button>
                     <button type="button" className="btn btn-danger" onClick={onConfirm}>
-                        Drop — lose {penalty.toLocaleString()} fame
+                        {t("contracts.dropConfirm.dropBtn", { fame: penalty.toLocaleString() })}
                     </button>
                 </footer>
             </div>
@@ -324,7 +325,7 @@ function ActiveCard({ contract, onDrop, busy }) {
             <div className="contract-body">
                 <header className="contract-header">
                     <div className="contract-brand">{contract.brand}</div>
-                    <span className="contract-status-badge active">Active</span>
+                    <span className="contract-status-badge active">{t("contracts.activeCard.statusBadge")}</span>
                 </header>
                 <div className="contract-tagline">{contract.tagline}</div>
                 <div className="contract-clause">
@@ -342,9 +343,9 @@ function ActiveCard({ contract, onDrop, busy }) {
                     drinks={contract.rewardDrinks}
                 />
                 <div className="contract-earned">
-                    <span className="contract-earned-label">Earned so far</span>
+                    <span className="contract-earned-label">{t("contracts.activeCard.earnedLabel")}</span>
                     <span className="contract-earned-val">+${formatIron(contract.totals?.ironEarned || 0)}</span>
-                    <button className="drop-btn" onClick={onDrop} disabled={busy}>{busy ? "…" : "Drop"}</button>
+                    <button className="drop-btn" onClick={onDrop} disabled={busy}>{busy ? "…" : t("contracts.activeCard.drop")}</button>
                 </div>
             </div>
         </article>
@@ -372,13 +373,13 @@ function OfferCard({ offer, onAccept, busy, slotsFull }) {
                     drinks={offer.rewardDrinks}
                 />
                 <div className="contract-meta-row">
-                    <span className="contract-meta-label">Duration</span>
-                    <span className="contract-meta-val">{offer.durationFights} fights</span>
+                    <span className="contract-meta-label">{t("contracts.offerCard.durationLabel")}</span>
+                    <span className="contract-meta-val">{t("contracts.offerCard.durationValue", { n: offer.durationFights })}</span>
                 </div>
                 {slotsFull ? (
-                    <div className="slots-full-tag"><Lock size={13} /> Slots Full</div>
+                    <div className="slots-full-tag"><Lock size={13} /> {t("contracts.offerCard.slotsFull")}</div>
                 ) : (
-                    <button className="sign-btn" onClick={onAccept} disabled={busy} title={undefined}>{busy ? "…" : "Sign"}</button>
+                    <button className="sign-btn" onClick={onAccept} disabled={busy} title={undefined}>{busy ? "…" : t("contracts.offerCard.sign")}</button>
                 )}
             </div>
         </article>
@@ -404,8 +405,8 @@ function HistoryCard({ contract }) {
                     <div className="contract-break-reason">{contract.breakReason}</div>
                 )}
                 <div className="contract-totals-row">
-                    <span>+${formatIron(contract.totals?.ironEarned || 0)} earned</span>
-                    {contract.totals?.fameEarned ? <span>+{contract.totals.fameEarned} fame</span> : null}
+                    <span>+${formatIron(contract.totals?.ironEarned || 0)} {t("contracts.historyCard.earnedSuffix")}</span>
+                    {contract.totals?.fameEarned ? <span>+{contract.totals.fameEarned} {t("contracts.historyCard.fameSuffix")}</span> : null}
                     {contract.resolvedAt && <span className="muted">{formatRelative(contract.resolvedAt)}</span>}
                 </div>
             </div>

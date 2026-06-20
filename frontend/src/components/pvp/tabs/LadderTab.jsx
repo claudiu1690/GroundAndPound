@@ -6,6 +6,7 @@ import { FiltersBar } from "./ladder/FiltersBar";
 import { DivisionSummary } from "./ladder/DivisionSummary";
 import { PositionCard } from "./ladder/PositionCard";
 import { LadderTable } from "./ladder/LadderTable";
+import { t } from "../../../lib/i18n";
 
 /**
  * NewCompetitorShieldBanner — blue banner shown when onboarding.shield.active.
@@ -18,10 +19,14 @@ function NewCompetitorShieldBanner({ expiresAt }) {
     <div className="pvp-shield-banner pvp-new-comp-shield-banner">
       <Shield size={13} strokeWidth={2} style={{ color: "#3B82F6", flexShrink: 0 }} />
       <div className="pvp-shield-text">
-        <strong>New Competitor Shield</strong> — You&apos;re protected from challenges for{" "}
-        {daysLeft} day{daysLeft !== 1 ? "s" : ""} or until your first attack, whichever comes first.
+        <strong>{t("pvp.ladder.shieldTitle")}</strong> —{" "}
+        {daysLeft !== 1
+          ? t("pvp.ladder.shieldProtectedPlural", { n: daysLeft })
+          : t("pvp.ladder.shieldProtected", { n: daysLeft })}
         <div style={{ marginTop: 3, fontSize: 10, color: "#555" }}>
-          {daysLeft} day{daysLeft !== 1 ? "s" : ""} remaining
+          {daysLeft !== 1
+            ? t("pvp.ladder.shieldRemainingPlural", { n: daysLeft })
+            : t("pvp.ladder.shieldRemaining", { n: daysLeft })}
         </div>
       </div>
     </div>

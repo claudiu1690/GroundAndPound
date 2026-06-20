@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Flame, Heart } from "lucide-react";
 import { api } from "../../api";
+import { t } from "@/lib/i18n";
 
 function recordStr(r) {
   if (!r) return "—";
@@ -26,7 +27,7 @@ export function TargetPicker({ fighterId, selectedId, onSelect }) {
       const list = Array.isArray(data) ? data : (data.targets || data.candidates || []);
       setTargets(list);
     } catch (e) {
-      setError(e.message || "Could not load targets.");
+      setError(e.message || t("media.targetPicker.error"));
       setTargets(null);
     } finally {
       setLoading(false);
@@ -35,25 +36,25 @@ export function TargetPicker({ fighterId, selectedId, onSelect }) {
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading) return <div className="media-target-state">Loading targets…</div>;
+  if (loading) return <div className="media-target-state">{t("media.targetPicker.loading")}</div>;
   if (error) {
     return (
       <div className="media-target-state media-target-state--error">
         {error}
-        <button type="button" className="media-mini-btn" onClick={load}>Retry</button>
+        <button type="button" className="media-mini-btn" onClick={load}>{t("common.retry")}</button>
       </div>
     );
   }
   if (!targets || targets.length === 0) {
-    return <div className="media-target-state">No valid targets right now.</div>;
+    return <div className="media-target-state">{t("media.targetPicker.empty")}</div>;
   }
 
   return (
     <div className="media-target-grid">
-      {targets.map((t) => {
-        const id = t.opponentId || t.id || t._id;
-        const name = t.name || `${t.firstName ?? ""} ${t.lastName ?? ""}`.trim() || "Unknown";
-        const ovr = t.overallRating ?? t.ovr;
+      {targets.map((target) => {
+        const id = target.opponentId || target.id || target._id;
+        const name = target.name || `${target.firstName ?? ""} ${target.lastName ?? ""}`.trim() || "Unknown";
+        const ovr = target.overallRating ?? target.ovr;
         return (
           <button
             type="button"
@@ -63,12 +64,12 @@ export function TargetPicker({ fighterId, selectedId, onSelect }) {
           >
             <div className="media-target-head">
               <span className="media-target-name">{name}</span>
-              {t.hasBeef && <span className="media-target-chip beef"><Flame size={10} /> Beef</span>}
-              {t.hasRespect && <span className="media-target-chip respect"><Heart size={10} /> Respect</span>}
+              {target.hasBeef && <span className="media-target-chip beef"><Flame size={10} /> {t("media.targetPicker.chipBeef")}</span>}
+              {target.hasRespect && <span className="media-target-chip respect"><Heart size={10} /> {t("media.targetPicker.chipRespect")}</span>}
             </div>
             <div className="media-target-meta">
               {ovr != null && <span>OVR {ovr}</span>}
-              <span>{recordStr(t.record)}</span>
+              <span>{recordStr(target.record)}</span>
             </div>
           </button>
         );

@@ -4,12 +4,13 @@ import { usePvpOpponents } from "../../../hooks/usePvpOpponents";
 import { PreFight } from "../PreFight";
 import { FightResult } from "../FightResult";
 import { seasonWeightClassLabel } from "../pvpConst";
+import { t } from "../../../lib/i18n";
 
 function DiffPill({ difficulty }) {
   const map = {
-    easy: { label: "Easy", color: "#4ADE80", bg: "rgba(58,154,74,0.12)", border: "rgba(58,154,74,0.2)" },
-    even: { label: "Even", color: "#FBB042", bg: "rgba(200,122,16,0.12)", border: "rgba(200,122,16,0.2)" },
-    hard: { label: "Hard", color: "#C8102E", bg: "rgba(200,16,46,0.12)", border: "rgba(200,16,46,0.2)" },
+    easy: { label: t("pvp.fight.diffEasy"), color: "#4ADE80", bg: "rgba(58,154,74,0.12)", border: "rgba(58,154,74,0.2)" },
+    even: { label: t("pvp.fight.diffEven"), color: "#FBB042", bg: "rgba(200,122,16,0.12)", border: "rgba(200,122,16,0.2)" },
+    hard: { label: t("pvp.fight.diffHard"), color: "#C8102E", bg: "rgba(200,16,46,0.12)", border: "rgba(200,16,46,0.2)" },
   };
   const style = map[difficulty] ?? map.even;
   return (
@@ -106,8 +107,8 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
           <Zap size={18} strokeWidth={2} />
         </div>
         <div className="pvp-ec-info">
-          <div className="pvp-ec-name">Energy</div>
-          <div className="pvp-ec-sub">Each PVP fight costs 15 energy</div>
+          <div className="pvp-ec-name">{t("pvp.fight.energyCardTitle")}</div>
+          <div className="pvp-ec-sub">{t("pvp.fight.energyCardSub")}</div>
         </div>
         <div className="pvp-ec-val">{energyCur}</div>
       </div>
@@ -116,45 +117,45 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
       {onboarding?.placement?.active ? (
         <div className="pvp-placement-fight-header">
           <div className="pvp-placement-fight-title">
-            Placement Match {Math.min(3, (onboarding.placement.fights ?? 0) + 1)} of 3
+            {t("pvp.fight.placementMatchTitle", { n: Math.min(3, (onboarding.placement.fights ?? 0) + 1) })}
           </div>
           <div className="pvp-placement-fight-sub">
-            Win to start higher on the ladder. No DP gained or lost during placement.
+            {t("pvp.fight.placementMatchSub")}
           </div>
           <button
             className="pvp-refresh-btn"
             onClick={silentRefetch}
             disabled={refreshing}
-            title="Refresh opponents"
+            title={t("pvp.fight.refreshTitle")}
           >
             <RefreshCw size={13} strokeWidth={2} className={refreshing ? "pvp-spin" : ""} />
-            {refreshing ? "Refreshing…" : "Refresh"}
+            {refreshing ? t("pvp.fight.refreshingBtn") : t("pvp.fight.refreshBtn")}
           </button>
         </div>
       ) : (
         <div className="pvp-fight-header">
           <div className="pvp-section-lbl" style={{ marginBottom: 0 }}>
-            Available Opponents · {seasonWeightClassLabel(season)}
+            {t("pvp.fight.availableOpponents", { weightClass: seasonWeightClassLabel(season) })}
           </div>
           <button
             className="pvp-refresh-btn"
             onClick={silentRefetch}
             disabled={refreshing}
-            title="Refresh opponents"
+            title={t("pvp.fight.refreshTitle")}
           >
             <RefreshCw size={13} strokeWidth={2} className={refreshing ? "pvp-spin" : ""} />
-            {refreshing ? "Refreshing…" : "Refresh"}
+            {refreshing ? t("pvp.fight.refreshingBtn") : t("pvp.fight.refreshBtn")}
           </button>
         </div>
       )}
 
       {loading ? (
-        <div className="pvp-loading">Finding opponents…</div>
+        <div className="pvp-loading">{t("pvp.fight.loadingOpponents")}</div>
       ) : error ? (
         <div className="pvp-error-note">{error}</div>
       ) : candidates.length === 0 ? (
         <div className="pvp-empty-opponents">
-          No opponents found. The pool may be too small — check back later.
+          {t("pvp.fight.noOpponents")}
         </div>
       ) : (
         <div className="pvp-opponents-list">
@@ -163,13 +164,13 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
             const cardClass = c.isBeltHolder ? "pvp-matchup-card pvp-matchup-champ" : c.isRival ? "pvp-matchup-card pvp-matchup-rival" : "pvp-matchup-card";
 
             const bracketNote = c.bracketBonus === "plus25"
-              ? "+25% bonus DP — large bracket"
+              ? t("pvp.fight.bracketPlus25")
               : c.bracketBonus === "plus10"
-                ? "+10% bonus DP — expanded bracket"
+                ? t("pvp.fight.bracketPlus10")
                 : null;
 
-            const rivalNote = c.isRival ? "Rivalry Resolved if you win — bonus DP" : null;
-            const beltNote = c.isBeltHolder ? "+50 bonus DP for beating the belt holder" : null;
+            const rivalNote = c.isRival ? t("pvp.fight.rivalNote") : null;
+            const beltNote = c.isBeltHolder ? t("pvp.fight.beltNote") : null;
 
             return (
               <div key={c.playerId} className={cardClass}>
@@ -181,22 +182,22 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
                       {c.isBeltHolder && (
                         <>
                           <span>🏆</span>
-                          <span className="pvp-mc-champ-tag">Belt Holder</span>
+                          <span className="pvp-mc-champ-tag">{t("pvp.fight.beltHolder")}</span>
                         </>
                       )}
-                      {c.isRival && <span className="pvp-mc-rival-tag">Rival</span>}
+                      {c.isRival && <span className="pvp-mc-rival-tag">{t("pvp.fight.rival")}</span>}
                       {c.isProtected && (
-                        <span className="pvp-mc-protected-pill">Protected</span>
+                        <span className="pvp-mc-protected-pill">{t("pvp.fight.protected")}</span>
                       )}
                       {c.isRecovering && (
-                        <span className="pvp-mc-recovering-pill">Recovering</span>
+                        <span className="pvp-mc-recovering-pill">{t("pvp.fight.recovering")}</span>
                       )}
                     </div>
                     <div className="pvp-mc-meta">
                       {c.fightingStyle && (
                         <span className="pvp-mc-style">{c.fightingStyle}</span>
                       )}
-                      <span>{c.wins ?? 0}W · {c.losses ?? 0}L this season</span>
+                      <span>{t("pvp.fight.winsLossesMeta", { wins: c.wins ?? 0, losses: c.losses ?? 0 })}</span>
                       {season?.crossWeightClass && c.realWeightClass && (
                         <span className="pvp-wc-pill">{c.realWeightClass}</span>
                       )}
@@ -221,13 +222,13 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
                     style={(energyCur < 15 || c.isProtected || c.isRecovering) ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                     title={
                       c.isRecovering
-                        ? "This fighter is recovering from an injury and can't be challenged right now."
+                        ? t("pvp.fight.challengeRecoveringTooltip")
                         : c.isProtected
-                          ? "This fighter is protected — they're still finding their footing."
+                          ? t("pvp.fight.challengeProtectedTooltip")
                           : undefined
                     }
                   >
-                    Challenge
+                    {t("pvp.fight.challengeBtn")}
                   </button>
                 </div>
               </div>
@@ -238,7 +239,7 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
 
       {energyCur < 15 && !loading && (
         <div className="pvp-energy-warn">
-          Not enough energy to fight. You need at least 15 energy.
+          {t("pvp.fight.energyWarnLow")}
         </div>
       )}
     </div>

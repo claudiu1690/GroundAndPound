@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Zap, Lock } from "lucide-react";
 import { usePvpSeason } from "../../hooks/usePvpSeason";
 import { OPEN_LABEL } from "./pvpConst";
+import { t } from "../../lib/i18n";
 import { usePvpDefenseResults } from "../../hooks/usePvpDefenseResults";
 import { LadderTab } from "./tabs/LadderTab";
 import { FightTab } from "./tabs/FightTab";
@@ -15,13 +16,15 @@ import { ReadOnlyProfile } from "./ReadOnlyProfile";
 import { OfflineDefenseBanner } from "./OfflineDefenseBanner";
 import { api } from "../../api";
 
-const TABS = [
-  { id: "ladder",   label: "Ladder" },
-  { id: "fight",    label: "Fight" },
-  { id: "history",  label: "History" },
-  { id: "rewards",  label: "Season Rewards" },
-  { id: "hof",      label: "Hall of Fame" },
-];
+function buildTabs() {
+  return [
+    { id: "ladder",  label: t("pvp.hub.tabLadder") },
+    { id: "fight",   label: t("pvp.hub.tabFight") },
+    { id: "history", label: t("pvp.hub.tabHistory") },
+    { id: "rewards", label: t("pvp.hub.tabRewards") },
+    { id: "hof",     label: t("pvp.hub.tabHof") },
+  ];
+}
 
 /**
  * PvpHub — top container for the Proving Ground PVP system.
@@ -160,7 +163,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
   if (loading && !seasonData) {
     return (
       <div className="pvp-hub-loading">
-        <div className="pvp-loading">Loading The Proving Ground…</div>
+        <div className="pvp-loading">{t("pvp.hub.loading")}</div>
       </div>
     );
   }
@@ -169,7 +172,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
     return (
       <div className="pvp-hub-error">
         <div className="pvp-error-note">{error}</div>
-        <button className="pvp-refresh-btn" onClick={silentRefetch}>Retry</button>
+        <button className="pvp-refresh-btn" onClick={silentRefetch}>{t("common.retry")}</button>
       </div>
     );
   }
@@ -186,9 +189,9 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
           <div className="pvp-locked-icon">
             <Lock size={32} strokeWidth={1.5} style={{ color: "#555" }} />
           </div>
-          <div className="pvp-locked-title">The Proving Ground — Locked</div>
+          <div className="pvp-locked-title">{t("pvp.locked.title")}</div>
           <div className="pvp-locked-copy">
-            Prove yourself in the cage first. Win 3 career fights to unlock competitive PVP.
+            {t("pvp.locked.copy")}
           </div>
           <div className="pvp-locked-progress">
             <div className="pvp-locked-prog-track">
@@ -197,7 +200,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <div className="pvp-locked-prog-label">{careerWins} / {winsNeeded} wins</div>
+            <div className="pvp-locked-prog-label">{t("pvp.locked.progressLabel", { wins: careerWins, needed: winsNeeded })}</div>
           </div>
         </div>
       </div>
@@ -260,15 +263,17 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
             <div className="pvp-hero-overlay" aria-hidden="true" />
             <div className="pvp-inner">
               <div>
-                <div className="pvp-eye">Competitive</div>
-                <div className="pvp-title">The Proving Ground</div>
+                <div className="pvp-eye">{t("pvp.hub.eyebrow")}</div>
+                <div className="pvp-title">{t("pvp.hub.title")}</div>
                 <div className="pvp-meta">
                   {season && (
                     <span className="pvp-s-badge">{seasonLabel}</span>
                   )}
                   {weeksLeft !== null && (
                     <span style={{ fontSize: 12, color: "#AAAAAA" }}>
-                      {weeksLeft} week{weeksLeft !== 1 ? "s" : ""} remaining
+                      {weeksLeft !== 1
+                        ? t("pvp.hub.weeksRemainingPlural", { n: weeksLeft })
+                        : t("pvp.hub.weeksRemaining", { n: weeksLeft })}
                     </span>
                   )}
                   {season?.crossWeightClass && (
@@ -283,39 +288,39 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
                   )}
                   {onboarding?.placement?.active && (
                     <span className="pvp-placement-pill">
-                      Placement {onboarding.placement.fights ?? 0}/3
+                      {t("pvp.hub.placementPill", { done: onboarding.placement.fights ?? 0 })}
                     </span>
                   )}
                 </div>
                 {onboarding?.catchUp?.active && (
                   <div className="pvp-catchup-pill">
-                    New Competitor Bonus — {catchUpDaysLeft}d left · DP &times;2
+                    {t("pvp.hub.catchupPill", { days: catchUpDaysLeft })}
                   </div>
                 )}
               </div>
               <div className="pvp-statbar">
                 <div className="pvp-sb-cell">
                   <div className="pvp-sb-v pvp-sb-v-g">{yourRecord?.wins ?? 0}</div>
-                  <div className="pvp-sb-l">Wins</div>
+                  <div className="pvp-sb-l">{t("pvp.hub.statWins")}</div>
                 </div>
                 <div className="pvp-sb-div" aria-hidden="true" />
                 <div className="pvp-sb-cell">
                   <div className="pvp-sb-v pvp-sb-v-r">{yourRecord?.losses ?? 0}</div>
-                  <div className="pvp-sb-l">Losses</div>
+                  <div className="pvp-sb-l">{t("pvp.hub.statLosses")}</div>
                 </div>
                 <div className="pvp-sb-div" aria-hidden="true" />
                 <div className="pvp-sb-cell pvp-sb-cell-dp">
                   <div className="pvp-sb-v pvp-sb-v-gold">{(yourRecord?.dp ?? 0).toLocaleString()}</div>
-                  <div className="pvp-sb-l">DP</div>
+                  <div className="pvp-sb-l">{t("pvp.hub.statDp")}</div>
                   {yourRecord?.winStreak >= 3 && (
-                    <div className="pvp-sb-s">&times;1.25 streak</div>
+                    <div className="pvp-sb-s">{t("pvp.hub.streakMultiplier")}</div>
                   )}
                 </div>
                 <div className="pvp-sb-div" aria-hidden="true" />
                 <div className="pvp-sb-cell">
                   <div className="pvp-sb-v pvp-sb-v-blue">{energyCur}</div>
-                  <div className="pvp-sb-l">Energy</div>
-                  <div className="pvp-sb-s">15E / fight</div>
+                  <div className="pvp-sb-l">{t("pvp.hub.statEnergy")}</div>
+                  <div className="pvp-sb-s">{t("pvp.hub.energyCostPerFight")}</div>
                 </div>
               </div>
             </div>
@@ -329,7 +334,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
 
           {/* Tabs */}
           <div className="pvp-tabs">
-            {TABS.map((tab) => (
+            {buildTabs().map((tab) => (
               <button
                 key={tab.id}
                 className={`pvp-pt ${activeTab === tab.id && !showDefense ? "pvp-pt-act" : ""}`}
@@ -345,7 +350,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
               className={`pvp-pt pvp-pt-defense ${showDefense ? "pvp-pt-act" : ""}`}
               onClick={() => setShowDefense(true)}
             >
-              Defense
+              {t("pvp.hub.tabDefense")}
               {unreadDefense > 0 && (
                 <span className="pvp-defense-badge">{unreadDefense}</span>
               )}
