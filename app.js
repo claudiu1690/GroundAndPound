@@ -1,3 +1,8 @@
+// MUST be first — initializes Sentry before any other module loads so it can
+// auto-instrument them. No-ops when SENTRY_DSN is unset.
+require("./instrument");
+const Sentry = require("@sentry/node");
+
 const express = require("express");
 const helmet = require("helmet");
 const { rateLimit } = require("express-rate-limit");
@@ -122,6 +127,11 @@ swagger(app);
 app.use((req, res) => {
     res.status(404).json({ message: "Not found" });
 });
+
+// Sentry error capture — after routes, before our own error handler. Captures
+// the error (when SENTRY_DSN is set) then falls through to our handler, which
+// sends the safe client response. No-op when Sentry isn't initialized.
+Sentry.setupExpressErrorHandler(app);
 
 // ── Global error handler (MUST be last; 4 args) ──
 // Safety net for anything that throws or calls next(err): malformed JSON bodies,
