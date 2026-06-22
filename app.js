@@ -75,6 +75,49 @@ app.use("/pvp", authMiddleware, pvpRoutes);
 
 swagger(app);
 
+// ── 404 — unmatched routes (after all real routes + swagger) ──
+app.use((req, res) => {
+    res.status(404).json({ message: "Not found" });
+});
+
+// ── Global error handler (MUST be last; 4 args) ──
+// Safety net for anything that throws or calls next(err): malformed JSON bodies,
+// CORS rejections, and any uncaught error in a handler. Per project policy, never
+// leak internal error details to the client — log full detail server-side, return
+// a safe message. Client-fixable errors opt in via err.statusCode/err.validation.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+    const isBadJson = err.type === "entity.parse.failed";
+    const isCors = typeof err.message === "string" && err.message.startsWith("CORS:");
+    const status = isBadJson ? 400 : isCors ? 403 : (err.statusCode || err.status || 500);
+
+    if (status >= 500) {
+        console.error("[error]", req.method, req.originalUrl, "-", err.stack || err.message);
+    } else {
+        console.warn("[error]", req.method, req.originalUrl, "-", err.message);
+    }
+
+    let message = "Internal server error";
+    if (isBadJson) message = "Invalid JSON in request body.";
+    else if (isCors) message = "Origin not allowed.";
+    else if (status < 500 && (err.expose || err.validation)) message = err.message;
+
+    if (res.headersSent) return next(err);
+    res.status(status).json({ message });
+});
+
+// ── Process-level safety nets ──
+// Log unhandled promise rejections instead of crashing silently. On a truly
+// uncaught exception, log and exit so the platform (Railway) restarts cleanly
+// rather than running in a corrupted state.
+process.on("unhandledRejection", (reason) => {
+    console.error("[unhandledRejection]", reason);
+});
+process.on("uncaughtException", (err) => {
+    console.error("[uncaughtException]", err.stack || err.message);
+    process.exit(1);
+});
+
 async function migrateLegacyEnergyShape() {
     const fighters = mongoose.connection.collection("fighters");
     const result = await fighters.updateMany(
