@@ -1,4 +1,6 @@
 const express = require("express");
+const helmet = require("helmet");
+const { rateLimit } = require("express-rate-limit");
 const cors = require("cors");
 const fighterRoutes = require("./routes/fighterRoutes");
 const gymRoutes = require("./routes/gymRoutes");
@@ -22,6 +24,44 @@ const scheduler = require("./modules/scheduler");
 const { ENERGY } = require("./consts/gameConstants");
 
 const app = express();
+
+// Behind Railway's edge proxy: trust the first hop so express-rate-limit (and
+// req.ip) read the real client IP from X-Forwarded-For instead of lumping every
+// request under the proxy's single IP.
+app.set("trust proxy", 1);
+
+// ── Rate limiting ──
+// Global per-IP limiter: generous enough for normal click-resolved play (a busy
+// session is well under this) but stops scraping/floods/DoS. Tunable via env.
+const globalLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: Number(process.env.RATE_LIMIT_MAX) || 300, // requests/min/IP
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: { message: "Too many requests — slow down and try again shortly." },
+});
+// Stricter limiter for auth (login/register/forgot/reset) — blunts credential
+// stuffing and signup floods from a single IP. Complements the existing
+// per-email throttle in the auth controller.
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: Number(process.env.AUTH_RATE_LIMIT_MAX) || 50, // attempts/15min/IP
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: { message: "Too many attempts — please wait a few minutes and try again." },
+});
+
+// ── Security headers (first middleware, applies to every response) ──
+// This is a JSON API consumed cross-origin by the separate frontend, so:
+//   - contentSecurityPolicy OFF: CSP belongs on the frontend host; a default CSP
+//     here would break the Swagger UI (/api-docs serves inline scripts/styles).
+//   - crossOriginResourcePolicy "cross-origin": allow the frontend on another
+//     origin to consume API responses (default "same-origin" would block it).
+// Everything else (HSTS, X-Content-Type-Options, frameguard, etc.) stays on.
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
 
 /**
  * CORS allowlist. Same-origin (no Origin header — curl, server-to-server,
@@ -52,8 +92,11 @@ console.log(`[CORS] Allowlist: ${corsAllowlist.join(", ") || "(empty)"}`);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Public — no auth required
-app.use("/auth", authRoutes);
+// Global per-IP rate limit on the whole API.
+app.use(globalLimiter);
+
+// Public — no auth required (stricter per-IP throttle on top of the global one)
+app.use("/auth", authLimiter, authRoutes);
 
 // Public — hit from an email link, no JWT. Mounted before the protected
 // /account routes so it doesn't get caught by the auth middleware.
