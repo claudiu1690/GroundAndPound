@@ -2,6 +2,14 @@ import "./landing.css";
 import { useState, useEffect } from "react";
 import { api, authStorage } from "../../api";
 import { AuthPage } from "../auth/AuthPage";
+import { CookieConsent } from "../legal/CookieConsent";
+import { LegalModals } from "../legal/LegalModals";
+
+// Open a legal modal from a footer link without navigating.
+const openLegal = (e, eventName) => {
+  e.preventDefault();
+  window.dispatchEvent(new CustomEvent(eventName));
+};
 
 export function LandingPage({ onAuthenticated, initialResetToken }) {
   // Nav scroll darkening
@@ -419,13 +427,17 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         <footer>
           <div className="foot-logo">Ground <span>&amp;</span> Pound</div>
           <div className="foot-links">
-            <a className="foot-link" href="#">Cookie Policy</a>
-            <a className="foot-link" href="#">Privacy</a>
-            <a className="foot-link" href="#">Terms</a>
+            <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-cookie-policy")}>Cookie Policy</a>
+            <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-privacy-policy")}>Privacy</a>
+            <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-terms")}>Terms</a>
           </div>
           <div className="foot-copy">&copy; 2026 Digital Olive. All rights reserved.</div>
         </footer>
       </div>
+
+      {/* Cookie consent banner + legal modals for logged-out visitors */}
+      <CookieConsent />
+      <LegalModals />
 
       {/* LIGHTBOX */}
       <div

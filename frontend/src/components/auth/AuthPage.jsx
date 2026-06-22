@@ -41,6 +41,7 @@ export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   // Fighter fields
   const [firstName, setFirstName] = useState("");
@@ -60,7 +61,7 @@ export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab
   const [recovering, setRecovering]   = useState(false);
 
   function resetForm() {
-    setEmail(""); setPassword(""); setConfirmPw("");
+    setEmail(""); setPassword(""); setConfirmPw(""); setAgeConfirmed(false);
     setFirstName(""); setLastName(""); setNickname("");
     setWeightClass(WEIGHT_CLASSES[2]); setStyle(STYLES[0]); setBackstory(BACKSTORIES[0]);
     setError(""); setStep(1); setRecoverInfo(null);
@@ -119,6 +120,7 @@ export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab
     if (!email.includes("@")) return setError(t("auth.validation.invalidEmail"));
     if (password.length < 6)   return setError(t("auth.validation.passwordTooShort"));
     if (password !== confirmPw) return setError(t("auth.validation.passwordMismatch"));
+    if (!ageConfirmed) return setError(t("auth.validation.ageRequired"));
     setStep(2);
   }
 
@@ -239,6 +241,10 @@ export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab
                 <div className="auth-field"><label>{t("auth.register.emailLabel")}</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t("auth.register.emailPlaceholder")} required autoComplete="email" /></div>
                 <div className="auth-field"><label>{t("auth.register.passwordLabel")} <span className="auth-hint">{t("auth.register.passwordHint")}</span></label><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={t("auth.register.passwordPlaceholder")} required autoComplete="new-password" /></div>
                 <div className="auth-field"><label>{t("auth.register.confirmPasswordLabel")}</label><input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder={t("auth.register.confirmPasswordPlaceholder")} required autoComplete="new-password" /></div>
+                <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "12px", color: "#999", margin: "2px 0 6px", cursor: "pointer", lineHeight: 1.4 }}>
+                  <input type="checkbox" checked={ageConfirmed} onChange={e => setAgeConfirmed(e.target.checked)} style={{ marginTop: "2px", flexShrink: 0 }} />
+                  <span>{t("auth.register.ageConfirmLabel")}</span>
+                </label>
                 {error && <div className="auth-error">{error}</div>}
                 <button className="auth-submit" type="submit">{t("auth.register.nextBtn")}</button>
                 <p className="auth-switch">{t("auth.register.alreadyHaveAccount")} <button type="button" className="auth-link" onClick={() => switchTab("login")}>{t("auth.register.signIn")}</button></p>

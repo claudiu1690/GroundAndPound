@@ -61,13 +61,15 @@
       "backstoryLabel": "Backstory",
       "backBtn": "← Back",
       "createBtn": "Create Fighter & Start",
-      "creating": "Creating…"
+      "creating": "Creating…",
+      "ageConfirmLabel": "I confirm I'm at least 13 years old and agree to the Terms of Service and Privacy Policy."
     },
     "validation": {
       "invalidEmail": "Enter a valid email address.",
       "passwordTooShort": "Password must be at least 6 characters.",
       "passwordMismatch": "Passwords do not match.",
-      "nameRequired": "First and last name are required."
+      "nameRequired": "First and last name are required.",
+      "ageRequired": "You must confirm you're at least 13 to create an account."
     },
     "forgot": {
       "stepLabel": "Reset your password",
@@ -249,7 +251,7 @@
       },
       "contact": {
         "heading": "Contact",
-        "body": "If you have any questions about this policy or your data, please contact us through your account or our support channels."
+        "body": "If you have any questions about this policy or your data, contact us at support@groundandpound.net."
       },
       "closeBtn": "Close"
     }
@@ -1258,6 +1260,8 @@
       "fame": "★ Fame",
       "account": "Account",
       "cookiePolicy": "Cookie Policy",
+      "privacy": "Privacy",
+      "terms": "Terms",
       "signOut": "Sign Out",
       "accountSettings": "Account settings",
       "cookiePolicyTitle": "Cookie Policy",

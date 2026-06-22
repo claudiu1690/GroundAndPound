@@ -36,6 +36,7 @@ import { DashboardTab } from "./components/dashboard/DashboardTab";
 import { ShopTab } from "./components/shop/ShopTab";
 import { InventorySidebar } from "./components/shop/InventorySidebar";
 import { CookieConsent } from "./components/legal/CookieConsent";
+import { LegalModals } from "./components/legal/LegalModals";
 import { tutorialBus } from "./utils/tutorialBus";
 import { TITLE_WINS } from "./constants/gameConstants";
 import { useToasts } from "./hooks/useToasts";
@@ -1108,8 +1109,9 @@ const handleGetOffers = useCallback(async () => {
   return (
     <div className="app">
 
-      {/* ── COOKIE / STORAGE ACKNOWLEDGEMENT ── */}
+      {/* ── COOKIE / STORAGE ACKNOWLEDGEMENT + LEGAL MODALS ── */}
       <CookieConsent />
+      <LegalModals />
 
       {/* ── EMAIL-VERIFY BANNER ──
           Soft verification: the user can keep playing while this banner is up.
@@ -1700,6 +1702,20 @@ const handleGetOffers = useCallback(async () => {
               title={t("layout.bottombar.cookiePolicyTitle")}
             >
               {t("layout.bottombar.cookiePolicy")}
+            </button>
+            <button
+              type="button"
+              className="bb-btn"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-privacy-policy"))}
+            >
+              {t("layout.bottombar.privacy")}
+            </button>
+            <button
+              type="button"
+              className="bb-btn"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-terms"))}
+            >
+              {t("layout.bottombar.terms")}
             </button>
             <button type="button" className="bb-btn" onClick={handleLogout} title={t("layout.bottombar.signOutTitle")}>{t("layout.bottombar.signOut")}</button>
           </div>
