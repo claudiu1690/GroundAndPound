@@ -25,6 +25,8 @@ const fightService = require("./fightService");
 const campService = require("./campService");
 const rankingService = require("./rankingService");
 const sponsorshipService = require("./sponsorshipService");
+const pvpSeasonService = require("./pvpSeasonService");
+const pvpRecordService = require("./pvpRecordService");
 const { PROMOTION_TIERS } = require("../consts/gameConstants");
 
 /**
@@ -354,7 +356,48 @@ async function buildRanking(fighter, rawFighter, id) {
         console.error("[dashboard] rank delta failed:", err.message);
     }
 
-    return { rank, rosterSize, isTopFive, delta };
+    // Title-shot conditions (surfaced as a checklist on the Rankings tile). All from
+    // the already-loaded fighter — no extra reads. OVR is "met" once pendingPromotion
+    // is set (it's set exactly when OVR reaches the next tier's floor).
+    const titleWins = fightService.getTitleShotConfig(tier).titleWins;
+    const winsInTier = fighter.winsInCurrentTier ?? 0;
+    const titleShot = {
+        ovrMet: !!fighter.pendingPromotion,
+        topFive: isTopFive,
+        winsMet: winsInTier >= titleWins,
+        winsInTier,
+        titleWins,
+    };
+
+    return { rank, rosterSize, isTopFive, delta, division: tier, titleShot };
+}
+
+/**
+ * PvP / Proving Ground summary for the dashboard tile. Two light reads (active
+ * season + this player's record); error-safe — returns null on any failure so the
+ * tile degrades gracefully, like every other dashboard module.
+ */
+async function buildPvp(fighter) {
+    try {
+        const season = await pvpSeasonService.getCurrentSeasonForFighter(fighter.weightClass);
+        if (!season) return null;
+        const record = await pvpRecordService.getRecord(fighter._id, season._id);
+        const weeksRemaining = season.endDate
+            ? Math.max(0, Math.ceil((new Date(season.endDate).getTime() - Date.now()) / (7 * 24 * 3600 * 1000)))
+            : null;
+        return {
+            wins: record?.wins ?? 0,
+            losses: record?.losses ?? 0,
+            dp: record?.dp ?? 0,
+            hasPlayed: !!record,
+            seasonLabel: `Season ${season.seasonNumber}${season.name ? ` — ${season.name}` : ""}`,
+            crossWeightClass: !!(season.config && season.config.crossWeightClass),
+            weeksRemaining,
+        };
+    } catch (err) {
+        console.error("[dashboard] pvp summary failed:", err.message);
+        return null;
+    }
 }
 
 async function buildSponsorship(id) {
@@ -468,11 +511,12 @@ async function buildDashboard(id) {
     const tier = fighter.promotionTier;
 
     // Run independent modules concurrently. Each builder swallows its own errors.
-    const [camp, offersData, feed, sponsorship] = await Promise.all([
+    const [camp, offersData, feed, sponsorship, pvp] = await Promise.all([
         buildCamp(fighter, id),
         buildOffers(id, tier),
         buildFeed(id),
         buildSponsorship(id),
+        buildPvp(fighter),
     ]);
 
     const ranking = await buildRanking(fighter, rawFighter, id);
@@ -527,6 +571,7 @@ async function buildDashboard(id) {
             fame: notoriety.score ?? 0,
         },
         sponsorship,
+        pvp,
         nudge: buildNudge(fighter, ranking),
     };
 }

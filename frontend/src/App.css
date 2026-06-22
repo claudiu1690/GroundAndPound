@@ -12134,6 +12134,36 @@ code {
   margin-top: auto;
 }
 
+/* ── Rankings tile inner content ── */
+.dashboard-tab .rnk-eye{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:#666;margin-bottom:10px}
+.dashboard-tab .rnk-main{display:flex;align-items:flex-end;gap:6px;margin-bottom:4px}
+.dashboard-tab .rnk-num{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:56px;line-height:1;color:#D4A820}
+.dashboard-tab .rnk-of{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:#666;padding-bottom:8px}
+.dashboard-tab .rnk-move{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;color:#C8102E}
+.dashboard-tab .rnk-move--up{color:#4ADE80}
+.dashboard-tab .rnk-divider{height:1px;background:#1E1E1E;margin-bottom:10px}
+.dashboard-tab .rnk-checks{display:flex;flex-direction:column;gap:6px;margin-bottom:auto}
+.dashboard-tab .rnk-check{display:flex;align-items:center;gap:8px;font-size:11px;color:#666}
+.dashboard-tab .rnk-check.done{color:#AAAAAA}
+.dashboard-tab .rnk-check-icon{font-size:10px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;background:rgba(58,154,74,0.12);color:#4ADE80;border:1px solid rgba(58,154,74,0.2)}
+.dashboard-tab .rnk-check-icon.x{background:rgba(200,16,46,0.1);color:#C8102E;border-color:rgba(200,16,46,0.2)}
+.dashboard-tab .rnk-check-hint{color:#666;font-size:10px}
+.dashboard-tab .rnk-link{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#666;margin-top:12px}
+
+/* ── PVP tile inner content ── */
+.dashboard-tab .pvp-eye{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:#666;margin-bottom:6px}
+.dashboard-tab .pvp-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;text-transform:uppercase;color:#C8102E;line-height:1;margin-bottom:4px}
+.dashboard-tab .pvp-season{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#666;margin-bottom:10px}
+.dashboard-tab .pvp-divider{height:1px;background:rgba(200,16,46,0.1);margin-bottom:10px}
+.dashboard-tab .pvp-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px}
+.dashboard-tab .pvp-stat{text-align:center;padding:7px 4px;background:rgba(0,0,0,0.3);border-radius:3px;border:1px solid rgba(255,255,255,0.04)}
+.dashboard-tab .pvp-stat-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;line-height:1}
+.dashboard-tab .pvp-stat-lbl{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#666;margin-top:2px}
+.dashboard-tab .pvp-badge{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;padding:4px 8px;border-radius:2px;background:rgba(200,16,46,0.08);color:#C8102E;border:1px solid rgba(200,16,46,0.2);display:inline-block;margin-bottom:10px}
+.dashboard-tab .pvp-time{font-size:10px;color:#666;margin-bottom:auto}
+.dashboard-tab .pvp-time span{color:#AAAAAA}
+.dashboard-tab .pvp-link{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#C8102E;margin-top:12px}
+
 /* ── Mobile: 3-up row stacks ── */
 @media (max-width: 768px) {
   .dashboard-tab .dash-top-row {

@@ -1,16 +1,18 @@
 /**
- * Seed PVP ladder bots.
+ * Seed PVP ladder bots — realistic filler so a new player never sees an empty ladder.
  *
- * Creates N non-account bot fighters (isPvpBot:true) and a PVPRecord for each in the
- * active Open season, with a spread of DP across all five divisions so the ladder,
- * division filters, and counts look realistic.
+ * Creates 15 non-account bot fighters (isPvpBot:true) and a PVPRecord for each in the
+ * active Open season. Real-looking names + nicknames, a backstory tag, a record/DP that
+ * fits their division, and a recent lastActive. Tier mix (NO elite, NO champions):
+ *   8 Prospect · 4 Contender · 3 Challenger
  *
  * Usage:
- *   node scripts/seedPvpBots.js          # default 10 bots
- *   node scripts/seedPvpBots.js 16       # custom count
+ *   node scripts/seedPvpBots.js
+ *   (against production: run with your prod Mongo env, e.g. LOCAL_MODE unset / Atlas URI)
  *
- * Idempotent: deletes any existing isPvpBot fighters + their PVP records first, then
- * creates exactly N. Re-run to reset. Remove them anytime with the same isPvpBot flag.
+ * Idempotent: deletes ALL existing isPvpBot fighters + their PVP records/fights/rivalries
+ * first, then creates exactly these 15. Re-run to reset. This is also how you "strip the
+ * DB of bot users" — running it removes any prior bots before reseeding.
  */
 const connectDB = require("../modules/dbConnect");
 const mongoose = require("mongoose");
@@ -22,32 +24,36 @@ const PVPRival = require("../models/pvpRivalModel");
 const { divisionForDp } = require("../consts/pvpConfig");
 
 const DAY = 24 * 3600 * 1000;
-const STYLES = ["Boxer", "Kickboxer", "Wrestler", "Brazilian Jiu-Jitsu", "Muay Thai", "Judo", "Sambo", "Capoeira"];
 const GAMEPLANS = ["balanced", "striking", "wrestling", "submission", "counter"];
 const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
 
-// 16 names / classes so a custom count up to 16 still gets variety; we use the first N.
+// 15 hand-built bots. dp drives division (divisionForDp): prospect <300, contender
+// 300–1199, challenger 1200–2499. ovr is kept inside each tier's band; record + total
+// fights scale up with tier; lastDays is 0–4 ("active in the last few days").
 const POOL = [
-  { name: "Diego Cruz",     wc: "Featherweight", ovr: 16, dp: 80,   w: 1,  l: 1, lastDays: 0 },
-  { name: "Yuri Volkov",    wc: "Lightweight",   ovr: 21, dp: 220,  w: 2,  l: 2, lastDays: 1 },
-  { name: "Marcus Webb",    wc: "Middleweight",  ovr: 28, dp: 380,  w: 3,  l: 2, lastDays: 2 },
-  { name: "Tank Mboto",     wc: "Heavyweight",   ovr: 33, dp: 620,  w: 5,  l: 3, lastDays: 4 },
-  { name: "Eddie Stone",    wc: "Lightweight",   ovr: 37, dp: 980,  w: 7,  l: 3, lastDays: 6 },
-  { name: "Kenji Sato",     wc: "Featherweight", ovr: 42, dp: 1350, w: 9,  l: 4, lastDays: 0 },
-  { name: "Rafael Lima",    wc: "Middleweight",  ovr: 46, dp: 2050, w: 12, l: 5, lastDays: 3 },
-  { name: "Boris Petrov",   wc: "Heavyweight",   ovr: 50, dp: 2700, w: 14, l: 6, lastDays: 8 },
-  { name: "Andre Costa",    wc: "Lightweight",   ovr: 55, dp: 3900, w: 18, l: 7, lastDays: 10 },
-  { name: "Cassius Moore",  wc: "Middleweight",  ovr: 60, dp: 5400, w: 22, l: 8, lastDays: 1 },
-  { name: "Hiro Tanaka",    wc: "Featherweight", ovr: 19, dp: 150,  w: 1,  l: 0, lastDays: 5 },
-  { name: "Sergei Orlov",   wc: "Heavyweight",   ovr: 31, dp: 510,  w: 4,  l: 4, lastDays: 7 },
-  { name: "Leon Park",      wc: "Lightweight",   ovr: 44, dp: 1700, w: 10, l: 5, lastDays: 2 },
-  { name: "Mateo Rossi",    wc: "Middleweight",  ovr: 52, dp: 3100, w: 16, l: 6, lastDays: 0 },
-  { name: "Omar Haddad",    wc: "Featherweight", ovr: 39, dp: 1100, w: 8,  l: 4, lastDays: 12 },
-  { name: "Viktor Reyes",   wc: "Heavyweight",   ovr: 58, dp: 4600, w: 20, l: 9, lastDays: 1 },
+  // ── 8 Prospects (dp 0–299, ovr 10–20) ──
+  { first: "Jesse",   last: "Hooker",    nick: "The Kid",        wc: "Featherweight", style: "Boxer",               story: "Street Fighter",      ovr: 12, dp: 60,   w: 1,  l: 1,  lastDays: 1 },
+  { first: "Dani",    last: "Reyes",     nick: "Pocket Rocket",  wc: "Featherweight", style: "Muay Thai",           story: "Late Bloomer",        ovr: 14, dp: 110,  w: 2,  l: 1,  lastDays: 0 },
+  { first: "Tyrell",  last: "Banks",     nick: "Fresh",          wc: "Lightweight",   style: "Kickboxer",           story: "MMA Prodigy",         ovr: 13, dp: 90,   w: 2,  l: 2,  lastDays: 3 },
+  { first: "Cole",    last: "Whitaker",  nick: "Greenhorn",      wc: "Middleweight",  style: "Wrestler",            story: "College Wrestler",    ovr: 16, dp: 180,  w: 3,  l: 2,  lastDays: 2 },
+  { first: "Sami",    last: "Okafor",    nick: "Spark",          wc: "Lightweight",   style: "Capoeira",            story: "Street Fighter",      ovr: 11, dp: 40,   w: 0,  l: 2,  lastDays: 4 },
+  { first: "Andre",   last: "Boateng",   nick: "Iron Lungs",     wc: "Heavyweight",   style: "Judo",                story: "Army Veteran",        ovr: 18, dp: 240,  w: 4,  l: 3,  lastDays: 1 },
+  { first: "Marco",   last: "Bellini",   nick: "Stone Hands",    wc: "Middleweight",  style: "Boxer",               story: "Kickboxing Champion", ovr: 15, dp: 150,  w: 3,  l: 3,  lastDays: 3 },
+  { first: "Jin",     last: "Park",      nick: "Lightning",      wc: "Featherweight", style: "Kickboxer",           story: "MMA Prodigy",         ovr: 17, dp: 200,  w: 3,  l: 1,  lastDays: 0 },
+
+  // ── 4 Contenders (dp 300–1199, ovr 18–30) ──
+  { first: "Rashad",  last: "Vance",     nick: "The Verdict",    wc: "Lightweight",   style: "Wrestler",            story: "College Wrestler",    ovr: 22, dp: 420,  w: 6,  l: 4,  lastDays: 1 },
+  { first: "Bruno",   last: "Mendez",    nick: "El Toro",        wc: "Middleweight",  style: "Brazilian Jiu-Jitsu", story: "Late Bloomer",        ovr: 25, dp: 680,  w: 9,  l: 5,  lastDays: 2 },
+  { first: "Sean",    last: "Gallagher", nick: "Cinderella",     wc: "Featherweight", style: "Boxer",               story: "Late Bloomer",        ovr: 27, dp: 920,  w: 11, l: 6,  lastDays: 0 },
+  { first: "Dmitri",  last: "Sokolov",   nick: "The Bear",       wc: "Heavyweight",   style: "Sambo",               story: "Army Veteran",        ovr: 29, dp: 1120, w: 13, l: 6,  lastDays: 3 },
+
+  // ── 3 Challengers (dp 1200–2499, ovr 25–40) ──
+  { first: "Malik",   last: "Johnson",   nick: "Bad News",       wc: "Middleweight",  style: "Muay Thai",           story: "Street Fighter",      ovr: 31, dp: 1450, w: 16, l: 8,  lastDays: 1 },
+  { first: "Hiroshi", last: "Nakamura",  nick: "The Surgeon",    wc: "Lightweight",   style: "Brazilian Jiu-Jitsu", story: "MMA Prodigy",         ovr: 35, dp: 1900, w: 19, l: 9,  lastDays: 0 },
+  { first: "Gunnar",  last: "Olsen",     nick: "The Viking",     wc: "Heavyweight",   style: "Wrestler",            story: "Army Veteran",        ovr: 38, dp: 2300, w: 22, l: 10, lastDays: 2 },
 ];
 
 (async () => {
-  const count = Math.max(1, Math.min(POOL.length, parseInt(process.argv[2], 10) || 10));
   await connectDB();
 
   const season = await Season.findOne({ status: "active", "config.crossWeightClass": true })
@@ -59,7 +65,7 @@ const POOL = [
   }
   console.log(`Target season: #${season.seasonNumber} wc=${season.weightClass} id=${season._id}`);
 
-  // Reset existing bots (idempotent).
+  // Strip existing bots (idempotent — only touches isPvpBot:true, never real players).
   const existing = await Fighter.find({ isPvpBot: true }).select("_id").lean();
   const exIds = existing.map((f) => f._id);
   if (exIds.length) {
@@ -67,52 +73,57 @@ const POOL = [
     await PVPFight.deleteMany({ $or: [{ attackerId: { $in: exIds } }, { defenderId: { $in: exIds } }] });
     await PVPRival.deleteMany({ $or: [{ player1Id: { $in: exIds } }, { player2Id: { $in: exIds } }] });
     await Fighter.deleteMany({ _id: { $in: exIds } });
-    console.log(`Cleared ${exIds.length} existing bot(s) + their PVP data.`);
+    console.log(`Stripped ${exIds.length} existing bot(s) + their PVP data.`);
   }
 
   const now = Date.now();
-  let made = 0;
-  for (let i = 0; i < count; i++) {
+  const counts = {};
+  for (let i = 0; i < POOL.length; i++) {
     const b = POOL[i];
     const stats = {};
     STAT_KEYS.forEach((k) => { stats[k] = Math.max(1, Math.min(99, b.ovr)); });
 
     const fighter = await Fighter.create({
-      // "BOT" prefix so they're unmistakable on the ladder (e.g. "BOT Diego Cruz").
-      firstName: "BOT",
-      lastName: b.name,
+      firstName: b.first,
+      lastName: b.last,
+      nickname: b.nick,
       isPvpBot: true,
       weightClass: b.wc,
-      style: STYLES[i % STYLES.length],
+      style: b.style,
+      backstory: b.story,
       overallRating: b.ovr,
       ...stats,
       record: { wins: b.w, losses: b.l },
       pvpOnboarding: { unlocked: true, placementComplete: true },
     });
 
+    const div = divisionForDp(b.dp);
+    counts[div] = (counts[div] || 0) + 1;
+    const onStreak = i % 4 === 0; // a few show the streak pill
     const lastFightAt = new Date(now - b.lastDays * DAY);
+
     await PVPRecord.create({
       playerId: fighter._id,
       seasonId: season._id,
-      weightClass: season.weightClass,        // season-derived ("Open") — load-bearing for pool filters
-      realWeightClass: b.wc,                   // true class — drives the cross-WC filter + [WC] pill
-      division: divisionForDp(b.dp),
+      weightClass: season.weightClass,   // season-derived ("Open") — load-bearing for pool filters
+      realWeightClass: b.wc,              // true class — drives the cross-WC filter + [WC] pill
+      division: div,
       dp: b.dp,
       peakDp: b.dp,
       overallRating: b.ovr,
       wins: b.w,
       losses: b.l,
-      winStreak: i % 4 === 0 ? 3 : 0,          // a few show the streak pill
-      longestStreak: i % 4 === 0 ? 3 : 0,
+      winStreak: onStreak ? 3 : 0,
+      longestStreak: onStreak ? 3 : 0,
       defenseGameplan: GAMEPLANS[i % GAMEPLANS.length],
       lastFightAt,
       lastActiveAt: lastFightAt,
     });
-    made++;
-    console.log(`  + BOT ${b.name} (${b.wc}, OVR ${b.ovr}) → ${divisionForDp(b.dp)} @ ${b.dp} DP`);
+    console.log(`  + ${b.first} "${b.nick}" ${b.last} (${b.wc}, ${b.style}, OVR ${b.ovr}) → ${div} @ ${b.dp} DP · ${b.w}-${b.l}`);
   }
 
+  console.log(`\nCreated ${POOL.length} bots — ${JSON.stringify(counts)}`);
   const total = await PVPRecord.countDocuments({ seasonId: season._id });
-  console.log(`\nCreated ${made} bots. Season now has ${total} PVP records.`);
+  console.log(`Season now has ${total} PVP records.`);
   await mongoose.disconnect();
 })().catch((e) => { console.error(e); process.exit(1); });

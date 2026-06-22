@@ -215,6 +215,7 @@ export const DashboardTab = memo(function DashboardTab({
   const injuries = Array.isArray(data?.injuries) ? data.injuries : [];
   const feed = Array.isArray(data?.feed) ? data.feed.slice(0, 3) : [];
   const ranking = data?.ranking ?? null;
+  const pvp = data?.pvp ?? null;
   const sponsorship = data?.sponsorship ?? null;
   const nudge = data?.nudge ?? null;
 
@@ -303,30 +304,69 @@ export const DashboardTab = memo(function DashboardTab({
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("rankings"); } }}
         >
-          <div className="dash-top-tile-label">
-            <ListOrdered size={13} strokeWidth={2.2} />
-            {t("dashboard.rankings.label")}
-          </div>
+          <div className="rnk-eye">{t("dashboard.rankings.label")}</div>
+
           {ranking?.rank != null ? (
-            <div className="dash-top-tile-main">
-              <span className="dash-top-tile-big">#{ranking.rank}</span>
-              <span className="dash-top-tile-sub">{t("dashboard.rankings.ofTotal", { n: ranking.rosterSize ?? "—" })}</span>
-              {ranking.delta != null && ranking.delta !== 0 ? (
-                <span className={`dash-rank-delta ${ranking.delta > 0 ? "up" : "down"}`}>
-                  {ranking.delta > 0
-                    ? <TrendingUp size={12} strokeWidth={2.4} />
-                    : <TrendingDown size={12} strokeWidth={2.4} />}
-                  {Math.abs(ranking.delta)}
+            <>
+              <div className="rnk-main">
+                <span className="rnk-num">#{ranking.rank}</span>
+                <span className="rnk-of">{t("dashboard.rankings.ofTotal", { n: ranking.rosterSize ?? "—" })}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "11px", color: "#666" }}>
+                  {ranking.division ? `${ranking.division} ${t("dashboard.rankings.divisionSuffix")}` : ""}
                 </span>
-              ) : null}
+                {ranking.delta != null && ranking.delta !== 0 ? (
+                  <span className={`rnk-move${ranking.delta > 0 ? " rnk-move--up" : ""}`}>
+                    {ranking.delta > 0
+                      ? `↑ +${ranking.delta} ${t("dashboard.rankings.thisSession")}`
+                      : `↓ −${Math.abs(ranking.delta)} ${t("dashboard.rankings.thisSession")}`}
+                  </span>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <div className="dash-top-tile-muted" style={{ marginBottom: "8px" }}>{t("dashboard.rankings.unranked")}</div>
+          )}
+
+          <div className="rnk-divider" />
+
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "#666", marginBottom: "8px" }}>
+            {t("dashboard.rankings.titleShotConditions")}
+          </div>
+
+          {ranking?.titleShot ? (
+            <div className="rnk-checks">
+              <div className={`rnk-check${ranking.titleShot.ovrMet ? " done" : ""}`}>
+                <span className={`rnk-check-icon${ranking.titleShot.ovrMet ? "" : " x"}`}>
+                  {ranking.titleShot.ovrMet ? "✓" : "✗"}
+                </span>
+                {t("dashboard.rankings.conditionOvr")}
+              </div>
+              <div className={`rnk-check${ranking.titleShot.topFive ? " done" : ""}`}>
+                <span className={`rnk-check-icon${ranking.titleShot.topFive ? "" : " x"}`}>
+                  {ranking.titleShot.topFive ? "✓" : "✗"}
+                </span>
+                {t("dashboard.rankings.conditionTopFive")}
+                {ranking.rank != null && (
+                  <span className="rnk-check-hint">{t("dashboard.rankings.topFiveHint", { rank: ranking.rank })}</span>
+                )}
+              </div>
+              <div className={`rnk-check${ranking.titleShot.winsMet ? " done" : ""}`}>
+                <span className={`rnk-check-icon${ranking.titleShot.winsMet ? "" : " x"}`}>
+                  {ranking.titleShot.winsMet ? "✓" : "✗"}
+                </span>
+                {t("dashboard.rankings.conditionWins")}
+                <span className="rnk-check-hint">
+                  {t("dashboard.rankings.winsHint", { won: ranking.titleShot.winsInTier ?? 0, need: ranking.titleShot.titleWins ?? 0 })}
+                </span>
+              </div>
             </div>
           ) : (
-            <div className="dash-top-tile-muted">{t("dashboard.rankings.unranked")}</div>
+            <div className="rnk-checks" />
           )}
-          {ranking?.isTopFive && (
-            <span className="dash-title-badge">{t("dashboard.rankings.titleContender")}</span>
-          )}
-          <div className="dash-top-tile-cta">{t("dashboard.rankings.viewCta")}</div>
+
+          <div className="rnk-link">{t("dashboard.rankings.viewCta")}</div>
         </div>
 
         {/* Proving Ground tile */}
@@ -337,15 +377,44 @@ export const DashboardTab = memo(function DashboardTab({
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("pvp"); } }}
         >
-          <div className="dash-top-tile-label">
-            <Crosshair size={13} strokeWidth={2.2} />
-            {t("dashboard.provingGround.label")}
-          </div>
-          <div className="dash-top-tile-main">
-            <span className="dash-top-tile-big">{t("dashboard.provingGround.big")}</span>
-          </div>
-          <div className="dash-top-tile-desc">{t("dashboard.provingGround.desc")}</div>
-          <div className="dash-top-tile-cta">{t("dashboard.provingGround.cta")}</div>
+          {pvp != null ? (
+            <>
+              <div className="pvp-eye">{t("dashboard.provingGround.label")}</div>
+              <div className="pvp-title">{t("dashboard.provingGround.title")}</div>
+              <div className="pvp-season">{pvp.seasonLabel}</div>
+              <div className="pvp-divider" />
+              <div className="pvp-stats">
+                <div className="pvp-stat">
+                  <div className="pvp-stat-val" style={{ color: "#4ADE80" }}>{pvp.wins}</div>
+                  <div className="pvp-stat-lbl">{t("dashboard.provingGround.statWins")}</div>
+                </div>
+                <div className="pvp-stat">
+                  <div className="pvp-stat-val" style={{ color: "#C8102E" }}>{pvp.losses}</div>
+                  <div className="pvp-stat-lbl">{t("dashboard.provingGround.statLosses")}</div>
+                </div>
+                <div className="pvp-stat">
+                  <div className="pvp-stat-val" style={{ color: "#D4A820" }}>{pvp.dp}</div>
+                  <div className="pvp-stat-lbl">{t("dashboard.provingGround.statDp")}</div>
+                </div>
+              </div>
+              {pvp.crossWeightClass && (
+                <div className="pvp-badge">● {t("dashboard.provingGround.openBadge")}</div>
+              )}
+              {pvp.weeksRemaining != null && (
+                <div className="pvp-time">
+                  <span>{pvp.weeksRemaining}</span> {t("dashboard.provingGround.weeksRemaining")}
+                </div>
+              )}
+              <div className="pvp-link">{t("dashboard.provingGround.cta")}</div>
+            </>
+          ) : (
+            <>
+              <div className="pvp-eye">{t("dashboard.provingGround.label")}</div>
+              <div className="pvp-title">{t("dashboard.provingGround.title")}</div>
+              <div className="pvp-season" style={{ color: "#666" }}>{t("dashboard.provingGround.seasonNotActive")}</div>
+              <div className="pvp-link">{t("dashboard.provingGround.cta")}</div>
+            </>
+          )}
         </div>
       </div>
 

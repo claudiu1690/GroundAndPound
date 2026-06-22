@@ -305,13 +305,28 @@
       "ofTotal": "of {n}",
       "unranked": "Unranked",
       "titleContender": "Title contender",
-      "viewCta": "View Rankings →"
+      "viewCta": "View Rankings →",
+      "divisionSuffix": "Division",
+      "thisSession": "this session",
+      "titleShotConditions": "Title Shot Conditions",
+      "conditionOvr": "OVR threshold reached",
+      "conditionTopFive": "Top 5 in division",
+      "topFiveHint": "(currently #{rank})",
+      "conditionWins": "Wins in tier met",
+      "winsHint": "({won}/{need})"
     },
     "provingGround": {
       "label": "Proving Ground",
+      "title": "The Proving Ground",
       "big": "PVP",
       "desc": "Challenge rivals. Earn badges.",
-      "cta": "Enter →"
+      "cta": "Enter →",
+      "statWins": "Wins",
+      "statLosses": "Losses",
+      "statDp": "DP",
+      "openBadge": "Open · All Weight Classes",
+      "weeksRemaining": "weeks remaining this season",
+      "seasonNotActive": "Season not active"
     },
     "hero": {
       "defaultLabel": "Continue"
