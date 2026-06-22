@@ -125,14 +125,14 @@ function rollFightInjury(fighter, { isKoLoss, injuryRiskMult, collagenBuff }) {
     const injuryGrace = injuryGraceActive(fighter);
     if (isKoLoss) {
         if (injuryGrace) return null;
-        const concussion = buildInjury("concussion");
+        const concussion = buildInjury("concussion", fighter.promotionTier);
         if (!concussion) return null;
         softenInjury(concussion, collagenBuff);
         return concussion;
     }
     const fightInjuryType = rollForFightInjury(fighter.fiq || 10, injuryRiskMult || 1);
     if (!fightInjuryType) return null;
-    const inj = buildInjury(fightInjuryType);
+    const inj = buildInjury(fightInjuryType, fighter.promotionTier);
     // During grace, skip fight-blocking injuries (e.g. Cut); minor ones still apply.
     if (!inj || (injuryGrace && inj.cannotFight)) return null;
     softenInjury(inj, collagenBuff);

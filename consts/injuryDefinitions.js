@@ -112,6 +112,24 @@ const FULL_RECOVERY_DISCOUNT = 0.15;
 // out of the game before they've had a chance to build up resources.
 const INJURY_GRACE_FIGHTS = 3;
 
+// Tier-scaled doctor-visit cost overrides (iron). A KO/sub loss past the grace window
+// guarantees a Concussion; at Amateur the flat 1,500 cost prices a brand-new player out
+// of the fast-heal exactly when they're most fragile. It's reduced here so the paid
+// shortcut is actually reachable. NOTE: every injury still self-heals for FREE over its
+// recovery hours regardless of tier — the doctor visit is only a paid shortcut, never a
+// gate. Any (type, tier) not listed falls back to the injury's base docVisitIron.
+const DOC_VISIT_IRON_BY_TIER = {
+    concussion: { Amateur: 600 },
+};
+
+/** Resolve the doctor-visit iron cost for an injury type at a given promotion tier. */
+function docVisitIronFor(typeKey, tier) {
+    const def = INJURY_TYPES[typeKey];
+    const base = (def && def.docVisitIron) || 0;
+    const override = DOC_VISIT_IRON_BY_TIER[typeKey];
+    return override && tier && override[tier] != null ? override[tier] : base;
+}
+
 // Health restoration packages — available to all tiers, no level gating.
 // Each package restores up to `hp` health (capped at 100); iron cost is pro-rated on
 // actual HP delivered. Volume discount across tiers — bigger packages have a better
@@ -134,4 +152,6 @@ module.exports = {
     FULL_RECOVERY_DISCOUNT,
     INJURY_GRACE_FIGHTS,
     HEALTH_PACKAGES,
+    DOC_VISIT_IRON_BY_TIER,
+    docVisitIronFor,
 };

@@ -98,11 +98,16 @@ Five tiers. A tier's **signing fee is its base fight purse** (no fee is ever pai
 
 | Tier | Overall Range | Fight Energy Cost | Base Purse (Cash) |
 |---|---|---|---|
-| Amateur | 0–30 | 10 | 400 |
-| Regional Pro | 30–48 | 15 | 2,000 |
-| National | 45–65 | 18 | 10,000 |
-| GCS Contender | 60–75 | 20 | 25,000 |
-| GCS | 62–95 | 20 | 50,000 |
+| Amateur | 0–30 | 10 | 500 |
+| Regional Pro | 30–48 | 15 | 750 |
+| National | 45–65 | 18 | 2,200 |
+| GCS Contender | 60–75 | 20 | 6,000 |
+| GCS | 62–95 | 20 | 12,000 |
+
+Purses scale at a steady **~2–3× per tier** (rather than a sharp early jump) and are
+tuned so fight income stays roughly in line with each tier's cash sinks (gym fees,
+hospital, shop) — one win funds at most a couple of extra fights' worth of energy
+via Energy Shots, so the cash→energy loop can't run away at the upper tiers.
 
 There is **no daily fight cap** — the number of fights per day is limited only by
 energy (each fight costs the tier's energy amount above; energy regenerates 1/min).
@@ -498,15 +503,15 @@ Read-only history of podcast episodes, documentary, appearances, and post-fight 
 ### 17.1 Injuries
 | Injury | Source | Penalty | Heals In | Blocks |
 |---|---|---|---|---|
-| Cut | Fight | None | 2 days | Fighting |
-| Bruised Rib | Fight | −10 Max Stamina | 2 days | — |
-| Broken Nose | Fight | −3 CHN | 3 days | — |
-| Broken Hand | Fight | −20 STR | 6 days | Bag/pad work |
-| Sprained Ankle | Sparring | −15 LEG | 5 days | — |
-| Torn Ligament | Sparring | −10 STR, −10 LEG | 6 days | Fighting |
-| Concussion | KO/TKO or Sub loss | −2 CHN | 4 days | Fighting + sparring |
+| Cut | Fight | None | 6 h | Fighting |
+| Bruised Rib | Fight | −10 Max Stamina | 6 h | — |
+| Broken Nose | Fight | −3 CHN | 9 h | — |
+| Broken Hand | Fight | −20 STR | 24 h | Bag/pad work |
+| Sprained Ankle | Sparring | −15 LEG | 18 h | — |
+| Torn Ligament | Sparring | −10 STR, −10 LEG | 24 h | Fighting |
+| Concussion | KO/TKO or Sub loss | −2 CHN | 12 h | Fighting + sparring |
 
-**Healing model:** every injury ticks down once per 24h and auto-clears — **no permanent dead ends**. The Hospital shows a live countdown. Auto-heal injuries clear free over time (cash can skip the wait); doctor-required injuries (Cut, Broken Nose, Concussion, Torn Ligament) also auto-heal but block fighting/sparring while active, so waiting has a real cost.
+**Healing model:** every injury ticks down by real elapsed hours and auto-clears for **free** — **no permanent dead ends, and the Hospital is never a payment gate**. The Hospital shows a live countdown. Auto-heal injuries clear free over time (cash can skip the wait); doctor-required injuries (Cut, Broken Nose, Concussion, Torn Ligament) also auto-heal on their own but block fighting/sparring while active, so the paid doctor visit only buys back the wait — it's never the *only* way out.
 
 ### 17.2 New-Fighter Injury Grace
 During a fighter's **first 3 fights**, no fight-blocking injury (Concussion, Cut, Torn Ligament) is ever inflicted (fights or sparring). Non-blocking injuries can still occur. After 3 recorded fights the grace expires.
@@ -517,7 +522,7 @@ During a fighter's **first 3 fights**, no fight-blocking injury (Concussion, Cut
 
 Cash-paid services to skip recovery, fast-clear blocking injuries, or restore HP.
 
-- **Doctor Visit:** clears one doctor-required injury — Cut (10E/200), Broken Nose (10E/400), Concussion (20E/1,500), Torn Ligament (20E/2,000).
+- **Doctor Visit:** clears one doctor-required injury — Cut (10E/200), Broken Nose (10E/400), Concussion (20E/1,500), Torn Ligament (20E/2,000). **Amateur exception:** the Concussion doctor visit costs **600** (not 1,500) at Amateur tier, so a new player who eats the guaranteed KO-loss concussion isn't priced out of the fast-heal in the fragile early game (it still self-heals free in 12 h regardless).
 - **Skip Recovery:** clears one auto-heal injury — Bruised Rib 600, Sprained Ankle 800, Broken Hand 1,200 (cash only).
 - **Health Restoration:** Quick Patch (+25 HP / 250), Recovery Bay (+50 HP / 400), Full Restoration (→100 HP / 700). Cost pro-rates to HP actually delivered.
 - **Full Recovery Package:** heals every active injury at a 15% bulk discount (2+ injuries).

@@ -63,11 +63,11 @@ exports.GYM_TIERS = {
 // `signingFee` is the base fight purse for the tier (win pays 100%, draw 50%, loss 70%).
 // (No daily fight cap — fights are limited only by energy / the per-tier fightEnergyCost.)
 exports.PROMOTION_TIERS = {
-    Amateur:        { fightEnergyCost: 10, signingFee: 400,   minOverall: 0,  maxOverall: 30, recommendedTca: 2, penaltyStatPct: 0.10, penaltyStaminaPct: 0,    injuryRiskMult: 2 },
-    'Regional Pro': { fightEnergyCost: 15, signingFee: 2000,  minOverall: 30, maxOverall: 48, recommendedTca: 3, penaltyStatPct: 0.15, penaltyStaminaPct: 0,    injuryRiskMult: 2 },
-    National:       { fightEnergyCost: 18, signingFee: 10000, minOverall: 45, maxOverall: 65, recommendedTca: 5, penaltyStatPct: 0.15, penaltyStaminaPct: 0.25, injuryRiskMult: 2 },
-    'GCS Contender': { fightEnergyCost: 20, signingFee: 25000, minOverall: 60, maxOverall: 75, recommendedTca: 8, penaltyStatPct: 0.20, penaltyStaminaPct: 0.25, injuryRiskMult: 3 },
-    GCS:            { fightEnergyCost: 20, signingFee: 50000, minOverall: 62, maxOverall: 95, recommendedTca: 10, penaltyStatPct: 0.20, penaltyStaminaPct: 0.30, injuryRiskMult: 3 },
+    Amateur:        { fightEnergyCost: 10, signingFee: 500,   minOverall: 0,  maxOverall: 30, recommendedTca: 2, penaltyStatPct: 0.10, penaltyStaminaPct: 0,    injuryRiskMult: 2 },
+    'Regional Pro': { fightEnergyCost: 15, signingFee: 750,   minOverall: 30, maxOverall: 48, recommendedTca: 3, penaltyStatPct: 0.15, penaltyStaminaPct: 0,    injuryRiskMult: 2 },
+    National:       { fightEnergyCost: 18, signingFee: 2200,  minOverall: 45, maxOverall: 65, recommendedTca: 5, penaltyStatPct: 0.15, penaltyStaminaPct: 0.25, injuryRiskMult: 2 },
+    'GCS Contender': { fightEnergyCost: 20, signingFee: 6000, minOverall: 60, maxOverall: 75, recommendedTca: 8, penaltyStatPct: 0.20, penaltyStaminaPct: 0.25, injuryRiskMult: 3 },
+    GCS:            { fightEnergyCost: 20, signingFee: 12000, minOverall: 62, maxOverall: 95, recommendedTca: 10, penaltyStatPct: 0.20, penaltyStaminaPct: 0.30, injuryRiskMult: 3 },
 };
 
 // ----- Fight strategies (GDD 8.3) -----

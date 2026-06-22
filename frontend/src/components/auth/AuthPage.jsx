@@ -28,8 +28,8 @@ const BACKSTORY_DESC = {
   "Late Bloomer":          "+25% training XP — A slow start, explosive ceiling.",
 };
 
-export function AuthPage({ onAuthenticated, initialResetToken = null }) {
-  const [tab, setTab] = useState(initialResetToken ? "forgot" : "login"); // "login" | "register" | "forgot"
+export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab = null, onBack = null }) {
+  const [tab, setTab] = useState(initialResetToken ? "forgot" : (initialTab || "login")); // "login" | "register" | "forgot"
   const [step, setStep] = useState(1);     // register step 1=account, 2=fighter
   // `initialResetToken` is set when the user arrived via the reset email link
   // (?reset_password_token=... in the URL). The ForgotPasswordFlow detects the
@@ -172,6 +172,11 @@ export function AuthPage({ onAuthenticated, initialResetToken = null }) {
           <div className="auth-title-divider" />
         </div>
         <div className="auth-container">
+          {onBack && (
+            <button type="button" className="auth-form-link" style={{ marginBottom: "12px", display: "block" }} onClick={onBack}>
+              ← Back
+            </button>
+          )}
           {tab !== "forgot" && (
             <div className="auth-tabs">
               <button className={`auth-tab ${tab === "login" ? "active" : ""}`} onClick={() => switchTab("login")}>{t("auth.tabs.login")}</button>

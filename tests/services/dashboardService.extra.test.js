@@ -75,5 +75,5 @@ test("CONTRACT: live buildOffers passes tier=null → purse always null", () => 
     assert.equal(s.best.purse, null);
     // …whereas passing the real tier WOULD populate it:
     const s2 = summariseOffers(offers, "Amateur");
-    assert.equal(s2.best.purse, 400);
+    assert.equal(s2.best.purse, 500);
 });

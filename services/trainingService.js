@@ -357,7 +357,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
         if (isSparringFamily) {
             const injuryType = rollForSparringInjury(fighter.fiq || 10);
             if (injuryType) {
-                const inj = buildInjury(injuryType);
+                const inj = buildInjury(injuryType, fighter.promotionTier);
                 if (inj && !(injuryGraceActive(fighter) && inj.cannotFight)) {
                     applyInjuryToFighter(fighter, inj);
                     fighter.injuries = [...(fighter.injuries || []), inj];

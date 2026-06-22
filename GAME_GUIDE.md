@@ -500,7 +500,7 @@ The banner is purely cosmetic — it doesn't affect fight outcomes. But it appea
 
 *Where cash comes from, where it goes, and how to manage it across your career.*
 
-Cash is the currency of your MMA career. You earn it by fighting — every fight pays a purse based on your tier, the opponent's difficulty, and any bonuses from callouts, sponsorships, or comeback mode. You spend it on gym memberships, hospital treatment, and eventually title shot fees.
+Cash is the currency of your MMA career. You earn it by fighting — every fight pays a purse based on your tier, the opponent's difficulty, and any bonuses from callouts, sponsorships, or comeback mode. You spend it on gym memberships, hospital treatment, and shop items like energy shots, training boosters, and pre-fight supplements. Title shots cost no cash — they're earned in the cage, not bought.
 
 The cash economy gets tighter in the middle tiers. Amateur fights pay modest purses with low gym costs. Regional Pro and National fights pay more, but the gym memberships in those tiers cost significantly more too. Managing your cash means knowing when to upgrade your gym, when to stay at the cheaper one, and when a hospital visit is worth the cost versus just waiting for natural recovery.
 
@@ -580,7 +580,7 @@ There's a new-fighter grace period: during your first 3 fights, no fight-blockin
 
 The Hospital tab is your medical centre. It offers four services: Doctor Visit (Treatment) for the doctor-required injuries, Skip Recovery to instantly clear an auto-heal injury, Health Restoration packages, and a Full Recovery Package when you have multiple injuries at once.
 
-Doctor Visit clears one doctor-required injury — Cut, Broken Nose, Concussion, or Torn Ligament. It costs energy and cash. Concussions are the most expensive at 20 energy and $1,500. Cuts and Broken Noses are cheaper. Torn Ligaments are expensive but worth it if a title shot is waiting. Remember — these injuries will heal on their own within 6 to 24 hours even if you don't pay; the doctor visit is just the fast path.
+Doctor Visit clears one doctor-required injury — Cut, Broken Nose, Concussion, or Torn Ligament. It costs energy and cash. Concussions are the most expensive at 20 energy and $1,500 — though at Amateur tier the Concussion visit is only $600, so a rough early KO loss doesn't price a new fighter out of the fast-heal. Cuts and Broken Noses are cheaper. Torn Ligaments are expensive but worth it if a title shot is waiting. Remember — these injuries will heal on their own within 6 to 24 hours even if you don't pay; the doctor visit is just the fast path.
 
 Skip Recovery instantly clears an auto-heal injury. Use it when an injury is dragging on and you have a fight or sponsor clause that can't wait. Bruised Ribs cost $600, Sprained Ankles $800, Broken Hands $1,200. If you can wait a few hours, don't spend the cash.
 
@@ -598,7 +598,7 @@ Every loss activates Comeback Mode. While in Comeback Mode, your next fight earn
 
 Three consecutive losses freeze your notoriety — no fame gains from fights, sponsors, or media until you win again. The freeze is automatic and clears itself the moment you put a win on the record. Nemesis victories and title shot wins are the two exceptions: they always pay their bonuses, even through a freeze.
 
-Crucially, a losing streak never blocks you from fighting. You can always step into the cage to break the freeze. The game gives you the comeback XP and cash bonuses precisely so you have every incentive to climb back out — there is no forced rest, no mandatory cleanup step, no gate between you and the next fight.
+Crucially, the losing streak and the fame freeze themselves never block you from fighting — there's no forced rest or mental-reset gate. You can always step back into the cage to break the freeze, and the comeback XP and cash bonuses are there precisely so you have every incentive to climb back out. (A serious injury from a brutal loss can still sideline you until it heals — but every injury clears on its own in time for free, and the Hospital only ever speeds that up; it never gates you behind a payment.)
 
 Come back with a new camp, a different approach, and a clear head. The Career Feed will remember the losing streak, but it'll also remember the comeback.
 

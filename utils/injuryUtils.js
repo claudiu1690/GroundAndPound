@@ -11,6 +11,7 @@ const {
     MAJOR_SPARRING_INJURIES,
     FULL_RECOVERY_DISCOUNT,
     INJURY_GRACE_FIGHTS,
+    docVisitIronFor,
 } = require("../consts/injuryDefinitions");
 
 function pickRandom(arr) {
@@ -69,7 +70,7 @@ function rollForFightInjury(fiq = 10, riskMultiplier = 1) {
  * Build an injury subdocument ready to be pushed onto fighter.injuries.
  * Does NOT apply stat effects — call applyInjuryToFighter() separately.
  */
-function buildInjury(typeKey) {
+function buildInjury(typeKey, tier) {
     const def = INJURY_TYPES[typeKey];
     if (!def) return null;
     return {
@@ -85,7 +86,8 @@ function buildInjury(typeKey) {
         recoveryHoursLeft: def.recoveryHoursNeeded || 0,
         recoveryLastTickAt: def.recoveryHoursNeeded ? new Date() : null,
         docVisitEnergy: def.docVisitEnergy || 0,
-        docVisitIron: def.docVisitIron || 0,
+        // Tier-scaled (e.g. cheaper Amateur concussion); falls back to base when no tier.
+        docVisitIron: docVisitIronFor(typeKey, tier),
         recoverySkipIron: def.recoverySkipIron || 0,
         appliedStatEffects: { ...def.statEffects },
         sustainedAt: new Date(),

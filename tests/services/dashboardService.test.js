@@ -144,7 +144,7 @@ test("summariseOffers: unlocked title shot is best; locked title excluded from c
     assert.equal(s.count, 2);
     assert.equal(s.best.isTitleShot, true);
     assert.equal(s.best.offerType, "TitleShot");
-    assert.equal(s.best.purse, 400); // Amateur signingFee
+    assert.equal(s.best.purse, 500); // Amateur signingFee
 });
 
 test("summariseOffers: locked title shot dropped from count, OVR tiebreak picks best", () => {

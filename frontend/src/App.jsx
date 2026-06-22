@@ -19,6 +19,7 @@ import { CareerFeed } from "./components/CareerFeed";
 import { CareerPage } from "./components/career/CareerPage";
 import { prettifyBadgeId } from "./components/career/badgeCatalog";
 import { AuthPage } from "./components/auth/AuthPage";
+import { LandingPage } from "./components/landing/LandingPage";
 import { FightLimitPopup } from "./components/fights/FightLimitPopup";
 import { FameDrawer } from "./components/fame/FameDrawer";
 import { ContractsTab } from "./components/contracts/ContractsTab";
@@ -1085,7 +1086,7 @@ const handleGetOffers = useCallback(async () => {
   // password-reset email link we land directly on the forgot-password "apply"
   // form by passing the token through.
   if (!authed) {
-    return <AuthPage onAuthenticated={handleAuthenticated} initialResetToken={bootParams.resetToken} />;
+    return <LandingPage onAuthenticated={handleAuthenticated} initialResetToken={bootParams.resetToken} />;
   }
 
   if (loading) {

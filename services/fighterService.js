@@ -314,7 +314,8 @@ async function reconcileEnergy(fighter) {
 
 /**
  * Passively regenerate health based on elapsed real time.
- * Gains +1 health per 30 minutes since `healthLastRegenAt`, capped at 100.
+ * Gains +1 health per 5 minutes since `healthLastRegenAt`, capped at 100
+ * (so a full heal from 0 takes ~8h20m).
  * Only advances the timestamp by the amount of time actually consumed — partial
  * intervals are preserved so players don't lose progress between loads.
  */

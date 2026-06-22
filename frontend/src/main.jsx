@@ -9,6 +9,7 @@ import '@fontsource/barlow-condensed/400.css';
 import '@fontsource/barlow-condensed/600.css';
 import '@fontsource/barlow-condensed/700.css';
 import '@fontsource/barlow-condensed/800.css';
+import '@fontsource/barlow-condensed/900.css';
 // Playfair Display — serif masthead/headlines for the Octagon Gazette newspaper.
 import '@fontsource/playfair-display/400.css';
 import '@fontsource/playfair-display/700.css';

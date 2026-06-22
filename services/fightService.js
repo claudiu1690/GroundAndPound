@@ -122,6 +122,17 @@ const {
     injuryGraceActive,
 } = require("../utils/injuryUtils");
 const { applyXpToStat, roundStatXp, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require("../utils/statProgression");
+
+/**
+ * Message shown when a fight-blocking injury (Concussion/Cut/Torn Ligament) is active.
+ * Leads with the FREE self-heal so it doesn't read as a paywall — the doctor visit is
+ * the optional fast path, not a gate (the injury always clears on its own in time).
+ */
+function fightBlockedMessage(injury) {
+    const hrs = Math.ceil(injury.recoveryHoursLeft || 0);
+    const left = hrs > 0 ? ` (clears on its own in ~${hrs}h)` : "";
+    return `Still recovering from a ${injury.label}${left}. Wait it out, or clear it now at the Hospital.`;
+}
 const fightConsequenceService = require("./fightConsequenceService");
 const notorietyService = require("./notorietyService");
 const { tierRank } = require("../consts/notorietyConfig");
@@ -184,7 +195,7 @@ async function generateOffers(fighterId) {
     if (!fighter) throw new Error("Fighter not found");
     const blockingInjury = isFightBlocked(fighter);
     if (blockingInjury) {
-        throw new Error(`Cannot fight: ${blockingInjury.label} requires a doctor visit first.`);
+        throw new Error(fightBlockedMessage(blockingInjury));
     }
 
     const tier = fighter.promotionTier;
@@ -514,7 +525,7 @@ async function resolveFightAndApply(fighterId) {
     // GDD 8.9: Block fight if injury requires doctor visit first
     const blockingInjury = isFightBlocked(fighter);
     if (blockingInjury) {
-        throw new Error(`Cannot fight: ${blockingInjury.label} requires a doctor visit first.`);
+        throw new Error(fightBlockedMessage(blockingInjury));
     }
 
     const tierConfig = PROMOTION_TIERS[fight.promotionTier];
