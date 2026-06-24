@@ -360,12 +360,14 @@ async function buildRanking(fighter, rawFighter, id) {
     // the already-loaded fighter — no extra reads. OVR is "met" once pendingPromotion
     // is set (it's set exactly when OVR reaches the next tier's floor).
     const titleWins = fightService.getTitleShotConfig(tier).titleWins;
-    const winsInTier = fighter.winsInCurrentTier ?? 0;
+    // Title shot is gated on wins earned WHILE ranked top-5 (not raw tier wins).
+    const winsInTier = fighter.topFiveWinsInTier ?? 0;
     const titleShot = {
         ovrMet: !!fighter.pendingPromotion,
         topFive: isTopFive,
         winsMet: winsInTier >= titleWins,
-        winsInTier,
+        // Display the count capped at the requirement so it reads "2/2", never "4/2".
+        winsInTier: Math.min(winsInTier, titleWins),
         titleWins,
     };
 
@@ -444,7 +446,7 @@ function buildNudge(fighter, ranking) {
     const isTopFive = !!ranking?.isTopFive;
 
     const titleWins = fightService.getTitleShotConfig(fighter.promotionTier).titleWins;
-    const wins = fighter.winsInCurrentTier ?? 0;
+    const wins = fighter.topFiveWinsInTier ?? 0; // title shot now gated on wins earned while top-5
     const cooldown = fighter.titleShotCooldown ?? 0;
     const pending = fighter.pendingPromotion;
 

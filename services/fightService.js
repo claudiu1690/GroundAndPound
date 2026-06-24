@@ -332,7 +332,7 @@ async function generateOffers(fighterId) {
             // Show boosted OVR on the card so the player knows the real challenge
             const displayChampion = { ...champion, overallRating: Math.round(champion.overallRating * 1.05) };
             const titleConfig = getTitleShotConfig(fighter.promotionTier);
-            const winsMet     = (fighter.winsInCurrentTier ?? 0) >= titleConfig.titleWins;
+            const winsMet     = (fighter.topFiveWinsInTier ?? 0) >= titleConfig.titleWins;
             const cooldownOk  = (fighter.titleShotCooldown ?? 0) <= 0;
             const rankMet     = rankingService.isTopFive(fighter);
             const eligible    = winsMet && cooldownOk && rankMet;
@@ -343,7 +343,7 @@ async function generateOffers(fighterId) {
                 titleShotMeta: { targetTier: fighter.pendingPromotion },
                 locked: !eligible,
                 cooldownRemaining: fighter.titleShotCooldown ?? 0,
-                winsNeeded: Math.max(0, titleConfig.titleWins - (fighter.winsInCurrentTier ?? 0)),
+                winsNeeded: Math.max(0, titleConfig.titleWins - (fighter.topFiveWinsInTier ?? 0)),
                 rankNeeded: !rankMet,
                 currentRank: require("./rankingService").toDisplayRank(fighter.ranking?.rank ?? null),
                 nemesisMeta: fighter.nemesis?.opponentId?.toString() === champion._id.toString()
@@ -974,6 +974,13 @@ async function resolveFightAndApply(fighterId) {
         rankingService.updatePlayerRank(fighter, fightResult);
     }
 
+    // Title-shot gate: count this win only if it leaves the fighter ranked top-5
+    // (post-fight rank — the win that carries you INTO the zone counts). Does NOT
+    // reset on dropping out of top-5; only resets on promotion (below).
+    if (isWin && rankingService.isTopFive(fighter)) {
+        fighter.topFiveWinsInTier = (fighter.topFiveWinsInTier || 0) + 1;
+    }
+
     // Stat-XP banking + OVR recompute were applied by fightConsequenceService above.
     const statLevelUps = cons.statLevelUps;
     const fightXpApplied = cons.xpGained;
@@ -1006,6 +1013,7 @@ async function resolveFightAndApply(fighterId) {
         fighter.promotionTier = targetTier;
         fighter.pendingPromotion = null;
         fighter.winsInCurrentTier = 0;
+        fighter.topFiveWinsInTier = 0;
         fighter.titleShotCooldown = 0;
         // Ranking System v1.0 — wipe rank, fights/wins-in-tier counters for the new tier.
         rankingService.resetRankingForNewTier(fighter);
@@ -1031,6 +1039,7 @@ async function resolveFightAndApply(fighterId) {
         if (newTier) {
             fighter.promotionTier = newTier;
             fighter.winsInCurrentTier = 0;
+            fighter.topFiveWinsInTier = 0;
             // Ranking System v1.0 — wipe rank for the new tier so the player starts Unranked.
             rankingService.resetRankingForNewTier(fighter);
             promoted = { from: oldTier, to: newTier };
@@ -1244,9 +1253,11 @@ async function resolveFightAndApply(fighterId) {
     if (beltWon) activityLogService.log(fighterId, "TITLE_WON",
         `Won ${promoted.from} ${fighter.weightClass} Title \u2014 promoted to ${promoted.to}`,
         { from: promoted.from, to: promoted.to, weightClass: fighter.weightClass, tier: promoted.from, drinksGranted: promotionDrinksGranted });
-    // Title shot eligible: fires when wins threshold is first met
+    // Title shot eligible: fires when the top-5 wins threshold is first met (and
+    // the fighter is actually top-5, since that's now what the wins are gated on).
     if (isWin && fighter.pendingPromotion
-        && (fighter.winsInCurrentTier ?? 0) === getTitleShotConfig(fighter.promotionTier).titleWins
+        && rankingService.isTopFive(fighter)
+        && (fighter.topFiveWinsInTier ?? 0) === getTitleShotConfig(fighter.promotionTier).titleWins
         && (fighter.titleShotCooldown ?? 0) <= 0) {
         activityLogService.log(fighterId, "TITLE_SHOT_ELIGIBLE",
             `Title shot available \u2014 fight for the ${fighter.promotionTier} belt`,

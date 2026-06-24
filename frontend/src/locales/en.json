@@ -312,7 +312,7 @@
       "conditionOvr": "OVR threshold reached",
       "conditionTopFive": "Top 5 in division",
       "topFiveHint": "(currently #{rank})",
-      "conditionWins": "Wins in tier met",
+      "conditionWins": "Contender wins (while top 5)",
       "winsHint": "({won}/{need})"
     },
     "provingGround": {

@@ -113,9 +113,9 @@ There is **no daily fight cap** — the number of fights per day is limited only
 energy (each fight costs the tier's energy amount above; energy regenerates 1/min).
 
 ### 5.1 Promotion Gates
-- **Amateur → Regional Pro:** reach OVR 30 (pending promotion), then win **2** Amateur fights to earn the **Amateur title shot** vs. the NPC Amateur champion; winning grants the **Amateur Champion** badge and **+75 fame**.
-- **Regional Pro → National:** beat the Regional Pro champion (title shot — OVR threshold + 3 tier wins).
-- **National → GCS Contender:** beat the National champion (title shot — OVR threshold + 3 tier wins).
+- **Amateur → Regional Pro:** reach OVR 30 (pending promotion), then win **2** fights **while ranked top 5** to earn the **Amateur title shot** vs. the NPC Amateur champion; winning grants the **Amateur Champion** badge and **+75 fame**.
+- **Regional Pro → National:** beat the Regional Pro champion (title shot — OVR threshold + top 5 + **3 wins earned while top 5**).
+- **National → GCS Contender:** beat the National champion (title shot — OVR threshold + top 5 + **3 wins earned while top 5**).
 - **GCS Contender → GCS:** auto-promotes at OVR 62. **The GCS Contender belt is not a winnable title** (no champion at this tier).
 - **GCS:** final tier — defend the belt indefinitely. Pro title wins (Regional Pro, National, GCS) grant **+200 fame** + a permanent championship badge.
 
@@ -246,7 +246,7 @@ Cost capped at 3,000 fame, min 100. An active callout can be cancelled for a **f
 
 Each pro tier (Regional Pro, National, GCS) has a persistent NPC champion per weight class. You cannot promote past these tiers without beating the champion.
 
-- **Earning a shot:** reach the next tier's OVR threshold → pending promotion set → win 3 tier fights (2 for Amateur) → title card appears as a 4th gold card.
+- **Earning a shot:** reach the next tier's OVR threshold → pending promotion set → climb into the **top 5** → win **3 fights while ranked top 5** (2 for Amateur) → title card appears as a 4th gold card. Wins earned *before* you reached the top 5 do **not** count; once banked they are **not** lost if you drop out of the top 5 (they only reset on promotion). The post-loss rematch cooldown is a separate plain 2-win count (any wins, not top-5-gated).
 - **The fight:** champion gets +5% all stats; their Fighter Report shows only 2 visible fight logs; wildcard hidden; always a full 5-slot camp; gold theme throughout.
 - **Winning:** dethrone the champion, promote, +200 fame (Amateur +75) + permanent Champion badge; a new NPC champion is seeded from the old tier.
 - **Losing a title shot:** 2-win cooldown (card greyed until 2 more wins). Two straight title losses → the champion becomes your **Nemesis**. Pending promotion stays set — you can always retry.

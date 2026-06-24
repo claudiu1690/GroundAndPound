@@ -510,6 +510,33 @@ async function migrateAmateurPendingPromotion() {
     }
 }
 
+// One-time backfill for the title-shot rule change (tier wins → wins-while-top-5).
+// Fighters who had ALREADY earned the title shot under the old rule (pending + top-5 +
+// enough tier wins) get topFiveWinsInTier granted up to the requirement so the change
+// doesn't relock a shot they'd legitimately earned. Everyone else defaults to 0 and
+// earns it naturally. Idempotent: only touches fighters whose counter is still 0/unset.
+async function backfillTopFiveWinsForEarnedShots() {
+    const Fighter = require("./models/fighterModel");
+    const rankingService = require("./services/rankingService");
+    const { getTitleShotConfig } = require("./services/fightService");
+    const candidates = await Fighter.find({
+        pendingPromotion: { $ne: null },
+        $or: [{ topFiveWinsInTier: { $in: [0, null] } }, { topFiveWinsInTier: { $exists: false } }],
+    });
+    let n = 0;
+    for (const f of candidates) {
+        const titleWins = getTitleShotConfig(f.promotionTier).titleWins;
+        if (rankingService.isTopFive(f) && (f.winsInCurrentTier ?? 0) >= titleWins) {
+            f.topFiveWinsInTier = titleWins;
+            await f.save();
+            n++;
+        }
+    }
+    if (n > 0) {
+        console.log(`[Migration] Backfilled topFiveWinsInTier for ${n} fighter(s) with an already-earned title shot.`);
+    }
+}
+
 mongoose.connect(config.database.url, config.database.options)
     .then(async () => {
         console.log("Connected to MongoDB");
@@ -524,6 +551,7 @@ mongoose.connect(config.database.url, config.database.options)
         await backfillInventoryShape();
         await scheduler.startEnergyIncrementScheduler();
         await migrateAmateurPendingPromotion();
+        await backfillTopFiveWinsForEarnedShots();
         const { ensureChampionsExist } = require("./services/championService");
         await ensureChampionsExist();
         app.listen(config.port, () => {
