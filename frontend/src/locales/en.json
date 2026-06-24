@@ -1287,7 +1287,9 @@
       "record": "Record:",
       "ovr": "OVR:",
       "energy": "Energy",
-      "health": "Health"
+      "health": "Health",
+      "energyTooltip": "Energy replenishes +1 every minute.",
+      "healthTooltip": "Health replenishes +1 every 5 minutes."
     },
     "quickActions": {
       "title": "Quick Actions",

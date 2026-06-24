@@ -23,6 +23,7 @@ export function resourceRowsFromFighter(fighter) {
       value: fighter.energy?.current ?? fighter.energy ?? 0,
       max: fighter.energy?.max ?? 100,
       barClass: "resource-bar-energy",
+      tip: "Energy replenishes +1 every minute.",
     },
     {
       key: "health",
@@ -30,6 +31,7 @@ export function resourceRowsFromFighter(fighter) {
       value: fighter.health ?? 100,
       max: 100,
       barClass: "resource-bar-health",
+      tip: "Health replenishes +1 every 5 minutes.",
     },
   ];
 }

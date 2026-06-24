@@ -11,8 +11,8 @@ function barWidthPct(value, max) {
 export const FighterResourceBars = memo(function FighterResourceBars({ rows }) {
   return (
     <div className="fighter-resources">
-      {rows.map(({ key, label, value, max, barClass }) => (
-        <div className="resource-row" key={key} data-tut={`profile-${key}`}>
+      {rows.map(({ key, label, value, max, barClass, tip }) => (
+        <div className="resource-row" key={key} data-tut={`profile-${key}`} title={tip || undefined}>
           <span className="resource-label">{label}</span>
           <div className="resource-bar-wrap">
             <div

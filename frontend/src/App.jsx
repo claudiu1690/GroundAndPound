@@ -149,12 +149,12 @@ function FighterCard({ fighter }) {
 
         <div className="fighter-card-bars">
           {[
-            { label: t("layout.fighterCard.energy"), val: fighter?.energy ?? 100, max: 100, color: "#3b82f6" },
-            { label: t("layout.fighterCard.health"), val: fighter?.health ?? 100, max: 100, color: "#e31837" },
-          ].map(({ label, val, max, color }) => {
+            { label: t("layout.fighterCard.energy"), val: fighter?.energy ?? 100, max: 100, color: "#3b82f6", tip: t("layout.fighterCard.energyTooltip") },
+            { label: t("layout.fighterCard.health"), val: fighter?.health ?? 100, max: 100, color: "#e31837", tip: t("layout.fighterCard.healthTooltip") },
+          ].map(({ label, val, max, color, tip }) => {
             const pct = Math.min(100, Math.round((val / max) * 100));
             return (
-              <div key={label} className="fc-bar-row">
+              <div key={label} className="fc-bar-row" title={tip}>
                 <span className="fc-bar-label">{label}:</span>
                 <div className="fc-bar-wrap">
                   <div className="fc-bar-fill" style={{ width: `${pct}%`, background: color }} />
