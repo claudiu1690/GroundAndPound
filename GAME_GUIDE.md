@@ -9,6 +9,7 @@
 - Creating Your Fighter
 - Energy — The Daily Resource
 - The Career Feed
+- The Octagon Gazette
 
 **Fighting**
 - Fight Offers — Reading the Room
@@ -114,9 +115,27 @@ The Career Feed on your dashboard is a reverse-chronological log of everything s
 
 Think of it as your fighter's autobiography being written in real time. When you win your first title, it's in the feed. When you lose three in a row and freeze your notoriety, that's in there too. The feed doesn't judge — it just records.
 
+Any fight row — career or Proving Ground — has a › arrow on the right. Click it to open a side drawer with the full round-by-round breakdown of that fight: the event feed, per-round stats, and a Result tab with the camp outcomes and combined stats. It's the same breakdown you saw on the post-fight summary, available forever from your history. Non-fight rows (badges, promotions, nemesis events) don't open a drawer.
+
 The Fame drawer (★ Fame button in the footer) gives you a focused view of fame-only events — every notoriety gain, milestone hit, and fame tier-up in order. Useful when you want to track your fame growth specifically without the noise of everything else.
 
-> **Key takeaway:** The Career Feed is your permanent record. Check it to understand where you've been and what's driven your progress.
+> **Key takeaway:** The Career Feed is your permanent record. Click any fight's › to re-read its full round-by-round breakdown.
+
+### The Octagon Gazette
+
+*Your career, written up as a newspaper — always on your dashboard, always current.*
+
+The Octagon Gazette is your career written up like a sports newspaper. You'll find it as the cream-coloured tile in the top row of your dashboard, next to Rankings and the Proving Ground. It's always there and always current — there's no daily popup to catch and no edition to miss.
+
+Click the tile to open the full paper. Up top is the masthead — your issue number, edition, and a 'Breaking' banner. Below it the lead story recaps your latest big moment, complete with a result band (outcome, method, round, record), a couple of paragraphs of write-up, and a pull quote. Down the side, four shorter pieces cover your rankings, nemesis, fight offers, the Proving Ground, injuries, gym work, and sponsor contracts. Three secondary stories and an 'In Brief' rundown round out the page.
+
+The paper rewrites itself after every meaningful career event — a win or loss, a promotion, a title fight, a badge, a nemesis set or settled, a Proving Ground result. Each rewrite prints a new issue, so your issue number climbs over a career and you build up a paper of record that's entirely your own.
+
+It isn't just for reading. Most stories are clickable — a story about your rankings jumps you to the Rankings tab, a nemesis story sends you to your fight offers, an injury note opens the Hospital. Items worth acting on right now carry a 'Go →' pill. Tap a link and the paper closes and takes you straight there.
+
+Brand new and haven't fought yet? The Gazette simply says there's nothing to report — fight your first match and the presses start running.
+
+> **Key takeaway:** The Gazette is a living newspaper of your career on your dashboard. It refreshes after every big event, and its stories link straight to the tab that matters.
 
 ---
 
@@ -130,11 +149,15 @@ When you're ready to fight, you request offers from the promoter. Three cards co
 
 Easy opponents are 3–5 Overall below you. They're safer wins but pay less cash and earn less notoriety. Even opponents are within 3 OVR either way — competitive fights that pay fair. Hard opponents are 2–5 OVR above you — the upset potential is real, and so is the payout.
 
+Each card carries a scouting preview: the opponent's top stats with a reliability tag — Confirmed, Suspected, or Unknown — drawn from the same fog-of-war system as the full Fighter Report. The less tape exists on a fighter, the foggier the read; champions are especially restricted (only two fight logs). The card's threat tags follow the same rule — a tag like "Exploitable chin" or "Elite KO power" only shows when scouting actually supports it, so unscouted stats stay hidden. Calling an opponent out unlocks full intel — every stat Confirmed, no fog. Use Game Plan Study or Sparring to fill the gaps before a fight you're unsure about.
+
+Special cards change the picture. A Callout card takes the Hard slot when you've called someone out (full intel, +25% cash, +30% fame on the win). A Nemesis card appears for a fighter who's beaten you — it shows your record against them and pays a +150 fame bonus that lands even when your fame is frozen. A Grudge or Respect pill on a card flags a fight that carries its own cash/fame modifier from a past beef or show of respect.
+
 There's no objectively correct choice. If you need cash, take the safer fight. If you're chasing notoriety milestones or have a sponsor clause demanding a finish, a harder opponent might serve you better. If you're deep in comeback mode after two losses, staying healthy and building a win streak matters more than the risk-reward of a Hard fight.
 
-The Title Shot card appears in gold when your OVR hits the threshold, you've earned the required wins at your current tier (2 at Amateur, 3 from Regional Pro up), and you're ranked in the top 5. Beating the Amateur champion on this card is how you turn pro. It replaces nothing — it's a fourth option, always optional. You can ignore it and keep taking regular fights, but the clock is ticking.
+The Title Shot card appears in gold when your OVR hits the threshold, you're ranked in the top 5, and you've banked the required wins WHILE ranked top 5 (2 at Amateur, 3 from Regional Pro up). Beating the Amateur champion on this card is how you turn pro. It replaces nothing — it's a fourth option, always optional. You can ignore it and keep taking regular fights, but the clock is ticking.
 
-> **Key takeaway:** Easy, Even, Hard, Title Shot. Match your pick to what your career needs right now — not what looks safest in isolation.
+> **Key takeaway:** Easy, Even, Hard, Title Shot — each card previews scouted intel and threat tags (fog-of-war respected). Match your pick to what your career needs right now, not what looks safest in isolation.
 
 ### Fight Camp — Preparing to Win
 
@@ -146,7 +169,7 @@ The number of camp slots you get depends on your tier and whether it's a title f
 
 Choosing the right sessions requires reading the Fighter Report first. If the report shows your opponent is a wrestler, Takedown Defence is your most valuable session. If they're a submission hunter, Submission Escapes should be in your camp. Match your preparation to their threat.
 
-Sessions are rated Matched, Partial, Unmatched, or Wrong — but the rating stays hidden while you build. It's revealed only when you finalise camp, so you have to read the opponent and commit rather than guess-and-check. Matched means you directly countered their game and received 100% of the bonus. Partial means it was broadly useful but not targeted — 50%. Unmatched sessions gave nothing. Wrong sessions actively hurt you. The camp grade S through F reflects how well you read the opponent.
+Each session is rated Matched, Partial, or Unmatched — but the rating stays hidden while you build. It's revealed only when you finalise camp, so you have to read the opponent and commit rather than guess-and-check. Matched means you directly countered their game and received 100% of the session's bonus. Partial means it was broadly useful but not targeted — 50%. Unmatched means nothing in the opponent's profile justified it, so it gave 0% — a wasted slot, but it doesn't hurt you. The camp grade S through F reflects how well you read the opponent.
 
 Game Plan Study is always Partial against any opponent — it's the safe fallback when you're uncertain. Sparring trains all stats at +3% (always active) but carries a 3% injury risk per session. Repeating the same session has diminishing returns — the second time gets 60% value, the third 30%.
 
@@ -158,7 +181,7 @@ Game Plan Study is always Partial against any opponent — it's the safe fallbac
 
 Before you fill your camp slots, you get a Fighter Report — a scouting document that tells you what's known about your opponent's stats and tendencies. Not everything is visible. The report classifies each stat as Confirmed, Suspected, or Unknown.
 
-Confirmed stats are proven across multiple fights — treat them as fact. Suspected stats are suggested by limited footage — likely but not certain. Unknown means there's no tape, or the evidence is too thin to trust — you're flying blind on that stat.
+Confirmed stats are proven across multiple fights — treat them as fact. Suspected stats are suggested by limited footage — likely but not certain. Unknown means you're flying blind on that stat — no tape exists, or the evidence is too thin to trust.
 
 The key is reading what the report is telling you about their style, not just the numbers. A fighter with Confirmed high WRE and GND is telling you to prepare for takedowns and ground control. A fighter with Suspected high SUB is warning you to prepare submission escapes even if the data isn't locked in.
 
@@ -218,6 +241,8 @@ How you win and lose matters beyond the result column. KO wins earn more notorie
 
 After every fight, the Fight Summary shows you a complete breakdown of what happened. This isn't just a scoreboard — it's a diagnostic tool. Use it to understand your fighter and improve your next camp.
 
+The right side is the Fight Description — a round-by-round retelling, not a generic paragraph. Each round shows an intro, a handful of timestamped moments (takedowns, big strikes, submission attempts, knockdowns, camp triggers, the finish), a stat bar (Strikes · Takedowns · Sub att. · Damage, you vs them), a momentum bar, and who took the round. A camp line only appears when that session actually fired. It's a faithful retelling of what the engine produced — the same breakdown is saved to your Career Feed, openable any time from a fight's › arrow.
+
 The Camp Performance section is the most valuable part. It shows your camp grade, which sessions triggered, what match status they received, and how your wildcard played out. If you got a D-grade camp and lost, this is where you find out why. If you prepared perfectly and still lost, the wildcard section might hold the answer.
 
 The Notoriety section gives a line-by-line breakdown of every fame modifier that applied — the base fight reward, any streak bonuses, milestone hits, callout bonuses, and beef or respect flag payouts. If your notoriety moved less than expected, this section explains exactly where the shortfall was.
@@ -242,9 +267,11 @@ PvP is asynchronous — there's no live opponent sitting across from you. You pi
 
 Every PvP fight costs 15 energy from the same bar you train with, so laddering competes with your career for energy — pick your spots. The matchmaker hands you up to five opponents near your skill and standing; each card flags how tough they are, whether beating them pays a bonus, and whether they're a rival or the current belt holder.
 
-Before each fight you choose an attack gameplan — there are five, each built around a different way to win: Striking (STR + SPD + LEG — bang on the feet), Wrestling (WRE + GND — put them on the mat), Submission (SUB + GND — hunt the finish), Counter (takes less strike damage + grappling defense — make them miss), or Balanced (no bias). Each one boosts its cluster, pays a defensive cost, and shifts how the fight actually plays out — how often you shoot takedowns, chase submissions, or pressure on the feet — so pick the one that matches your build (the picker flags which suits your stats). Your defense gameplan is set once and reused every time you're attacked. Because PvP reuses the same stat-driven engine as your career fights, it's a fair contest decided by stats, gameplan, and the season's rules.
+Before each fight you choose an attack gameplan — there are five, each built around a different way to win: Striking (STR + SPD + LEG — bang on the feet), Wrestling (WRE + GND — put them on the mat), Submission (SUB + GND — hunt the finish), Counter (takes less strike damage + grappling defense — make them miss), or Balanced (no bias). Each one boosts its cluster, pays a defensive cost, and shifts how the fight actually plays out — how often you shoot takedowns, chase submissions, or pressure on the feet — so pick the one that matches your build (the picker flags which suits your stats). Your defense gameplan is set once — from the Defense tab in the Proving Ground, open any time — and reused every time someone attacks you while you're offline; it starts on Balanced until you change it, so set it to match your build early. Because PvP reuses the same stat-driven engine as your career fights, it's a fair contest decided by stats, gameplan, and the season's rules.
 
 PvP fights are not consequence-free: it's your one real body. You enter at your current HP and can leave hurt or injured — a real injury that lands in the Hospital and blocks your career fights until it heals — and both fighters earn stat XP from the bout, win or lose. This is true even on defense: someone can attack you while you're offline and you'll take the HP, injuries, and XP from it (your defense report shows what it cost). The flip side: a fighter who's already injured can't be attacked (they show as 'Recovering'), and a low-HP fighter is easy prey — so don't sit on the ladder hurt.
+
+If you were challenged while you were away, you'll know the moment you're back: a red dot sits on the Proving Ground menu, and a banner at the top of the Hub sums it up — how many defenses held, how many were lost, the Division Points it cost, and any injury you picked up. Tap 'View defense report →' to jump straight to that fight's full breakdown in your career feed. The dot and banner stick around until you actually open the report, so an attack that hurt you never slips by unnoticed.
 
 > **Key takeaway:** PvP is a parallel ladder (15 energy a fight) — but the same body: fights cost real HP, can injure you (Hospital-real, career-blocking), and earn stat XP, win or lose, even on offline defenses.
 
@@ -284,7 +311,7 @@ A win starts at +120 DP and is shaped by modifiers, in order. Beating the belt h
 
 Rivalries build as you keep beating the same player within a season — the third win 'resolves' the rivalry and pays its +25 bonus. The belt belongs to whoever sits #1 in the Champion division when the season ends (with at least one fight): they're crowned, enter the Hall of Fame, and take the season's biggest reward. And if you go quiet, it costs you — seven days without a PvP fight bleeds −10 DP (Prospects are spared), so check in to defend your climb.
 
-You watch all of this on the Ladder screen. Filter it by division — and, in the open Season 1, by weight class — to see exactly who sits above and below you; your own position stays pinned at the top no matter what you're browsing, and a 'Last Active' column flags who's drifting toward inactivity decay. Tap any fighter to open their profile, and if they're a fair match in your season you can challenge them straight from there. That shortcut still respects matchmaking, though: brand-new fighters under their New Competitor Shield, and anyone too far outside your skill range, can't be called out directly.
+You watch all of this on the Ladder screen. It's one single ladder — not five separate boards. By default it's filtered to your own division so you can see exactly who sits just above and below you, but tap 'All' to zoom out to the whole field ranked by DP, where every fighter's row carries a coloured tier badge (Prospect → Champion) so you can read the hierarchy at a glance. You can also filter by weight class in the open Season 1. Every row is colour-coded to its tier badge and shows a 'Last Active' hint, and your own card sits pinned at the top showing your overall rank across all divisions plus a tier-progress track that marks how much DP you need to reach the next division. Tap any fighter to open their profile, and if they're a fair match in your season you can challenge them straight from there. That shortcut still respects matchmaking, though: brand-new fighters under their New Competitor Shield, and anyone too far outside your skill range, can't be called out directly.
 
 > **Key takeaway:** DP is everything. Promotions reset you to the new floor with a 3-fight shield, the belt goes to the season-end Champion #1, and a week of inactivity costs DP.
 
@@ -296,7 +323,7 @@ The Proving Ground runs in seasons of 70 days. Each season carries a twist — a
 
 When a season ends, everyone who fought at least once is paid by the division they finished in. The belt holder's reward replaces the Champion reward — it doesn't stack on top of it.
 
-| Final division | Iron | Fame | Energy drinks | Badge |
+| Final division | Cash | Fame | Energy drinks | Badge |
 | --- | --- | --- | --- | --- |
 | Prospect | 500 | 500 | 0 | — |
 | Contender | 1,200 | 1,200 | 0 | — |
@@ -424,9 +451,9 @@ As you climb, the pace of the game changes. There's no daily fight limit — how
 
 Beating the tier champion is the only way to advance — at every tier except GCS Contender, which promotes automatically at OVR 62. Your very first belt is the Amateur title: beat the Amateur champion (the top contender in your division) to turn pro and move up to Regional Pro.
 
-The path to a title shot has three steps, and all three must be met before the Title Shot (or Turn Pro) card appears in your Fight Offers. First, your Overall Rating reaches the next tier's threshold — once it does, you become a contender and a "Path to the Belt" checklist appears at the top of your Fight Offers tracking your progress. Second, you climb into the top 5 of your division's rankings. Third, you bank the required number of wins at your current tier: 2 wins at Amateur, and 3 wins from Regional Pro upward. Hit all three and the card unlocks automatically.
+The path to a title shot has three steps, and all three must be met before the Title Shot (or Turn Pro) card appears in your Fight Offers. First, your Overall Rating reaches the next tier's threshold — once it does, you become a contender and a "Path to the Belt" checklist appears at the top of your Fight Offers tracking your progress. Second, you climb into the top 5 of your division's rankings. Third — and this is the key part — you bank the required number of wins WHILE ranked in that top 5: 2 wins at Amateur, and 3 wins from Regional Pro upward. Wins you scored before breaking into the top 5 do not count toward this; you have to prove yourself as a contender. The good news: once banked, those wins are not lost if you later slip out of the top 5 (they only reset when you promote). Hit all three and the card unlocks automatically.
 
-The Amateur title shot is your pro debut, so the framing is "Turn Pro" rather than a belt defence — but the three steps are the same: reach OVR 30, sit in your division's top 5, and bank 2 wins at the Amateur tier. Win the Amateur belt and you earn the distinct Amateur Champion badge plus a fame boost.
+The Amateur title shot is your pro debut, so the framing is "Turn Pro" rather than a belt defence — but the three steps are the same: reach OVR 30, sit in your division's top 5, and bank 2 wins while ranked in that top 5. Win the Amateur belt and you earn the distinct Amateur Champion badge plus a fame boost.
 
 Champion fights are harder than regular fights. The champion receives a +5% boost to all stats during the fight. Their Fighter Report shows only 2 visible fight logs instead of the normal 5 — less tape to study means more uncertainty. Bring your best camp and don't assume you can out-prepare what you can't see. Title fights always run a full 5-slot training camp regardless of tier.
 
@@ -446,7 +473,7 @@ You don't enter the rankings on day one. The first 3 fights at any tier are your
 
 Wins by KO or submission climb faster than decision wins. Upset wins (beating a higher-ranked opponent) climb the most — you can move multiple ranks at once. Decision losses drop you one rank; losses to lower-ranked fighters drop you two. The rank movement formula favours fighters who go after the toughest matchups.
 
-Top 5 of your division is the title shot zone. Hitting it is one of three requirements to challenge the champion — alongside reaching the OVR threshold and a minimum number of wins at the current tier (2 at Amateur, 3 from Regional Pro up). The other ranks gate other features: top 15 unlocks callouts, top 1 means you're the champion of your tier (you're not, unless you've won the belt — the champion always sits above the ranked roster).
+Top 5 of your division is the title shot zone. Hitting it is one of three requirements to challenge the champion — alongside reaching the OVR threshold and banking a minimum number of wins WHILE you're in that top 5 (2 at Amateur, 3 from Regional Pro up). The other ranks gate other features: top 15 unlocks callouts, top 1 means you're the champion of your tier (you're not, unless you've won the belt — the champion always sits above the ranked roster).
 
 NPC ranks are fixed and never change. When you climb past them, they don't move down — you just visually slot in above them. This keeps the division stable and meaningful: the #5 NPC has been the #5 NPC since you started.
 
@@ -476,9 +503,11 @@ Career badges come from doing exceptional things in your fights: winning while i
 
 Gym badges are earned by reaching Rank 4 at each specialty gym — Champion Boxer, BJJ Black Belt, Tactician, Elite Master, and the rest. These are the hardest to earn because they require sustained dedication to one gym across training sessions and specific win types. A fighter with multiple Rank 4 gym badges has put in serious time.
 
+The Proving Ground has its own badge line, grouped on your profile under Proving Ground. Some are quick first steps (your first PvP win, first finish, first successful defense); others mark real ladder progress (reaching Contender → Champion, win streaks of 3/5/10, beating opponents rated well above you); and the rarest are seasonal prestige — holding a season belt, going back-to-back, winning the belt without a single loss, or finishing a season on the podium. They're awarded as you fight and at season's end, and sit permanently alongside your career badges.
+
 Badges aren't just cosmetic. Several unlock banner pieces for the customizer, and the gym badges come with the Rank 4 utility perks that change how the game works for you permanently.
 
-> **Key takeaway:** Gym badges require the most work but come with permanent perks. Career badges tell the story of your biggest moments.
+> **Key takeaway:** Gym badges require the most work but come with permanent perks. Career and Proving Ground badges tell the story of your biggest moments in both the cage and on the ladder.
 
 ### Banner Customizer — Your Fighter's Identity
 
@@ -578,11 +607,9 @@ There's a new-fighter grace period: during your first 3 fights, no fight-blockin
 
 *Hospital services, what they cost, and how to decide whether a visit is worth it.*
 
-The Hospital tab is your medical centre. It offers four services: Doctor Visit (Treatment) for the doctor-required injuries, Skip Recovery to instantly clear an auto-heal injury, Health Restoration packages, and a Full Recovery Package when you have multiple injuries at once.
+The Hospital tab is your medical centre. It offers three services: Treat Now to clear any active injury instantly, Health Restoration packages to top up your HP, and a Full Recovery Package when you have multiple injuries at once.
 
-Doctor Visit clears one doctor-required injury — Cut, Broken Nose, Concussion, or Torn Ligament. It costs energy and cash. Concussions are the most expensive at 20 energy and $1,500 — though at Amateur tier the Concussion visit is only $600, so a rough early KO loss doesn't price a new fighter out of the fast-heal. Cuts and Broken Noses are cheaper. Torn Ligaments are expensive but worth it if a title shot is waiting. Remember — these injuries will heal on their own within 6 to 24 hours even if you don't pay; the doctor visit is just the fast path.
-
-Skip Recovery instantly clears an auto-heal injury. Use it when an injury is dragging on and you have a fight or sponsor clause that can't wait. Bruised Ribs cost $600, Sprained Ankles $800, Broken Hands $1,200. If you can wait a few hours, don't spend the cash.
+Treat Now clears a single active injury on the spot instead of waiting for it to heal. The doctor-required injuries — Cut, Broken Nose, Concussion, Torn Ligament — cost energy and cash (a Concussion is the priciest at 20 energy and $1,500 — though as an Amateur it's only $600, so a rough early KO loss doesn't price you out). The rest — Bruised Rib ($600), Sprained Ankle ($800), Broken Hand ($1,200) — cost cash only. Either way the injury heals on its own within 6 to 24 hours, so Treat Now is purely the fast path — spend it when a fight or sponsor clause can't wait.
 
 Health Restoration packages restore HP without waiting. Quick Patch restores up to 25 HP for $250. Recovery Bay restores up to 50 HP for $400. Full Restoration brings you to 100 HP for $700. The cost is pro-rated — if you only need 15 HP, Quick Patch charges you proportionally less. You never overpay for more restoration than you need.
 
@@ -597,6 +624,8 @@ Full Recovery Package heals every active injury in one transaction, with a 15% b
 Every loss activates Comeback Mode. While in Comeback Mode, your next fight earns 1.5× XP and a 30% larger cash purse. Win that fight and you earn the Resilience badge (once per career) and Comeback clears. The game is designed to give you a reason to keep going after a setback, not to punish you into quitting.
 
 Three consecutive losses freeze your notoriety — no fame gains from fights, sponsors, or media until you win again. The freeze is automatic and clears itself the moment you put a win on the record. Nemesis victories and title shot wins are the two exceptions: they always pay their bonuses, even through a freeze.
+
+You won't miss it, either. The moment a loss puts you in Comeback Mode, your dashboard's main call-to-action turns amber and spells out exactly what's waiting: 'Comeback Fight Waiting — your next win pays +30% cash and ×1.5 XP.' If the loss also gave you a Nemesis, it sharpens to 'Settle the Score' and names them, calling out the +150 fame revenge bonus that pays even through a fame freeze. The bonuses were always there; now the dashboard makes sure you see the reason to come back.
 
 Crucially, the losing streak and the fame freeze themselves never block you from fighting — there's no forced rest or mental-reset gate. You can always step back into the cage to break the freeze, and the comeback XP and cash bonuses are there precisely so you have every incentive to climb back out. (A serious injury from a brutal loss can still sideline you until it heals — but every injury clears on its own in time for free, and the Hospital only ever speeds that up; it never gates you behind a payment.)
 
@@ -687,12 +716,12 @@ The Rivalry Board and the Archive are read-only. The Rivalry Board gathers every
 
 After every win, before the summary closes, you're asked to give a post-fight interview. Losses skip this step — only winners take the mic. There are four tones to choose from: Humble, Confident, Trash Talk, and Skip. Each one does something different — this isn't just flavour.
 
-Humble earns a small notoriety bonus now and sets up a larger cash reward if you fight that opponent again in a rematch. It's the long-game option — sacrifice immediate reward for a future payday. Confident earns a standard notoriety bonus with no side effects. It's the clean, uncomplicated choice.
+Humble earns a small notoriety bonus (+100 fame) and writes a Respect flag on the fighter you just beat — meet them again in a rematch and you bank a cash bonus. It's the long-game option: sacrifice immediate reward for a future payday. Confident earns a standard notoriety bonus (+150 fame) with no side effects — the clean, uncomplicated choice.
 
-Trash Talk earns the highest immediate notoriety bonus but writes a Beef flag on the opponent. The Beef flag pays a bonus if you fight them within 4 fights — but if the 4-fight window closes without a matchup, you take a −150 fame penalty. Trash talk is a commitment, not just an attitude.
+Trash Talk pays the highest immediate bonus (+200 fame), but it's a callout, not just an attitude: you pick a different fighter to target — someone in your weight class and tier, within range of your Overall, whom you have NOT already fought. You cannot trash-talk the opponent you just beat; the point is to name a future matchup. It writes a Beef flag on that target — beat them within your next 4 fights for a fame bonus, but if the window closes without the fight, you take a −150 fame penalty. It's a commitment about a fight you intend to chase.
 
 Skip is neutral. No bonus, no penalty. Sometimes the right move is to say nothing.
 
-> **Key takeaway:** Interviews are only available after wins. Trash Talk pays the most but starts a 4-fight clock — fight them before the window closes or pay the penalty.
+> **Key takeaway:** Interviews are only available after wins. Trash Talk is a callout — you name a future opponent (not the one you just beat) and start a 4-fight clock: fight that target before it closes or pay the −150 penalty.
 
 ---
