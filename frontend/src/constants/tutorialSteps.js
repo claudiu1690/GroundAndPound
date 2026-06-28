@@ -86,7 +86,7 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: "nav-gym",
                         title: "Welcome to the Gym",
-                        body: "This is where your career starts. Every day you have energy to spend on training sessions. The more you train, the stronger you get. Tap the Gym tab to begin.",
+                        body: "This is where your career starts. You spend energy on training sessions — the more you train, the stronger you get. Tap the Gym tab to begin.",
                     },
                 ],
             },
@@ -104,7 +104,7 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: "energy",
                         title: "Your Energy",
-                        body: "Energy is your daily resource. Each training session costs energy. It refills every day. Spend it wisely — you can't train if you're out of energy.",
+                        body: "Energy is your training fuel. Each session costs energy, and it refills on its own over time — about 1 point a minute, so a full bar takes a couple of hours. Spend it wisely — you can't train when it's empty.",
                     },
                     {
                         anchor: "gym-sessions",

@@ -10918,6 +10918,28 @@ code {
 .m-drawer,
 .m-drawer-overlay { display: none; }
 
+/* Legal links row at the bottom of the mobile drawer (the desktop bottombar that
+   normally holds these is hidden on mobile). */
+.m-drawer-legal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 12px 8px 4px;
+  font-size: 11px;
+  color: var(--c-text-3);
+}
+.m-drawer-legal button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.m-drawer-legal button:hover { color: var(--c-text); text-decoration: underline; }
+
 @media (max-width: 768px) {
   /* Hide desktop chrome, show mobile chrome. */
   .topbar { display: none; }
@@ -13449,10 +13471,10 @@ code {
 
 /* ── Filters Bar ── */
 .lt-filters-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.lt-filter-group { display: flex; gap: 4px; }
+.lt-filter-group { display: flex; gap: 4px; flex-wrap: wrap; }
 .lt-filter-lbl { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #555; margin-right: 4px; align-self: center; }
 .lt-filter-sep { width: 1px; height: 18px; background: #1E1E1E; margin: 0 4px; }
-.lt-fb { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 3px; background: #242424; border: 1px solid #383838; color: #C2C2C2; cursor: pointer; transition: all 0.1s; }
+.lt-fb { font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; padding: 4px 10px; border-radius: 3px; background: #242424; border: 1px solid #383838; color: #C2C2C2; cursor: pointer; transition: all 0.1s; }
 .lt-fb:hover:not(.lt-fb-act) { background: #2C2C2C; border-color: #4A4A4A; color: #F0F0F0; }
 .lt-fb-act { background: rgba(200,16,46,0.10); border-color: rgba(200,16,46,0.25); color: #C8102E; }
 .lt-filters-right { flex-basis: 100%; text-align: right; font-size: 11px; color: #555; }

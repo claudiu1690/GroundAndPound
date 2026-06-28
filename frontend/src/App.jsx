@@ -56,6 +56,7 @@ import {
   Mic,
   Menu,
   X,
+  LogOut,
   Zap,
   Heart,
   CheckCircle2,
@@ -1661,6 +1662,35 @@ const handleGetOffers = useCallback(async () => {
                   )
                 ))}
               </nav>
+              {/* Account + session actions. The desktop bottombar holds these, but
+                  it's display:none on mobile — so surface them in the drawer or the
+                  player has no way to reach Account settings or sign out on portrait. */}
+              <nav className="sidebar-menu sb-menu m-drawer-menu">
+                <div className="nav-section-label">{t("layout.bottombar.account")}</div>
+                <a
+                  href="#account"
+                  className={`sb-menu-item ${activeTab === "account" ? "active" : ""}`}
+                  onClick={(e) => { e.preventDefault(); handleNavTab("account"); setMobileDrawerOpen(false); }}
+                >
+                  <span className="nav-icon"><UserCircle2 size={13} strokeWidth={2.2} /></span>
+                  {t("layout.bottombar.accountSettings")}
+                </a>
+                <button
+                  type="button"
+                  className="sb-menu-item"
+                  onClick={() => { setMobileDrawerOpen(false); handleLogout(); }}
+                >
+                  <span className="nav-icon"><LogOut size={13} strokeWidth={2.2} /></span>
+                  {t("layout.bottombar.signOut")}
+                </button>
+              </nav>
+              <div className="m-drawer-legal">
+                <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("open-cookie-policy"))}>{t("layout.bottombar.cookiePolicy")}</button>
+                <span>·</span>
+                <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("open-privacy-policy"))}>{t("layout.bottombar.privacy")}</button>
+                <span>·</span>
+                <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("open-terms"))}>{t("layout.bottombar.terms")}</button>
+              </div>
             </div>
           </aside>
         </>
