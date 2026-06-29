@@ -371,7 +371,7 @@ async function getCurrentSeason(req, res) {
         let poolCount = 0;
         // HYDRATED (not lean) — ensureUnlocked may mutate pvpOnboarding and we save it.
         const fighter = await Fighter.findById(req.user.fighterId)
-            .select("firstName lastName nickname weightClass overallRating record pvpOnboarding");
+            .select("firstName lastName nickname weightClass overallRating record pvpOnboarding pvpDefenseGameplan");
 
         // Self-heal the unlock flag; persist only if it actually changed.
         if (fighter) {

@@ -15,6 +15,7 @@ const activityLogService = require("./activityLogService");
 const {
     DIVISIONS,
     DIVISION_KEYS,
+    GAMEPLAN_KEYS,
     REWARDS,
     SOFT_RESET,
     FIRST_SEASON_BONUS,
@@ -89,7 +90,7 @@ async function getOrCreateRecord(fighterId, season, fighter = null) {
         return null;
     }
 
-    const f = fighter || (await Fighter.findById(fighterId).select("overallRating weightClass"));
+    const f = fighter || (await Fighter.findById(fighterId).select("overallRating weightClass pvpDefenseGameplan"));
     if (!f) throw new Error("fighter_not_found");
 
     // First-ever PVPRecord for this fighter? (Drives placement-start + first-season-bonus
@@ -122,7 +123,8 @@ async function getOrCreateRecord(fighterId, season, fighter = null) {
             dp: 0,
             peakDp: 0,
             overallRating: f.overallRating || 0,
-            defenseGameplan: "balanced",
+            defenseGameplan: (f.pvpDefenseGameplan && GAMEPLAN_KEYS.includes(f.pvpDefenseGameplan))
+                ? f.pvpDefenseGameplan : "balanced",
             lastFightAt: null,
             lastActiveAt: new Date(),
             catchUpExpiresAt,

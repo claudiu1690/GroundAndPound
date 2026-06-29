@@ -14,6 +14,7 @@ import { SeasonEndModal } from "./SeasonEndModal";
 import { NewSeasonModal } from "./NewSeasonModal";
 import { ReadOnlyProfile } from "./ReadOnlyProfile";
 import { OfflineDefenseBanner } from "./OfflineDefenseBanner";
+import { PreSeasonCountdown } from "./PreSeasonCountdown";
 import { api } from "../../api";
 
 function buildTabs() {
@@ -205,6 +206,12 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
         </div>
       </div>
     );
+  }
+
+  // Pre-season countdown — shown when the resolved season hasn't started yet.
+  // Locked gate above has top priority: a locked player never reaches this branch.
+  if (season?.status === "upcoming") {
+    return <PreSeasonCountdown season={season} fighter={fighter} onElapsed={silentRefetch} />;
   }
 
   return (

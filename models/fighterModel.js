@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { WEIGHT_CLASSES, STYLES, BACKSTORIES, PROMOTION_TIERS } = require("../consts/gameConstants");
+const { GAMEPLAN_KEYS_WITH_LEGACY } = require("../consts/pvpConfig");
 
 const statSchema = {
     type: Number,
@@ -439,6 +440,9 @@ const fighterSchema = new mongoose.Schema({
         shieldExpiresAt:    { type: Date,    default: null },
         firstSeasonComplete:{ type: Boolean, default: false },
     },
+    // Pre-season / persistent default defense gameplan. Seeds a new PVPRecord's
+    // defenseGameplan at record creation. Legacy fighters default to "balanced".
+    pvpDefenseGameplan: { type: String, enum: GAMEPLAN_KEYS_WITH_LEGACY, default: "balanced" },
 }, { timestamps: true });
 
 fighterSchema.index({ promotionTier: 1, weightClass: 1, overallRating: -1 });

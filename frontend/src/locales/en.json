@@ -1464,6 +1464,24 @@
       "copy": "Prove yourself in the cage first. Win 3 career fights to unlock competitive PVP.",
       "progressLabel": "{wins} / {needed} wins"
     },
+    "preSeason": {
+      "heroEyebrow": "Proving Ground",
+      "heroTitleL1": "THE CAGE",
+      "heroTitleL2": "GOES DARK.",
+      "timerLabel": "Until Season {n} opens",
+      "timerLabelSubHour": "Season {n} opens in under an hour",
+      "timerLabelOpening": "Season opening…",
+      "beltUnclaimed": "Belt Unclaimed",
+      "stakesGoldValue": "15,000",
+      "stakesGoldLabel": "Cash · Belt Winner",
+      "stakesChampionValue": "Champion",
+      "stakesChampionLabel": "Division · Top Reward",
+      "stakesBeltValue": "Belt + Badge",
+      "stakesBeltLabel": "Hall of Fame",
+      "primerLabel": "New to the Proving Ground?",
+      "primerBody": "The Proving Ground is the game's PvP ladder. Fight other players' fighters, climb five divisions from Prospect to Champion, and hunt the season belt. Every fight costs 15 energy — from the same bar you train with — and it's your one real body: HP, injuries, and stat XP all carry over. Read 'The Proving Ground — PvP, Explained' in the Library for the full breakdown.",
+      "setDefenseCta": "Set Your Defense Gameplan →"
+    },
     "emptyState": {
       "seasonLive": "Season {n} is Live",
       "defaultTitle": "The Proving Ground",

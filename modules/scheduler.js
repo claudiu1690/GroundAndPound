@@ -204,14 +204,21 @@ async function startEnergyIncrementScheduler() {
         removeOnComplete: true,
     });
 
-    // PVP season transition — 00:05 UTC daily (offset from decay so they don't contend).
+    // PVP season transition — every 10 min so season start/end (and the pre-season
+    // countdown flip to active) happen promptly, not on a once-a-day tick. The sweep is
+    // idempotent and only acts on due seasons (3 cheap indexed queries otherwise).
+    // Clear any prior repeatable (e.g. the old daily schedule) so the cadence change
+    // actually takes effect instead of leaving a stale repeatable alongside it.
+    for (const j of await pvpSeasonTransitionQueue.getRepeatableJobs()) {
+        await pvpSeasonTransitionQueue.removeRepeatableByKey(j.key);
+    }
     await pvpSeasonTransitionQueue.add("transition", {}, {
-        repeat: { pattern: "5 0 * * *", tz: "UTC" },
+        repeat: { pattern: "*/10 * * * *", tz: "UTC" },
         jobId: "pvp-season-transition",
         removeOnComplete: true,
     });
 
-    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h, pvp decay: 0 0 UTC, pvp season transition: 5 0 UTC).");
+    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h, pvp decay: 0 0 UTC, pvp season transition: every 10m).");
 }
 
 module.exports = {

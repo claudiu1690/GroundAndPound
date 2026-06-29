@@ -650,6 +650,8 @@ After payout, a **soft reset** drops each player one tier into the next season (
 
 Seasons are controlled by a per-season **config block** (`Season.config`), so behaviour is flippable season to season without code changes — see the Open format below.
 
+**Between seasons — the pre-season countdown.** When the live season is taken offline and the next is seeded as `upcoming` with a future `startDate`, entering the Proving Ground shows a **pre-season countdown** instead of the ladder: a live `hh:mm:ss` timer to the new season (red, pulsing `mm:ss` in the final hour; "Season opening…" held at zero), the upcoming season's name/twist, the stakes, and a primer for new players. When the timer reaches zero the transition sweep flips the season to `active` and the hub returns automatically (client polls 30s, 5s once at zero — no manual button). **Defense gameplan is editable during the pre-season window:** it persists as a fighter-level default (`fighter.pvpDefenseGameplan`) and seeds your PVPRecord's `defenseGameplan` when the new season's record is created — defaulting to **Balanced** if never set. Setting it during an active season writes both the record and the fighter default (kept in sync).
+
 ### 22.7 Season 1 — The Open (cross-weight-class) format
 Normally PvP runs **one season per weight class** (four parallel ladders, four belts). At launch the player pool is too thin to populate four ladders, so **Season 1 is a single "Open" season** flagged `config.crossWeightClass = true`:
 

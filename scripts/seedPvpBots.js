@@ -56,10 +56,12 @@ const POOL = [
 (async () => {
   await connectDB();
 
-  const season = await Season.findOne({ status: "active", "config.crossWeightClass": true })
-    || await Season.findOne({ status: "active" });
+  // Target the Open season whether it's live OR an upcoming countdown (so bots can be
+  // seeded during the pre-season window and are ready on the ladder at go-live).
+  const season = await Season.findOne({ status: { $in: ["active", "upcoming"] }, "config.crossWeightClass": true }).sort({ startDate: -1 })
+    || await Season.findOne({ status: { $in: ["active", "upcoming"] } }).sort({ startDate: -1 });
   if (!season) {
-    console.error("No active season found — seed a season first (scripts/seedPvpSeason1.js).");
+    console.error("No active or upcoming season found — seed a season first (scripts/seedPreSeasonCountdown.js or seedPvpSeason1.js).");
     await mongoose.disconnect();
     process.exit(1);
   }

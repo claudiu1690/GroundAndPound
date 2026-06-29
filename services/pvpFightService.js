@@ -1207,21 +1207,43 @@ async function listFights(seasonId, fighterId, { page = 1, limit = 25 } = {}) {
 }
 
 /**
- * Set the actor's defense gameplan on their active-season record.
+ * Set the actor's defense gameplan.
+ *
+ * Status-aware so players can set their gameplan during the pre-season countdown
+ * (`status:"upcoming"`) before any active-season PVPRecord exists. We always persist
+ * the choice on the fighter (`pvpDefenseGameplan`) — that field is the persistent
+ * default and seeds the next season's record at creation. When a season is ACTIVE we
+ * ALSO write the active record and keep the two in sync.
+ *
+ *   - season active  → write record.defenseGameplan + fighter.pvpDefenseGameplan; scope "season".
+ *   - no season / upcoming → write fighter.pvpDefenseGameplan only; scope "fighter".
  */
 async function setDefenseGameplan(fighterId, gameplan) {
+    // Strict validation — legacy "aggressive" is rejected on new writes.
     if (!gameplan || !GAMEPLAN_KEYS.includes(gameplan)) {
         throw new PvpError("bad_gameplan", "Invalid gameplan.", 400);
     }
-    const fighter = await Fighter.findById(fighterId).select("weightClass");
-    if (!fighter) throw new PvpError("no_active_record", "No active record.", 409);
+    const fighter = await Fighter.findById(fighterId).select("weightClass pvpDefenseGameplan");
+    if (!fighter) throw new PvpError("fighter_not_found", "Fighter not found.", 404);
+
     const season = await pvpSeasonService.getCurrentSeasonForFighter(fighter.weightClass);
-    if (!season || season.status !== "active") throw new PvpError("no_active_record", "No active record.", 409);
-    const record = await PVPRecord.findOne({ playerId: fighterId, seasonId: season._id });
-    if (!record) throw new PvpError("no_active_record", "No active record.", 409);
-    record.defenseGameplan = gameplan;
-    await record.save();
-    return { defenseGameplan: record.defenseGameplan };
+
+    if (season && season.status === "active") {
+        const record = await PVPRecord.findOne({ playerId: fighterId, seasonId: season._id });
+        if (!record) throw new PvpError("no_active_record", "No active record.", 409);
+        record.defenseGameplan = gameplan;
+        await record.save();
+        // Keep the persistent fighter default in sync with the active-season choice.
+        fighter.pvpDefenseGameplan = gameplan;
+        await fighter.save();
+        return { defenseGameplan: gameplan, scope: "season" };
+    }
+
+    // No season, or pre-season (upcoming): persist on the fighter only. This seeds the
+    // next season's record when it is created.
+    fighter.pvpDefenseGameplan = gameplan;
+    await fighter.save();
+    return { defenseGameplan: gameplan, scope: "fighter" };
 }
 
 /**

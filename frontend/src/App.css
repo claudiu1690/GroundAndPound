@@ -14480,3 +14480,288 @@ code {
   color: #E8304E;
 }
 
+/* ============================================================
+   PVP PRE-SEASON COUNTDOWN — pvp-ps- namespace
+   Shown instead of the live hub when season.status === "upcoming".
+   Uses the existing pvp-hero / pvp-inner / pvp-title / pvp-eye
+   treatment for the header; new classes only for the body content.
+   ============================================================ */
+
+/* Hero inner override: center text for the countdown layout */
+.pvp-ps-hero-inner { justify-content: center; text-align: center; }
+.pvp-ps-title-block { line-height: 0.92; }
+
+/* ── Body wrapper ── */
+.pvp-ps-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 22px 28px;
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Big live timer ── */
+.pvp-ps-timer-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 0 18px;
+  border-bottom: 1px solid #1E1E1E;
+}
+
+.pvp-ps-timer {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 64px;
+  line-height: 1;
+  letter-spacing: 3px;
+  color: #F0F0F0;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.7);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Under-1-hour: switch to red + pulsing animation */
+@keyframes pvp-ps-pulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.55; }
+  100% { opacity: 1; }
+}
+
+.pvp-ps-timer.pvp-ps-timer-subhour {
+  color: #C8102E;
+  animation: pvp-ps-pulse 1.2s ease-in-out infinite;
+  text-shadow: 0 0 32px rgba(200, 16, 46, 0.45), 0 2px 24px rgba(0, 0, 0, 0.7);
+}
+
+/* Zero state: dim & hold */
+.pvp-ps-timer.pvp-ps-timer-zero {
+  color: #555;
+  animation: none;
+}
+
+/* Small spinner shown at zero alongside the "Season opening…" label */
+.pvp-ps-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #333;
+  border-top-color: #C8102E;
+  border-radius: 50%;
+  animation: pvp-spinner-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes pvp-spinner-spin {
+  to { transform: rotate(360deg); }
+}
+
+.pvp-ps-timer-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #555;
+}
+
+/* ── Season identity card ── */
+.pvp-ps-card {
+  background: #1A1A1A;
+  border: 1px solid #2A2A2A;
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pvp-ps-card-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #F0F0F0;
+}
+
+.pvp-ps-card-twist {
+  font-size: 12px;
+  color: #AAAAAA;
+  line-height: 1.4;
+}
+.pvp-ps-twist-icon { color: #C8102E; }
+
+.pvp-ps-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.pvp-ps-weight-pill {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 2px;
+  background: rgba(59, 130, 246, 0.10);
+  color: #3B82F6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.pvp-ps-belt-tag {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 2px;
+  background: rgba(212, 168, 32, 0.12);
+  color: #D4A820;
+  border: 1px solid rgba(212, 168, 32, 0.25);
+}
+
+/* ── What's at stake strip ── */
+.pvp-ps-stakes {
+  display: flex;
+  align-items: stretch;
+  background: #1A1A1A;
+  border: 1px solid #2A2A2A;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pvp-ps-stake-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 10px;
+  gap: 4px;
+  text-align: center;
+}
+
+.pvp-ps-stake-divider {
+  width: 1px;
+  background: #222;
+  flex-shrink: 0;
+}
+
+.pvp-ps-stake-value {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 20px;
+  line-height: 1;
+  color: #F0F0F0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pvp-ps-stake-gold { color: #D4A820; }
+.pvp-ps-stake-red  { color: #C8102E; }
+
+.pvp-ps-stake-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #555;
+}
+
+/* ── New-player primer ── */
+.pvp-ps-primer {
+  background: rgba(212, 168, 32, 0.04);
+  border: 1px solid rgba(212, 168, 32, 0.12);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pvp-ps-primer-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #D4A820;
+}
+
+.pvp-ps-primer-body {
+  font-size: 12px;
+  color: #AAAAAA;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── Set Defense CTA ── */
+.pvp-ps-defense {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pvp-ps-defense-btn {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 11px 20px;
+  border-radius: 5px;
+  background: transparent;
+  border: 1px solid #3B82F6;
+  color: #3B82F6;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.15s, color 0.15s;
+}
+.pvp-ps-defense-btn:hover {
+  background: rgba(59, 130, 246, 0.10);
+  color: #5B9AF8;
+}
+
+.pvp-ps-defense-panel {
+  background: #1A1A1A;
+  border: 1px solid #2A2A2A;
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pvp-ps-defense-close {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid #2A2A2A;
+  color: #555;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: border-color 0.12s, color 0.12s;
+}
+.pvp-ps-defense-close:hover {
+  border-color: #3A3A3A;
+  color: #AAAAAA;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .pvp-ps-timer { font-size: 44px; letter-spacing: 1.5px; }
+  .pvp-ps-body  { padding: 16px 14px 24px; gap: 14px; }
+  .pvp-ps-stake-value { font-size: 16px; }
+}
+
