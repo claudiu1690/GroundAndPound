@@ -31,7 +31,8 @@ const PVPRival = require("../models/pvpRivalModel");
 const HallOfFame = require("../models/hallOfFameModel");
 const { seedOpenSeason } = require("../services/pvpSeasonService");
 
-const COUNTDOWN_HOURS = 72;
+// Countdown length in hours. Override with COUNTDOWN_HOURS env (e.g. 144 = 6 days).
+const COUNTDOWN_HOURS = Number(process.env.COUNTDOWN_HOURS) || 72;
 const LAUNCH_TWIST = "iron_circuit"; // Season 1 launch = no-twist baseline
 
 (async () => {
