@@ -1,5 +1,6 @@
 const fighterService = require("../services/fighterService");
 const dashboardService = require("../services/dashboardService");
+const analyticsService = require("../services/analyticsService");
 
 async function list(req, res) {
     try {
@@ -190,7 +191,7 @@ async function hospitalRestoreHealth(req, res) {
 
 async function switchGym(req, res) {
     try {
-        const fighter = await fighterService.switchGym(req.params.id, req.body.gymId);
+        const fighter = await fighterService.switchGym(req.params.id, req.body.gymId, req.user.id);
         res.json({ fighter, message: "Gym membership activated." });
     } catch (err) {
         res.status(400).json({ message: err.message });
@@ -285,6 +286,18 @@ async function getActivity(req, res) {
 async function getDashboard(req, res) {
     try {
         const dashboard = await dashboardService.buildDashboard(req.params.id);
+
+        // Fire-and-forget "session" event, deduped to first-per-fighter-per-day.
+        // Energy comes from the already-reconciled dashboard vitals payload.
+        const energyCurrent = dashboard?.vitals?.energy?.current;
+        const energyMax = dashboard?.vitals?.energy?.max;
+        analyticsService.track(
+            req.user.id,
+            "session",
+            { energyCurrent, energyMax },
+            { fighterId: req.params.id, dedupeSession: true }
+        );
+
         res.json(dashboard);
     } catch (err) {
         if (err.message === "Fighter not found") {

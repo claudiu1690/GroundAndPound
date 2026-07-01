@@ -651,7 +651,7 @@ async function hospitalRestoreHealth(fighterId, packageKey) {
  * source of truth for membership — see questService.hasValidGymMembership,
  * trainingService access gate, and gymController's daysLeft countdown.
  */
-async function switchGym(fighterId, gymId) {
+async function switchGym(fighterId, gymId, userId) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
 
@@ -682,6 +682,15 @@ async function switchGym(fighterId, gymId) {
     gymRankService.getOrInitRank(fighter, gym.slug);
 
     await fighter.save();
+
+    // Fire-and-forget analytics — userId is threaded from the controller (req.user.id).
+    require("./analyticsService").track(
+        userId,
+        "gym_purchase",
+        { gymId: String(gym._id), weeklyCost: gym.weeklyCost },
+        { fighterId: fighter._id }
+    );
+
     return toPublicFighter(fighter);
 }
 

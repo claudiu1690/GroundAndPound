@@ -20,9 +20,13 @@ const gazetteRoutes = require("./routes/gazetteRoutes");
 const tutorialRoutes = require("./routes/tutorialRoutes");
 const accountRoutes = require("./routes/accountRoutes");
 const pvpRoutes = require("./routes/pvpRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
 const accountController = require("./controllers/accountController");
 const pvpController = require("./controllers/pvpController");
+const bugReportController = require("./controllers/bugReportController");
 const authMiddleware = require("./middleware/authMiddleware");
+const adminMiddleware = require("./middleware/adminMiddleware");
+const optionalAuthMiddleware = require("./middleware/optionalAuthMiddleware");
 const mongoose = require("mongoose");
 const config = require("./config");
 const swagger = require("./swagger");
@@ -55,6 +59,15 @@ const authLimiter = rateLimit({
     standardHeaders: "draft-7",
     legacyHeaders: false,
     message: { message: "Too many attempts — please wait a few minutes and try again." },
+});
+// Bug-report limiter — public endpoint, logged-out callers welcome, so throttle
+// per-IP to stop a single source flooding the ops inbox / DB with reports.
+const bugReportLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    limit: Number(process.env.BUG_REPORT_RATE_LIMIT_MAX) || 5, // reports/10min/IP
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: { message: "Too many bug reports — please wait a few minutes and try again." },
 });
 
 // ── Security headers (first middleware, applies to every response) ──
@@ -124,6 +137,14 @@ app.use("/account", authMiddleware, accountRoutes);
 // before the protected /pvp routes so it bypasses authMiddleware.
 app.get("/pvp/season/public", pvpController.getPublicSeason);
 app.use("/pvp", authMiddleware, pvpRoutes);
+
+// Protected + admin-gated — internal analytics/telemetry reads.
+app.use("/admin/analytics", authMiddleware, adminMiddleware, analyticsRoutes);
+
+// Public — "Report a Bug". Works logged-out; optionalAuthMiddleware attaches
+// identity when a valid JWT is present. Mounted before nothing auth-gated (all
+// game routes above already require auth) and carries its own per-IP limiter.
+app.post("/bug-reports", bugReportLimiter, optionalAuthMiddleware, bugReportController.submitBugReport);
 
 swagger(app);
 

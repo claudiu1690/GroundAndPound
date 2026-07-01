@@ -138,6 +138,7 @@ const notorietyService = require("./notorietyService");
 const { tierRank } = require("../consts/notorietyConfig");
 const { logFightResolve } = require("../utils/fightResolveLogger");
 const activityLogService = require("./activityLogService");
+const analyticsService = require("./analyticsService");
 const championService = require("./championService");
 const rankingService = require("./rankingService");
 
@@ -428,7 +429,7 @@ async function createOffer(fighterId, opponentId, offerType) {
 /**
  * Accept a fight offer: deduct energy, set status to accepted, link to fighter.
  */
-async function acceptOffer(fighterId, fightId) {
+async function acceptOffer(fighterId, fightId, userId) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
 
@@ -449,6 +450,14 @@ async function acceptOffer(fighterId, fightId) {
 
     // Create the FightCamp document for this fight (title shots always get full camp, never short notice)
     await campService.createCamp(fight._id, fighterId, fight.promotionTier, false, fight.offerType);
+
+    // Fire-and-forget analytics — userId is threaded from the controller (req.user.id).
+    analyticsService.track(
+        userId,
+        "fight_accepted",
+        { fightId: fight._id, tier: fight.promotionTier, kind: "pve" },
+        { fighterId: fighter._id }
+    );
 
     return fight;
 }
@@ -510,7 +519,7 @@ function applyLegacyTcaPenalty(fightPlayer, fighter, tierConfig) {
 /**
  * Resolve the accepted fight: run simulation, apply outcome, update fighter and fight.
  */
-async function resolveFightAndApply(fighterId) {
+async function resolveFightAndApply(fighterId, userId) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
     notorietyService.ensureNotorietyShape(fighter);
@@ -1217,6 +1226,15 @@ async function resolveFightAndApply(fighterId) {
     // ── Activity log entries (fire-and-forget, never throw) ──────────────
     const _tier = fighter.promotionTier;
     const _isTitleFight = fight.offerType === "TitleShot";
+
+    // Fire-and-forget analytics — one resolved event per fight. userId is threaded
+    // from the controller (req.user.id).
+    analyticsService.track(
+        userId,
+        "fight_resolved",
+        { fightId: String(fight._id), tier: _tier, outcome: result.outcome, isWin },
+        { fighterId: fighter._id }
+    );
     if (isWin)  activityLogService.log(fighterId, "FIGHT_WIN",
         `Beat ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
         { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight,
@@ -1235,6 +1253,13 @@ async function resolveFightAndApply(fighterId) {
         activityLogService.log(fighterId, "pvp_unlocked",
             "The Proving Ground is now open to you",
             { careerWins: fighter.record.wins });
+        // Fire-and-forget analytics — userId threaded from the controller.
+        analyticsService.track(
+            userId,
+            "pvp_unlocked",
+            { careerWins: fighter.record.wins },
+            { fighterId }
+        );
         try { await fighter.save(); } catch (e) { console.error("[pvp unlock] save failed:", e.message); }
     }
     if (isDraw) activityLogService.log(fighterId, "FIGHT_DRAW",

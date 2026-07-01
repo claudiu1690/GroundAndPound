@@ -37,6 +37,7 @@ import { ShopTab } from "./components/shop/ShopTab";
 import { InventorySidebar } from "./components/shop/InventorySidebar";
 import { CookieConsent } from "./components/legal/CookieConsent";
 import { LegalModals } from "./components/legal/LegalModals";
+import { ReportBugModal } from "./components/shared/ReportBugModal";
 import { tutorialBus } from "./utils/tutorialBus";
 import { TITLE_WINS } from "./constants/gameConstants";
 import { useToasts } from "./hooks/useToasts";
@@ -1113,6 +1114,7 @@ const handleGetOffers = useCallback(async () => {
       {/* ── COOKIE / STORAGE ACKNOWLEDGEMENT + LEGAL MODALS ── */}
       <CookieConsent />
       <LegalModals />
+      <ReportBugModal />
 
       {/* ── EMAIL-VERIFY BANNER ──
           Soft verification: the user can keep playing while this banner is up.
@@ -1690,6 +1692,8 @@ const handleGetOffers = useCallback(async () => {
                 <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("open-privacy-policy"))}>{t("layout.bottombar.privacy")}</button>
                 <span>·</span>
                 <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("open-terms"))}>{t("layout.bottombar.terms")}</button>
+                <span>·</span>
+                <button type="button" onClick={() => { setMobileDrawerOpen(false); window.dispatchEvent(new CustomEvent("open-bug-report")); }}>Report a Bug</button>
               </div>
             </div>
           </aside>
@@ -1746,6 +1750,13 @@ const handleGetOffers = useCallback(async () => {
               onClick={() => window.dispatchEvent(new CustomEvent("open-terms"))}
             >
               {t("layout.bottombar.terms")}
+            </button>
+            <button
+              type="button"
+              className="bb-btn"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-bug-report"))}
+            >
+              Report a Bug
             </button>
             <button type="button" className="bb-btn" onClick={handleLogout} title={t("layout.bottombar.signOutTitle")}>{t("layout.bottombar.signOut")}</button>
           </div>

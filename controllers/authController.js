@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 const fighterService = require("../services/fighterService");
 const accountService = require("../services/accountService");
+const analyticsService = require("../services/analyticsService");
 const config = require("../config");
 
 /**
@@ -58,6 +59,9 @@ async function register(req, res) {
         accountService.sendVerifyEmail(user).catch((err) => {
             console.error("[register] sendVerifyEmail failed:", err.message);
         });
+
+        // Fire-and-forget analytics — never blocks or breaks registration.
+        analyticsService.track(user._id, "signup", {}, { fighterId: newFighter._id });
 
         const token = signToken(user);
         res.status(201).json({ token, fighterId: newFighter._id });

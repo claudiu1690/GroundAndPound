@@ -42,7 +42,7 @@ async function createOffer(req, res) {
 async function acceptOffer(req, res) {
     try {
         const { fighterId, fightId } = req.params;
-        const fight = await fightService.acceptOffer(fighterId, fightId);
+        const fight = await fightService.acceptOffer(fighterId, fightId, req.user.id);
         res.json(fight);
     } catch (err) {
         if (err.message && err.message.includes("not found")) return res.status(404).json({ message: err.message });
@@ -92,7 +92,7 @@ async function setStrategy(req, res) {
 
 async function resolveFight(req, res) {
     try {
-        const result = await fightService.resolveFightAndApply(req.params.fighterId);
+        const result = await fightService.resolveFightAndApply(req.params.fighterId, req.user.id);
         res.json(result);
     } catch (err) {
         if (err.message === "Fighter not found" || err.message === "Fight not found" || err.message === "Opponent not found") return res.status(404).json({ message: err.message });

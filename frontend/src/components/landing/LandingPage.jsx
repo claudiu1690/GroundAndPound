@@ -4,6 +4,7 @@ import { api, authStorage } from "../../api";
 import { AuthPage } from "../auth/AuthPage";
 import { CookieConsent } from "../legal/CookieConsent";
 import { LegalModals } from "../legal/LegalModals";
+import { ReportBugModal } from "../shared/ReportBugModal";
 import { useSeasonBand } from "../../hooks/useSeasonBand";
 
 // Open a legal modal from a footer link without navigating.
@@ -509,6 +510,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
             <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-cookie-policy")}>Cookie Policy</a>
             <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-privacy-policy")}>Privacy</a>
             <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-terms")}>Terms</a>
+            <a className="foot-link" href="#" onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent("open-bug-report")); }}>Report a Bug</a>
           </div>
           <div className="foot-copy">&copy; 2026 Digital Olive. All rights reserved.</div>
         </footer>
@@ -517,6 +519,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
       {/* Cookie consent banner + legal modals for logged-out visitors */}
       <CookieConsent />
       <LegalModals />
+      <ReportBugModal />
 
       {/* LIGHTBOX */}
       <div

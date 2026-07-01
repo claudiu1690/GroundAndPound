@@ -14779,3 +14779,81 @@ code {
   .pvp-ps-stake-value { font-size: 16px; }
 }
 
+/* ── Bug Report Modal ──────────────────────────────────────────────────── */
+.bug-report-modal {
+  max-width: 480px;
+}
+
+.bug-report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bug-report-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.bug-report-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.bug-report-control {
+  background: #0F0F0F;
+  border: 1px solid var(--c-border-3);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #F0F0F0;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.bug-report-control:focus   { border-color: var(--c-blue); }
+.bug-report-control:disabled {
+  background: var(--c-bg-tile);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.bug-report-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.bug-report-charcount {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  align-self: flex-end;
+  line-height: 1;
+}
+.bug-report-charcount--warn { color: var(--gold-bright); }
+
+.bug-report-error {
+  font-size: 12px;
+  color: #fca5a5;
+  margin: 0;
+  line-height: 1.45;
+  background: rgba(185, 28, 28, 0.12);
+  border: 1px solid var(--red-dim);
+  border-radius: 4px;
+  padding: 0.5rem 0.65rem;
+}
+
+.bug-report-success-text {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  margin: 0;
+}
+

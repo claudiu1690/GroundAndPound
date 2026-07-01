@@ -15,6 +15,7 @@ const pvpSeasonService = require("../services/pvpSeasonService");
 const pvpRecordService = require("../services/pvpRecordService");
 const pvpMatchmakingService = require("../services/pvpMatchmakingService");
 const pvpFightService = require("../services/pvpFightService");
+const analyticsService = require("../services/analyticsService");
 const { WEIGHT_CLASSES_PVP, SEASON_WEIGHT_CLASSES, OPEN_WEIGHT_CLASS, TWISTS, DIVISION_KEYS } = require("../consts/pvpConfig");
 
 // Accepted weightClass query values for the full ladder screen: FW|LW|MW|HW or "All".
@@ -264,6 +265,16 @@ async function postFight(req, res) {
             seasonId: body.seasonId,
             weightClass: body.weightClass,
         });
+
+        // Fire-and-forget analytics — fires on EVERY pvp fight. Dedup to "first"
+        // happens at query time in the retention aggregation, not here.
+        analyticsService.track(
+            req.user.id,
+            "pvp_first_fight",
+            { pvpFightId: result?.fightId ?? null },
+            { fighterId: req.user.fighterId }
+        );
+
         return res.json(result);
     } catch (err) {
         return handleError(res, err);

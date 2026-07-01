@@ -368,4 +368,10 @@ export const api = {
    * DTO: { status:"upcoming"|"active", seasonNumber, name, startDate, endDate, crossWeightClass, weightClass }
    */
   pvpPublicSeason: () => request("/pvp/season/public"),
+
+  // ── Bug Reports ─────────────────────────────────────────
+  // Works logged-in and logged-out — request() attaches the JWT automatically
+  // when one is present, so the server can resolve identity server-side.
+  reportBug: (body) =>
+    request("/bug-reports", { method: "POST", body: JSON.stringify(body) }),
 };
