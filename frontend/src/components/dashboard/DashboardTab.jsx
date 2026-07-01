@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { t } from "@/lib/i18n";
 import { useDashboard } from "../../hooks/useDashboard";
+import { PvpSeasonCountdown } from "./PvpSeasonCountdown";
 import { statMeterRows } from "../fighterProfile/profileModel";
 import {
   Stethoscope,
@@ -217,6 +218,11 @@ export const DashboardTab = memo(function DashboardTab({
   const ranking = data?.ranking ?? null;
   const pvp = data?.pvp ?? null;
   const sponsorship = data?.sponsorship ?? null;
+
+  // Pre-season: render a live countdown on the tile while the season is "upcoming".
+  const pvpUpcoming = (pvp?.status === "upcoming" && pvp.startsAt)
+    ? { startsAt: pvp.startsAt, seasonLabel: pvp.seasonLabel }
+    : null;
   const nudge = data?.nudge ?? null;
 
   // ── Gazette tile data ──────────────────────────────────────────────────────
@@ -377,7 +383,15 @@ export const DashboardTab = memo(function DashboardTab({
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("pvp"); } }}
         >
-          {pvp != null ? (
+          {pvpUpcoming ? (
+            <>
+              <div className="pvp-eye">{t("dashboard.provingGround.label")}</div>
+              <div className="pvp-title">{t("dashboard.provingGround.title")}</div>
+              <div className="pvp-season">{pvpUpcoming.seasonLabel}</div>
+              <PvpSeasonCountdown startsAt={pvpUpcoming.startsAt} />
+              <div className="pvp-link">{t("dashboard.provingGround.cta")}</div>
+            </>
+          ) : pvp != null ? (
             <>
               <div className="pvp-eye">{t("dashboard.provingGround.label")}</div>
               <div className="pvp-title">{t("dashboard.provingGround.title")}</div>

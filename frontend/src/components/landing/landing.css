@@ -93,13 +93,32 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
   border-top:1px solid rgba(200,16,46,0.2);border-bottom:1px solid rgba(200,16,46,0.2);
   padding:70px 40px;text-align:center;position:relative;overflow:hidden
 }
-.landing-page .pvp-inner{max-width:600px;margin:0 auto;position:relative;z-index:1}
+.landing-page .pvp-inner{max-width:600px;margin:0 auto;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center}
 .landing-page .pvp-season{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--r);margin-bottom:12px}
 .landing-page .pvp-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(40px,6vw,68px);text-transform:uppercase;line-height:0.95;margin-bottom:16px}
-.landing-page .pvp-sub{font-size:15px;color:#888;line-height:1.6;margin-bottom:28px}
+.landing-page .pvp-sub{font-size:15px;color:#888;line-height:1.6;margin-bottom:28px;max-width:460px}
 .landing-page .pvp-pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .landing-page .pill{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:2px;background:rgba(255,255,255,0.05);border:1px solid var(--bor);color:var(--ts)}
 .landing-page .pill.hot{border-color:rgba(200,16,46,0.3);color:var(--r);background:rgba(200,16,46,0.06)}
+
+/* ── PVP BAND COUNTDOWN (upcoming state) ── */
+.landing-page .pvp-countdown-wrap{margin:24px 0;text-align:center;display:flex;flex-direction:column;align-items:center}
+.landing-page .pvp-countdown-label{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--ts);margin-bottom:10px}
+.landing-page .pvp-countdown-timer{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(48px,8vw,76px);line-height:1;color:var(--tp);letter-spacing:2px;white-space:nowrap;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.landing-page .pvp-countdown-start{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--tm);margin-top:12px}
+/* Final-hour heartbeat — scales the digits like a pulse, with a red glow on the
+   beat (color is set inline so the white→red shift keeps working underneath). */
+@keyframes pvpCountdownPulse{
+  0%,100%{transform:scale(1);text-shadow:0 0 0 rgba(200,16,46,0)}
+  50%{transform:scale(1.08);text-shadow:0 0 26px rgba(200,16,46,0.6)}
+}
+.landing-page .pvp-countdown-timer--final{
+  transform-origin:center;
+  animation:pvpCountdownPulse 1s ease-in-out infinite
+}
+@media (prefers-reduced-motion:reduce){
+  .landing-page .pvp-countdown-timer--final{animation:none}
+}
 
 /* ── LOGIN SECTION ── */
 .landing-page .login-section{padding:90px 40px;max-width:480px;margin:0 auto;text-align:center}

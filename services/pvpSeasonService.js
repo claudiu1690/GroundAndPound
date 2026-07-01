@@ -69,6 +69,35 @@ async function getCurrentSeasonForFighter(realWeightClass) {
 }
 
 /**
+ * Resolve the season to surface on the public marketing landing "Live Now / countdown"
+ * band. Unauthenticated + cheap to poll. Precedence (first non-null wins):
+ *   1. active Open season
+ *   2. active per-WC season (any PVP weight class)
+ *   3. upcoming Open season (soonest to start)
+ *   4. upcoming per-WC season (soonest to start)
+ * "ended" seasons are never queried. Returns null if none exist. All reads are .lean().
+ */
+async function getPublicSeason() {
+    const activeOpen = await Season.findOne({ weightClass: OPEN_WEIGHT_CLASS, status: "active" })
+        .sort({ seasonNumber: -1 }).lean();
+    if (activeOpen) return activeOpen;
+
+    const activeWc = await Season.findOne({ weightClass: { $in: WEIGHT_CLASSES_PVP }, status: "active" })
+        .sort({ seasonNumber: -1 }).lean();
+    if (activeWc) return activeWc;
+
+    const upcomingOpen = await Season.findOne({ weightClass: OPEN_WEIGHT_CLASS, status: "upcoming" })
+        .sort({ startDate: 1 }).lean();
+    if (upcomingOpen) return upcomingOpen;
+
+    const upcomingWc = await Season.findOne({ weightClass: { $in: WEIGHT_CLASSES_PVP }, status: "upcoming" })
+        .sort({ startDate: 1 }).lean();
+    if (upcomingWc) return upcomingWc;
+
+    return null;
+}
+
+/**
  * Resolve the "current" season for a weight class. Alias kept for existing callers —
  * delegates to getCurrentSeasonForFighter so Open seasons take precedence. When no Open
  * season exists this returns the per-WC season exactly as before.
@@ -231,6 +260,7 @@ async function runSeasonTransitionSweep(now = new Date()) {
 module.exports = {
     getCurrentSeason,
     getCurrentSeasonForFighter,
+    getPublicSeason,
     isCrossWeightClass,
     getSeasonById,
     seedSeason,

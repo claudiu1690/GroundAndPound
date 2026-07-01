@@ -362,4 +362,10 @@ export const api = {
     request(`/pvp/season/current/${wc}`),
   pvpAcknowledgeSeason: (seasonId) =>
     request(`/pvp/acknowledge-season`, { method: "POST", body: JSON.stringify({ seasonId }) }),
+
+  /**
+   * Public (unauth) season status for the landing band. Returns the DTO or null.
+   * DTO: { status:"upcoming"|"active", seasonNumber, name, startDate, endDate, crossWeightClass, weightClass }
+   */
+  pvpPublicSeason: () => request("/pvp/season/public"),
 };

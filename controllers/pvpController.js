@@ -492,6 +492,36 @@ async function getPvpFightBreakdown(req, res) {
     }
 }
 
+// ── GET /pvp/season/public ───────────────────────────────────────────────────
+// PUBLIC (unauthenticated) — powers the marketing landing "Live Now / countdown"
+// band. No req.user (route bypasses authMiddleware). Cheap + safe to poll.
+
+// Dedicated shaper — must NOT reuse shapeSeasonBlock (it leaks twist/belt/id fields).
+// Returns EXACTLY these 7 fields, nothing else.
+function shapePublicSeason(season) {
+    return {
+        status: season.status,
+        seasonNumber: season.seasonNumber,
+        name: season.name,
+        startDate: new Date(season.startDate).toISOString(),
+        endDate: new Date(season.endDate).toISOString(),
+        crossWeightClass: !!(season.config && season.config.crossWeightClass),
+        weightClass: season.weightClass,
+    };
+}
+
+async function getPublicSeason(req, res) {
+    try {
+        const season = await pvpSeasonService.getPublicSeason();
+        res.set("Cache-Control", "public, max-age=10");
+        if (!season) return res.json(null);
+        return res.json(shapePublicSeason(season));
+    } catch (err) {
+        console.error("[pvpController] getPublicSeason", err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 module.exports = {
     getLadder,
     getLadderPosition,
@@ -506,4 +536,5 @@ module.exports = {
     getCurrentSeason,
     acknowledgeSeason,
     getPvpFightBreakdown,
+    getPublicSeason,
 };

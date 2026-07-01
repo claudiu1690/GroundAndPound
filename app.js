@@ -21,6 +21,7 @@ const tutorialRoutes = require("./routes/tutorialRoutes");
 const accountRoutes = require("./routes/accountRoutes");
 const pvpRoutes = require("./routes/pvpRoutes");
 const accountController = require("./controllers/accountController");
+const pvpController = require("./controllers/pvpController");
 const authMiddleware = require("./middleware/authMiddleware");
 const mongoose = require("mongoose");
 const config = require("./config");
@@ -119,6 +120,9 @@ app.use("/rankings", authMiddleware, rankingRoutes);
 app.use("/gazette", authMiddleware, gazetteRoutes);
 app.use("/tutorial", authMiddleware, tutorialRoutes);
 app.use("/account", authMiddleware, accountRoutes);
+// Public — powers the marketing landing "Live Now" band, no JWT. Mounted
+// before the protected /pvp routes so it bypasses authMiddleware.
+app.get("/pvp/season/public", pvpController.getPublicSeason);
 app.use("/pvp", authMiddleware, pvpRoutes);
 
 swagger(app);

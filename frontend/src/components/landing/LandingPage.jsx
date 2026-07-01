@@ -4,6 +4,7 @@ import { api, authStorage } from "../../api";
 import { AuthPage } from "../auth/AuthPage";
 import { CookieConsent } from "../legal/CookieConsent";
 import { LegalModals } from "../legal/LegalModals";
+import { useSeasonBand } from "../../hooks/useSeasonBand";
 
 // Open a legal modal from a footer link without navigating.
 const openLegal = (e, eventName) => {
@@ -11,7 +12,22 @@ const openLegal = (e, eventName) => {
   window.dispatchEvent(new CustomEvent(eventName));
 };
 
+// Formats a Date/ISOstring as "Mon D, YYYY" e.g. "Jul 4, 2026"
+function formatDate(isoStr) {
+  const d = new Date(isoStr);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+// Formats a Date/ISOstring as "Mon D" e.g. "Jul 4"
+function formatDateShort(isoStr) {
+  const d = new Date(isoStr);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 export function LandingPage({ onAuthenticated, initialResetToken }) {
+  // Season band (data-driven PVP section)
+  const { data: seasonData, loading: seasonLoading, countdown, timerColor, finalHour } = useSeasonBand();
+
   // Nav scroll darkening
   const [scrolled, setScrolled] = useState(false);
 
@@ -115,7 +131,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
           <a className="nav-link" href="#features">Features</a>
           <a className="nav-link" href="#how">How It Works</a>
           <a className="nav-link" href="#screenshots">Screenshots</a>
-          <a className="nav-link" href="#pvp">Season 1</a>
+          <a className="nav-link" href="#pvp">{seasonData ? `Season ${seasonData.seasonNumber}` : "Season 1"}</a>
           <a className="nav-cta" href="#play">Play Free</a>
         </div>
       </nav>
@@ -147,8 +163,17 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         <div className="stat-item"><div className="stat-val">100<span>%</span></div><div className="stat-lbl">Free to Play</div></div>
         <div className="stat-item"><div className="stat-val"><span>0</span></div><div className="stat-lbl">Downloads Required</div></div>
         <div className="stat-item"><div className="stat-val">5</div><div className="stat-lbl">Division Tiers</div></div>
-        <div className="stat-item"><div className="stat-val">6</div><div className="stat-lbl">Fight Disciplines</div></div>
-        <div className="stat-item"><div className="stat-val"><span>S1</span></div><div className="stat-lbl">Season Live Now</div></div>
+        <div className="stat-item"><div className="stat-val">8</div><div className="stat-lbl">Combat Stats</div></div>
+        <div className="stat-item">
+          <div className="stat-val"><span>{seasonData ? `S${seasonData.seasonNumber}` : "S1"}</span></div>
+          <div className="stat-lbl">
+            {(!seasonData || seasonLoading)
+              ? "Season Live Now"
+              : seasonData.status === "upcoming"
+                ? "Season Opening Soon"
+                : "Season Live Now"}
+          </div>
+        </div>
       </div>
 
       {/* FEATURES */}
@@ -160,8 +185,8 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
           <div className="feat">
             <div className="feat-icon-text">STR</div>
             <div className="feat-name">Train &amp; Develop</div>
-            <div className="feat-desc">Build your fighter across Striking, Boxing, Wrestling, Grappling, Strength and Conditioning. Every session costs energy — spend it wisely.</div>
-            <div className="feat-tag">6 Disciplines</div>
+            <div className="feat-desc">Build your fighter across Striking, Speed, Kicks, Wrestling, Ground Game, Submissions, Chin and Fight IQ. Every session costs energy — spend it wisely.</div>
+            <div className="feat-tag">8 Stats</div>
           </div>
           <div className="feat">
             <div className="feat-icon-text">FGT</div>
@@ -298,7 +323,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
             <h3 className="ss-copy-title">Your gym defines your path</h3>
             <p className="ss-copy-desc">From the free Community MMA Center to the $10,000/week Elite Fight Academy. Each gym unlocks different drills, builds different strengths, and requires a different rank to access.</p>
             <div className="ss-copy-pills">
-              <span className="ss-pill">9 gyms</span>
+              <span className="ss-pill">11 gyms</span>
               <span className="ss-pill">Rank gated</span>
               <span className="ss-pill">XP multipliers</span>
               <span className="ss-pill">Specialty drills</span>
@@ -358,15 +383,69 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
       {/* PVP CALLOUT */}
       <div className="pvp-band" id="pvp">
         <div className="pvp-inner">
-          <div className="pvp-season">Season 1 — Iron Circuit — Live Now</div>
-          <h2 className="pvp-title">The Proving<br />Ground</h2>
-          <p className="pvp-sub">Compete in ranked PvP seasons. Earn Division Points, defend your spot on the ladder, and fight your way to the top before the season ends.</p>
-          <div className="pvp-pills">
-            <span className="pill hot">Open Now</span>
-            <span className="pill">10 Weeks Remaining</span>
-            <span className="pill">All Weight Classes</span>
-            <span className="pill">Real Players Only</span>
-          </div>
+          {/* fallback: data===null, error, OR still loading — renders the hardcoded copy */}
+          {(!seasonData || seasonLoading) && (
+            <>
+              <div className="pvp-season">Season 1 — Iron Circuit — Live Now</div>
+              <h2 className="pvp-title">The Proving<br />Ground</h2>
+              <p className="pvp-sub">Compete in ranked PvP seasons. Earn Division Points, defend your spot on the ladder, and fight your way to the top before the season ends.</p>
+              <div className="pvp-pills">
+                <span className="pill hot">Open Now</span>
+                <span className="pill">10 Weeks Remaining</span>
+                <span className="pill">All Weight Classes</span>
+                <span className="pill">Real Players Only</span>
+              </div>
+            </>
+          )}
+
+          {/* upcoming */}
+          {seasonData && !seasonLoading && seasonData.status === "upcoming" && (() => {
+            const wcPill = seasonData.crossWeightClass ? "Open · All Weight Classes" : seasonData.weightClass;
+            return (
+              <>
+                <div className="pvp-season">Season {seasonData.seasonNumber} — {seasonData.name} — Opening Soon</div>
+                <h2 className="pvp-title">The Proving<br />Ground</h2>
+                <p className="pvp-sub">Compete in ranked PvP seasons. Earn Division Points, defend your spot on the ladder, and fight your way to the top before the season ends.</p>
+                <div className="pvp-countdown-wrap">
+                  <div className="pvp-countdown-label">Opens in</div>
+                  <div
+                    className={`pvp-countdown-timer${finalHour ? " pvp-countdown-timer--final" : ""}`}
+                    style={{ color: timerColor }}
+                  >{countdown}</div>
+                  <div className="pvp-countdown-start">Starts {formatDate(seasonData.startDate)}</div>
+                </div>
+                <div className="pvp-pills">
+                  <span className="pill">Opens {formatDateShort(seasonData.startDate)}</span>
+                  <span className="pill">{wcPill}</span>
+                  <span className="pill">Real Players Only</span>
+                </div>
+              </>
+            );
+          })()}
+
+          {/* active */}
+          {seasonData && !seasonLoading && seasonData.status === "active" && (() => {
+            const wcPill = seasonData.crossWeightClass ? "Open · All Weight Classes" : seasonData.weightClass;
+            const weeksLeft = Math.floor((new Date(seasonData.endDate) - Date.now()) / (7 * 86400000));
+            const weeksPill = weeksLeft >= 2
+              ? `${weeksLeft} Weeks Remaining`
+              : weeksLeft === 1
+                ? "1 Week Remaining"
+                : "Final Week";
+            return (
+              <>
+                <div className="pvp-season">Season {seasonData.seasonNumber} — {seasonData.name} — Live Now</div>
+                <h2 className="pvp-title">The Proving<br />Ground</h2>
+                <p className="pvp-sub">Compete in ranked PvP seasons. Earn Division Points, defend your spot on the ladder, and fight your way to the top before the season ends.</p>
+                <div className="pvp-pills">
+                  <span className="pill hot">Open Now</span>
+                  <span className="pill">{weeksPill}</span>
+                  <span className="pill">{wcPill}</span>
+                  <span className="pill">Real Players Only</span>
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
 

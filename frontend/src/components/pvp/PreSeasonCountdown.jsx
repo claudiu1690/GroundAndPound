@@ -4,6 +4,7 @@ import { GameplanPicker } from "./GameplanPicker";
 import { api } from "../../api";
 import { t } from "../../lib/i18n";
 import { OPEN_LABEL } from "./pvpConst";
+import { timerColorFor } from "../../lib/countdown";
 
 /**
  * PreSeasonCountdown — shown in PvpHub when season.status === "upcoming".
@@ -149,6 +150,7 @@ export function PreSeasonCountdown({ season, fighter, onElapsed }) {
         <div className="pvp-ps-timer-wrap">
           <div
             className={`pvp-ps-timer${isSubHour ? " pvp-ps-timer-subhour" : ""}${isZero ? " pvp-ps-timer-zero" : ""}`}
+            style={isZero ? undefined : { color: timerColorFor(remainingMs) }}
           >
             {timerDisplay}
           </div>

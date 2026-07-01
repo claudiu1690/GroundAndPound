@@ -395,6 +395,10 @@ async function buildPvp(fighter) {
             seasonLabel: `Season ${season.seasonNumber}${season.name ? ` — ${season.name}` : ""}`,
             crossWeightClass: !!(season.config && season.config.crossWeightClass),
             weeksRemaining,
+            // Pre-season: the tile renders a live countdown to startsAt instead of
+            // the stats/weeks layout when status is "upcoming".
+            status: season.status,
+            startsAt: season.startDate ? new Date(season.startDate).toISOString() : null,
         };
     } catch (err) {
         console.error("[dashboard] pvp summary failed:", err.message);
