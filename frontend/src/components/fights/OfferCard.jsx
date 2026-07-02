@@ -368,6 +368,7 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
           type="button"
           className={btnCls}
           onClick={() => onAccept && onAccept(opp._id, offer.type)}
+          data-tut="offer-accept"
         >
           {btnLabel}
         </button>
@@ -379,7 +380,9 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
   const cardCls = `offer-card ${variant}${isLocked ? " offer-card-locked" : ""}`;
 
   return (
-    <div className={cardCls}>
+    // data-tut only on UNLOCKED cards so the tutorial cut-out never lands on a
+    // locked offer (whose Accept button is hidden), which would re-trap the player.
+    <div className={cardCls} data-tut={isLocked ? undefined : "offer-card"}>
       <span className={badge.cls}>{t(badge.textKey)}</span>
 
       <SpecialBanner />
