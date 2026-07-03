@@ -12285,12 +12285,20 @@ code {
 /* Cookie policy modal — extends the shared account-modal shell. */
 .cookie-policy-modal {
   max-width: 560px;
+  /* Cap to the viewport so the header (title/close ×) and footer (Close btn)
+     never spill off-screen on short/mobile screens. dvh accounts for mobile
+     browser chrome; the backdrop's 1rem padding is subtracted on each side. */
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
   border-color: var(--gold-bright);
 }
 .cookie-policy-modal .account-modal-title { color: var(--gold-bright); }
 
 .cookie-policy-body {
-  max-height: 70vh;
+  /* Fill the space left between the fixed header/footer and scroll internally,
+     instead of a fixed 70vh that could push the modal past the viewport. */
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
 }
 
