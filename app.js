@@ -77,6 +77,10 @@ const guestCreateLimiter = rateLimit({
     limit: Number(process.env.GUEST_CREATE_RATE_LIMIT_MAX) || 5, // guests/hour/IP
     standardHeaders: "draft-7",
     legacyHeaders: false,
+    // Only successful creations consume the quota — a player hitting a
+    // validation error or a server fault can retry without locking themselves
+    // out of the signup path for an hour.
+    skipFailedRequests: true,
     message: { message: "Too many guest accounts created — please wait a while and try again." },
 });
 
