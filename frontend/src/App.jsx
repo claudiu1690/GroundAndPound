@@ -39,6 +39,8 @@ import { InventorySidebar } from "./components/shop/InventorySidebar";
 import { CookieConsent } from "./components/legal/CookieConsent";
 import { LegalModals } from "./components/legal/LegalModals";
 import { ReportBugModal } from "./components/shared/ReportBugModal";
+import { ChangelogModal } from "./components/changelog/ChangelogModal";
+import { CHANGELOG_ENTRIES, CURRENT_VERSION } from "./components/changelog/changelogContent";
 import { tutorialBus } from "./utils/tutorialBus";
 import { TITLE_WINS } from "./constants/gameConstants";
 import { useToasts } from "./hooks/useToasts";
@@ -88,6 +90,9 @@ function buildNavItems() {
   ];
 }
 const NAV_ITEMS = buildNavItems();
+
+// ── Changelog / What's New ──────────────────────────────────
+const LAST_SEEN_VERSION_KEY = "gnp_last_seen_version";
 
 // ── Tier ladder for display ────────────────────────────────
 const TIER_LADDER_DISPLAY = [
@@ -479,6 +484,11 @@ function App() {
   const prevPendingPromotionRef = useRef(undefined);
   const [fameDrawerOpen, setFameDrawerOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  // "What's New" changelog — auto-opens once for returning players on a major
+  // release they haven't seen yet (gated on fighter load, see effect below).
+  const [changelogOpen, setChangelogOpen] = useState(false);
+  const [changelogUnseen, setChangelogUnseen] = useState(false);
+  const changelogCheckedRef = useRef(false);
   /** Bumps after train / membership pay so gym quest panel refetches without a full page reload. */
 
   // ── Camp v1.1 state ────────────────────────────────────────
@@ -664,6 +674,61 @@ function App() {
     offers,
     champions,
   ]);
+
+  const openChangelog = useCallback(() => {
+    setChangelogOpen(true);
+    try { localStorage.setItem(LAST_SEEN_VERSION_KEY, CURRENT_VERSION); } catch (_) {}
+    setChangelogUnseen(false);
+  }, []);
+
+  // One-shot "What's New" check, gated on the fighter being loaded (the major
+  // auto-open must not fire over the onboarding tutorial). Uses a ref guard so
+  // the 60s fighter poll can't re-run this and re-open a modal the player closed.
+  useEffect(() => {
+    if (!authed || loading || !fighter) return;
+    if (changelogCheckedRef.current) return;
+
+    let stored;
+    try {
+      stored = localStorage.getItem(LAST_SEEN_VERSION_KEY);
+    } catch (_) {
+      // Storage unreadable (private mode etc.) — we can't tell a new player
+      // from a returning one. Show the dot as a gentle signal but never
+      // auto-open, and since nothing can persist, don't keep re-checking.
+      setChangelogUnseen(true);
+      changelogCheckedRef.current = true;
+      return;
+    }
+
+    // First visit: nothing stored yet — silently mark current version as seen.
+    // Must be checked BEFORE the "differs" branch, or first-visit players would
+    // get an unearned What's New popup/badge.
+    if (!stored) {
+      try { localStorage.setItem(LAST_SEEN_VERSION_KEY, CURRENT_VERSION); } catch (_) {}
+      changelogCheckedRef.current = true;
+      return;
+    }
+
+    if (stored === CURRENT_VERSION) {
+      changelogCheckedRef.current = true;
+      return;
+    }
+
+    setChangelogUnseen(true);
+    const isMajor = CHANGELOG_ENTRIES[0]?.major === true;
+    const inTutorial = !!(fighter?.tutorial && !fighter.tutorial.completed);
+    if (isMajor && inTutorial) {
+      // Suppressed while onboarding — leave the ref unset so the effect
+      // re-evaluates on later fighter refreshes and the auto-open still fires
+      // once the tutorial completes. (Manually opening the modal writes the
+      // seen-version, which resolves this via the equality branch above.)
+      return;
+    }
+    if (isMajor) {
+      openChangelog();
+    }
+    changelogCheckedRef.current = true;
+  }, [authed, loading, fighter, openChangelog]);
 
   // Email-change confirmation redirect — the backend bounces the user here from
   // /account/email/confirm with one of two query params. Surface the result via
@@ -1195,6 +1260,11 @@ const handleGetOffers = useCallback(async () => {
         onNavigate={handleNavTab}
       />
 
+      <ChangelogModal
+        open={changelogOpen}
+        onClose={() => setChangelogOpen(false)}
+      />
+
       {/* ── ONBOARDING TUTORIAL ── */}
       {fighter?._id && fighter.tutorial && !fighter.tutorial.completed && (
         <TutorialOverlay
@@ -1706,6 +1776,11 @@ const handleGetOffers = useCallback(async () => {
                 <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("open-terms"))}>{t("layout.bottombar.terms")}</button>
                 <span>·</span>
                 <button type="button" onClick={() => { setMobileDrawerOpen(false); window.dispatchEvent(new CustomEvent("open-bug-report")); }}>Report a Bug</button>
+                <span>·</span>
+                <button type="button" className="bb-btn-whatsnew" onClick={() => { setMobileDrawerOpen(false); openChangelog(); }}>
+                  {t("changelog.whatsNewButton")} v{CURRENT_VERSION}
+                  {changelogUnseen && <span className="nav-dot nav-dot--pulse" aria-label={t("changelog.unseenLabel")} />}
+                </button>
               </div>
             </div>
           </aside>
@@ -1769,6 +1844,14 @@ const handleGetOffers = useCallback(async () => {
               onClick={() => window.dispatchEvent(new CustomEvent("open-bug-report"))}
             >
               Report a Bug
+            </button>
+            <button
+              type="button"
+              className="bb-btn bb-btn-whatsnew"
+              onClick={openChangelog}
+            >
+              {t("changelog.whatsNewButton")} v{CURRENT_VERSION}
+              {changelogUnseen && <span className="nav-dot nav-dot--pulse" aria-label={t("changelog.unseenLabel")} />}
             </button>
             <button type="button" className="bb-btn" onClick={handleLogout} title={t("layout.bottombar.signOutTitle")}>{t("layout.bottombar.signOut")}</button>
           </div>

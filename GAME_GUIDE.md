@@ -8,6 +8,7 @@
 - What Is Ground & Pound?
 - Creating Your Fighter
 - Guest Accounts & Securing Your Progress
+- What's New — Game Updates
 - Energy — The Daily Resource
 - The Career Feed
 - The Octagon Gazette
@@ -109,6 +110,20 @@ The permanent fix is to claim your account: in the Account tab, add an email and
 One warning for unclaimed guests: accounts with no email that haven't been played for 30 days are permanently deleted, fighter and all. Any activity resets that clock, and claimed accounts are never auto-deleted. If you care about your career, claim it.
 
 > **Key takeaway:** Guests get the full game, no email needed. Save your one-time recovery code — and claim your account with an email to make your career permanent.
+
+### What's New — Game Updates
+
+*Where to see what changed in the game and what the version number means.*
+
+Ground & Pound is updated continuously — new features, fixes, and balance changes ship while you play. The What's New button in the footer (next to the version number) opens the full changelog: the latest release up top with its highlights, and every earlier release below it.
+
+When an update lands that you haven't read about yet, a small pulsing dot appears on the What's New button. Big releases open the notes for you once, automatically — smaller patches just show the dot and stay out of your way. Opening the notes clears the dot until the next update.
+
+Balance changes always come with a short reason. If a training method or fight mechanic was adjusted, the changelog tells you what changed and why, so you can adapt your strategy instead of guessing.
+
+The changelog says what changed and when; this Library explains how systems work right now. If a changelog entry mentions a system you don't know, look it up here — the Library is always updated alongside the game.
+
+> **Key takeaway:** Check the What's New button in the footer when the dot appears — big updates open once by themselves, and balance changes always explain their reasoning.
 
 ### Energy — The Daily Resource
 

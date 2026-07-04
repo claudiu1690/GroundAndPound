@@ -86,6 +86,20 @@ export const LIBRARY_ARTICLES = [
         keyTakeaway: "Guests get the full game, no email needed. Save your one-time recovery code — and claim your account with an email to make your career permanent.",
     },
     {
+        id: "whats-new-changelog",
+        category: "Getting Started",
+        title: "What's New — Game Updates",
+        summary: "Where to see what changed in the game and what the version number means.",
+        tags: ["changelog", "updates", "version", "patch notes", "what's new"],
+        body: [
+            "Ground & Pound is updated continuously — new features, fixes, and balance changes ship while you play. The What's New button in the footer (next to the version number) opens the full changelog: the latest release up top with its highlights, and every earlier release below it.",
+            "When an update lands that you haven't read about yet, a small pulsing dot appears on the What's New button. Big releases open the notes for you once, automatically — smaller patches just show the dot and stay out of your way. Opening the notes clears the dot until the next update.",
+            "Balance changes always come with a short reason. If a training method or fight mechanic was adjusted, the changelog tells you what changed and why, so you can adapt your strategy instead of guessing.",
+            "The changelog says what changed and when; this Library explains how systems work right now. If a changelog entry mentions a system you don't know, look it up here — the Library is always updated alongside the game.",
+        ],
+        keyTakeaway: "Check the What's New button in the footer when the dot appears — big updates open once by themselves, and balance changes always explain their reasoning.",
+    },
+    {
         id: "energy",
         category: "Getting Started",
         title: "Energy — The Daily Resource",

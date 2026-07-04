@@ -300,7 +300,8 @@
         "items": {
           "gnp_token": "A sign-in token (JWT) that keeps you logged in between visits so you don't have to re-enter your password each time.",
           "gnp_fighter_id": "The ID of your fighter, so the game knows which character to load when you return.",
-          "gnp_cookie_consent": "Remembers that you've seen and acknowledged this notice, so the banner doesn't show again on every visit."
+          "gnp_cookie_consent": "Remembers that you've seen and acknowledged this notice, so the banner doesn't show again on every visit.",
+          "gnp_last_seen_version": "Remembers the last app version whose 'What's New' notes you viewed, so the update badge only shows when there's something new."
         }
       },
       "whyEssential": {
@@ -2185,5 +2186,18 @@
     "champion": "Champion",
     "you": "You",
     "foreignNote": "Viewing another tier — your row only appears in your current tier ({tier})."
+  },
+  "changelog": {
+    "whatsNewButton": "What's New",
+    "title": "What's New",
+    "unseenLabel": "New updates available",
+    "closeAriaLabel": "Close",
+    "ariaLabel": "What's New — changelog",
+    "sections": {
+      "changed": "Changed",
+      "fixed": "Fixed",
+      "balance": "Balance"
+    },
+    "olderHeading": "Previous updates"
   }
 }

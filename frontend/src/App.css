@@ -14515,6 +14515,24 @@ code {
   right: 18px;
 }
 
+/* Pulsing variant — used on the "What's New" button when there are unseen
+   changelog notes. Reuses the existing fd-pulse keyframes. */
+.nav-dot--pulse {
+  animation: fd-pulse 1.4s ease-in-out infinite;
+}
+
+/* Anchors the absolute-positioned .nav-dot to the button itself, not the
+   bottombar / drawer-legal row it lives in. */
+.bb-btn-whatsnew {
+  position: relative;
+}
+
+/* The drawer-legal buttons have zero padding, so without clearance the unseen
+   dot (absolute, right:6px) lands on the label's last glyphs. */
+.m-drawer-legal .bb-btn-whatsnew {
+  padding-right: 16px;
+}
+
 /* ── Offline Defense Banner (.pvp-odb) ──────────────────── */
 /* Amber/red accent, shown above the pvp-tabs, only when unread defense results exist */
 .pvp-odb {
@@ -14942,5 +14960,215 @@ code {
   color: var(--text);
   line-height: 1.5;
   margin: 0;
+}
+
+/* ============================================================
+   CHANGELOG — "What's New" modal (.cl-*)
+   Layout primitives mirror the Gazette's gz2-* overlay/paper/close, but use
+   the app's dark-card palette (--bg-card / --border / --red) instead of the
+   Gazette's newspaper "paper" theme. z-index must stay above the account
+   modal backdrop (9000) and the auth overlay (10000).
+   ============================================================ */
+.cl-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  background: rgba(0, 0, 0, 0.7);
+  overflow-y: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px 60px;
+}
+
+.cl-paper {
+  position: relative;
+  width: 100%;
+  max-width: 620px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  color: var(--text);
+  font-family: var(--font-body);
+  padding: 20px 22px 26px;
+}
+
+.cl-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-sec);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.cl-close:hover { background: rgba(255, 255, 255, 0.12); color: var(--text); }
+
+.cl-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+  padding-right: 28px;
+}
+
+.cl-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.cl-entry {
+  margin-bottom: 18px;
+}
+.cl-entry:last-child { margin-bottom: 0; }
+
+.cl-entry-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.cl-version {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.cl-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.cl-highlights {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cl-highlights li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.cl-highlights li::before {
+  content: '\25A0';
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--red);
+  font-size: 8px;
+  line-height: 2;
+}
+
+.cl-section {
+  margin-bottom: 10px;
+}
+.cl-section:last-child { margin-bottom: 0; }
+
+.cl-section-label {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.cl-cat-changed .cl-section-label    { color: var(--c-blue, #3B82F6); }
+.cl-cat-fixed .cl-section-label      { color: var(--gold-bright); }
+.cl-cat-balance .cl-section-label    { color: var(--text-sec); }
+
+.cl-section ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cl-section li {
+  position: relative;
+  padding-left: 14px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-sec);
+}
+.cl-section li::before {
+  content: '\2013';
+  position: absolute;
+  left: 0;
+  color: var(--text-muted);
+}
+
+.cl-older {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.cl-older-heading {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.cl-entry-older {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--bg-surface);
+}
+.cl-entry-older:last-child { margin-bottom: 0; }
+
+.cl-entry-summary {
+  cursor: pointer;
+  margin-bottom: 0;
+  list-style: none;
+}
+.cl-entry-summary::-webkit-details-marker { display: none; }
+.cl-entry-summary::before {
+  content: '\25B8';
+  display: inline-block;
+  margin-right: 6px;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+.cl-entry-older[open] .cl-entry-summary::before {
+  transform: rotate(90deg);
+}
+.cl-entry-older[open] .cl-entry-summary {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 600px) {
+  .cl-overlay { padding: 20px 8px 40px; }
+  .cl-paper { padding: 16px 14px 20px; }
+  .cl-title { font-size: 16px; }
 }
 

@@ -793,6 +793,35 @@ recovery-code resume is rate-limited per IP (~10/hour) with a generic failure me
 
 ---
 
+## 25. Versioning & the What's New Changelog
+
+The app has a player-facing version (`MAJOR.MINOR`, e.g. `1.0`) whose single
+source of truth is `frontend/src/components/changelog/changelogContent.js`:
+the newest entry's `version` **is** the app version. There is no separate
+version constant and no backend endpoint — the version ships inside the bundle.
+
+- **Footer button** — "What's New v1.0" in the logged-in footer (and the mobile
+  drawer) opens the changelog modal: newest release expanded (highlights carry
+  the new features, plus Changed / Fixed / Balance sections), older releases
+  collapsed below.
+- **Unseen dot** — `localStorage` (`gnp_last_seen_version`, disclosed in the
+  Cookie Policy) remembers the last version viewed per device. A newer version
+  shows a pulsing dot on the button.
+- **Auto-open** — only for releases flagged `major: true`, once, for returning
+  players. Never on a first-ever visit (baseline set silently) and never during
+  the onboarding tutorial — if a major release lands mid-onboarding, the
+  auto-open defers until the tutorial completes. Opening the modal by any means
+  marks the version seen.
+- **Editorial rules** — 3–5 highlights per release, player language (no ticket
+  numbers/internals), and every balance line carries a short "why" (players
+  accept changes they understand). Balance-relevant detail belongs in this GDD;
+  the changelog is the announcement, the Library is the reference.
+- **Release discipline** — bump the version (new entry, newest first) for every
+  player-facing deploy; never edit a shipped entry's content without a new
+  version, since the unseen badge keys off version equality.
+
+---
+
 ## Appendix A — Player-facing reference (the Library)
 
 The in-game **Library** (`frontend/src/components/library/libraryContent.js`) is the

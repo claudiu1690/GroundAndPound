@@ -29,6 +29,10 @@ export function CookiePolicyModal({ open, onClose }) {
       key: "gnp_cookie_consent",
       purpose: t("legal.cookiePolicy.whatWeStore.items.gnp_cookie_consent"),
     },
+    {
+      key: "gnp_last_seen_version",
+      purpose: t("legal.cookiePolicy.whatWeStore.items.gnp_last_seen_version"),
+    },
   ];
 
   const node = (
