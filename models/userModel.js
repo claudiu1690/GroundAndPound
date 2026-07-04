@@ -9,14 +9,16 @@ const mongoose = require("mongoose");
  * only ever sent in the email link. That way a DB leak can't be replayed.
  */
 const userSchema = new mongoose.Schema({
+    // Credentials are OPTIONAL — guest accounts carry neither until they claim
+    // an email. Uniqueness on `email` is enforced by a partial unique index
+    // (see below), NOT an inline `unique: true`, so multiple null emails coexist.
     email: {
         type: String,
-        required: true,
-        unique: true,
+        default: null,
         lowercase: true,
         trim: true,
     },
-    passwordHash: { type: String, required: true },
+    passwordHash: { type: String, default: null },
     fighterId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Fighter",
@@ -56,6 +58,20 @@ const userSchema = new mongoose.Schema({
         emailEnabled: { type: Boolean, default: true },
     },
 
+    // ── Guest lane ────────────────────────────────────────────────
+    /** True while this is an unclaimed guest (no email attached). Flipped to
+     *  false at claim time. Purge and UI both key off this. */
+    isGuest: { type: Boolean, default: false },
+
+    /** SHA-256 hex of the raw recovery code (never stored plaintext). Null for
+     *  email-first accounts and cleared at claim. */
+    recoveryCodeHash:      { type: String, default: null },
+    recoveryCodeCreatedAt: { type: Date,   default: null },
+
+    /** Last authenticated activity. Stamped (throttled) by auth middleware for
+     *  guests only; drives the inactivity purge. */
+    lastActiveAt: { type: Date, default: Date.now },
+
     // ── Soft-delete + 30-day grace ────────────────────────────────
     deletionRequestedAt: { type: Date,    default: null },
     deleted:             { type: Boolean, default: false, index: true },
@@ -67,5 +83,19 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ passwordResetToken: 1 }, { sparse: true });
 userSchema.index({ emailChangeToken: 1 },   { sparse: true });
 userSchema.index({ emailVerifyToken: 1 },   { sparse: true });
+
+// Partial unique index — uniqueness enforced only on real email strings, so any
+// number of guests can share `email: null` without colliding. Replaces the
+// old inline `unique: true` on the email field (which produced `email_1`).
+userSchema.index(
+    { email: 1 },
+    { unique: true, partialFilterExpression: { email: { $type: "string" } }, name: "email_unique_partial" }
+);
+
+// Purge query support — the daily guest sweep filters on { isGuest, lastActiveAt }.
+userSchema.index({ isGuest: 1, lastActiveAt: 1 });
+
+// Recovery-code lookup (sparse — only guests carry one).
+userSchema.index({ recoveryCodeHash: 1 }, { sparse: true });
 
 module.exports = mongoose.model("User", userSchema);

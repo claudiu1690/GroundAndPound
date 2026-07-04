@@ -737,6 +737,62 @@ The **Proving Ground** (§22) is a parallel economy: the same trained stats and 
 
 ---
 
+## 24. Accounts: Guest Lane, Recovery Codes & Claiming
+
+Two ways into the game, one shared career system. The email-first lane (register with
+email + password, verify email) is unchanged. The **guest lane** removes the sign-up
+wall entirely: a player picks a fighter (same weight class / style / backstory step as
+registration — §2) and is playing seconds later, with **zero feature restrictions**.
+A guest is a real account with a real fighter; nothing in the game is gated on having
+an email.
+
+### 24.1 Design intent
+
+- **Frictionless first fight.** The strongest onboarding is playing, not form-filling.
+  Guests skip email/password and go straight to fighter creation.
+- **No second-class citizens.** Guest limits create resentment, not conversions. A
+  guest can train, fight, buy, and climb the Proving Ground ladder like anyone else.
+- **Nudge, never force.** A persistent in-app banner ("You're playing as a guest —
+  secure your account") points at the claim panel in the Account tab. It is never a
+  blocking wall.
+
+### 24.2 Session & recovery (two mechanisms)
+
+- **Device token** — a long-lived (365-day) login token on the device gives silent
+  auto-resume: close the tab, come back, still logged in.
+- **Recovery code** — an optional one-time code (`XXXX-XXXX-XXXX-XXXX`, 16 chars,
+  Crockford base32) shown **once** at creation. It is the cross-device / data-loss
+  fallback: "Resume with a recovery code" on the landing/login screens logs the guest
+  back in anywhere. Only a hash is stored server-side, so it can never be re-shown —
+  the Account tab lets a guest **regenerate** a fresh code (60s cooldown), which
+  invalidates the old one. Resuming on a new device does not log out other devices.
+- A guest who loses the device token *and* never saved a code is unrecoverable — by
+  design, accepted trade-off for a passwordless lane.
+
+### 24.3 Claiming (guest → registered)
+
+"Secure your account" in the Account tab attaches an email + password (min 8 chars,
+≥1 number) to the guest account. Career, stats, purchases — everything is kept; only
+the credentials change. On claim: the recovery code is invalidated (claimed accounts
+use the normal password-reset path), other devices are logged out (fresh session),
+and the standard email-verification flow takes over from the guest banner.
+
+### 24.4 Inactivity purge
+
+Unclaimed guest accounts (no email ever attached) inactive for **30 days** are
+hard-deleted (fighter + account) by a daily sweep. Any authenticated activity
+refreshes the clock, so an active guest is never at risk. Claimed accounts are
+never purged by this sweep. Rationale: data minimization and keeping rankings free
+of abandoned throwaway fighters.
+
+### 24.5 Abuse controls
+
+Guest creation is rate-limited per IP (~5/hour) on top of the general auth limiter;
+recovery-code resume is rate-limited per IP (~10/hour) with a generic failure message
+(no account-existence oracle). The 80-bit code space makes brute force infeasible.
+
+---
+
 ## Appendix A — Player-facing reference (the Library)
 
 The in-game **Library** (`frontend/src/components/library/libraryContent.js`) is the

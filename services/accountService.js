@@ -18,6 +18,8 @@ const EMAIL_CHANGE_TTL_MS      = 24 * 60 * 60 * 1000;   // 24 hours
 const EMAIL_VERIFY_TTL_MS      = 24 * 60 * 60 * 1000;   // 24 hours
 const EMAIL_RESEND_COOLDOWN_MS = 60 * 1000;             // 60s between resends
 const HARD_DELETE_GRACE_MS     = 30 * 24 * 60 * 60 * 1000; // 30 days
+const GUEST_PURGE_INACTIVE_MS  = 30 * 24 * 60 * 60 * 1000; // 30 days of inactivity
+const RECOVERY_CODE_COOLDOWN_MS = 60 * 1000;               // 60s between reveals/regenerates
 const NICKNAME_MIN = 2;
 const NICKNAME_MAX = 20;
 const NICKNAME_RE  = /^[a-zA-Z0-9\-' ]+$/;
@@ -37,12 +39,46 @@ function hashToken(raw) {
 }
 
 // ──────────────────────────────────────────────────────────────────
+// Recovery code (guest-only, cross-device recovery credential)
+// ──────────────────────────────────────────────────────────────────
+
+// Crockford base32 alphabet, excluding I/L/O/U to avoid look-alike/rude chars.
+const CROCKFORD_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+/**
+ * Generate a raw recovery code: 80 bits of entropy → 16 Crockford-base32 chars,
+ * formatted XXXX-XXXX-XXXX-XXXX. Returned to the user exactly once; only the
+ * SHA-256 hash is ever persisted.
+ */
+function generateRecoveryCode() {
+    const bytes = crypto.randomBytes(10); // 80 bits
+    // Map the 80-bit buffer to 16 base32 symbols (5 bits each) via a big-int walk.
+    let value = 0n;
+    for (const b of bytes) value = (value << 8n) | BigInt(b);
+    let chars = "";
+    for (let i = 0; i < 16; i += 1) {
+        const idx = Number(value & 31n); // low 5 bits
+        chars = CROCKFORD_ALPHABET[idx] + chars;
+        value >>= 5n;
+    }
+    return `${chars.slice(0, 4)}-${chars.slice(4, 8)}-${chars.slice(8, 12)}-${chars.slice(12, 16)}`;
+}
+
+/**
+ * Normalize a user-entered recovery code before hashing/lookup: uppercase and
+ * strip everything that isn't an alphanumeric (dashes, spaces, etc.).
+ */
+function normalizeRecoveryCode(raw) {
+    return String(raw || "").toUpperCase().replace(/[^0-9A-Z]/g, "");
+}
+
+// ──────────────────────────────────────────────────────────────────
 // Public profile
 // ──────────────────────────────────────────────────────────────────
 
 async function getAccountProfile(accountId) {
     const user = await User.findById(accountId).select(
-        "email emailPending emailConfirmed emailChangeLastSentAt emailVerifyLastSentAt notifications deletionRequestedAt fighterId"
+        "email emailPending emailConfirmed emailChangeLastSentAt emailVerifyLastSentAt notifications deletionRequestedAt fighterId isGuest recoveryCodeHash"
     ).lean();
     if (!user) throw new Error("Account not found");
     let fighter = null;
@@ -68,7 +104,9 @@ async function getAccountProfile(accountId) {
     }
     return {
         accountId: String(user._id),
-        email: user.email,
+        email: user.email || null,
+        isGuest: user.isGuest === true,
+        hasRecoveryCode: !!user.recoveryCodeHash,
         emailPending: user.emailPending || null,
         emailConfirmed: user.emailConfirmed !== false,
         emailResendCooldown,
@@ -494,6 +532,222 @@ async function deleteAccount(accountId, typedFighterName) {
     return { deleted: true };
 }
 
+// ──────────────────────────────────────────────────────────────────
+// Guest lane — create, claim, recovery-code, resume, purge
+// ──────────────────────────────────────────────────────────────────
+
+/**
+ * Create an anonymous guest account + its fighter. The fighter runs the exact
+ * same validation + profanity path as the email-first register step-2 (via
+ * fighterService.createFighter). Returns the User, the created fighter, and the
+ * raw recovery code — which the caller MUST surface exactly once and never store.
+ *
+ * `emailConfirmed: true` so a guest is never nagged by the verify banner; the
+ * frontend shows the guest/claim banner instead (keyed off `isGuest`).
+ */
+async function createGuestAccount({ fighter } = {}) {
+    if (!fighter || typeof fighter !== "object") {
+        throw new Error("Fighter details are required");
+    }
+
+    // Create the User first so we have an _id to attach the fighter to. Guests
+    // carry no credentials — email + passwordHash stay null.
+    const user = await User.create({
+        isGuest: true,
+        email: null,
+        passwordHash: null,
+        emailConfirmed: true,
+        lastActiveAt: new Date(),
+    });
+
+    let newFighter;
+    try {
+        // Lazy require to avoid a require-time cycle (fighterService pulls in a
+        // large service graph). Same signature the register controller uses. This
+        // throws on invalid fields or profanity — we clean up the orphan User
+        // before rethrowing.
+        const fighterService = require("./fighterService");
+        newFighter = await fighterService.createFighter({ ...fighter, userId: user._id });
+    } catch (err) {
+        await User.deleteOne({ _id: user._id }).catch(() => {});
+        throw err;
+    }
+
+    user.fighterId = newFighter._id;
+
+    // Mint the recovery code — store only the hash, return the raw once.
+    const rawCode = generateRecoveryCode();
+    user.recoveryCodeHash = hashToken(normalizeRecoveryCode(rawCode));
+    user.recoveryCodeCreatedAt = new Date();
+    await user.save();
+
+    return { user, fighter: newFighter, recoveryCode: rawCode };
+}
+
+/**
+ * Claim a guest account by attaching an email + password. Validates the email
+ * and password (validateNewPassword — min 8, ≥1 number), pre-checks uniqueness,
+ * flips the account out of guest mode, clears the recovery code, and bumps
+ * sessionEpoch (mirrors changePassword — securing the account logs out old
+ * device tokens). Fires the verification email fire-and-forget.
+ *
+ * Coded errors: not_guest, invalid_email, weak_password, email_taken.
+ */
+async function claimAccount(accountId, emailRaw, password) {
+    const user = await User.findById(accountId);
+    if (!user || user.deleted) throw new Error("Account not found");
+
+    if (!user.isGuest) {
+        const err = new Error("This account already has an email");
+        err.code = "not_guest";
+        throw err;
+    }
+
+    const email = typeof emailRaw === "string" ? emailRaw.trim().toLowerCase() : "";
+    if (!EMAIL_RE.test(email)) {
+        const err = new Error("Invalid email format");
+        err.code = "invalid_email";
+        throw err;
+    }
+
+    // Password rules: reuse validateNewPassword but re-tag as weak_password so the
+    // controller returns a stable code regardless of which rule failed.
+    try {
+        validateNewPassword(password);
+    } catch (e) {
+        const err = new Error(e.message || "Password too weak");
+        err.code = "weak_password";
+        throw err;
+    }
+
+    // Pre-check uniqueness against non-deleted accounts.
+    const taken = await User.findOne({
+        email,
+        _id: { $ne: user._id },
+        deleted: { $ne: true },
+    }).select("_id").lean();
+    if (taken) {
+        const err = new Error("This email is already in use");
+        err.code = "email_taken";
+        throw err;
+    }
+
+    user.email = email;
+    user.passwordHash = await bcrypt.hash(password, 10);
+    user.emailConfirmed = false;      // must verify the newly-attached address
+    user.isGuest = false;
+    user.recoveryCodeHash = null;     // no lingering passwordless backdoor
+    user.recoveryCodeCreatedAt = null;
+    user.sessionEpoch = (user.sessionEpoch || 1) + 1; // invalidate old guest tokens
+
+    try {
+        await user.save();
+    } catch (e) {
+        // Duplicate-key race — someone claimed the same email between our
+        // pre-check and save. Surface the same email_taken contract.
+        if (e && e.code === 11000) {
+            const err = new Error("This email is already in use");
+            err.code = "email_taken";
+            throw err;
+        }
+        throw e;
+    }
+
+    // Fire-and-forget the verification email — never block the claim on the send.
+    sendVerifyEmail(user).catch((e) => {
+        console.error("[claimAccount] sendVerifyEmail failed:", e.message);
+    });
+
+    return { user };
+}
+
+/**
+ * Regenerate (a.k.a. "reveal") a guest's recovery code. Because only the hash is
+ * stored, any reveal mints a fresh code and invalidates the old one. Guarded to
+ * guests only, with an optional 60s cooldown to blunt spam.
+ *
+ * Coded errors: not_guest, cooldown_active (with retryAfter).
+ */
+async function regenerateRecoveryCode(accountId) {
+    const user = await User.findById(accountId);
+    if (!user || user.deleted) throw new Error("Account not found");
+    if (!user.isGuest) {
+        const err = new Error("Recovery codes are only for guest accounts");
+        err.code = "not_guest";
+        throw err;
+    }
+
+    const lastAt = user.recoveryCodeCreatedAt ? user.recoveryCodeCreatedAt.getTime() : 0;
+    const elapsed = Date.now() - lastAt;
+    if (lastAt && elapsed < RECOVERY_CODE_COOLDOWN_MS) {
+        const retryAfter = Math.ceil((RECOVERY_CODE_COOLDOWN_MS - elapsed) / 1000);
+        const err = new Error(`Please wait ${retryAfter}s before generating another code`);
+        err.code = "cooldown_active";
+        err.retryAfter = retryAfter;
+        throw err;
+    }
+
+    const rawCode = generateRecoveryCode();
+    user.recoveryCodeHash = hashToken(normalizeRecoveryCode(rawCode));
+    user.recoveryCodeCreatedAt = new Date();
+    await user.save();
+    return { recoveryCode: rawCode };
+}
+
+/**
+ * Resume a guest account from a recovery code. Normalizes + hashes the input and
+ * does a single indexed lookup — no per-account guessing oracle, and the caller
+ * returns a generic 401 on miss so existence is never revealed. Stamps
+ * lastActiveAt (keeps the account outside the purge window) but does NOT bump
+ * sessionEpoch — resuming on device B must not log out device A.
+ *
+ * Returns the User on success, or null on any miss (bad/missing/unknown code).
+ */
+async function resumeByRecoveryCode(rawCode) {
+    const normalized = normalizeRecoveryCode(rawCode);
+    if (!normalized) return null;
+    const hashed = hashToken(normalized);
+    const user = await User.findOne({
+        recoveryCodeHash: hashed,
+        isGuest: true,
+        deleted: { $ne: true },
+    });
+    if (!user) return null;
+    user.lastActiveAt = new Date();
+    await user.save();
+    return user;
+}
+
+/**
+ * Daily guest-purge sweep. Permanently removes unclaimed guest accounts (guests
+ * that never attached an email) inactive for GUEST_PURGE_INACTIVE_MS, along with
+ * their linked fighter. Separate from the soft-delete hard-delete sweep. Deletes
+ * are per-candidate and wrapped in try/catch so one bad doc can't abort the batch.
+ * Returns the number of accounts purged. Idempotent — safe to retry.
+ */
+async function runGuestPurgeSweep() {
+    const cutoff = new Date(Date.now() - GUEST_PURGE_INACTIVE_MS);
+    const candidates = await User.find({
+        isGuest: true,
+        email: null,
+        deleted: { $ne: true },
+        lastActiveAt: { $lte: cutoff },
+    }).select("_id fighterId");
+    let purged = 0;
+    for (const u of candidates) {
+        try {
+            if (u.fighterId) {
+                await Fighter.deleteOne({ _id: u.fighterId });
+            }
+            await User.deleteOne({ _id: u._id });
+            purged += 1;
+        } catch (e) {
+            console.error("[accountService] guest purge failed for", String(u._id), e.message);
+        }
+    }
+    return { purged };
+}
+
 /**
  * Daily hard-delete sweep. Permanently removes any account that was soft-deleted
  * more than HARD_DELETE_GRACE_MS ago, along with its linked fighter document.
@@ -537,7 +791,18 @@ module.exports = {
     applyPasswordReset,
     deleteAccount,
     runHardDeleteSweep,
+    // Guest lane
+    createGuestAccount,
+    claimAccount,
+    generateRecoveryCode,
+    regenerateRecoveryCode,
+    resumeByRecoveryCode,
+    runGuestPurgeSweep,
     // Exported for tests / inspection
     hashToken,
+    normalizeRecoveryCode,
+    validateNewPassword,
     HARD_DELETE_GRACE_MS,
+    GUEST_PURGE_INACTIVE_MS,
+    RECOVERY_CODE_COOLDOWN_MS,
 };

@@ -14,6 +14,13 @@ router.post("/:id/email/resend",         accountController.resendEmailChange);
 router.delete("/:id/email/pending",      accountController.cancelEmailChange);
 router.post("/:id/email/verify-resend",  accountController.resendVerifyEmail);
 router.post("/:id/password",             accountController.changePassword);
+
+// Guest lane — protected (authMiddleware mounts this router; each handler also
+// enforces requireSelf). Claim attaches email+password; recovery-code reveals a
+// fresh one-time code.
+router.post("/:id/claim",                accountController.claim);
+router.post("/:id/recovery-code",        accountController.regenerateRecoveryCode);
+
 router.delete("/:id",                    accountController.deleteAccount);
 
 module.exports = router;

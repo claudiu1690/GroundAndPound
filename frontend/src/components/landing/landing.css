@@ -135,6 +135,13 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
 .landing-page .login-help a:hover{color:var(--ts)}
 .landing-page .login-error{color:var(--r);font-size:12px;margin-top:10px}
 
+/* ── GUEST / RESUME entry points (Guest Account System) ── */
+.landing-page .login-guest-divider{display:flex;align-items:center;gap:10px;margin:18px 0 14px;color:var(--tm);font-size:10px;letter-spacing:2px;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif}
+.landing-page .login-guest-divider::before,
+.landing-page .login-guest-divider::after{content:"";flex:1;height:1px;background:var(--bor)}
+.landing-page .login-guest-btn{width:100%;text-align:center;box-sizing:border-box}
+.landing-page .login-help-resume{justify-content:center;margin-top:12px}
+
 /* ── FOOTER ── */
 .landing-page footer{border-top:1px solid var(--bor);padding:28px 40px;display:flex;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto}
 .landing-page .foot-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:14px;text-transform:uppercase;color:var(--tm)}

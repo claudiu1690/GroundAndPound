@@ -116,6 +116,20 @@ const hardDeleteWorker = new Worker(
 );
 hardDeleteWorker.on("error", (err) => console.error("[Hard delete] Worker error:", err));
 
+// ── Guest purge sweep — permanently removes unclaimed guests inactive 30 days ─
+const guestPurgeQueue = new Queue("guest-purge", { connection: QUEUE_CONNECTION });
+const guestPurgeWorker = new Worker(
+    "guest-purge",
+    async () => {
+        const { purged } = await accountService.runGuestPurgeSweep();
+        if (purged > 0) console.log(`[Guest purge] Permanently purged ${purged} inactive unclaimed guest account(s).`);
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+// Both handlers so neither transport-level errors nor per-job failures go silent.
+guestPurgeWorker.on("error", (err) => console.error("[Guest purge] Worker error:", err));
+guestPurgeWorker.on("failed", (job, err) => console.error("[Guest purge] Job failed:", err));
+
 // ── PVP inactivity decay — daily DP decay for idle Proving Ground records ─────
 const pvpDecayQueue = new Queue("pvp-decay", { connection: QUEUE_CONNECTION });
 const pvpDecayWorker = new Worker(
@@ -197,6 +211,13 @@ async function startEnergyIncrementScheduler() {
         removeOnComplete: true,
     });
 
+    // Guest purge — daily. Removes unclaimed guests inactive for 30 days.
+    await guestPurgeQueue.add("sweep", {}, {
+        repeat: { every: 86_400_000 },
+        jobId: "guest-purge-sweep",
+        removeOnComplete: true,
+    });
+
     // PVP inactivity decay — midnight UTC daily.
     await pvpDecayQueue.add("decay", {}, {
         repeat: { pattern: "0 0 * * *", tz: "UTC" },
@@ -218,7 +239,7 @@ async function startEnergyIncrementScheduler() {
         removeOnComplete: true,
     });
 
-    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h, pvp decay: 0 0 UTC, pvp season transition: every 10m).");
+    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h, guest purge: 24h, pvp decay: 0 0 UTC, pvp season transition: every 10m).");
 }
 
 module.exports = {
@@ -228,6 +249,7 @@ module.exports = {
     notorietyDecayQueue,
     injuryHealQueue,
     hardDeleteQueue,
+    guestPurgeQueue,
     pvpDecayQueue,
     pvpSeasonTransitionQueue,
     energyWorker,
@@ -235,6 +257,7 @@ module.exports = {
     notorietyDecayWorker,
     injuryHealWorker,
     hardDeleteWorker,
+    guestPurgeWorker,
     pvpDecayWorker,
     pvpSeasonTransitionWorker,
     redis,

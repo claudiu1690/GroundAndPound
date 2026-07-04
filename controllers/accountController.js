@@ -190,6 +190,75 @@ async function changePassword(req, res) {
 }
 
 // ──────────────────────────────────────────────────────────────────
+// Guest lane — claim + recovery code
+// ──────────────────────────────────────────────────────────────────
+
+/**
+ * Attach an email + password to a guest account. On success returns a FRESH
+ * token (claim bumps sessionEpoch, invalidating old guest device tokens) so the
+ * current device stays logged in. Error codes mirror the contract exactly.
+ */
+async function claim(req, res) {
+    try {
+        const id = requireSelf(req, res); if (!id) return;
+        const { email, password } = req.body || {};
+
+        await accountService.claimAccount(id, email, password);
+
+        // Epoch was bumped inside the service — re-read and mint a fresh token so
+        // the caller isn't logged out on their own device.
+        const user = await User.findById(id);
+        const freshToken = signToken(user);
+        return res.json({
+            success: true,
+            token: freshToken,
+            email: user.email,
+            emailConfirmed: user.emailConfirmed !== false,
+        });
+    } catch (err) {
+        if (err.code === "email_taken") {
+            return res.status(409).json({ message: err.message, code: err.code });
+        }
+        if (err.code === "not_guest" || err.code === "invalid_email" || err.code === "weak_password") {
+            return res.status(400).json({ message: err.message, code: err.code });
+        }
+        if (err.message === "Account not found") {
+            return res.status(404).json({ message: err.message });
+        }
+        console.error("claim error:", err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+/**
+ * Regenerate / reveal a guest's one-time recovery code. Returns the raw code once.
+ * Any previously-issued code is invalidated (only the hash is stored).
+ */
+async function regenerateRecoveryCode(req, res) {
+    try {
+        const id = requireSelf(req, res); if (!id) return;
+        const { recoveryCode } = await accountService.regenerateRecoveryCode(id);
+        return res.json({ recoveryCode });
+    } catch (err) {
+        if (err.code === "not_guest") {
+            return res.status(400).json({ message: err.message, code: err.code });
+        }
+        if (err.code === "cooldown_active") {
+            return res.status(429).json({
+                message: err.message,
+                code: err.code,
+                retryAfter: err.retryAfter,
+            });
+        }
+        if (err.message === "Account not found") {
+            return res.status(404).json({ message: err.message });
+        }
+        console.error("regenerateRecoveryCode error:", err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────
 // Delete
 // ──────────────────────────────────────────────────────────────────
 
@@ -220,4 +289,6 @@ module.exports = {
     confirmEmailChange,
     changePassword,
     deleteAccount,
+    claim,
+    regenerateRecoveryCode,
 };

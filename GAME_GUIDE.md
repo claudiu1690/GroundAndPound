@@ -7,6 +7,7 @@
 **Getting Started**
 - What Is Ground & Pound?
 - Creating Your Fighter
+- Guest Accounts & Securing Your Progress
 - Energy — The Daily Resource
 - The Career Feed
 - The Octagon Gazette
@@ -92,6 +93,22 @@ Fighting style has real mechanical weight. Each style assigns your eight stats i
 Backstory gives a small permanent bonus that never goes away. Street Fighter gives CHN and KO resistance. Late Bloomer gives +25% XP from all training — extremely valuable for a grinding playstyle. MMA Prodigy gives +2 to everything, safe and consistent. Choose based on how you plan to develop your fighter.
 
 > **Key takeaway:** Style affects how your stats are weighted in your OVR. Backstory gives a permanent bonus. Both matter — choose deliberately.
+
+### Guest Accounts & Securing Your Progress
+
+*Play instantly without an email, how recovery codes work, and why you should claim your account.*
+
+You can start playing without an email address. Hit "Play as guest", create your fighter, and you're in — a guest account is a full account with zero restrictions. Training, fights, the Shop, the Proving Ground: everything works exactly as it does for registered players.
+
+Your login is remembered on this device for up to a year, so you can close the tab and come back without doing anything. But that memory lives in your browser — clear your browser data or switch devices, and it's gone. That's what the recovery code is for.
+
+When you create a guest account, you're shown a one-time recovery code (format XXXX-XXXX-XXXX-XXXX). Save it somewhere safe — it is shown exactly once and can never be displayed again. With it, you can log back into your career from any device via "Resume with a recovery code" on the login screen. Lost yours? The Account tab lets you generate a new code at any time, which replaces the old one.
+
+The permanent fix is to claim your account: in the Account tab, add an email and password under "Secure your account". You keep everything — fighter, stats, cash, badges, ranking. After claiming, you log in like any registered player and can recover access through your email, so there's nothing left to lose track of.
+
+One warning for unclaimed guests: accounts with no email that haven't been played for 30 days are permanently deleted, fighter and all. Any activity resets that clock, and claimed accounts are never auto-deleted. If you care about your career, claim it.
+
+> **Key takeaway:** Guests get the full game, no email needed. Save your one-time recovery code — and claim your account with an email to make your career permanent.
 
 ### Energy — The Daily Resource
 

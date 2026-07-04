@@ -69,6 +69,16 @@ const bugReportLimiter = rateLimit({
     legacyHeaders: false,
     message: { message: "Too many bug reports — please wait a few minutes and try again." },
 });
+// Guest-creation limiter — dedicated per-IP throttle on top of authLimiter to
+// blunt guest-account spam (each call creates a real User + Fighter). The daily
+// purge job bounds long-term accumulation; this bounds the burst rate.
+const guestCreateLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: Number(process.env.GUEST_CREATE_RATE_LIMIT_MAX) || 5, // guests/hour/IP
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: { message: "Too many guest accounts created — please wait a while and try again." },
+});
 
 // ── Security headers (first middleware, applies to every response) ──
 // This is a JSON API consumed cross-origin by the separate frontend, so:
@@ -114,7 +124,10 @@ app.use(express.urlencoded({ extended: true }));
 // Global per-IP rate limit on the whole API.
 app.use(globalLimiter);
 
-// Public — no auth required (stricter per-IP throttle on top of the global one)
+// Public — no auth required (stricter per-IP throttle on top of the global one).
+// Guest creation gets an extra dedicated per-IP limiter (mounted before the
+// /auth router so it runs ahead of the route handler).
+app.post("/auth/guest", guestCreateLimiter);
 app.use("/auth", authLimiter, authRoutes);
 
 // Public — hit from an email link, no JWT. Mounted before the protected

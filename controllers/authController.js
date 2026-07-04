@@ -11,16 +11,17 @@ const config = require("../config");
  * outstanding session by bumping User.sessionEpoch — the middleware rejects
  * any token whose epoch is stale relative to the live DB value.
  */
-function signToken(user) {
+function signToken(user, opts = {}) {
     return jwt.sign(
         {
             id: user._id,
-            email: user.email,
+            email: user.email || null,
             fighterId: user.fighterId,
             epoch: user.sessionEpoch || 1,
+            guest: !!opts.guest,
         },
         config.jwtSecret,
-        { expiresIn: config.jwtExpiresIn }
+        { expiresIn: opts.guest ? config.guestJwtExpiresIn : config.jwtExpiresIn }
     );
 }
 // Exposed so accountController can mint a fresh token after a same-session password change.
@@ -111,6 +112,114 @@ async function login(req, res) {
     } catch (err) {
         console.error("Login error:", err);
         res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Guest lane — create / resume (unauthenticated)
+// ──────────────────────────────────────────────────────────────────
+
+/**
+ * Create an anonymous guest account + fighter. Fighter fields run the same
+ * validation + profanity gate as register step-2 (inside fighterService). The
+ * recovery code is returned exactly once here and never again.
+ */
+async function createGuest(req, res) {
+    try {
+        const { fighter } = req.body || {};
+        if (!fighter || typeof fighter !== "object") {
+            return res.status(400).json({ message: "Fighter details are required" });
+        }
+        // Mirror register's required-field gate so we fail fast with a clear 400
+        // before touching the DB.
+        if (!fighter.firstName || !fighter.lastName || !fighter.weightClass || !fighter.style) {
+            return res.status(400).json({
+                message: "Fighter first name, last name, weight class, and style are required",
+            });
+        }
+
+        const { user, fighter: newFighter, recoveryCode } =
+            await accountService.createGuestAccount({ fighter });
+
+        // Fire-and-forget analytics — never blocks or breaks guest creation.
+        analyticsService.track(user._id, "guest_signup", {}, { fighterId: newFighter._id });
+
+        const token = signToken(user, { guest: true });
+        return res.status(201).json({
+            token,
+            fighterId: String(newFighter._id),
+            accountId: String(user._id),
+            recoveryCode,
+        });
+    } catch (err) {
+        // Client-fixable errors from fighterService — profanity uses the codebase's
+        // { statusCode:400, validation:true } convention; the required-field guard
+        // throws a plain "... are required" Error. Both are safe to echo as a 400.
+        const msg = err && err.message ? err.message : "";
+        if (err && (err.statusCode === 400 || err.validation) ) {
+            return res.status(400).json({ message: msg || "Invalid fighter details" });
+        }
+        if (/required|weight class|style|First name|Last name|Nickname/i.test(msg)) {
+            return res.status(400).json({ message: msg });
+        }
+        console.error("createGuest error:", err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+// Per-IP Redis rate limit on guest resume (~10/hour). Falls open on a Redis
+// outage — same posture as the forgot-password limiter. Generic 401 on miss keeps
+// the endpoint from becoming an existence oracle.
+const GUEST_RESUME_MAX = Number(process.env.GUEST_RESUME_RATE_LIMIT_MAX) || 10;
+const GUEST_RESUME_WINDOW_SEC = 60 * 60; // 1 hour
+async function checkGuestResumeRateLimit(ip) {
+    try {
+        const { redis, ensureRedisConnected } = require("../lib/redis");
+        await ensureRedisConnected();
+        const key = `guestresume:rate:${ip}`;
+        const count = await redis.incr(key);
+        if (count === 1) await redis.expire(key, GUEST_RESUME_WINDOW_SEC);
+        return count <= GUEST_RESUME_MAX;
+    } catch (e) {
+        console.warn("[guest-resume] rate limit unavailable, allowing:", e.message);
+        return true;
+    }
+}
+
+/**
+ * Resume a guest account from a one-time recovery code. Generic 401 on any miss
+ * (never reveals whether a code exists). No sessionEpoch bump — resuming on a new
+ * device leaves the original device logged in.
+ */
+async function resumeGuest(req, res) {
+    try {
+        const { recoveryCode } = req.body || {};
+        if (typeof recoveryCode !== "string" || !recoveryCode.trim()) {
+            return res.status(400).json({ message: "Recovery code is required" });
+        }
+
+        const allowed = await checkGuestResumeRateLimit(req.ip);
+        if (!allowed) {
+            return res.status(429).json({
+                message: "Too many attempts — please wait and try again.",
+                code: "rate_limited",
+            });
+        }
+
+        const user = await accountService.resumeByRecoveryCode(recoveryCode);
+        if (!user) {
+            return res.status(401).json({ message: "Invalid recovery code", code: "invalid_code" });
+        }
+
+        const token = signToken(user, { guest: true });
+        return res.json({
+            token,
+            fighterId: String(user.fighterId),
+            accountId: String(user._id),
+        });
+    } catch (err) {
+        console.error("resumeGuest error:", err);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
 
@@ -289,4 +398,5 @@ async function verifyEmail(req, res) {
 module.exports = {
     register, login, forgotPassword, checkResetToken, resetPassword,
     logout, recoverAccount, verifyEmail, signToken,
+    createGuest, resumeGuest,
 };

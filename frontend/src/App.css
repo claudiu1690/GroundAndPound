@@ -4138,6 +4138,79 @@ code {
   color: #333;
 }
 
+/* ── Guest account entry points (AuthPage) ───────────────── */
+.auth-guest-links {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.auth-guest-cta { color: #888; }
+.auth-guest-cta:hover { color: #F0F0F0; }
+.auth-resume-cta { color: #555; font-size: 11px; }
+.auth-resume-cta:hover { color: var(--red); }
+
+/* ── Recovery code modal (one-time reveal) ───────────────── */
+.recovery-code-modal { max-width: 440px; }
+.recovery-code-title { color: var(--gold-bright, #d4a820); }
+.recovery-code-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #0F0F0F;
+  border: 1px solid var(--c-border-3, #2a2a2a);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 4px 0;
+}
+.recovery-code-value {
+  flex: 1;
+  font-family: var(--font-mono, monospace);
+  font-size: 15px;
+  letter-spacing: 1.5px;
+  color: #F0F0F0;
+  word-break: break-all;
+}
+.recovery-code-ack {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-secondary, #999);
+  line-height: 1.4;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.recovery-code-ack input { margin-top: 2px; flex-shrink: 0; }
+
+/* ── Guest banner (top-of-app nudge, styled like email-verify-banner) ──── */
+.guest-banner {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 1rem;
+  background: rgba(184,134,11,0.18);
+  border-bottom: 1px solid var(--gold);
+  color: var(--text);
+  font-size: 11.5px;
+  z-index: 5;
+}
+.guest-banner-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0.2rem 0.3rem;
+  line-height: 1;
+}
+.guest-banner-dismiss:hover { color: var(--text); }
+
 @media (max-height: 760px), (max-width: 480px) {
   .auth-page {
     overflow-y: auto;
@@ -10177,6 +10250,12 @@ code {
   align-items: center;
   justify-content: center;
   padding: 1rem;
+}
+
+/* The recovery-code reveal also opens over the auth overlay (.auth-page,
+   z-index 10000) during guest signup — it must stack above it. */
+.account-modal-backdrop.recovery-code-backdrop {
+  z-index: 10100;
 }
 
 .account-modal {

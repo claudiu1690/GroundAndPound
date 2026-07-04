@@ -2,6 +2,18 @@ const jwt = require("jsonwebtoken");
 const config = require("../config");
 const User = require("../models/userModel");
 
+const GUEST_ACTIVE_STAMP_THROTTLE_MS = 6 * 60 * 60 * 1000; // 6h
+
+/** Fire-and-forget guest lastActiveAt stamp (see authMiddleware). */
+function stampGuestActivity(user) {
+    if (!user || user.isGuest !== true) return;
+    const last = user.lastActiveAt ? new Date(user.lastActiveAt).getTime() : 0;
+    if (Date.now() - last <= GUEST_ACTIVE_STAMP_THROTTLE_MS) return;
+    User.updateOne({ _id: user._id }, { $set: { lastActiveAt: new Date() } }).catch((e) => {
+        console.error("[optionalAuthMiddleware] guest lastActiveAt stamp failed:", e.message);
+    });
+}
+
 /**
  * Optional (soft) auth middleware.
  *
@@ -27,7 +39,7 @@ async function optionalAuthMiddleware(req, res, next) {
         return next();
     }
     try {
-        const user = await User.findById(payload.id).select("sessionEpoch deleted fighterId email").lean();
+        const user = await User.findById(payload.id).select("sessionEpoch deleted fighterId email isGuest lastActiveAt").lean();
         if (!user || user.deleted) {
             return next();
         }
@@ -37,7 +49,8 @@ async function optionalAuthMiddleware(req, res, next) {
             // Token minted before a password change / reset — treat as anonymous.
             return next();
         }
-        req.user = { ...payload, fighterId: user.fighterId, email: user.email };
+        req.user = { ...payload, fighterId: user.fighterId, email: user.email, isGuest: user.isGuest === true };
+        stampGuestActivity(user);
         return next();
     } catch (err) {
         // Never surface an auth-lookup error on a public endpoint — log and

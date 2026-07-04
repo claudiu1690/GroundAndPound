@@ -67,4 +67,7 @@ module.exports = {
     },
     jwtSecret: process.env.JWT_SECRET || 'gnp_super_secret_key_change_in_prod_2026',
     jwtExpiresIn: '30d',
+    // Guests have no fallback credential unless they save their recovery code, so
+    // their JWT (the "device token") is long-lived. Env-overridable for tuning.
+    guestJwtExpiresIn: process.env.GUEST_JWT_EXPIRES_IN || '365d',
 };

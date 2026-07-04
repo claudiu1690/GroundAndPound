@@ -55,6 +55,21 @@ export const api = {
   login: (body) =>
     request("/auth/login", { method: "POST", body: JSON.stringify(body) }),
 
+  // ── Guest accounts ───────────────────────────────────────
+  // Success 201: { token, fighterId, accountId, recoveryCode } — recoveryCode
+  // is shown only here and at regenerateRecoveryCode, never again.
+  createGuest: (fighter) =>
+    request("/auth/guest", { method: "POST", body: JSON.stringify({ fighter }) }),
+  // Success 200: { token, fighterId, accountId }
+  resumeGuest: (recoveryCode) =>
+    request("/auth/guest/resume", { method: "POST", body: JSON.stringify({ recoveryCode }) }),
+  // Success 200: { success, token, email, emailConfirmed } — fresh token, bumps sessionEpoch.
+  claimAccount: (accountId, email, password) =>
+    request(`/account/${accountId}/claim`, { method: "POST", body: JSON.stringify({ email, password }) }),
+  // Success 200: { recoveryCode } — one-time reveal, invalidates the previous code.
+  regenerateRecoveryCode: (accountId) =>
+    request(`/account/${accountId}/recovery-code`, { method: "POST" }),
+
   // ── Fighter ─────────────────────────────────────────────
   getFighter: (id) => request(`/fighters/${id}`),
   getDashboard: (id) => request(`/fighters/${id}/dashboard`),

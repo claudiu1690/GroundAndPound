@@ -50,6 +50,7 @@
     "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "nodemon": "^3.1.0"
   }
 }

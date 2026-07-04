@@ -98,6 +98,35 @@
       "validationMismatch": "Passwords don't match.",
       "recoverFailed": "Could not recover account."
     },
+    "guest": {
+      "playAsGuestCta": "Play as guest — no email needed",
+      "resumeWithCodeCta": "Resume with a recovery code",
+      "startLabel": "Play as guest",
+      "startDesc": "Build your fighter and jump straight in — no email or password required. You can secure your account with an email later from Account Settings.",
+      "createBtn": "Create Fighter & Play",
+      "creating": "Creating…",
+      "recoveryModal": {
+        "title": "Save your recovery code",
+        "warn": "This code is the only way to recover your account on another device or if you clear your browser data. It is shown once, right now.",
+        "warnSub": "We never store the plain code — if you lose it, generating a new one from Account Settings will invalidate this one.",
+        "copyBtn": "Copy code",
+        "copied": "Copied!",
+        "ackLabel": "I've saved this code somewhere safe.",
+        "confirmBtn": "I've saved it — continue"
+      },
+      "resume": {
+        "label": "Resume with a recovery code",
+        "desc": "Enter the recovery code you saved when you created your guest account.",
+        "codeLabel": "Recovery code",
+        "codePlaceholder": "XXXX-XXXX-XXXX-XXXX",
+        "submitBtn": "Resume",
+        "resuming": "Resuming…",
+        "errorMissing": "Enter your recovery code.",
+        "errorInvalid": "That recovery code isn't valid.",
+        "errorRateLimited": "Too many attempts. Try again in {n}s.",
+        "retryIn": "Wait {n}s"
+      }
+    },
     "beta": "Beta",
     "cookiePolicy": "Cookie Policy",
     "copyright": "© {year} Digital Olive. All rights reserved."
@@ -204,6 +233,43 @@
       "submitting": "Creating…",
       "validationNameRequired": "First name and last name are required.",
       "successMsg": "Fighter created."
+    },
+    "guestBanner": {
+      "text": "You're playing as a guest. Secure your account with an email so you never lose your progress.",
+      "secureBtn": "Secure account",
+      "dismissAriaLabel": "Dismiss"
+    },
+    "guestClaim": {
+      "title": "Secure Your Account",
+      "subtitle": "Attach an email and password so you can log in from anywhere and never lose your fighter.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "fighter@example.com",
+      "passwordLabel": "Password",
+      "passwordHint": "(min 8 characters, at least 1 number)",
+      "passwordPlaceholder": "New password",
+      "confirmLabel": "Confirm Password",
+      "confirmPlaceholder": "Confirm new password",
+      "submitBtn": "Secure Account",
+      "submitting": "Securing…",
+      "successMsg": "Account secured. Check your inbox to verify your email.",
+      "errorEmailTaken": "That email is already in use.",
+      "errorWeakPassword": "Password needs at least 8 characters and 1 number.",
+      "errorInvalidEmail": "Enter a valid email address.",
+      "errorMismatch": "Passwords don't match.",
+      "errorNotGuest": "This account has already been secured."
+    },
+    "guestRecovery": {
+      "title": "Recovery Code",
+      "subtitle": "A one-time code for signing back in on another device or if you lose access to this browser.",
+      "statusSaved": "You have a recovery code saved.",
+      "statusNone": "You haven't generated a recovery code yet.",
+      "generateBtn": "Generate recovery code",
+      "regenerateBtn": "Generate new code",
+      "generating": "Generating…",
+      "regenerateHint": "Generating a new code invalidates any previous code.",
+      "cooldownBtn": "Wait {n}s",
+      "cooldownTitle": "Wait {n}s before generating another code",
+      "cooldownMsg": "Please wait {n}s before generating another code."
     }
   },
   "legal": {

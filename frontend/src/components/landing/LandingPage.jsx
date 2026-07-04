@@ -74,7 +74,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
 
   // Auth — full AuthPage overlay
   const [showAuth, setShowAuth] = useState(false);
-  const [authTab, setAuthTab] = useState("register");
+  const [authTab, setAuthTab] = useState("register"); // "register" | "login" | "guest" | "resume"
 
   // Inline login form
   const [email, setEmail] = useState("");
@@ -104,6 +104,16 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
 
   function openForgot() {
     setAuthTab("forgot");
+    setShowAuth(true);
+  }
+
+  function openGuest() {
+    setAuthTab("guest");
+    setShowAuth(true);
+  }
+
+  function openResume() {
+    setAuthTab("resume");
     setShowAuth(true);
   }
 
@@ -497,6 +507,18 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
               onClick={(e) => { e.preventDefault(); openRegister(); }}
             >
               No account? Create one
+            </a>
+          </div>
+          <div className="login-guest-divider"><span>or</span></div>
+          <button type="button" className="btn-secondary login-guest-btn" onClick={openGuest}>
+            Play as guest — no email needed
+          </button>
+          <div className="login-help login-help-resume">
+            <a
+              href="#"
+              onClick={(e) => { e.preventDefault(); openResume(); }}
+            >
+              Resume with a recovery code
             </a>
           </div>
         </div>

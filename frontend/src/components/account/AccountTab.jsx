@@ -2,6 +2,8 @@ import { memo, useCallback, useEffect, useState } from "react";
 import { Lock, Pencil, Mail, Key, Bell, Trash2, LogOut } from "lucide-react";
 import { api, authStorage } from "../../api";
 import { DeleteAccountModal } from "./DeleteAccountModal";
+import { GuestClaimPanel } from "./GuestClaimPanel";
+import { GuestRecoverySection } from "./GuestRecoverySection";
 import { t } from "../../lib/i18n";
 
 /**
@@ -13,7 +15,7 @@ import { t } from "../../lib/i18n";
  *   5. Email Notifications
  *   6. Danger Zone (delete + logout)
  */
-export function AccountTab({ onMessage, onLogout, onFighterRefresh }) {
+export function AccountTab({ onMessage, onLogout, onFighterRefresh, onAccountStatusRefresh }) {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [deleteOpen, setDeleteOpen] = useState(false);
@@ -23,12 +25,17 @@ export function AccountTab({ onMessage, onLogout, onFighterRefresh }) {
         try {
             const res = await api.getAccountProfile(profile?.accountId || decodeAccountIdFromToken());
             setProfile(res);
+            // Let the app shell refresh its top-bar banner state (isGuest /
+            // emailConfirmed) immediately — most relevant right after a guest
+            // claims an email, so GuestBanner ↔ EmailVerifyBanner swap without
+            // waiting for the next unrelated reload.
+            onAccountStatusRefresh?.();
         } catch (e) {
             onMessage?.(e.message || t("account.unavailable"));
         } finally {
             setLoading(false);
         }
-    }, [profile?.accountId, onMessage]);
+    }, [profile?.accountId, onMessage, onAccountStatusRefresh]);
 
     useEffect(() => {
         const id = decodeAccountIdFromToken();
@@ -61,6 +68,22 @@ export function AccountTab({ onMessage, onLogout, onFighterRefresh }) {
 
             <div className="body">
                 <FighterInfo profile={profile} />
+
+                {profile.isGuest && (
+                    <GuestClaimPanel
+                        accountId={accountId}
+                        onClaimed={() => reload()}
+                        onMessage={onMessage}
+                    />
+                )}
+
+                {profile.isGuest && (
+                    <GuestRecoverySection
+                        accountId={accountId}
+                        hasRecoveryCode={!!profile.hasRecoveryCode}
+                        onMessage={onMessage}
+                    />
+                )}
 
                 <ChangeNickname
                     profile={profile}

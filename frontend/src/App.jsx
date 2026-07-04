@@ -32,6 +32,7 @@ import { TutorialOverlay } from "./components/tutorial/TutorialOverlay";
 import { LibraryTab } from "./components/library/LibraryTab";
 import { AccountTab } from "./components/account/AccountTab";
 import { EmailVerifyBanner } from "./components/account/EmailVerifyBanner";
+import { GuestBanner } from "./components/account/GuestBanner";
 import { DashboardTab } from "./components/dashboard/DashboardTab";
 import { ShopTab } from "./components/shop/ShopTab";
 import { InventorySidebar } from "./components/shop/InventorySidebar";
@@ -576,6 +577,8 @@ function App() {
         email: profile.email,
         emailConfirmed: profile.emailConfirmed !== false,
         emailVerifyCooldown: profile.emailVerifyCooldown || 0,
+        isGuest: !!profile.isGuest,
+        hasRecoveryCode: !!profile.hasRecoveryCode,
       });
     } catch (_) { /* silent — banner just stays hidden */ }
   }, []);
@@ -1116,11 +1119,19 @@ const handleGetOffers = useCallback(async () => {
       <LegalModals />
       <ReportBugModal />
 
-      {/* ── EMAIL-VERIFY BANNER ──
-          Soft verification: the user can keep playing while this banner is up.
-          Disappears the moment they click the link in their email (the verify
-          redirect flips accountStatus.emailConfirmed via the URL-param effect). */}
-      {accountStatus && !accountStatus.emailConfirmed && (
+      {/* ── GUEST / EMAIL-VERIFY BANNER (mutually exclusive) ──
+          Guests have no email attached, so the verify banner would be
+          meaningless for them — GuestBanner takes precedence whenever
+          accountStatus.isGuest is true. Once a guest claims an email, isGuest
+          flips false and (if still unconfirmed) the normal verify banner
+          takes over automatically.
+          Soft verification: the user can keep playing while either banner is
+          up. The verify banner disappears the moment they click the link in
+          their email (accountStatus.emailConfirmed via the URL-param effect). */}
+      {accountStatus && accountStatus.isGuest && (
+        <GuestBanner onSecureClick={() => setActiveTab("account")} />
+      )}
+      {accountStatus && !accountStatus.isGuest && !accountStatus.emailConfirmed && (
         <EmailVerifyBanner
           email={accountStatus.email}
           accountId={accountStatus.accountId}
@@ -1480,6 +1491,7 @@ const handleGetOffers = useCallback(async () => {
                 onMessage={setMessage}
                 onLogout={handleLogout}
                 onFighterRefresh={loadFighter}
+                onAccountStatusRefresh={loadAccountStatus}
               />
             </div>
           )}

@@ -6,6 +6,12 @@ router.post("/register",        authController.register);
 router.post("/login",           authController.login);
 router.post("/logout",          authController.logout);
 
+// Guest lane — public. `POST /guest` carries an extra per-IP guestCreateLimiter
+// applied at mount time in app.js (on top of the /auth authLimiter). `POST
+// /guest/resume` is throttled per-IP via a Redis limiter inside the controller.
+router.post("/guest",           authController.createGuest);
+router.post("/guest/resume",    authController.resumeGuest);
+
 // Account recovery — same-shape response as /login on success (token + fighterId)
 // so the client can hand off seamlessly. Only works inside the 30-day grace
 // window; see authController.recoverAccount.
