@@ -71,6 +71,33 @@ export const LIBRARY_ARTICLES = [
         keyTakeaway: "Style affects how your stats are weighted in your OVR. Backstory gives a permanent bonus. Both matter — choose deliberately.",
     },
     {
+        id: "the-eight-stats",
+        category: "Getting Started",
+        title: "The Eight Stats — What Each One Does",
+        summary: "A plain-language guide to what STR, SPD, LEG, WRE, GND, SUB, CHN and FIQ each do in a fight.",
+        tags: ["stats", "str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq", "ko power", "chin", "attributes"],
+        body: [
+            "Every fighter is built from eight stats, each shown by a three-letter code. They drive everything that happens in the cage. Here's what each one does in plain terms.",
+            {
+                type: "table",
+                headers: ["Code", "Stat", "What it does"],
+                rows: [
+                    ["STR", "Striking", "Punching power and accuracy — this is your \"KO power\". Higher STR means more strike damage and a higher chance to knock an opponent out."],
+                    ["SPD", "Speed", "Hand speed, evasion and reactions. Makes you harder to hit by lowering the opponent's accuracy against you."],
+                    ["LEG", "Leg Power", "Kicking effectiveness. Leg kicks drain the opponent's stamina; head kicks carry their own KO threat."],
+                    ["WRE", "Wrestling", "Takedown offence and defence, plus cage control and positioning."],
+                    ["GND", "Ground & Pound", "Damage from top position and posture control once the fight hits the mat."],
+                    ["SUB", "Submissions", "Applying and escaping chokes and locks — both your submission offence and your defence."],
+                    ["CHN", "Chin", "Durability against strikes. This is your \"KO resistance\" — how much punishment you can absorb before getting stopped."],
+                    ["FIQ", "Fight IQ", "Ring smarts. Feeds into your Overall Rating and lowers your injury risk. Hard to train."],
+                ],
+            },
+            "No single stat wins fights on its own — they work in pairs and clusters depending on where the fight goes. STR and LEG drive your striking on the feet, GND drives your damage from top position on the ground, and CHN is the durability that stands against all of it — it blunts the punishment you take whether you're being picked apart standing or ground-and-pounded, and decides how much you can soak up before you're stopped. WRE is the gatekeeper for whether the fight stays standing or hits the mat, and SUB is the ground game's other threat.",
+            "Your Overall Rating weighs all eight together, but a balanced OVR and a fight-ready build aren't the same thing. Lean into the stats that match how you want to fight — and don't neglect the defensive ones, because a hole in your game is exactly what an opponent will aim for.",
+        ],
+        keyTakeaway: "Each stat governs a specific part of the fight, and they work in pairs — offence and defence, standing and ground. Build toward your style, but cover your weak stats or opponents will exploit them.",
+    },
+    {
         id: "guest-accounts",
         category: "Getting Started",
         title: "Guest Accounts & Securing Your Progress",
