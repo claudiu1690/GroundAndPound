@@ -15218,3 +15218,75 @@ code {
   .cl-title { font-size: 16px; }
 }
 
+/* ============================================================
+   MOTION POLISH
+   Subtle, transform/opacity-based only, and fully neutralised
+   under prefers-reduced-motion (block at the end).
+   ============================================================ */
+
+/* Tab content entrance — plays each time a tab mounts (the child of
+   .main is swapped on every tab switch). */
+@keyframes tabEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.main > * { animation: tabEnter 0.3s ease both; }
+
+/* Smooth resource / progress bar fills — animate width changes so
+   energy, health, XP, fame and contract progress glide instead of jump. */
+.hdr-resource-bar-fill,
+.tier-progress-fill,
+.fame-progress-fill,
+.readiness-tile-bar-fill,
+.contracts-tab .contract-progress-fill,
+.hospital-tab .hp-fill,
+.events-tab .bets-fill,
+.shop-inv-booster-fill,
+.fc-bar-fill {
+  transition: width 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Interactive card hover lift on the main clickable cards. */
+.gym-card,
+.session-card,
+.offer-card,
+.library-tab .article-card,
+.media-tab .media-card,
+.contracts-tab .contract-card.available-card {
+  transition: border-color 0.15s, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.gym-card:hover,
+.session-card:not(.locked-card):hover,
+.offer-card:hover,
+.library-tab .article-card:hover,
+.media-tab .media-card:not(.locked-card):hover,
+.contracts-tab .contract-card.available-card:not(.full-card):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.65);
+}
+
+/* Primary-action button press feedback. */
+.btn-primary:active,
+.sign-btn:active,
+.fight-hub-btn:active {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .main > * { animation: none; }
+  .hdr-resource-bar-fill,
+  .tier-progress-fill,
+  .fame-progress-fill,
+  .readiness-tile-bar-fill,
+  .contracts-tab .contract-progress-fill,
+  .hospital-tab .hp-fill,
+  .events-tab .bets-fill,
+  .shop-inv-booster-fill,
+  .fc-bar-fill { transition: none; }
+  .gym-card, .session-card, .offer-card, .library-tab .article-card,
+  .media-tab .media-card, .contracts-tab .contract-card.available-card { transition: border-color 0.15s; }
+  .gym-card:hover, .session-card:hover, .offer-card:hover, .library-tab .article-card:hover,
+  .media-tab .media-card:hover, .contracts-tab .contract-card.available-card:hover { transform: none; box-shadow: none; }
+  .btn-primary:active, .sign-btn:active, .fight-hub-btn:active { transform: none; }
+}
+
