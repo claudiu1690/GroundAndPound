@@ -6,6 +6,7 @@ import { CalloutModal } from "./CalloutModal";
 import { ContenderChecklist } from "./ContenderChecklist";
 import { TITLE_WINS } from "../../constants/gameConstants";
 import { OfferCard } from "./OfferCard";
+import { InjuryWarnModal } from "./InjuryWarnModal";
 import { buildCardModel } from "./offerIntel";
 
 const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard", TITLE: "TitleShot" };
@@ -193,9 +194,25 @@ function ActiveCalloutBanner({ activeCallout, onOpenCallout }) {
 
 export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOffers, onAcceptOffer, onRefreshFighter, onMessage }) {
   const [calloutOpen, setCalloutOpen] = useState(false);
+  // A fight the player picked while carrying a non-blocking injury, held for
+  // confirmation ({ opponentId, type }) — or null.
+  const [pendingFight, setPendingFight] = useState(null);
   if (!fighter) return null;
   const energyCost = FIGHT_ENERGY_COST[fighter.promotionTier] ?? 10;
   const activeCallout = fighter.activeCallout?.opponentId ? fighter.activeCallout : null;
+
+  // Injuries the fighter CAN fight through but that carry a penalty (Broken
+  // Hand, Bruised Rib, etc.). cannotFight injuries are hard-blocked elsewhere,
+  // so they never reach here. Accepting a fight with one of these first asks for
+  // confirmation instead of silently sending the fighter in hurt.
+  const nonBlockingInjuries = (fighter.injuries ?? []).filter((inj) => inj && !inj.cannotFight);
+  const handleAccept = (opponentId, type) => {
+    if (nonBlockingInjuries.length > 0) {
+      setPendingFight({ opponentId, type });
+    } else {
+      onAcceptOffer(opponentId, type);
+    }
+  };
 
   // Show the contender checklist while the player is a title CONTENDER but the
   // shot is not yet ready (cooldown, not top-5, or wins short of the gate).
@@ -230,6 +247,17 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
           onMessage={onMessage}
         />
 
+        <InjuryWarnModal
+          open={!!pendingFight}
+          injuries={nonBlockingInjuries}
+          onCancel={() => setPendingFight(null)}
+          onConfirm={() => {
+            const p = pendingFight;
+            setPendingFight(null);
+            if (p) onAcceptOffer(p.opponentId, p.type);
+          }}
+        />
+
         {offers.length === 0 ? (
           <FightHub
             fighter={fighter}
@@ -251,7 +279,7 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                     offer={enrichedOffer}
                     fighter={fighter}
                     energyCost={energyCost}
-                    onAccept={(opponentId, type) => onAcceptOffer(opponentId, type)}
+                    onAccept={handleAccept}
                   />
                 );
               })}

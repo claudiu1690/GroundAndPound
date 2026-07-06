@@ -1233,6 +1233,13 @@
       "fallback": "You cannot accept this fight right now.",
       "gotIt": "Got it"
     },
+    "injuryWarn": {
+      "title": "Fight while injured?",
+      "intro": "You'll go into this fight hurt. Fighting injured lowers your stats and raises the risk of picking up more damage:",
+      "hospitalHint": "Heal at the Hospital first to go in at full strength.",
+      "cancel": "Not yet",
+      "confirm": "Fight anyway"
+    },
     "drawer": {
       "loading": "Loading…",
       "errorTitle": "Fight breakdown",
