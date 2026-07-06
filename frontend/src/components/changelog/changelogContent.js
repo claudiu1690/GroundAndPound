@@ -18,6 +18,23 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "1.1",
+    date: "2026-07-06",
+    major: false,
+    highlights: [
+      "Sponsor contracts now have artwork. Every deal shows off its brand with a painted card.",
+      "You now get a warning before taking a fight while injured, so a bad injury doesn't catch you off guard.",
+      "A new Library guide breaks down what each of your eight stats actually does.",
+    ],
+    sections: {
+      changed: [],
+      fixed: [
+        "Fixed a problem that could stop new guest accounts from being created.",
+      ],
+      balance: [],
+    },
+  },
+  {
     version: "1.0",
     date: "2026-07-04",
     major: true,
