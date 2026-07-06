@@ -318,14 +318,36 @@ function DropContractConfirm({ contract, onCancel, onConfirm }) {
     );
 }
 
+// ───────────────────────────────────────────────────────────────
+// Sponsor art header (treatment B). Art derives from the catalog id
+// (REDLINE_ENERGY → /assets/sponsors/redline-energy.webp). Missing asset
+// degrades to a plain dark band, never a broken image.
+// ───────────────────────────────────────────────────────────────
+function sponsorArtUrl(catalogId) {
+    if (!catalogId) return null;
+    return `/assets/sponsors/${String(catalogId).toLowerCase().replace(/_/g, "-")}.webp`;
+}
+
+function ContractArt({ catalogId, badge, badgeClass }) {
+    const url = sponsorArtUrl(catalogId);
+    return (
+        <div
+            className={`contract-art${url ? "" : " no-art"}`}
+            style={url ? { backgroundImage: `url("${url}")` } : undefined}
+        >
+            {badge && <span className={`contract-status-badge ${badgeClass}`}>{badge}</span>}
+        </div>
+    );
+}
+
 function ActiveCard({ contract, onDrop, busy }) {
     return (
         <article className="contract-card active-card">
             <div className="contract-stripe active" />
+            <ContractArt catalogId={contract.sponsorId} badge={t("contracts.activeCard.statusBadge")} badgeClass="active" />
             <div className="contract-body">
                 <header className="contract-header">
                     <div className="contract-brand">{contract.brand}</div>
-                    <span className="contract-status-badge active">{t("contracts.activeCard.statusBadge")}</span>
                 </header>
                 <div className="contract-tagline">{contract.tagline}</div>
                 <div className="contract-clause">
@@ -356,10 +378,10 @@ function OfferCard({ offer, onAccept, busy, slotsFull }) {
     return (
         <article className={`contract-card available-card ${slotsFull ? "full-card" : ""}`}>
             <div className="contract-stripe prospect" />
+            <ContractArt catalogId={offer.id} badge={offer.unlockTier.replace("_", " ")} badgeClass="prospect" />
             <div className="contract-body">
                 <header className="contract-header">
                     <div className="contract-brand">{offer.brand}</div>
-                    <span className="contract-status-badge prospect">{offer.unlockTier.replace("_", " ")}</span>
                 </header>
                 <div className="contract-tagline">{offer.tagline}</div>
                 <div className="contract-clause">
@@ -392,10 +414,10 @@ function HistoryCard({ contract }) {
     return (
         <article className="contract-card history-card">
             <div className={`contract-stripe ${stripeClass}`} />
+            <ContractArt catalogId={contract.sponsorId} badge={statusLabel(contract.status)} badgeClass={stripeClass} />
             <div className="contract-body">
                 <header className="contract-header">
                     <div className="contract-brand">{contract.brand}</div>
-                    <span className={`contract-status-badge ${stripeClass}`}>{statusLabel(contract.status)}</span>
                 </header>
                 <div className="contract-tagline">{contract.tagline}</div>
                 <div className="contract-clause">

@@ -6432,6 +6432,10 @@ code {
   border: 1px solid var(--c-border);
   border-radius: 8px;
   overflow: hidden;
+  width: 100%;
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .contracts-tab .contract-card.active-card { border-color: rgba(200,16,46,.4); }
 .contracts-tab .contract-card.full-card { opacity: .6; }
@@ -6439,6 +6443,30 @@ code {
 .contracts-tab .contract-stripe.active { background: var(--c-accent); }
 .contracts-tab .contract-stripe.prospect { background: #3A9A4A; }
 .contracts-tab .contract-stripe.locked { background: var(--c-border-3); }
+/* Sponsor art header (treatment B) — product banner fading into the card body.
+   Art is authored landscape/wide so `cover` frames the whole product without
+   zoom. Height is kept shallow so cards stay compact. */
+.contracts-tab .contract-art {
+  position: relative;
+  height: 108px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #101010;
+}
+.contracts-tab .contract-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 55%, var(--bg-surface) 100%);
+  pointer-events: none;
+}
+.contracts-tab .contract-art .contract-status-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+}
 .contracts-tab .contract-body {
   padding: 14px 16px;
   display: flex;
