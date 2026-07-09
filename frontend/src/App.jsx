@@ -10,6 +10,7 @@ import { TierUpOverlay, BeltWonOverlay } from "./components/fights/TierUpOverlay
 import { FightOffers } from "./components/fights/FightOffers";
 import { FightCamp } from "./components/fights/FightCamp";
 import { FighterReport } from "./components/fights/FighterReport";
+import { FaceOff } from "./components/fights/FaceOff";
 import { CampSummary } from "./components/fights/CampSummary";
 import { FightDescription } from "./components/fights/FightDescription";
 import { FightSummary } from "./components/fights/FightSummary";
@@ -503,6 +504,8 @@ function App() {
   // ── Camp v1.1 state ────────────────────────────────────────
   const [campReport, setCampReport]           = useState(null);
   const [showFighterReport, setShowFighterReport] = useState(false);
+  // Face-off overlay shown on accept, above the (already-loaded) Fighter Report.
+  const [faceOff, setFaceOff]                 = useState(null);
   const [reportFromCamp, setReportFromCamp]       = useState(false);
   const [campState, setCampState]             = useState(null);
   const [addingSession, setAddingSession]     = useState(null); // sessionType key while loading
@@ -982,6 +985,28 @@ const handleGetOffers = useCallback(async () => {
         setCampState(state);
         setReportFromCamp(false);
         setShowFighterReport(true);
+        // Face-off plays as an overlay ON TOP of the now-loaded report; when it
+        // finishes (auto or Skip) it unmounts, revealing the report underneath.
+        // Public tale-of-the-tape only — the report keeps the opponent's stats fogged.
+        setFaceOff({
+          player: {
+            name: `${fighter.firstName ?? ""} ${fighter.lastName ?? ""}`.trim(),
+            nickname: fighter.nickname,
+            record: `${fighter.record?.wins ?? 0}-${fighter.record?.losses ?? 0}${(fighter.record?.draws ?? 0) > 0 ? `-${fighter.record.draws}` : ""}`,
+            ovr: fighter.overallRating,
+            style: fighter.style,
+            weightClass: fighter.weightClass,
+          },
+          opponent: {
+            name: report.name,
+            nickname: report.nickname,
+            record: report.record,
+            ovr: report.overallRating,
+            style: report.style,
+            weightClass: fighter.weightClass, // same division as the player
+            isTitle: !!report.isTitleFight,
+          },
+        });
         setMessage(t("app.fightAccepted"));
         loadFighter(fighter._id, { clearMessage: false });
         setActiveTab("fights");
@@ -1320,6 +1345,15 @@ const handleGetOffers = useCallback(async () => {
           onClose={() => { setShowFighterReport(false); tutorialBus.emit("fighter_report_closed"); }}
           hideStartButton={reportFromCamp}
           isTitleFight={campState?.isTitleFight}
+        />
+      )}
+
+      {/* ── FIGHT ACCEPT FACE-OFF (overlays the report, then unmounts) ── */}
+      {faceOff && (
+        <FaceOff
+          player={faceOff.player}
+          opponent={faceOff.opponent}
+          onDone={() => setFaceOff(null)}
         />
       )}
 

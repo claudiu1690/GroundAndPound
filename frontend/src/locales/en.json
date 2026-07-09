@@ -1181,6 +1181,19 @@
       "fogUnknown": "Unknown",
       "giantKillerNote": "Giant Killer opportunity — {name} is +{n} OVR above you. Win for +300 fame bonus."
     },
+    "faceOff": {
+      "aria": "Fight face-off",
+      "skip": "Skip",
+      "blueCorner": "◆ Blue Corner · You",
+      "redCorner": "Red Corner ◆",
+      "champCorner": "Champion · Red Corner ◆",
+      "overall": "Overall",
+      "record": "Record",
+      "style": "Style",
+      "klass": "Class",
+      "scoutNote": "Detailed stats stay hidden — scout them in camp.",
+      "entering": "Entering Camp"
+    },
     "contenderChecklist": {
       "pathToBelt": "Path to the {tier} Belt",
       "pathToPro": "Path to Turning Pro",

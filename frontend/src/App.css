@@ -16031,3 +16031,87 @@ code {
   .drop-spark { display: none; }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FIGHT ACCEPT — FACE-OFF (tale of the tape). Portal overlay above the
+   Fighter Report; auto-dismisses. One component, responsive: L/R on desktop,
+   vertical clash on mobile.
+   ═══════════════════════════════════════════════════════════════════════ */
+.faceoff { position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column;
+  background: radial-gradient(120% 90% at 50% 40%, #1a1a1a, #000 75%); overflow: hidden; }
+.faceoff::before, .faceoff::after { content: ""; position: absolute; top: 0; bottom: 0; width: 44%; pointer-events: none; opacity: .5; }
+.faceoff::before { left: 0; background: radial-gradient(70% 60% at 0% 50%, rgba(59,130,246,.28), transparent 70%); }
+.faceoff::after { right: 0; background: radial-gradient(70% 60% at 100% 50%, rgba(200,16,46,.3), transparent 70%); }
+.faceoff-skip { position: absolute; top: 20px; right: 22px; z-index: 5; font-family: var(--font-display); font-weight: 800;
+  font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #888; background: none; border: 1px solid #333;
+  border-radius: 6px; padding: 7px 14px; cursor: pointer; }
+.faceoff-skip:hover { color: #ccc; border-color: #555; }
+.faceoff-arena { flex: 1; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; position: relative; z-index: 2; }
+
+/* Fighter panels — desktop: vertical, centered, port on top. */
+.faceoff-fighter { padding: 0 4vw; display: flex; flex-direction: column; align-items: center; opacity: 0; }
+.faceoff-fighter--you { transform: translateX(-120%); animation: faceoffSlideL .7s cubic-bezier(.16,.8,.3,1) .1s forwards; }
+.faceoff-fighter--opp { transform: translateX(120%); animation: faceoffSlideR .7s cubic-bezier(.16,.8,.3,1) .1s forwards; }
+@keyframes faceoffSlideL { to { opacity: 1; transform: translateX(0); } }
+@keyframes faceoffSlideR { to { opacity: 1; transform: translateX(0); } }
+.faceoff-port { width: 140px; height: 140px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 900; font-size: 56px; border: 2px solid; margin-bottom: 14px; box-shadow: 0 0 40px -12px currentColor; }
+.faceoff-fighter--you .faceoff-port { border-color: var(--c-blue); color: var(--c-blue); background: linear-gradient(135deg, rgba(59,130,246,.18), #0d0d12); }
+.faceoff-fighter--opp .faceoff-port { border-color: var(--c-accent); color: var(--c-accent-hover); background: linear-gradient(135deg, rgba(200,16,46,.2), #120d0d); }
+.faceoff-info { text-align: center; min-width: 0; }
+.faceoff-corner { font-family: var(--font-display); font-weight: 800; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+.faceoff-fighter--you .faceoff-corner { color: #7fb0ff; }
+.faceoff-fighter--opp .faceoff-corner { color: #ff8a97; }
+.faceoff-name { font-family: var(--font-display); font-weight: 900; font-size: 36px; text-transform: uppercase; letter-spacing: .5px; line-height: 1; }
+.faceoff-nick { font-style: italic; color: #9a9a9a; font-size: 13.5px; margin-top: 6px; }
+.faceoff-rec { margin-top: 10px; font-family: var(--font-display); font-weight: 900; font-size: 15px; letter-spacing: 1px; color: #ddd; }
+
+/* Center: VS + tape */
+.faceoff-center { display: flex; flex-direction: column; align-items: center; gap: 16px; z-index: 3; padding: 0 10px; }
+.faceoff-vs { position: relative; font-family: var(--font-display); font-weight: 900; font-size: 84px; letter-spacing: -2px; color: #fff;
+  opacity: 0; transform: scale(2.4); text-shadow: 0 0 30px rgba(200,16,46,.6); animation: faceoffVsIn .5s cubic-bezier(.2,1.4,.4,1) .55s forwards; }
+.faceoff-vs > span { color: var(--c-accent-hover); }
+@keyframes faceoffVsIn { 0% { opacity: 0; transform: scale(2.4) rotate(-8deg); } 60% { opacity: 1; } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+.faceoff-clash { position: absolute; inset: -30px; border-radius: 50%; opacity: 0; background: radial-gradient(circle, rgba(255,255,255,.5), transparent 60%); animation: faceoffClash .5s ease .6s forwards; }
+@keyframes faceoffClash { 0% { opacity: 0; transform: scale(.2); } 40% { opacity: .9; } 100% { opacity: 0; transform: scale(1.8); } }
+.faceoff-tape { width: min(340px, 82vw); border-top: 1px solid #333; border-bottom: 1px solid #333; }
+.faceoff-trow { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 8px 0; border-bottom: 1px solid #1c1c1c;
+  opacity: 0; transform: translateY(8px); animation: faceoffRowIn .4s ease forwards; }
+.faceoff-trow:last-child { border-bottom: none; }
+.faceoff-trow:nth-child(1) { animation-delay: .9s; } .faceoff-trow:nth-child(2) { animation-delay: 1.02s; }
+.faceoff-trow:nth-child(3) { animation-delay: 1.14s; } .faceoff-trow:nth-child(4) { animation-delay: 1.26s; }
+@keyframes faceoffRowIn { to { opacity: 1; transform: translateY(0); } }
+.faceoff-tval { font-family: var(--font-display); font-weight: 900; font-size: 20px; font-variant-numeric: tabular-nums; }
+.faceoff-tval.l { text-align: right; color: #9cc0ff; } .faceoff-tval.r { text-align: left; color: #ff9aa6; }
+.faceoff-tval.win { color: #fff; text-shadow: 0 0 12px currentColor; }
+.faceoff-tlbl { font-family: var(--font-display); font-weight: 800; font-size: 9.5px; letter-spacing: 2px; text-transform: uppercase; color: #666; padding: 0 16px; white-space: nowrap; }
+.faceoff-scout { font-size: 11px; color: #777; text-align: center; max-width: 300px; opacity: 0; animation: faceoffRowIn .5s ease 1.5s forwards; }
+
+.faceoff-prompt { position: absolute; bottom: 8%; left: 0; right: 0; text-align: center; z-index: 4; opacity: 0; animation: faceoffRowIn .5s ease 2.1s forwards; }
+.faceoff-go { font-family: var(--font-display); font-weight: 800; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--c-amber-bright);
+  border: 1px solid rgba(212,168,32,.4); border-radius: 8px; padding: 11px 26px; background: rgba(212,168,32,.06); display: inline-flex; align-items: center; gap: 8px; animation: faceoffPulse 1.4s ease-in-out infinite; }
+@keyframes faceoffPulse { 0%, 100% { opacity: .75; } 50% { opacity: 1; } }
+
+/* Mobile: vertical clash — you slide from left up top, opp from right below. */
+@media (max-width: 680px) {
+  .faceoff-arena { grid-template-columns: 1fr; grid-template-rows: 1fr auto 1fr; }
+  .faceoff-fighter { flex-direction: row; align-items: center; gap: 14px; padding: 0 22px; }
+  .faceoff-fighter--you { padding-top: 40px; }
+  .faceoff-fighter--opp { flex-direction: row-reverse; }
+  .faceoff-info { text-align: left; }
+  .faceoff-fighter--opp .faceoff-info { text-align: right; }
+  .faceoff-port { width: 82px; height: 82px; font-size: 34px; margin-bottom: 0; flex-shrink: 0; }
+  .faceoff-name { font-size: 26px; }
+  .faceoff-nick { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55vw; }
+  .faceoff-vs { font-size: 48px; margin: -6px 0; }
+  .faceoff-center { gap: 8px; padding: 6px 22px; }
+  .faceoff-tape { width: 88vw; }
+  .faceoff-tval { font-size: 17px; }
+  .faceoff-prompt { bottom: 5%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faceoff-fighter--you, .faceoff-fighter--opp, .faceoff-vs, .faceoff-clash,
+  .faceoff-trow, .faceoff-scout, .faceoff-prompt, .faceoff-go { animation: none; opacity: 1; transform: none; }
+  .faceoff-clash { display: none; }
+}

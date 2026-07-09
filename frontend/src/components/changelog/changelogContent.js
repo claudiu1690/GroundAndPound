@@ -36,6 +36,7 @@ export const CHANGELOG_ENTRIES = [
         "Sparring sessions in the gym now show they have a chance to drop Special Moves — and which rarities your gym can roll.",
         "Special Moves moved up the menu, next to Training — kit out your moveset right where you build your fighter.",
         "Your Profile now shows your equipped Special Moves loadout next to your championship belts.",
+        "Accepting a fight now opens with a face-off — you and your opponent square up with a tale-of-the-tape before the Fighter Report.",
       ],
       fixed: [],
       balance: [],

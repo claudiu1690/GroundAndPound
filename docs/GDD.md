@@ -26,7 +26,7 @@ Single-page web client. Top to bottom: a collapsible **Message Bar**, the **App 
 
 - **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — cash, fame, rank, class, gym, backstory — badges, stat meters, active injuries), an **Inventory** panel (shown only when the fighter owns shop items), and the nav menu. Nav order groups by intent — *build → compete → manage*: **Home, Training, Special Moves, Fight, Career, Proving Ground, Rankings, Contracts, Hospital, Shop, Events, Media, Library**. Special Moves sits with Training (both "build your fighter") rather than down among the utility tabs.
 - **Footer:** game wordmark, contextual status badges (injury count → Hospital, camp → Fight, Fame → Fame drawer), Sign Out.
-- **Overlays:** Training toast stack, Tier-Up / Belt-Won overlays, Fight-block popup (energy / injury), Fame drawer, Octagon Gazette, Onboarding Tutorial, Fighter Report, Camp Summary, Badge-unlock celebration.
+- **Overlays:** Training toast stack, Tier-Up / Belt-Won overlays, Fight-block popup (energy / injury), Fame drawer, Octagon Gazette, Onboarding Tutorial, **Fight-Accept Face-Off** (see §10), Fighter Report, Camp Summary, Badge-unlock celebration, Special-Move drop reveal.
 
 ---
 
@@ -306,6 +306,16 @@ Sparring carries 3% injury risk per session. On injury: stop camp (lose remainin
 ---
 
 ## 10. The Fight
+
+### 10.0 Accept → Face-Off → Camp
+Accepting a fight plays a brief **face-off** overlay before the Fighter Report: you
+(blue corner) and the opponent (red corner) slide in from opposite sides, clash on a
+"VS", and a **public tale-of-the-tape** staggers in — Overall, Record, Style, weight
+Class — then it auto-dismisses into the report (or Skip / Esc / Enter). It is
+deliberately **spoiler-safe**: only info already on the offer card is shown; the
+opponent's detailed combat stats stay fogged for the player to scout in camp (§9.5).
+Cosmetic only — no mechanic. Responsive (L/R on desktop, vertical clash on mobile) and
+respects `prefers-reduced-motion`.
 
 ### 10.1 Weight Cut
 Before every fight the player picks a weight-cut strategy — a stamina gamble with a chance to miss weight.
