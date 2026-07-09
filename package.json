@@ -20,6 +20,8 @@
     "seed:gyms:reset": "node scripts/seedGyms.js --reset",
     "stats": "node scripts/stats.js",
     "stats:local": "cross-env LOCAL_MODE=true node scripts/stats.js",
+    "retention": "node scripts/retention.js",
+    "retention:local": "cross-env LOCAL_MODE=true node scripts/retention.js",
     "debug:energy": "node scripts/debugRechargeEnergy.js",
     "debug:reset-fight-cap": "node scripts/debugResetDailyFightCap.js",
     "debug:title-shot": "node scripts/debugTitleShot.js"

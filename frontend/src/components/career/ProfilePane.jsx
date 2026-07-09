@@ -7,6 +7,7 @@ import { ProfileBanner } from "./ProfileBanner";
 import { ProfileStatsCard } from "./ProfileStatsCard";
 import { ProfileCareerCard } from "./ProfileCareerCard";
 import { ChampionshipBeltsCard } from "./ChampionshipBeltsCard";
+import { EquippedMovesCard } from "./EquippedMovesCard";
 import { BadgeGrid } from "./BadgeGrid";
 import { MediaCareerCard } from "./MediaCareerCard";
 import { PvpHistoryCard } from "./PvpHistoryCard";
@@ -28,6 +29,7 @@ export function ProfilePane({
   fighterId,
   onMessage,
   onRefreshFighter,
+  onNavigate,
   readOnly = false,
 }) {
   const { data, setData, loading, error, reload } = useCareerProfile(fighterId);
@@ -108,6 +110,9 @@ export function ProfilePane({
           <ProfileCareerCard fighter={fighter} />
           <ChampionshipBeltsCard belts={belts} />
         </div>
+
+        {/* Equipped Special Moves — owner-only (GET /moves is owner-guarded). */}
+        {!readOnly && <EquippedMovesCard fighterId={fighterId} onNavigate={onNavigate} />}
 
         <BadgeGrid badges={badges} />
 

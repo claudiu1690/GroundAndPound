@@ -384,6 +384,21 @@ export const api = {
    */
   pvpPublicSeason: () => request("/pvp/season/public"),
 
+  // ── Special Moves ───────────────────────────────────────
+  getMoves: (fighterId) => request(`/fighters/${fighterId}/moves`),
+  equipMove: (fighterId, moveId, slotIndex) =>
+    request(`/fighters/${fighterId}/moves/equip`, {
+      method: "POST",
+      body: JSON.stringify({ moveId, slotIndex }),
+    }),
+  unequipMove: (fighterId, slotIndex) =>
+    request(`/fighters/${fighterId}/moves/unequip`, {
+      method: "POST",
+      body: JSON.stringify({ slotIndex }),
+    }),
+  getMoveDetail: (fighterId, moveId) =>
+    request(`/fighters/${fighterId}/moves/${moveId}`),
+
   // ── Bug Reports ─────────────────────────────────────────
   // Works logged-in and logged-out — request() attaches the JWT automatically
   // when one is present, so the server can resolve identity server-side.

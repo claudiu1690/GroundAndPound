@@ -29,6 +29,12 @@ const fightCampSchema = new Schema({
     // v2: conditional session bonuses (populated on finalise, updated after fight)
     sessionBonuses: { type: [Schema.Types.Mixed], default: [] },
 
+    // Special Moves v1 — FROZEN loadout snapshot, computed at camp finalise from the
+    // fighter's equipped moves + owned rarities (specialMovesService.buildMoveBonuses).
+    // Read at fight resolve instead of rebuilding live, so a mid-camp UPGRADE drop can't
+    // change an already-booked fight's power. Empty for legacy/pre-feature camps.
+    moveBonuses: { type: [Schema.Types.Mixed], default: [] },
+
     // v2: hidden wildcard (generated on finalise, excluded from report, revealed post-fight)
     wildcard: { type: Schema.Types.Mixed, default: null },
 

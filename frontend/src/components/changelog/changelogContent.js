@@ -18,6 +18,30 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "1.2",
+    date: "2026-07-08",
+    major: true,
+    highlights: [
+      "Special Moves have arrived — collectible signature techniques with full painted trading cards, earned from Sparring.",
+      "Equip up to 3 moves as your career climbs: 1 slot at Amateur, a 2nd at Regional Pro, a 3rd at National.",
+      "Moves come in four rarities, Common to Legendary — pull a better copy of one you own and it upgrades automatically.",
+      "Mix and match freely: up to 2 always-on passives, plus a slot for a proc or a big one-shot signature move.",
+      "Better gyms don't drop moves more often — they shift the odds toward rarer pulls, so a top-tier gym is your best shot at Legendary.",
+    ],
+    sections: {
+      changed: [
+        "The gym screen has been redesigned around a featured Sparring Ring, a compact training floor, and a clearer gym-standing sidebar.",
+        "New move drops arrive as a face-down card — tap it to flip and reveal what you pulled.",
+        "Move effects now read as Ratings (\"+30 Defense Rating\") with magnitude pips instead of tiny percentages — same math underneath, the exact numbers stay in the fine print.",
+        "Sparring sessions in the gym now show they have a chance to drop Special Moves — and which rarities your gym can roll.",
+        "Special Moves moved up the menu, next to Training — kit out your moveset right where you build your fighter.",
+        "Your Profile now shows your equipped Special Moves loadout next to your championship belts.",
+      ],
+      fixed: [],
+      balance: [],
+    },
+  },
+  {
     version: "1.1",
     date: "2026-07-06",
     major: false,

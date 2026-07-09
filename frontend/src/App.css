@@ -2128,94 +2128,37 @@ code {
 .gym-header-row1 { display:flex; align-items:center; gap:10px; margin-bottom:12px; position:relative; z-index:1; }
 .gym-back { all:unset; box-sizing:border-box; font-family:var(--font-display); font-weight:600; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); display:inline-flex; align-items:center; gap:4px; cursor:pointer; }
 .gym-back:hover { color:var(--text-secondary); }
-.gym-header-row2 { display:flex; align-items:center; gap:16px; flex-wrap:wrap; position:relative; z-index:1; }
+.gym-header-row2 { display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap; position:relative; z-index:1; }
+.gym-header-id { display:flex; flex-direction:column; gap:8px; flex:1 1 auto; min-width:0; }
 .gym-title { font-family:var(--font-display); font-weight:800; font-size:26px; text-transform:uppercase; letter-spacing:.5px; color:#F0F0F0; }
-.gym-header .gym-tags { display:flex; gap:5px; align-items:center; }
+.gym-header .gym-tags { display:flex; gap:5px; align-items:center; flex-wrap:wrap; }
 .gym-tag.xp { background:rgba(212,168,32,.1); color:var(--c-amber-bright); border:1px solid rgba(212,168,32,.2); }
-.gym-header-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
-.gym-energy-pill { font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--c-blue); background:rgba(59,130,246,.1); border:1px solid rgba(59,130,246,.2); border-radius:3px; padding:5px 12px; display:flex; align-items:center; gap:6px; }
-.gym-energy-lbl { font-size:10px; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; }
+.gym-header-right { margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:10px; min-width:260px; flex:0 1 340px; }
 .gym-join-btn { all:unset; box-sizing:border-box; font-family:var(--font-display); font-weight:800; font-size:13px; letter-spacing:1px; text-transform:uppercase; background:var(--c-accent); color:#FFF; border-radius:4px; padding:8px 20px; cursor:pointer; }
 .gym-join-btn:hover { background:#E8102E; }
-.gym-join-wrap { display:inline-flex; flex-direction:column; align-items:flex-end; gap:4px; }
-.gym-join-error { font-size:11px; font-weight:600; color:#F87171; text-align:right; max-width:220px; }
+.gym-join-wrap { display:inline-flex; flex-direction:column; align-items:flex-end; gap:4px; width:100%; }
+.gym-join-error { font-size:11px; font-weight:600; color:#F87171; text-align:right; max-width:260px; }
 .gym-membership-badge { font-family:var(--font-display); font-weight:700; font-size:12px; color:#3A9A4A; display:flex; align-items:center; gap:5px; }
 
-.rank-strip { background:var(--c-bg-tile); border-bottom:1px solid var(--c-border); padding:12px 24px; display:flex; align-items:center; gap:16px; flex-shrink:0; }
-.rank-strip-label { font-family:var(--font-display); font-weight:700; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-secondary); white-space:nowrap; }
-.rank-strip-steps { display:flex; align-items:center; flex:1; }
-.rank-step { display:flex; align-items:center; flex:1; }
-.rank-step:last-child { flex:0; }
-.rank-step-dot { width:26px; height:26px; border-radius:50%; border:2px solid var(--c-border); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-family:var(--font-display); font-weight:800; font-size:11px; color:var(--text-muted); }
-.rank-step-dot.current { border-color:var(--c-amber-bright); background:rgba(212,168,32,.15); color:var(--c-amber-bright); }
-.rank-step-info { padding:0 8px; }
-.rank-step-name { font-family:var(--font-display); font-weight:700; font-size:12px; text-transform:uppercase; color:var(--text-muted); }
-.rank-step-name.current { color:var(--c-amber-bright); }
-.rank-step-unlock { font-size:10px; color:var(--text-muted); margin-top:1px; }
-.rank-step-line { flex:1; height:1px; background:var(--c-border); min-width:16px; }
-
-.rank-upcta { display:flex; align-items:center; gap:14px; padding:10px 24px; border-bottom:1px solid var(--c-border-3); flex-shrink:0; flex-wrap:wrap; }
-.rank-upcta-head { display:flex; flex-direction:column; line-height:1.15; flex-shrink:0; }
-.rank-upcta-eyebrow { font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted); }
-.rank-upcta-name { font-family:var(--font-display); font-weight:800; font-size:13px; color:var(--c-text); text-transform:uppercase; letter-spacing:.4px; }
-.rank-reqs { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.rank-req-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:5px; background:var(--c-bg-tile); border:1px solid var(--c-border); }
-.rank-req-chip > svg { display:block; }
-.rank-req-chip .rank-req-label { font-size:10px; font-weight:600; letter-spacing:.3px; text-transform:uppercase; color:var(--text-secondary); line-height:1; }
-.rank-req-chip .rank-req-val { font-family:var(--font-display); font-weight:800; font-size:13px; color:var(--c-text); line-height:1; }
-.rank-req-chip.is-done { background:rgba(34,197,94,.1); border-color:rgba(34,197,94,.3); }
-.rank-req-chip.is-done .rank-req-label, .rank-req-chip.is-done .rank-req-val { color:#22C55E; }
-.rank-req-chip--fee .rank-req-val { color:var(--c-amber-bright); }
-.rank-up-btn { all:unset; box-sizing:border-box; font-family:var(--font-display); font-weight:800; font-size:12px; letter-spacing:1px; text-transform:uppercase; background:var(--c-accent); color:#FFF; border-radius:4px; padding:6px 14px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; margin-left:auto; }
-.rank-up-btn:hover { background:#E8102E; }
 /* Inline rank-up failure (e.g. not enough iron) — full-width row under the CTA. */
 .rank-up-error { flex-basis:100%; text-align:right; font-size:11px; font-weight:600; color:#F87171; margin-top:2px; }
-.rank-maxed { display:flex; align-items:center; gap:8px; padding:10px 24px; border-bottom:1px solid var(--c-border-3); color:var(--c-amber-bright); font-family:var(--font-display); font-weight:700; font-size:12px; flex-shrink:0; }
-.rank-maxed-body { display:flex; flex-direction:column; gap:1px; }
-.rank-maxed-title { color:var(--c-amber-bright); font-weight:700; font-size:12px; }
-.rank-maxed-perk { font-family:var(--font-body, inherit); font-weight:600; font-size:11px; color:var(--c-text-2, #AAAAAA); }
-.rank-maxed-perk strong { color:var(--c-text, #F0F0F0); font-weight:700; }
 
 .flavor-strip { padding:14px 24px; border-bottom:1px solid var(--c-border-3); }
 .flavor-text { font-size:13px; color:var(--text-secondary); line-height:1.7; font-style:italic; }
 
-.sessions-area { padding:24px; flex:1; }
-.sessions-label { font-family:var(--font-display); font-weight:700; font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:var(--text-muted); margin-bottom:16px; }
-/* Active XP booster banner above the session grid */
-.booster-banner { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:16px; padding:9px 14px; background:rgba(212,168,32,.08); border:1px solid rgba(212,168,32,.25); border-radius:7px; }
+/* Active XP booster banner — sits above the Training Floor. */
+.booster-banner { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:0 0 16px; padding:9px 14px; background:rgba(212,168,32,.08); border:1px solid rgba(212,168,32,.25); border-radius:7px; }
 .booster-banner-icon { color:var(--c-amber-bright); flex-shrink:0; }
 .booster-banner-name { font-family:var(--font-display); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--text); }
 .booster-banner-pct { font-family:var(--font-display); font-weight:800; font-size:11px; letter-spacing:.04em; color:var(--c-amber-bright); }
 .booster-banner-scope { font-size:11px; color:var(--text-secondary); }
 .booster-banner-left { margin-left:auto; font-family:var(--font-display); font-weight:700; font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); border:1px solid var(--c-border); border-radius:2px; padding:2px 7px; flex-shrink:0; }
-.session-boost-badge { display:inline-flex; align-items:center; gap:2px; font-family:var(--font-display); font-size:9px; font-weight:800; letter-spacing:.04em; background:rgba(212,168,32,.12); color:var(--c-amber-bright); border:1px solid rgba(212,168,32,.25); border-radius:2px; padding:2px 5px; margin-left:6px; vertical-align:middle; }
-.session-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
-.session-card { background:var(--c-bg-tile); border:1px solid var(--c-border); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; transition:border-color .15s; }
-.session-card:hover:not(.locked-card) { border-color:#555; }
-.session-card.locked-card { opacity:.5; }
-.session-card-top { height:4px; width:100%; }
-.session-card-top.lock { background:var(--c-border); }
-.session-card-body { padding:18px 18px 14px; flex:1; display:flex; flex-direction:column; }
-.session-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:8px; }
-.session-card-name { font-family:var(--font-display); font-weight:800; font-size:18px; text-transform:uppercase; letter-spacing:.5px; color:#F0F0F0; line-height:1.1; }
-.session-card-name.locked { color:var(--text-muted); }
-.session-card-energy { font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--c-blue); background:rgba(59,130,246,.1); border:1px solid rgba(59,130,246,.15); border-radius:3px; padding:4px 10px; display:flex; align-items:center; gap:4px; flex-shrink:0; }
-.session-card-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; margin-bottom:14px; flex:1; }
-.session-card-warn { font-size:10px; color:var(--c-amber); display:flex; align-items:center; gap:4px; margin-bottom:10px; }
-.session-card-footer { display:flex; align-items:center; justify-content:space-between; margin-top:auto; gap:8px; }
-.session-card-tags { display:flex; gap:5px; flex-wrap:wrap; }
+
+/* Shared Train button (batch control) — still used by both the Ring cards
+   and the Training Floor rows via SessionTrainControl. */
 .session-card-btn { all:unset; box-sizing:border-box; font-family:var(--font-display); font-weight:700; font-size:12px; letter-spacing:1px; text-transform:uppercase; background:var(--c-accent); color:#FFF; border-radius:3px; padding:6px 14px; cursor:pointer; }
 .session-card-btn:hover { background:#E8102E; }
-.session-card-btn.inactive, .session-card-btn.locked-btn { background:transparent; color:var(--text-muted); border:1px solid var(--c-border); cursor:not-allowed; display:inline-flex; align-items:center; gap:4px; }
-.session-card-btn.inactive:hover, .session-card-btn.locked-btn:hover { background:transparent; }
-
-/* ── Batch / multi-session quantity control ───────────────────── */
-/* The active "Train" branch swaps the single button for this block. It
-   occupies the full footer width so the stepper/presets/live-line/button
-   stack cleanly below the stat tags. */
-.session-card-footer:has(.session-train-control) { flex-wrap:wrap; }
-.session-train-control { display:flex; flex-direction:column; gap:8px; flex:1 1 100%; min-width:0; }
-.session-injury-hint { margin-bottom:0; color:var(--text-secondary); }
+.session-train-control { display:flex; flex-direction:column; gap:8px; min-width:0; }
 .session-qty-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
 .session-stepper { display:inline-flex; align-items:center; gap:0; border:1px solid var(--c-border); border-radius:4px; overflow:hidden; }
 .session-stepper-btn { all:unset; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; color:#F0F0F0; cursor:pointer; background:var(--c-bg-tile-2); }
@@ -2233,11 +2176,163 @@ code {
 
 .rank-badge { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; background:rgba(212,168,32,.1); color:var(--c-amber-bright); border:1px solid rgba(212,168,32,.2); border-radius:2px; padding:2px 6px; margin-left:6px; vertical-align:middle; }
 
-.other-section-label { font-family:var(--font-display); font-weight:700; font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; }
-.other-session { background:var(--c-bg-tile); border:1px solid var(--c-border); border-radius:6px; padding:12px 16px; display:flex; align-items:center; gap:12px; margin-bottom:8px; }
-.other-session-name { font-family:var(--font-display); font-weight:700; font-size:14px; text-transform:uppercase; color:var(--text-secondary); }
-.other-session-tag { font-family:var(--font-display); font-weight:700; font-size:10px; letter-spacing:1px; padding:2px 7px; border-radius:3px; background:rgba(34,197,94,.12); color:#22C55E; border:1px solid rgba(34,197,94,.2); }
-.other-session-gym { font-size:12px; color:#3A9A4A; margin-left:auto; }
+/* ============================================================
+   GYM SCREEN REDESIGN — Sparring Ring / Training Floor / sidebar
+   (App.css conventions: --c-bg-tile / --c-border / --c-accent / --font-display)
+   ============================================================ */
+
+/* Header energy module — real bar (fill = energy/max) + affordability note. */
+.gym-energy-mod { width:100%; background:rgba(0,0,0,.35); border:1px solid var(--c-border); border-radius:9px; padding:10px 12px; }
+.gym-energy-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; gap:8px; }
+.gym-energy-mod-lbl { font-family:var(--font-display); font-weight:700; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); }
+.gym-energy-mod-val { font-family:var(--font-display); font-weight:800; font-size:16px; color:#FFF; display:inline-flex; align-items:center; gap:4px; }
+.gym-energy-mod-val svg { color:var(--c-blue); }
+.gym-energy-mod-val small { font-size:11px; color:var(--text-muted); font-weight:400; margin-left:2px; }
+.gym-energy-mod-bar { height:7px; border-radius:4px; background:#000; overflow:hidden; position:relative; }
+.gym-energy-mod-fill { position:absolute; inset:0; background:linear-gradient(90deg, var(--c-blue), #7fb0ff); border-radius:4px; transition:width .25s ease; }
+.gym-energy-mod-note { margin-top:6px; font-size:10.5px; color:var(--text-muted); }
+
+/* Two-column body: main (Ring + Floor) + sidebar (Standing / Specialty pitch). */
+.gym-body-grid { display:grid; grid-template-columns:1fr 300px; gap:16px; padding:20px 24px; align-items:start; }
+.gym-main-col { display:flex; flex-direction:column; gap:16px; min-width:0; }
+.gym-side-col { display:flex; flex-direction:column; gap:14px; min-width:0; }
+
+/* ── The Sparring Ring (featured section) ──────────────────────── */
+.ring { position:relative; border:1px solid rgba(212,168,32,.4); border-radius:12px; background:linear-gradient(180deg, rgba(212,168,32,.07), rgba(212,168,32,.02) 55%, transparent); padding:16px 18px 18px; }
+.ring-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px; }
+.ring-title { font-family:var(--font-display); font-weight:800; font-size:16px; letter-spacing:1.5px; text-transform:uppercase; color:var(--c-amber-bright); display:inline-flex; align-items:center; gap:6px; }
+.ring-sub { font-size:12px; color:var(--text-secondary); }
+
+.loot-box { margin:10px 0 14px; background:rgba(0,0,0,.25); border:1px solid var(--c-border-3); border-radius:8px; padding:10px 12px; }
+.loot-line1 { font-size:12px; color:var(--text-secondary); margin-bottom:9px; line-height:1.5; }
+.loot-line1 .loot-pct { color:var(--c-amber-bright); }
+.loot-lbl { font-family:var(--font-display); font-weight:700; font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; display:block; }
+.loot-bar { display:flex; height:16px; border-radius:4px; overflow:hidden; border:1px solid #000; }
+.loot-seg { display:flex; align-items:center; justify-content:center; font:800 9px/1 var(--font-display); letter-spacing:.3px; color:#0D0D0D; min-width:0; white-space:nowrap; }
+.loot-legend { display:flex; gap:12px; flex-wrap:wrap; margin-top:7px; font-size:10.5px; color:var(--text-secondary); }
+.loot-legend span { display:inline-flex; align-items:center; }
+.loot-legend i { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:4px; font-style:normal; }
+.loot-legend-lock { color:var(--text-muted); }
+
+.ring-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.rcard { background:var(--c-bg-tile); border:1px solid var(--c-border); border-radius:9px; padding:13px 14px; display:flex; flex-direction:column; gap:8px; min-width:0; }
+.rcard.hot { border-color:rgba(212,168,32,.45); box-shadow:0 0 24px -12px rgba(212,168,32,.5); }
+.rcard--dimmed { opacity:.55; }
+.rcard-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.rcard-name { font-family:var(--font-display); font-weight:800; font-size:15px; letter-spacing:.5px; text-transform:uppercase; color:#F0F0F0; }
+.rcard-cost { font-family:var(--font-display); font-weight:700; font-size:11.5px; color:var(--c-blue); display:inline-flex; align-items:center; gap:3px; }
+.rcard-lock { font-family:var(--font-display); font-weight:700; font-size:9px; letter-spacing:1px; color:var(--text-muted); border:1px solid var(--c-border); padding:2px 6px; border-radius:3px; text-transform:uppercase; display:inline-flex; align-items:center; gap:3px; }
+.rcard-warn { font-size:10px; color:var(--c-amber); display:flex; align-items:center; gap:4px; }
+/* Stat-coverage caption under the sparring card name — clarifies that XP is
+   spread across the listed stats, so the per-stat meter reads honestly. */
+.rcard-coverage { font-size:10px; color:var(--text-secondary); margin:-2px 0 8px; letter-spacing:.2px; }
+.rcard-coverage-boost { display:inline-flex; align-items:center; gap:3px; margin-left:6px; font-family:var(--font-display); font-size:8.5px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:var(--c-amber-bright); }
+.rmeters { display:flex; flex-direction:column; gap:5px; font-size:10.5px; }
+.rmeter { display:flex; align-items:center; gap:8px; }
+.rmeter i { font-style:normal; width:96px; color:var(--text-muted); flex-shrink:0; font-size:9.5px; text-transform:uppercase; letter-spacing:.6px; font-family:var(--font-display); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rtrack { flex:1; height:4px; border-radius:3px; background:#000; overflow:hidden; position:relative; }
+.rfill { position:absolute; inset:0; border-radius:3px; }
+.rmeter b { width:36px; text-align:right; font-weight:600; font-size:10.5px; flex-shrink:0; }
+.f-xp { background:linear-gradient(90deg, var(--c-blue), #7fb0ff); }
+.f-inj { background:linear-gradient(90deg, var(--c-amber), #e8a44a); }
+.f-drop { background:linear-gradient(90deg, #8a6a10, var(--c-amber-bright)); }
+.rc-inj { color:#e8a44a; }
+.rc-drop { color:var(--c-amber-bright); }
+/* Full-width qualitative drop line under the meters — no bar/number (rate is hidden). */
+.rcard-drop-note { display:flex; align-items:center; gap:5px; margin-top:7px; font-size:10.5px; letter-spacing:.2px; color:var(--c-amber-bright); }
+.rcard-drop-note svg { flex-shrink:0; }
+/* Compact status footer for disabled cards (no energy / injury-locked / join) —
+   replaces the old full-width grey button; keeps the card body intact above it. */
+.rcard-status { margin-top:8px; display:flex; align-items:center; justify-content:center; gap:5px; font-size:11px; color:var(--text-muted); background:rgba(255,255,255,.02); border:1px solid var(--c-border-3); border-radius:6px; padding:8px; }
+.rcard-status svg { flex-shrink:0; }
+.rcard-live { font-size:10.5px; color:var(--text-muted); }
+.rcard-live--footer { margin-top:auto; }
+.train { all:unset; box-sizing:border-box; font-family:var(--font-display); font-weight:700; font-size:11px; letter-spacing:1px; text-transform:uppercase; background:var(--c-accent); border:none; color:#FFF; border-radius:4px; padding:7px 0; flex:1; text-align:center; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px; }
+.train:hover:not(:disabled) { background:#E8102E; }
+.train--disabled, .train:disabled { background:transparent; color:var(--text-muted); border:1px solid var(--c-border); cursor:not-allowed; }
+
+/* ── Training Floor ─────────────────────────────────────────────── */
+.floor { background:var(--c-bg-tile-2); border:1px solid var(--c-border-3); border-radius:12px; padding:14px 16px; }
+.floor-head { display:flex; align-items:center; gap:14px; margin-bottom:12px; flex-wrap:wrap; }
+.floor-title { font-family:var(--font-display); font-weight:700; font-size:12px; letter-spacing:2.5px; text-transform:uppercase; color:var(--text-muted); }
+.cat-tabs { display:inline-flex; gap:4px; margin-left:auto; flex-wrap:wrap; }
+.cat-tab { all:unset; box-sizing:border-box; font-family:var(--font-display); font-weight:700; font-size:10.5px; letter-spacing:1px; text-transform:uppercase; padding:5px 12px; border-radius:5px; border:1px solid var(--c-border); color:var(--text-secondary); background:transparent; cursor:pointer; }
+.cat-tab:hover { border-color:#555; }
+.cat-tab.on { background:rgba(200,16,46,.14); border-color:var(--c-accent); color:#FFF; }
+.floor-rows { display:flex; flex-direction:column; }
+.floor-empty { padding:14px 4px; font-size:12px; color:var(--text-muted); font-style:italic; }
+.srow { display:grid; grid-template-columns:4px minmax(150px,1.1fr) 1fr auto auto; gap:12px; align-items:center; padding:9px 10px; border-radius:7px; }
+.srow:hover { background:rgba(255,255,255,.025); }
+.srow + .srow { border-top:1px solid var(--c-border-3); }
+.srow--locked { opacity:.55; }
+.saccent { width:4px; height:30px; border-radius:2px; align-self:center; }
+.sname { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.sname b { font-family:var(--font-display); font-size:14px; letter-spacing:.4px; text-transform:uppercase; font-weight:800; color:#F0F0F0; display:flex; align-items:center; flex-wrap:wrap; gap:2px; }
+.sname > span { display:flex; gap:4px; flex-wrap:wrap; }
+.sdesc { font-size:11.5px; color:var(--text-muted); line-height:1.45; min-width:0; }
+.scost { font-family:var(--font-display); font-weight:700; font-size:11.5px; color:var(--c-blue); white-space:nowrap; display:inline-flex; align-items:center; gap:3px; }
+.sctl { display:flex; align-items:center; gap:6px; justify-self:end; }
+.train-sm { all:unset; box-sizing:border-box; font-family:var(--font-display); font-weight:700; font-size:10.5px; letter-spacing:1px; text-transform:uppercase; background:var(--c-accent); border:none; color:#FFF; border-radius:4px; padding:6px 14px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+.train-sm:hover:not(:disabled) { background:#E8102E; }
+.train-sm--inactive, .train-sm:disabled { background:transparent; color:var(--text-muted); border:1px solid var(--c-border); cursor:not-allowed; }
+.boost-pill { display:inline-flex; align-items:center; gap:4px; font-family:var(--font-display); font-size:9px; font-weight:800; letter-spacing:.5px; background:rgba(212,168,32,.12); color:var(--c-amber-bright); border:1px solid rgba(212,168,32,.25); border-radius:2px; padding:2px 5px; }
+
+/* ── Sidebar: Gym Standing ladder / Specialty pitch ──────────────────
+   Scoped .gym-panel classes — must NOT redefine the global app-wide .panel
+   (used by FighterProfile, the Inventory sidebar, etc.), which a bare `.panel`
+   rule here would clobber. */
+.gym-panel { background:var(--c-bg-tile-2); border:1px solid var(--c-border-3); border-radius:12px; padding:14px 16px; }
+.gym-panel-title { font-family:var(--font-display); font-weight:700; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); margin-bottom:12px; }
+.ladder { display:flex; flex-direction:column; }
+.lstep { display:grid; grid-template-columns:24px 1fr; gap:10px; position:relative; padding-bottom:16px; }
+.lstep:last-child { padding-bottom:0; }
+.lstep::before { content:""; position:absolute; left:11px; top:24px; bottom:0; width:2px; background:var(--c-border-3); }
+.lstep:last-child::before { display:none; }
+.ldot { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:11px; border:1px solid var(--c-border); background:var(--c-bg-tile-2); color:var(--text-muted); z-index:1; }
+.ldot.done { background:rgba(34,197,94,.15); border-color:#22C55E; color:#22C55E; }
+.ldot.cur { background:rgba(200,16,46,.16); border-color:var(--c-accent); color:#FFF; }
+.lname { font-family:var(--font-display); font-weight:700; font-size:12.5px; letter-spacing:.5px; text-transform:uppercase; color:#F0F0F0; }
+.lunlock { font-size:10.5px; color:var(--text-muted); margin-top:2px; }
+.lreq { display:flex; flex-direction:column; gap:5px; margin-top:7px; }
+.lreq-row { display:flex; align-items:center; gap:8px; font-size:10.5px; color:var(--text-secondary); }
+.lreq-row .rtrack { height:4px; }
+.lreq-row.is-done { color:#22C55E; }
+.rankup-btn { all:unset; box-sizing:border-box; margin-top:10px; width:100%; text-align:center; font-family:var(--font-display); font-weight:700; font-size:11px; letter-spacing:1px; text-transform:uppercase; background:var(--c-amber-bright); color:#141414; border:none; border-radius:5px; padding:8px 0; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+.rankup-btn:hover { background:#e6bb2c; }
+.lmaxed { display:flex; align-items:flex-start; gap:8px; margin-top:8px; color:var(--c-amber-bright); }
+.lmaxed-title { font-family:var(--font-display); font-weight:700; font-size:12px; }
+.lmaxed-perk { font-size:11px; color:var(--text-secondary); }
+.lmaxed-perk strong { color:var(--c-text); font-weight:700; }
+.side-note { font-size:10.5px; color:var(--text-muted); margin-top:8px; line-height:1.5; }
+.elsewhere { display:flex; flex-direction:column; gap:7px; }
+.else-row { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:11.5px; color:var(--text-secondary); }
+.else-row b { font-family:var(--font-display); font-size:12px; letter-spacing:.4px; }
+.else-row span { color:var(--text-muted); font-size:10.5px; white-space:nowrap; }
+.sub-line { font-size:10.5px; color:var(--text-muted); margin:-3px 0 2px; }
+
+/* ── Sticky condensed energy bar (appears once the header scrolls away) ── */
+/* position:sticky (not fixed) so it respects the app's own scroll container
+   (matches the existing .rank-table-header sticky-header pattern) rather than
+   pinning to the browser viewport, which would overlap the app chrome. It's
+   mounted in the DOM immediately after the header (see GymTraining.jsx) and
+   only rendered once the header has scrolled out of view (IntersectionObserver
+   in StickyGymBar.jsx), so it snaps to top:0 the instant it mounts. */
+.sticky-gym-bar { position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:8px; background:rgba(10,10,10,.92); backdrop-filter:blur(6px); border-bottom:1px solid var(--c-border-3); padding:8px 24px; }
+.sticky-gym-bar b { font-family:var(--font-display); font-size:13px; letter-spacing:.4px; text-transform:uppercase; color:#F0F0F0; }
+.sticky-gym-bar-pill { margin-left:auto; display:inline-flex; align-items:center; gap:4px; font-family:var(--font-display); font-weight:700; font-size:12px; background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.3); color:#9cc0ff; border-radius:20px; padding:4px 11px; }
+
+@media (max-width:980px) {
+  .gym-body-grid { grid-template-columns:1fr; padding:16px; }
+  .ring-cards { grid-template-columns:1fr; }
+}
+@media (max-width:640px) {
+  .gym-header-right { min-width:0; width:100%; }
+  .srow { grid-template-columns:1fr; row-gap:6px; }
+  .saccent { display:none; }
+  .sctl { justify-self:stretch; }
+  .sctl .train-sm { width:100%; justify-content:center; min-height:40px; }
+  .rcard-ctl, .rmeters { min-width:0; }
+}
 
 /* ============================================================
    TRAINING HUB (legacy — kept for session card styles)
@@ -11523,23 +11618,15 @@ code {
   /* Banner taller on single-column cards; hero overlay simpler on mobile. */
   .gym-card-banner { height: 120px; }
   .gym-header-overlay { background: linear-gradient(to right, rgba(10,10,10,.92), rgba(10,10,10,.7)); }
-  /* Training header wraps; energy pill + join button keep their place. */
+  /* Training header wraps; energy module + join button keep their place. */
   .gym-header-row2 { gap: 10px; }
+  .gym-header-right { width: 100%; min-width: 0; }
   .gym-training .gym-join-btn { width: 100%; min-height: 44px; text-align: center; }
   .gym-training .gym-join-wrap { width: 100%; align-items: stretch; }
   .gym-training .gym-join-error { text-align: center; max-width: none; }
-  /* Rank stepper is a strip — scroll-x only, never widens main content. */
-  .gym-training .rank-strip { flex-wrap: wrap; }
-  .gym-training .rank-strip-steps {
-    flex: 1 1 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    min-width: 0;
-  }
-  .gym-training .rank-strip-steps::-webkit-scrollbar { display: none; }
-  .gym-training .rank-step { flex: 0 0 auto; }
-  /* Sessions: keep 2 columns (fine at 2), train buttons full width. */
-  .gym-training .session-grid { grid-template-columns: 1fr 1fr; }
+  /* Sparring Ring cards stack; Training Floor rows go single-column (see
+     the shared 640px .srow rule) with full-width Train buttons. */
+  .gym-training .ring-cards { grid-template-columns: 1fr; }
   .gym-training .session-card-btn { width: 100%; min-height: 36px; justify-content: center; }
   /* Batch control: ≥44px touch targets, no horizontal scroll. */
   .gym-training .session-train-btn { min-height: 44px; }
@@ -11549,7 +11636,7 @@ code {
   /* Presets must wrap — at narrow card widths the 1/5/10/Max row would
      otherwise overflow the card and force a sideways scroll to reach Max. */
   .gym-training .session-presets { flex-wrap: wrap; }
-  .gym-training .rank-up-btn { width: 100%; min-height: 44px; justify-content: center; }
+  .gym-training .rankup-btn { width: 100%; min-height: 44px; justify-content: center; }
 
   /* ── 17. GENERIC MODALS / OVERLAYS — spot-check guard ───── */
   /* All audited shells already use width:100% (capped to a padded
@@ -11750,17 +11837,13 @@ code {
 .media-arch-time { font-size:10px; color:var(--text-muted); }
 .media-arch-more { display:flex; justify-content:center; padding-top:6px; }
 
-/* ── Portrait phones: training sessions as a single-column list ──────
-   At 2 columns the cards shrink to ~165px-wide tiles that read as big
-   squares, and the batch preset row (1/5/10/Max) overflows the card —
-   forcing a sideways scroll to reach "Max". One full-width column per
-   card gives the controls room and reads as a compact list, not tiles. */
+/* ── Portrait phones: gym body single column, floor rows as a compact list ──
+   The batch preset row (1/5/10/Max) needs room, so rows/cards go full-width
+   at narrow widths instead of shrinking into tiles. */
 @media (max-width: 560px) {
-  .gym-training .sessions-area { padding: 16px; }
-  .gym-training .session-grid { grid-template-columns: 1fr; gap: 10px; }
-  .gym-training .session-card-body { padding: 14px; }
-  .gym-training .session-card-name { font-size: 16px; }
-  .gym-training .session-card-desc { font-size: 12px; line-height: 1.5; margin-bottom: 10px; }
+  .gym-body-grid { padding: 12px; gap: 12px; }
+  .rcard-name { font-size: 16px; }
+  .sdesc { font-size: 12px; line-height: 1.5; }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -12912,6 +12995,24 @@ code {
 .career-page .cv.acc { color: var(--acc); }
 .career-page .cv.grn { color: #4ADE80; }
 .career-page .cv.gold { color: var(--gold); }
+
+/* Special Moves loadout strip (read-only mirror of the equipped moves) */
+.career-page .loadout-lbl { gap: 8px; }
+.career-page .loadout-manage { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--c-amber-bright); }
+.career-page .loadout-manage:hover { text-decoration: underline; }
+.career-page .loadout-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.career-page .loadout-slot { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--bor); background: #0D0D0D; min-width: 0; }
+.career-page .loadout-slot--filled { cursor: pointer; border-color: color-mix(in srgb, var(--rarity-color) 45%, var(--bor)); }
+.career-page .loadout-slot--filled:hover { border-color: var(--rarity-color); }
+.career-page .loadout-slot--empty { cursor: pointer; border-style: dashed; }
+.career-page .loadout-slot--empty:hover { border-color: var(--tm); }
+.career-page .loadout-slot--locked { opacity: .55; }
+.career-page .loadout-slot .move-art { width: 34px; height: 34px; flex-shrink: 0; }
+.career-page .loadout-slot-icon { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--tm); border: 1px solid var(--bor); border-radius: 6px; }
+.career-page .loadout-slot-info { min-width: 0; }
+.career-page .loadout-slot-name { font-family: var(--font-display); font-weight: 800; font-size: 12.5px; letter-spacing: .3px; text-transform: uppercase; color: #F0F0F0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.career-page .loadout-slot-meta { font-size: 10px; color: var(--tm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 640px) { .career-page .loadout-slots { grid-template-columns: 1fr; } }
 
 /* Belts */
 .career-page .belts-row { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
@@ -15248,7 +15349,7 @@ code {
 
 /* Interactive card hover lift on the main clickable cards. */
 .gym-card,
-.session-card,
+.rcard,
 .offer-card,
 .library-tab .article-card,
 .media-tab .media-card,
@@ -15256,7 +15357,7 @@ code {
   transition: border-color 0.15s, transform 0.18s ease, box-shadow 0.18s ease;
 }
 .gym-card:hover,
-.session-card:not(.locked-card):hover,
+.rcard:not(.rcard--dimmed):hover,
 .offer-card:hover,
 .library-tab .article-card:hover,
 .media-tab .media-card:not(.locked-card):hover,
@@ -15288,5 +15389,645 @@ code {
   .gym-card:hover, .session-card:hover, .offer-card:hover, .library-tab .article-card:hover,
   .media-tab .media-card:hover, .contracts-tab .contract-card.available-card:hover { transform: none; box-shadow: none; }
   .btn-primary:active, .sign-btn:active, .fight-hub-btn:active { transform: none; }
+}
+
+/* ============================================================
+   SPECIAL MOVES — collection, equip slots, detail card, drop reveal.
+   Rarity is always a CSS frame+glow (--rarity-color custom property set by
+   MoveArt), never baked into art. Reuses the app's existing dark palette
+   (App.css :root tokens) — no new colors introduced.
+   ============================================================ */
+
+.page-layout:has(.moves-tab) { padding: 0; gap: 0; }
+
+.moves-tab { display: flex; flex-direction: column; height: 100%; }
+.moves-tab .moves-loading { padding: 40px 24px; text-align: center; color: var(--text-muted); font-size: 13px; }
+.moves-tab .moves-error {
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.moves-tab .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  background: var(--bg-nav);
+  border-bottom: 1px solid var(--c-border);
+  padding: 16px 24px;
+}
+.moves-tab .page-eyebrow {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  margin-bottom: 4px;
+}
+.moves-tab .page-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 26px;
+  text-transform: uppercase;
+  color: #F0F0F0;
+  margin: 0;
+}
+.moves-tab .slots-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--c-bg-tile);
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  padding: 8px 14px;
+  text-align: right;
+}
+.moves-tab .slots-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
+.moves-tab .slots-val { font-family: var(--font-display); font-weight: 800; font-size: 18px; color: var(--c-amber-bright); }
+.moves-tab .slots-hint { font-size: 10px; color: var(--text-muted); }
+
+.moves-tab .moves-camp-lock-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(200, 16, 46, .08);
+  border-bottom: 1px solid rgba(200, 16, 46, .25);
+  color: #fca5a5;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 8px 24px;
+}
+
+.moves-tab .moves-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.moves-tab .col-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.moves-tab .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  background: var(--bg-surface);
+  border: 1px dashed var(--c-border);
+  border-radius: 8px;
+  padding: 24px 18px;
+}
+.moves-tab .empty-state-text { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+.moves-tab .moves-slots-block { display: flex; flex-direction: column; gap: 6px; }
+.moves-tab .moves-passive-cap-hint { font-size: 10px; color: var(--text-muted); }
+
+/* ── Equipped slots — up to 3 compact horizontal tiles ── */
+.equipped-slots { display: flex; gap: 10px; flex-wrap: wrap; }
+.equip-tile {
+  flex: 1 1 240px;
+  min-width: 210px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 9px 10px;
+  position: relative;
+}
+.equip-tile--locked, .equip-tile--empty {
+  justify-content: center;
+  text-align: center;
+  flex-direction: column;
+  gap: 4px;
+  border-style: dashed;
+  color: var(--text-muted);
+}
+.equip-tile--locked { opacity: .6; }
+.equip-tile-lock-icon { color: var(--text-muted); }
+.equip-tile-lock-text, .equip-tile-empty-text { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; font-weight: 700; color: var(--text-muted); }
+.equip-tile--filled { cursor: pointer; transition: border-color .15s, transform .15s; }
+.equip-tile--filled:hover { border-color: var(--rarity-color, var(--c-border)); transform: translateY(-1px); }
+.equip-tile-body { flex: 1; min-width: 0; }
+.equip-tile-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.equip-tile-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.equip-tile-unequip {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border);
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.equip-tile-unequip:hover:not(:disabled) { color: #fff; border-color: var(--c-accent); background: rgba(200, 16, 46, .15); }
+.equip-tile-unequip:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Collection: header + grid/list toggle ── */
+.moves-collection-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.moves-view-toggle { display: flex; gap: 4px; background: var(--c-bg-tile); border: 1px solid var(--c-border); border-radius: 6px; padding: 2px; }
+.moves-view-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.moves-view-btn.active { background: var(--bg-hover); color: #fff; }
+
+/* ── Grid view ── */
+.move-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 12px; }
+.move-grid-item { display: flex; flex-direction: column; align-items: center; gap: 6px; background: transparent; border: none; cursor: pointer; padding: 4px; }
+.move-grid-item-name {
+  font-size: 9.5px;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.25;
+  max-width: 76px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.move-grid-item.is-equipped .move-art { box-shadow: 0 0 0 2px var(--c-bg-root), 0 0 0 3px var(--rarity-color); }
+.move-grid-item:hover .move-art { filter: brightness(1.12); }
+
+/* ── List view ── */
+.move-list { display: flex; flex-direction: column; gap: 6px; }
+.move-list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.move-list-row:hover { border-color: var(--text-muted); }
+.move-list-info { flex: 1; min-width: 0; }
+.move-list-name { font-family: var(--font-display); font-weight: 700; font-size: 12px; color: #fff; text-transform: uppercase; }
+.move-list-desc { font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.move-list-rarity {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 3px;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+.move-list-equipped-badge { display: flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; color: var(--green-bright); flex-shrink: 0; }
+.move-list-equip-btn {
+  flex-shrink: 0;
+  background: var(--c-accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.move-list-equip-btn:hover:not(:disabled) { background: var(--c-accent-hover); }
+.move-list-equip-btn:disabled { background: var(--bg-hover); color: var(--text-muted); cursor: not-allowed; }
+
+/* ── Rarity frame colors — shared across list rows, detail card, drop reveal ── */
+.move-list-rarity[data-rarity="COMMON"], .move-detail-rarity[data-rarity="COMMON"], .drop-reveal-rarity-chip[data-rarity="COMMON"] { color: #AAAAAA; border-color: #888888; }
+.move-list-rarity[data-rarity="UNCOMMON"], .move-detail-rarity[data-rarity="UNCOMMON"], .drop-reveal-rarity-chip[data-rarity="UNCOMMON"] { color: #4ade80; border-color: #22c55e; }
+.move-list-rarity[data-rarity="RARE"], .move-detail-rarity[data-rarity="RARE"], .drop-reveal-rarity-chip[data-rarity="RARE"] { color: #60a5fa; border-color: #3b82f6; }
+.move-list-rarity[data-rarity="LEGENDARY"], .move-detail-rarity[data-rarity="LEGENDARY"], .drop-reveal-rarity-chip[data-rarity="LEGENDARY"] { color: #D4A820; border-color: #D4A820; }
+
+/* ── MoveArt — the shared rarity-framed tile (thumb / sm / tall) ── */
+.move-art {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--c-bg-tile) 0%, var(--c-bg-tile-2) 100%);
+  border: 2px solid var(--rarity-color);
+  box-shadow: 0 0 10px -2px var(--rarity-color), inset 0 0 12px -6px var(--rarity-color);
+  flex-shrink: 0;
+}
+.move-art--thumb { width: 40px; height: 40px; }
+.move-art--sm { width: 100%; aspect-ratio: 1 / 1; }
+.move-art--tall { width: 176px; max-width: 60vw; aspect-ratio: 2 / 3; border-radius: 10px; border-width: 3px; margin: 0 auto; }
+.move-art-img { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.move-art-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--rarity-color); opacity: .55; }
+.move-rarity-dot {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rarity-color);
+  box-shadow: 0 0 4px var(--rarity-color);
+  border: 1px solid rgba(0, 0, 0, .4);
+}
+
+/* ── Move detail modal — tall painted-card treatment (sponsor-card style) ── */
+.move-detail-root { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.move-detail-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .72); backdrop-filter: blur(2px); }
+.move-detail-shell {
+  position: relative;
+  width: min(380px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  padding: 22px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, .8);
+  animation: moveDetailIn .18s ease;
+}
+@keyframes moveDetailIn { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+.move-detail-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border);
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.move-detail-close:hover { color: #fff; border-color: var(--text-muted); }
+.move-detail-cardwrap { margin-top: 6px; }
+.move-detail-name { font-family: var(--font-display); font-weight: 800; font-size: 20px; text-transform: uppercase; letter-spacing: .4px; color: #fff; text-align: center; }
+.move-detail-meta-row { display: flex; align-items: center; gap: 8px; }
+.move-detail-rarity { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 2px 9px; border-radius: 3px; border: 1px solid; }
+.move-detail-effect-type { font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); border: 1px solid var(--c-border); padding: 2px 9px; border-radius: 3px; }
+.move-detail-description { font-size: 12px; color: var(--text-secondary); text-align: center; line-height: 1.5; }
+.move-detail-flavor { font-size: 11px; font-style: italic; color: var(--text-muted); text-align: center; }
+.move-detail-acquired { font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+.move-detail-actions { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.move-detail-camp-lock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  font-size: 10.5px;
+  color: #fca5a5;
+  background: rgba(200, 16, 46, .08);
+  border: 1px solid rgba(200, 16, 46, .25);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.move-detail-unequip-btn { width: 100%; }
+.move-detail-slot-picker-label { font-size: 9.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+.move-detail-slot-buttons { display: flex; flex-direction: column; gap: 6px; }
+.move-detail-slot-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--bg-hover);
+  border: 1px solid var(--c-border);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.move-detail-slot-btn:hover:not(:disabled) { border-color: var(--c-accent); }
+.move-detail-slot-btn:disabled { opacity: .45; cursor: not-allowed; }
+.move-detail-slot-btn--open { background: var(--c-accent); border-color: var(--red-dim); font-weight: 700; }
+.move-detail-slot-btn--open:hover:not(:disabled) { background: var(--c-accent-hover); }
+.move-detail-slot-locked-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-muted);
+  border: 1px dashed var(--c-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.move-detail-error { font-size: 10.5px; color: #fca5a5; text-align: center; }
+.move-detail-passive-cap-note { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 2px; }
+
+/* ── Drop reveal modal — the collectible payoff moment ── */
+.drop-reveal-root { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.drop-reveal-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .82); backdrop-filter: blur(3px); }
+.drop-reveal-shell {
+  position: relative;
+  width: min(360px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 22px 24px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--c-bg-tile) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--c-border);
+  text-align: center;
+}
+.drop-reveal-shell--new { animation: dropRevealFlip .5s cubic-bezier(.2, .9, .25, 1); box-shadow: 0 0 60px -10px rgba(212, 168, 32, .25); }
+.drop-reveal-shell--upgrade { animation: dropRevealPulse 1.1s ease-in-out; box-shadow: 0 0 70px -6px rgba(212, 168, 32, .45); }
+@keyframes dropRevealFlip {
+  0% { opacity: 0; transform: rotateY(90deg) scale(.85); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: rotateY(0) scale(1); }
+}
+@keyframes dropRevealPulse {
+  0% { opacity: 0; transform: scale(.9); }
+  35% { opacity: 1; transform: scale(1.05); }
+  55% { transform: scale(.99); }
+  100% { transform: scale(1); }
+}
+.drop-reveal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border);
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.drop-reveal-close:hover { color: #fff; border-color: var(--text-muted); }
+.drop-reveal-eyebrow { display: flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: 800; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--c-amber-bright); }
+.drop-reveal-rarity-transition { display: flex; align-items: center; gap: 8px; }
+.drop-reveal-rarity-chip { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; border-radius: 4px; border: 1px solid; }
+.drop-reveal-rarity-arrow { color: var(--text-muted); font-size: 14px; }
+.drop-reveal-rarity-chip--to { animation: dropRevealChipPop .5s ease .15s both; }
+@keyframes dropRevealChipPop {
+  0% { transform: scale(.6); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+/* ── Card stage: aura + floating flip card + sparkle field ── */
+.drop-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0;
+  isolation: isolate;
+}
+
+/* Rarity-tinted glow behind the card; wakes up + breathes once revealed. */
+.drop-aura {
+  position: absolute;
+  inset: -26% -34%;
+  z-index: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, var(--rarity-color) 0%, transparent 62%);
+  opacity: 0;
+  filter: blur(26px);
+  transition: opacity .5s ease;
+  pointer-events: none;
+}
+.drop-aura.is-live { opacity: .3; animation: dropAuraBreathe 3.4s ease-in-out infinite; }
+@keyframes dropAuraBreathe {
+  0%, 100% { opacity: .22; transform: scale(.96); }
+  50% { opacity: .38; transform: scale(1.06); }
+}
+
+/* ── Face-down card + click-to-flip reveal ── */
+.drop-flip {
+  position: relative;
+  z-index: 1;
+  width: 176px;
+  max-width: 60vw;
+  aspect-ratio: 2 / 3;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  perspective: 900px;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Gentle float + sway once the card is revealed (transform lives on .drop-flip;
+   the 3D flip transform lives on .drop-flip-inner, so they never collide). */
+.drop-flip.is-flipped { animation: dropCardFloat 4.2s ease-in-out .65s infinite; }
+@keyframes dropCardFloat {
+  0%, 100% { transform: translateY(0) rotate(-.6deg); }
+  50% { transform: translateY(-11px) rotate(.6deg); }
+}
+.drop-flip:disabled { cursor: default; }
+.drop-flip:not(.is-flipped):hover .drop-flip-inner { transform: rotateY(-8deg) scale(1.02); }
+.drop-flip-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform .65s cubic-bezier(.3, .8, .3, 1);
+}
+.drop-flip.is-flipped .drop-flip-inner { transform: rotateY(180deg); }
+.drop-flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.drop-flip-face--front { transform: rotateY(180deg); }
+.drop-flip-face--front .move-art--tall { width: 100%; height: 100%; max-width: none; }
+
+/* One-shot diagonal light sweep across the art as the flip lands. */
+.drop-flip-shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 34%, rgba(255, 255, 255, .42) 50%, transparent 66%);
+  transform: translateX(-130%);
+  opacity: 0;
+}
+.drop-flip.is-flipped .drop-flip-shine { animation: dropShine 1s cubic-bezier(.4, 0, .2, 1) .68s 1; }
+@keyframes dropShine {
+  0% { transform: translateX(-130%); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translateX(130%); opacity: 0; }
+}
+
+/* ── Themed rising sparks (embers/glints) around the revealed card ── */
+.drop-sparkles { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: visible; }
+.drop-spark {
+  position: absolute;
+  bottom: 8%;
+  width: var(--size);
+  height: var(--size);
+  background: radial-gradient(circle at center, #fff 0%, var(--c-amber-bright, #D4A820) 45%, var(--rarity-color) 80%, transparent 100%);
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  opacity: 0;
+  filter: drop-shadow(0 0 3px var(--rarity-color));
+  animation: dropSparkRise var(--dur) ease-in var(--delay) infinite;
+}
+@keyframes dropSparkRise {
+  0% { transform: translate(0, 20px) scale(.2) rotate(0deg); opacity: 0; }
+  15% { opacity: 1; }
+  70% { opacity: .9; }
+  100% { transform: translate(var(--drift), -150px) scale(.9) rotate(140deg); opacity: 0; }
+}
+
+/* Card back: flat black with a clean geometric gold hairline frame + the game
+   wordmark centered — a gritty fight-card look, not fantasy. One shared back for
+   every card, gives nothing away pre-flip. */
+.drop-cardback {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: radial-gradient(125% 90% at 50% 42%, #161618 0%, #0c0c0d 62%, #080808 100%);
+}
+/* Double hairline frame (the "ornament") — inset, restrained, gold. */
+.drop-cardback::before {
+  content: "";
+  position: absolute;
+  inset: 11px;
+  border: 1px solid rgba(198, 164, 74, .5);
+  border-radius: 5px;
+}
+.drop-cardback::after {
+  content: "";
+  position: absolute;
+  inset: 15px;
+  border: 1px solid rgba(198, 164, 74, .16);
+  border-radius: 3px;
+}
+.drop-cardback-logo {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #EDE7D8;
+}
+.drop-cardback-word { line-height: 1; }
+/* Ampersand flanked by short tapered rules — a fight-card title flourish. */
+.drop-cardback-mid { display: flex; align-items: center; gap: 8px; }
+.drop-cardback-mid i { display: block; width: 22px; height: 1px; background: linear-gradient(90deg, transparent, rgba(198, 164, 74, .75)); }
+.drop-cardback-mid i:last-child { background: linear-gradient(90deg, rgba(198, 164, 74, .75), transparent); }
+.drop-cardback-amp { color: var(--c-accent); font-size: 19px; line-height: 1; }
+
+.drop-reveal-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: .3px;
+  animation: dropHintPulse 1.6s ease-in-out infinite;
+}
+@keyframes dropHintPulse {
+  0%, 100% { opacity: .55; }
+  50% { opacity: 1; }
+}
+
+/* Post-flip info block: staged fade-up, timed to land as the flip finishes. */
+.drop-reveal-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  animation: dropInfoRise .45s ease .3s both;
+}
+@keyframes dropInfoRise {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.drop-reveal-name { font-family: var(--font-display); font-weight: 800; font-size: 22px; text-transform: uppercase; letter-spacing: .4px; color: #fff; }
+.drop-reveal-rarity-chip--solo { margin-top: -6px; }
+.drop-reveal-desc { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
+.drop-reveal-flavor { margin: 0; font-size: 12px; font-style: italic; color: var(--text-muted); }
+.drop-reveal-cta { margin-top: 8px; width: 100%; }
+
+/* ── Rarity magnitude pips (Slight / Solid / Heavy / Brutal) ── */
+.rarity-pips { display: inline-flex; align-items: center; gap: 4px; }
+.rarity-pip { width: 7px; height: 7px; border-radius: 50%; background: transparent; border: 1px solid var(--c-border); }
+.rarity-pip.is-filled { background: var(--rarity-color); border-color: var(--rarity-color); box-shadow: 0 0 6px -1px var(--rarity-color); }
+.rarity-pips-word { margin-left: 6px; font-family: var(--font-display); font-weight: 800; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--rarity-color); }
+
+/* ── Duplicate-drop toast accent (reuses .train-toast base) ── */
+.train-toast--movedupe { border-color: rgba(212, 168, 32, .4); }
+.train-toast-movedupe-icon { color: var(--c-amber-bright); }
+
+@media (prefers-reduced-motion: reduce) {
+  .move-detail-shell, .drop-reveal-shell--new, .drop-reveal-shell--upgrade, .drop-reveal-rarity-chip--to,
+  .drop-cardback, .drop-reveal-hint, .drop-reveal-info,
+  .drop-flip.is-flipped, .drop-aura.is-live, .drop-flip-shine, .drop-spark { animation: none; }
+  .drop-flip-inner { transition: none; }
+  .drop-aura.is-live { opacity: .28; }
+  .drop-spark { display: none; }
 }
 

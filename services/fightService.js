@@ -644,6 +644,11 @@ async function resolveFightAndApply(fighterId, userId) {
     // v2: pass conditional session bonuses and wildcard instead of flat campBonuses
     const sessionBonuses = fightCamp?.sessionBonuses ? [...fightCamp.sessionBonuses.map(b => ({ ...b }))] : [];
     const wildcard = fightCamp?.wildcard ?? null;
+    // Special Moves (PvE): read the FROZEN loadout snapshot taken at camp finalise — NOT a
+    // live rebuild — so a mid-camp UPGRADE drop can't change this booked fight's power.
+    // Fresh copies each resolve (the array is mutated during resolution). Empty for legacy or
+    // un-finalised camps → no move effects, consistent with sessionBonuses.
+    const moveBonuses = fightCamp?.moveBonuses ? [...fightCamp.moveBonuses.map(b => ({ ...b }))] : [];
 
     // Commentary context — drives personalised, fighter-tailored fight commentary.
     const commentaryCtx = {
@@ -668,6 +673,7 @@ async function resolveFightAndApply(fighterId, userId) {
         opponentName,
         ironWillPerk,
         sessionBonuses,
+        moveBonuses,
         wildcard,
         ctx: commentaryCtx,
     });
@@ -675,6 +681,9 @@ async function resolveFightAndApply(fighterId, userId) {
     // v2: save triggered session bonuses back to FightCamp for post-fight display
     if (fightCamp && result.sessionBonuses) {
         fightCamp.sessionBonuses = result.sessionBonuses;
+        // Special Moves: persist the triggered move-bonus snapshot too (which moves fired),
+        // mirroring sessionBonuses. Overwriting the frozen snapshot is safe post-resolve.
+        if (result.moveBonuses) fightCamp.moveBonuses = result.moveBonuses;
         await fightCamp.save();
     }
 

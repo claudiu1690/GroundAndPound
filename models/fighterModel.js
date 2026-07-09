@@ -443,6 +443,22 @@ const fighterSchema = new mongoose.Schema({
     // Pre-season / persistent default defense gameplan. Seeds a new PVPRecord's
     // defenseGameplan at record creation. Legacy fighters default to "balanced".
     pvpDefenseGameplan: { type: String, enum: GAMEPLAN_KEYS_WITH_LEGACY, default: "balanced" },
+    /**
+     * Special Moves v1 — collectible, gym-dropped techniques (consts/specialMovesCatalog.js).
+     * A move is one concept spanning rarities; the fighter owns each at its best-pulled
+     * rarity. INVARIANT: at most one specialMovesOwned entry per moveId (best rarity kept) —
+     * specialMovesService.grantOrUpgrade is the SOLE writer. Legacy fighters default to [].
+     */
+    specialMovesOwned: [{
+        moveId:     { type: String, required: true },
+        rarity:     { type: String, required: true },
+        acquiredAt: { type: Date, default: Date.now },
+        _id: false,
+    }],
+    // Ordered, slot-indexed list (length 0–3) of equipped moveIds. Each must be present in
+    // specialMovesOwned; the effective value is looked up from the owned rarity at fight
+    // time, never stored here.
+    specialMovesEquipped: { type: [String], default: [] },
 }, { timestamps: true });
 
 fighterSchema.index({ promotionTier: 1, weightClass: 1, overallRating: -1 });

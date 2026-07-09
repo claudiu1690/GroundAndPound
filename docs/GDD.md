@@ -24,7 +24,7 @@ promotion tiers — from unknown amateur to GCS champion.
 Single-page web client. Top to bottom: a collapsible **Message Bar**, the **App Body**
 (left sidebar + content panel), and a fixed **App Footer**.
 
-- **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — cash, fame, rank, class, gym, backstory — badges, stat meters, active injuries) and the nav menu: **Home, Training, Fight, Career, Rankings, Contracts, Hospital, Shop, Events, Media, Proving Ground**.
+- **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — cash, fame, rank, class, gym, backstory — badges, stat meters, active injuries), an **Inventory** panel (shown only when the fighter owns shop items), and the nav menu. Nav order groups by intent — *build → compete → manage*: **Home, Training, Special Moves, Fight, Career, Proving Ground, Rankings, Contracts, Hospital, Shop, Events, Media, Library**. Special Moves sits with Training (both "build your fighter") rather than down among the utility tabs.
 - **Footer:** game wordmark, contextual status badges (injury count → Hospital, camp → Fight, Fame → Fame drawer), Sign Out.
 - **Overlays:** Training toast stack, Tier-Up / Belt-Won overlays, Fight-block popup (energy / injury), Fame drawer, Octagon Gazette, Onboarding Tutorial, Fighter Report, Camp Summary, Badge-unlock celebration.
 
@@ -544,7 +544,7 @@ No tier gating on any service.
 ### 20.1 Career Page
 The **Career** tab has two sub-tabs:
 - **Feed** — reverse-chronological timeline (see §20.4).
-- **Profile** — the player's full profile: the customized banner (same cosmetic banner as the sidebar; no avatar), pinned badges, a "Customize Banner" entry, three cards (Stats / Career / **Championship Belts**), the full **Badge grid**, plus Media Career and **PvP History** (your Proving Ground record + recent fights — see §22.13).
+- **Profile** — the player's full profile: the customized banner (same cosmetic banner as the sidebar; no avatar), pinned badges, a "Customize Banner" entry, three cards (Stats / Career / **Championship Belts**), a read-only **Special Moves loadout strip** (mirrors the fighter's equipped moves next to the belts, deep-links to the Special Moves tab; owner-only, since the moves endpoint is owner-guarded — see §26), the full **Badge grid**, plus Media Career and **PvP History** (your Proving Ground record + recent fights — see §22.13).
 
 The dashboard player-identity card is clickable and deep-links to the Profile sub-tab.
 
@@ -819,6 +819,105 @@ version constant and no backend endpoint — the version ships inside the bundle
 - **Release discipline** — bump the version (new entry, newest first) for every
   player-facing deploy; never edit a shipped entry's content without a new
   version, since the unseen badge keys off version equality.
+
+---
+
+## 26. Special Moves
+
+Collectible, named techniques (*Granite Jaw*, *Sprawl Instinct*, *The Finisher*) that
+give a **small, permanent in-fight edge** — a fighter-identity layer on top of stats.
+Distinct from Fight Camp (§9): camp is *per-fight, opponent-reactive prep*; Special
+Moves are *permanent, always-equipped*. **PvE-only** — they do **not** apply in the
+Proving Ground (§22), and the PvP resolve path never builds a `moveBonuses` array.
+
+### 26.1 Slots & the passive cap
+**3 equip slots**, unlocked by promotion tier (derived from `promotionTier`, not stored):
+
+| Slot | Unlocks at |
+|---|---|
+| Slot 1 | Amateur |
+| Slot 2 | Regional Pro |
+| Slot 3 | National |
+
+GCS Contender/GCS add no 4th slot (ceiling 3, mirrors camp slots). Equip/unequip is free
+and unrestricted **except while a fight is booked** (`acceptedFightId` set → locked, the
+loadout freezes at camp finalize — see §26.5).
+
+**Passive cap (balance rule): at most 2 always-on PASSIVE moves may be equipped at once**
+— slot 3 must hold a Proc or Signature. Passives fire every round unconditionally, so three
+stacked Legendary passives compound past the balance guardrail on lopsided-stat style
+mirrors (Capoeira/BJJ). Capping at 2 forces loadout variety and keeps the worst case in band.
+
+### 26.2 Rarity-scaling model
+A move is **one concept** spanning up to four rarities (Common → Uncommon → Rare →
+Legendary). A fighter owns each move at their **best-pulled rarity**; the fired value is a
+rarity-keyed table lookup. Effect types: **Passive** (always-on), **Proc** (fires on an
+existing fight trigger), **Signature** (Rare+ only, one bounded one-shot per fight).
+
+### 26.3 Acquisition, upgrades & duplicates
+- **Drop source:** sparring-family training sessions only, flat **4%** per session.
+- **The 4% is internal-only** (decision 2026-07-08, supersedes the spec's "visible in the
+  Library" stance): player-facing surfaces (gym UI, Library) say *"a chance — more rounds,
+  better odds"*, never the number. The rarity split IF a drop happens **is** shown (stacked
+  bar per gym tier).
+- **Gym tier weights RARITY, not drop chance** — the 4% is constant; a better gym shifts the
+  rarity distribution upward (Community can't roll Legendary; top-tier gyms roll it ~15%).
+- **Upgrade vs duplicate:** a pull of a *strictly higher* rarity than owned **upgrades** the
+  move in place (keeps `acquiredAt`); an equal-or-lower pull is a **duplicate → cash**
+  (`fighter.iron`): Common 100 / Uncommon 250 / Rare 600 / Legendary 1,500.
+- **No leveling, no pity timer, no PvP** (all deliberately cut from v1).
+
+### 26.4 The roster (v1 — 12 moves) & balance
+Values are per-rarity (C/U/R/L). Passive/Proc reuse existing engine `bonusType` branches;
+Signatures use new per-fight, per-move one-shot state. **Numbers below are the post-QA
+balance pass** — a Monte-Carlo sweep against the real engine showed the pre-trim values
+breached the guardrail (worst single/stacked loadouts 63–74%), so passives were trimmed so
+each is ~+3.5 pts single-move, and the passive cap (§26.1) was added. Net result: a full
+Legendary loadout is a **smaller swing than a matched Fight Camp**, consistent with the
+"flavorful edge, not a replacement power system" principle (§9, §22.4).
+
+A 5th passive concept, **Complete Package** (`ALL_STATS`), was **cut** from v1: the sweep
+proved `ALL_STATS` is untunable in this engine — it responds non-monotonically across styles
+(≈+7 pts on Boxer but ≈0 on BJJ at the same value, then spiking with a tiny bump), so no
+value gives consistent, fair behavior. The roster is intentionally **4 Passive / 5 Proc /
+3 Signature**; `ALL_STATS` remains a valid engine branch but is used by no move.
+
+| Move | Type | bonusType | Trigger | C / U / R / L |
+|---|---|---|---|---|
+| Granite Jaw | Passive | OPPONENT_DAMAGE_REDUCTION | always | .0125/.022/.0375/.05 → **trimmed** .008/.014/.023/.03 |
+| Heavy Hands | Passive | STRIKE_DAMAGE | always | **.009/.016/.026/.035** |
+| Body Snatcher | Passive | BODY_DAMAGE | always | **.016/.028/.05/.065** |
+| Veteran IQ | Passive | OPPONENT_DAMAGE_REDUCTION | always | **.007/.012/.02/.028** (collapse-stacks w/ Granite Jaw) |
+| Sprawl Instinct | Proc | SPRAWL_SUCCESS | opp. shoots TD | .05/.09/.14/.18 |
+| Never Tap | Proc | ESCAPE_PROBABILITY | opp. sub attempt | .04/.075/.12/.16 |
+| Clinch Killer | Proc | CLINCH_DAMAGE | striking exchange | **.035/.06/.10/.14** |
+| Second Wind | Proc | STAMINA_DRAIN | stamina < 70% | .04/.07/.12/.16 |
+| Mount Reaper | Proc | GNP_DAMAGE | top position | .04/.07/.13/.17 |
+| The Finisher | Signature | SIG_FINISHER_STRIKE | opp. HP < 25% | R .08 / L .15 |
+| Iron Recovery | Signature | SIG_IRON_RECOVERY | own HP < 25% | R .10 / L .18 |
+| Killer Instinct | Signature | SIG_KILLER_INSTINCT | opp. HP < 25% | R .015 / L .035 |
+
+**Collapse rule:** two equipped moves sharing a `bonusType` (e.g. Granite Jaw + Veteran IQ)
+**sum** into one effect at the shared engine branch; move values and camp values also **add**.
+Signatures never merge — each fires independently, keyed by `moveId`.
+
+**Presentation — Ratings (display-only rebase).** Raw fractions read as "almost nothing"
+(0.8%), so the UI presents every move value as an integer **Rating = fraction × 1000**
+("+30 Defense Rating" instead of "3% less damage"), with a per-`bonusType` flavored unit
+(Defense / Power / Sprawl / Cardio / … Rating), magnitude **pips + scale words** per rarity
+(Slight / Solid / Heavy / Brutal), and the exact percentage kept as a parenthetical in the
+description. The engine consumes raw fractions only; the ×1000 multiplier is a permanent
+presentation contract (changing it would silently inflate every card). Implemented in
+`describeMove` (`services/specialMovesService.js`) + `RarityPips` (frontend).
+
+### 26.5 Fight integration & loadout freeze
+`buildMoveBonuses` builds a `moveBonuses` array (shaped like camp's `sessionBonuses`),
+consumed by extending the existing hand-written branches in `resolveRound()`. To stop a
+mid-camp **upgrade** drop from silently changing an already-booked fight, the loadout is
+**snapshotted at camp finalize** (mirroring how camp bonuses freeze) and the fight resolves
+off that frozen snapshot, not live owned-rarity. Data lives on the fighter
+(`specialMovesOwned` / `specialMovesEquipped`); the catalog is code
+(`consts/specialMovesCatalog.js`), not a DB collection.
 
 ---
 

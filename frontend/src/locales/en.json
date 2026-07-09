@@ -497,6 +497,14 @@
       "wonTitle": "{label} champion",
       "lockedTitle": "{label} — not won"
     },
+    "loadout": {
+      "cardLabel": "Special Moves — Loadout",
+      "manage": "Manage",
+      "loading": "Loading loadout…",
+      "empty": "Empty slot",
+      "locked": "Locked",
+      "unlocksAt": "Unlocks at {tier}"
+    },
     "badges": {
       "title": "Badges",
       "earnedLocked": "{earned} earned · {locked} locked",
@@ -858,7 +866,12 @@
       "allGyms": "All Gyms",
       "energy": "Energy",
       "joinBtn": "Join — ${cost} / week",
-      "membershipLeft": "{days}d left"
+      "membershipLeft": "{days}d left",
+      "energyOfMax": "/ {max} · +1/min",
+      "energyNoteBoth": "Enough for {sparringN}× Sparring or {floorN}× {floorLabel}",
+      "energyNoteSparringOnly": "Enough for {sparringN}× Sparring",
+      "energyNoteFloorOnly": "Enough for {floorN}× {floorLabel}",
+      "energyNoteNone": "Not enough energy to train"
     },
     "rankStrip": {
       "label": "Gym Rank"
@@ -878,8 +891,6 @@
     },
     "sessions": {
       "label": "Training Sessions",
-      "availableAtOtherGyms": "Available at Other Gyms",
-      "availableAt": "Available at {gymName}",
       "joinToTrain": "Join to Train",
       "injuryLocked": "Injury locked",
       "staminaMaxed": "Max Stamina maxed (120)",
@@ -896,6 +907,55 @@
     },
     "booster": {
       "sessionsLeft": "{n} session{plural} left"
+    },
+    "sparringRing": {
+      "title": "The Sparring Ring",
+      "subtitleFull": "Highest XP · injury risk · the only place Special Moves drop",
+      "subtitleLimited": "One sparring style here — specialty gyms teach two more",
+      "xpPerStatLabel": "XP / stat",
+      "trainsAll": "Trains all {n} stats a little",
+      "trainsStats": "Trains {stats}",
+      "injuryLabel": "Injury",
+      "dropNote": "Chance to drop a Special Move",
+      "otherGym": "Other gym",
+      "taughtAt": "Taught at {gymName}",
+      "taughtAtRank2": "Taught at {gymName} · Rank 2",
+      "specialtyGymsOnly": "Specialty gyms only",
+      "unlocksHereRank2": "Unlocks at Rank 2"
+    },
+    "loot": {
+      "line1": "Every sparring round has a chance to uncover a Special Move — more rounds, better odds.",
+      "line1Free": "Every sparring round has a chance to uncover a Special Move — the chance is the same at every gym, even here.",
+      "rarityLabel": "If one drops, its rarity at this gym",
+      "legendItem": "{label} {pct}%",
+      "legendaryNeverDrops": "Legendary — never drops here · specialty gyms only"
+    },
+    "floor": {
+      "title": "Training Floor",
+      "tabAll": "All",
+      "tabStriking": "Striking",
+      "tabGrappling": "Grappling",
+      "tabMindBody": "Mind & Body",
+      "boosterBadge": "+{pct}% XP · {name}",
+      "emptyCategory": "No sessions in this category at this gym."
+    },
+    "standing": {
+      "elsewhereTitle": "Trained Elsewhere",
+      "elsewhereNote": "Sessions this gym doesn't teach, and where to find them.",
+      "sessionsProgress": "{done}/{req} sessions",
+      "winsProgress": "{done}/{req} {label}",
+      "winsOf": "{type} wins",
+      "winsGeneric": "wins"
+    },
+    "specialtyPitch": {
+      "title": "Why Go Specialty?",
+      "perWeek": "${cost}/wk",
+      "xpMult": "{mult}× focus XP",
+      "oddsPair": "{rareLabel} {rarePct}% · {legLabel} {legPct}%",
+      "footerNote": "Better gyms train faster and roll rarer Special Moves."
+    },
+    "sticky": {
+      "energyLabel": "Energy"
     },
     "quests": {
       "title": "Gym Quests",
@@ -926,7 +986,8 @@
       "greatSession": "Great session!",
       "sluggish": "Sluggish",
       "greatCount": "{n} great session{plural}",
-      "dismiss": "Dismiss"
+      "dismiss": "Dismiss",
+      "moveDuplicate": "Duplicate {name} — sold to the gym for ${cash}"
     }
   },
   "fights": {
@@ -1321,6 +1382,7 @@
       "provingGround": "Proving Ground",
       "rankings": "Rankings",
       "contracts": "Contracts",
+      "moves": "Special Moves",
       "hospital": "Hospital",
       "shop": "Shop",
       "events": "Events",
@@ -2067,6 +2129,57 @@
       "acceptError": "Could not accept contract",
       "dropped": "Contract dropped.",
       "dropError": "Could not drop contract"
+    }
+  },
+  "moves": {
+    "loading": "Loading special moves…",
+    "retry": "Retry",
+    "campLockedHint": "Locked during fight camp",
+    "header": {
+      "eyebrow": "Fighter Identity",
+      "title": "Special Moves",
+      "slotsLabel": "Slots Unlocked",
+      "slotsHint": "Next slot at {tier}"
+    },
+    "slots": {
+      "unlocksAt": "Unlocks at {tier}",
+      "empty": "Empty slot",
+      "unequip": "Unequip",
+      "passiveCapHint": "Up to 2 always-on passives; the rest are procs & signatures."
+    },
+    "collection": {
+      "label": "Your Moves",
+      "viewToggleAria": "Collection view",
+      "grid": "Grid",
+      "list": "List",
+      "empty": "No moves yet — win sparring rounds to earn them"
+    },
+    "list": {
+      "equip": "Equip",
+      "equipped": "Equipped",
+      "noOpenSlot": "No open slot — open the card to swap",
+      "passiveCapBlocked": "Max 2 always-on passives — slot 3 needs a Proc or Signature move"
+    },
+    "detail": {
+      "dialogLabel": "Move detail",
+      "closeLabel": "Close",
+      "equipToSlot": "Equip",
+      "equipOpenSlot": "Equip to an open slot",
+      "slotSwap": "Swap in — replaces {name} (Slot {n})",
+      "slotLocked": "Slot {n} locked",
+      "unequipFromSlot": "Unequip from Slot {n}",
+      "acquiredToday": "Acquired today",
+      "acquiredDaysAgo": "Acquired {n}d ago",
+      "passiveCapBlocked": "Max 2 always-on passives can be equipped — that slot needs a Proc or Signature move"
+    },
+    "dropReveal": {
+      "dialogLabel": "Special move acquired",
+      "closeLabel": "Close",
+      "newEyebrow": "New Special Move!",
+      "upgradeEyebrow": "Move Upgraded!",
+      "tapToReveal": "Tap the card to reveal",
+      "revealLabel": "Reveal your new move",
+      "cta": "Awesome"
     }
   },
   "events": {

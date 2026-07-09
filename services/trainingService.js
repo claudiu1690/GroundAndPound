@@ -6,6 +6,7 @@ const { applyXpToStat, roundStatXp, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require(
 const fighterService = require("./fighterService");
 const energyService = require("./energyService");
 const gymRankService = require("./gymRankService");
+const specialMovesService = require("./specialMovesService");
 const { rollSessionXp, tierForRoll } = require("../utils/trainingRng");
 const { BOOSTERS, boosterStatList } = require("../consts/shopConfig");
 const {
@@ -238,6 +239,9 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
             newlyEarnedBadges,
             rollTier: null,
             rollTierCounts: { great: 0, normal: 0, sluggish: 0 },
+            // Conditioning (raisesMaxStamina) is never a sparring-family session, so it never
+            // drops a move — null keeps the response shape uniform with the XP path.
+            moveDrop: null,
             fighter: fighterService.toPublicFighter(fighter),
             message,
         };
@@ -281,6 +285,11 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
     let completed = 0;
     let stopReason = "completed";
     const injurySustained = [];
+    // Special Moves v1 — at most ONE drop per doTraining call (first drop in a batch wins).
+    // Rolled inside the sparring-family injury block below so the injury RNG stream position
+    // is preserved. Rides the existing fighter.save() — specialMovesOwned is a defined subdoc,
+    // so no markModified is needed (unlike the Mixed inventory map).
+    let moveDrop = null;
 
     // Per-session XP roll tally (a session is drawn once, shared across stats).
     const rollTierCounts = { great: 0, normal: 0, sluggish: 0 };
@@ -356,6 +365,11 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
         // Sparring injury roll happens per-session; an applied injury stops the batch.
         if (isSparringFamily) {
             const injuryType = rollForSparringInjury(fighter.fiq || 10);
+            // Special Moves drop roll — AFTER rollForSparringInjury (preserves this session's
+            // injury RNG position) and only until the first drop lands this batch. Never throws.
+            if (!moveDrop) {
+                moveDrop = specialMovesService.rollMoveDrop(fighter, gym);
+            }
             if (injuryType) {
                 const inj = buildInjury(injuryType, fighter.promotionTier);
                 if (inj && !(injuryGraceActive(fighter) && inj.cannotFight)) {
@@ -486,6 +500,7 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
         newlyEarnedBadges,
         rollTier,
         rollTierCounts,
+        moveDrop,
         fighter: fighterService.toPublicFighter(fighter),
         message,
     };

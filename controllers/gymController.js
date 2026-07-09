@@ -1,11 +1,16 @@
 const Gym = require("../models/gymModel");
 const Fighter = require("../models/fighterModel");
 const gymRankService = require("../services/gymRankService");
+const specialMovesService = require("../services/specialMovesService");
 
 async function list(req, res) {
     try {
         const gyms = await Gym.find({}).sort({ isFreeGym: -1, weeklyCost: 1 }).lean();
-        res.json(gyms);
+        const enriched = gyms.map((gym) => ({
+            ...gym,
+            dropRarityWeights: specialMovesService.dropRarityWeightsForGym(gym),
+        }));
+        res.json(enriched);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Internal server error" });
@@ -16,7 +21,7 @@ async function getById(req, res) {
     try {
         const gym = await Gym.findById(req.params.id).lean();
         if (!gym) return res.status(404).json({ message: "Gym not found" });
-        res.json(gym);
+        res.json({ ...gym, dropRarityWeights: specialMovesService.dropRarityWeightsForGym(gym) });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Internal server error" });
@@ -67,6 +72,7 @@ async function listWithProgress(req, res) {
             return {
                 ...gym,
                 progress,
+                dropRarityWeights: specialMovesService.dropRarityWeightsForGym(gym),
                 membership: {
                     isActive,
                     daysLeft,

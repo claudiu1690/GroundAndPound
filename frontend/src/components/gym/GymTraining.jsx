@@ -1,145 +1,30 @@
-import { memo, useState, useEffect } from "react";
-import { Zap, AlertTriangle, Check, ChevronLeft, Lock, Trophy, Minus, Plus, TrendingUp } from "lucide-react";
+import { memo, useEffect, useRef, useMemo } from "react";
 import { gymImageUrl } from "./gymImage";
-import {
-    resolveBoosterDisplay,
-    boosterEffectLine,
-    boosterAffectsStat,
-    pctLabel,
-} from "../shop/shopConstants";
+import { resolveBoosterDisplay, boosterEffectLine, pctLabel } from "../shop/shopConstants";
+import { SESSION_META, SPARRING_KEYS } from "./sessionMeta";
+import { GymHeader } from "./GymHeader";
+import { SparringRing } from "./SparringRing";
+import { TrainingFloor } from "./TrainingFloor";
+import { GymStandingPanel } from "./GymStandingPanel";
+import { SpecialtyPitchPanel } from "./SpecialtyPitchPanel";
+import { StickyGymBar } from "./StickyGymBar";
+import { TrendingUp } from "lucide-react";
 import { t } from "@/lib/i18n";
 
-// Full session metadata matching backend TRAINING_SESSIONS + rank 2 sessions
-export const SESSION_META = {
-    bag_work:       { label: "Bag Work",       category: "striking",  cost: 4, stats: ["STR"],  xpBase: 10, desc: "Heavy bag rounds — power and accuracy" },
-    footwork:       { label: "Footwork",       category: "striking",  cost: 4, stats: ["SPD"],  xpBase: 10, desc: "Lateral movement, evasion and reaction speed" },
-    kick_drills:    { label: "Kick Drills",    category: "striking",  cost: 4, stats: ["LEG"],  xpBase: 10, desc: "Repetitive kick technique on pads and bags" },
-    pad_work:       { label: "Pad Work",       category: "striking",  cost: 5, stats: ["STR", "SPD"], xpBase: 10, desc: "Combo work with a coach — power meets reaction" },
-    wrestling:      { label: "Wrestling",      category: "grappling", cost: 5, stats: ["WRE"],  xpBase: 10, desc: "Takedowns, cage control, scrambles" },
-    clinch:         { label: "Clinch Work",    category: "grappling", cost: 5, stats: ["WRE", "STR"], xpBase: 10, desc: "Cage clinches, dirty boxing, body locks" },
-    bjj:            { label: "BJJ",            category: "grappling", cost: 6, stats: ["GND", "SUB"], xpBase: 10, desc: "Ground game, sweeps, transitions, guard work" },
-    submission:     { label: "Submissions",    category: "grappling", cost: 6, stats: ["SUB"],  xpBase: 10, desc: "Choke and joint-lock mechanics — attack chains and escapes" },
-    sparring:       { label: "Sparring",       category: "sparring",  cost: 8, stats: ["STR", "SPD", "LEG", "WRE", "GND", "SUB", "CHN", "FIQ"], xpBase: 12, desc: "Full-contact rounds — highest XP, builds chin and IQ", warn: "3% injury risk" },
-    film_study:     { label: "Film Study",     category: "mental",    cost: 3, stats: ["FIQ"],  xpBase: 10, desc: "Opponent breakdown — raises Fight IQ" },
-    strength_conditioning: { label: "Conditioning", category: "physical", cost: 4, stats: [], xpBase: 0, desc: "+1 Max Stamina (cap 120)", special: "Max Stamina" },
-    // Rank 2 unique sessions
-    combination_drilling: { label: "Combination Drilling", category: "striking",  cost: 5, stats: ["STR", "SPD"], xpBase: 10, desc: "Advanced boxing combos (+15% XP)", rank2: true },
-    switch_kick_mastery:  { label: "Switch Kick Mastery",  category: "striking",  cost: 5, stats: ["LEG", "SPD"], xpBase: 10, desc: "Dynamic kick switching (+15% XP)", rank2: true },
-    chain_wrestling:      { label: "Chain Wrestling",      category: "grappling", cost: 6, stats: ["WRE", "GND"], xpBase: 10, desc: "Continuous wrestling chains (+15% XP)", rank2: true },
-    advanced_guard_work:  { label: "Advanced Guard Work",  category: "grappling", cost: 6, stats: ["GND", "SUB"], xpBase: 10, desc: "Elite guard techniques (+15% XP)", rank2: true },
-    clinch_knees:         { label: "Clinch Knees",         category: "striking",  cost: 5, stats: ["LEG", "CHN"], xpBase: 10, desc: "Knees from clinch range (+15% XP)", rank2: true },
-    transition_mastery:   { label: "Transition Mastery",   category: "grappling", cost: 6, stats: ["SUB", "FIQ"], xpBase: 10, desc: "Sub transitions + IQ (+15% XP)", rank2: true },
-    counter_timing:       { label: "Counter Timing",       category: "striking",  cost: 5, stats: ["SPD", "FIQ"], xpBase: 10, desc: "Counter-strike timing (+15% XP)", rank2: true },
-    power_wrestling:      { label: "Power Wrestling",      category: "grappling", cost: 6, stats: ["STR", "WRE"], xpBase: 10, desc: "Strength-based wrestling (+15% XP)", rank2: true },
-    strategic_sparring:   { label: "Strategic Sparring",   category: "sparring",  cost: 7, stats: ["FIQ", "GND"], xpBase: 10, desc: "Tactical sparring (+15% XP)", rank2: true, warn: "3% injury risk" },
-    championship_rounds:  { label: "Championship Rounds",  category: "sparring",  cost: 8, stats: ["STR", "SPD", "LEG", "WRE", "GND", "SUB", "CHN", "FIQ"], xpBase: 12, desc: "Elite full-contact (+10% XP)", rank2: true, warn: "3% injury risk" },
-};
-
-// Kept exported to avoid breaking any importer (TrainingResultPopup uses .stat-chip classes).
-export const STAT_CHIP_CLASS = {
-    STR: "stat-chip-str", SPD: "stat-chip-spd", LEG: "stat-chip-leg",
-    WRE: "stat-chip-wre", GND: "stat-chip-gnd", SUB: "stat-chip-sub",
-    CHN: "stat-chip-chn", FIQ: "stat-chip-fiq",
-};
-
-// Accent-bar colors per stat (mockup reference).
-const STAT_COLOR = {
-    STR: "#C8102E", SPD: "#3B82F6", LEG: "#22C55E", WRE: "#F97316",
-    GND: "#EAB308", SUB: "#14B8A6", CHN: "#A855F7", FIQ: "#6366F1",
-};
-
-const GOLD = "#D4A820";
-
-const SPARRING_KEYS = new Set(["sparring", "strategic_sparring", "championship_rounds"]);
-const PRESETS = [1, 5, 10];
-const MAX_BATCH = 25;
+// Re-exported so existing importers (TrainingToast.jsx, App.jsx) keep working
+// unchanged — the actual catalog now lives in ./sessionMeta.js.
+export { SESSION_META, STAT_CHIP_CLASS } from "./sessionMeta";
 
 /**
- * Per-card quantity control: stepper + presets + Max + live cost line + dynamic
- * Train button. Holds its own N (clamped to [1, cardMax]). cardMax derives from
- * the energy/cost passed in each render; when energy drops post-batch we clamp
- * N down. cardMax is guaranteed >= 1 by the caller (cardMax===0 falls through to
- * the "Need {cost}E" branch instead of rendering this control).
+ * Gym Training screen — orchestrator.
+ *
+ * Derives all cross-cutting state (energy, booster, canTrain, injury locks,
+ * rank-2 unlock, session partitioning, cross-gym lookups) once here, then
+ * composes the header, the featured Sparring Ring, the Training Floor, and
+ * a sidebar (Gym Standing for paid gyms / the specialty upsell pitch for
+ * the free gym). No session-card markup lives in this file — that's owned
+ * by SparringRing / TrainingFloor.
  */
-function SessionTrainControl({ sessionKey, cost, energy, cardMax, isSparring, busy, onTrain }) {
-    const [n, setN] = useState(1);
-
-    // Clamp N down when cardMax shrinks (e.g. energy spent by a prior batch).
-    useEffect(() => {
-        setN((prev) => Math.min(Math.max(1, prev), cardMax));
-    }, [cardMax]);
-
-    const safeN = Math.min(Math.max(1, n), cardMax);
-    const totalCost = safeN * cost;
-    const after = energy - totalCost;
-    const injuryPct = Math.round((1 - (1 - 0.03) ** safeN) * 100);
-
-    return (
-        <div className="session-train-control">
-            {isSparring && (
-                <div className="session-card-warn session-injury-hint">
-                    <AlertTriangle size={9} /> ~{injuryPct}% chance of injury over {safeN} round{safeN > 1 ? "s" : ""}
-                </div>
-            )}
-            <div className="session-qty-row">
-                <div className="session-stepper" role="group" aria-label={t("gym.sessions.ariaStepperGroup")}>
-                    <button
-                        type="button"
-                        className="session-stepper-btn"
-                        aria-label={t("gym.sessions.ariaOneFewer")}
-                        disabled={safeN <= 1 || busy}
-                        onClick={() => setN((p) => Math.max(1, Math.min(p, cardMax) - 1))}
-                    >
-                        <Minus size={12} />
-                    </button>
-                    <span className="session-stepper-n">{safeN}</span>
-                    <button
-                        type="button"
-                        className="session-stepper-btn"
-                        aria-label={t("gym.sessions.ariaOneMore")}
-                        disabled={safeN >= cardMax || busy}
-                        onClick={() => setN((p) => Math.min(cardMax, Math.min(p, cardMax) + 1))}
-                    >
-                        <Plus size={12} />
-                    </button>
-                </div>
-                <div className="session-presets">
-                    {PRESETS.map((preset) => (
-                        <button
-                            key={preset}
-                            type="button"
-                            className={`session-preset${safeN === preset ? " active" : ""}`}
-                            disabled={preset > cardMax || busy}
-                            onClick={() => setN(Math.min(preset, cardMax))}
-                        >
-                            {preset}
-                        </button>
-                    ))}
-                    <button
-                        type="button"
-                        className={`session-preset${safeN === cardMax ? " active" : ""}`}
-                        disabled={busy}
-                        onClick={() => setN(cardMax)}
-                    >
-                        {t("gym.sessions.maxBtn")}
-                    </button>
-                </div>
-            </div>
-            <div className="session-live-line">
-                {safeN} session{safeN > 1 ? "s" : ""} · {totalCost}E · {after}E after
-            </div>
-            <button
-                type="button"
-                className="session-card-btn session-train-btn"
-                disabled={busy}
-                onClick={() => onTrain(sessionKey, safeN)}
-            >
-                {safeN > 1 ? t("gym.sessions.trainMultiple", { n: safeN }) : t("gym.sessions.trainSingle")}
-            </button>
-        </div>
-    );
-}
-
 export const GymTraining = memo(function GymTraining({
     gym,
     fighter,
@@ -152,6 +37,7 @@ export const GymTraining = memo(function GymTraining({
     flashSessionKey,
 }) {
     const heroUrl = gymImageUrl(gym?.name);
+    const headerRef = useRef(null);
 
     // Preload the hero so the header paints without a flash on click-resolve.
     useEffect(() => {
@@ -161,374 +47,150 @@ export const GymTraining = memo(function GymTraining({
         }
     }, [heroUrl]);
 
-    // Inline rank-up error (e.g. "Need $1,500 (have $200)") shown at the CTA —
-    // the app has no global message bar, so the failure is surfaced contextually.
-    const [rankUpError, setRankUpError] = useState("");
-    // Inline join error (e.g. "Not enough cash — need $1,500"), same rationale.
-    const [joinError, setJoinError] = useState("");
-
-    if (!fighter || !gym) return null;
-
-    const energy = fighter.energy?.current ?? fighter.energy ?? 0;
+    const energy = fighter?.energy?.current ?? fighter?.energy ?? 0;
+    const energyMax = fighter?.energy?.max ?? 100;
     // Active XP booster (only while it still has charges) — surfaced as a banner
-    // here and a per-card "+X%" badge on the sessions whose stats it boosts.
-    const activeBooster = fighter.activeBooster && fighter.activeBooster.sessionsLeft > 0
+    // above the floor and a per-row "+X%" badge on the sessions it boosts.
+    const activeBooster = fighter?.activeBooster && fighter.activeBooster.sessionsLeft > 0
         ? resolveBoosterDisplay(fighter.activeBooster)
         : null;
-    const isFree = gym.isFreeGym;
-    const isActive = gym.membership?.isActive;
+    const isFree = !!gym?.isFreeGym;
+    const isActive = !!gym?.membership?.isActive;
     const canTrain = isFree || isActive;
-    const injuryLocked = new Set(fighter?.injuryLockedStats || []);
+    const injuryLocked = useMemo(() => new Set(fighter?.injuryLockedStats || []), [fighter?.injuryLockedStats]);
 
-    const rank2SessionDef = gym.ranks?.find((r) => r.rank === 2);
+    const rank2SessionDef = gym?.ranks?.find((r) => r.rank === 2);
     const rank2SessionKey = rank2SessionDef?.unlock?.sessionKey;
-    const rank2Unlocked = (gym.progress?.rank ?? 0) >= 2;
+    const rank2Unlocked = (gym?.progress?.rank ?? 0) >= 2;
 
-    const displaySessions = [...(gym.sessions || [])];
-    if (rank2SessionKey && !displaySessions.includes(rank2SessionKey)) {
-        displaySessions.push(rank2SessionKey);
-    }
+    const displaySessions = useMemo(() => {
+        const list = [...(gym?.sessions || [])];
+        if (rank2SessionKey && !list.includes(rank2SessionKey)) list.push(rank2SessionKey);
+        return list;
+    }, [gym?.sessions, rank2SessionKey]);
 
-    const otherSessions = Object.keys(SESSION_META).filter(
-        (k) => !SESSION_META[k].rank2 && !displaySessions.includes(k)
+    const floorKeys = useMemo(
+        () => displaySessions.filter((k) => !SPARRING_KEYS.has(k) && SESSION_META[k]),
+        [displaySessions]
     );
 
+    // Sessions taught at OTHER gyms but not here (excludes sparring-family —
+    // those get their own dimmed cards in the Ring — and rank2-unique
+    // sessions, which are gym-specific by design, not "missing").
     function findGymForSession(key) {
-        for (const g of (allGyms || [])) {
-            if (g._id === gym._id) continue;
-            if (g.sessions?.includes(key)) return g.name;
+        for (const g of allGyms || []) {
+            if (!gym || g._id === gym._id) continue;
+            if (g.sessions?.includes(key)) return { name: g.name, rank2: false };
+            const r2 = g.ranks?.find((r) => r.unlock?.sessionKey === key);
+            if (r2) return { name: g.name, rank2: true };
         }
         return null;
     }
 
-    const currentRank = gym.progress?.rank ?? 0;
-    const sortedRanks = (gym.ranks || []).slice().sort((a, b) => a.rank - b.rank);
-    const next = (gym.ranks || []).find((r) => r.rank === currentRank + 1);
+    const otherSessions = useMemo(() => {
+        if (!gym) return [];
+        return Object.keys(SESSION_META)
+            .filter((k) => !SESSION_META[k].rank2 && !SPARRING_KEYS.has(k) && !displaySessions.includes(k))
+            .map((k) => {
+                const found = findGymForSession(k);
+                return { key: k, label: SESSION_META[k].label, gymName: found?.name ?? null };
+            });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [displaySessions, allGyms, gym?._id]);
 
-    function rankUnlockText(r) {
-        if (!r.unlock) return null;
-        switch (r.unlock.type) {
-            case "access": return t("gym.rankUnlock.access");
-            case "session": return SESSION_META[r.unlock.sessionKey]?.label ?? r.unlock.sessionKey;
-            case "xpBonus": return t("gym.rankUnlock.xpBonus", { pct: r.unlock.xpBonusPct });
-            case "perk": return t("gym.rankUnlock.perk");
-            default: return null;
+    // Header affordability line: "Enough for N× Sparring or M× <cheapest floor session>".
+    const sparringCost = SESSION_META.sparring.cost;
+    const sparringAffordable = Math.floor(energy / sparringCost);
+    const cheapestFloor = useMemo(() => {
+        let best = null;
+        for (const key of floorKeys) {
+            const m = SESSION_META[key];
+            if (!m) continue;
+            if (!best || m.cost < best.cost) best = { key, cost: m.cost, label: m.label };
         }
-    }
+        if (!best) return null;
+        const n = Math.floor(energy / best.cost);
+        return n > 0 ? { ...best, n } : null;
+    }, [floorKeys, energy]);
+
+    if (!fighter || !gym) return null;
 
     return (
         <div className="gym-training">
-            {/* STRIP 1 — Header */}
-            <div
-                className="gym-header gym-header-hero"
-                data-tut="gym-info"
-                style={{ backgroundImage: heroUrl ? `url(${heroUrl})` : undefined }}
-            >
-                <div className="gym-header-overlay" aria-hidden="true" />
-                <div className="gym-header-row1">
-                    <button type="button" className="gym-back" onClick={onBack}>
-                        <ChevronLeft size={12} /> {t("gym.header.allGyms")}
-                    </button>
-                </div>
-                <div className="gym-header-row2">
-                    <div className="gym-title">{gym.name}</div>
-                    <div className="gym-tags">
-                        {!isFree && gym.focusStats?.length ? (
-                            <>
-                                {gym.focusStats.map((s) => (
-                                    <span key={s} className={`gym-tag gym-tag-${s.toLowerCase()}`}>{s}</span>
-                                ))}
-                                <span className="gym-tag xp">{gym.focusXpMultiplier}× XP</span>
-                            </>
-                        ) : null}
-                        {isFree && (
-                            <span className="gym-tag gym-tag-all">{t("gym.card.allStats", { mult: gym.xpMultiplier })}</span>
-                        )}
-                    </div>
-                    <div className="gym-header-right">
-                        <div className="gym-energy-pill" data-tut="energy">
-                            <span className="gym-energy-lbl">{t("gym.header.energy")}</span>
-                            <Zap size={12} /> {energy}
-                        </div>
-                        {!isFree && !isActive && (
-                            <div className="gym-join-wrap">
-                                <button
-                                    type="button"
-                                    className="gym-join-btn"
-                                    onClick={async () => {
-                                        setJoinError("");
-                                        const res = await onSwitchGym(gym._id);
-                                        if (res && res.ok === false) {
-                                            setJoinError(res.error || "Couldn't join this gym.");
-                                        }
-                                    }}
-                                >
-                                    {t("gym.header.joinBtn", { cost: gym.weeklyCost })}
-                                </button>
-                                {joinError && <div className="gym-join-error">{joinError}</div>}
-                            </div>
-                        )}
-                        {isActive && (
-                            <span className="gym-membership-badge">
-                                <Check size={11} /> {t("gym.header.membershipLeft", { days: gym.membership.daysLeft })}
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </div>
+            <GymHeader
+                gym={gym}
+                isFree={isFree}
+                isActive={isActive}
+                energy={energy}
+                energyMax={energyMax}
+                heroUrl={heroUrl}
+                onBack={onBack}
+                onSwitchGym={onSwitchGym}
+                sparringAffordable={sparringAffordable}
+                cheapestFloor={cheapestFloor}
+                headerRef={headerRef}
+            />
 
-            {/* STRIP 2 — Rank strip */}
-            {!isFree && gym.ranks?.length > 0 && (
-                <div className="rank-strip">
-                    <div className="rank-strip-label">{t("gym.rankStrip.label")}</div>
-                    <div className="rank-strip-steps">
-                        {sortedRanks.map((r, i) => {
-                            const done = currentRank > r.rank;
-                            const current = currentRank === r.rank;
-                            const isLast = i === sortedRanks.length - 1;
-                            return (
-                                <div key={r.rank} className="rank-step">
-                                    <div className={`rank-step-dot ${current || done ? "current" : "locked"}`}>
-                                        {done ? <Check size={11} /> : r.rank}
-                                    </div>
-                                    <div className="rank-step-info">
-                                        <div className={`rank-step-name ${current || done ? "current" : "locked"}`}>{r.name}</div>
-                                        <div className="rank-step-unlock">{rankUnlockText(r)}</div>
-                                    </div>
-                                    {!isLast && <div className="rank-step-line" />}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
+            <StickyGymBar headerRef={headerRef} gymName={gym.name} energy={energy} />
 
-            {/* Rank up CTA — requirements to reach the next gym rank */}
-            {!isFree && gym.progress?.hasJoined && next && currentRank < 4 && (() => {
-                const tReq = next.requirements.trainingSessions;
-                const tDone = gym.progress.trainingSessions >= tReq;
-                const wReq = next.requirements.relevantWins;
-                const wDone = gym.progress.relevantWins >= wReq;
-                const winChipLabel = gym.relevantWinTypes?.length === 1
-                    ? `${gym.relevantWinTypes[0]} wins`
-                    : "Wins";
-                const ironCost = next.requirements.ironCost || 0;
-                return (
-                    <div className="rank-upcta">
-                        <div className="rank-upcta-head">
-                            <span className="rank-upcta-eyebrow">{t("gym.rankUp.nextRank")}</span>
-                            <span className="rank-upcta-name">{next.name}</span>
-                        </div>
-                        <div className="rank-reqs">
-                            <span className={`rank-req-chip${tDone ? " is-done" : ""}`}>
-                                {tDone && <Check size={11} />}
-                                <span className="rank-req-label">{t("gym.rankUp.reqTraining")}</span>
-                                <span className="rank-req-val">{Math.min(gym.progress.trainingSessions, tReq)}/{tReq}</span>
-                            </span>
-                            {wReq > 0 && (
-                                <span className={`rank-req-chip${wDone ? " is-done" : ""}`}>
-                                    {wDone && <Check size={11} />}
-                                    <span className="rank-req-label">{winChipLabel}</span>
-                                    <span className="rank-req-val">{Math.min(gym.progress.relevantWins, wReq)}/{wReq}</span>
-                                </span>
-                            )}
-                            {ironCost > 0 && (
-                                <span className="rank-req-chip rank-req-chip--fee">
-                                    <span className="rank-req-label">{t("gym.rankUp.reqCost")}</span>
-                                    <span className="rank-req-val">${ironCost.toLocaleString()}</span>
-                                </span>
-                            )}
-                        </div>
-                        {gym.progress?.nextRank?.canRankUp && gym.progress.nextRank.needsIron && (
-                            <>
-                                <button
-                                    type="button"
-                                    className="rank-up-btn"
-                                    onClick={async () => {
-                                        setRankUpError("");
-                                        const res = await onRankUp(gym._id);
-                                        if (res && res.ok === false) {
-                                            setRankUpError(res.error || "Rank up failed.");
-                                        }
-                                    }}
-                                >
-                                    <Trophy size={12} /> {t("gym.rankUp.rankUpBtn", { cost: ironCost.toLocaleString() })}
-                                </button>
-                                {rankUpError && <div className="rank-up-error">{rankUpError}</div>}
-                            </>
-                        )}
-                    </div>
-                );
-            })()}
-
-            {/* Max rank achieved — name the actual perk (rank-4 unlock) */}
-            {!isFree && currentRank >= 4 && (() => {
-                const maxPerk = gym.ranks?.find((r) => r.rank === 4)?.unlock;
-                return (
-                    <div className="rank-maxed">
-                        <Trophy size={14} />
-                        <div className="rank-maxed-body">
-                            <div className="rank-maxed-title">{t("gym.rankUp.maxTitle")}</div>
-                            {maxPerk?.perkName && (
-                                <div className="rank-maxed-perk">
-                                    <strong>{maxPerk.perkName}</strong>
-                                    {maxPerk.perkEffect ? ` — ${maxPerk.perkEffect}` : ""}
-                                    {maxPerk.badge ? ` · Badge: ${maxPerk.badge}` : ""}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                );
-            })()}
-
-            {/* STRIP 3 — Flavor */}
             {gym.description && (
                 <div className="flavor-strip">
                     <div className="flavor-text">{gym.description}</div>
                 </div>
             )}
 
-            {/* STRIP 4 — Sessions */}
-            <div className="sessions-area">
-                <div className="sessions-label">{t("gym.sessions.label")}</div>
-                {activeBooster && (
-                    <div className="booster-banner">
-                        <TrendingUp size={14} className="booster-banner-icon" />
-                        <span className="booster-banner-name">{activeBooster.name}</span>
-                        <span className="booster-banner-pct">+{pctLabel(activeBooster.pct)}% XP</span>
-                        <span className="booster-banner-scope">{boosterEffectLine(activeBooster)}</span>
-                        <span className="booster-banner-left">
-                            {t("gym.booster.sessionsLeft", { n: activeBooster.sessionsLeft, plural: activeBooster.sessionsLeft === 1 ? "" : "s" })}
-                        </span>
-                    </div>
-                )}
-                <div className="session-grid" data-tut="gym-sessions">
-                    {displaySessions.map((key) => {
-                        const m = SESSION_META[key];
-                        if (!m) return null;
-                        const stats = m.stats || [];
-                        const isLocked = stats.some((s) => injuryLocked.has(s));
-                        const notEnoughEnergy = energy < m.cost;
-                        const isRank2Locked = !!m.rank2 && !rank2Unlocked && key === rank2SessionKey;
-                        const cardLocked = isRank2Locked || isLocked;
-                        // Conditioning is a no-op once Max Stamina is at the 120 cap —
-                        // surface that explicitly instead of a button that does nothing.
-                        const isStaminaMaxed = key === "strength_conditioning" && (fighter.maxStamina ?? 100) >= 120;
-                        // Active "Train" branch: the only state that gets the
-                        // quantity control. cardMax floor>=1 here because
-                        // notEnoughEnergy already covers floor===0.
-                        const showQtyControl = !isRank2Locked && canTrain && !isLocked && !notEnoughEnergy && !isStaminaMaxed;
-                        const cardMax = Math.min(Math.floor(energy / m.cost), MAX_BATCH);
-                        const isSparring = SPARRING_KEYS.has(key);
-                        // XP-boosted if a booster is active and covers any of this card's stats.
-                        const boostedHere = !!activeBooster && stats.some((s) => boosterAffectsStat(activeBooster, s));
+            <div className="gym-body-grid">
+                <div className="gym-main-col">
+                    <SparringRing
+                        gym={gym}
+                        energy={energy}
+                        canTrain={canTrain}
+                        injuryLocked={injuryLocked}
+                        rank2SessionKey={rank2SessionKey}
+                        rank2Unlocked={rank2Unlocked}
+                        findGymForSession={findGymForSession}
+                        training={training}
+                        onTrain={onTrain}
+                        flashSessionKey={flashSessionKey}
+                        dropRarityWeights={gym.dropRarityWeights ?? null}
+                        isFreeGym={isFree}
+                        activeBooster={activeBooster}
+                    />
 
-                        let accentStyle;
-                        if (isRank2Locked || isLocked) {
-                            accentStyle = undefined; // class "lock" handles color
-                        } else if (stats.length > 2) {
-                            accentStyle = { background: GOLD };
-                        } else if (stats.length === 2) {
-                            const c0 = STAT_COLOR[stats[0]];
-                            const c1 = STAT_COLOR[stats[1]];
-                            accentStyle = { background: `linear-gradient(90deg, ${c0} 0%, ${c0} 50%, ${c1} 50%, ${c1} 100%)` };
-                        } else if (stats.length === 1) {
-                            accentStyle = { background: STAT_COLOR[stats[0]] };
-                        } else {
-                            accentStyle = { background: GOLD };
-                        }
+                    {activeBooster && (
+                        <div className="booster-banner">
+                            <TrendingUp size={14} className="booster-banner-icon" />
+                            <span className="booster-banner-name">{activeBooster.name}</span>
+                            <span className="booster-banner-pct">+{pctLabel(activeBooster.pct)}% XP</span>
+                            <span className="booster-banner-scope">{boosterEffectLine(activeBooster)}</span>
+                            <span className="booster-banner-left">
+                                {t("gym.booster.sessionsLeft", { n: activeBooster.sessionsLeft, plural: activeBooster.sessionsLeft === 1 ? "" : "s" })}
+                            </span>
+                        </div>
+                    )}
 
-                        return (
-                            <div key={key} className={`session-card${cardLocked ? " locked-card" : ""}${flashSessionKey === key ? " session-card--flash" : ""}`}>
-                                <div
-                                    className={`session-card-top${isRank2Locked || isLocked ? " lock" : ""}`}
-                                    style={accentStyle}
-                                />
-                                <div className="session-card-body">
-                                    <div className="session-card-header">
-                                        <div className={`session-card-name${cardLocked ? " locked" : ""}`}>
-                                            {m.label}
-                                            {isRank2Locked && <span className="rank-badge">Rank 2</span>}
-                                            {boostedHere && (
-                                                <span className="session-boost-badge" title={`${activeBooster.name}: +${pctLabel(activeBooster.pct)}% XP`}>
-                                                    <TrendingUp size={9} /> +{pctLabel(activeBooster.pct)}%
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="session-card-energy"><Zap size={11} /> {m.cost}E</div>
-                                    </div>
-                                    <div className="session-card-desc">{m.desc}</div>
-                                    {m.warn && !showQtyControl && (
-                                        <div className="session-card-warn"><AlertTriangle size={9} /> {m.warn}</div>
-                                    )}
-                                    <div className="session-card-footer">
-                                        <div className="session-card-tags">
-                                            {stats.length
-                                                ? stats.map((s) => (
-                                                    <span key={s} className={`s-tag gym-tag gym-tag-${s.toLowerCase()}`}>{s}</span>
-                                                ))
-                                                : m.special
-                                                ? <span className="s-tag gym-tag gym-tag-all">{m.special}</span>
-                                                : null}
-                                        </div>
-                                        {isRank2Locked ? (
-                                            <button type="button" className="session-card-btn locked-btn" disabled>
-                                                <Lock size={10} /> {t("gym.sessions.rank2Locked")}
-                                            </button>
-                                        ) : !canTrain ? (
-                                            <button type="button" className="session-card-btn inactive" disabled>
-                                                {t("gym.sessions.joinToTrain")}
-                                            </button>
-                                        ) : isLocked ? (
-                                            <button type="button" className="session-card-btn locked-btn" disabled>
-                                                {t("gym.sessions.injuryLocked")}
-                                            </button>
-                                        ) : isStaminaMaxed ? (
-                                            <button type="button" className="session-card-btn inactive" disabled>
-                                                {t("gym.sessions.staminaMaxed")}
-                                            </button>
-                                        ) : notEnoughEnergy ? (
-                                            <button type="button" className="session-card-btn inactive" disabled>
-                                                {t("gym.sessions.needEnergy", { cost: m.cost })}
-                                            </button>
-                                        ) : (
-                                            <SessionTrainControl
-                                                sessionKey={key}
-                                                cost={m.cost}
-                                                energy={energy}
-                                                cardMax={cardMax}
-                                                isSparring={isSparring}
-                                                busy={!!training}
-                                                onTrain={onTrain}
-                                            />
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+                    <TrainingFloor
+                        floorKeys={floorKeys}
+                        canTrain={canTrain}
+                        injuryLocked={injuryLocked}
+                        rank2SessionKey={rank2SessionKey}
+                        rank2Unlocked={rank2Unlocked}
+                        energy={energy}
+                        fighter={fighter}
+                        activeBooster={activeBooster}
+                        training={training}
+                        onTrain={onTrain}
+                        flashSessionKey={flashSessionKey}
+                    />
                 </div>
 
-                {!isFree && otherSessions.length > 0 && (
-                    <>
-                        <div className="other-section-label">{t("gym.sessions.availableAtOtherGyms")}</div>
-                        {otherSessions.map((key) => {
-                            const m = SESSION_META[key];
-                            const gymName = findGymForSession(key);
-                            return (
-                                <div key={key} className="other-session">
-                                    <div>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
-                                            <span className="other-session-name">{m.label}</span>
-                                            <span className="other-session-tag">{m.stats?.[0] ?? m.special}</span>
-                                        </div>
-                                        {gymName && <div className="other-session-gym">{t("gym.sessions.availableAt", { gymName })}</div>}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </>
-                )}
+                <div className="gym-side-col">
+                    {isFree ? (
+                        <SpecialtyPitchPanel allGyms={allGyms} />
+                    ) : (
+                        <GymStandingPanel gym={gym} onRankUp={onRankUp} otherSessions={otherSessions} />
+                    )}
+                </div>
             </div>
         </div>
     );

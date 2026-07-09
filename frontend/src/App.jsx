@@ -23,6 +23,8 @@ import { LandingPage } from "./components/landing/LandingPage";
 import { FightLimitPopup } from "./components/fights/FightLimitPopup";
 import { FameDrawer } from "./components/fame/FameDrawer";
 import { ContractsTab } from "./components/contracts/ContractsTab";
+import { MovesTab } from "./components/moves/MovesTab";
+import { DropRevealModal } from "./components/moves/DropRevealModal";
 import { MediaHub } from "./components/media/MediaHub";
 import { EventsTab } from "./components/events/EventsTab";
 import { HospitalTab } from "./components/hospital/HospitalTab";
@@ -68,6 +70,7 @@ import {
   ChevronRight,
   Trophy,
   Crosshair,
+  Sparkles,
 } from "lucide-react";
 
 // ── Navigation definition ──────────────────────────────────
@@ -77,6 +80,9 @@ function buildNavItems() {
   return [
     { id: "home",      label: t("layout.nav.home"),          icon: <LayoutDashboard size={13} strokeWidth={2.2} />, active: true },
     { id: "gym",       label: t("layout.nav.training"),      icon: <Dumbbell size={13} strokeWidth={2.2} />,       active: true },
+    // Special Moves sits with the "build your fighter" cluster — next to Training,
+    // before Fight (train → kit out your moveset → go use it), not buried down by Shop.
+    { id: "moves",     label: t("layout.nav.moves"),         icon: <Sparkles size={13} strokeWidth={2.2} />,       active: true },
     { id: "fights",    label: t("layout.nav.fight"),         icon: <Swords size={13} strokeWidth={2.2} />,         active: true },
     { id: "career",    label: t("layout.nav.career"),        icon: <FileText size={13} strokeWidth={2.2} />,       active: true },
     { id: "pvp",       label: t("layout.nav.provingGround"), icon: <Crosshair size={13} strokeWidth={2.2} />,      active: true },
@@ -475,6 +481,9 @@ function App() {
   // In-flight guard so a slow batch can't be double-submitted — one click now
   // spends up to 25× energy.
   const [training, setTraining] = useState(false);
+  // Special-move drop reveal (NEW/UPGRADE outcomes only — DUPLICATE surfaces
+  // as a compact toast instead, see handleTrain).
+  const [moveDropReveal, setMoveDropReveal] = useState(null);
   const [tierUpModal, setTierUpModal] = useState(null);
   const [beltWonModal, setBeltWonModal] = useState(null);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
@@ -871,6 +880,26 @@ function App() {
           flashTimerRef.current = setTimeout(() => setFlashSessionKey(null), 2500);
         }
 
+        // ── Special-move drop (sparring-family sessions only) ────────────
+        // NEW/UPGRADE get the tall-card reveal; DUPLICATE is a compact cash
+        // toast that also patches the displayed cash from newBalance so the
+        // sidebar doesn't wait on the fighter refetch below.
+        const moveDrop = result.moveDrop || null;
+        if (moveDrop) {
+          if (moveDrop.outcome === "DUPLICATE") {
+            addToast({
+              kind: "moveDupe",
+              name: moveDrop.name,
+              cashAwarded: moveDrop.cashAwarded ?? 0,
+            });
+            if (moveDrop.newBalance != null) {
+              setFighter((prev) => (prev ? { ...prev, iron: moveDrop.newBalance } : prev));
+            }
+          } else {
+            setMoveDropReveal(moveDrop);
+          }
+        }
+
         loadFighter(fighter._id, { clearMessage: false });
         loadGyms();
       } catch (e) {
@@ -1208,6 +1237,9 @@ const handleGetOffers = useCallback(async () => {
       {/* ── POST-TRAINING TOASTS (after train, no message bar) ── */}
       <ToastContainer toasts={toasts} onDismiss={beginDismiss} />
 
+      {/* ── SPECIAL MOVE DROP REVEAL (NEW/UPGRADE only) ── */}
+      <DropRevealModal drop={moveDropReveal} onClose={() => setMoveDropReveal(null)} />
+
       {/* ── GLOBAL NOTICE TOAST — surfaces the `message` state (errors + key
           successes from handlers across the app that have no inline surface). ── */}
       {message && (
@@ -1465,6 +1497,7 @@ const handleGetOffers = useCallback(async () => {
                 refreshKey={feedRefreshKey}
                 onMessage={setMessage}
                 onRefreshFighter={loadFighter}
+                onNavigate={handleNavTab}
                 subTab={careerSubTab}
                 onSubTabChange={setCareerSubTab}
                 initialFight={careerInitialFight}
@@ -1480,6 +1513,16 @@ const handleGetOffers = useCallback(async () => {
                 fighter={fighter}
                 onMessage={setMessage}
                 onRefreshFighter={loadFighter}
+              />
+            </div>
+          )}
+
+          {/* ── SPECIAL MOVES ── */}
+          {activeTab === "moves" && (
+            <div className="page-layout">
+              <MovesTab
+                fighter={fighter}
+                onMessage={setMessage}
               />
             </div>
           )}

@@ -12,7 +12,7 @@ import { FightDrawer } from "../fights/breakdown/FightDrawer";
  * Drawer mount: push-left layout (flex row). Feed flex:1, drawer fixed 420px.
  * On mobile the drawer becomes a bottom-sheet overlay.
  */
-export function CareerPage({ fighter, fighterId, refreshKey, onMessage, onRefreshFighter, subTab, onSubTabChange, initialFight, onInitialFightConsumed }) {
+export function CareerPage({ fighter, fighterId, refreshKey, onMessage, onRefreshFighter, onNavigate, subTab, onSubTabChange, initialFight, onInitialFightConsumed }) {
   // Controlled when subTab/onSubTabChange are provided (e.g. deep-link from the
   // dashboard "open profile" click); otherwise self-managed, default "feed".
   const [internal, setInternal] = useState("feed");
@@ -63,6 +63,7 @@ export function CareerPage({ fighter, fighterId, refreshKey, onMessage, onRefres
               fighterId={fighterId}
               onMessage={onMessage}
               onRefreshFighter={onRefreshFighter}
+              onNavigate={onNavigate}
             />
           </div>
         </div>

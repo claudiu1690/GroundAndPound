@@ -278,6 +278,32 @@ export const LIBRARY_ARTICLES = [
         ],
         keyTakeaway: "The Camp Performance section tells you whether your preparation was right. Check it after every fight — it's the fastest way to become a better player.",
     },
+    {
+        id: "special-moves",
+        category: "Fighting",
+        title: "Special Moves — Your Fighter's Signature Techniques",
+        summary: "Collectible named techniques that give a small permanent edge — how to get them, equip them, and the 2-passive cap.",
+        tags: ["special moves", "passive", "proc", "signature", "rarity", "sparring", "drop rate", "equip slots"],
+        body: [
+            "Special Moves are collectible, named techniques — things like a signature counter or a submission instinct — that give your fighter a small edge in a fight. Where camp is temporary, per-fight prep you choose fresh every time, Special Moves are permanent: once you own one, it's part of your fighter's identity for good, sitting on top of your stats rather than replacing them.",
+            "You get 3 equip slots for your career, but they don't all open at once. Slot 1 is available from the start at Amateur. Slot 2 unlocks when you turn Regional Pro. Slot 3 unlocks at National. Equipping and unequipping is free and instant outside an active fight camp — a move locked in when you accept a fight stays equipped for that fight's resolution, but otherwise you can rearrange your loadout any time.",
+            "There's one rule to plan around: at most 2 always-on Passive moves can be equipped at the same time. Your 3rd slot has to hold a Proc or a Signature move. Swapping one passive for another passive is always fine since the total doesn't change — the cap only stops you from stacking a 3rd passive in.",
+            {
+                type: "table",
+                headers: ["Effect Type", "How It Works"],
+                rows: [
+                    ["Passive", "Always on, every fight — a flat, unconditional bonus. This is the type the 2-slot cap applies to."],
+                    ["Proc", "Fires when a specific situation comes up in the fight — for example, when your opponent shoots a takedown."],
+                    ["Signature", "Only Rare and Legendary moves can be Signature-type. One big, one-shot moment per fight, capped to fire once."],
+                ],
+            },
+            "Moves come in four rarities — Common, Uncommon, Rare, and Legendary — and rarity is the only thing that scales a move's power. There's no separate leveling system: if you pull a copy of a move you already own at a higher rarity, it upgrades the one you have. Pull an equal-or-lower rarity copy instead, and it's sold automatically for a small cash payout rather than sitting uselessly in your collection.",
+            "A move's strength is shown as a Rating — \"+30 Defense Rating\" — with magnitude pips from Slight (Common) up to Brutal (Legendary), and the exact percentage in the fine print for the mathematically curious. Don't let small-looking percentages fool you: these edges are deliberately subtle per exchange but they compound across every round of every fight — a top-rarity move is worth several extra wins per hundred fights on its own, and that's before it stacks with your camp prep.",
+            "You earn Special Moves by training — specifically Sparring and each gym's unique sparring-family sessions (the advanced sessions gyms unlock at Rank 2). Every sparring-family round has a chance to drop a move — it's a rare event, so more rounds mean better odds. A better gym doesn't make drops more frequent — what it does is shift the odds toward rarer moves once a drop happens. The free Community gym can still drop a move, but Legendary is effectively locked behind the top-tier gyms; grinding sparring at the Community gym will mostly get you Commons and Uncommons.",
+            "Special Moves only apply in PvE — regular fights against the game's roster. They have no effect in the Proving Ground (PvP); your gameplan, not your equipped moves, is what matters there.",
+        ],
+        keyTakeaway: "Equip up to 3 moves, unlocked by tier — but no more than 2 always-on Passives at once, so your 3rd slot should be a Proc or Signature. Sparring-family sessions have a chance to drop moves; better gyms roll better rarities, not more drops.",
+    },
 
     // ──────────────────────────────────────────────────────────────
     // TRAINING & GYMS
@@ -371,7 +397,7 @@ export const LIBRARY_ARTICLES = [
                     ["Clinch Work", "5", "WRE, STR", "Dirty boxing and clinch pressure. Two stats, useful for Muay Thai."],
                     ["BJJ", "6", "GND, SUB", "Ground control and submission chains. Two stats — good value."],
                     ["Submissions", "6", "SUB", "Pure submission hunting. More targeted than BJJ sessions."],
-                    ["Sparring", "8", "All 8 stats", "Most expensive but broadest. 3% injury risk per session."],
+                    ["Sparring", "8", "All 8 stats", "Most expensive but broadest — XP is spread thin across every stat. 3% injury risk, and the only session type that can drop a Special Move."],
                     ["Film Study", "3", "FIQ", "Cheapest session. Tactical awareness. Often overlooked, valuable for decision fighters."],
                     ["Conditioning", "4", "Max Stamina", "Raises your stamina ceiling, not the stat itself. Stacks over time."],
                 ],

@@ -207,10 +207,70 @@ function getBonus(sessionBonuses, bonusType) {
     return sessionBonuses.find(b => b.bonusType === bonusType && b.effectiveValue > 0) || null;
 }
 
+/**
+ * Special Moves: get a signature bonus entry by type (needs the moveId to key per-move
+ * sigState). Returns null if not equipped / value not positive.
+ */
+function getSignatureEntry(moveBonuses, bonusType) {
+    return moveBonuses.find(b => b.bonusType === bonusType && b.effectiveValue > 0) || null;
+}
+
 // ── Resolve round (v2 with conditional bonuses) ─────────────────────────────
 
-function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk = false, sessionBonuses = [], opponentStrategy = null, groundPosition = 0) {
+function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk = false, sessionBonuses = [], opponentStrategy = null, groundPosition = 0, moveBonuses = [], sigState = {}) {
     const staminaDrain = CFG.round.staminaDrainBase + Math.floor(Math.random() * CFG.round.staminaDrainRandom);
+
+    // ── Special Moves: signature arming (PvE only; moveBonuses is [] in PvP) ─────
+    // Each signature is armed at most ONCE, keyed by moveId in the request-local sigState
+    // (never module-level). THE_FINISHER and KILLER_INSTINCT both key off the opponent's
+    // sub-25% health but have distinct moveIds/bonusTypes, so they fire independently.
+    const finisherEntry = getSignatureEntry(moveBonuses, 'SIG_FINISHER_STRIKE');
+    const ironRecEntry = getSignatureEntry(moveBonuses, 'SIG_IRON_RECOVERY');
+    const killerEntry = getSignatureEntry(moveBonuses, 'SIG_KILLER_INSTINCT');
+    const playerHealthNow = player.health ?? CFG.defaults.health;
+    const opponentHealthNow = opponent.health ?? CFG.defaults.health;
+
+    // SIG_FINISHER_STRIKE — one-shot, THIS round only (applied in the striking exchange).
+    let sigFinisherStrikeBonus = 0;
+    if (finisherEntry) {
+        const st = sigState[finisherEntry.moveId] || (sigState[finisherEntry.moveId] = { fired: false });
+        if (!st.fired && opponentHealthNow < 25) {
+            st.fired = true;
+            sigFinisherStrikeBonus = finisherEntry.effectiveValue;
+            finisherEntry.triggered = true;
+            finisherEntry.triggerCount = (finisherEntry.triggerCount || 0) + 1;
+        }
+    }
+
+    // SIG_IRON_RECOVERY — arm once when player first drops below 25%; persistent drain cut.
+    if (ironRecEntry) {
+        const st = sigState[ironRecEntry.moveId] || (sigState[ironRecEntry.moveId] = { fired: false });
+        if (!st.fired && playerHealthNow < 25) {
+            st.fired = true;
+            st.value = ironRecEntry.effectiveValue;
+            ironRecEntry.triggered = true;
+            ironRecEntry.triggerCount = (ironRecEntry.triggerCount || 0) + 1;
+        }
+    }
+    const sigDrainReduction = (ironRecEntry && sigState[ironRecEntry.moveId] && sigState[ironRecEntry.moveId].fired)
+        ? (sigState[ironRecEntry.moveId].value || 0)
+        : 0;
+
+    // SIG_KILLER_INSTINCT — arm once when opponent first drops below 25%; persistent flash-KO
+    // boost against the opponent (still bounded by CFG.flashKo.maxProb clamp).
+    if (killerEntry) {
+        const st = sigState[killerEntry.moveId] || (sigState[killerEntry.moveId] = { fired: false });
+        if (!st.fired && opponentHealthNow < 25) {
+            st.fired = true;
+            st.value = killerEntry.effectiveValue;
+            killerEntry.triggered = true;
+            killerEntry.triggerCount = (killerEntry.triggerCount || 0) + 1;
+        }
+    }
+    const sigKillerInstinctBonus = (killerEntry && sigState[killerEntry.moveId] && sigState[killerEntry.moveId].fired)
+        ? (sigState[killerEntry.moveId].value || 0)
+        : 0;
+
     let playerDamage = 0;
     let opponentDamage = 0;
     let event = null;
@@ -227,15 +287,22 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     const campCommentary = []; // Camp-specific commentary for this round
 
     // ── Stamina drain ───────────────────────────────────────────────────
-    // CARDIO_PUSH: fires only when player stamina is below 70%
+    // CARDIO_PUSH (camp) + SECOND_WIND (move) both fire below 70% stamina; SIG_IRON_RECOVERY
+    // adds a persistent cut once armed. All are additive reductions to the drain multiplier.
     const currentPlayerStamina = player.stamina ?? CFG.defaults.stamina;
     let playerDrainMult = 1;
+    let drainReduction = 0;
     if (currentPlayerStamina < 70) {
         const cardioBonusValue = triggerBonus(sessionBonuses, 'STAMINA_DRAIN');
-        if (cardioBonusValue > 0) {
-            playerDrainMult = 1 - cardioBonusValue; // e.g. 1 - 0.20 = 0.80
+        const moveCardioValue = triggerBonus(moveBonuses, 'STAMINA_DRAIN');
+        if (cardioBonusValue > 0 || moveCardioValue > 0) {
+            drainReduction += cardioBonusValue + moveCardioValue;
             campCommentary.push('campCardio');
         }
+    }
+    drainReduction += sigDrainReduction; // SIG_IRON_RECOVERY: persistent, not gated on <70%
+    if (drainReduction > 0) {
+        playerDrainMult = Math.max(0, 1 - drainReduction); // never negative (would add stamina)
     }
 
     const pStamina = Math.max(0, currentPlayerStamina - Math.round(staminaDrain * playerDrainMult));
@@ -243,11 +310,13 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     const pStaminaMod = pStamina / 100;
     const oStaminaMod = oStamina / 100;
 
-    // ── GAME_PLAN_STUDY: always active → reduce opponent damage ─────────
-    const gamePlanReduction = getBonusValue(sessionBonuses, 'OPPONENT_DAMAGE_REDUCTION');
-    if (gamePlanReduction > 0) {
-        triggerBonus(sessionBonuses, 'OPPONENT_DAMAGE_REDUCTION');
-    }
+    // ── GAME_PLAN_STUDY (camp) + GRANITE_JAW/VETERAN_IQ (move) → reduce opponent damage ─
+    // Additive; applied together to the striking-exchange damage below.
+    const campDmgReduction = getBonusValue(sessionBonuses, 'OPPONENT_DAMAGE_REDUCTION');
+    const moveDmgReduction = getBonusValue(moveBonuses, 'OPPONENT_DAMAGE_REDUCTION');
+    const gamePlanReduction = campDmgReduction + moveDmgReduction;
+    if (campDmgReduction > 0) triggerBonus(sessionBonuses, 'OPPONENT_DAMAGE_REDUCTION');
+    if (moveDmgReduction > 0) triggerBonus(moveBonuses, 'OPPONENT_DAMAGE_REDUCTION');
 
     // ── Ground continuation ─────────────────────────────────────────────
     // If the previous round ended with someone in top control, the round starts
@@ -280,7 +349,10 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             let gnpDamage = Math.round(Math.max(2, base) * topStaminaMod);
 
             if (playerOnTop) {
-                const gnpBonus = triggerBonus(sessionBonuses, 'GNP_DAMAGE');
+                // GROUND_AND_POUND_POSTURE (camp) + MOUNT_REAPER (move): additive from top.
+                const campGnp = triggerBonus(sessionBonuses, 'GNP_DAMAGE');
+                const moveGnp = triggerBonus(moveBonuses, 'GNP_DAMAGE');
+                const gnpBonus = campGnp + moveGnp;
                 if (gnpBonus > 0) {
                     gnpDamage = Math.round(gnpDamage * (1 + gnpBonus));
                     campCommentary.push('campGnpPosture');
@@ -353,8 +425,10 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         const base = getStat(player, "gnd") * 0.55 + getStat(player, "str") * 0.15 - getStat(opponent, "chn") * 0.2;
         let gnpDamage = Math.round(Math.max(2, base) * pStaminaMod);
 
-        // GROUND_AND_POUND_POSTURE: +20% GnP damage from top
-        const gnpBonus = triggerBonus(sessionBonuses, 'GNP_DAMAGE');
+        // GROUND_AND_POUND_POSTURE (camp) + MOUNT_REAPER (move): additive GnP from top.
+        const campGnp = triggerBonus(sessionBonuses, 'GNP_DAMAGE');
+        const moveGnp = triggerBonus(moveBonuses, 'GNP_DAMAGE');
+        const gnpBonus = campGnp + moveGnp;
         if (gnpBonus > 0) {
             gnpDamage = Math.round(gnpDamage * (1 + gnpBonus));
             campCommentary.push('campGnpPosture');
@@ -378,16 +452,20 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         }
     } else if (opponentGoesFirst || (playerGoesFirst && opponentWillShoot)) {
         // Opponent shoots — either they had initiative, or they picked up after the player's failed TD.
-        const sprawlBonus = getBonusValue(sessionBonuses, 'SPRAWL_SUCCESS');
+        // TAKEDOWN_DEFENCE (camp) + SPRAWL_INSTINCT (move): additive sprawl bonus.
+        const campSprawl = getBonusValue(sessionBonuses, 'SPRAWL_SUCCESS');
+        const moveSprawl = getBonusValue(moveBonuses, 'SPRAWL_SUCCESS');
+        const sprawlBonus = campSprawl + moveSprawl;
         let tdSucceeded = false;
 
         if (sprawlBonus > 0) {
-            // TAKEDOWN_DEFENCE bonus reduces opponent's success chance
+            // Bonus reduces opponent's success chance
             const aWre = getStat(opponent, "wre");
             const dWre = getStat(player, "wre");
             const adjustedChance = CFG.takedown.baseSuccessChance + (aWre - dWre) / CFG.takedown.wreDiffDivisor - sprawlBonus;
             tdSucceeded = Math.random() < adjustedChance;
-            triggerBonus(sessionBonuses, 'SPRAWL_SUCCESS');
+            if (campSprawl > 0) triggerBonus(sessionBonuses, 'SPRAWL_SUCCESS');
+            if (moveSprawl > 0) triggerBonus(moveBonuses, 'SPRAWL_SUCCESS');
             if (!tdSucceeded) {
                 campCommentary.push('campTakedownDefence');
             }
@@ -409,8 +487,10 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
                 CFG.submission.attemptMax
             );
             if (Math.random() < oppSubChance) {
-                // SUBMISSION_ESCAPES: reduce opponent's submission success
-                const escapeBonus = getBonusValue(sessionBonuses, 'ESCAPE_PROBABILITY');
+                // SUBMISSION_ESCAPES (camp) + NEVER_TAP (move): additive escape bonus.
+                const campEscape = getBonusValue(sessionBonuses, 'ESCAPE_PROBABILITY');
+                const moveEscape = getBonusValue(moveBonuses, 'ESCAPE_PROBABILITY');
+                const escapeBonus = campEscape + moveEscape;
                 let subSucceeded;
                 if (escapeBonus > 0) {
                     const aSub = getStat(opponent, "sub");
@@ -429,7 +509,8 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
                         CFG.submission.chanceMax
                     );
                     subSucceeded = Math.random() < (baseChance * (1 - escapeBonus));
-                    triggerBonus(sessionBonuses, 'ESCAPE_PROBABILITY');
+                    if (campEscape > 0) triggerBonus(sessionBonuses, 'ESCAPE_PROBABILITY');
+                    if (moveEscape > 0) triggerBonus(moveBonuses, 'ESCAPE_PROBABILITY');
                     if (!subSucceeded) {
                         campCommentary.push('campSubmissionEscape');
                     }
@@ -457,35 +538,45 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             * getStrikeDamageMod(playerStrategy, true)
             * getStrikeDamageMod(opponentStrategy, false);
 
-        // STRIKING_ACCURACY: +15% to player's strike damage
-        const strikingBonus = triggerBonus(sessionBonuses, 'STRIKE_DAMAGE');
-        if (strikingBonus > 0) {
-            plStrike *= (1 + strikingBonus);
-            campCommentary.push('campStrikingAccuracy');
+        // STRIKING_ACCURACY (camp) + HEAVY_HANDS (move) + SIG_FINISHER_STRIKE (this round only):
+        // all additive on player's strike damage.
+        const campStrike = triggerBonus(sessionBonuses, 'STRIKE_DAMAGE');
+        const moveStrike = triggerBonus(moveBonuses, 'STRIKE_DAMAGE');
+        const strikeMult = campStrike + moveStrike + sigFinisherStrikeBonus;
+        if (strikeMult > 0) {
+            plStrike *= (1 + strikeMult);
+            if (campStrike > 0 || moveStrike > 0) campCommentary.push('campStrikingAccuracy');
         }
 
-        // GAME_PLAN_STUDY: reduce opponent damage
+        // GAME_PLAN_STUDY (camp) + GRANITE_JAW/VETERAN_IQ (move): reduce opponent damage
         if (gamePlanReduction > 0) {
             oppStrike *= (1 - gamePlanReduction);
         }
 
-        // BODY_SHOT_FOCUS: roll for body attack (50% chance when bonus active)
+        // BODY_SHOT_FOCUS (camp) + BODY_SNATCHER (move): roll for body attack (50% chance when
+        // any body bonus is active). Values are additive; only the camp session carries the
+        // extra body-stamina-drain field.
         let bodyAttack = false;
         const bodyBonus = getBonus(sessionBonuses, 'BODY_DAMAGE');
-        if (bodyBonus && Math.random() < 0.5) {
+        const moveBodyValue = getBonusValue(moveBonuses, 'BODY_DAMAGE');
+        const bodyValue = (bodyBonus ? bodyBonus.effectiveValue : 0) + moveBodyValue;
+        if (bodyValue > 0 && Math.random() < 0.5) {
             bodyAttack = true;
-            // Body shots do bonus damage and drain opponent stamina
-            plStrike *= (1 + bodyBonus.effectiveValue);
-            triggerBonus(sessionBonuses, 'BODY_DAMAGE');
+            plStrike *= (1 + bodyValue);
+            if (bodyBonus) triggerBonus(sessionBonuses, 'BODY_DAMAGE');
+            if (moveBodyValue > 0) triggerBonus(moveBonuses, 'BODY_DAMAGE');
             campCommentary.push('campBodyShot');
         }
 
-        // CLINCH_CONTROL: chance of clinch during striking
+        // CLINCH_CONTROL (camp) + CLINCH_KILLER (move): chance of clinch during striking.
         const clinchBonus = getBonus(sessionBonuses, 'CLINCH_DAMAGE');
-        if (clinchBonus && Math.random() < (clinchBonus.clinchChance || 0.30)) {
-            // Clinch occurs — bonus damage
-            plStrike *= (1 + clinchBonus.effectiveValue);
-            triggerBonus(sessionBonuses, 'CLINCH_DAMAGE');
+        const moveClinchValue = getBonusValue(moveBonuses, 'CLINCH_DAMAGE');
+        const clinchValue = (clinchBonus ? clinchBonus.effectiveValue : 0) + moveClinchValue;
+        const clinchChance = clinchBonus ? (clinchBonus.clinchChance || 0.30) : 0.30;
+        if (clinchValue > 0 && Math.random() < clinchChance) {
+            plStrike *= (1 + clinchValue);
+            if (clinchBonus) triggerBonus(sessionBonuses, 'CLINCH_DAMAGE');
+            if (moveClinchValue > 0) triggerBonus(moveBonuses, 'CLINCH_DAMAGE');
             campCommentary.push('campClinchControl');
         }
 
@@ -499,10 +590,12 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             opponent.stamina = Math.max(0, (opponent.stamina ?? oStamina) - extraDrain);
         }
 
-        // Flash KO checks (unchanged)
+        // Flash KO checks. SIG_KILLER_INSTINCT (once armed, opponent below 25% health) adds a
+        // persistent boost to the player's flash-KO chance against the opponent — still bounded
+        // by CFG.flashKo.maxProb.
         if (!finished && opponentDamage >= CFG.flashKo.minDamage) {
             const flashKoChance = clamp(
-                CFG.flashKo.baseChance + strikingProfileMod(player) + (opponentDamage - CFG.flashKo.minDamage) / CFG.flashKo.extraDamageDivisor,
+                CFG.flashKo.baseChance + strikingProfileMod(player) + (opponentDamage - CFG.flashKo.minDamage) / CFG.flashKo.extraDamageDivisor + sigKillerInstinctBonus,
                 CFG.flashKo.minProb,
                 CFG.flashKo.maxProb
             );
@@ -675,6 +768,12 @@ function resolveFight(player, opponent, options = {}) {
     const opponentStrategy = options.opponentStrategy || opponent?.strategy || null;
     const ironWillPerk = !!options.ironWillPerk;
     const sessionBonuses = options.sessionBonuses ?? [];
+    // Special Moves (PvE only): parallel array shaped like sessionBonuses, built from the
+    // fighter's equipped moves. PvP passes nothing → [] → the engine never forks by mode.
+    const moveBonuses = options.moveBonuses ?? [];
+    // Request-LOCAL signature fire state, keyed by moveId. NEVER module-level — no state
+    // may leak across fights.
+    const sigState = {};
     const wildcard = options.wildcard ?? null;
     const playerName = options.playerName || "Your fighter";
     const opponentName = options.opponentName || "Opponent";
@@ -711,17 +810,20 @@ function resolveFight(player, opponent, options = {}) {
         gnd: opponent.gnd, sub: opponent.sub, chn: opponent.chn, fiq: opponent.fiq
     };
 
-    // ── Pre-fight: Apply SPARRING_GENERAL (+10% all stats) ──────────────
+    // ── Pre-fight: Apply ALL_STATS bonuses (camp SPARRING_GENERAL + move COMPLETE_PACKAGE) ──
+    // Additive: total all-stats mult = 1 + campAllStats + moveAllStats, applied once.
     const sparringBonus = sessionBonuses.find(b => b.bonusType === 'ALL_STATS' && b.effectiveValue > 0);
-    if (sparringBonus) {
-        const boost = sparringBonus.effectiveValue;
+    const moveAllStatsBonus = moveBonuses.find(b => b.bonusType === 'ALL_STATS' && b.effectiveValue > 0);
+    const totalAllStats = (sparringBonus ? sparringBonus.effectiveValue : 0)
+        + (moveAllStatsBonus ? moveAllStatsBonus.effectiveValue : 0);
+    if (totalAllStats > 0) {
         for (const k of STAT_KEYS) {
             if (typeof p[k] === "number") {
-                p[k] = Math.max(1, Math.round(p[k] * (1 + boost)));
+                p[k] = Math.max(1, Math.round(p[k] * (1 + totalAllStats)));
             }
         }
-        sparringBonus.triggered = true;
-        sparringBonus.triggerCount = 1;
+        if (sparringBonus) { sparringBonus.triggered = true; sparringBonus.triggerCount = 1; }
+        if (moveAllStatsBonus) { moveAllStatsBonus.triggered = true; moveAllStatsBonus.triggerCount = 1; }
     }
 
     // ── Wildcard: pick a round to fire (random round between 2 and maxRounds) ──
@@ -753,7 +855,7 @@ function resolveFight(player, opponent, options = {}) {
             }
         }
 
-        const result = resolveRound(p, o, r, playerStrategy, ironWillPerk, sessionBonuses, opponentStrategy, groundPosition);
+        const result = resolveRound(p, o, r, playerStrategy, ironWillPerk, sessionBonuses, opponentStrategy, groundPosition, moveBonuses, sigState);
         groundPosition = result.grapplingControl;
 
         // Revert wildcard stat boost after the round
@@ -825,7 +927,7 @@ function resolveFight(player, opponent, options = {}) {
                 // ADDITIVE display field — why the (T)KO happened: "ko" | "tko" | "submission".
                 finishCause: result.finishCause ?? null,
                 playerHealthAfter, opponentHealthAfter, playerStaminaAfter: p.stamina,
-                commentary, sessionBonuses, wildcard: wildcard ? { ...wildcard, countered: wildcardCountered } : null,
+                commentary, sessionBonuses, moveBonuses, wildcard: wildcard ? { ...wildcard, countered: wildcardCountered } : null,
             };
         }
     }
@@ -857,7 +959,7 @@ function resolveFight(player, opponent, options = {}) {
         outcome, rounds, winner,
         finishCause: null, // decisions/draws have no finish cause
         playerHealthAfter: p.health, opponentHealthAfter: o.health, playerStaminaAfter: p.stamina,
-        commentary, scorecard, sessionBonuses,
+        commentary, scorecard, sessionBonuses, moveBonuses,
         wildcard: wildcard ? { ...wildcard, countered: wildcardCountered } : null,
     };
 }

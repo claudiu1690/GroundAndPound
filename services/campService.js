@@ -2,6 +2,7 @@ const Fight = require("../models/fightModel");
 const FightCamp = require("../models/fightCampModel");
 const Fighter = require("../models/fighterModel");
 const energyService = require("./energyService");
+const specialMovesService = require("./specialMovesService");
 const { BUFFS } = require("../consts/shopConfig");
 const {
     CAMP_SESSIONS,
@@ -557,6 +558,9 @@ async function resolveInjury(fightId, fighterId, choice) {
         camp.campRating = newGrade;
         camp.campBreakdown = campBreakdown;
         camp.sessionBonuses = buildSessionBonuses(camp.sessions);
+        // Special Moves: freeze the equipped loadout alongside sessionBonuses so a later
+        // UPGRADE drop can't change this already-booked fight's power.
+        camp.moveBonuses = await specialMovesService.buildMoveBonusesSnapshot(fighterId);
         camp.finalisedAt = new Date();
     } else {
         camp.injuryPenalty = { ...injuryCfg.fightPenalty };
@@ -575,6 +579,11 @@ async function finaliseCamp(fightId, fighterId, skip = false) {
     assertCampOwnership(camp, fighterId);
 
     if (camp.finalisedAt) throw new Error("Camp is already finalised");
+
+    // Special Moves: freeze the equipped loadout at finalise (both skip and normal paths).
+    // Skipping camp forfeits SESSION bonuses but not the permanent, always-on special moves,
+    // so the snapshot is taken regardless of skip.
+    camp.moveBonuses = await specialMovesService.buildMoveBonusesSnapshot(fighterId);
 
     if (skip) {
         camp.wasSkipped = true;

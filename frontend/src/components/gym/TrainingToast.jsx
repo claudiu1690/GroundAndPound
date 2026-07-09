@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Check, X, TrendingUp, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Check, X, TrendingUp, AlertTriangle, ShieldCheck, Coins } from "lucide-react";
 import { STAT_CHIP_CLASS } from "./GymTraining";
 import { t } from "@/lib/i18n";
 
@@ -43,6 +43,31 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
             <span className="train-toast-xp-label">{toast.badgeContext}</span>
           </div>
         )}
+        <div className="train-toast-progress" />
+      </div>
+    );
+  }
+
+  // Duplicate special-move drop — a compact cash line, deliberately NOT a
+  // big card (the tall reveal card is reserved for NEW/UPGRADE outcomes,
+  // rendered via DropRevealModal instead).
+  if (toast.kind === "moveDupe") {
+    return (
+      <div className={`train-toast train-toast--movedupe${toast.dismissing ? " dismissing" : ""}`}>
+        <div className="train-toast-top">
+          <div className="train-toast-title">
+            <Coins size={18} className="train-toast-movedupe-icon" />
+            <span>{t("gym.toast.moveDuplicate", { name: toast.name, cash: (toast.cashAwarded || 0).toLocaleString() })}</span>
+          </div>
+          <button
+            type="button"
+            className="train-toast-close"
+            aria-label={t("gym.toast.dismiss")}
+            onClick={() => onDismiss(toast.id)}
+          >
+            <X size={18} />
+          </button>
+        </div>
         <div className="train-toast-progress" />
       </div>
     );

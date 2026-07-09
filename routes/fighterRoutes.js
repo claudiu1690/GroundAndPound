@@ -3,6 +3,7 @@ const router = express.Router();
 const fighterController = require("../controllers/fighterController");
 const rankingController = require("../controllers/rankingController");
 const shopController = require("../controllers/shopController");
+const specialMovesController = require("../controllers/specialMovesController");
 const ownFighter = require("../middleware/ownFighterMiddleware");
 
 /**
@@ -198,6 +199,14 @@ router.post("/:id/callouts", fighterController.createCallout);
 router.delete("/:id/callouts", fighterController.cancelCallout);
 /** Reserved for media events (notoriety) — returns 501 until implemented */
 router.post("/:id/media-event", fighterController.mediaEventStub);
+
+// ── Special Moves v1 ───────────────────────────────────────
+// Literal routes MUST precede the /:moveId param route so /moves/equip and
+// /moves/unequip are not swallowed by /moves/:moveId.
+router.get("/:id/moves", ownFighter, specialMovesController.listMoves);
+router.post("/:id/moves/equip", ownFighter, specialMovesController.equipMove);
+router.post("/:id/moves/unequip", ownFighter, specialMovesController.unequipMove);
+router.get("/:id/moves/:moveId", ownFighter, specialMovesController.getMoveDetail);
 
 // ── Shop, Inventory & Pre-Fight Supplements v1.0 ───────────
 router.get("/:id/shop/catalog", ownFighter, shopController.getCatalog);
