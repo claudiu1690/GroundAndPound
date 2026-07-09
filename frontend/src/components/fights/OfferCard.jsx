@@ -93,15 +93,19 @@ function ThreatTag({ label, tone }) {
 
 // ── Locked title card ─────────────────────────────────────────────────────────
 function LockedOverlay({ offer }) {
+  // Precedence follows the actual path to the shot: clear any rematch cooldown,
+  // then get ranked top-5, THEN bank the qualifying wins. Rank must come before
+  // winsNeeded — the qualifying wins can only be earned while top-5, so telling a
+  // #10 fighter "win 2 to qualify" is wrong (they can't, until they're top-5).
   let message = t("fights.offerCard.lockedDefault");
   if (offer.cooldownRemaining > 0) {
     message = t("fights.offerCard.lockedWinsRematch", { n: offer.cooldownRemaining, plural: offer.cooldownRemaining !== 1 ? "s" : "" });
-  } else if (offer.winsNeeded > 0) {
-    message = t("fights.offerCard.lockedWinsQualify", { n: offer.winsNeeded, plural: offer.winsNeeded !== 1 ? "s" : "" });
   } else if (offer.rankNeeded) {
     message = offer.currentRank == null
       ? t("fights.offerCard.lockedGetRanked")
       : t("fights.offerCard.lockedReachTop5", { rank: offer.currentRank });
+  } else if (offer.winsNeeded > 0) {
+    message = t("fights.offerCard.lockedWinsQualify", { n: offer.winsNeeded, plural: offer.winsNeeded !== 1 ? "s" : "" });
   }
   return (
     <div className="accept-section">

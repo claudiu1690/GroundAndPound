@@ -12,7 +12,7 @@ import { t } from "@/lib/i18n";
  *
  * Render gating (handled by the caller, but also guarded here): only when
  *   fighter.pendingPromotion is set AND the shot is not ready
- *   (cooldown > 0 OR not top-5 OR winsInCurrentTier < titleWins).
+ *   (cooldown > 0 OR not top-5 OR topFiveWinsInTier < titleWins).
  */
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -38,7 +38,10 @@ export const ContenderChecklist = memo(function ContenderChecklist({ fighter, of
   const currentTier = fighter.promotionTier ?? "Amateur";
   const rank = fighter.ranking?.rank ?? null;
   const top5 = rank != null && rank <= 5;
-  const wins = fighter.winsInCurrentTier ?? 0;
+  // The title-shot gate is wins earned WHILE ranked top-5 (topFiveWinsInTier) —
+  // NOT total wins in tier (winsInCurrentTier). Using the latter showed "8/2"
+  // when the player has 8 tier wins but 0 of them while top-5.
+  const wins = fighter.topFiveWinsInTier ?? 0;
   const titleWins = TITLE_WINS[currentTier] ?? 3;
   const cooldown = fighter.titleShotCooldown ?? 0;
 
@@ -103,7 +106,7 @@ export const ContenderChecklist = memo(function ContenderChecklist({ fighter, of
         <ChecklistRow state="met">{t("fights.contenderChecklist.rowRating")}</ChecklistRow>
         <ChecklistRow state={top5State}>{top5Text}</ChecklistRow>
         <ChecklistRow state={winsMet ? "met" : "pending"}>
-          {t("fights.contenderChecklist.rowWins", { n: titleWins, current: wins, total: titleWins })}
+          {t("fights.contenderChecklist.rowWins", { n: titleWins, current: Math.min(wins, titleWins), total: titleWins })}
         </ChecklistRow>
         {cooldown > 0 && (
           <ChecklistRow state="pending">
