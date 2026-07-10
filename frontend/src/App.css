@@ -16037,7 +16037,9 @@ code {
    Fighter Report; auto-dismisses. One component, responsive: L/R on desktop,
    vertical clash on mobile.
    ═══════════════════════════════════════════════════════════════════════ */
-.faceoff { position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column;
+/* Above the onboarding tutorial scrim (z 50000) so the cutscene plays clean —
+   undimmed, Skip clickable — while the tutorial waits on fight_accepted. */
+.faceoff { position: fixed; inset: 0; z-index: 50600; display: flex; flex-direction: column;
   background: radial-gradient(120% 90% at 50% 40%, #1a1a1a, #000 75%); overflow: hidden; }
 .faceoff::before, .faceoff::after { content: ""; position: absolute; top: 0; bottom: 0; width: 44%; pointer-events: none; opacity: .5; }
 .faceoff::before { left: 0; background: radial-gradient(70% 60% at 0% 50%, rgba(59,130,246,.28), transparent 70%); }

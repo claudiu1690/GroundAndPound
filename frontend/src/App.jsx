@@ -761,6 +761,28 @@ function App() {
     }
   }, [bootParams.emailUpdated, bootParams.emailUpdateError]);
 
+  // ── Tutorial resume routing ──────────────────────────────────
+  // activeTab resets to "home" on every page load, but some tutorial steps
+  // focus elements that only exist on another screen. Most such steps open
+  // with a nav-* phase (or carry skipIfAbsent) and heal themselves, but the
+  // training step is a single phase pinned to gym-screen anchors with no
+  // in-step navigation — after a mid-tutorial refresh the player lands on
+  // home and gets trapped behind a full scrim with no anchor to cut out and
+  // no way to reach the gym. Route to the required tab once on resume so the
+  // step's focal elements exist. (During these steps the scrim locks the
+  // player to that screen anyway, so forcing the tab can't fight the user.)
+  const tutorialResumedRef = useRef(false);
+  const STEP_RESUME_TAB = { training_session: "gym" };
+  useEffect(() => {
+    if (tutorialResumedRef.current) return;
+    const tut = fighter?.tutorial;
+    if (!tut || tut.completed) return;
+    tutorialResumedRef.current = true;
+    const tab = STEP_RESUME_TAB[tut.current_step];
+    if (tab) setActiveTab(tab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fighter?.tutorial?.current_step, fighter?.tutorial?.completed]);
+
   // Email-verification redirect — same pattern. On success we also flip the
   // local accountStatus so the banner disappears without needing a refetch.
   useEffect(() => {
@@ -1010,7 +1032,9 @@ const handleGetOffers = useCallback(async () => {
         setMessage(t("app.fightAccepted"));
         loadFighter(fighter._id, { clearMessage: false });
         setActiveTab("fights");
-        tutorialBus.emit("fight_accepted");
+        // NOTE: tutorialBus.emit("fight_accepted") fires from the FaceOff's
+        // onDone (below in render) — not here — so the tutorial waits for the
+        // face-off to finish before advancing to the Fighter Report tooltip.
       } catch (e) {
         const errMsg = e.message || "Accept failed";
         maybeShowBlockPopup(errMsg, e.code);
@@ -1353,7 +1377,14 @@ const handleGetOffers = useCallback(async () => {
         <FaceOff
           player={faceOff.player}
           opponent={faceOff.opponent}
-          onDone={() => setFaceOff(null)}
+          onDone={() => {
+            setFaceOff(null);
+            // Advance the tutorial only once the face-off has played out
+            // (auto, Skip, or Esc/Enter) so the fight_camp step's Fighter
+            // Report tooltip doesn't render on top of the cutscene. No-op
+            // outside the tutorial.
+            tutorialBus.emit("fight_accepted");
+          }}
         />
       )}
 

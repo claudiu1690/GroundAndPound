@@ -98,23 +98,34 @@ export const TUTORIAL_STEPS = {
         next: "fight_offer",
         phases: [
             {
+                // Each tooltip carries its own `focus` so the cut-out walks
+                // element by element and scroll-into-view keeps each anchor on
+                // screen. Without this the cut-out parks on the floor and the
+                // header anchors (energy/gym-info) — now separated from the
+                // floor by the Sparring Ring — scroll off-screen. Once tooltips
+                // are done, `focusAfterTooltips` returns the cut-out to the
+                // floor for the train action that fires `training_complete`.
                 focus: "gym-sessions",
+                focusAfterTooltips: "gym-sessions",
                 advance: { type: "event", name: "training_complete" },
                 tooltips: [
                     {
+                        focus: "energy",
                         anchor: "energy",
                         title: "Your Energy",
                         body: "Energy is your training fuel. Each session costs energy, and it refills on its own over time — about 1 point a minute, so a full bar takes a couple of hours. Spend it wisely — you can't train when it's empty.",
                     },
                     {
-                        anchor: "gym-sessions",
-                        title: "Choose What to Train",
-                        body: "Each session improves a specific stat — striking, grappling, footwork, and more. Your overall rating (OVR) is a reflection of all your stats combined. Higher OVR, better fighter.",
-                    },
-                    {
+                        focus: "gym-info",
                         anchor: "gym-info",
                         title: "Your Gym",
                         body: "You're training at the common gym. As you earn cash from fights you can upgrade to better gyms with stronger training bonuses and perks.",
+                    },
+                    {
+                        focus: "gym-sessions",
+                        anchor: "gym-sessions",
+                        title: "Choose What to Train",
+                        body: "Each session improves a specific stat — striking, grappling, footwork, and more. Your overall rating (OVR) is a reflection of all your stats combined. Higher OVR, better fighter.",
                     },
                 ],
             },
