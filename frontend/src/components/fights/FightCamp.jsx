@@ -146,7 +146,7 @@ export const FightCamp = memo(function FightCamp({
                 <CampSlotDots maxSlots={maxSlots} slotsUsed={slotsUsed} canRemove={canRemove} onRemove={onRemoveSession} />
                 <span className="camp-slot-text">
                     <strong>{t("fights.camp.slotsUsed", { used: slotsUsed, max: maxSlots })}</strong>
-                    {slotsRemaining > 0 && !isFinalised ? <> &middot; <strong>{slotsRemaining}</strong> {t("fights.camp.slotsRemaining", { n: slotsRemaining })}</> : null}
+                    {slotsRemaining > 0 && !isFinalised ? <> &middot; {t("fights.camp.slotsRemaining", { n: slotsRemaining })}</> : null}
                 </span>
                 <span className="camp-energy-pill">
                     <span className="lbl">{t("fights.camp.energy")}</span>
