@@ -24,72 +24,98 @@
  */
 
 const BANNER_PIECES = [
-    // ── Backgrounds ────────────────────────────────────────────
+    // ── Styles (background compositions) ───────────────────────
+    // Same ids/unlock tiers as the old flat-gradient set so saved banners and
+    // progression carry over. `css` is a layered background shorthand (slash
+    // cuts, sheens, washes); `texture` picks an overlay class in the preview
+    // ("halftone" | "grain" | null).
     {
         id: "BG_SLATE", kind: "background", label: "Slate",
-        visual: { css: "linear-gradient(135deg, #2c2c2e 0%, #3a3a3c 100%)" },
+        visual: { css: "linear-gradient(115deg, #232327 0%, #141416 62%)", texture: "grain" },
         unlockAt: { always: true },
     },
     {
-        id: "BG_CRIMSON", kind: "background", label: "Crimson",
-        visual: { css: "linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%)" },
+        id: "BG_CRIMSON", kind: "background", label: "Red Slash",
+        visual: {
+            css: "linear-gradient(115deg, transparent 0 58%, rgba(200,16,46,0.92) 58.3% 66%, transparent 66.3%), linear-gradient(115deg, transparent 0 67%, rgba(200,16,46,0.30) 67.3% 71%, transparent 71.3%), linear-gradient(115deg, #1a1416 0%, #141416 65%)",
+            texture: "halftone",
+        },
         unlockAt: { notorietyTier: "PROSPECT" },
     },
     {
-        id: "BG_NAVY", kind: "background", label: "Deep Blue",
-        visual: { css: "linear-gradient(135deg, #0c1a3a 0%, #1e3a8a 100%)" },
+        id: "BG_NAVY", kind: "background", label: "Blue Steel",
+        visual: {
+            css: "linear-gradient(115deg, transparent 0 58%, rgba(59,130,246,0.85) 58.3% 66%, transparent 66.3%), linear-gradient(115deg, transparent 0 67%, rgba(59,130,246,0.28) 67.3% 71%, transparent 71.3%), linear-gradient(115deg, #10141c 0%, #121316 65%)",
+            texture: "halftone",
+        },
         unlockAt: { notorietyTier: "PROSPECT" },
     },
     {
-        id: "BG_CARBON", kind: "background", label: "Carbon Fiber",
-        visual: { css: "repeating-linear-gradient(45deg, #1a1a1c 0 6px, #2c2c2e 6px 12px)" },
+        id: "BG_CARBON", kind: "background", label: "Carbon",
+        visual: {
+            css: "radial-gradient(90% 130% at 18% 0%, rgba(255,255,255,0.09), transparent 55%), repeating-linear-gradient(45deg, #151517 0 6px, #1c1c1f 6px 12px)",
+            texture: null,
+        },
         unlockAt: { notorietyTier: "RISING_STAR" },
     },
     {
-        id: "BG_EMERALD", kind: "background", label: "Emerald",
-        visual: { css: "linear-gradient(135deg, #052e1a 0%, #10b981 100%)" },
+        id: "BG_EMERALD", kind: "background", label: "Jade Slash",
+        visual: {
+            css: "linear-gradient(115deg, transparent 0 58%, rgba(34,197,94,0.8) 58.3% 66%, transparent 66.3%), linear-gradient(115deg, transparent 0 67%, rgba(34,197,94,0.25) 67.3% 71%, transparent 71.3%), linear-gradient(115deg, #0f1712 0%, #121412 65%)",
+            texture: "halftone",
+        },
         unlockAt: { notorietyTier: "RISING_STAR" },
     },
     {
-        id: "BG_GOLD_MESH", kind: "background", label: "Gold Mesh",
-        visual: { css: "repeating-linear-gradient(90deg, #7c5a0b 0 2px, #d4a012 2px 4px, #7c5a0b 4px 6px)" },
+        id: "BG_GOLD_MESH", kind: "background", label: "Gold Standard",
+        visual: {
+            css: "linear-gradient(100deg, transparent 0 60%, rgba(212,168,32,0.16) 60% 100%), linear-gradient(115deg, #1e1808 0%, #141416 68%)",
+            texture: "grain",
+        },
         unlockAt: { notorietyTier: "CONTENDER" },
     },
     {
         id: "BG_NEON", kind: "background", label: "Neon City",
-        visual: { css: "linear-gradient(135deg, #1a0b2e 0%, #7e22ce 50%, #ec4899 100%)" },
+        visual: {
+            css: "linear-gradient(115deg, transparent 0 60%, rgba(236,72,153,0.5) 60.3% 65%, transparent 65.3%), linear-gradient(115deg, transparent 0 66%, rgba(126,34,206,0.4) 66.3% 69%, transparent 69.3%), linear-gradient(135deg, #170b28 0%, #0f0a18 60%)",
+            texture: "halftone",
+        },
         unlockAt: { notorietyTier: "STAR" },
     },
     {
         id: "BG_HOLO", kind: "background", label: "Holographic",
-        visual: { css: "linear-gradient(135deg, #c084fc 0%, #38bdf8 25%, #fbbf24 50%, #f472b6 75%, #c084fc 100%)" },
+        visual: {
+            css: "linear-gradient(135deg, rgba(192,132,252,0.35) 0%, rgba(56,189,248,0.3) 25%, rgba(251,191,36,0.28) 50%, rgba(244,114,182,0.33) 75%, rgba(192,132,252,0.35) 100%), linear-gradient(135deg, #17181c 0%, #101114 100%)",
+            texture: "grain",
+        },
         unlockAt: { notorietyTier: "LEGEND" },
     },
 
-    // ── Frames ─────────────────────────────────────────────────
+    // ── Layouts (nameplate typesetting; stored in the legacy frameId slot) ──
+    // `glyph` is only used for the editor swatch.
     {
-        id: "FRAME_NONE", kind: "frame", label: "No Frame",
-        visual: { border: "1px solid rgba(255,255,255,0.15)" },
+        id: "LAYOUT_STACKED", kind: "frame", label: "Stacked",
+        visual: { glyph: "≡" },
         unlockAt: { always: true },
     },
     {
-        id: "FRAME_ROPE", kind: "frame", label: "Cage Rope",
-        visual: { border: "3px double #b8860b" },
+        id: "LAYOUT_INLINE", kind: "frame", label: "Lower Third",
+        visual: { glyph: "—" },
         unlockAt: { notorietyTier: "PROSPECT" },
     },
     {
-        id: "FRAME_CHROME", kind: "frame", label: "Chrome",
-        visual: { border: "3px solid #cbd5e1", boxShadow: "inset 0 0 0 1px #64748b" },
+        id: "LAYOUT_MARQUEE", kind: "frame", label: "Marquee",
+        visual: { glyph: "◈" },
         unlockAt: { notorietyTier: "RISING_STAR" },
     },
     {
-        id: "FRAME_GOLD", kind: "frame", label: "Gold Trim",
-        visual: { border: "3px solid #d4a012", boxShadow: "inset 0 0 0 1px #7c5a0b, 0 0 8px rgba(212,160,18,0.3)" },
+        id: "LAYOUT_BROADCAST", kind: "frame", label: "Broadcast",
+        visual: { glyph: "▮" },
         unlockAt: { notorietyTier: "CONTENDER" },
     },
     {
-        id: "FRAME_CHAMP", kind: "frame", label: "Championship",
-        visual: { border: "4px double #fbbf24", boxShadow: "inset 0 0 0 2px #7c5a0b, 0 0 12px rgba(251,191,36,0.4)" },
+        id: "LAYOUT_CHAMP", kind: "frame", label: "Championship",
+        visual: { glyph: "★" },
         unlockAt: { beltsWon: true },
     },
 
@@ -179,7 +205,7 @@ const MAX_BADGE_SLOTS = 3;
 /** Default banner for new fighters. */
 const DEFAULT_BANNER = {
     backgroundId: "BG_SLATE",
-    frameId: "FRAME_NONE",
+    frameId: "LAYOUT_STACKED",
     accentColor: "ACC_RED",
     badgeSlots: [],
 };

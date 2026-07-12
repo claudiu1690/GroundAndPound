@@ -353,8 +353,8 @@
       "badgeHint": "Pin up to {max} badges. Click to add or remove.",
       "badgeCount": "({count}/{max})",
       "tabs": {
-        "background": "Background",
-        "frame": "Frame",
+        "background": "Style",
+        "frame": "Layout",
         "accent": "Accent"
       }
     }

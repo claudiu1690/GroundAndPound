@@ -42,8 +42,9 @@ function NewCompetitorShieldBanner({ expiresAt }) {
  *   onboarding     {object|null}
  *   onOpenProfile  {fn(playerId)}
  *   onChallenge    {fn(playerId)}   threaded from PvpHub.handleChallengeFromProfile
+ *   viewerBanner   {object|null}    the viewer's banner config — skins their own row/card
  */
-export function LadderTab({ season, myFighterId, onboarding, onOpenProfile }) {
+export function LadderTab({ season, myFighterId, onboarding, onOpenProfile, viewerBanner }) {
   const seasonId = season?.id;
 
   // ── position (never moves on filter change) ──────────────────────────────
@@ -99,7 +100,7 @@ export function LadderTab({ season, myFighterId, onboarding, onOpenProfile }) {
 
       {/* Your position (pinned — independent of filters) */}
       {!posLoading && (
-        <PositionCard position={position} />
+        <PositionCard position={position} viewerBanner={viewerBanner} />
       )}
 
       {/* Division spectrum strip */}
@@ -122,6 +123,7 @@ export function LadderTab({ season, myFighterId, onboarding, onOpenProfile }) {
         season={season}
         onOpenProfile={onOpenProfile}
         division={division}
+        viewerBanner={viewerBanner}
       />
     </div>
   );

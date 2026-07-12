@@ -30,6 +30,7 @@ export function LadderTable({
   season,
   onOpenProfile,
   division,
+  viewerBanner,
 }) {
   if (loading && rows.length === 0) {
     return (
@@ -73,6 +74,7 @@ export function LadderTable({
             row={row}
             season={season}
             onOpenProfile={onOpenProfile}
+            viewerBanner={viewerBanner}
           />
         ))
       )}

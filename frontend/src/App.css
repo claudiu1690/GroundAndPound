@@ -1918,20 +1918,23 @@ code {
 .rankings-tab .rl-ovr { font-family: var(--font-display); font-weight: 800; font-size: 15px; width: 34px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .rankings-tab .rl-rec { font-family: var(--font-display); font-weight: 700; font-size: 11px; color: var(--text-muted); width: 44px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 
+/* --rung-accent: the fighter's banner accent (set inline); green fallback. */
 .rankings-tab .rl-rung--me {
   background: rgba(34, 197, 94, 0.08);
-  border: 1px solid rgba(34, 197, 94, 0.35);
+  border: 1px solid color-mix(in srgb, var(--rung-accent, var(--green-bright)) 40%, transparent);
+  /* Keeps text legible over the banner composition (inline background). */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 .rankings-tab .rl-rung--me:hover { background: rgba(34, 197, 94, 0.12); }
 .rankings-tab .rl-rung--me::before {
-  background: var(--green-bright);
-  border-color: var(--green-bright);
+  background: var(--rung-accent, var(--green-bright));
+  border-color: var(--rung-accent, var(--green-bright));
   color: #0c130e;
-  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.15);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--rung-accent, var(--green-bright)) 15%, transparent);
 }
-.rankings-tab .rl-rung--me .rl-name { color: #4ADE80; }
-.rankings-tab .rl-rung--me .rl-port { border: 1px solid var(--green-bright); color: #4ADE80; }
-.rankings-tab .rl-rung--me .rank-you-badge { background: var(--green-bright); color: #0c130e; }
+.rankings-tab .rl-rung--me .rl-name { color: var(--rung-accent, #4ADE80); }
+.rankings-tab .rl-rung--me .rl-port { border: 1px solid var(--rung-accent, var(--green-bright)); color: var(--rung-accent, #4ADE80); }
+.rankings-tab .rl-rung--me .rank-you-badge { background: var(--rung-accent, var(--green-bright)); color: #0c130e; }
 .rankings-tab .rl-rung--unranked { opacity: 0.75; }
 
 .rankings-tab .rl-path { display: flex; padding: 2px 0 10px 10px; }
@@ -6500,6 +6503,130 @@ code {
 .banner-size-full    { min-height: 100px; padding: 0.75rem 1rem; }
 .banner-size-compact { min-height: 68px;  padding: 0.5rem 0.7rem; }
 
+/* ── Fight-poster nameplate (bp2) ────────────────────────────
+   Typography-first banner: composition background + texture
+   overlay + a layout-switched nameplate. Replaces the old
+   gray-card layout; the legacy .banner-inner styles below are
+   kept for any straggler usages. */
+.banner-preview.bp2 { padding: 0; border: 1px solid rgba(255, 255, 255, 0.08); container-type: inline-size; }
+.bp2 .bp2-tex { position: absolute; inset: 0; pointer-events: none; }
+.bp2 .bp2-tex--halftone {
+  background: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1.3px);
+  background-size: 7px 7px;
+  -webkit-mask-image: linear-gradient(100deg, #000 28%, transparent 62%);
+  mask-image: linear-gradient(100deg, #000 28%, transparent 62%);
+}
+.bp2 .bp2-tex--grain {
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.016) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 1px, transparent 1px 4px);
+}
+.bp2 .bp2-in { position: relative; height: 100%; min-height: inherit; }
+.bp2 .bp2-row { display: flex; align-items: center; gap: 14px; padding: 12px 18px; }
+.bp2 .bp2-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 12px 18px; text-align: center; }
+
+.bp2 .bp2-nameblock { display: flex; flex-direction: column; line-height: 0.85; min-width: 0; }
+.bp2 .bp2-first {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+}
+.bp2 .bp2-last {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 34px;
+  /* Scale the name with the banner's own width so it never crushes down to a
+     single ellipsized letter in narrow slots (sidebar, small viewports).
+     Browsers without container-query units keep the px size above. */
+  font-size: clamp(15px, 9.5cqw, 34px);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bp2 .bp2-last--inline { font-size: 26px; font-size: clamp(14px, 7.5cqw, 26px); line-height: 1; }
+.bp2 .bp2-last--marquee { font-size: 27px; font-size: clamp(14px, 8cqw, 27px); line-height: 1; }
+/* Long last names get a lower ceiling so they fit before ellipsis kicks in
+   (declared after the variants so it wins for any layout). */
+.bp2 .bp2-last--long { font-size: clamp(13px, 7cqw, 25px); }
+.bp2 .bp2-nick {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.bp2 .bp2-nick--tilt { transform: rotate(-4deg); margin: -14px 0 0 -4px; }
+.bp2 .bp2-inlineblock { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+
+.bp2 .bp2-right { margin-left: auto; text-align: right; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.bp2 .bp2-tierline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+.bp2 .bp2-rec {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 21px;
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.bp2 .bp2-rec small { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: rgba(255, 255, 255, 0.65); }
+
+.bp2 .bp2-topline, .bp2 .bp2-botline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+.bp2 .bp2-botline { display: flex; gap: 10px; align-items: baseline; }
+.bp2 .bp2-botline .bp2-nick { font-size: 12px; text-transform: none; letter-spacing: 0; }
+
+.bp2 .bp2-broadcast { padding-left: 0; }
+.bp2 .bp2-sidebar { align-self: stretch; width: 7px; flex-shrink: 0; margin-right: 11px; }
+
+/* Championship layout — marquee with gold dressing. */
+.bp2--champ { border: 2px solid rgba(251, 191, 36, 0.75) !important; box-shadow: inset 0 0 0 1px #7c5a0b, 0 0 14px rgba(251, 191, 36, 0.3); }
+.bp2--champ .bp2-topline { color: #e6c766; }
+
+/* Compact size (profile sidebar) — tighter type, hide the flourish. */
+.bp2.banner-size-compact .bp2-row,
+.bp2.banner-size-compact .bp2-center { padding: 8px 12px; }
+.bp2.banner-size-compact .bp2-first { font-size: 10px; letter-spacing: 2px; }
+.bp2.banner-size-compact .bp2-nick { font-size: 11px; }
+.bp2.banner-size-compact .bp2-nick--tilt { margin-top: -8px; }
+.bp2.banner-size-compact .bp2-rec { font-size: 15px; }
+.bp2.banner-size-compact .bp2-tierline { font-size: 8px; letter-spacing: 1.5px; }
+
+/* Narrow banners (whatever the size prop): the name wins the space fight.
+   The meta column gives way — tier line goes first, then the record shrinks —
+   and the tilted nickname overlay is dropped so nothing overlaps. */
+@container (max-width: 340px) {
+  .bp2 .bp2-row { gap: 8px; padding: 8px 12px; }
+  .bp2 .bp2-tierline { display: none; }
+  .bp2 .bp2-rec { font-size: 14px; }
+  .bp2 .bp2-rec small { font-size: 8.5px; }
+  .bp2 .bp2-nick--tilt { display: none; }
+  .bp2 .bp2-sidebar { margin-right: 8px; }
+}
+@container (max-width: 230px) {
+  .bp2 .bp2-first { font-size: 9px; letter-spacing: 1.5px; }
+  .bp2 .bp2-rec small { display: none; }
+}
+
 .banner-inner {
   display: flex;
   justify-content: space-between;
@@ -6741,6 +6868,14 @@ code {
 }
 .banner-piece-badge-icon {
   font-size: 22px;
+  line-height: 1;
+}
+/* Layout swatch glyph (Stacked ≡ / Lower Third — / Marquee ◈ …) */
+.banner-piece-glyph {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.75);
   line-height: 1;
 }
 .banner-piece-lock {
@@ -14102,7 +14237,7 @@ code {
 .lt-row { display: grid; grid-template-columns: 48px 1fr 88px 82px 52px 96px; gap: 0; padding: 9px 14px; border-bottom: 1px solid #1E1E1E; border-left: 3px solid transparent; align-items: center; cursor: pointer; transition: background 0.1s; }
 .lt-row:last-child { border-bottom: none; }
 .lt-row:hover { background: rgba(255,255,255,0.02); }
-.lt-row-you { background: rgba(200,16,46,0.05); border-left: 3px solid #C8102E; padding-left: 11px; }
+.lt-row-you { background: rgba(200,16,46,0.05); border-left: 3px solid #C8102E; padding-left: 11px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); }
 .lt-row-you:hover { background: rgba(200,16,46,0.08); }
 .lt-row-belt { background: rgba(212,168,32,0.03); }
 .lt-row-belt:hover { background: rgba(212,168,32,0.06); }
@@ -14114,7 +14249,10 @@ code {
 .lt-rank-top3 { color: #CD7F32; }
 .lt-cell-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .lt-cn-name { font-family: var(--font-display); font-weight: 800; font-size: 13px; text-transform: uppercase; color: #F0F0F0; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-.lt-cn-name-you { color: #C8102E; }
+.lt-cn-name-you { color: var(--rung-accent, #C8102E); }
+/* Every ladder row's name takes its owner's banner accent (set as --rung-accent
+   inline); rows without one inherit the default name color. */
+.lt-row .lt-cn-name > span:first-child { color: var(--rung-accent, inherit); }
 .lt-cn-meta { font-size: 10px; color: #555; display: flex; align-items: center; gap: 4px; }
 .lt-cell-dp { font-family: var(--font-display); font-weight: 800; font-size: 14px; color: #F0F0F0; text-align: right; }
 .lt-cell-record { font-size: 11px; color: #AAAAAA; text-align: right; }

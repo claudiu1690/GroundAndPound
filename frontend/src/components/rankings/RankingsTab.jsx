@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Trophy } from "lucide-react";
 import { api } from "../../api";
+import { bannerRowBackground, bannerAccentColor } from "../banner/bannerCatalog";
 import { t } from "@/lib/i18n";
 
 const TIER_ORDER = ["Amateur", "Regional Pro", "National", "GCS Contender", "GCS"];
@@ -120,6 +121,13 @@ export function RankingsTab({ fighter, onMessage }) {
                             key={row.id}
                             className={`rl-rung${isPlayer ? " rl-rung--me" : ""}${isUnranked ? " rl-rung--unranked" : ""}`}
                             data-rank={isUnranked ? "—" : row.rank}
+                            // Your rung wears your banner composition (dark-veiled)
+                            // and your accent colors the "you" markers (spine dot,
+                            // border, name, badge) via --rung-accent; green fallback.
+                            style={isPlayer ? {
+                                background: bannerRowBackground(fighter?.banner),
+                                "--rung-accent": bannerAccentColor(fighter?.banner) || undefined,
+                            } : undefined}
                         >
                             <span className="rl-port">{initialsOf(row.name)}</span>
                             <span className="rl-name">

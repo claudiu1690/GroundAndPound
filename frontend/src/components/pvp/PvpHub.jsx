@@ -372,6 +372,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
                 myFighterId={fighterId}
                 onboarding={onboarding}
                 onOpenProfile={setViewingProfileId}
+                viewerBanner={fighter?.banner}
               />
             )}
             {activeTab === "fight" && (

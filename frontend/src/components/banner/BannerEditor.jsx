@@ -217,7 +217,7 @@ function PieceButton({ piece, selected, onClick }) {
     const visual = piece.visual || {};
     const styleByKind = (() => {
         if (piece.kind === "background") return { background: visual.css };
-        if (piece.kind === "frame")      return { border: visual.border, boxShadow: visual.boxShadow, background: "#2c2c2e" };
+        if (piece.kind === "frame")      return { background: "#1c1c1f" }; // layout — glyph rendered inside
         if (piece.kind === "accent")     return { background: visual.color };
         return {};
     })();
@@ -231,6 +231,9 @@ function PieceButton({ piece, selected, onClick }) {
             title={locked ? `🔒 ${piece.unlockHint}` : piece.label}
         >
             <div className="banner-piece-swatch" style={styleByKind}>
+                {piece.kind === "frame" && !locked && (
+                    <span className="banner-piece-glyph">{visual.glyph}</span>
+                )}
                 {/* Badge icon render removed — badges still earned/stored; will return as achievements. */}
                 {locked && <span className="banner-piece-lock">🔒</span>}
             </div>

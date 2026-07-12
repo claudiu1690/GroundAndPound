@@ -89,10 +89,14 @@ function describeUnlock(piece) {
 /** Returns an in-memory normalised banner (fills in defaults if missing). */
 function normaliseBannerFromFighter(fighter) {
     const b = fighter?.banner || {};
+    // Ids that fell out of the catalog (e.g. the legacy FRAME_* pieces replaced
+    // by LAYOUT_*) normalise to defaults, so a stale saved banner never renders
+    // wrong or fails save-time validation.
+    const known = (id, fallback) => (id && PIECES_BY_ID[id] ? id : fallback);
     return {
-        backgroundId: b.backgroundId || DEFAULT_BANNER.backgroundId,
-        frameId:      b.frameId      || DEFAULT_BANNER.frameId,
-        accentColor:  b.accentColor  || DEFAULT_BANNER.accentColor,
+        backgroundId: known(b.backgroundId, DEFAULT_BANNER.backgroundId),
+        frameId:      known(b.frameId,      DEFAULT_BANNER.frameId),
+        accentColor:  known(b.accentColor,  DEFAULT_BANNER.accentColor),
         badgeSlots:   Array.isArray(b.badgeSlots) ? b.badgeSlots.slice(0, MAX_BADGE_SLOTS) : [],
     };
 }

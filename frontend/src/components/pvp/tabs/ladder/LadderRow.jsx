@@ -1,4 +1,5 @@
 import { divisionLabel, lastActiveColor, relativeTime, wcAbbrev } from "../../pvpConst";
+import { bannerRowBackground, bannerAccentColor } from "../../../banner/bannerCatalog";
 import { t } from "../../../../lib/i18n";
 
 /**
@@ -19,7 +20,7 @@ import { t } from "../../../../lib/i18n";
  * Tag priority (max 2 shown):
  *   Belt Holder > Rival > You > Protected > Streak (≥3) > Cross-weight [WC]
  */
-export function LadderRow({ row, season, onOpenProfile }) {
+export function LadderRow({ row, season, onOpenProfile, viewerBanner }) {
   const {
     rank,
     playerId,
@@ -103,10 +104,28 @@ export function LadderRow({ row, season, onOpenProfile }) {
   const activeColor = lastActiveColor(lastActiveAt);
   const activeText = relativeTime(lastActiveAt);
 
+  // Every row wears its owner's banner: yours under the light veil (it pops),
+  // everyone else's under the heavy veil (identity hint, never louder than
+  // yours). Accent colors the name; on your row it also recolors the border.
+  // Rows with no saved banner skin as default Slate — "no colors yet".
+  const rowStyle = { borderLeft: `3px solid ${borderColor}` };
+  const skinBanner = isViewer ? (viewerBanner || row.banner) : row.banner;
+  rowStyle.background = bannerRowBackground(skinBanner, { veil: isViewer ? "self" : "other" });
+  rowStyle.textShadow = "0 1px 2px rgba(0, 0, 0, 0.6)";
+  // Accent colors the name — but on OTHER rows the schema-default Blood Red is
+  // treated as "no accent chosen": it would paint every uncustomized fighter's
+  // name red, colliding with the rival/you color language.
+  const accent = bannerAccentColor(skinBanner);
+  const accentChosen = accent && (isViewer || skinBanner?.accentColor !== "ACC_RED");
+  if (accentChosen) {
+    rowStyle["--rung-accent"] = accent;
+    if (isViewer) rowStyle.borderLeftColor = accent;
+  }
+
   return (
     <div
       className={rowClass}
-      style={{ borderLeft: `3px solid ${borderColor}` }}
+      style={rowStyle}
       onClick={() => onOpenProfile?.(playerId)}
       role="button"
       tabIndex={0}

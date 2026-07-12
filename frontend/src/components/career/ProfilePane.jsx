@@ -91,10 +91,19 @@ export function ProfilePane({
   const { fighter, belts, badges } = data;
   const earnedCount = badges?.earnedCount ?? earnedBadges.length;
 
+  // Keep the hero banner in sync with the app-level fighter: the banner can be
+  // saved from the sidebar editor too, which refreshes `liveFighter` but not
+  // this pane's cached profile fetch. Own profile only — in readOnly views
+  // liveFighter is the viewer, not the viewed fighter.
+  const bannerFighter =
+    !readOnly && liveFighter?.banner && String(liveFighter._id) === String(fighterId)
+      ? { ...fighter, banner: liveFighter.banner }
+      : fighter;
+
   return (
     <>
       <ProfileBanner
-        fighter={fighter}
+        fighter={bannerFighter}
         fighterId={fighterId}
         earnedBadges={earnedBadges}
         earnedCount={earnedCount}
@@ -128,7 +137,13 @@ export function ProfilePane({
           fighter={liveFighter || fighter}
           open={bannerOpen}
           onClose={() => setBannerOpen(false)}
-          onSaved={() => {
+          onSaved={(newBanner) => {
+            // Patch the cached profile immediately (same pattern as pinned
+            // badges), then refresh the app-level fighter so the sidebar
+            // banner updates too.
+            if (newBanner) {
+              setData((prev) => (prev ? { ...prev, fighter: { ...prev.fighter, banner: newBanner } } : prev));
+            }
             onRefreshFighter?.(fighterId);
           }}
           onMessage={onMessage}

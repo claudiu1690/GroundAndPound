@@ -1,4 +1,5 @@
 import { divisionColor, divisionLabel, wcAbbrev, tierTrackSegments } from "../../pvpConst";
+import { bannerRowBackground } from "../../../banner/bannerCatalog";
 import { t } from "../../../../lib/i18n";
 
 /**
@@ -15,9 +16,10 @@ import { t } from "../../../../lib/i18n";
  *   └─────────────────────────────────────────────────────┘
  *
  * Props:
- *   position  {object|null}  from usePvpPosition
+ *   position      {object|null}  from usePvpPosition
+ *   viewerBanner  {object|null}  the viewer's banner config — skins the card
  */
-export function PositionCard({ position }) {
+export function PositionCard({ position, viewerBanner }) {
   if (!position) return null;
 
   const {
@@ -76,7 +78,12 @@ export function PositionCard({ position }) {
   // For the "current" tier we use its own color; others are dimmed.
 
   return (
-    <div className="lt-pos-card">
+    <div
+      className="lt-pos-card"
+      // Your Season card wears your banner composition, dark-veiled for
+      // readability; falls back to the stock card background without one.
+      style={viewerBanner ? { background: bannerRowBackground(viewerBanner) } : undefined}
+    >
       {/* Top row: rank · vdiv · info · vdiv · dp */}
       <div className="lt-pos-inner">
         {/* Big rank — overall standing across ALL divisions in the season pool */}

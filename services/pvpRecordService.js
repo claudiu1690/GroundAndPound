@@ -477,9 +477,9 @@ async function getLadderPage({ seasonId, season, division, wcParam, page, limit,
     const me = String(viewerId);
     const now = Date.now();
 
-    // Single Fighter join (name / style / authoritative real class / shield).
+    // Single Fighter join (name / style / authoritative real class / shield / banner).
     const fighters = await Fighter.find({ _id: { $in: ids } })
-        .select("firstName lastName nickname style weightClass pvpOnboarding")
+        .select("firstName lastName nickname style weightClass pvpOnboarding banner")
         .lean();
     const fighterMap = new Map(fighters.map((f) => [String(f._id), f]));
 
@@ -526,6 +526,11 @@ async function getLadderPage({ seasonId, season, division, wcParam, page, limit,
             isBeltHolder: beltId != null && pid === beltId,
             isRivalWithViewer: rivalSet.has(pid),
             isProtected,
+            // Cosmetic banner (composition + accent only) — every row wears its
+            // owner's colors on the ladder. Null for fighters who never saved one.
+            banner: f.banner
+                ? { backgroundId: f.banner.backgroundId || null, accentColor: f.banner.accentColor || null }
+                : null,
         };
     });
 
