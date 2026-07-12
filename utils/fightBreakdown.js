@@ -182,6 +182,7 @@ function deriveFightDetails(engineResult, ctx, fightId) {
     }
 
     const roundStats = [];
+    const roundNets = []; // per-round net (aligned with roundStats) for decision reconciliation
     const eventLog = [];
 
     let cumP = 0; // cumulative damage the PLAYER DEALT (dealt_p) — offensive output, matches strikes/round-winner
@@ -366,17 +367,25 @@ function deriveFightDetails(engineResult, ctx, fightId) {
         }
 
         // ── ROUND WINNER ─────────────────────────────────────────────────────
+        // Mirror the engine's judges (scoreRoundForJudge in fightResolution.js):
+        // the SAME net signal — damage differential + control·3 (the balanced
+        // judge's control weight) — so the round-by-round card can't contradict
+        // the fight's decision. Any nonzero net is a decisive 10-9; a true tie is
+        // even; a >18 blowout is a 10-8 (DOMINANT_NET mirrors the config's
+        // dominantRound10_8Threshold). A wide "even" band here previously let
+        // every round read 10-10 under a clear decision win.
+        const DOMINANT_NET = 18;
         let roundWinner;
         let dominant = false;
         const net = dealt_p - dealt_o + ctrl * 3;
-        if (net >= 18) {
+        if (net > DOMINANT_NET) {
             roundWinner = "player";
             dominant = true;
-        } else if (net >= 3) {
+        } else if (net > 0) {
             roundWinner = "player";
-        } else if (net > -3) {
+        } else if (net === 0) {
             roundWinner = "even";
-        } else if (net > -18) {
+        } else if (net >= -DOMINANT_NET) {
             roundWinner = "opponent";
         } else {
             roundWinner = "opponent";
@@ -407,6 +416,7 @@ function deriveFightDetails(engineResult, ctx, fightId) {
             roundWinner,
             dominant,
         });
+        roundNets.push(net);
 
         // ── EVENT LOG for this round ─────────────────────────────────────────
         // Continuation = control carried from the prior round's takedown (no new TD this
@@ -498,6 +508,32 @@ function deriveFightDetails(engineResult, ctx, fightId) {
 
     // ── Intro / result context keys ──────────────────────────────────────────
     const winner = engineResult.winner;
+
+    // ── Reconcile the round card with the announced decision ─────────────────
+    // roundWinner above is the balanced judge's card. The fight's decision is a
+    // 3-judge majority, so on a split decision the balanced judge can dissent —
+    // which would show the winner losing the round tally. Nudge the closest-to-
+    // even rounds toward the actual winner until the card gives them the
+    // majority, so the scorecard can never contradict the result. Finishes are
+    // already forced on the finish round, so skip them.
+    if (!isFinish && (winner === "player" || winner === "opponent")) {
+        const loser = winner === "player" ? "opponent" : "player";
+        const won = (w) => roundStats.filter((r) => r.roundWinner === w).length;
+        if (won(winner) <= won(loser)) {
+            const dir = winner === "player" ? 1 : -1;
+            // Rounds not already the winner's, closest to flipping first
+            // (net nearest the winner's side).
+            const candidates = roundStats
+                .map((r, idx) => ({ r, net: roundNets[idx] }))
+                .filter((c) => c.r.roundWinner !== winner)
+                .sort((a, b) => (b.net - a.net) * dir);
+            for (let k = 0; k < candidates.length && won(winner) <= won(loser); k++) {
+                candidates[k].r.roundWinner = winner;
+                candidates[k].r.dominant = false; // a flipped near-even round is never a 10-8
+            }
+        }
+    }
+
     const giantKiller =
         winner === "player" && (ctx.opponentOvr || 0) - (ctx.playerOvr || 0) >= 8;
 

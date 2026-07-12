@@ -172,28 +172,52 @@ test("damage tracks what each side DEALT — the winner who out-damages shows th
 });
 
 // ── roundWinner bands ───────────────────────────────────────────────────────────
-test("roundWinner bands: even within ±3, dominant at ±18", () => {
+test("roundWinner mirrors the judges: any nonzero net is decisive, 10-8 past ±18, tie is even", () => {
     const res = {
         outcome: "Decision (unanimous)",
         winner: "player",
         sessionBonuses: [],
         wildcard: null,
         rounds: [
-            // net = (oppDmg - playerDmg) + ctrl*3 = (5 - 4) + 0 = 1 → even
+            // net = (oppDmg - playerDmg) + ctrl*3 = (5 - 4) + 0 = 1 → player (decisive 10-9, NOT even)
             { round: 1, event: "Striking exchange.", grapplingControl: 0, playerDamage: 4, opponentDamage: 5, playerHealth: 96, opponentHealth: 95, campCommentary: [] },
-            // net = (20 - 1) + 0 = 19 → player dominant
+            // net = (20 - 1) + 0 = 19 → player dominant (10-8)
             { round: 2, event: "Striking exchange.", grapplingControl: 0, playerDamage: 1, opponentDamage: 20, playerHealth: 95, opponentHealth: 75, campCommentary: [] },
-            // net = (1 - 20) + 0 = -19 → opponent dominant
-            { round: 3, event: "Striking exchange.", grapplingControl: 0, playerDamage: 20, opponentDamage: 1, playerHealth: 75, opponentHealth: 74, campCommentary: [] },
+            // net = (5 - 5) + 0 = 0 → true tie → even
+            { round: 3, event: "Striking exchange.", grapplingControl: 0, playerDamage: 5, opponentDamage: 5, playerHealth: 90, opponentHealth: 70, campCommentary: [] },
         ],
     };
     const { roundStats } = deriveFightDetails(res, baseCtx, "fightBands");
-    assert.strictEqual(roundStats[0].roundWinner, "even");
+    // Player wins R1+R2, R3 is a genuine tie — card gives the winner the majority,
+    // so no reconciliation kicks in.
+    assert.strictEqual(roundStats[0].roundWinner, "player");
     assert.strictEqual(roundStats[0].dominant, false);
     assert.strictEqual(roundStats[1].roundWinner, "player");
     assert.strictEqual(roundStats[1].dominant, true);
-    assert.strictEqual(roundStats[2].roundWinner, "opponent");
-    assert.strictEqual(roundStats[2].dominant, true);
+    assert.strictEqual(roundStats[2].roundWinner, "even");
+    assert.strictEqual(roundStats[2].dominant, false);
+});
+
+// ── Decision reconciliation ───────────────────────────────────────────────────────
+test("split decision: round card is nudged so it never contradicts the winner", () => {
+    const res = {
+        outcome: "Decision (split)",
+        winner: "player",
+        sessionBonuses: [],
+        wildcard: null,
+        rounds: [
+            // Balanced-judge net favors the opponent on two of three rounds, but the
+            // player took the split decision — the raw card would read opponent 2-1.
+            { round: 1, event: "Striking exchange.", grapplingControl: 0, playerDamage: 5, opponentDamage: 4, playerHealth: 90, opponentHealth: 92, campCommentary: [] }, // net -1 → opponent
+            { round: 2, event: "Striking exchange.", grapplingControl: 0, playerDamage: 5, opponentDamage: 4, playerHealth: 80, opponentHealth: 84, campCommentary: [] }, // net -1 → opponent
+            { round: 3, event: "Striking exchange.", grapplingControl: 0, playerDamage: 4, opponentDamage: 5, playerHealth: 72, opponentHealth: 74, campCommentary: [] }, // net +1 → player
+        ],
+    };
+    const { roundStats } = deriveFightDetails(res, baseCtx, "fightSplit");
+    const winners = roundStats.map((r) => r.roundWinner);
+    const pw = winners.filter((w) => w === "player").length;
+    const ow = winners.filter((w) => w === "opponent").length;
+    assert.ok(pw > ow, `winner should hold the round-card majority (got player ${pw}, opponent ${ow})`);
 });
 
 // ── Finish-round last event mapping ─────────────────────────────────────────────
