@@ -926,7 +926,7 @@
     "loot": {
       "line1": "Every sparring round has a chance to uncover a Special Move — more rounds, better odds.",
       "line1Free": "Every sparring round has a chance to uncover a Special Move — the chance is the same at every gym, even here.",
-      "rarityLabel": "If one drops, its rarity at this gym",
+      "rarityLabel": "Rarity odds at this gym",
       "legendItem": "{label} {pct}%",
       "legendaryNeverDrops": "Legendary — never drops here · specialty gyms only"
     },
