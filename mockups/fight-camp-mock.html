@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fight Camp — UI Mock</title>
+<style>
+  :root {
+    --bg: #0b0d10;
+    --panel: #14171c;
+    --panel-2: #181c22;
+    --card: #15191f;
+    --line: #232830;
+    --text: #e7ebf0;
+    --muted: #8a93a0;
+    --dim: #5d6571;
+    --accent: #5b7cff;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --grey: #94a3b8;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --teal: #2dd4bf;
+    --amber: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(1200px 600px at 50% -10%, #131820 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 28px 22px 80px; }
+  .mock-note {
+    font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 1.5px;
+    border: 1px dashed var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 18px;
+  }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 26px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+  .tab {
+    font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); background: none; border: none; padding: 12px 2px; cursor: pointer; position: relative;
+  }
+  .tab.active { color: var(--text); }
+  .tab.active::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: #e31837; border-radius: 2px;
+  }
+
+  /* Opponent strip */
+  .opp-strip {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    background: linear-gradient(90deg, #1a1410 0%, var(--panel) 55%);
+    border: 1px solid var(--line); border-left: 3px solid #e31837;
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 14px;
+  }
+  .opp-av {
+    width: 38px; height: 38px; border-radius: 8px; flex: none;
+    background: linear-gradient(135deg, #2a3038, #1a1e24);
+    display: grid; place-items: center; font-weight: 800; color: var(--muted); font-size: 14px;
+  }
+  .opp-name { font-weight: 800; font-size: 15px; letter-spacing: .3px; }
+  .opp-meta { color: var(--muted); font-size: 12.5px; }
+  .opp-style-pill {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--blue); background: rgba(96,165,250,.12); border: 1px solid rgba(96,165,250,.3);
+    padding: 3px 9px; border-radius: 999px;
+  }
+  .opp-tend { color: var(--muted); font-size: 12.5px; font-style: italic; }
+  .opp-report-link {
+    margin-left: auto; color: var(--accent); font-size: 12.5px; font-weight: 600; text-decoration: none;
+    white-space: nowrap;
+  }
+  .opp-report-link:hover { text-decoration: underline; }
+
+  /* Loadout bar */
+  .loadout {
+    display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 18px; margin-bottom: 8px;
+  }
+  .loadout .seg { display: flex; align-items: center; gap: 10px; }
+  .seg-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.3px; color: var(--dim); }
+  .slot-dots { display: flex; gap: 6px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #3a4150; }
+  .dot.on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px rgba(91,124,255,.5); }
+  .seg-value { font-weight: 800; font-size: 14px; }
+  .seg-value .sub { color: var(--muted); font-weight: 600; }
+  .energy-ico { color: var(--accent); }
+  .bar { width: 120px; height: 6px; border-radius: 999px; background: #232830; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #8ea4ff); }
+  .grade {
+    font-weight: 900; font-size: 18px; width: 30px; height: 30px; border-radius: 8px;
+    display: grid; place-items: center;
+    background: rgba(96,165,250,.12); color: var(--blue); border: 1px solid rgba(96,165,250,.35);
+  }
+  .grade-proj { color: var(--green); font-size: 12.5px; font-weight: 700; }
+  .divider { width: 1px; height: 26px; background: var(--line); }
+  .loadout-caption { font-size: 11px; color: var(--dim); padding: 0 18px 14px; }
+
+  /* Recommended shelf */
+  .shelf-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--green);
+    margin: 18px 2px 8px; font-weight: 700; display: flex; align-items: center; gap: 7px;
+  }
+
+  /* Grid */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    position: relative; background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 0; overflow: hidden; display: flex; flex-direction: column;
+    transition: transform .12s ease, border-color .12s;
+  }
+  .card:hover { border-color: #313946; transform: translateY(-2px); }
+  .card.dim { opacity: .62; }
+  .card.dim:hover { opacity: .85; }
+  .stripe { height: 3px; width: 100%; }
+  .s-blue { background: var(--blue); } .s-purple { background: var(--purple); }
+  .s-red { background: var(--red); } .s-green { background: var(--green); }
+  .s-teal { background: var(--teal); } .s-amber { background: var(--amber); }
+  .card-body { padding: 14px 15px 15px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-name { font-weight: 800; font-size: 14.5px; letter-spacing: .4px; text-transform: uppercase; line-height: 1.2; }
+  .energy-pill {
+    flex: none; display: inline-flex; align-items: center; gap: 3px;
+    font-size: 11.5px; font-weight: 700; color: var(--accent);
+    background: rgba(91,124,255,.1); border: 1px solid rgba(91,124,255,.28);
+    padding: 3px 8px; border-radius: 7px;
+  }
+
+  /* Match badge */
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+    padding: 4px 9px; border-radius: 999px;
+  }
+  .badge .reason { text-transform: none; font-weight: 500; letter-spacing: 0; opacity: .85; }
+  .b-matched { color: var(--green); background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.35); }
+  .b-partial { color: var(--yellow); background: rgba(250,204,21,.1); border: 1px solid rgba(250,204,21,.3); }
+  .b-unmatched { color: var(--grey); background: rgba(148,163,184,.08); border: 1px solid rgba(148,163,184,.22); }
+  .b-wrong { color: var(--red); background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3); }
+
+  /* Effect / trigger / target lines */
+  .line-row { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.35; }
+  .line-row .ico { flex: none; width: 15px; text-align: center; opacity: .9; margin-top: 1px; }
+  .effect { font-weight: 700; }
+  .e-blue { color: var(--blue); } .e-purple { color: var(--purple); } .e-red { color: var(--red); }
+  .e-green { color: var(--green); } .e-teal { color: var(--teal); } .e-amber { color: var(--amber); }
+  .trigger { color: var(--muted); font-size: 12.5px; }
+  .trigger.always { color: #a7b0bd; }
+  .trigger .tag {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--green); background: rgba(74,222,128,.1); padding: 1px 6px; border-radius: 5px; margin-left: 6px;
+  }
+  .target { color: var(--dim); font-size: 12px; }
+  .risk { color: var(--amber); font-size: 12px; font-weight: 600; }
+
+  .add-btn {
+    margin-top: auto; width: 100%; padding: 10px; border-radius: 9px;
+    background: #1d222a; border: 1px solid #2c333d; color: var(--text);
+    font-weight: 700; font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; cursor: pointer;
+    transition: background .12s, border-color .12s;
+  }
+  .add-btn:hover { background: #232a34; border-color: #3a424f; }
+  .add-btn.primary { background: rgba(74,222,128,.12); border-color: rgba(74,222,128,.4); color: var(--green); }
+  .add-btn.primary:hover { background: rgba(74,222,128,.2); }
+
+  .legend {
+    margin: 26px 2px 0; padding-top: 16px; border-top: 1px solid var(--line);
+    display: flex; gap: 20px; flex-wrap: wrap; font-size: 12px; color: var(--muted);
+  }
+  .legend b { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mock-note">UI Mock · Fight Camp redesign · static preview — not wired to game state</div>
+
+  <div class="tabs">
+    <button class="tab active">Fight Camp</button>
+    <button class="tab">View Report</button>
+  </div>
+
+  <!-- Opponent strip -->
+  <div class="opp-strip">
+    <div class="opp-av">DV</div>
+    <div>
+      <div class="opp-name">Dmitri Volkov</div>
+      <div class="opp-meta">14–3 · Lightweight</div>
+    </div>
+    <span class="opp-style-pill">Wrestler</span>
+    <span class="opp-tend">Shoots early, GnP-heavy from top.</span>
+    <a class="opp-report-link" href="#">View full report →</a>
+  </div>
+
+  <!-- Loadout bar -->
+  <div class="loadout">
+    <div class="seg">
+      <span class="seg-label">Slots</span>
+      <span class="slot-dots"><i class="dot on"></i><i class="dot on"></i><i class="dot"></i></span>
+      <span class="seg-value">2<span class="sub">/3</span></span>
+    </div>
+    <div class="divider"></div>
+    <div class="seg">
+      <span class="seg-label">Energy</span>
+      <span class="energy-ico">⚡</span>
+      <span class="bar"><i style="width:17%"></i></span>
+      <span class="seg-value">11<span class="sub"> / 65 used</span></span>
+    </div>
+    <div class="divider"></div>
+    <div class="seg">
+      <span class="seg-label">Camp Rating</span>
+      <span class="grade">B</span>
+      <span class="grade-proj">↗ A if you add a matched session</span>
+    </div>
+  </div>
+  <div class="loadout-caption">Grade reflects prep quality — bonuses still depend on matching the fight.</div>
+
+  <!-- Recommended shelf -->
+  <div class="shelf-label">★ Recommended for this fight</div>
+  <div class="grid">
+
+    <!-- MATCHED: Takedown Defence -->
+    <div class="card">
+      <div class="stripe s-blue"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-name">Takedown Defence</span>
+          <span class="energy-pill">⚡ 6E</span>
+        </div>
+        <span class="badge b-matched">✓ Counters this opponent <span class="reason">· shoots early</span></span>
+        <div class="line-row"><span class="ico">↑</span><span class="effect e-blue">+25% sprawl success</span></div>
+        <div class="line-row"><span class="ico">⚡</span><span class="trigger">When opponent shoots a takedown</span></div>
+        <div class="line-row"><span class="ico">◎</span><span class="target">Best vs: Wrestlers, Judo, Sambo</span></div>
+        <button class="add-btn primary">Add to Camp</button>
+      </div>
+    </div>
+
+    <!-- MATCHED: Ground & Pound (defence framing) -->
+    <div class="card">
+      <div class="stripe s-red"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-name">Ground &amp; Pound</span>
+          <span class="energy-pill">⚡ 6E</span>
+        </div>
+        <span class="badge b-matched">✓ Counters this opponent <span class="reason">· GnP-heavy</span></span>
+        <div class="line-row"><span class="ico">↑</span><span class="effect e-red">+20% GnP damage</span></div>
+        <div class="line-row"><span class="ico">⚡</span><span class="trigger">When you're in top position</span></div>
+        <div class="line-row"><span class="ico">◎</span><span class="target">Best vs: Guard players, low-sub foes</span></div>
+        <button class="add-btn primary">Add to Camp</button>
+      </div>
+    </div>
+
+    <!-- PARTIAL: Game Plan Study -->
+    <div class="card">
+      <div class="stripe s-teal"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-name">Game Plan Study</span>
+          <span class="energy-pill">⚡ 4E</span>
+        </div>
+        <span class="badge b-partial">~ Generally useful</span>
+        <div class="line-row"><span class="ico">↑</span><span class="effect e-teal">−6% damage taken</span></div>
+        <div class="line-row"><span class="ico">●</span><span class="trigger always">Always active <span class="tag">can't whiff</span></span></div>
+        <div class="line-row"><span class="ico">◎</span><span class="target">Best vs: Any opponent — safe pick</span></div>
+        <button class="add-btn">Add to Camp</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full grid -->
+  <div class="shelf-label" style="color:var(--dim)">All sessions</div>
+  <div class="grid">
+
+    <!-- Submission Escapes -->
+    <div class="card dim">
+      <div class="stripe s-purple"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-name">Submission Escapes</span>
+          <span class="energy-pill">⚡ 6E</span>
+        </div>
+        <span class="badge b-unmatched">No edge vs this opponent</span>
+        <div class="line-row"><span class="ico">↑</span><span class="effect e-purple">+20% escape chance</span></div>
+        <div class="line-row"><span class="ico">⚡</span><span class="trigger">When caught in a submission</span></div>
+        <div class="line-row"><span class="ico">◎</span><span class="target">Best vs: BJJ, Sambo, sub hunters</span></div>
+        <button class="add-btn">Add to Camp</button>
+      </div>
+    </div>
+
+    <!-- Striking Accuracy -->
+    <div class="card dim">
+      <div class="stripe s-red"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-name">Striking Accuracy</span>
+          <span class="energy-pill">⚡ 5E</span>
+        </div>
+        <span class="badge b-unmatched">No edge vs this opponent</span>
+        <div class="line-row"><span class="ico">↑</span><span class="effect e-red">+15% strike damage</span></div>
+        <div class="line-row"><span class="ico">⚡</span><span class="trigger">In every striking exchange</span></div>
+        <div class="line-row"><span class="ico">◎</span><span class="target">Best vs: Counter-strikers, defensive</span></div>
+        <button class="add-btn">Add to Camp</button>
+      </div>
+    </div>
+
+    <!-- Cardio Push -->
+    <div class="card">
+      <div class="stripe s-green"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-name">Cardio Push</span>
+          <span class="energy-pill">⚡ 5E</span>
+        </div>
+        <span class="badge b-partial">~ Generally useful</span>
+        <div class="line-row"><span class="ico">↑</span><span class="effect e-green">−20% stamina drain</span></div>
+        <div class="line-row"><span class="ico">⚡</span><span class="trigger">When your stamina drops below 70%</span></div>
+        <div class="line-row"><span class="ico">◎</span><span class="target">Best vs: Pressure / high-volume foes</span></div>
+        <button class="add-btn">Add to Camp</button>
+      </div>
+    </div>
+
+    <!-- Body Shot Focus -->
+    <div class="card dim">
+      <div class="stripe s-amber"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-name">Body Shot Focus</span>
+          <span class="energy-pill">⚡ 5E</span>
+        </div>
+        <span class="badge b-unmatched">No edge vs this opponent</span>
+        <div class="line-row"><span class="ico">↑</span><span class="effect e-amber">+30% body damage, drains their gas</span></div>
+        <div class="line-row"><span class="ico">⚡</span><span class="trigger">In striking exchanges</span></div>
+        <div class="line-row"><span class="ico">◎</span><span class="target">Best vs: Tough chins, weak cardio</span></div>
+        <button class="add-btn">Add to Camp</button>
+      </div>
+    </div>
+
+    <!-- Clinch Control -->
+    <div class="card dim">
+      <div class="stripe s-purple"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-name">Clinch Control</span>
+          <span class="energy-pill">⚡ 5E</span>
+        </div>
+        <span class="badge b-unmatched">No edge vs this opponent</span>
+        <div class="line-row"><span class="ico">↑</span><span class="effect e-purple">+25% clinch damage</span></div>
+        <div class="line-row"><span class="ico">⚡</span><span class="trigger">When the fight clinches up</span></div>
+        <div class="line-row"><span class="ico">◎</span><span class="target">Best vs: Kickboxers, Muay Thai</span></div>
+        <button class="add-btn">Add to Camp</button>
+      </div>
+    </div>
+
+    <!-- Sparring -->
+    <div class="card">
+      <div class="stripe s-amber"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-name">Sparring (general)</span>
+          <span class="energy-pill">⚡ 8E</span>
+        </div>
+        <span class="badge b-partial">~ Last resort</span>
+        <div class="line-row"><span class="ico">↑</span><span class="effect e-amber">+3% to all stats</span></div>
+        <div class="line-row"><span class="ico">●</span><span class="trigger always">Always active <span class="tag">can't whiff</span></span></div>
+        <div class="line-row"><span class="ico">⚠</span><span class="risk">3% injury risk — costly &amp; risky</span></div>
+        <button class="add-btn">Add to Camp</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><b style="color:var(--green)">✓ Matched</b> — directly counters this opponent (100% bonus)</span>
+    <span><b style="color:var(--yellow)">~ Partial</b> — generally useful (50%)</span>
+    <span><b style="color:var(--grey)">No edge</b> — won't help vs this opponent (0%)</span>
+    <span><b>⚡ Triggers</b> — conditional, can whiff &nbsp; · &nbsp; <b>● Always</b> — constant</span>
+  </div>
+</div>
+</body>
+</html>
