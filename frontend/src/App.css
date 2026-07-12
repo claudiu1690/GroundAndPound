@@ -3502,6 +3502,135 @@ code {
 .fight-result-screen .notice--warn   { border-left-color: #FCA757; color: #FCA757; background: rgba(252,167,87,0.08); }
 .fight-result-screen .notice--danger { border-left-color: #F87171; color: #F87171; background: rgba(248,113,113,0.08); }
 
+/* ── Broadcast-package summary (fs2) ─────────────────────────
+   Cinematic outcome-tinted hero with the reward tiles built in,
+   plus the notice ticker that replaces the old banner stack. */
+.fight-result-screen .fs2-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 20px 28px 18px;
+  border-bottom: 1px solid var(--c-border);
+}
+.fight-result-screen .fs2-hero--win  { background: linear-gradient(115deg, #15270f 0%, #0f1a0d 34%, transparent 72%); }
+.fight-result-screen .fs2-hero--loss { background: linear-gradient(115deg, #2a1013 0%, #1a0d0f 34%, transparent 72%); }
+.fight-result-screen .fs2-hero--draw { background: linear-gradient(115deg, #1a2030 0%, #131722 34%, transparent 72%); }
+.fight-result-screen .fs2-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fight-result-screen .fs2-hero--win::before  { background: linear-gradient(115deg, transparent 55%, rgba(34,197,94,0.06) 56%, transparent 78%); }
+.fight-result-screen .fs2-hero--loss::before { background: linear-gradient(115deg, transparent 55%, rgba(200,16,46,0.07) 56%, transparent 78%); }
+.fight-result-screen .fs2-eyebrow {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.fight-result-screen .fs2-hrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.fight-result-screen .fs2-left { min-width: 0; }
+.fight-result-screen .fs2-outcome {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 52px;
+  line-height: 0.9;
+  letter-spacing: 1px;
+}
+.fight-result-screen .fs2-hero--win .fs2-outcome  { color: #4ADE80; text-shadow: 0 2px 24px rgba(34,197,94,0.35); }
+.fight-result-screen .fs2-hero--loss .fs2-outcome { color: #ff5c72; text-shadow: 0 2px 24px rgba(200,16,46,0.4); }
+.fight-result-screen .fs2-hero--draw .fs2-outcome { color: #93C5FD; text-shadow: 0 2px 24px rgba(147,197,253,0.3); }
+.fight-result-screen .fs2-method {
+  display: inline-block;
+  margin: 10px 0 6px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 2px 11px;
+  border-radius: 5px;
+}
+.fight-result-screen .fs2-hero--win .fs2-method  { background: var(--green-bright); color: #0c130e; }
+.fight-result-screen .fs2-hero--loss .fs2-method { background: var(--c-accent); color: #fff; }
+.fight-result-screen .fs2-hero--draw .fs2-method { background: var(--c-bg-tile-2); color: var(--text); border: 1px solid var(--c-border); }
+.fight-result-screen .fs2-sub { font-size: 13px; color: var(--text-secondary); }
+.fight-result-screen .fs2-tiles { display: flex; gap: 10px; position: relative; }
+.fight-result-screen .fs2-tile {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--c-border);
+  border-top: 3px solid var(--c-border-3);
+  border-radius: 8px;
+  padding: 10px 18px;
+  text-align: center;
+  min-width: 92px;
+}
+.fight-result-screen .fs2-tile--green { border-top-color: var(--green-bright); }
+.fight-result-screen .fs2-tile--gold  { border-top-color: var(--c-amber-bright); }
+.fight-result-screen .fs2-tile--blue  { border-top-color: var(--c-blue); }
+.fight-result-screen .fs2-tile-val {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 23px;
+  font-variant-numeric: tabular-nums;
+}
+.fight-result-screen .fs2-tile--green .fs2-tile-val { color: #4ADE80; }
+.fight-result-screen .fs2-tile--gold  .fs2-tile-val { color: #e6c766; }
+.fight-result-screen .fs2-tile--blue  .fs2-tile-val { color: #7eaefc; }
+.fight-result-screen .fs2-tile-lbl {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9.5px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.fight-result-screen .fs2-ticker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 28px 0;
+}
+.fight-result-screen .fs2-tick {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  background: var(--c-bg-tile);
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  padding: 5px 13px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+.fight-result-screen .fs2-tick-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  align-self: center;
+}
+.fight-result-screen .fs2-tick-glyph { flex-shrink: 0; }
+.fight-result-screen .fs2-tick--good   .fs2-tick-dot { background: var(--green-bright); }
+.fight-result-screen .fs2-tick--warn   .fs2-tick-dot { background: var(--c-amber-bright); }
+.fight-result-screen .fs2-tick--danger .fs2-tick-dot { background: var(--c-accent); }
+.fight-result-screen .fs2-tick--good   { color: #4ADE80; }
+.fight-result-screen .fs2-tick--warn   { color: #FCA757; }
+.fight-result-screen .fs2-tick--danger { color: #F87171; }
+/* Sub-label inside the merged Fight Toll card (XP section divider). */
+.fight-result-screen .fs2-card-label--sub { margin-top: 12px; }
+
 /* Body grid */
 .fight-result-screen .body-grid {
   display: grid;
@@ -14068,6 +14197,26 @@ code {
 .rw-win   { font-size: 10px; font-weight: 600; color: #4ADE80; }
 .rw-loss  { font-size: 10px; font-weight: 600; color: var(--c-accent); }
 .rw-even  { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+/* Summary scorecard: winner line gets room; the score chip hugs the right edge. */
+.rs-winner { font-size: 11.5px; flex: 1; min-width: 0; }
+.rs-chip {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 1px;
+  padding: 1px 9px;
+  border-radius: 5px;
+  border: 2px solid var(--text-muted);
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.rs-chip--win  { border-color: var(--green-bright); color: var(--green-bright); }
+.rs-chip--dom  { background: rgba(34, 197, 94, 0.15); }
+.rs-chip--loss { border-color: var(--c-accent); color: #ff5c72; }
+.rs-chip--fin  { background: var(--green-bright); border-color: var(--green-bright); color: #0c130e; }
+.rs-chip--fin-loss { background: var(--c-accent); border-color: var(--c-accent); color: #fff; }
 
 .rs-events {
   padding-left: 64px;
@@ -14129,9 +14278,45 @@ code {
 .rss-sep  { font-size: 10px; color: var(--c-border); }
 .rss-divider { width: 1px; height: 12px; background: var(--c-border-3); }
 
+/* ── Fixed four-slot scoreboard (summary) ──────────────────
+   One cell per stat so columns align vertically down the card. */
+.rsb {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.rsb-cell {
+  background: var(--c-bg-tile-2);
+  border: 1px solid var(--c-border-3);
+  border-radius: 6px;
+  padding: 5px 4px;
+  text-align: center;
+}
+.rsb-lbl {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.rsb-val {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
+.rsb-p, .rsb-o { color: var(--text); }
+.rsb-p.lead { color: var(--green-bright); }
+.rsb-o.lead { color: #ff5c72; }
+.rsb-sep { color: var(--text-muted); font-size: 10px; margin: 0 5px; }
+.rsb-cell--empty .rsb-val { color: var(--c-border); }
+
 /* ── Momentum bar (summary) ────────────────────────────── */
 .rs-momentum {
-  padding-left: 64px;
   margin-bottom: 10px;
 }
 .mom-track {
@@ -14141,6 +14326,24 @@ code {
   display: flex;
   overflow: hidden;
 }
+/* Summary variant: thicker track with a 50/50 centre tick. */
+.rs-momentum .mom-track {
+  height: 6px;
+  border-radius: 3px;
+  position: relative;
+  overflow: visible;
+}
+.rs-momentum .mom-track::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.rs-momentum .mom-a { border-radius: 3px 0 0 3px; }
+.rs-momentum .mom-b { border-radius: 0 3px 3px 0; }
 .mom-a { height: 100%; }
 .mom-b { height: 100%; }
 .mom-lbls {
@@ -14149,12 +14352,21 @@ code {
   margin-top: 2px;
 }
 .mom-lbl { font-size: 9px; color: var(--text-muted); }
+.mom-tag {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 5px;
+}
 
 /* ── Round divider ─────────────────────────────────────── */
 .round-divider {
   height: 1px;
   background: var(--c-border-3);
-  margin: 6px 0 10px 64px;
+  margin: 6px 0 10px;
 }
 
 /* ── Result row (summary) ──────────────────────────────── */

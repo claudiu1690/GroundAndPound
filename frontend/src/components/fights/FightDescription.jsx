@@ -51,6 +51,20 @@ export const FightDescription = memo(function FightDescription({ commentary, bre
     const finishStrike = finishEvent?.vars?.strike ?? null;
     const finishTemplateKey = finishEvent?.templateKey ?? null;
 
+    // Finish chip for the scorecard round header ("TKO 2:41" instead of 10-9).
+    const finishKind = finishTemplateKey?.startsWith("submission")
+      ? "SUB"
+      : finishTemplateKey === "ko_finish"
+        ? "KO"
+        : finishTemplateKey
+          ? "TKO"
+          : finishEvent
+            ? "FIN"
+            : null;
+    const finish = finishEvent && finishEvent.round != null
+      ? { round: finishEvent.round, label: [finishKind, finishEvent.timestamp].filter(Boolean).join(" ") }
+      : null;
+
     return (
       <div className="card" style={{ height: "fit-content" }}>
         <div className="card-label">{t("fights.fightDescription.cardLabel")}</div>
@@ -73,6 +87,8 @@ export const FightDescription = memo(function FightDescription({ commentary, bre
                   names={{ playerName, opponentName }}
                   fightId={fightId}
                   variant="summary"
+                  finish={finish}
+                  youWon={youWon}
                 />
               </div>
             );

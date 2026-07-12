@@ -5,10 +5,13 @@ import { t } from "@/lib/i18n";
 
 /**
  * Renders one round: header + winner line, events, stat row, momentum bar.
- * variant="summary" → uses .round-section / .rs-* / .rss-* classes (right col of FightSummary)
+ * variant="summary" → broadcast-scorecard style: .round-section / .rs-* / .rsb-* classes
+ *                     (right col of FightSummary). Optional `finish` ({round, label})
+ *                     marks the finish round so its chip shows e.g. "TKO 2:41" instead
+ *                     of a 10-9 score; `youWon` colors that chip.
  * variant="drawer"  → uses .round-block / .round-head / .events / .round-stats / .stat-row-grid / .sg* classes
  */
-export const RoundBlock = memo(function RoundBlock({ round, events, names, fightId, variant }) {
+export const RoundBlock = memo(function RoundBlock({ round, events, names, fightId, variant, finish, youWon }) {
   const { playerName, opponentName } = names;
   const isSummary = variant === "summary";
 
@@ -70,6 +73,37 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
   }
 
   if (isSummary) {
+    // Broadcast score chip: the finish round shows the method + time; every
+    // other round shows a judge-style 10-9 / 10-8 (player score always first).
+    const isFinishRound = !!finish && finish.round === round.round;
+    let chipClass = "rs-chip";
+    let chipLabel = "10 – 10";
+    if (isFinishRound) {
+      chipClass += ` rs-chip--fin${youWon ? "" : " rs-chip--fin-loss"}`;
+      chipLabel = finish.label;
+    } else if (isPlayerWinner) {
+      chipClass += ` rs-chip--win${round.dominant ? " rs-chip--dom" : ""}`;
+      chipLabel = round.dominant ? "10 – 8" : "10 – 9";
+    } else if (isOpponentWinner) {
+      chipClass += " rs-chip--loss";
+      chipLabel = round.dominant ? "8 – 10" : "9 – 10";
+    }
+
+    // Fixed four-slot scoreboard so columns align vertically across rounds:
+    // strikes / TD / damage always; the 4th slot goes to the rarest notable
+    // stat present (KD > sub attempts > control).
+    const fourth = showKnockdowns
+      ? { lbl: t("fights.roundBlock.kd"), p: pKd, o: oKd, pRaw: pKd, oRaw: oKd }
+      : showSubAttempts
+        ? { lbl: t("fights.roundBlock.subAtt"), p: pSub, o: oSub, pRaw: pSub, oRaw: oSub }
+        : { lbl: t("fights.roundBlock.ctrl"), p: fmtCtrl(pCtrl), o: fmtCtrl(oCtrl), pRaw: pCtrl, oRaw: oCtrl, empty: !showControl };
+    const cells = [
+      { lbl: t("fights.roundBlock.strikes"), p: pStrikes, o: oStrikes, pRaw: pStrikes, oRaw: oStrikes },
+      { lbl: t("fights.roundBlock.td"), p: pTd, o: oTd, pRaw: pTd, oRaw: oTd },
+      { lbl: t("fights.roundBlock.damage"), p: `${pDmg}%`, o: `${oDmg}%`, pRaw: pDmg, oRaw: oDmg },
+      fourth,
+    ];
+
     return (
       <div className={`round-section ${expanded ? "rs-expanded" : ""}`}>
         <div
@@ -83,12 +117,10 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
           }}
         >
           <span className={`round-badge r${round.round}`}>{t("fights.roundBlock.roundLabel", { n: round.round })}</span>
-          <span
-            style={{ fontSize: "10px", fontWeight: 600 }}
-            className={winnerClass === "win" ? "rw-win" : winnerClass === "loss" ? "rw-loss" : "rw-even"}
-          >
+          <span className={`rs-winner ${winnerClass === "win" ? "rw-win" : winnerClass === "loss" ? "rw-loss" : "rw-even"}`}>
             {winnerArrow} {winnerLabel}
           </span>
+          <span className={chipClass}>{chipLabel}</span>
           <ChevronDown size={13} strokeWidth={2.5} className={`rs-chev ${expanded ? "open" : ""}`} />
         </div>
 
@@ -106,68 +138,21 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
           </div>
         )}
 
-        <div className="rs-stats">
-          <div className="rss-inner">
-            <div className="rss-item">
-              <span className="rss-lbl">{t("fights.roundBlock.strikes")}</span>
-              &nbsp;
-              <span className={`rss-val ${valClass(pStrikes, oStrikes) === "win" ? "win" : valClass(pStrikes, oStrikes) === "loss" ? "loss" : "neu"}`}>{pStrikes}</span>
-              <span className="rss-sep">—</span>
-              <span className={`rss-val ${valClass(oStrikes, pStrikes) === "win" ? "win" : valClass(oStrikes, pStrikes) === "loss" ? "loss" : "neu"}`}>{oStrikes}</span>
+        <div className="rsb">
+          {cells.map((c, i) => (
+            <div className={`rsb-cell${c.empty ? " rsb-cell--empty" : ""}`} key={i}>
+              <span className="rsb-lbl">{c.lbl}</span>
+              {c.empty ? (
+                <span className="rsb-val">—</span>
+              ) : (
+                <span className="rsb-val">
+                  <span className={`rsb-p${c.pRaw > c.oRaw ? " lead" : ""}`}>{c.p}</span>
+                  <span className="rsb-sep">·</span>
+                  <span className={`rsb-o${c.oRaw > c.pRaw ? " lead" : ""}`}>{c.o}</span>
+                </span>
+              )}
             </div>
-            <div className="rss-divider" />
-            <div className="rss-item">
-              <span className="rss-lbl">{t("fights.roundBlock.td")}</span>
-              &nbsp;
-              <span className={`rss-val ${valClass(pTd, oTd) === "win" ? "win" : valClass(pTd, oTd) === "loss" ? "loss" : "neu"}`}>{pTd}</span>
-              <span className="rss-sep">—</span>
-              <span className={`rss-val ${valClass(oTd, pTd) === "win" ? "win" : valClass(oTd, pTd) === "loss" ? "loss" : "neu"}`}>{oTd}</span>
-            </div>
-            {showSubAttempts && (
-              <>
-                <div className="rss-divider" />
-                <div className="rss-item">
-                  <span className="rss-lbl">{t("fights.roundBlock.subAtt")}</span>
-                  &nbsp;
-                  <span className={`rss-val ${valClass(pSub, oSub) === "win" ? "win" : "neu"}`}>{pSub}</span>
-                  <span className="rss-sep">—</span>
-                  <span className={`rss-val ${valClass(oSub, pSub) === "win" ? "win" : "neu"}`}>{oSub}</span>
-                </div>
-              </>
-            )}
-            {showKnockdowns && (
-              <>
-                <div className="rss-divider" />
-                <div className="rss-item">
-                  <span className="rss-lbl">{t("fights.roundBlock.kd")}</span>
-                  &nbsp;
-                  <span className={`rss-val ${valClass(pKd, oKd) === "win" ? "win" : "neu"}`}>{pKd}</span>
-                  <span className="rss-sep">—</span>
-                  <span className={`rss-val ${valClass(oKd, pKd) === "win" ? "win" : "neu"}`}>{oKd}</span>
-                </div>
-              </>
-            )}
-            <div className="rss-divider" />
-            <div className="rss-item">
-              <span className="rss-lbl">{t("fights.roundBlock.damage")}</span>
-              &nbsp;
-              <span className={`rss-val ${valClass(pDmg, oDmg) === "win" ? "win" : valClass(pDmg, oDmg) === "loss" ? "loss" : "neu"}`}>{pDmg}%</span>
-              <span className="rss-sep">—</span>
-              <span className={`rss-val ${valClass(oDmg, pDmg) === "win" ? "win" : valClass(oDmg, pDmg) === "loss" ? "loss" : "neu"}`}>{oDmg}%</span>
-            </div>
-            {showControl && (
-              <>
-                <div className="rss-divider" />
-                <div className="rss-item">
-                  <span className="rss-lbl">{t("fights.roundBlock.ctrl")}</span>
-                  &nbsp;
-                  <span className={`rss-val ${valClass(pCtrl, oCtrl) === "win" ? "win" : valClass(pCtrl, oCtrl) === "loss" ? "loss" : "neu"}`}>{fmtCtrl(pCtrl)}</span>
-                  <span className="rss-sep">—</span>
-                  <span className={`rss-val ${valClass(oCtrl, pCtrl) === "win" ? "win" : valClass(oCtrl, pCtrl) === "loss" ? "loss" : "neu"}`}>{fmtCtrl(oCtrl)}</span>
-                </div>
-              </>
-            )}
-          </div>
+          ))}
         </div>
 
         <div className="rs-momentum">
@@ -176,7 +161,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
               className="mom-a"
               style={{
                 width: `${pPct}%`,
-                background: "var(--c-grn-bright)",
+                background: "var(--green-bright)",
                 opacity: isPlayerWinner ? momentumOpacity : oppMomentumOpacity,
               }}
             />
@@ -189,10 +174,7 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
               }}
             />
           </div>
-          <div className="mom-lbls">
-            <span className="mom-lbl">{playerName}</span>
-            <span className="mom-lbl">{opponentName}</span>
-          </div>
+          <div className="mom-tag">{t("fights.roundBlock.dmgShare")}</div>
         </div>
       </div>
     );

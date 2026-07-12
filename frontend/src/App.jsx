@@ -1713,7 +1713,7 @@ const handleGetOffers = useCallback(async () => {
               ) : lastFightSummary ? (
                 <>
                   <div className="fight-result-screen">
-                    <FightSummary summary={lastFightSummary} description={<FightDescription commentary={lastFightCommentary} breakdown={lastFightBreakdown} playerName={fighter ? `${fighter.firstName} "${fighter.nickname || "—"}" ${fighter.lastName}` : undefined} />} />
+                    <FightSummary summary={lastFightSummary} description={<FightDescription commentary={lastFightCommentary} breakdown={lastFightBreakdown} playerName={fighter ? [fighter.firstName, fighter.nickname ? `"${fighter.nickname}"` : null, fighter.lastName].filter(Boolean).join(" ") : undefined} />} />
                   </div>
                   {/* Post-fight interview is offered only after wins. A loss skips the
                       press conference entirely — no fame opportunity, no flag-writing.

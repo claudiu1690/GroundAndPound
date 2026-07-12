@@ -1294,7 +1294,11 @@
       "campWildcardCountered": "Opponent {desc} — your camp work countered it!",
       "campWildcardUncountered": "Opponent {desc} — you had no answer for this.",
       "recordVs": "vs {name} · ",
-      "recordNow": "Record now {record}"
+      "recordNow": "Record now {record}",
+      "cardFightToll": "Fight Toll",
+      "subWin": "def. {name}",
+      "subLoss": "lost to {name}",
+      "subDraw": "drew with {name}"
     },
     "fightDescription": {
       "cardLabel": "Fight Description",
@@ -1341,7 +1345,8 @@
       "ctrl": "Ctrl",
       "takedowns": "Takedowns",
       "kds": "KDs",
-      "control": "Control"
+      "control": "Control",
+      "dmgShare": "Dmg share"
     },
     "interview": {
       "pickToneTitle": "Post-Fight Interview",
