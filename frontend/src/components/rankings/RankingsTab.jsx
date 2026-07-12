@@ -5,6 +5,11 @@ import { t } from "@/lib/i18n";
 
 const TIER_ORDER = ["Amateur", "Regional Pro", "National", "GCS Contender", "GCS"];
 
+/** Two-letter initials for the ladder portrait circles. */
+function initialsOf(name) {
+    return (name || "").split(/\s+/).filter(Boolean).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+}
+
 /**
  * Rankings tab — fixed-roster leaderboard per (tier, weightClass).
  *
@@ -98,51 +103,81 @@ export function RankingsTab({ fighter, onMessage }) {
 
             {loading && <div className="rank-loading">{t("rankings.loading")}</div>}
 
-            {!loading && data && (
-                <div className="rank-table" data-tut="rankings-table">
-                    <div className="rank-table-header">
-                        <div className="th">{t("rankings.table.colRank")}</div>
-                        <div className="th">{t("rankings.table.colFighter")}</div>
-                        <div className="th right">{t("rankings.table.colOvr")}</div>
-                        <div className="th">{t("rankings.table.colStyle")}</div>
-                        <div className="th right">{t("rankings.table.colRecord")}</div>
-                    </div>
-                    {(() => {
-                        const showDividers = tier === playerTier;
-                        let titleShotEmitted = false, rankedEmitted = false;
-                        const out = [];
-                        displayList.forEach((row, i) => {
-                            const rank = row.rank;
-                            const isRanked = rank != null;
-                            if (showDividers && isRanked) {
-                                if (!titleShotEmitted && rank >= 4) { out.push(<div className="rank-section-div" key="div-ts"><span className="rank-section-div-label">{t("rankings.dividers.titleShot")}</span></div>); titleShotEmitted = true; }
-                                if (!rankedEmitted && rank >= 6) {
-                                    if (!titleShotEmitted) { out.push(<div className="rank-section-div" key="div-ts"><span className="rank-section-div-label">{t("rankings.dividers.titleShot")}</span></div>); titleShotEmitted = true; }
-                                    out.push(<div className="rank-section-div" key="div-ranked"><span className="rank-section-div-label">{t("rankings.dividers.ranked")}</span></div>); rankedEmitted = true;
-                                }
-                            }
-                            const isChampion = row.isChampion;
-                            const isPlayer = row.isPlayer;
-                            const isUnranked = row.__unranked || row.isUnranked;
-                            const isTop3 = isChampion || (rank != null && rank >= 1 && rank <= 3);
-                            out.push(
-                                <div key={row.id || `row-${i}`} className={`rank-row ${isTop3 ? "top3" : ""} ${isPlayer ? "my-row" : ""} ${isUnranked ? "unranked" : ""}`}>
-                                    <div className={`rank-num ${(isChampion || rank === 1) ? "top1" : isTop3 ? "top3" : ""} ${isPlayer ? "mine" : ""}`}>{isChampion ? "C" : isUnranked ? "—" : rank}</div>
-                                    <div className="rank-fighter">
-                                        <span className={`rank-fighter-name ${isPlayer ? "mine" : ""}`}>{row.nickname ? `${row.name} "${row.nickname}"` : row.name}</span>
-                                        {isChampion && <span className="rank-champ-badge">{t("rankings.champion")}</span>}
-                                        {isPlayer && <span className="rank-you-badge">{t("rankings.you")}</span>}
+            {!loading && data && (() => {
+                // Partition the display list into the ladder's sections.
+                const champion = displayList.find((r) => r.isChampion) || null;
+                const zoneRows = displayList.filter((r) => !r.isChampion && r.rank != null && r.rank <= 4);
+                const lowerRows = displayList.filter((r) => !r.isChampion && r.rank != null && r.rank > 4);
+                const unrankedRows = displayList.filter((r) => !r.isChampion && r.rank == null);
+                const isOwnTier = tier === playerTier;
+                const spotsToZone = playerRow?.rank != null && playerRow.rank > 4 ? playerRow.rank - 4 : 0;
+
+                const rung = (row) => {
+                    const isPlayer = row.isPlayer;
+                    const isUnranked = row.__unranked || row.isUnranked;
+                    return (
+                        <div
+                            key={row.id}
+                            className={`rl-rung${isPlayer ? " rl-rung--me" : ""}${isUnranked ? " rl-rung--unranked" : ""}`}
+                            data-rank={isUnranked ? "—" : row.rank}
+                        >
+                            <span className="rl-port">{initialsOf(row.name)}</span>
+                            <span className="rl-name">
+                                {row.nickname ? `${row.name} "${row.nickname}"` : row.name}
+                                {isPlayer && <span className="rank-you-badge">{t("rankings.you")}</span>}
+                            </span>
+                            <span className="rl-style">{row.style}</span>
+                            <span className="rl-ovr">{row.ovr}</span>
+                            <span className="rl-rec">{row.record}</span>
+                        </div>
+                    );
+                };
+
+                return (
+                    <div className="rl-lane" data-tut="rankings-table">
+                        {champion && (
+                            <div className="rl-champ">
+                                <span className="rl-champ-port">{initialsOf(champion.name)}</span>
+                                <div className="rl-champ-id">
+                                    <div className="rl-champ-name">
+                                        {champion.nickname ? `${champion.name} "${champion.nickname}"` : champion.name}
                                     </div>
-                                    <div className={`rank-ovr ${isPlayer ? "mine" : ""}`}>{row.ovr}</div>
-                                    <div className="rank-style">{row.style}</div>
-                                    <div className="rank-record">{row.record}</div>
+                                    <div className="rl-champ-sub">{champion.record} · {champion.style}</div>
                                 </div>
-                            );
-                        });
-                        return out;
-                    })()}
-                </div>
-            )}
+                                <div className="rl-champ-ovr">
+                                    <div className="rl-champ-ovr-val">{champion.ovr}</div>
+                                    <div className="rl-champ-ovr-lbl">{t("rankings.table.colOvr")}</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {zoneRows.length > 0 && (
+                            <div className="rl-zone">
+                                <span className="rl-zone-lbl">{t("rankings.zoneLabel")}</span>
+                                {zoneRows.map(rung)}
+                            </div>
+                        )}
+
+                        {lowerRows.map((row) => (
+                            <div key={row.id}>
+                                {rung(row)}
+                                {row.isPlayer && isOwnTier && spotsToZone > 0 && (
+                                    <div className="rl-path">
+                                        <span className="rl-path-chip">
+                                            ▲ {t("rankings.pathChip", { n: spotsToZone, plural: spotsToZone === 1 ? "" : "s" })}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+
+                        {unrankedRows.map(rung)}
+                        {isOwnTier && playerRow && (playerRow.rank == null) && (
+                            <div className="rl-pool-note">{t("rankings.unrankedNote")}</div>
+                        )}
+                    </div>
+                );
+            })()}
 
             {!loading && tier !== playerTier && (
                 <div className="rank-foreign-note">{t("rankings.foreignNote", { tier: playerTier })}</div>

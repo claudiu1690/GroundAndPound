@@ -2323,7 +2323,10 @@
     "titleShotBanner": "Title Shot Zone — you're in the top 5",
     "champion": "Champion",
     "you": "You",
-    "foreignNote": "Viewing another tier — your row only appears in your current tier ({tier})."
+    "foreignNote": "Viewing another tier — your row only appears in your current tier ({tier}).",
+    "zoneLabel": "TITLE SHOT ZONE",
+    "pathChip": "{n} SPOT{plural} FROM THE TITLE SHOT ZONE",
+    "unrankedNote": "Unranked — fight 3 times in this tier to earn a rank."
   },
   "changelog": {
     "whatsNewButton": "What's New",
