@@ -4965,6 +4965,183 @@ code {
   line-height: 1.45;
 }
 
+/* ── Banner-unlock modal ── lighter than Tier-Up; queues after belt + tier
+   overlays so it never buries the bigger moments (see App.jsx overlayQueue). */
+.banner-unlock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.banner-unlock-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(3px);
+}
+.banner-unlock-modal {
+  position: relative;
+  width: min(400px, 94vw);
+  background: linear-gradient(180deg, var(--c-bg-tile), #141414);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6), 0 0 50px -20px rgba(212, 168, 32, 0.4);
+  animation: bannerUnlockPop 0.35s cubic-bezier(0.2, 1.2, 0.35, 1);
+}
+@keyframes bannerUnlockPop {
+  0%   { opacity: 0; transform: translateY(14px) scale(0.96); }
+  100% { opacity: 1; transform: none; }
+}
+.banner-unlock-top {
+  position: relative;
+  padding: 20px 20px 14px;
+  text-align: center;
+  border-bottom: 1px solid var(--c-border-3);
+  background: radial-gradient(120% 90% at 50% 0%, rgba(212, 168, 32, 0.12), transparent 70%);
+}
+.banner-unlock-eyebrow {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 10.5px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--c-amber-bright);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.banner-unlock-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 23px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #F0F0F0;
+  margin-top: 8px;
+}
+.banner-unlock-sub {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.banner-unlock-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-tile-2);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+}
+.banner-unlock-body {
+  padding: 14px 18px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.banner-unlock-piece {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 11px;
+  border-radius: 10px;
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-root);
+}
+.banner-unlock-swatch {
+  width: 64px;
+  height: 44px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+.banner-unlock-swatch--accent,
+.banner-unlock-swatch--frame {
+  background: var(--c-bg-root);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.banner-unlock-swatch--accent i {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: block;
+  box-shadow: 0 0 14px -2px rgba(255, 255, 255, 0.35);
+}
+.banner-unlock-swatch--frame span {
+  font-size: 20px;
+  color: var(--c-amber-bright);
+}
+.banner-unlock-info { min-width: 0; flex: 1; }
+.banner-unlock-kind {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.banner-unlock-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin: 2px 0 3px;
+  color: #F0F0F0;
+}
+.banner-unlock-from {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.banner-unlock-from b { color: var(--c-amber-bright); font-weight: 600; }
+.banner-unlock-foot {
+  padding: 12px 18px 18px;
+  display: flex;
+  gap: 10px;
+}
+.banner-unlock-btn {
+  flex: 1;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 8px;
+  padding: 12px 0;
+  cursor: pointer;
+  border: 1px solid var(--c-border);
+  background: transparent;
+  color: var(--text-secondary);
+  transition: border-color 0.15s;
+}
+.banner-unlock-btn:hover { border-color: var(--text-muted); }
+.banner-unlock-btn--primary {
+  background: var(--c-amber-bright);
+  color: #141414;
+  border-color: var(--c-amber-bright);
+  flex: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.banner-unlock-btn--primary:hover { background: #e6c766; border-color: #e6c766; }
+
 /* ═══════════════════════════════════════════════════════════════
    FIGHT CAMP v1.1
    ═══════════════════════════════════════════════════════════════ */
@@ -6602,6 +6779,39 @@ code {
 .bp2--champ { border: 2px solid rgba(251, 191, 36, 0.75) !important; box-shadow: inset 0 0 0 1px #7c5a0b, 0 0 14px rgba(251, 191, 36, 0.3); }
 .bp2--champ .bp2-topline { color: #e6c766; }
 
+/* Warpath layout — aggressive crossed-blades glyph + a jagged accent edge. */
+.bp2--warpath { position: relative; }
+.bp2 .bp2-warpath { position: relative; padding-right: 24px; }
+.bp2 .bp2-warpath-glyph {
+  font-size: 18px;
+  margin-right: 10px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.7));
+}
+.bp2 .bp2-warpath-edge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 6px;
+  opacity: 0.9;
+  clip-path: polygon(100% 0, 100% 100%, 45% 100%, 100% 52%, 45% 0);
+}
+.bp2.banner-size-compact .bp2-warpath-glyph { font-size: 13px; margin-right: 6px; }
+
+/* Spotlight layout — centered marquee with a soft radial glow + a corner ring glyph. */
+.bp2--spotlight { position: relative; }
+.bp2 .bp2-spotlight { position: relative; }
+.bp2 .bp2-spotlight-glow { position: absolute; inset: -25% -10%; pointer-events: none; }
+.bp2 .bp2-spotlight-ring {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.bp2.banner-size-compact .bp2-spotlight-ring { font-size: 10px; top: 4px; right: 6px; }
+
 /* Compact size (profile sidebar) — tighter type, hide the flourish. */
 .bp2.banner-size-compact .bp2-row,
 .bp2.banner-size-compact .bp2-center { padding: 8px 12px; }
@@ -6621,6 +6831,8 @@ code {
   .bp2 .bp2-rec small { font-size: 8.5px; }
   .bp2 .bp2-nick--tilt { display: none; }
   .bp2 .bp2-sidebar { margin-right: 8px; }
+  .bp2 .bp2-warpath-glyph { display: none; }
+  .bp2 .bp2-spotlight-ring { display: none; }
 }
 @container (max-width: 230px) {
   .bp2 .bp2-first { font-size: 9px; letter-spacing: 1.5px; }

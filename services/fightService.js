@@ -522,6 +522,22 @@ function applyLegacyTcaPenalty(fightPlayer, fighter, tierConfig) {
 async function resolveFightAndApply(fighterId, userId) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
+
+    // ── Banner-piece unlock detection (display-only, non-persistent) ──────
+    // Snapshot which badge/tier-gated banner pieces are unlocked BEFORE any
+    // mutation, so we can diff against the post-resolve state below and surface
+    // freshly-unlocked pieces in the summary. Never fatal — see try/catch below.
+    const { BANNER_PIECES } = require("../consts/bannerCatalog");
+    const bannerService = require("./bannerService");
+    let beforeBanner = new Set();
+    try {
+        beforeBanner = new Set(
+            BANNER_PIECES.filter((p) => bannerService.isUnlocked(fighter, p)).map((p) => p.id)
+        );
+    } catch (e) {
+        console.error("[banner] before-snapshot failed:", e.message);
+    }
+
     notorietyService.ensureNotorietyShape(fighter);
     if (!fighter.acceptedFightId) throw new Error("No accepted fight");
 
@@ -1305,6 +1321,46 @@ async function resolveFightAndApply(fighterId, userId) {
     for (const badge of newBadges)
         activityLogService.log(fighterId, "BADGE_EARNED",
             `Earned badge: ${badge}`, { badge, tier: _tier });
+
+    // ── Banner-piece unlock diff (display-only; drives no persistence) ────
+    // Recompute the unlocked set AFTER all resolve mutations (badges + gym-rank
+    // block above, so e.g. titan_rank4 → BG_TITANIUM is caught same-fight) and
+    // diff against the pre-resolve snapshot. Non-fatal: defaults to [] on error.
+    let newlyUnlockedBannerPieces = [];
+    try {
+        // Resolve a badge id → display name/description across BOTH badge
+        // namespaces (career catalog incl. gym-rank badges, and PvP season
+        // badges) so the unlock modal can show real copy instead of a
+        // prettified raw id. Nulls when the piece isn't badge-gated.
+        const { getBadge } = require("../consts/badgeCatalog");
+        const { resolvePvpBadge } = require("../consts/pvpBadges");
+        const badgeMeta = (id) => {
+            if (!id) return { name: null, description: null };
+            const def = getBadge(id) || resolvePvpBadge(id) || null;
+            return { name: def?.name ?? null, description: def?.description ?? null };
+        };
+        const afterBanner = new Set(
+            BANNER_PIECES.filter((p) => bannerService.isUnlocked(fighter, p)).map((p) => p.id)
+        );
+        newlyUnlockedBannerPieces = BANNER_PIECES
+            .filter((p) => afterBanner.has(p.id) && !beforeBanner.has(p.id))
+            .map((p) => {
+                const badgeId = p.unlockAt?.badge ?? null;
+                const meta = badgeMeta(badgeId);
+                return {
+                    id: p.id,
+                    kind: p.kind,
+                    label: p.label,
+                    unlockBadgeId: badgeId,
+                    badgeName: meta.name,
+                    badgeDescription: meta.description,
+                };
+            });
+    } catch (e) {
+        console.error("[banner] unlock-diff failed:", e.message);
+        newlyUnlockedBannerPieces = [];
+    }
+
     const summary = {
         outcome: result.outcome,
         recordChange: isWin ? "W" : isLoss ? "L" : "D",
@@ -1332,6 +1388,8 @@ async function resolveFightAndApply(fighterId, userId) {
         newBadges,
         // Career Page: badges newly earned by this fight (catalog ids + context).
         newlyEarnedBadges,
+        // Banner: badge/tier-gated pieces first unlocked by this fight (display-only).
+        newlyUnlockedBannerPieces,
         completedQuests: completedQuests.map((q) => q.title),
         promoted,
         beltWon,

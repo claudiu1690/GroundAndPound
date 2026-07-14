@@ -1,4 +1,4 @@
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { resourceRowsFromFighter, statMeterRows } from "./profileModel";
 import { FighterInjuriesPanel } from "./FighterInjuriesPanel";
 import { FighterMetaPanel } from "./FighterMetaPanel";
@@ -31,11 +31,19 @@ export const FighterProfile = memo(function FighterProfile({
   onUpdateFighter,
   onRefreshFighter,
   onMessage,
+  openBannerEditorSignal,
 }) {
   const [editing, setEditing] = useState(false);
   const [editNickname, setEditNickname] = useState("");
   const [editGymId, setEditGymId] = useState("");
   const [bannerEditorOpen, setBannerEditorOpen] = useState(false);
+
+  // Deep-link CTA from the banner-unlock modal's "Customize Banner" button —
+  // bumped nonce (not a boolean) so repeat clicks re-open even if the editor
+  // was already closed in between.
+  useEffect(() => {
+    if (openBannerEditorSignal) setBannerEditorOpen(true);
+  }, [openBannerEditorSignal]);
 
   const saveProfile = useCallback(async () => {
     if (!fighter?._id || !onUpdateFighter) return;

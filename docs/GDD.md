@@ -570,7 +570,13 @@ Permanent profile markers. PvE categories: **Career**, **Championships**, **Styl
 Championship and other state-derivable badges **self-heal** on Profile load (silently), so the Profile and the belts always agree without a migration.
 
 ### 20.3 Banner Customizer
-Four cosmetic layers — Background (8), Frame (5), Accent Color (7), Pinned Badges (pin up to 3). Pieces unlock by fame tier and milestones. Purely cosmetic.
+Four cosmetic layers — Background (12), Frame (7), Accent Color (11), Pinned Badges (pin up to 3). Pieces unlock by fame tier, milestones, belts won, and **badges** (`unlockAt.badge`). A badge unlock is honoured across both badge namespaces — the legacy flat `fighter.badges` strings *and* the catalog ids in `fighter.badgesEarned[].badgeId` — so career, gym-rank, and PvP-season badges all count. Purely cosmetic; unlocking a piece grants no stat effect.
+
+**Badge-gated pieces (10).** Backgrounds *Scorched Canvas* (`ko_artist`), *Titanium* (`titan_rank4`), *Gold Leaf* (`champ_gcs`), *Throne Room* (`pvp_belt_first`); accents *Champagne* (`perfect_camp`), *Blood Rival* (`nemesis_slayer`), *Platinum* (`veteran`), *Teal Ice* (`sub_hunter`); frames *Warpath* (`giant_killer`), *Spotlight* (`documentary`).
+
+**Unlock celebration.** When a fight resolves, `fightService.resolveFightAndApply` snapshots the unlocked-piece set **before** the resolve and diffs it **after** all resolve mutations (badges + gym-rank), emitting `newlyUnlockedBannerPieces: Array<{ id, kind, label, unlockBadgeId, badgeName, badgeDescription }>` on the summary (badge name/description resolved via the career + PvP badge catalogs; the whole diff is wrapped in try/catch and defaults to `[]`, so it can never break a resolve). The frontend shows a single **Banner Unlocked** modal listing every piece that fight unlocked (never one modal per piece), with a "Customize Banner →" CTA that deep-links straight into the editor. Because the season PvP belt is awarded off the season-end path (not a PvE fight resolve), the `pvp_belt_first` → *Throne Room* piece unlocks normally in the editor but does not fire this post-fight modal.
+
+**Overlay queue.** The post-fight celebrations share one ordered queue (`App.jsx`), shown one-at-a-time in priority order **Belt Won → Tier Up → Banner Unlock** so the banner pop never buries the bigger moments. Each resolve *replaces* the queue (never appends), and only the head of the queue is ever rendered — 0/1/2/3 simultaneous celebrations from a single fight all resolve cleanly.
 
 ### 20.4 Career Feed
 Reverse-chronological log: fight results, promotions, title eligibility/wins, Nemesis set/cleared, badges earned, sponsor events, callout wins, beef lapses, prediction outcomes, fame milestones.

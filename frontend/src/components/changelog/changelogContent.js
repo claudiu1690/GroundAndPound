@@ -18,6 +18,43 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "1.4",
+    date: "2026-07-14",
+    major: false,
+    highlights: [
+      "10 new banner customizations to chase — bold new backgrounds, accent colours, and frames for your profile.",
+      "These ones aren't tied to fame — you earn them with badges: 10 KO wins, a perfect camp, a giant-killer upset, avenging a rival, and more.",
+      "When a fight earns you a new piece, a \"Banner Unlocked\" card celebrates it and drops you straight into the customizer.",
+    ],
+    sections: {
+      changed: [
+        "Post-fight celebrations now queue in order — a belt win or tier promotion always shows before a banner unlock, so the big moments land first.",
+      ],
+      fixed: [],
+      balance: [],
+    },
+  },
+  {
+    version: "1.3",
+    date: "2026-07-12",
+    major: false,
+    highlights: [
+      "The Rankings ladder has been redesigned — a champion summit at the top, a clear title-shot zone, and a chip that shows your path to the belt.",
+      "The post-fight Summary is now a full broadcast package, with a round-by-round scorecard.",
+      "Your profile banner got a fight-poster nameplate redesign.",
+    ],
+    sections: {
+      changed: [
+        "Onboarding tutorial polish and fixes.",
+      ],
+      fixed: [
+        "The round-by-round scorecard no longer contradicts the official decision.",
+        "Fixed a doubled digit in the fight camp's remaining-slots count.",
+      ],
+      balance: [],
+    },
+  },
+  {
     version: "1.2",
     date: "2026-07-08",
     major: true,
@@ -33,9 +70,6 @@ export const CHANGELOG_ENTRIES = [
         "The gym screen has been redesigned around a featured Sparring Ring, a compact training floor, and a clearer gym-standing sidebar.",
         "New move drops arrive as a face-down card — tap it to flip and reveal what you pulled.",
         "Move effects now read as Ratings (\"+30 Defense Rating\") with magnitude pips instead of tiny percentages — same math underneath, the exact numbers stay in the fine print.",
-        "Sparring sessions in the gym now show they have a chance to drop Special Moves — and which rarities your gym can roll.",
-        "Special Moves moved up the menu, next to Training — kit out your moveset right where you build your fighter.",
-        "Your Profile now shows your equipped Special Moves loadout next to your championship belts.",
         "Accepting a fight now opens with a face-off — you and your opponent square up with a tale-of-the-tape before the Fighter Report.",
       ],
       fixed: [],

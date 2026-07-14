@@ -25,12 +25,22 @@ const PIECES = [
     { id: "BG_NEON",      kind: "background", label: "Neon City",     css: "linear-gradient(115deg, transparent 0 60%, rgba(236,72,153,0.5) 60.3% 65%, transparent 65.3%), linear-gradient(115deg, transparent 0 66%, rgba(126,34,206,0.4) 66.3% 69%, transparent 69.3%), linear-gradient(135deg, #170b28 0%, #0f0a18 60%)", texture: "halftone" },
     { id: "BG_HOLO",      kind: "background", label: "Holographic",   css: "linear-gradient(135deg, rgba(192,132,252,0.35) 0%, rgba(56,189,248,0.3) 25%, rgba(251,191,36,0.28) 50%, rgba(244,114,182,0.33) 75%, rgba(192,132,252,0.35) 100%), linear-gradient(135deg, #17181c 0%, #101114 100%)", texture: "grain" },
 
+    // Badge-unlocked backgrounds
+    { id: "BG_SCORCHED",   kind: "background", label: "Scorched Canvas", css: "radial-gradient(120% 90% at 30% 10%, rgba(255,90,20,0.25), transparent 60%), linear-gradient(160deg, #2b0e05 0%, #140604 55%, #0d0605 100%)", texture: "grain" },
+    { id: "BG_TITANIUM",   kind: "background", label: "Titanium",       css: "linear-gradient(120deg, rgba(220,225,230,0.14) 0%, transparent 45%), linear-gradient(145deg, #1c1e22 0%, #101113 70%)", texture: "halftone" },
+    { id: "BG_GOLD_LEAF",  kind: "background", label: "Gold Leaf",      css: "linear-gradient(100deg, transparent 0 55%, rgba(212,168,32,0.28) 55.3% 78%, transparent 78.3%), linear-gradient(135deg, #241a06 0%, #14100a 70%)", texture: "grain" },
+    { id: "BG_THRONE",     kind: "background", label: "Throne Room",    css: "radial-gradient(100% 80% at 50% -10%, rgba(139,92,246,0.22), transparent 60%), linear-gradient(160deg, #150a22 0%, #0c0710 60%)", texture: "grain" },
+
     // Layouts (nameplate typesetting)
     { id: "LAYOUT_STACKED",   kind: "frame", label: "Stacked",      glyph: "≡" },
     { id: "LAYOUT_INLINE",    kind: "frame", label: "Lower Third",  glyph: "—" },
     { id: "LAYOUT_MARQUEE",   kind: "frame", label: "Marquee",      glyph: "◈" },
     { id: "LAYOUT_BROADCAST", kind: "frame", label: "Broadcast",    glyph: "▮" },
     { id: "LAYOUT_CHAMP",     kind: "frame", label: "Championship", glyph: "★" },
+
+    // Badge-unlocked layouts
+    { id: "FRAME_WARPATH",   kind: "frame", label: "Warpath",   glyph: "⚔" },
+    { id: "FRAME_SPOTLIGHT", kind: "frame", label: "Spotlight", glyph: "◎" },
 
     // Accents
     { id: "ACC_RED",    kind: "accent", label: "Blood Red",  color: "#ef4444" },
@@ -40,6 +50,12 @@ const PIECES = [
     { id: "ACC_GREEN",  kind: "accent", label: "Jade",       color: "#22c55e" },
     { id: "ACC_PURPLE", kind: "accent", label: "Royal",      color: "#c084fc" },
     { id: "ACC_PINK",   kind: "accent", label: "Hot Pink",   color: "#f472b6" },
+
+    // Badge-unlocked accents
+    { id: "ACC_CHAMPAGNE",   kind: "accent", label: "Champagne",   color: "#e8d48b" },
+    { id: "ACC_BLOOD_RIVAL", kind: "accent", label: "Blood Rival", color: "#7f1d1d" },
+    { id: "ACC_PLATINUM",    kind: "accent", label: "Platinum",    color: "#d9dde3" },
+    { id: "ACC_TEAL_ICE",    kind: "accent", label: "Teal Ice",    color: "#2dd4bf" },
 
     // Badges
     { id: "BADGE_FIRST_WIN",  kind: "badge", label: "First Win",        icon: "1️⃣" },

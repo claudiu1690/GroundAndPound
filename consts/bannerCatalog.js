@@ -91,6 +91,40 @@ const BANNER_PIECES = [
         unlockAt: { notorietyTier: "LEGEND" },
     },
 
+    // ── Badge-gated backgrounds ────────────────────────────────
+    {
+        id: "BG_SCORCHED", kind: "background", label: "Scorched Canvas",
+        visual: {
+            css: "radial-gradient(90% 130% at 20% 0%, rgba(249,115,22,0.18), transparent 55%), linear-gradient(115deg, transparent 0 60%, rgba(234,88,12,0.55) 60.3% 66%, transparent 66.3%), linear-gradient(115deg, transparent 0 67%, rgba(234,88,12,0.22) 67.3% 71%, transparent 71.3%), linear-gradient(115deg, #1a0f08 0%, #120a06 65%)",
+            texture: "grain",
+        },
+        unlockAt: { badge: "ko_artist" },
+    },
+    {
+        id: "BG_TITANIUM", kind: "background", label: "Titanium",
+        visual: {
+            css: "linear-gradient(100deg, transparent 0 58%, rgba(203,213,225,0.14) 58% 100%), radial-gradient(90% 130% at 82% 0%, rgba(226,232,240,0.10), transparent 55%), repeating-linear-gradient(100deg, #1c1e22 0 5px, #23262b 5px 10px)",
+            texture: null,
+        },
+        unlockAt: { badge: "titan_rank4" },
+    },
+    {
+        id: "BG_GOLD_LEAF", kind: "background", label: "Gold Leaf",
+        visual: {
+            css: "linear-gradient(100deg, transparent 0 55%, rgba(212,168,32,0.22) 55% 100%), radial-gradient(90% 130% at 82% 0%, rgba(250,204,21,0.16), transparent 55%), linear-gradient(115deg, #201907 0%, #131110 68%)",
+            texture: "grain",
+        },
+        unlockAt: { badge: "champ_gcs" },
+    },
+    {
+        id: "BG_THRONE", kind: "background", label: "Throne Room",
+        visual: {
+            css: "linear-gradient(115deg, transparent 0 60%, rgba(126,34,206,0.40) 60.3% 66%, transparent 66.3%), radial-gradient(90% 130% at 18% 0%, rgba(168,85,247,0.16), transparent 55%), linear-gradient(135deg, #1a0f22 0%, #120a16 62%)",
+            texture: "halftone",
+        },
+        unlockAt: { badge: "pvp_belt_first" },
+    },
+
     // ── Layouts (nameplate typesetting; stored in the legacy frameId slot) ──
     // `glyph` is only used for the editor swatch.
     {
@@ -118,6 +152,16 @@ const BANNER_PIECES = [
         visual: { glyph: "★" },
         unlockAt: { beltsWon: true },
     },
+    {
+        id: "FRAME_WARPATH", kind: "frame", label: "Warpath",
+        visual: { glyph: "⚔" },
+        unlockAt: { badge: "giant_killer" },
+    },
+    {
+        id: "FRAME_SPOTLIGHT", kind: "frame", label: "Spotlight",
+        visual: { glyph: "◎" },
+        unlockAt: { badge: "documentary" },
+    },
 
     // ── Accent colors ──────────────────────────────────────────
     { id: "ACC_RED",    kind: "accent", label: "Blood Red",  visual: { color: "#ef4444" }, unlockAt: { always: true } },
@@ -127,6 +171,10 @@ const BANNER_PIECES = [
     { id: "ACC_GREEN",  kind: "accent", label: "Jade",       visual: { color: "#22c55e" }, unlockAt: { notorietyTier: "RISING_STAR" } },
     { id: "ACC_PURPLE", kind: "accent", label: "Royal",      visual: { color: "#c084fc" }, unlockAt: { notorietyTier: "CONTENDER" } },
     { id: "ACC_PINK",   kind: "accent", label: "Hot Pink",   visual: { color: "#f472b6" }, unlockAt: { notorietyTier: "STAR" } },
+    { id: "ACC_CHAMPAGNE",   kind: "accent", label: "Champagne",   visual: { color: "#e8d48b" }, unlockAt: { badge: "perfect_camp" } },
+    { id: "ACC_BLOOD_RIVAL", kind: "accent", label: "Blood Rival", visual: { color: "#7f1d1d" }, unlockAt: { badge: "nemesis_slayer" } },
+    { id: "ACC_PLATINUM",    kind: "accent", label: "Platinum",    visual: { color: "#d9dde3" }, unlockAt: { badge: "veteran" } },
+    { id: "ACC_TEAL_ICE",    kind: "accent", label: "Teal Ice",    visual: { color: "#2dd4bf" }, unlockAt: { badge: "sub_hunter" } },
 
     // ── Badges (up to 3 can be pinned) ─────────────────────────
     {

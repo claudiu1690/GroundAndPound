@@ -3,6 +3,7 @@ import { api, authStorage } from "./api";
 import { t } from "@/lib/i18n";
 import "./App.css";
 import { FighterProfile } from "./components/fighterProfile/FighterProfile";
+import { BannerUnlockModal } from "./components/banner/BannerUnlockModal";
 import { GymTraining, SESSION_META } from "./components/gym/GymTraining";
 import { GymSelector } from "./components/gym/GymSelector";
 import { ToastContainer } from "./components/gym/ToastContainer";
@@ -485,8 +486,16 @@ function App() {
   // Special-move drop reveal (NEW/UPGRADE outcomes only — DUPLICATE surfaces
   // as a compact toast instead, see handleTrain).
   const [moveDropReveal, setMoveDropReveal] = useState(null);
-  const [tierUpModal, setTierUpModal] = useState(null);
-  const [beltWonModal, setBeltWonModal] = useState(null);
+  // Post-fight celebration overlays (belt / tier-up / banner-unlock) — ordered
+  // queue so they never stack; each closes into the next. REPLACED (never
+  // appended) on every fight resolve so a stale queue can't leak into the
+  // next fight's celebrations.
+  const [overlayQueue, setOverlayQueue] = useState([]);
+  const advanceOverlay = useCallback(() => setOverlayQueue((q) => q.slice(1)), []);
+  const currentOverlay = overlayQueue[0] || null;
+  // Nonce that tells the (always-mounted) sidebar FighterProfile to open its
+  // banner editor — bumped by the banner-unlock modal's "Customize" CTA.
+  const [openBannerEditorSignal, setOpenBannerEditorSignal] = useState(0);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
   // One-time "you're a contender" announcement. We track the previous
   // pendingPromotion value so we only fire on the absent→set transition.
@@ -1146,16 +1155,25 @@ const handleGetOffers = useCallback(async () => {
       // as GET /fights/:id/breakdown); fall back to the raw subdoc for old deploys
       setLastFightBreakdown(result.breakdownView ?? result.fight?.breakdown ?? null);
       setLastFightSummary(result.summary ?? null);
-      if (result.summary?.notorietyTierUp) {
-        setTierUpModal(result.summary.notorietyTierUp);
-      }
+      // Post-fight celebration overlays, priority order: belt > tier > banner.
+      // REPLACE (never append) — a fresh fight always overwrites any leftover
+      // queue from a previous resolve.
+      const queue = [];
       if (result.summary?.beltWon && result.summary?.promoted) {
-        setBeltWonModal({
+        queue.push({
+          type: "belt",
           from: result.summary.promoted.from,
           to: result.summary.promoted.to,
           weightClass: result.fighter?.weightClass,
         });
       }
+      if (result.summary?.notorietyTierUp) {
+        queue.push({ type: "tier", ...result.summary.notorietyTierUp });
+      }
+      if (result.summary?.newlyUnlockedBannerPieces?.length) {
+        queue.push({ type: "banner", pieces: result.summary.newlyUnlockedBannerPieces });
+      }
+      setOverlayQueue(queue);
       const out = result.fight?.outcome || "—";
       const iron = result.fight?.ironEarned ?? 0;
       const rec = result.fighter?.record;
@@ -1305,19 +1323,25 @@ const handleGetOffers = useCallback(async () => {
         </div>
       )}
 
-      <TierUpOverlay
-        open={!!tierUpModal}
-        fromTier={tierUpModal?.from}
-        toTier={tierUpModal?.to}
-        onClose={() => setTierUpModal(null)}
+      <BeltWonOverlay
+        open={currentOverlay?.type === "belt"}
+        fromTier={currentOverlay?.from}
+        toTier={currentOverlay?.to}
+        weightClass={currentOverlay?.weightClass}
+        onClose={advanceOverlay}
       />
 
-      <BeltWonOverlay
-        open={!!beltWonModal}
-        fromTier={beltWonModal?.from}
-        toTier={beltWonModal?.to}
-        weightClass={beltWonModal?.weightClass}
-        onClose={() => setBeltWonModal(null)}
+      <TierUpOverlay
+        open={currentOverlay?.type === "tier"}
+        fromTier={currentOverlay?.from}
+        toTier={currentOverlay?.to}
+        onClose={advanceOverlay}
+      />
+
+      <BannerUnlockModal
+        pieces={currentOverlay?.type === "banner" ? currentOverlay.pieces : null}
+        onClose={advanceOverlay}
+        onCustomize={() => { advanceOverlay(); setOpenBannerEditorSignal((n) => n + 1); }}
       />
 
       <FightLimitPopup
@@ -1485,6 +1509,7 @@ const handleGetOffers = useCallback(async () => {
             onUpdateFighter={handleUpdateFighter}
             onRefreshFighter={loadFighter}
             onMessage={setMessage}
+            openBannerEditorSignal={openBannerEditorSignal}
           />
           <InventorySidebar
             fighter={fighter}

@@ -357,6 +357,22 @@
         "frame": "Layout",
         "accent": "Accent"
       }
+    },
+    "unlock": {
+      "ariaLabel": "Banner unlocked",
+      "closeAriaLabel": "Close",
+      "eyebrow": "Banner Unlocked",
+      "title": "New Customizations",
+      "subtitleSingular": "Your latest win earned 1 new banner piece.",
+      "subtitlePlural": "Your latest win earned {n} new banner pieces.",
+      "kind": {
+        "background": "Background",
+        "accent": "Accent Color",
+        "frame": "Layout"
+      },
+      "earnedPrefix": "Earned:",
+      "later": "Later",
+      "customize": "Customize Banner →"
     }
   },
   "dashboard": {

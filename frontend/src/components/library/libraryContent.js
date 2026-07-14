@@ -488,13 +488,15 @@ export const LIBRARY_ARTICLES = [
         category: "Career",
         title: "Banner Customizer — Your Fighter's Identity",
         summary: "How the banner works, what each layer unlocks, and why it matters.",
-        tags: ["banner", "customization", "cosmetic", "background", "frame"],
+        tags: ["banner", "customization", "cosmetic", "background", "frame", "badge", "unlock"],
         body: [
             "Every fighter has a customizable banner on their profile. It's a visual identity layer — four customizable parts that evolve as your career progresses. Open it with the Customize button on your profile sidebar.",
-            "The four layers are Background, Frame, Accent Colour, and Pinned Badges. Backgrounds unlock at fame tiers — starting at a basic Slate and working up to Holographic at Legend fame. Frames unlock through fame progression too, with a special Championship frame available to anyone who has won a professional belt (Regional Pro and up — the Amateur belt earns the distinct Amateur Champion badge but not this frame). Accent colours span seven options unlocked by fame tier. Pinned Badges let you choose up to three of your earned badges to display prominently.",
+            "The four layers are Background, Frame, Accent Colour, and Pinned Badges. Backgrounds unlock at fame tiers — starting at a basic Slate and working up to Holographic at Legend fame. Frames unlock through fame progression too, with a special Championship frame available to anyone who has won a professional belt (Regional Pro and up — the Amateur belt earns the distinct Amateur Champion badge but not this frame). Accent colours span a range of options unlocked by fame tier. Pinned Badges let you choose up to three of your earned badges to display prominently.",
+            "Some of the sharpest pieces aren't tied to fame at all — they're earned by badges. Win 10 fights by knockout for the Scorched Canvas background; win off a perfect (S-grade) camp for the Champagne accent; beat someone rated far above you for the Warpath frame. Whatever badge unlocks a piece, having that badge — career, gym-rank, or Proving Ground — is enough to claim it in the customizer.",
+            "When a fight earns you a new banner piece, a Banner Unlocked card pops up right after with what you pulled and a shortcut straight into the customizer. If a single fight earns several at once, they're listed together on one card. It always waits its turn behind the big moments — a belt win or a tier promotion shows first.",
             "The banner is purely cosmetic — it doesn't affect fight outcomes. But it appears on your profile and in any future context where other players see your fighter. A banner loaded with Rank 4 gym badges and a Championship frame tells everyone who looks at it exactly what kind of fighter you are and what you've done.",
         ],
-        keyTakeaway: "The banner is cosmetic but meaningful. It's the visual summary of your career that other players see first.",
+        keyTakeaway: "The banner is cosmetic but meaningful — the visual summary of your career others see first. Chase the badge-locked pieces; they mark real achievements.",
     },
 
     // ──────────────────────────────────────────────────────────────

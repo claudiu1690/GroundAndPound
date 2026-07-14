@@ -35,7 +35,11 @@ function isUnlocked(fighter, piece) {
         if (!fighter?.notoriety?.milestones?.[u.milestone]) return false;
     }
     if (u.badge) {
-        if (!(fighter?.badges || []).includes(u.badge)) return false;
+        // Union both namespaces: legacy flat strings on `fighter.badges` AND
+        // catalog ids on `fighter.badgesEarned` (Career Page / PvP badge system).
+        const inLegacy = (fighter?.badges || []).includes(u.badge);
+        const inEarned = (fighter?.badgesEarned || []).some((b) => b?.badgeId === u.badge);
+        if (!inLegacy && !inEarned) return false;
     }
     if (u.totalWins != null) {
         if ((fighter?.record?.wins || 0) < u.totalWins) return false;
