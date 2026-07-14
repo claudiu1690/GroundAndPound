@@ -143,6 +143,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
           <a className="nav-link" href="#how">How It Works</a>
           <a className="nav-link" href="#screenshots">Screenshots</a>
           <a className="nav-link" href="#pvp">{seasonData ? `Season ${seasonData.seasonNumber}` : "Season 1"}</a>
+          <a className="nav-link" href="https://discord.gg/jDmh4wuBMb" target="_blank" rel="noopener noreferrer">Discord</a>
           <a className="nav-cta" href="#play">Play Free</a>
         </div>
       </nav>
@@ -529,6 +530,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         <footer>
           <div className="foot-logo">Ground <span>&amp;</span> Pound</div>
           <div className="foot-links">
+            <a className="foot-link" href="https://discord.gg/jDmh4wuBMb" target="_blank" rel="noopener noreferrer">Discord</a>
             <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-cookie-policy")}>Cookie Policy</a>
             <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-privacy-policy")}>Privacy</a>
             <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-terms")}>Terms</a>
