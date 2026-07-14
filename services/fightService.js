@@ -538,6 +538,16 @@ async function resolveFightAndApply(fighterId, userId) {
         console.error("[banner] before-snapshot failed:", e.message);
     }
 
+    // Snapshot earned badge ids BEFORE any resolve mutation. A single fight can
+    // award badges through three separate eval paths — notoriety fame-tier
+    // (applied below, before the fight eval), the fight-resolve eval, and the
+    // gym rank-up eval (after it). Diffing this snapshot after all of them run is
+    // the only way to surface EVERY badge earned this fight in the celebration
+    // payload; the fight eval's own return misses the other two.
+    const beforeBadgeIds = new Set(
+        (fighter.badgesEarned || []).map((e) => e && e.badgeId).filter(Boolean)
+    );
+
     notorietyService.ensureNotorietyShape(fighter);
     if (!fighter.acceptedFightId) throw new Error("No accepted fight");
 
@@ -1228,6 +1238,21 @@ async function resolveFightAndApply(fighterId, userId) {
         } catch (e) {
             console.error("[gymRank] Failed to update fight wins:", e.message);
         }
+    }
+
+    // ── Newly-earned badge diff (celebration payload) ────────────────────
+    // Every badge-awarding eval for this fight has now run: notoriety fame-tier
+    // (before the fight eval), the fight-resolve eval, and the gym rank-up eval
+    // (above). The fight eval's own return (`r.newlyEarned`) only covers the
+    // middle one, so recompute against the pre-resolve snapshot to surface ALL
+    // of them. This is what fixes fame-tier / gym-rank-4 badges silently showing
+    // up as earned later instead of celebrating at unlock. Non-fatal.
+    try {
+        newlyEarnedBadges = (fighter.badgesEarned || [])
+            .filter((e) => e && e.badgeId && !beforeBadgeIds.has(e.badgeId))
+            .map((e) => ({ badgeId: e.badgeId, context: e.context ?? null }));
+    } catch (e) {
+        console.error("[badges] newly-earned diff failed:", e.message);
     }
 
     // ── Phase 3: Sponsorship clauses resolve after every fight ──────────

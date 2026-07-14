@@ -30,7 +30,9 @@ export const CHANGELOG_ENTRIES = [
       changed: [
         "Post-fight celebrations now queue in order — a belt win or tier promotion always shows before a banner unlock, so the big moments land first.",
       ],
-      fixed: [],
+      fixed: [
+        "Badges you earn during a fight — like reaching a new fame tier or maxing out a gym — now celebrate the moment you unlock them, instead of quietly showing up as earned on your profile later.",
+      ],
       balance: [],
     },
   },
