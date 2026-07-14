@@ -32,6 +32,7 @@ export const CHANGELOG_ENTRIES = [
       ],
       fixed: [
         "Badges you earn during a fight — like reaching a new fame tier or maxing out a gym — now celebrate the moment you unlock them, instead of quietly showing up as earned on your profile later.",
+        "Maxing out a gym's rank now shows a green check on the top rank instead of a red \"4\", so it reads as completed.",
       ],
       balance: [],
     },

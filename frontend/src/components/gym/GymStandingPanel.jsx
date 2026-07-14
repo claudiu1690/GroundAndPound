@@ -32,13 +32,18 @@ export function GymStandingPanel({ gym, onRankUp, otherSessions }) {
 
     if (!sortedRanks.length) return null;
 
+    // Ceiling rank of this gym's ladder. Reaching it counts as achieved (green
+    // check), not in-progress (red number) — the top step has no "next" to climb.
+    const maxRank = sortedRanks[sortedRanks.length - 1].rank;
+    const atMax = currentRank >= maxRank;
+
     return (
         <>
             <div className="gym-panel">
                 <div className="gym-panel-title">{t("gym.rankStrip.label")}</div>
                 <div className="ladder">
                     {sortedRanks.map((r) => {
-                        const done = currentRank > r.rank;
+                        const done = currentRank > r.rank || (atMax && r.rank === maxRank);
                         const current = currentRank === r.rank;
                         const showRankUpCta = current && gym.progress?.hasJoined && next && r.rank === currentRank && currentRank < 4;
                         const showMaxedNote = current && currentRank >= 4 && r.rank === currentRank;
