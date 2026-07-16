@@ -5,6 +5,7 @@ import { AuthPage } from "../auth/AuthPage";
 import { CookieConsent } from "../legal/CookieConsent";
 import { LegalModals } from "../legal/LegalModals";
 import { ReportBugModal } from "../shared/ReportBugModal";
+import { DiscordIcon } from "../shared/DiscordIcon";
 import { useSeasonBand } from "../../hooks/useSeasonBand";
 
 // Open a legal modal from a footer link without navigating.
@@ -24,6 +25,16 @@ function formatDateShort(isoStr) {
   const d = new Date(isoStr);
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
+
+// Showcase card fan — real in-game Special Move art + rarity colors
+// (same palette as the in-game rarity chips).
+const FAN_CARDS = [
+  { id: "granite-jaw",     name: "Granite Jaw",     rarity: "Common",    rar: "#888888", glow: "rgba(136,136,136,.25)" },
+  { id: "sprawl-instinct", name: "Sprawl Instinct", rarity: "Uncommon",  rar: "#22c55e", glow: "rgba(34,197,94,.3)" },
+  { id: "the-finisher",    name: "The Finisher",    rarity: "Legendary", rar: "#D4A820", glow: "rgba(212,168,32,.45)" },
+  { id: "heavy-hands",     name: "Heavy Hands",     rarity: "Rare",      rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
+  { id: "killer-instinct", name: "Killer Instinct", rarity: "Rare",      rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
+];
 
 export function LandingPage({ onAuthenticated, initialResetToken }) {
   // Season band (data-driven PVP section)
@@ -141,9 +152,18 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         <div className="nav-links">
           <a className="nav-link" href="#features">Features</a>
           <a className="nav-link" href="#how">How It Works</a>
-          <a className="nav-link" href="#screenshots">Screenshots</a>
+          <a className="nav-link" href="#screenshots">Showcase</a>
           <a className="nav-link" href="#pvp">{seasonData ? `Season ${seasonData.seasonNumber}` : "Season 1"}</a>
-          <a className="nav-link" href="https://discord.gg/jDmh4wuBMb" target="_blank" rel="noopener noreferrer">Discord</a>
+          <a
+            className="nav-link nav-link--icon"
+            href="https://discord.gg/jDmh4wuBMb"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Join our Discord"
+            title="Discord"
+          >
+            <DiscordIcon size={17} />
+          </a>
           <a className="nav-cta" href="#play">Play Free</a>
         </div>
       </nav>
@@ -263,130 +283,102 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         </div>
       </div>
 
-      {/* SCREENSHOTS */}
+      {/* SHOWCASE — Special Moves card fan + Persona (game art, not screenshots) */}
       <div className="ss-section" id="screenshots">
-        <div className="ss-head">
-          <div className="sec-eye">Inside the game</div>
-          <h2 className="sec-title">Deep enough to keep<br />you thinking</h2>
-          <p className="sec-sub">Every screen has a decision. Every decision has a consequence.</p>
+        <div className="ss-head ss-head--center">
+          <div className="sec-eye">Special Moves</div>
+          <h2 className="sec-title">Build your arsenal</h2>
+          <p className="sec-sub">Thirteen collectible signature techniques, painted like trading cards. Pull them from sparring, upgrade them by rarity, equip up to three.</p>
         </div>
 
-        {/* 1: Fight Summary */}
-        <div className="ss-pair">
-          <div className="ss-img-wrap">
-            <img
-              src="/assets/landing/ss_fight.webp"
-              alt="Fight Summary"
-              loading="lazy"
-              onClick={() => openLightbox("/assets/landing/ss_fight.webp", "Fight Summary")}
-            />
-          </div>
-          <div className="ss-copy">
-            <div className="ss-copy-num">01</div>
-            <div className="ss-copy-eye">After the bell</div>
-            <h3 className="ss-copy-title">Every fight tells a complete story</h3>
-            <p className="ss-copy-desc">Round-by-round breakdown, XP gains, cash earned, nemesis settled. Then the mic goes live — Humble, Confident, or Trash Talk. Your call. Your consequences.</p>
-            <div className="ss-copy-pills">
-              <span className="ss-pill">Round stats</span>
-              <span className="ss-pill">XP breakdown</span>
-              <span className="ss-pill">Post-fight interview</span>
-              <span className="ss-pill">Rivalry system</span>
+        <div className="fan-row">
+          {FAN_CARDS.map((c, i) => (
+            <div
+              key={c.id}
+              className={`fan-card fan-c${i + 1}`}
+              style={{ "--rar": c.rar, "--rar-glow": c.glow }}
+              onClick={() => openLightbox(`/assets/moves/${c.id}.webp`, c.name)}
+            >
+              <img src={`/assets/moves/${c.id}.webp`} alt={c.name} loading="lazy" />
+              <div className="fan-plate">
+                <div className="fan-name">{c.name}</div>
+                <div className="fan-rar">{c.rarity}</div>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
+        <div className="fan-note">Common · Uncommon · Rare · <b>Legendary</b> — better gyms pull rarer.</div>
 
-        {/* 2: Hospital (flipped) */}
-        <div className="ss-pair flip">
-          <div className="ss-img-wrap">
-            <img
-              src="/assets/landing/ss_hospital.webp"
-              alt="Hospital"
-              loading="lazy"
-              onClick={() => openLightbox("/assets/landing/ss_hospital.webp", "Hospital")}
-            />
+        {/* PERSONA */}
+        <div className="persona-band">
+          <div className="persona-band-art">
+            <img src="/assets/persona/octagon-map.webp" alt="Persona map" loading="lazy" />
+            <span className="persona-band-dot" />
           </div>
-          <div className="ss-copy">
-            <div className="ss-copy-num">02</div>
-            <div className="ss-copy-eye">Medical Centre</div>
-            <h3 className="ss-copy-title">Injuries have real consequences</h3>
-            <p className="ss-copy-desc">A concussion blocks fighting. A torn rib kills your stamina. A busted hand ends sparring. The diagnostic scanner maps every injury on your fighter's body — ignore them at your peril.</p>
-            <div className="ss-copy-pills">
-              <span className="ss-pill">Body map</span>
-              <span className="ss-pill">Auto-heal timers</span>
-              <span className="ss-pill">Doctor visits</span>
-              <span className="ss-pill">Blocks training</span>
+          <div className="persona-band-copy">
+            <div className="sec-eye">Persona</div>
+            <h2 className="sec-title">Who will they<br />call you?</h2>
+            <p className="sec-sub">Every mic you touch shapes your public character. Commit to a corner and the press crowns you — with real rewards, and real costs.</p>
+            <div className="persona-band-archs">
+              <span className="arch-chip arch-v">The Villain</span>
+              <span className="arch-chip arch-c">People's Champ</span>
+              <span className="arch-chip arch-b">Boogeyman</span>
+              <span className="arch-chip arch-r">Role Model</span>
             </div>
+            <p className="persona-band-line">Villains get paid but lose sponsors. Champs get the crowd. Boogeymen get feared. Role Models get taken care of. <b>Nothing is ever locked</b> — heel turns are one hot mic away.</p>
           </div>
         </div>
 
-        {/* 3: Gyms */}
-        <div className="ss-pair">
-          <div className="ss-img-wrap">
-            <img
-              src="/assets/landing/ss_gyms.webp"
-              alt="Choose Your Gym"
-              loading="lazy"
-              onClick={() => openLightbox("/assets/landing/ss_gyms.webp", "Choose Your Gym")}
-            />
+        {/* FACE-OFF — static poster of the in-game tale-of-the-tape */}
+        <div className="fo-band">
+          <div className="ss-head--center fo-head">
+            <div className="sec-eye">The Face-Off</div>
+            <h2 className="sec-title">Square up before<br />you step in</h2>
+            <p className="sec-sub">Take a fight and the tape drops: you in the blue corner, them in the red. Public numbers only — the rest you scout in camp.</p>
           </div>
-          <div className="ss-copy">
-            <div className="ss-copy-num">03</div>
-            <div className="ss-copy-eye">Training</div>
-            <h3 className="ss-copy-title">Your gym defines your path</h3>
-            <p className="ss-copy-desc">From the free Community MMA Center to the $10,000/week Elite Fight Academy. Each gym unlocks different drills, builds different strengths, and requires a different rank to access.</p>
-            <div className="ss-copy-pills">
-              <span className="ss-pill">11 gyms</span>
-              <span className="ss-pill">Rank gated</span>
-              <span className="ss-pill">XP multipliers</span>
-              <span className="ss-pill">Specialty drills</span>
+
+          <div className="fo-poster">
+            <div className="fo-side fo-side--you">
+              <div className="fo-port">DV</div>
+              <div className="fo-corner">◆ Blue Corner · You</div>
+              <div className="fo-name">Demo Villain</div>
+              <div className="fo-nick">&ldquo;The Unwritten&rdquo;</div>
+              <div className="fo-rec">7–2–0</div>
             </div>
-          </div>
-        </div>
 
-        {/* 4: Fight Camp (flipped) */}
-        <div className="ss-pair flip">
-          <div className="ss-img-wrap">
-            <img
-              src="/assets/landing/ss_camp.webp"
-              alt="Fight Camp"
-              loading="lazy"
-              onClick={() => openLightbox("/assets/landing/ss_camp.webp", "Fight Camp")}
-            />
-          </div>
-          <div className="ss-copy">
-            <div className="ss-copy-num">04</div>
-            <div className="ss-copy-eye">Pre-fight</div>
-            <h3 className="ss-copy-title">Win the fight before it starts</h3>
-            <p className="ss-copy-desc">Pick your camp sessions based on the opponent's style. Takedown defence against wrestlers. Submission escapes against BJJ specialists. Add a supplement. Set your weight cut. Then step in.</p>
-            <div className="ss-copy-pills">
-              <span className="ss-pill">9 camp drills</span>
-              <span className="ss-pill">Opponent matching</span>
-              <span className="ss-pill">Supplements</span>
-              <span className="ss-pill">Weight cut risk</span>
+            <div className="fo-center">
+              <div className="fo-vs"><span>V</span>S</div>
+              <div className="fo-tape">
+                <div className="fo-trow">
+                  <span className="fo-tval l win">71</span>
+                  <span className="fo-tlbl">Overall</span>
+                  <span className="fo-tval r">68</span>
+                </div>
+                <div className="fo-trow">
+                  <span className="fo-tval l">7–2–0</span>
+                  <span className="fo-tlbl">Record</span>
+                  <span className="fo-tval r">11–4–0</span>
+                </div>
+                <div className="fo-trow">
+                  <span className="fo-tval l">Boxer</span>
+                  <span className="fo-tlbl">Style</span>
+                  <span className="fo-tval r">Wrestler</span>
+                </div>
+                <div className="fo-trow">
+                  <span className="fo-tval l">MW</span>
+                  <span className="fo-tlbl">Class</span>
+                  <span className="fo-tval r">MW</span>
+                </div>
+              </div>
+              <div className="fo-scout">Detailed stats stay hidden — scout them in camp.</div>
             </div>
-          </div>
-        </div>
 
-        {/* 5: Dashboard */}
-        <div className="ss-pair">
-          <div className="ss-img-wrap">
-            <img
-              src="/assets/landing/ss_dashboard.webp"
-              alt="Dashboard"
-              loading="lazy"
-              onClick={() => openLightbox("/assets/landing/ss_dashboard.webp", "Dashboard")}
-            />
-          </div>
-          <div className="ss-copy">
-            <div className="ss-copy-num">05</div>
-            <div className="ss-copy-eye">Home</div>
-            <h3 className="ss-copy-title">Everything at a glance, nothing wasted</h3>
-            <p className="ss-copy-desc">The Octagon Gazette breaks the latest news. Your rank, injuries, energy, cash, recent career, active sponsorships — all in one place. You always know exactly where you stand.</p>
-            <div className="ss-copy-pills">
-              <span className="ss-pill">Live newspaper</span>
-              <span className="ss-pill">Injury alerts</span>
-              <span className="ss-pill">Career timeline</span>
-              <span className="ss-pill">Sponsorships</span>
+            <div className="fo-side fo-side--opp">
+              <div className="fo-port">★</div>
+              <div className="fo-corner">Champion · Red Corner ◆</div>
+              <div className="fo-name">Marcus Kane</div>
+              <div className="fo-nick">&ldquo;The Warden&rdquo;</div>
+              <div className="fo-rec">11–4–0</div>
             </div>
           </div>
         </div>

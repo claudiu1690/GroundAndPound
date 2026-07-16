@@ -31,6 +31,9 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
 .landing-page .nav-links{display:flex;align-items:center;gap:28px}
 .landing-page .nav-link{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ts);text-decoration:none;transition:color 0.2s}
 .landing-page .nav-link:hover{color:var(--tp)}
+/* Icon-only nav link (Discord) — brand-tints on hover instead of going white. */
+.landing-page .nav-link--icon{display:inline-flex;align-items:center;justify-content:center;padding:2px}
+.landing-page .nav-link--icon:hover{color:#5865F2}
 .landing-page .nav-cta{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:11px;letter-spacing:2px;text-transform:uppercase;background:var(--r);color:#fff;border:none;padding:9px 20px;border-radius:2px;cursor:pointer;text-decoration:none}
 
 /* ── HERO ── */
@@ -190,6 +193,86 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
 .landing-page .ss-pill{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;border-radius:2px;background:rgba(255,255,255,0.04);border:1px solid #222;color:#555}
 .landing-page .ss-divider{border:none;border-top:1px solid #181818;max-width:1100px;margin:0 auto 80px;padding:0 40px}
 
+/* ── SHOWCASE: Special Moves card fan ── */
+.landing-page .ss-head--center{text-align:center}
+.landing-page .ss-head--center .sec-sub{margin:0 auto}
+.landing-page .fan-row{display:flex;justify-content:center;align-items:flex-end;margin:46px auto 0;height:340px}
+.landing-page .fan-card{
+  position:relative;width:190px;aspect-ratio:2/3;border-radius:10px;overflow:hidden;
+  border:1px solid var(--rar,#3b82f6);background:#111;cursor:zoom-in;
+  box-shadow:0 18px 40px -12px rgba(0,0,0,.8),0 0 26px -6px var(--rar-glow,rgba(59,130,246,.35));
+  margin:0 -34px;transform-origin:50% 120%;transition:transform .25s ease;
+}
+.landing-page .fan-c1{transform:rotate(-22deg) translateY(12px);z-index:1}
+.landing-page .fan-c2{transform:rotate(-11deg) translateY(-6px);z-index:2}
+.landing-page .fan-c3{transform:translateY(-16px);z-index:3}
+.landing-page .fan-c4{transform:rotate(11deg) translateY(-6px);z-index:2}
+.landing-page .fan-c5{transform:rotate(22deg) translateY(12px);z-index:1}
+.landing-page .fan-card:hover{transform:translateY(-30px) scale(1.06);z-index:5}
+.landing-page .fan-card img{width:100%;height:100%;object-fit:cover;display:block}
+.landing-page .fan-plate{position:absolute;left:0;right:0;bottom:0;padding:26px 10px 9px;background:linear-gradient(to top,rgba(0,0,0,.92) 30%,transparent);text-align:center}
+.landing-page .fan-name{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;letter-spacing:1px;text-transform:uppercase;line-height:1}
+.landing-page .fan-rar{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:2px;text-transform:uppercase;color:var(--rar,#3b82f6);margin-top:3px}
+.landing-page .fan-note{margin-top:34px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--tm)}
+.landing-page .fan-note b{color:var(--g)}
+
+/* ── SHOWCASE: Persona split row ── */
+.landing-page .persona-band{display:flex;align-items:center;gap:60px;max-width:1050px;margin:90px auto 0;padding:80px 40px 0;border-top:1px solid #181818}
+.landing-page .persona-band-art{position:relative;width:290px;height:290px;flex-shrink:0}
+.landing-page .persona-band-art img{width:100%;height:100%;object-fit:cover}
+.landing-page .persona-band-dot{position:absolute;left:24%;top:22%;width:14px;height:14px;border-radius:50%;background:#e06479;border:1.5px solid rgba(0,0,0,.5);box-shadow:0 0 0 4px rgba(224,100,121,.2),0 0 18px rgba(224,100,121,.65)}
+.landing-page .persona-band-archs{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.landing-page .arch-chip{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;padding:7px 14px;border-radius:3px;border:1px solid}
+.landing-page .arch-v{color:#e06479;border-color:rgba(224,100,121,.33);background:rgba(224,100,121,.06)}
+.landing-page .arch-c{color:#7fc98f;border-color:rgba(127,201,143,.33);background:rgba(127,201,143,.06)}
+.landing-page .arch-b{color:#b9b9c4;border-color:rgba(185,185,196,.33);background:rgba(185,185,196,.06)}
+.landing-page .arch-r{color:#e8cd7a;border-color:rgba(232,205,122,.33);background:rgba(232,205,122,.06)}
+.landing-page .persona-band-line{margin-top:18px;font-size:13px;color:var(--ts);line-height:1.65}
+.landing-page .persona-band-line b{color:var(--tp)}
+
+/* ── SHOWCASE: Face-off poster (static mirror of the in-game tale-of-the-tape) ── */
+.landing-page .fo-band{max-width:1050px;margin:90px auto 0;padding:80px 40px 0;border-top:1px solid #181818}
+.landing-page .fo-head{margin-bottom:46px}
+.landing-page .fo-poster{
+  position:relative;overflow:hidden;border:1px solid var(--bor);border-radius:10px;
+  background:linear-gradient(180deg,#131313,#0d0d0d);
+  box-shadow:0 30px 70px -24px rgba(0,0,0,.85);
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:20px;
+  padding:44px 34px;
+}
+/* Corner light — blue (you) left, red (them) right, same as the in-game overlay. */
+.landing-page .fo-poster::before,.landing-page .fo-poster::after{content:"";position:absolute;top:0;bottom:0;width:44%;pointer-events:none;opacity:.5}
+.landing-page .fo-poster::before{left:0;background:radial-gradient(70% 60% at 0% 50%,rgba(59,130,246,.28),transparent 70%)}
+.landing-page .fo-poster::after{right:0;background:radial-gradient(70% 60% at 100% 50%,rgba(200,16,46,.3),transparent 70%)}
+.landing-page .fo-side{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center}
+.landing-page .fo-port{
+  width:96px;height:96px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:34px;letter-spacing:1px;margin-bottom:16px;border:2px solid;
+}
+.landing-page .fo-side--you .fo-port{border-color:#3b82f6;color:#3b82f6;background:linear-gradient(135deg,rgba(59,130,246,.18),#0d0d12)}
+.landing-page .fo-side--opp .fo-port{border-color:var(--r);color:#ff8a97;background:linear-gradient(135deg,rgba(200,16,46,.2),#120d0d)}
+.landing-page .fo-corner{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:8px}
+.landing-page .fo-side--you .fo-corner{color:#7fb0ff}
+.landing-page .fo-side--opp .fo-corner{color:#ff8a97}
+.landing-page .fo-name{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:27px;text-transform:uppercase;letter-spacing:.5px;line-height:1}
+.landing-page .fo-nick{font-style:italic;color:#9a9a9a;font-size:12.5px;margin-top:5px}
+.landing-page .fo-rec{margin-top:9px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:14px;letter-spacing:1px;color:#ddd}
+.landing-page .fo-center{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;gap:14px;padding:0 6px}
+.landing-page .fo-vs{
+  font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:60px;letter-spacing:-2px;color:#fff;line-height:1;
+  text-shadow:0 0 34px rgba(255,255,255,.28);
+}
+.landing-page .fo-vs>span{color:var(--r)}
+.landing-page .fo-tape{width:min(300px,74vw);border-top:1px solid #333;border-bottom:1px solid #333}
+.landing-page .fo-trow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:7px 0;border-bottom:1px solid #1c1c1c}
+.landing-page .fo-trow:last-child{border-bottom:none}
+.landing-page .fo-tval{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:17px;font-variant-numeric:tabular-nums}
+.landing-page .fo-tval.l{text-align:right;color:#9cc0ff}
+.landing-page .fo-tval.r{text-align:left;color:#ff9aa6}
+.landing-page .fo-tval.win{color:#fff;text-shadow:0 0 12px currentColor}
+.landing-page .fo-tlbl{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#666;padding:0 14px;white-space:nowrap}
+.landing-page .fo-scout{font-size:11px;color:#777;text-align:center;max-width:280px}
+
 /* ── LIGHTBOX ── */
 .landing-page .ss-img-wrap{cursor:zoom-in}
 .landing-page #lightbox{
@@ -221,6 +304,9 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
   .landing-page nav { padding: 14px 20px; }
   .landing-page .nav-links { gap: 14px; }
   .landing-page .nav-link { display: none; }
+  /* The text links hide on narrow screens, but the Discord glyph is compact
+     enough to keep — must follow .nav-link's display:none (equal specificity). */
+  .landing-page .nav-link--icon { display: inline-flex; }
 
   /* Section padding: 40px sides is too much on small screens */
   .landing-page section { padding: 64px 20px; }
@@ -229,6 +315,26 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
   .landing-page .login-section { padding: 64px 20px; }
   .landing-page .ss-head { padding: 0 20px; margin-bottom: 44px; }
   .landing-page .ss-pair { padding: 0 20px; }
+
+  /* Showcase: fan shrinks, persona band stacks + centers */
+  .landing-page .fan-row { height: 224px; margin-top: 30px; }
+  .landing-page .fan-card { width: 122px; margin: 0 -24px; border-radius: 7px; }
+  .landing-page .fan-name { font-size: 10.5px; }
+  .landing-page .fan-rar { font-size: 7px; letter-spacing: 1.5px; }
+  .landing-page .fan-plate { padding: 16px 6px 6px; }
+  .landing-page .fan-note { margin-top: 22px; padding: 0 20px; font-size: 9.5px; }
+  .landing-page .persona-band { flex-direction: column; gap: 30px; margin-top: 60px; padding: 56px 20px 0; text-align: center; }
+  .landing-page .persona-band-art { width: 230px; height: 230px; }
+  .landing-page .persona-band-archs { justify-content: center; }
+
+  /* Face-off: 3-col clash → stacked (you / VS+tape / them), mirroring the
+     in-game overlay's own mobile behaviour. */
+  .landing-page .fo-band { margin-top: 60px; padding: 56px 20px 0; }
+  .landing-page .fo-head { margin-bottom: 32px; }
+  .landing-page .fo-poster { grid-template-columns: 1fr; gap: 26px; padding: 32px 18px; }
+  .landing-page .fo-port { width: 68px; height: 68px; font-size: 24px; margin-bottom: 12px; border-radius: 10px; }
+  .landing-page .fo-name { font-size: 22px; }
+  .landing-page .fo-vs { font-size: 44px; }
   .landing-page .hero-body { padding: 0 24px; }
   .landing-page footer { padding: 24px 20px; }
 

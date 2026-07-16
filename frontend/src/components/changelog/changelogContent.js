@@ -30,7 +30,9 @@ export const CHANGELOG_ENTRIES = [
       "The big persona moments get celebrated: the first time the press crowns you, and the moment your Signature perk unlocks — each with a rundown of exactly what just switched on.",
     ],
     sections: {
-      changed: [],
+      changed: [
+        "The landing page now shows off the game's painted card art — a fanned hand of Special Move cards and the Persona compass — instead of plain screenshots.",
+      ],
       fixed: [
         "Tightened account safety on the Media and post-fight interview screens so only you can act on your own fighter.",
         "Sponsor contracts, gym rank-ups, and hospital bills now display the price your persona actually pays — with the old price struck through and a tag like \"The Role Model −10%\" showing why. Previously the screens showed the unmodified price while you were silently charged (or paid) a different number.",
