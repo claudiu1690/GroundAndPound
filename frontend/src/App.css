@@ -1471,13 +1471,21 @@ code {
   font-size: 11.5px; color: var(--ink2); line-height: 1.78;
   margin-bottom: 7px; text-align: justify; hyphens: auto;
 }
+/* Drop cap. margin-top fine-tunes the cap so its top sits flush with the first
+   line's ascenders — measured against real Playfair metrics (was 6px, which sank
+   the letter ~4px below the line). Re-measure with the WEBFONT LOADED if the cap
+   font-size or the body line-height changes; a fallback serif lands elsewhere. */
 .gz2-drop-cap::first-letter {
   font-family: 'Playfair Display', serif;
   font-size: 44px; font-weight: 800;
   float: left; line-height: 0.78;
-  margin-right: 5px; margin-top: 6px;
+  margin-right: 5px; margin-top: 2px;
   color: var(--ink);
 }
+/* Short (single-line) first paragraph: there is no second line to wrap under
+   the cap, so lift the letter to sit balanced against the one line instead of
+   hanging below it. Applied by GazetteModal when para.length < ~180. */
+.gz2-drop-cap--short::first-letter { margin-top: -12px; }
 .gz2-body-copy em { font-style: normal; font-weight: 700; color: var(--ink); }
 
 /* ── PULL QUOTE ─────────────────────────────────────────────── */

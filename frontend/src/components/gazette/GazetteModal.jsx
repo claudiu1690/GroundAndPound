@@ -195,10 +195,14 @@ export function GazetteModal({ open, gazette, onClose, onNavigate }) {
                           {t("gazette.bylineRole")} · {gazette?.fighterMeta ? gazette.fighterMeta.split("·")[0]?.trim() : ""} {t("gazette.bylineSuffix")}
                         </div>
 
-                        {/* Body paragraphs with drop cap on first */}
+                        {/* Body paragraphs with drop cap on first. The cap is sized to
+                            span two lines; short paragraphs (< ~180 chars) render a single
+                            line, so the cap gets the --short modifier which lifts the
+                            letter to sit balanced against that one line instead of
+                            hanging below it. */}
                         <div className="gz2-body-copy">
                           {bodyParas.map((para, i) => (
-                            <p key={i} className={i === 0 ? "gz2-body-p gz2-drop-cap" : "gz2-body-p"}>
+                            <p key={i} className={i === 0 ? `gz2-body-p gz2-drop-cap${para.length < 180 ? " gz2-drop-cap--short" : ""}` : "gz2-body-p"}>
                               {para}
                             </p>
                           ))}
