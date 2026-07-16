@@ -19,4 +19,23 @@ function ownFighterMiddleware(req, res, next) {
     return next();
 }
 
+/**
+ * Factory variant — same ownership guard but keyed on an arbitrary route param name
+ * (e.g. `ownFighterParam("fighterId")` for routes mounted as /media/:fighterId/...).
+ * Same 403 messages/behaviour as the default guard.
+ */
+function ownFighterParam(paramName) {
+    return function ownFighterParamGuard(req, res, next) {
+        const fighterId = req.user && req.user.fighterId;
+        if (!fighterId) {
+            return res.status(403).json({ message: "Forbidden — no fighter linked to this account" });
+        }
+        if (String(fighterId) !== String(req.params[paramName])) {
+            return res.status(403).json({ message: "Forbidden — you can only act on your own fighter" });
+        }
+        return next();
+    };
+}
+
 module.exports = ownFighterMiddleware;
+module.exports.ownFighterParam = ownFighterParam;

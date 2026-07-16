@@ -6439,6 +6439,11 @@ code {
 .interview-consequence strong.neg { color: #F87171; }
 .interview-consequence--muted { font-style: italic; }
 
+/* Per-choice persona hint — "Hated −9 · Loud +7  → The Villain" under each card. */
+.interview-persona-hint { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; font-size: 10px; }
+.interview-persona-hint--loading { color: var(--text-muted); font-style: italic; }
+.interview-persona-arrow { color: var(--text-secondary); font-weight: 700; letter-spacing: .3px; }
+
 .pfi-header {
   display: flex;
   align-items: center;
@@ -6615,6 +6620,10 @@ code {
   color: var(--text-muted);
   line-height: 1.5;
 }
+/* Persona outcome block on the DONE screen */
+.pfi-persona-outcome { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; margin-top: 2px; }
+.persona-sig-note { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: .5px; text-transform: uppercase; padding: 5px 10px; border-radius: 5px; background: rgba(212,168,32,.1); color: var(--gold-bright); border: 1px solid rgba(212,168,32,.3); }
+.persona-sig-note--muted { background: var(--c-bg-tile); color: var(--text-muted); border-color: var(--c-border); }
 /* Old single-line variant kept for any callers still rendering it. */
 .pfi-done-line {
   font-size: 12px;
@@ -12328,7 +12337,8 @@ code {
   .media-segments-grid { grid-template-columns: 1fr; }
   .media-doc-steps { grid-template-columns: 1fr; }
   .media-body { padding: 14px; }
-  .media-app-action { border-left: none; border-top: 1px solid var(--border); padding: 8px 0 0; width: 100%; }
+  /* .media-app-action mobile collapse lives AFTER its base rule (see the
+     "Appearance cards — mobile" block) — here it lost the cascade. */
   .picker-modal-sides,
   .picker-modal-methods { width: 100%; }
 }
@@ -12384,6 +12394,7 @@ code {
 .media-seg-name { font-family:var(--font-display); font-weight:800; font-size:13px; text-transform:uppercase; color:var(--text); }
 .media-seg-reward { font-family:var(--font-display); font-weight:700; font-size:11px; white-space:nowrap; }
 .media-seg-desc { font-size:11px; color:var(--text-secondary); margin-bottom:6px; line-height:1.5; }
+.media-seg-tag-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .media-seg-tag { font-family:var(--font-display); font-weight:700; font-size:9px; letter-spacing:1px; text-transform:uppercase; padding:2px 6px; border-radius:2px; display:inline-flex; align-items:center; gap:3px; }
 .media-seg-tag.beef { background:rgba(200,16,46,.1); color:#F87171; border:1px solid rgba(200,16,46,.2); }
 .media-seg-tag.respect { background:rgba(59,130,246,.1); color:#93C5FD; border:1px solid rgba(59,130,246,.2); }
@@ -12450,6 +12461,7 @@ code {
 .media-doc-opt.sel { border-color:rgba(200,16,46,.4); background:rgba(200,16,46,.05); }
 .media-doc-opt-name { font-family:var(--font-display); font-weight:700; font-size:11px; text-transform:uppercase; color:var(--text); margin-bottom:2px; }
 .media-doc-opt-desc { font-size:10px; color:var(--text-muted); line-height:1.4; }
+.media-doc-opt-nudge { margin-top:5px; }
 .media-doc-memorial-choices { font-family:var(--font-display); font-weight:700; font-size:12px; text-transform:uppercase; color:var(--text); margin-bottom:8px; }
 .media-doc-memorial-reward { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
 .media-doc-memorial-date { font-size:10px; color:var(--text-muted); }
@@ -12476,7 +12488,31 @@ code {
 .media-app-reward-tag.cash { background:rgba(58,154,74,.1); color:#4ADE80; border:1px solid rgba(58,154,74,.2); }
 .media-app-reward-tag.beef { background:rgba(200,16,46,.08); color:#F87171; border:1px solid rgba(200,16,46,.15); }
 .media-app-picker { width:100%; margin-top:8px; }
-.media-app-action { padding:0 12px; border-left:1px solid var(--border); display:flex; align-items:center; flex-shrink:0; }
+/* Fixed width + a reserved pill slot so the persona preview arriving/refreshing
+   never resizes the column — the card used to reflow (button jumping) every
+   time the pill mounted or swapped. */
+.media-app-action { width:200px; padding:0 12px; border-left:1px solid var(--border); display:flex; flex-direction:column; align-items:flex-end; justify-content:center; gap:6px; flex-shrink:0; }
+.media-app-action .persona-preview-slot { min-height:42px; display:flex; flex-direction:column; align-items:flex-end; justify-content:flex-end; }
+.persona-preview-wrap.is-refreshing { opacity:.55; }
+.persona-preview-wrap, .persona-preview-pill { transition:opacity .15s ease; }
+
+/* Persona price attribution — "The Role Model −10%" next to an adjusted price,
+   with the base price struck through. Reused by gym / contracts / hospital. */
+.persona-price-tag { display:inline-flex; align-items:center; gap:4px; font-family:var(--font-display); font-weight:700; font-size:9.5px; letter-spacing:.6px; text-transform:uppercase; white-space:nowrap; }
+.persona-price-tag.good { color:#7fc98f; }
+.persona-price-tag.bad { color:#e06479; }
+.persona-price-row { display:flex; align-items:center; gap:7px; margin-top:4px; }
+.persona-price-base { font-size:10px; color:var(--text-muted); text-decoration:line-through; }
+.reward-base { font-size:10px; color:var(--text-muted); text-decoration:line-through; margin-right:5px; font-weight:400; }
+.treat-cost-base { color:var(--text-muted); text-decoration:line-through; margin-right:4px; opacity:.8; }
+.contract-persona-note { margin-top:2px; }
+.full-recovery-wrap { display:flex; flex-direction:column; align-items:flex-end; }
+/* Appearance cards — mobile. Must live after the base rule: the copy inside the
+   main 768px block (above the Media Hub section) lost the cascade to it. */
+@media (max-width: 768px) {
+  .media-app-action { width:100%; border-left:none; border-top:1px solid var(--border); padding:8px 0 0; }
+  .media-app-action .persona-preview-slot { min-height:28px; }
+}
 .media-do-btn { all:unset; box-sizing:border-box; font-family:var(--font-display); font-weight:800; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; border:1px solid var(--border-bright); border-radius:4px; color:var(--text-secondary); padding:6px 12px; cursor:pointer; white-space:nowrap; }
 .media-do-btn:hover:not(:disabled) { border-color:var(--c-accent); color:var(--c-accent); }
 .media-do-btn:disabled { opacity:.45; cursor:default; }
@@ -12514,6 +12550,112 @@ code {
 .media-arch-reward { font-family:var(--font-display); font-weight:700; font-size:12px; color:var(--gold); }
 .media-arch-time { font-size:10px; color:var(--text-muted); }
 .media-arch-more { display:flex; justify-content:center; padding-top:6px; }
+
+/* ── Persona strip ── mounts between the page header and the tab strip. */
+.persona-strip { display:flex; align-items:stretch; gap:20px; padding:16px 22px; border-bottom:1px solid var(--border); background:var(--bg-surface); }
+.persona-strip--loading { align-items:center; }
+.persona-strip--error { padding:14px 22px; color:#F87171; font-size:12px; border-bottom:1px solid var(--border); }
+
+/* Skeleton */
+.persona-skel-oct { width:178px; height:150px; border-radius:12px; background:var(--c-bg-tile-2); flex-shrink:0; animation:dash-pulse 1.2s ease-in-out infinite; }
+.persona-skel-info { flex:1; display:flex; flex-direction:column; justify-content:center; gap:8px; }
+.persona-skel-line { height:11px; border-radius:4px; background:var(--c-bg-tile-2); animation:dash-pulse 1.2s ease-in-out infinite; }
+.persona-skel-line--lg { height:18px; width:40%; }
+
+/* Octagon — the wrap is larger than the octagon so the archetype labels sit in
+   the corner gutters OUTSIDE the clipped octagon body (they were being chopped
+   by the clip-path when placed inside). Octagon stays a fixed 120px, centered. */
+.persona-octagon-wrap { position:relative; width:178px; height:150px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+/* The map is painted art (frontend/public/assets/persona/octagon-map.webp) in
+   the same TCG splash style as the move/sponsor cards — a top-down cage whose
+   corner glows match the archetype colors. Dot + labels are live UI overlays. */
+/* No clipping — the webp bakes a soft alpha edge-fade so the art dissolves
+   into the strip background instead of sitting as a hard square. */
+.persona-octagon { position:relative; width:150px; height:150px; }
+.persona-octagon-img { width:100%; height:100%; object-fit:cover; display:block; user-select:none; pointer-events:none; }
+.persona-quad-lbl { position:absolute; z-index:2; font-family:var(--font-display); font-weight:700; font-size:8px; letter-spacing:.4px; text-transform:uppercase; color:var(--text-muted); width:50px; line-height:1.1; opacity:.85; text-shadow:0 1px 3px rgba(0,0,0,.9); pointer-events:none; }
+.persona-quad-lbl.act { opacity:1; font-weight:800; text-shadow:0 1px 3px rgba(0,0,0,.9), 0 0 8px currentColor; }
+.persona-quad-lbl--tl { top:2px; left:0; text-align:left; }
+.persona-quad-lbl--tr { top:2px; right:0; text-align:right; }
+.persona-quad-lbl--bl { bottom:2px; left:0; text-align:left; }
+.persona-quad-lbl--br { bottom:2px; right:0; text-align:right; }
+.persona-octagon-dot {
+  position:absolute; width:11px; height:11px; border-radius:50%; z-index:1;
+  transform:translate(-50%,-50%); transition:left .3s ease, top .3s ease;
+  border:1.5px solid rgba(0,0,0,.5);
+}
+
+/* Info column */
+.persona-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:9px; justify-content:center; }
+.persona-id-row { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.persona-id-text { min-width:0; }
+.persona-name { font-family:var(--font-display); font-weight:800; font-size:19px; text-transform:uppercase; letter-spacing:.5px; line-height:1.1; }
+.persona-epithet { font-size:12px; font-style:italic; color:var(--text-secondary); margin-top:2px; }
+.persona-sig-chip { flex-shrink:0; display:inline-flex; align-items:center; gap:5px; font-family:var(--font-display); font-weight:700; font-size:10px; letter-spacing:1px; text-transform:uppercase; padding:4px 9px; border-radius:4px; background:rgba(212,168,32,.1); color:var(--gold); border:1px solid rgba(212,168,32,.25); }
+
+.persona-heat-row { display:flex; align-items:center; gap:10px; }
+.persona-heat-lbl { font-family:var(--font-display); font-weight:700; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-muted); flex-shrink:0; }
+.persona-heat-track { position:relative; flex:1; height:7px; background:var(--c-bg-tile-2); border-radius:4px; overflow:visible; border:1px solid var(--border); }
+.persona-heat-fill { height:100%; border-radius:4px; transition:width .3s ease; }
+.persona-heat-cap { position:absolute; top:-2px; bottom:-2px; width:2px; background:#F87171; transform:translateX(-1px); }
+.persona-heat-val { font-family:var(--font-display); font-weight:800; font-size:12px; color:var(--text); flex-shrink:0; width:34px; text-align:right; }
+.persona-heat-cap-note { font-size:10px; color:#F87171; margin-top:-4px; }
+
+.persona-blackout-banner { display:flex; align-items:center; gap:7px; background:rgba(200,16,46,.1); border:1px solid rgba(200,16,46,.3); color:#F87171; border-radius:5px; padding:6px 10px; font-size:11px; font-weight:600; }
+
+.persona-mods { display:flex; flex-direction:column; gap:5px; }
+.persona-mods-hdr { display:inline-flex; align-items:center; gap:5px; font-family:var(--font-display); font-weight:700; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-muted); }
+.persona-mods-empty { font-size:11px; color:var(--text-muted); font-style:italic; }
+.persona-mods-list { display:flex; flex-wrap:wrap; gap:6px; }
+/* Chips are tappable: label + value colored by polarity (buff/debuff/flavor);
+   tapping reveals the plain-language description line below the list. */
+.persona-mod-chip { all:unset; box-sizing:border-box; cursor:pointer; display:inline-flex; align-items:center; gap:5px; font-size:10.5px; color:var(--text-secondary); background:var(--c-bg-tile); border:1px solid var(--border); border-radius:4px; padding:3px 8px; }
+.persona-mod-chip:focus-visible { outline:1px solid var(--border-bright); }
+.persona-mod-lbl { color:inherit; }
+.persona-mod-val { font-family:var(--font-display); font-weight:800; font-size:11px; letter-spacing:.3px; }
+.persona-mod-chip.buff { color:#7fc98f; border-color:rgba(127,201,143,.35); background:rgba(127,201,143,.08); }
+.persona-mod-chip.debuff { color:#e06479; border-color:rgba(224,100,121,.35); background:rgba(224,100,121,.08); }
+.persona-mod-chip.cosmetic { color:#9aa0b0; border-style:dashed; }
+.persona-mod-chip.open { box-shadow:0 0 0 1px currentColor inset; }
+.persona-mod-chip.inactive { opacity:.45; }
+.persona-mod-desc { font-size:11px; line-height:1.45; color:var(--text-secondary); background:var(--c-bg-tile); border:1px solid var(--border); border-radius:5px; padding:6px 10px; max-width:520px; }
+
+/* ── Persona Moment modal — crowned / signature celebrations. Reuses the
+   banner-unlock overlay/backdrop; the shell is archetype-tinted via --pm-*. */
+.persona-moment-modal { position:relative; width:min(400px,94vw); background:linear-gradient(180deg,#161616,#101010); border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:0 24px 60px -20px rgba(0,0,0,.6), 0 0 60px -18px var(--pm-glow,#e0647955); animation:bannerUnlockPop .35s cubic-bezier(.2,1.2,.35,1); }
+.persona-moment-top { position:relative; padding:20px 20px 16px; text-align:center; background:radial-gradient(120% 90% at 50% 0%, var(--pm-tint,rgba(224,100,121,.13)), transparent 70%); }
+.persona-moment-eyebrow { font-family:var(--font-display); font-weight:800; font-size:10.5px; letter-spacing:2.5px; text-transform:uppercase; color:var(--pm-accent,#e06479); display:inline-flex; align-items:center; gap:6px; }
+.persona-moment-title { font-family:var(--font-display); font-weight:800; font-size:32px; text-transform:uppercase; letter-spacing:.5px; color:var(--pm-color,#e06479); margin-top:10px; line-height:1.05; text-shadow:0 0 26px var(--pm-glow,#e0647955); }
+.persona-moment-title--sub { font-size:17px; opacity:.9; }
+.persona-moment-epithet { color:var(--text-secondary); font-size:12.5px; font-style:italic; margin-top:6px; }
+.persona-moment-signame { font-family:var(--font-display); font-weight:800; font-size:27px; letter-spacing:1px; text-transform:uppercase; color:var(--pm-accent,#d4a820); text-shadow:0 0 24px var(--pm-glow,rgba(212,168,32,.5)); margin-top:3px; line-height:1.05; }
+.persona-moment-sigdesc { font-size:12.5px; color:var(--text-secondary); line-height:1.55; margin:9px 10px 0; }
+.persona-moment-body { padding:14px 20px 4px; border-top:1px solid var(--border); }
+.persona-moment-lede { font-size:12px; color:var(--text-secondary); text-align:center; line-height:1.5; margin-bottom:11px; }
+.persona-moment-mods { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:8px; }
+.persona-mod-chip--static { cursor:default; }
+.persona-moment-heat { display:flex; align-items:center; gap:10px; margin:2px 0 12px; }
+.persona-moment-foot { display:flex; gap:10px; padding:14px 20px 18px; }
+.persona-moment-btn { all:unset; box-sizing:border-box; flex:1; text-align:center; cursor:pointer; font-family:var(--font-display); font-weight:800; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; padding:10px 0; border-radius:6px; border:1px solid var(--border-bright); color:var(--text-secondary); }
+.persona-moment-btn--primary { background:var(--pm-accent,#e06479); border-color:transparent; color:#111; }
+
+/* Nudge chip — reused inside podcast/appearances/documentary option cards */
+.persona-nudge-chip { display:inline-flex; align-items:center; font-family:var(--font-display); font-weight:700; font-size:9px; letter-spacing:.5px; text-transform:none; padding:2px 6px; border-radius:3px; background:var(--c-bg-tile); border:1px solid var(--border-bright); color:var(--text-secondary); white-space:nowrap; }
+
+/* Preview pill — "this X moves you → archetype (heat→heat)" */
+.persona-preview-wrap { display:flex; flex-direction:column; gap:5px; align-items:flex-start; }
+.persona-preview-pill { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--text-secondary); background:var(--c-bg-tile); border:1px solid var(--border-bright); border-radius:5px; padding:5px 10px; }
+.persona-preview-pill--loading { color:var(--text-muted); }
+.persona-preview-spin { animation:persona-spin 0.8s linear infinite; }
+@keyframes persona-spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+.persona-preview-warn { display:inline-flex; align-items:center; gap:6px; font-family:var(--font-display); font-weight:700; font-size:10px; letter-spacing:.5px; text-transform:uppercase; background:rgba(200,16,46,.12); border:1px solid rgba(200,16,46,.35); color:#F87171; border-radius:5px; padding:5px 10px; }
+
+@media (max-width: 640px) {
+  .persona-strip { flex-direction:column; align-items:center; text-align:center; gap:14px; }
+  .persona-id-row { justify-content:center; }
+  .persona-heat-row { justify-content:center; }
+  .persona-mods-list { justify-content:center; }
+}
 
 /* ── Portrait phones: gym body single column, floor rows as a compact list ──
    The batch preset row (1/5/10/Max) needs room, so rows/cards go full-width
@@ -13148,7 +13290,9 @@ code {
   white-space: nowrap;
 }
 
-/* Auth page footer link (below login) */
+/* Auth page footer link (below login). pointer-events:none on the wrapper —
+   at short viewports it overlaps the form's submit button and was swallowing
+   clicks (blocked guest signup); only the actual link stays clickable. */
 .auth-cookie-link {
   position: absolute;
   bottom: 8px;
@@ -13160,7 +13304,9 @@ code {
   align-items: center;
   gap: 2px;
   text-align: center;
+  pointer-events: none;
 }
+.auth-cookie-link > button, .auth-cookie-link > a { pointer-events: auto; }
 
 .auth-copyright {
   font-size: 10px;

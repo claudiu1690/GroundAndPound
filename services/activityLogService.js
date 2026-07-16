@@ -10,6 +10,7 @@ const REGEN_TRIGGERS = new Set([
     "TIER_PROMOTION", "TITLE_WON",
     "NEMESIS_SET", "NEMESIS_CLEARED",
     "BADGE_EARNED", "TITLE_SHOT_ELIGIBLE", "MENTAL_RESET",
+    "PERSONA_SIGNATURE", "PERSONA_BREAK_CHARACTER", "PERSONA_CROWNED",
     "pvp_win", "pvp_loss", "pvp_promoted", "pvp_belt_won", "pvp_rivalry_resolved",
 ]);
 

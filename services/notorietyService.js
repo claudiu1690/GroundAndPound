@@ -264,8 +264,11 @@ function computeFightNotorietyAward(ctx) {
 
 /**
  * One-time milestone notoriety after a win (call after record updated).
+ * @param {import("mongoose").Document} fighter
+ * @param {number} [fameMult=1] — PvE persona (Role Model LEGACY) fame multiplier. PvP-safe:
+ *        callers that omit it get the unmodified 1.0 award. Keeps this function PvP-generic.
  */
-function applyWinMilestoneBonuses(fighter) {
+function applyWinMilestoneBonuses(fighter, fameMult = 1) {
     ensureNotorietyShape(fighter);
     const m = fighter.notoriety.milestones || {};
     const wins = fighter.record?.wins ?? 0;
@@ -294,6 +297,9 @@ function applyWinMilestoneBonuses(fighter) {
         notes.push("10 KO/TKO milestone");
     }
     fighter.notoriety.milestones = m;
+    // PvE persona (LEGACY) fame multiplier — no-op at the default 1.0.
+    const mult = typeof fameMult === "number" && fameMult > 0 ? fameMult : 1;
+    if (mult !== 1) bonus = Math.round(bonus * mult);
     if (bonus > 0) {
         applyNotorietyDelta(fighter, bonus, {
             skipFreezeBlock: true,

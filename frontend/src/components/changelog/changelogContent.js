@@ -18,6 +18,30 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "1.5",
+    date: "2026-07-15",
+    major: true,
+    highlights: [
+      "Your fighter now has a Persona — the media choices you make build a public character the whole fight world reacts to.",
+      "Commit to a corner and the press crowns you: The Villain, The People's Champ, The Boogeyman, or The Role Model — each with real rewards and real costs.",
+      "The Media Hub gets a persona strip: an octagon tracking how Hated/Loved and Loud/Quiet you are, your live modifiers, and a \"this moves you\" preview on every mic and post-fight interview.",
+      "Build Storyline Heat by staying in character to unlock your Signature perk at 70% — but heat fades if you stop feeding it, so a persona takes upkeep.",
+      "Nothing is ever locked: go off-brand at high heat for a \"Breaking Character\" turn — double fame, but it shatters your persona for a fight. Heel turns and redemption arcs are yours to write.",
+      "The big persona moments get celebrated: the first time the press crowns you, and the moment your Signature perk unlocks — each with a rundown of exactly what just switched on.",
+    ],
+    sections: {
+      changed: [],
+      fixed: [
+        "Tightened account safety on the Media and post-fight interview screens so only you can act on your own fighter.",
+        "Sponsor contracts, gym rank-ups, and hospital bills now display the price your persona actually pays — with the old price struck through and a tag like \"The Role Model −10%\" showing why. Previously the screens showed the unmodified price while you were silently charged (or paid) a different number.",
+        "Fixed the login screen's footer text invisibly blocking the \"Create Fighter & Play\" button on shorter screens — clicks went nowhere and signup looked broken.",
+      ],
+      balance: [
+        "Persona modifiers now start at half strength the moment you claim an archetype (25% heat) and grow to full at 100% heat — under the old curve a fresh persona's bonuses rounded to ~1% and didn't feel like anything.",
+      ],
+    },
+  },
+  {
     version: "1.4.1",
     date: "2026-07-14",
     major: false,

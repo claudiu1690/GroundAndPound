@@ -1,4 +1,5 @@
 const Gym = require("../models/gymModel");
+const personaService = require("./personaService");
 
 /**
  * Get or initialize a fighter's rank progress at a gym.
@@ -63,13 +64,16 @@ function attemptManualRankUp(fighter, gym) {
     if (progress.relevantWins < req.relevantWins) {
         throw new Error(`Need ${req.relevantWins} relevant wins (have ${progress.relevantWins})`);
     }
-    if (req.ironCost > 0 && (fighter.iron ?? 0) < req.ironCost) {
-        throw new Error(`Need $${req.ironCost} (have $${fighter.iron ?? 0})`);
+    // Persona (Role Model) discounts the rank-up iron cost. gymRankCostFrac is ≤0.
+    const gymRankCostFrac = personaService.getModifiers(fighter).gymRankCostFrac || 0;
+    const ironCost = req.ironCost > 0 ? Math.round(req.ironCost * (1 + gymRankCostFrac)) : (req.ironCost || 0);
+    if (ironCost > 0 && (fighter.iron ?? 0) < ironCost) {
+        throw new Error(`Need $${ironCost} (have $${fighter.iron ?? 0})`);
     }
 
     // Deduct iron
-    if (req.ironCost > 0) {
-        fighter.iron = (fighter.iron ?? 0) - req.ironCost;
+    if (ironCost > 0) {
+        fighter.iron = (fighter.iron ?? 0) - ironCost;
     }
 
     return applyRankUp(fighter, gym, nextRankDef);
@@ -166,6 +170,19 @@ async function onFightWin(fighter, outcome) {
 function getGymProgress(fighter, gym) {
     if (gym.isFreeGym) return { rank: 0, rankName: "Free Gym", progress: null, nextRank: null, hasJoined: false };
 
+    // Persona (Role Model) rank-up discount — displayed cost must match what
+    // rankUpGym actually charges (it applies the same fraction + rounding).
+    const gymRankCostFrac = personaService.getModifiers(fighter).gymRankCostFrac || 0;
+    const costFields = (req) => {
+        const base = req.ironCost || 0;
+        const adjusted = base > 0 ? Math.round(base * (1 + gymRankCostFrac)) : base;
+        return {
+            ironCost: adjusted,
+            ironCostBase: base,
+            personaCost: adjusted !== base ? personaService.priceAdjust(fighter, "gymRankCostFrac") : null,
+        };
+    };
+
     // Read-only: don't create rank entries just for display
     const progress = fighter.gymRanks?.[gym.slug];
     if (!progress) {
@@ -175,7 +192,7 @@ function getGymProgress(fighter, gym) {
         return {
             rank: 0, rankName: null, trainingSessions: 0, relevantWins: 0,
             hasXpBonus: false, xpBonusPct: 0, hasPerk: false, perkId: null, hasJoined: false,
-            nextRank: firstRank ? { rank: 1, name: firstRank.name, requirements: firstRank.requirements, unlock: firstRank.unlock, canRankUp: false, needsIron: false } : null,
+            nextRank: firstRank ? { rank: 1, name: firstRank.name, requirements: firstRank.requirements, unlock: firstRank.unlock, canRankUp: false, needsIron: false, ...costFields(firstRank.requirements) } : null,
         };
     }
     const currentRank = progress.rank;
@@ -204,6 +221,7 @@ function getGymProgress(fighter, gym) {
             canRankUp: progress.trainingSessions >= nextRankDef.requirements.trainingSessions
                 && progress.relevantWins >= nextRankDef.requirements.relevantWins,
             needsIron: nextRankDef.requirements.ironCost > 0,
+            ...costFields(nextRankDef.requirements),
         } : null,
     };
 }

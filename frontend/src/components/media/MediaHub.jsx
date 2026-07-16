@@ -7,6 +7,7 @@ import { DocumentaryTab } from "./tabs/DocumentaryTab";
 import { AppearancesTab } from "./tabs/AppearancesTab";
 import { RivalryTab } from "./tabs/RivalryTab";
 import { ArchiveTab } from "./tabs/ArchiveTab";
+import { PersonaStrip } from "./PersonaStrip";
 
 const TABS = [
   { id: "podcast",      labelKey: "media.tabs.podcast",      Icon: Mic },
@@ -55,6 +56,8 @@ export function MediaHub({ fighter, onMessage, onRefreshFighter, onNavigate }) {
         <h1 className="media-page-title">{t("media.hub.title")}</h1>
         <div className="media-page-sub">{t("media.hub.subtitle")}</div>
       </header>
+
+      <PersonaStrip hub={hub} loading={loading} error={error} />
 
       <div className="media-tabs">
         {TABS.map(({ id, labelKey, Icon }) => (

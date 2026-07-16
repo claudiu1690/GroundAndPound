@@ -267,14 +267,26 @@ const BodyInjuryCard = memo(function BodyInjuryCard({
                 </p>
             )}
             <div className="inj-card-actions">
+                {/* Prices arrive persona-adjusted from the API; *Base carries the list
+                    price so the Role Model discount is visible, not silent. */}
                 {needsDoctor && (
                     <button type="button" className="treat-btn" disabled={busy} onClick={onDoctorVisit}>
-                        {t("hospital.injuries.treatNow")} <span className="treat-cost-inline">${inj.docVisitIron} + {inj.docVisitEnergy}E</span>
+                        {t("hospital.injuries.treatNow")} <span className="treat-cost-inline">
+                            {inj.docVisitIronBase != null && inj.docVisitIronBase !== inj.docVisitIron && (
+                                <s className="treat-cost-base">${inj.docVisitIronBase}</s>
+                            )}
+                            ${inj.docVisitIron} + {inj.docVisitEnergy}E
+                        </span>
                     </button>
                 )}
                 {isAutoHealing && inj.recoverySkipIron > 0 && (
                     <button type="button" className="treat-btn" disabled={busy} onClick={onSkipRecovery}>
-                        {t("hospital.injuries.treatNow")} <span className="treat-cost-inline">${inj.recoverySkipIron}</span>
+                        {t("hospital.injuries.treatNow")} <span className="treat-cost-inline">
+                            {inj.recoverySkipIronBase != null && inj.recoverySkipIronBase !== inj.recoverySkipIron && (
+                                <s className="treat-cost-base">${inj.recoverySkipIronBase}</s>
+                            )}
+                            ${inj.recoverySkipIron}
+                        </span>
                     </button>
                 )}
             </div>

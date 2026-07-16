@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useState } from "react";
 import { Stethoscope, HeartPulse, Package, Coins, ShieldCheck } from "lucide-react";
 import { api } from "../../api";
 import { InjuryBodyMap } from "./InjuryBodyMap";
+import { PersonaPriceTag } from "../media/PersonaPriceTag";
 import { t } from "@/lib/i18n";
 
 /**
@@ -122,15 +123,23 @@ export function HospitalTab({ fighter, onMessage, onRefreshFighter }) {
                     <div className="slbl-row">
                         <div className="slbl">{t("hospital.injuries.sectionLabel")}</div>
                         {hasInjuries && quote && quote.count > 1 && (
-                            <button
-                                type="button"
-                                className="treat-btn full-recovery-btn"
-                                disabled={busyFull}
-                                title={t("hospital.injuries.fullRecoveryTitle", { count: quote.count })}
-                                onClick={handleFullRecovery}
-                            >
-                                <Package size={14} /> {t("hospital.injuries.fullRecoveryBtn", { iron: quote.iron, energy: quote.energy })}
-                            </button>
+                            <div className="full-recovery-wrap">
+                                <button
+                                    type="button"
+                                    className="treat-btn full-recovery-btn"
+                                    disabled={busyFull}
+                                    title={t("hospital.injuries.fullRecoveryTitle", { count: quote.count })}
+                                    onClick={handleFullRecovery}
+                                >
+                                    <Package size={14} /> {t("hospital.injuries.fullRecoveryBtn", { iron: quote.iron, energy: quote.energy })}
+                                </button>
+                                {quote.personaDiscount && (
+                                    <div className="persona-price-row">
+                                        <s className="persona-price-base">${(quote.ironBase || 0).toLocaleString()}</s>
+                                        <PersonaPriceTag tag={quote.personaDiscount} />
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
 

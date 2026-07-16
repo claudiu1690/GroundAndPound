@@ -1,6 +1,7 @@
 const Fighter = require("../models/fighterModel");
 const Opponent = require("../models/opponentModel");
 const notorietyService = require("./notorietyService");
+const personaService = require("./personaService");
 const rankingService = require("./rankingService");
 const {
     computeCalloutCost,
@@ -37,6 +38,9 @@ async function listRoster(fighterId) {
         isChampion: { $ne: true },
     };
     if (excludeIds.length) baseQuery._id = { $nin: excludeIds };
+
+    // Persona (Villain) callout-cost multiplier applied to displayed costs.
+    const calloutCostMult = personaService.getModifiers(fighter).calloutCostMult || 1;
 
     let sameTierList = [];
     let stretchList = [];
@@ -81,7 +85,7 @@ async function listRoster(fighterId) {
                 : rankingService.displayRankForNpc(o.fixedRank, playerRank)
         ),
         record: o.record || { wins: 0, losses: 0, draws: 0 },
-        cost: computeCalloutCost(fighter, o),
+        cost: Math.round(computeCalloutCost(fighter, o) * calloutCostMult),
         isStretch,
     });
 
@@ -152,7 +156,9 @@ async function createCallout(fighterId, opponentId) {
         }
     }
 
-    const cost = computeCalloutCost(fighter, opponent);
+    // Persona (Villain) callout-cost multiplier — must match the listRoster display.
+    const calloutCostMult = personaService.getModifiers(fighter).calloutCostMult || 1;
+    const cost = Math.round(computeCalloutCost(fighter, opponent) * calloutCostMult);
     if ((fighter.notoriety?.score || 0) < cost) {
         throw new Error(`Not enough fame — need ${cost.toLocaleString()}`);
     }

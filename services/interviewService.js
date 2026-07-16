@@ -5,12 +5,21 @@ const Opponent = require("../models/opponentModel");
 /** Fight outcomes that count as a win for the player (excluded from callout roster below). */
 const WIN_OUTCOMES = ["KO/TKO", "Submission", "Decision (unanimous)", "Decision (split)"];
 const notorietyService = require("./notorietyService");
+const personaService = require("./personaService");
 const {
     INTERVIEW_CHOICES,
     INTERVIEW_CHOICE_KEYS,
     CALLOUT_CANDIDATE_LIMIT,
     CALLOUT_OVR_WINDOW,
 } = require("../consts/interviewConfig");
+
+/** Interview choice → persona nudge actionKey (SKIPPED handled separately). */
+const INTERVIEW_PERSONA_ACTION = {
+    HUMBLE: "INTERVIEW_HUMBLE",
+    CONFIDENT: "INTERVIEW_CONFIDENT",
+    CALLOUT: "INTERVIEW_CALLOUT",
+    SKIPPED: "INTERVIEW_SKIPPED",
+};
 
 /**
  * Promotion tier ordering for stretch-tier lookups.
@@ -129,6 +138,7 @@ async function resolveInterview({ fighterId, fightId, choice, targetOpponentId }
             interview: fight.interview,
             fameDelta: 0,
             fameReason: "Interview skipped",
+            personaNudge: null,
         };
     }
 
@@ -169,15 +179,28 @@ async function resolveInterview({ fighterId, fightId, choice, targetOpponentId }
     }
 
     // Apply fame (obeys freeze — a frozen fighter gets 0 from an interview).
+    // Persona fame multiplier scales the reward by the CURRENT persona (before the nudge
+    // below shifts identity). Category is the action's single canonical fame category.
     const fameReason = def.requiresTarget
         ? def.reasonTemplate.replace("{name}", targetOpponent.name)
         : def.reasonTemplate;
-    const { applied } = notorietyService.applyNotorietyDelta(fighter, def.fameReward, {
+    const personaActionKey = INTERVIEW_PERSONA_ACTION[choice];
+    const fameCategory = personaService.fameCategoryForAction(personaActionKey);
+    // Breaking Character pays this action's fame at ×2 — detected on the PRE-action persona
+    // (previewNudge is pure), applied on top of the normal category multiplier, then nudged.
+    const bcPreview = personaService.previewNudge(fighter, { actionKey: personaActionKey });
+    const breakingCharacter = !!(bcPreview && bcPreview.breakingCharacter);
+    let scaledFame = personaService.applyFameMultiplier(fighter, def.fameReward, fameCategory);
+    if (breakingCharacter) scaledFame *= 2;
+    const { applied } = notorietyService.applyNotorietyDelta(fighter, scaledFame, {
         code: def.fameCode,
         reason: fameReason,
         meta: { fightId: fight._id, interviewChoice: choice },
     });
     notorietyService.touchLastEvent(fighter);
+
+    // Persona nudge — after touchLastEvent, before save. actionKey from the interview choice.
+    const personaNudge = personaService.applyNudge(fighter, { actionKey: personaActionKey });
 
     // Beef / Respect flags
     if (def.emitBeefFlag && targetOpponent) {
@@ -249,11 +272,21 @@ async function resolveInterview({ fighterId, fightId, choice, targetOpponentId }
 
     await fighter.save();
 
+    // Persona feed (fire-and-forget) — signature unlock / breaking character.
+    try {
+        for (const e of personaService.personaFeedEvents(fighter, personaNudge)) {
+            require("./activityLogService").log(fighterId, e.type, e.detail, e.meta);
+        }
+    } catch (e) {
+        console.error("[persona] interview feed emit failed:", e.message);
+    }
+
     return {
         alreadyDone: false,
         interview: fight.interview,
         fameDelta: applied,
         fameReason,
+        personaNudge,
         targetOpponent: targetOpponent
             ? {
                   id: String(targetOpponent._id),

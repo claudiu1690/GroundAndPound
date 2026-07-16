@@ -459,6 +459,27 @@ const fighterSchema = new mongoose.Schema({
     // specialMovesOwned; the effective value is looked up from the owned rarity at fight
     // time, never stored here.
     specialMovesEquipped: { type: [String], default: [] },
+    /**
+     * Persona system (PvE) — the fighter's public identity on two axes.
+     * ONLY these five fields are persisted; heat / archetype / epithet / signature /
+     * heatCap are DERIVED at read time in services/personaService.js and never stored.
+     *   x  — Hated (−100) ↔ Loved (+100)
+     *   y  — Quiet (−100) ↔ Loud  (+100)
+     *   blackoutFightsRemaining — 0..1; while >0 ALL persona modifiers are suppressed
+     *                             (x/y/heat still tracked + displayed). Set to 1 on a
+     *                             Breaking-Character event, decremented once per PvE fight.
+     *   lastBreakingCharacterAt — timestamp of the last Breaking-Character event.
+     *   crownedArchetypes — archetype keys whose "the press crowns you" celebration has
+     *                       fired (once ever per archetype; drives the Persona Moment modal).
+     * Legacy fighters hydrate these defaults on next save — no migration.
+     */
+    persona: {
+        x: { type: Number, default: 0, min: -100, max: 100 },
+        y: { type: Number, default: 0, min: -100, max: 100 },
+        blackoutFightsRemaining: { type: Number, default: 0, min: 0, max: 1 },
+        lastBreakingCharacterAt: { type: Date, default: null },
+        crownedArchetypes: { type: [String], default: [] },
+    },
 }, { timestamps: true });
 
 fighterSchema.index({ promotionTier: 1, weightClass: 1, overallRating: -1 });

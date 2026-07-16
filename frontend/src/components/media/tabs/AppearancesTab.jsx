@@ -3,6 +3,10 @@ import { Clock, Flame, Heart } from "lucide-react";
 import { api } from "../../../api";
 import { appearanceMeta, appearanceDescription, refreshesInLabel, daysLeftLabel } from "../mediaFormat";
 import { TargetPicker } from "../TargetPicker";
+import { PersonaNudgeChip } from "../PersonaNudgeChip";
+import { PersonaPreviewPill } from "../PersonaPreviewPill";
+import { usePersonaPreview } from "../../../hooks/usePersonaPreview";
+import { emitPersonaMoments } from "../personaMoments";
 import { t } from "@/lib/i18n";
 
 const GUEST_TONES = [
@@ -37,6 +41,17 @@ function AppearanceCard({ app, fighterId, busy, onTake }) {
 
   const canSubmit = !needsTone || (!!tone && !!targetId);
 
+  // Persona preview — only meaningful once the card is actually ready to
+  // submit (immediately for tone-less appearances; once tone is chosen for
+  // PODCAST_GUEST, since the target doesn't affect the persona nudge).
+  const { preview: personaPreview, loading: personaPreviewLoading, run: runPersonaPreview, clear: clearPersonaPreview } = usePersonaPreview(fighterId);
+  useEffect(() => {
+    if (!app.available || (needsTone && !tone)) { clearPersonaPreview(); return; }
+    const body = { appearanceType: app.type };
+    if (needsTone && tone) body.tone = tone;
+    runPersonaPreview(body);
+  }, [app.available, app.type, needsTone, tone, runPersonaPreview, clearPersonaPreview]);
+
   return (
     <div className="media-app-card">
       <div className="media-app-stripe" style={{ background: meta.color }} />
@@ -54,6 +69,7 @@ function AppearanceCard({ app, fighterId, busy, onTake }) {
             {app.expiresAt && (
               <span className="media-app-deadline"><Clock size={11} /> {daysLeftLabel(app.expiresAt)}</span>
             )}
+            <PersonaNudgeChip nudge={app.nudge} />
           </div>
           {!app.available && app.lockReason && (
             <div className="media-app-lock">{app.lockReason}</div>
@@ -77,6 +93,15 @@ function AppearanceCard({ app, fighterId, busy, onTake }) {
           )}
         </div>
         <div className="media-app-action">
+          {app.available && (
+            <div className="persona-preview-slot">
+              <PersonaPreviewPill
+                loading={personaPreviewLoading}
+                preview={personaPreview}
+                subjectKey="media.persona.preview.subjects.appearance"
+              />
+            </div>
+          )}
           <button
             type="button"
             className="media-do-btn"
@@ -120,6 +145,7 @@ export function AppearancesTab({ fighter, onMessage, onRefreshFighter }) {
     setBusyId(instanceId);
     try {
       const res = await api.takeAppearance(fighterId, instanceId, body);
+      emitPersonaMoments(res.personaNudge);
       const bits = [];
       if (res.fameDelta) bits.push(`+${res.fameDelta} fame`);
       if (res.cashDelta) bits.push(`+$${res.cashDelta}`);

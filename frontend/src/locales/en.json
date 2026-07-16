@@ -640,6 +640,57 @@
       "loading": "Loading the Media Hub…",
       "error": "Could not load the Media Hub."
     },
+    "persona": {
+      "error": "Could not load your persona.",
+      "unwrittenDesc": "Grab a mic — every choice you make starts writing your story.",
+      "heatLabel": "Heat",
+      "heatCapTitle": "Cap — {value}%",
+      "heatCapNote": "Capped at {value}% until {tier}.",
+      "blackoutOne": "Breaking Character — blacked out for your next fight.",
+      "blackoutMany": "Breaking Character — blacked out for {n} more fights.",
+      "modifiersTitle": "Live Modifiers",
+      "modifiersEmpty": "None yet — every mic and interview writes your character.",
+      "cosmeticTag": "flavor",
+      "signatureFallback": "Signature Active",
+      "moment": {
+        "ariaLabel": "Persona milestone",
+        "crownedEyebrow": "The press has spoken",
+        "crownedLede": "You've been crowned. Your character is live — every fight and every mic now plays by these rules:",
+        "crownedClose": "Keep the act going",
+        "signatureEyebrow": "Signature unlocked",
+        "signatureLede": "Stay in character — heat fades after every fight, and the signature switches off below 70%.",
+        "signatureClose": "Later",
+        "seePersona": "See your persona"
+      },
+      "signatureActivatedNote": "Signature persona activated!",
+      "signatureDeactivatedNote": "Signature persona deactivated.",
+      "axis": {
+        "hated": "Hated",
+        "loved": "Loved",
+        "loud": "Loud",
+        "quiet": "Quiet"
+      },
+      "archetypes": {
+        "UNWRITTEN": "The Unwritten",
+        "VILLAIN": "The Villain",
+        "PEOPLES_CHAMP": "People's Champ",
+        "BOOGEYMAN": "Boogeyman",
+        "ROLE_MODEL": "Role Model"
+      },
+      "preview": {
+        "loading": "Checking persona shift…",
+        "movesTo": "This {subject} moves you → {archetype} ({delta})",
+        "movedTo": "This {subject} moved you → {archetype} ({delta})",
+        "breakingCharacter": "Breaking Character — your persona shatters and you're blacked out next fight.",
+        "subjects": {
+          "default": "action",
+          "podcast": "episode",
+          "appearance": "appearance",
+          "documentary": "documentary",
+          "interview": "interview"
+        }
+      }
+    },
     "tabs": {
       "podcast": "Podcast",
       "documentary": "Documentary",

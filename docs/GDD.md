@@ -503,6 +503,36 @@ A live view of all active **Beef** / **Respect** flags and the current **Nemesis
 ### 16.5 Archive
 Read-only history of podcast episodes, documentary, appearances, and post-fight interviews.
 
+### 16.6 Persona System
+A **public character** that emerges from the media choices the player already makes — no new content, no new buttons. It turns "how the crowd sees you" into an ongoing playstyle identity that pays off consistency of character. PvE-only (mirrors Special Moves §26); never touches the Proving Ground.
+
+**Two axes** (persisted per fighter as `persona.x`, `persona.y`, each −100..+100):
+- **Hated (−x) ↔ Loved (+x)** — how the crowd feels about you.
+- **Loud (−y is Quiet) ↔ Loud (+y)** — how you carry yourself.
+
+**Storyline Heat** = `clamp(round((|x|+|y|)/2), 0, 100)` (derived, never stored). It **scales every modifier** (rewards *and* costs) on a floored curve: **50% strength the moment the archetype is claimed at 25 heat, scaling linearly to 100% at 100 heat** (`heatFrac = 0.5 + 0.5·(heat−25)/75`; a raw `heat/100` curve made low-heat modifiers read as ~1% rounding errors nobody felt). It also **unlocks the signature perk at ≥70%**, and **decays ×0.95 toward center after every PvE fight** — identity needs upkeep or it fades.
+
+**Archetypes** (quadrants; center is modifier-free "**The Unwritten**" — active only past `heat ≥ 25`):
+
+| Archetype | Quadrant | Rewards (full heat) | Costs (full heat) | Signature (≥70%) |
+|---|---|---|---|---|
+| **The Villain** | Hated+Loud | +15% purses; trash-talk fame ×2; callout fame cost ×0.5; listeners +35% (cosmetic) | sponsor payouts −35%; beef-lapse penalty ×2; respect/charity fame ×0.5; **beef-loss heat drain** (−15/axis toward center) | **Bad Blood** — nemesis + active-Beef fights pay ×1.5 fame & +15% purse (stacks on the +30% grudge base) |
+| **The People's Champ** | Loved+Loud | comeback-mode fight bonuses +5%; +1 sponsor slot; +1 appearance-pool slot; listeners +20% | purses only +5%; trash-talk fame ×0.5; upset-loss −150 fame (lose to a lower-rated foe) | **Hometown Hero** — comeback-mode win adds +30% purse (additive) & +250 flat fame |
+| **The Boogeyman** | Hated+Quiet | damage taken −2% (shares the OPPONENT_DAMAGE_REDUCTION lane); +8% purses; cryptic fame ×1.5 | listeners −10%; sponsor payouts −20%; loud-action fame ×0.5 | **Ambush** — equipped **Proc** special moves fire ×1.10 (excludes Sprawl Instinct's lane; capped +0.02/move) |
+| **The Role Model** | Loved+Quiet | sponsor payouts +10%; gym rank-up cost −10%; hospital bills −15%; beef-lapse/weight-miss fame penalties halved | no purse bonus; heat builds 25% slower; Trash a Rival relies on Breaking Character | **Legacy** — documentary & win-milestone fame ×1.5 |
+
+**Modifier shapes:** Type A additive fraction (`full × heatFrac`), Type B reward multiplier (`1 + (mult−1) × heatFrac`), Type C flat counts (+1 sponsor slot / +1 appearance slot — no fractional scale, unlock in full only at heat ≥70). `heatFrac` uses the floored curve above (0.5 at heat 25 → 1.0 at heat 100), so e.g. a fresh Villain already earns beef fame ×1.5 and +7.5% purses.
+
+**Nudges** come only from existing actions (each carries a `(dx,dy)`): the **post-fight interview** (Humble +6/−6, Confident +6/+6, Trash Talk −8/+8), each **podcast segment** (e.g. Trash a Rival −9/+7, Cryptic −3/−8, Show Respect +7/−5), each **appearance**, and the **documentary** (Focus + Tone summed). Committing to one quadrant reaches ~70% heat by roughly fight 12 (interview-only).
+
+**Breaking Character ("The Turn"):** nothing is ever locked. Below 40% heat an off-brand action is a normal nudge; at **≥40% heat**, a diagonal-opposite-quadrant action pays its fame **×2**, still lands its full effect (Beef flags always write), but lurches the nudge ×1.5 then **shatters heat** (×0.6 toward center), deactivates the signature, and **blanks all persona modifiers for the next fight** (one-fight blackout; x/y/heat still tracked). Heel turns and redemption arcs become player-authored career stories.
+
+**Gating:** heat is capped at ≤50% until Regional Pro (non-destructive), uncapped after. **Feed/Gazette:** being crowned, crossing into signature range, and a Breaking Character event all log a "Persona Edition" story.
+
+**Persona Moments (milestone celebrations):** exactly two modals, matched to the two capability milestones — (1) **"The press has spoken"**: the first time EVER an archetype is claimed (entering it from Unwritten or another quadrant), showing the archetype name/epithet and the live modifier chips that just switched on; gated by `fighter.persona.crownedArchetypes` so re-entry after decay never re-fires it. (2) **Signature unlocked** at ≥70 heat: signature name + payoff + the retention hook (decay drops it below 70). Both are detected from `personaNudge.crownedInfo`/`signatureInfo` attached by `applyNudge` and fire from any of the four nudge sources (podcast / appearance / documentary / post-fight interview); they queue behind fight overlays (belt/tier/banner) and never re-fire on re-activation. Heat ticks, decay, and Breaking Character deliberately get NO modal (Breaking Character keeps its inline warning + result note + feed story).
+
+**Where it surfaces:** a **persona strip** at the top of the Media Hub (octagon map + archetype + epithet + heat bar + live modifiers), nudge chips + a "this moves you → {archetype}" preview on every media/interview action, and modifier reads at purse/fame/sponsor/callout/gym/hospital sites (all blackout-gated, all routed through `personaService`). **Price displays match the charge:** sponsor contract cards, gym rank-up buttons, and hospital bills all show the persona-adjusted number with the base price struck through and an attribution tag (e.g. "The Role Model −10%", via `personaService.priceAdjust`); contract history stays at booked rates.
+
 ---
 
 ## 17. Health, Stamina & Injuries

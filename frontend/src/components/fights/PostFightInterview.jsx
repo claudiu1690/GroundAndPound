@@ -1,6 +1,29 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Zap } from "lucide-react";
 import { api } from "../../api";
+import { usePersonaPreview } from "../../hooks/usePersonaPreview";
+import { PersonaNudgeChip } from "../media/PersonaNudgeChip";
+import { archetypeLabel, heatDeltaLabel } from "../media/personaTypes";
+import { emitPersonaMoments } from "../media/personaMoments";
 import { t } from "@/lib/i18n";
+
+/**
+ * Small per-choice persona hint — nudge chip + "→ Archetype" — shown under
+ * each tone card. Backed by usePersonaPreview({actionKey}); purely
+ * presentational, no persona resolution here.
+ */
+function PersonaChoiceHint({ loading, preview }) {
+    if (loading) {
+        return <div className="interview-persona-hint interview-persona-hint--loading">{t("media.persona.preview.loading")}</div>;
+    }
+    if (!preview) return null;
+    return (
+        <div className="interview-persona-hint">
+            <PersonaNudgeChip nudge={{ dx: preview.dx, dy: preview.dy, quadrant: preview.after?.archetype }} />
+            <span className="interview-persona-arrow">→ {archetypeLabel(preview.after?.archetype)}</span>
+        </div>
+    );
+}
 
 /**
  * Flavor text shown on the DONE state, with 3 variants per tone so the press
@@ -131,6 +154,20 @@ export function PostFightInterview({
     const [candidatesLoading, setCandidatesLoading] = useState(false);
     const [selectedTarget, setSelectedTarget] = useState(null);
 
+    // Persona preview per choice — POST /media/:fighterId/persona/preview with
+    // {actionKey}. Fired once, up-front, when the tone picker is showing;
+    // lightweight (3 calls, debounced) rather than wiring per-hover.
+    const humblePreview = usePersonaPreview(fighterId);
+    const confidentPreview = usePersonaPreview(fighterId);
+    const calloutPreview = usePersonaPreview(fighterId);
+    useEffect(() => {
+        if (mode !== "PICK_TONE" || !fighterId) return;
+        humblePreview.run({ actionKey: "INTERVIEW_HUMBLE" });
+        confidentPreview.run({ actionKey: "INTERVIEW_CONFIDENT" });
+        calloutPreview.run({ actionKey: "INTERVIEW_CALLOUT" });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mode, fighterId]);
+
     const loadCandidates = useCallback(async () => {
         if (!fighterId) return;
         setCandidatesLoading(true);
@@ -158,6 +195,7 @@ export function PostFightInterview({
             const body = { fighterId, choice };
             if (targetOpponentId) body.targetOpponentId = targetOpponentId;
             const res = await api.postInterview(fightId, body);
+            emitPersonaMoments(res.personaNudge);
             setResult(res);
             setMode("DONE");
             onResolved?.(res);
@@ -204,6 +242,32 @@ export function PostFightInterview({
                 </header>
                 {quote && <blockquote className="pfi-done-quote">{quote}</blockquote>}
                 {consequence && <p className="pfi-done-consequence">{consequence}</p>}
+
+                {result.personaNudge && (() => {
+                    const pn = result.personaNudge;
+                    return (
+                        <div className="pfi-persona-outcome">
+                            <div className="persona-preview-pill">
+                                {t("media.persona.preview.movedTo", {
+                                    subject: t("media.persona.preview.subjects.interview"),
+                                    archetype: archetypeLabel(pn.after?.archetype),
+                                    delta: heatDeltaLabel(pn.before?.heat, pn.after?.heat),
+                                })}
+                            </div>
+                            {pn.breakingCharacter && (
+                                <div className="persona-preview-warn">
+                                    <AlertTriangle size={12} /> {t("media.persona.preview.breakingCharacter")}
+                                </div>
+                            )}
+                            {pn.signatureActivated && (
+                                <div className="persona-sig-note"><Zap size={12} /> {t("media.persona.signatureActivatedNote")}</div>
+                            )}
+                            {pn.signatureDeactivated && (
+                                <div className="persona-sig-note persona-sig-note--muted">{t("media.persona.signatureDeactivatedNote")}</div>
+                            )}
+                        </div>
+                    );
+                })()}
             </section>
         );
     }
@@ -302,6 +366,7 @@ export function PostFightInterview({
                     <div className="interview-consequence">
                         {t("fights.interview.humbleConsequence")}
                     </div>
+                    <PersonaChoiceHint loading={humblePreview.loading} preview={humblePreview.preview} />
                 </button>
 
                 <button
@@ -316,6 +381,7 @@ export function PostFightInterview({
                     <div className="interview-consequence interview-consequence--muted">
                         {t("fights.interview.confidentConsequence")}
                     </div>
+                    <PersonaChoiceHint loading={confidentPreview.loading} preview={confidentPreview.preview} />
                 </button>
 
                 <button
@@ -330,6 +396,7 @@ export function PostFightInterview({
                     <div className="interview-consequence">
                         {t("fights.interview.trashTalkConsequence")}
                     </div>
+                    <PersonaChoiceHint loading={calloutPreview.loading} preview={calloutPreview.preview} />
                 </button>
             </div>
         </section>

@@ -416,6 +416,9 @@ function editionForTrigger(triggeringEventType) {
         case "NEMESIS_SET":
         case "NEMESIS_CLEARED":         return "Rivalry Edition";
         case "BADGE_EARNED":            return "Achievement Edition";
+        case "PERSONA_SIGNATURE":
+        case "PERSONA_BREAK_CHARACTER":
+        case "PERSONA_CROWNED":          return "Persona Edition";
         case "pvp_belt_won":            return "Championship Edition";
         default:
             if (typeof triggeringEventType === "string" && triggeringEventType.startsWith("pvp_")) {

@@ -5,6 +5,12 @@ const { calculateOverall } = require("../utils/overallRating");
 const { xpRequiredForNextPoint, roundStatXp, normalizeBankedXp } = require("../utils/statProgression");
 const notorietyService = require("./notorietyService");
 const energyService = require("./energyService");
+const personaService = require("./personaService");
+
+/** Persona (Role Model) hospital-bill discount fraction (≤0). Injury-clearing charges only. */
+function hospitalBillFrac(fighter) {
+    return personaService.getModifiers(fighter).hospitalBillFrac || 0;
+}
 
 const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
 const STAT_NAMES = ["STR", "SPD", "LEG", "WRE", "GND", "SUB", "CHN", "FIQ"];
@@ -200,6 +206,18 @@ function toPublicFighter(fighter) {
     const out = fighter.toObject ? fighter.toObject() : { ...fighter };
     out.notoriety = notorietyService.buildNotorietyPublicState(fighter);
     out.injuryLockedStats = getInjuryLockedStats(fighter);
+    // Persona (Role Model) hospital discount: the injury card prices shown in the
+    // hospital UI must match what doctorVisit/skipRecovery actually charge (same
+    // fraction + rounding). Base values stay in *Base; the tag explains the delta.
+    const billFrac = hospitalBillFrac(fighter);
+    if (billFrac && Array.isArray(out.injuries)) {
+        out.injuries = out.injuries.map((inj) => ({
+            ...inj,
+            ...(inj.docVisitIron > 0 ? { docVisitIron: Math.round(inj.docVisitIron * (1 + billFrac)), docVisitIronBase: inj.docVisitIron } : {}),
+            ...(inj.recoverySkipIron > 0 ? { recoverySkipIron: Math.round(inj.recoverySkipIron * (1 + billFrac)), recoverySkipIronBase: inj.recoverySkipIron } : {}),
+        }));
+    }
+    out.hospitalPersona = personaService.priceAdjust(fighter, "hospitalBillFrac");
     // Shift player's rank to display rank for the UI. DB stores 2-N (1 = champion slot,
     // never the player). UI shows champion separately and contenders as #1-#(N-1).
     if (out.ranking && typeof out.ranking.rank === "number") {
@@ -405,7 +423,8 @@ async function doctorVisit(fighterId, injuryType) {
     // Capture the stable subdoc _id — array index is not safe across reloads.
     const injuryId = String(target._id);
     const energyCost = target.docVisitEnergy || 0;
-    const ironCost = target.docVisitIron || 0;
+    // Persona (Role Model) −15% on the doctor-visit charge (an injury-clearing bill).
+    const ironCost = Math.round((target.docVisitIron || 0) * (1 + hospitalBillFrac(fighter)));
 
     if (currentEnergy < energyCost) {
         throw new Error(`Not enough energy (doctor visit costs ${energyCost})`);
@@ -472,7 +491,8 @@ async function hospitalSkipRecovery(fighterId, injuryType) {
     if (!target) throw new Error("Injury not found or not eligible for recovery skip");
 
     const injuryId = String(target._id);
-    const ironCost = target.recoverySkipIron || 0;
+    // Persona (Role Model) −15% on the skip-recovery charge (an injury-clearing bill).
+    const ironCost = Math.round((target.recoverySkipIron || 0) * (1 + hospitalBillFrac(fighter)));
     if ((fighter.iron || 0) < ironCost) {
         throw new Error(`Not enough cash (skip recovery costs $${ironCost})`);
     }
@@ -515,8 +535,11 @@ async function hospitalFullRecovery(fighterId) {
     if (currentEnergy < quote.energy) {
         throw new Error(`Not enough energy (full recovery costs ${quote.energy})`);
     }
-    if ((fighter.iron || 0) < quote.iron) {
-        throw new Error(`Not enough cash (full recovery costs $${quote.iron})`);
+    // Persona (Role Model) −15% on the full-recovery bill — validate against the discount.
+    const billFrac = hospitalBillFrac(fighter);
+    const discountedQuoteIron = Math.round(quote.iron * (1 + billFrac));
+    if ((fighter.iron || 0) < discountedQuoteIron) {
+        throw new Error(`Not enough cash (full recovery costs $${discountedQuoteIron})`);
     }
 
     // Build a per-injury cost map keyed by stable _id so we can (a) re-identify
@@ -568,8 +591,9 @@ async function hospitalFullRecovery(fighterId) {
                 toPull.push(injuryId);
             }
             // Apply the package discount once over the survivors' raw iron — same math
-            // as quoteFullRecovery — then decrement on the fresh (un-charged) doc.
-            ironCharged = Math.round(survivorRawIron * (1 - FULL_RECOVERY_DISCOUNT));
+            // as quoteFullRecovery — then the persona (Role Model) hospital discount, then
+            // decrement on the fresh (un-charged) doc.
+            ironCharged = Math.round(survivorRawIron * (1 - FULL_RECOVERY_DISCOUNT) * (1 + billFrac));
             if (ironCharged > 0) f.iron = (f.iron || 0) - ironCharged;
             for (const injuryId of toPull) f.injuries.pull(injuryId);
         }
@@ -601,8 +625,14 @@ async function hospitalQuote(fighterId) {
     if (!fighter) throw new Error("Fighter not found");
     reconcileHealth(fighter);
     const fullRecovery = quoteFullRecovery(fighter);
+    // Quote the persona-discounted bill — hospitalFullRecovery charges exactly
+    // Math.round(quote.iron * (1 + billFrac)); the quote must show that number.
+    const billFrac = hospitalBillFrac(fighter);
     return {
         ...fullRecovery,
+        iron: Math.round((fullRecovery.iron || 0) * (1 + billFrac)),
+        ironBase: fullRecovery.iron || 0,
+        personaDiscount: personaService.priceAdjust(fighter, "hospitalBillFrac"),
         health: {
             current: fighter.health ?? 100,
             max: 100,

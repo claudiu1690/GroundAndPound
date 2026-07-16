@@ -28,6 +28,8 @@ import { ContractsTab } from "./components/contracts/ContractsTab";
 import { MovesTab } from "./components/moves/MovesTab";
 import { DropRevealModal } from "./components/moves/DropRevealModal";
 import { MediaHub } from "./components/media/MediaHub";
+import { PersonaMomentModal } from "./components/media/PersonaMomentModal";
+import { PERSONA_MOMENT_EVENT } from "./components/media/personaMoments";
 import { EventsTab } from "./components/events/EventsTab";
 import { HospitalTab } from "./components/hospital/HospitalTab";
 import { RankingsTab } from "./components/rankings/RankingsTab";
@@ -496,6 +498,18 @@ function App() {
   // Nonce that tells the (always-mounted) sidebar FighterProfile to open its
   // banner editor — bumped by the banner-unlock modal's "Customize" CTA.
   const [openBannerEditorSignal, setOpenBannerEditorSignal] = useState(0);
+  // Persona Moment celebrations (crowned / signature-unlock). Fed by the
+  // gp:persona-moment window event emitted at the four persona-nudging response
+  // sites (podcast / appearance / documentary / post-fight interview). APPENDED
+  // (never replaced) — milestones are once-ever, so a stale entry can't recur.
+  // Rendered only while no fight overlay is up, so it never buries a belt win.
+  const [personaMomentQueue, setPersonaMomentQueue] = useState([]);
+  const advancePersonaMoment = useCallback(() => setPersonaMomentQueue((q) => q.slice(1)), []);
+  useEffect(() => {
+    const onMoment = (e) => setPersonaMomentQueue((q) => [...q, e.detail]);
+    window.addEventListener(PERSONA_MOMENT_EVENT, onMoment);
+    return () => window.removeEventListener(PERSONA_MOMENT_EVENT, onMoment);
+  }, []);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
   // One-time "you're a contender" announcement. We track the previous
   // pendingPromotion value so we only fire on the absent→set transition.
@@ -1342,6 +1356,12 @@ const handleGetOffers = useCallback(async () => {
         pieces={currentOverlay?.type === "banner" ? currentOverlay.pieces : null}
         onClose={advanceOverlay}
         onCustomize={() => { advanceOverlay(); setOpenBannerEditorSignal((n) => n + 1); }}
+      />
+
+      <PersonaMomentModal
+        moment={!currentOverlay ? (personaMomentQueue[0] || null) : null}
+        onClose={advancePersonaMoment}
+        onSeePersona={() => { advancePersonaMoment(); setActiveTab("media"); }}
       />
 
       <FightLimitPopup

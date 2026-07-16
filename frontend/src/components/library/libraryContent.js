@@ -669,6 +669,20 @@ export const LIBRARY_ARTICLES = [
         ],
         keyTakeaway: "Interviews are only available after wins. Trash Talk is a callout — you name a future opponent (not the one you just beat) and start a 4-fight clock: fight that target before it closes or pay the −150 penalty.",
     },
+    {
+        id: "persona-system",
+        category: "Events & Media",
+        title: "Your Persona — The Character the Crowd Sees",
+        summary: "How your media choices build a public persona — Villain, People's Champ, Boogeyman or Role Model — and what each one changes.",
+        tags: ["persona", "villain", "role model", "boogeyman", "people's champ", "heat", "signature", "breaking character", "reputation"],
+        body: [
+            "Every mic you touch does more than pay fame — it shapes who the fight world thinks you are. Your persona lives on two sliders. Hated ↔ Loved is how the crowd feels about you; Loud ↔ Quiet is how you carry yourself. The octagon map at the top of the Media Hub shows exactly where you stand. Commit to a corner and the press crowns you with one of four personas, each with real rewards and real costs.",
+            "The Villain (Hated + Loud) gets paid to be the bad guy: bigger purses, double fame on trash talk, and half-price callouts — but sponsors walk (−35% payouts), your beef-lapse penalty doubles, and losing to a rival you've got beef with drags your reputation back toward the middle. The People's Champ (Loved + Loud) is the crowd's favourite: an extra sponsor slot, more appearance offers, and a boost when you're fighting out of a losing streak — but trash talk costs you, and favourites are punished for upset losses. The Boogeyman (Hated + Quiet) is the silent threat: you take less damage in the cage and pull bigger purses, and cryptic one-liners pay extra — but sponsors and listeners shy away from the silence. The Role Model (Loved + Quiet) is the respected professional: cheaper gym rank-ups, cheaper hospital bills, better sponsor deals, and softer fame penalties — but you don't sell chaos, so there's no purse bonus.",
+            "How committed you are is your Storyline Heat — how far you've pushed from the centre. Heat scales everything, rewards and costs alike: the moment the press crowns you (25% heat) your modifiers already run at half strength, and they grow to full power at 100% heat — claiming a persona is meant to be felt immediately. Both big moments get their own celebration: the first time you're ever crowned as an archetype, and the moment your Signature unlocks. Cross 70% heat and you unlock your persona's Signature perk — the Villain's Bad Blood (grudge fights pay extra), the Champ's Hometown Hero (comeback wins pay double-ish), the Boogeyman's Ambush (your Proc special moves hit harder), or the Role Model's Legacy (documentary and milestone fame boosted). But heat fades about 5% after every fight — a persona you stop feeding drifts back toward 'The Unwritten', the neutral centre where you get no modifiers at all (new fighters start here, and it's deliberately penalty-free).",
+            "Nothing is ever locked. If you've built real heat and then do something totally off-brand — a Role Model trashing a rival, say — that's Breaking Character: it pays DOUBLE fame because man-bites-dog is the story of the month, but it shatters your heat, switches off your signature, and blanks all your persona bonuses for one fight while the press works out who you are now. That's how you pull a heel turn or a redemption arc — on purpose, when the moment's right.",
+        ],
+        keyTakeaway: "Your media choices build one of four personas, each with its own rewards and costs that scale with Storyline Heat (signature perk at 70%). Heat fades if you stop feeding it. Nothing's locked — going off-brand at high heat is 'Breaking Character': double fame, but it resets your persona for a fight.",
+    },
 
     // ──────────────────────────────────────────────────────────────
     // SHOP & SUPPLEMENTS

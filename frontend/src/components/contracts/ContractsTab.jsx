@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { PersonaPriceTag } from "../media/PersonaPriceTag";
 import { createPortal } from "react-dom";
 import { X, AlertTriangle, Lock, FileX, Zap } from "lucide-react";
 import { api } from "../../api";
@@ -190,6 +191,7 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
                         <OfferCard
                             key={o.id}
                             offer={o}
+                            personaPayout={available.personaPayout}
                             onAccept={() => handleAccept(o.id)}
                             busy={busyId === o.id}
                             slotsFull={slotsFull}
@@ -224,19 +226,31 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
 // Shared rewards block (Active + Offer)
 // ───────────────────────────────────────────────────────────────
 
-function RewardsBlock({ perFight, onComplete, fame, penalty, drinks = 0 }) {
+function RewardsBlock({ perFight, perFightBase, onComplete, onCompleteBase, personaPayout, fame, penalty, drinks = 0 }) {
+    const showBase = (base, val) => base != null && base !== val;
     return (
         <>
             <div className="contract-rewards">
                 <div className="contract-reward">
                     <span className="contract-reward-label">{t("contracts.rewards.perFight")}</span>
-                    <span className="contract-reward-val positive">+${formatIron(perFight)}</span>
+                    <span className="contract-reward-val positive">
+                        {showBase(perFightBase, perFight) && <s className="reward-base">${formatIron(perFightBase)}</s>}
+                        +${formatIron(perFight)}
+                    </span>
                 </div>
                 <div className="contract-reward">
                     <span className="contract-reward-label">{t("contracts.rewards.onComplete")}</span>
-                    <span className="contract-reward-val positive">+${formatIron(onComplete)}</span>
+                    <span className="contract-reward-val positive">
+                        {showBase(onCompleteBase, onComplete) && <s className="reward-base">${formatIron(onCompleteBase)}</s>}
+                        +${formatIron(onComplete)}
+                    </span>
                 </div>
             </div>
+            {personaPayout && (
+                <div className="contract-persona-note">
+                    <PersonaPriceTag tag={personaPayout} goodWhenNegative={false} />
+                </div>
+            )}
             <div className="contract-reward contract-reward-fame">
                 <span className="contract-reward-label">{t("contracts.rewards.onComplete")}</span>
                 <span className="contract-reward-val positive-fame">+{fame} <span>fame</span></span>
@@ -358,8 +372,11 @@ function ActiveCard({ contract, onDrop, busy }) {
                     <span className="contract-progress-label">{contract.progressText}</span>
                 </div>
                 <RewardsBlock
-                    perFight={contract.rewardPerFight}
-                    onComplete={contract.rewardBonus}
+                    perFight={contract.rewardPerFightAdjusted ?? contract.rewardPerFight}
+                    perFightBase={contract.rewardPerFightAdjusted != null ? contract.rewardPerFight : null}
+                    onComplete={contract.rewardBonusAdjusted ?? contract.rewardBonus}
+                    onCompleteBase={contract.rewardBonusAdjusted != null ? contract.rewardBonus : null}
+                    personaPayout={contract.personaPayout}
                     fame={contract.fameBonusOnComplete}
                     penalty={contract.famePenaltyOnBreak}
                     drinks={contract.rewardDrinks}
@@ -374,7 +391,7 @@ function ActiveCard({ contract, onDrop, busy }) {
     );
 }
 
-function OfferCard({ offer, onAccept, busy, slotsFull }) {
+function OfferCard({ offer, personaPayout, onAccept, busy, slotsFull }) {
     return (
         <article className={`contract-card available-card ${slotsFull ? "full-card" : ""}`}>
             <div className="contract-stripe prospect" />
@@ -388,8 +405,11 @@ function OfferCard({ offer, onAccept, busy, slotsFull }) {
                     <span className="contract-clause-text">{offer.clauseText}</span>
                 </div>
                 <RewardsBlock
-                    perFight={offer.rewardPerFight}
-                    onComplete={offer.rewardBonus}
+                    perFight={offer.rewardPerFightAdjusted ?? offer.rewardPerFight}
+                    perFightBase={offer.rewardPerFightAdjusted != null ? offer.rewardPerFight : null}
+                    onComplete={offer.rewardBonusAdjusted ?? offer.rewardBonus}
+                    onCompleteBase={offer.rewardBonusAdjusted != null ? offer.rewardBonus : null}
+                    personaPayout={offer.rewardPerFightAdjusted != null ? personaPayout : null}
                     fame={offer.fameBonusOnComplete}
                     penalty={offer.famePenaltyOnBreak}
                     drinks={offer.rewardDrinks}

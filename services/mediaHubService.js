@@ -9,6 +9,88 @@ const notorietyService = require("./notorietyService");
 const energyService = require("./energyService");
 const interviewService = require("./interviewService");
 const sponsorshipService = require("./sponsorshipService");
+const personaService = require("./personaService");
+
+// ── Persona actionKey resolution (data-only maps; persona math lives in personaService) ──
+function podcastPersonaActionKey(segKey, tone) {
+    switch (segKey) {
+        case "RECAP": return "PODCAST_RECAP";
+        case "BREAKDOWN": return "PODCAST_BREAKDOWN";
+        case "TRASH": return "PODCAST_TRASH";
+        case "RESPECT": return "PODCAST_RESPECT";
+        case "CRYPTIC": return "PODCAST_CRYPTIC";
+        case "GUEST": return tone === "TRASH" ? "PODCAST_GUEST_BEEF" : "PODCAST_GUEST_RESPECT";
+        default: return null;
+    }
+}
+function appearancePersonaActionKey(type, tone) {
+    switch (type) {
+        case "MAGAZINE_COVER": return "APPEARANCE_MAGAZINE_COVER";
+        case "PODCAST_GUEST": return tone === "TRASH" ? "APPEARANCE_PODCAST_GUEST_BEEF" : "APPEARANCE_PODCAST_GUEST_RESPECT";
+        case "UNDERCARD_FEATURE": return "APPEARANCE_UNDERCARD_FEATURE";
+        case "BRAND_DEAL_CLIP": return "APPEARANCE_BRAND_DEAL_CLIP";
+        case "CHARITY_EXHIBITION": return "APPEARANCE_CHARITY_EXHIBITION";
+        default: return null;
+    }
+}
+
+/**
+ * Aggregate a sequence of applyNudge reports (podcast has one per segment) into ONE
+ * personaNudge response object: total delta, before(first)→after(last), OR-ed flags.
+ * `stateBefore`/`stateAfter` are personaService.getState snapshots.
+ */
+function aggregatePersonaNudge(stateBefore, stateAfter, reports) {
+    // Milestone payloads (Persona Moment modal): a multi-segment action can only
+    // crown once (crownedArchetypes gates repeats), so the last report carrying
+    // each block wins. signatureInfo is only kept when the AGGREGATE transition
+    // activates the signature (a mid-action flicker that ends deactivated is not
+    // a milestone).
+    const crownedReport = [...reports].reverse().find(
+        (r) => r && r.crowned && r.crowned === stateAfter.archetype
+    );
+    const signatureActivated = !stateBefore.signatureActive && stateAfter.signatureActive;
+    const signatureReport = signatureActivated
+        ? [...reports].reverse().find((r) => r && r.signatureInfo)
+        : null;
+    return {
+        dx: stateAfter.x - stateBefore.x,
+        dy: stateAfter.y - stateBefore.y,
+        before: { x: stateBefore.x, y: stateBefore.y, heat: stateBefore.heat, archetype: stateBefore.archetype },
+        after: { x: stateAfter.x, y: stateAfter.y, heat: stateAfter.heat, archetype: stateAfter.archetype },
+        breakingCharacter: reports.some((r) => r && r.breakingCharacter),
+        shattered: reports.some((r) => r && r.shattered),
+        blackoutSet: reports.some((r) => r && r.blackoutSet),
+        signatureActivated,
+        signatureDeactivated: stateBefore.signatureActive && !stateAfter.signatureActive,
+        crowned: crownedReport ? crownedReport.crowned : null,
+        ...(crownedReport?.crownedInfo ? { crownedInfo: crownedReport.crownedInfo } : {}),
+        ...(signatureReport?.signatureInfo ? { signatureInfo: signatureReport.signatureInfo } : {}),
+    };
+}
+
+/** Documentary FOCUS → persona nudge map (display; combined nudge = focus+tone summed). */
+function personaFocusNudges() {
+    const out = {};
+    for (const k of DOCUMENTARY_FOCUS_KEYS) out[k] = personaService.documentaryFocusNudge(k);
+    return out;
+}
+/** Documentary TONE → persona nudge map (display). */
+function personaToneNudges() {
+    const out = {};
+    for (const k of DOCUMENTARY_TONE_KEYS) out[k] = personaService.documentaryToneNudge(k);
+    return out;
+}
+
+/** Fire-and-forget persona career-feed emit for an aggregate transition (after save). */
+function emitPersonaFeed(fighterId, fighter, aggregateNudge) {
+    try {
+        for (const e of personaService.personaFeedEvents(fighter, aggregateNudge)) {
+            require("./activityLogService").log(fighterId, e.type, e.detail, e.meta);
+        }
+    } catch (e) {
+        console.error("[persona] media feed emit failed:", e.message);
+    }
+}
 
 const { tierRank, calculateTierFromScore } = require("../consts/notorietyConfig");
 const { NOTORIETY_TIERS } = require("../consts/notorietyConfig");
@@ -180,6 +262,9 @@ function buildSegmentCatalog(fighter, hasLastFight) {
     return PODCAST_SEGMENT_KEYS.map((key) => {
         const seg = PODCAST_SEGMENTS[key];
         const lockReason = segmentLockReason(seg, fighter, hasLastFight);
+        // Persona nudge for display. GUEST is tone-dependent — show the beef (TRASH) variant
+        // as the representative; the preview endpoint resolves the exact tone at request time.
+        const nudge = personaService.nudgeForAction(podcastPersonaActionKey(key, "TRASH"));
         return {
             key: seg.key,
             name: seg.name,
@@ -190,6 +275,7 @@ function buildSegmentCatalog(fighter, hasLastFight) {
             deepLink: seg.deepLink || null,
             available: !lockReason,
             lockReason: lockReason || null,
+            nudge,
         };
     });
 }
@@ -226,11 +312,13 @@ function generateAppearancePool(fighter, rotation, hasActiveSponsor, sponsorCash
         for (let i = 0; i < w; i += 1) bag.push(key);
     }
     const shuffled = seededShuffle(bag, seed);
-    // Pick distinct types up to APPEARANCE_POOL_SIZE.
+    // Pick distinct types up to the pool size. Persona (People's Champ, heat≥70) grants +1
+    // pool slot — surfaced through getModifiers so the math stays in personaService.
+    const poolSize = APPEARANCE_POOL_SIZE + (personaService.getModifiers(fighter).appearancePoolBonus || 0);
     const chosen = [];
     for (const key of shuffled) {
         if (!chosen.includes(key)) chosen.push(key);
-        if (chosen.length >= APPEARANCE_POOL_SIZE) break;
+        if (chosen.length >= poolSize) break;
     }
     const now = Date.now();
     return chosen.map((key) => {
@@ -358,6 +446,9 @@ function appearanceView(inst, fighter) {
         actionLabel: def.actionLabel || "Take",
         available: inst.status === "available" && !lockReason,
         lockReason,
+        // Persona nudge for display. PODCAST_GUEST is tone-dependent — show the beef (TRASH)
+        // variant as representative; preview resolves the exact tone at request time.
+        nudge: personaService.nudgeForAction(appearancePersonaActionKey(inst.type, "TRASH")),
     };
 }
 
@@ -445,12 +536,20 @@ async function getHubState(fighterId) {
 
     if (needsSave) await fighter.save();
 
+    // Persona: cosmetic listeners bonus is surfaced (never alters listenersFromScore).
+    const personaBlock = personaService.buildPersonaBlock(fighter);
+    const listenersPersonaPct = personaService.getModifiers(fighter).listenersPct || 0;
+    const listenersDisplayed = Math.round(listeners * (1 + listenersPersonaPct));
+
     return {
         fame: score,
         peakTier: pTier,
         tierLabel: tierLabelFor(pTier),
         listeners,
         listenersFormatted: formatListeners(listeners),
+        listenersDisplayed,
+        listenersDisplayedFormatted: formatListeners(listenersDisplayed),
+        persona: personaBlock,
         podcast: {
             podcastName: fighter.media.podcastName || null,
             episodeCount: fighter.media.episodeCount || 0,
@@ -479,6 +578,10 @@ async function getHubState(fighterId) {
             unlockTier: DOCUMENTARY_UNLOCK_TIER,
             unlockThreshold: DOCUMENTARY_UNLOCK_THRESHOLD,
             progress: docProgress,
+            // Persona nudge per documentary FOCUS / TONE option; the combined nudge is
+            // focus+tone summed (quadrant null). Frontend previews via /persona/preview.
+            focusNudges: personaFocusNudges(),
+            toneNudges: personaToneNudges(),
             choices: fighter.media.documentaryChoices || null,
             reward: fighter.media.documentaryReward || null,
             recordedAt: fighter.media.documentaryRecordedAt || null,
@@ -595,12 +698,31 @@ async function recordPodcast(fighterId, body) {
     const flagsCreated = [];
     const episodeTargets = [];
 
+    // Persona: one applyNudge PER segment in order. Per-segment fame is scaled by the
+    // persona BEFORE that segment's nudge (evolving identity). Aggregate report built after.
+    const personaBefore = personaService.getState(fighter);
+    const personaReports = [];
+
     for (const key of segKeys) {
         const seg = PODCAST_SEGMENTS[key];
-        if (seg.fame > 0) totalFame += seg.fame;
+        const resolved = resolvedTargets[key];
+        const tone = resolved ? resolved.tone : null;
+        const actionKey = podcastPersonaActionKey(key, tone);
+
+        // Breaking Character (×2 fame) for THIS segment only — detected on the current
+        // (evolving) persona before this segment's nudge is applied.
+        const bcPreview = actionKey ? personaService.previewNudge(fighter, { actionKey }) : null;
+        const segBreaksCharacter = !!(bcPreview && bcPreview.breakingCharacter);
+
+        // Fame scaled by the current persona (per-segment canonical category), then ×2 on BC.
+        if (seg.fame > 0) {
+            const cat = personaService.fameCategoryForAction(actionKey);
+            let segFame = personaService.applyFameMultiplier(fighter, seg.fame, cat);
+            if (segBreaksCharacter) segFame *= 2;
+            totalFame += segFame;
+        }
         if (seg.cash > 0) totalCash += seg.cash;
 
-        const resolved = resolvedTargets[key];
         if (resolved) {
             episodeTargets.push({ opponentId: resolved.opp._id, opponentName: resolved.opp.name });
             let flagType = seg.flag;
@@ -613,7 +735,13 @@ async function recordPodcast(fighterId, body) {
                 flagsCreated.push({ type: "respect", targetId: resolved.opp._id });
             }
         }
+
+        // Nudge AFTER fame for this segment so the next segment sees the shifted identity.
+        if (actionKey) personaReports.push(personaService.applyNudge(fighter, { actionKey }));
     }
+
+    const personaAfter = personaService.getState(fighter);
+    const personaNudge = aggregatePersonaNudge(personaBefore, personaAfter, personaReports);
 
     let fameApplied = 0;
     if (totalFame > 0) {
@@ -648,6 +776,8 @@ async function recordPodcast(fighterId, body) {
 
     await fighter.save();
 
+    emitPersonaFeed(fighter._id, fighter, personaNudge);
+
     const episode = await PodcastEpisode.create({
         fighterId: fighter._id,
         episodeNumber,
@@ -676,6 +806,7 @@ async function recordPodcast(fighterId, body) {
         },
         fameDelta: fameApplied,
         cashDelta: totalCash,
+        personaNudge,
         resetsAtUtcMidnight: nextUtcMidnight(now),
         podcast: {
             podcastName: fighter.media.podcastName || null,
@@ -729,11 +860,19 @@ async function recordDocumentary(fighterId, body) {
     fighter.badges = fighter.badges || [];
     if (!fighter.badges.includes(DOCUMENTARY_BADGE)) fighter.badges.push(DOCUMENTARY_BADGE);
 
+    // Persona: capture state, apply the summed focus+tone nudge (quadrant null → never
+    // breaks character) BEFORE payout fame is scaled + before save.
+    const personaBefore = personaService.getState(fighter);
+    const docNudgeSpec = personaService.documentaryNudge(focus, tone);
+
     let reward;
     if (timing === "NOW") {
-        // Pay immediately at timing mult 1.0.
+        // Pay immediately at timing mult 1.0. Persona LEGACY signature scales doc fame ×1.5.
         const r = computeDocumentaryReward(choices, DOCUMENTARY_TIMING.NOW.mult);
-        notorietyService.applyNotorietyDelta(fighter, r.fame, {
+        const scaledFame = personaService.applyFameMultiplier(
+            fighter, r.fame, personaService.FAME_CATEGORY.DOCUMENTARY
+        );
+        notorietyService.applyNotorietyDelta(fighter, scaledFame, {
             skipFreezeBlock: true,
             code: "DOCUMENTARY",
             reason: "Career documentary released",
@@ -742,7 +881,7 @@ async function recordDocumentary(fighterId, body) {
         notorietyService.touchLastEvent(fighter);
         fighter.iron = (fighter.iron || 0) + r.cash;
         if (r.grantsBooster) grantTechnicianBooster(fighter);
-        reward = { fame: r.fame, cash: r.cash, deferred: false, boosterGranted: !!r.grantsBooster };
+        reward = { fame: scaledFame, cash: r.cash, deferred: false, boosterGranted: !!r.grantsBooster };
         fighter.media.documentaryReward = reward;
         fighter.media.documentaryPending = null;
     } else {
@@ -758,6 +897,11 @@ async function recordDocumentary(fighterId, body) {
         fighter.media.documentaryReward = reward;
     }
 
+    // Persona nudge (focus+tone summed, quadrant null), before save.
+    const docReport = personaService.applyNudge(fighter, docNudgeSpec);
+    const personaAfter = personaService.getState(fighter);
+    const personaNudge = aggregatePersonaNudge(personaBefore, personaAfter, [docReport]);
+
     // Career Page badge: `documentary` (status now "recorded"). Mutation-only.
     try {
         require("./badgeService").evaluateBadges(fighter, { documentary: true });
@@ -767,11 +911,14 @@ async function recordDocumentary(fighterId, body) {
 
     await fighter.save();
 
+    emitPersonaFeed(fighter._id, fighter, personaNudge);
+
     return {
         status: "recorded",
         choices,
         reward,
         recordedAt: now,
+        personaNudge,
         pending: fighter.media.documentaryPending
             ? {
                   focus,
@@ -872,13 +1019,25 @@ async function takeAppearance(fighterId, instanceId, body) {
     let flagCreated = null;
     let armed = false;
 
+    // Persona: resolve the action + capture state before fame is applied.
+    const personaActionKey = appearancePersonaActionKey(inst.type, tone);
+    const personaBefore = personaService.getState(fighter);
+    // Breaking Character (×2 fame) — detected on the PRE-action persona (arms types carry no
+    // fame and their quadrant is null, so this is only ever true on the fame-paying types).
+    const bcPreview = personaActionKey ? personaService.previewNudge(fighter, { actionKey: personaActionKey }) : null;
+    const appearanceBreaksCharacter = !!(bcPreview && bcPreview.breakingCharacter);
+
     if (def.arms) {
         // UNDERCARD_FEATURE: arm only — pays on a qualifying fight within fightByDays.
         const armDays = def.fightByDays || 10;
         inst.requiresFightByDate = new Date(Date.now() + armDays * MS_PER_DAY);
         armed = true;
     } else {
-        const fame = appearanceFameForTier(def, peakTier(fighter));
+        const rawFame = appearanceFameForTier(def, peakTier(fighter));
+        // Persona fame multiplier (single canonical category for this appearance), ×2 on BC.
+        const cat = personaService.fameCategoryForAction(personaActionKey);
+        let fame = personaService.applyFameMultiplier(fighter, rawFame, cat);
+        if (appearanceBreaksCharacter) fame *= 2;
         if (fame > 0) {
             const { applied } = notorietyService.applyNotorietyDelta(fighter, fame, {
                 code: "APPEARANCE",
@@ -904,10 +1063,20 @@ async function takeAppearance(fighterId, instanceId, body) {
         }
     }
 
+    // Persona nudge — after fame, before save. actionKey from inst.type (+tone for guest).
+    let personaNudge = null;
+    if (personaActionKey) {
+        const report = personaService.applyNudge(fighter, { actionKey: personaActionKey });
+        const personaAfter = personaService.getState(fighter);
+        personaNudge = aggregatePersonaNudge(personaBefore, personaAfter, [report]);
+    }
+
     inst.status = "taken";
     inst.takenAt = new Date();
 
     await fighter.save();
+
+    if (personaNudge) emitPersonaFeed(fighter._id, fighter, personaNudge);
 
     await MediaArchiveEntry.create({
         fighterId: fighter._id,
@@ -930,7 +1099,102 @@ async function takeAppearance(fighterId, instanceId, body) {
             ? { type: flagCreated.type, targetId: String(flagCreated.targetId) }
             : null,
         armed,
+        personaNudge,
     };
+}
+
+// ─────────────────────────────────────────────────────────────
+// POST persona preview (pure — no mutation, no save)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Preview the persona nudge for a prospective media action WITHOUT mutating/saving.
+ * Request is exactly ONE of:
+ *   { segments:[...], targets:{key:{tone}} }   — podcast (sequence, aggregated)
+ *   { appearanceType, tone? }                   — appearance
+ *   { documentary: { focus, tone } }            — documentary (focus+tone summed)
+ *   { actionKey }                               — raw persona actionKey
+ * Response = previewNudge object. All bad input throws "Invalid persona preview request".
+ */
+async function previewPersona(fighterId, body) {
+    const fighter = await Fighter.findById(fighterId);
+    if (!fighter) throw new Error("Fighter not found");
+    personaService.ensurePersonaShape(fighter);
+
+    // Detached preview fighter — a persona CLONE + tier only, so nothing leaks or persists.
+    const p0 = fighter.persona || {};
+    const clone = {
+        promotionTier: fighter.promotionTier,
+        persona: {
+            x: p0.x || 0,
+            y: p0.y || 0,
+            blackoutFightsRemaining: p0.blackoutFightsRemaining || 0,
+            lastBreakingCharacterAt: p0.lastBreakingCharacterAt || null,
+        },
+        markModified() {},
+    };
+
+    const bad = () => { throw new Error("Invalid persona preview request"); };
+    if (!body || typeof body !== "object") bad();
+
+    // Podcast — a sequence of segment nudges aggregated into one preview.
+    if (Array.isArray(body.segments)) {
+        if (body.segments.length === 0 || body.segments.length > PODCAST_SEGMENT_COUNT) bad();
+        const targets = (body.targets && typeof body.targets === "object") ? body.targets : {};
+        const before = personaService.getState(clone);
+        const reports = [];
+        for (const rawKey of body.segments) {
+            const key = String(rawKey);
+            if (!PODCAST_SEGMENTS[key]) bad();
+            const t = targets[key];
+            const tone = t && t.tone ? String(t.tone).toUpperCase() : null;
+            const actionKey = podcastPersonaActionKey(key, tone);
+            if (!actionKey) bad();
+            reports.push(personaService.applyNudge(clone, { actionKey }));
+        }
+        const after = personaService.getState(clone);
+        const agg = aggregatePersonaNudge(before, after, reports);
+        return {
+            dx: agg.dx,
+            dy: agg.dy,
+            before: agg.before,
+            after: agg.after,
+            breakingCharacter: agg.breakingCharacter,
+            shattered: agg.shattered,
+            wouldSetBlackout: agg.blackoutSet,
+        };
+    }
+
+    // Appearance.
+    if (body.appearanceType) {
+        const type = String(body.appearanceType);
+        if (!APPEARANCE_TYPES[type]) bad();
+        const tone = body.tone ? String(body.tone).toUpperCase() : null;
+        const actionKey = appearancePersonaActionKey(type, tone);
+        const preview = personaService.previewNudge(clone, { actionKey });
+        if (!preview) bad();
+        return preview;
+    }
+
+    // Documentary (focus + tone summed).
+    if (body.documentary && typeof body.documentary === "object") {
+        const focus = String(body.documentary.focus || "").toUpperCase();
+        const tone = String(body.documentary.tone || "").toUpperCase();
+        if (!DOCUMENTARY_FOCUS_KEYS.includes(focus) || !DOCUMENTARY_TONE_KEYS.includes(tone)) bad();
+        const spec = personaService.documentaryNudge(focus, tone);
+        const preview = personaService.previewNudge(clone, spec);
+        if (!preview) bad();
+        return preview;
+    }
+
+    // Raw actionKey.
+    if (body.actionKey) {
+        const preview = personaService.previewNudge(clone, { actionKey: String(body.actionKey) });
+        if (!preview) bad();
+        return preview;
+    }
+
+    return bad();
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1163,7 +1427,11 @@ async function resolveDocumentaryOnFight(fighter, fight) {
     const choices = { focus: pending.focus, tone: pending.tone, timing: pending.timing };
     const r = computeDocumentaryReward(choices, timingMult);
 
-    notorietyService.applyNotorietyDelta(fighter, r.fame, {
+    // Persona LEGACY signature scales deferred doc fame ×1.5 (same as the immediate path).
+    const scaledFame = personaService.applyFameMultiplier(
+        fighter, r.fame, personaService.FAME_CATEGORY.DOCUMENTARY
+    );
+    notorietyService.applyNotorietyDelta(fighter, scaledFame, {
         skipFreezeBlock: true,
         code: "DOCUMENTARY",
         reason: "Documentary deferred payout",
@@ -1174,7 +1442,7 @@ async function resolveDocumentaryOnFight(fighter, fight) {
     if (r.grantsBooster) grantTechnicianBooster(fighter);
 
     fighter.media.documentaryReward = {
-        fame: r.fame,
+        fame: scaledFame,
         cash: r.cash,
         deferred: false,
         boosterGranted: !!r.grantsBooster,
@@ -1240,6 +1508,7 @@ module.exports = {
     recordDocumentary,
     getAppearances,
     takeAppearance,
+    previewPersona,
     getRivalry,
     getArchive,
     // fight hooks

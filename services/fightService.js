@@ -135,6 +135,8 @@ function fightBlockedMessage(injury) {
 }
 const fightConsequenceService = require("./fightConsequenceService");
 const notorietyService = require("./notorietyService");
+const personaService = require("./personaService");
+const specialMovesService = require("./specialMovesService");
 const { tierRank } = require("../consts/notorietyConfig");
 const { logFightResolve } = require("../utils/fightResolveLogger");
 const activityLogService = require("./activityLogService");
@@ -676,6 +678,27 @@ async function resolveFightAndApply(fighterId, userId) {
     // un-finalised camps → no move effects, consistent with sessionBonuses.
     const moveBonuses = fightCamp?.moveBonuses ? [...fightCamp.moveBonuses.map(b => ({ ...b }))] : [];
 
+    // ── Persona (PvE) resolve-site modifiers ─────────────────────────────────────
+    // Applied to the FRESH sessionBonuses/moveBonuses copies with LIVE getFightModifiers —
+    // NEVER baked into the frozen camp snapshot. Damage-reduction/AMBUSH/comeback do not
+    // depend on the (not-yet-known) outcome, so a minimal ctx is enough here.
+    {
+        const personaFightMods = personaService.getFightModifiers(fighter, {
+            comebackMode: !!fighter.comebackMode,
+        });
+        // People's Champ comeback: scale camp session + move bonus VALUES first.
+        if (fighter.comebackMode && personaFightMods.comebackBonusMult !== 1) {
+            const m = personaFightMods.comebackBonusMult;
+            for (const b of sessionBonuses) if (typeof b.value === "number") b.value *= m;
+            for (const b of moveBonuses) if (typeof b.effectiveValue === "number") b.effectiveValue *= m;
+        }
+        // Boogeyman: MERGE (sum) damage reduction into the OPPONENT_DAMAGE_REDUCTION lane so
+        // the engine's first-match .find() reads the combined value (never appended).
+        specialMovesService.mergePersonaBonus(moveBonuses, "OPPONENT_DAMAGE_REDUCTION", personaFightMods.damageReductionFrac);
+        // Boogeyman AMBUSH: scale equipped PROC move values.
+        specialMovesService.scaleProcs(moveBonuses, personaFightMods.ambushProcMult);
+    }
+
     // Commentary context — drives personalised, fighter-tailored fight commentary.
     const commentaryCtx = {
         playerStyle: fighter.style,
@@ -733,6 +756,20 @@ async function resolveFightAndApply(fighterId, userId) {
     const isLoss = !isWin && !isDraw;
     const isKoLoss = result.outcome === OUT_LOSS_KO || result.outcome === OUT_LOSS_SUB;
 
+    // ── Persona (PvE) post-resolve fight modifiers ───────────────────────────────
+    // Full outcome-aware ctx (folds BAD BLOOD, HOMETOWN HERO, upset-loss, LEGACY milestone).
+    const isNemesisFight = String(fighter.nemesis?.opponentId || "") === String(opponent._id);
+    const isBeefFight = (fighter.beefFlags || []).some((f) => String(f.opponentId) === String(opponent._id));
+    const personaMods = personaService.getFightModifiers(fighter, {
+        isWin,
+        isLoss,
+        comebackMode: !!fighter.comebackMode,
+        isNemesis: isNemesisFight,
+        isBeef: isBeefFight,
+        fighterOvr: fighter.overallRating ?? 14,
+        oppOvr: opponent.overallRating ?? 14,
+    });
+
     // GDD 8.5 XP multipliers (corrected)
     let xpMult;
     if (result.outcome === OUT_KO_TKO)      xpMult = 1.3;
@@ -754,8 +791,10 @@ async function resolveFightAndApply(fighterId, userId) {
     // Championship Pedigree perk: +10% fame from fights (handled in notoriety section below)
     const notorietyPurseFrac = notorietyService.getNotorietyPurseFraction(fighter.notoriety.peakTier);
     const comebackPurseFrac = isComeback ? 0.3 : 0;
+    // Persona purse fraction (PvE) folds in additively alongside the other purse mods.
+    const personaPurseFrac = personaMods.purseFrac || 0;
     let ironEarned = Math.round(
-        basePurse * outcomeIronMult * (1 + notorietyPurseFrac + comebackPurseFrac)
+        basePurse * outcomeIronMult * (1 + notorietyPurseFrac + comebackPurseFrac + personaPurseFrac)
     );
     // Phase 4: callout purse bump (+25%) only on a WIN. Losing a callout just loses the fame spend.
     const isCalloutFight = !!fight.isCallout;
@@ -958,6 +997,28 @@ async function resolveFightAndApply(fighterId, userId) {
     let notorietyGain = fightNotoriety.total;
     const notorietyBreakdown = fightNotoriety.breakdown;
 
+    // ── Persona fame folds (PvE) — computeFightNotorietyAward stays PvP-generic. ──
+    // Weight-miss softening (Role Model ×0.5 on the WEIGHT_MISS penalty already inside the award).
+    if (weightMissed) {
+        const { WEIGHT_MISS_NOTORIETY } = require("../consts/notorietyConfig");
+        const scaled = personaService.applyFameMultiplier(
+            fighter, WEIGHT_MISS_NOTORIETY, personaService.FAME_CATEGORY.WEIGHT_MISS
+        );
+        const corrective = scaled - WEIGHT_MISS_NOTORIETY; // 0 unless Role Model softens it
+        if (corrective !== 0) {
+            notorietyBreakdown.push({ code: "PERSONA_WEIGHT_MISS", amount: corrective, note: "Role Model softens the weight-miss hit" });
+            notorietyGain += corrective;
+        }
+    }
+    // Fight-win fame multiplier (BAD BLOOD / HOMETOWN HERO signatures).
+    if (personaMods.fightWinFameMult !== 1) {
+        const bonus = Math.round(notorietyGain * (personaMods.fightWinFameMult - 1));
+        if (bonus !== 0) {
+            notorietyBreakdown.push({ code: "PERSONA_SIGNATURE", amount: bonus, note: "Persona signature fame" });
+            notorietyGain += bonus;
+        }
+    }
+
     if (notorietyGain !== 0) {
         const fameCode = isWin ? "FIGHT_WIN" : (isDraw ? "FIGHT_DRAW" : "FIGHT_LOSS");
         const fameReason = `${result.outcome} vs ${opponent.name}`;
@@ -966,6 +1027,25 @@ async function resolveFightAndApply(fighterId, userId) {
             reason: fameReason,
             meta: { fightId: fight._id, opponentId: opponent._id },
         });
+    }
+
+    // Persona flat fame delta — a separate post-award delta. People's Champ carries both the
+    // upset-loss penalty (−150 on a loss) and the HOMETOWN HERO comeback-win bonus (+250);
+    // they are mutually exclusive (win vs loss), so the sign picks the label.
+    if (personaMods.flatFameDelta !== 0) {
+        const isBonus = personaMods.flatFameDelta > 0;
+        const code = isBonus ? "PERSONA_SIGNATURE" : "PERSONA_UPSET_LOSS";
+        const reason = isBonus
+            ? "Hometown hero — comeback wins over the crowd"
+            : "Upset loss — the crowd expected more";
+        const note = isBonus ? "Hometown hero comeback (People's Champ)" : "Upset loss (People's Champ)";
+        notorietyService.applyNotorietyDelta(fighter, personaMods.flatFameDelta, {
+            code,
+            reason,
+            meta: { fightId: fight._id, opponentId: opponent._id },
+        });
+        notorietyBreakdown.push({ code, amount: personaMods.flatFameDelta, note });
+        notorietyGain += personaMods.flatFameDelta;
     }
 
     // Nemesis win bonus — awarded even if notoriety is frozen (skip freeze block)
@@ -983,7 +1063,10 @@ async function resolveFightAndApply(fighterId, userId) {
     if (firstFinishInThisPromotion && isFinishWin) {
         notorietyService.registerFirstFinishInPromotion(fighter, promoTier);
     }
-    const milestoneResult = isWin ? notorietyService.applyWinMilestoneBonuses(fighter) : { bonus: 0, notes: [] };
+    // Persona LEGACY signature scales win-milestone fame ×1.5 (default 1 for everyone else).
+    const milestoneResult = isWin
+        ? notorietyService.applyWinMilestoneBonuses(fighter, personaMods.milestoneFameMult)
+        : { bonus: 0, notes: [] };
     notorietyService.touchLastEvent(fighter);
 
     let notorietyTierUp = null;
@@ -1133,9 +1216,13 @@ async function resolveFightAndApply(fighterId, userId) {
             if ((f.expiresAfterFights || 0) <= 0) return false;
             return true;
         });
-        // Apply lapse penalties (one per lapsed beef flag).
+        // Apply lapse penalties (one per lapsed beef flag). Persona (PvE) scales the penalty:
+        // Villain ×2 (BEEF_LAPSE), Role Model ×0.5 — magnitude scaled here, sign applied below.
         for (const name of lapsedBeefOpponents) {
-            notorietyService.applyNotorietyDelta(fighter, -BEEF_LAPSE_PENALTY_FAME, {
+            const penalty = personaService.applyFameMultiplier(
+                fighter, BEEF_LAPSE_PENALTY_FAME, personaService.FAME_CATEGORY.BEEF_LAPSE
+            );
+            notorietyService.applyNotorietyDelta(fighter, -penalty, {
                 code: "BEEF_LAPSED",
                 reason: `Couldn't back it up — ${name}`,
             });
@@ -1154,6 +1241,9 @@ async function resolveFightAndApply(fighterId, userId) {
     } catch (e) {
         console.error("[media] media hub post-fight error:", e.message);
     }
+    // NOTE: persona decay (blackout tick + heat decay) is DELIBERATELY deferred to AFTER
+    // sponsorshipService.resolveAfterFight below, so every in-fight reward lane sees the
+    // correct blackout=1 state for this fight (see the persona post-fight block).
 
     // Phase 4: Resolve active callout when the fight was flagged as a callout.
     // Award "Callout Win" badge on a win (unlocks BADGE_CALLOUT banner piece).
@@ -1271,6 +1361,21 @@ async function resolveFightAndApply(fighterId, userId) {
         }
     } catch (e) {
         console.error("[sponsorship] resolveAfterFight failed:", e.message);
+    }
+
+    // ── Persona post-fight cost + decay (PvE only) ───────────────────────────────
+    // MUST run AFTER every in-fight reward lane (purse/fame computed at resolve + the
+    // sponsorship payout above) so the blackout=1 state stays in force for this whole
+    // fight — the blackout tick + heat decay only take effect for the NEXT fight.
+    //   1. Beef-loss cost: losing to an active-Beef opponent drains 15 off each axis.
+    //   2. Decay: blackout-- then x/y *= 0.95.
+    // Non-fatal — a persona error here must never reject the fight (own try/catch + save).
+    try {
+        if (isLoss && beefMatch) personaService.applyBeefLossDrain(fighter);
+        personaService.decayAfterFight(fighter);
+        await fighter.save();
+    } catch (e) {
+        console.error("[persona] post-fight decay/drain error:", e.message);
     }
 
     // ── Activity log entries (fire-and-forget, never throw) ──────────────

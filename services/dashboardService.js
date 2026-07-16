@@ -416,7 +416,8 @@ async function buildSponsorship(id) {
             brand: s.brand ?? null,
             clauseText: s.clauseText ?? null,
             progressText: s.progressText ?? null,
-            rewardPerFight: s.rewardPerFight ?? 0,
+            // Persona-adjusted when a payout modifier is live — matches what's paid.
+            rewardPerFight: s.rewardPerFightAdjusted ?? s.rewardPerFight ?? 0,
         };
     } catch (err) {
         console.error("[dashboard] sponsorship module failed:", err.message);

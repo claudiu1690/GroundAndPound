@@ -301,6 +301,8 @@ export const api = {
   getRivalry: (fighterId) => request(`/media/${fighterId}/rivalry`),
   getArchive: (fighterId, filter = "all", page = 1) =>
     request(`/media/${fighterId}/archive?filter=${encodeURIComponent(filter)}&page=${page}`),
+  previewPersona: (fighterId, body) =>
+    request(`/media/${fighterId}/persona/preview`, { method: "POST", body: JSON.stringify(body || {}) }),
 
   // ── Account settings ────────────────────────────────────
   getAccountProfile: (accountId) =>

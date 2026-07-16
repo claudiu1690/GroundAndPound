@@ -453,6 +453,68 @@ function buildMoveBonuses(fighter) {
 }
 
 /**
+ * Persona (Boogeyman) damage-reduction merge. Applied at the fight RESOLVE read-site on the
+ * FRESH moveBonuses copy — NEVER baked into the frozen snapshot.
+ *
+ * COLLAPSE INVARIANT: the engine reads OPPONENT_DAMAGE_REDUCTION via the FIRST `.find()`
+ * match, so a persona bonus MUST be SUMMED into any existing same-bonusType entry rather than
+ * appended (an appended second entry would be silently ignored). When no such entry exists,
+ * we push one shaped like a merged PASSIVE entry so downstream trigger/getBonusValue reads it.
+ *
+ * No-op when `value` is falsy/non-positive or `moveBonuses` is not an array. Mutates in place.
+ */
+function mergePersonaBonus(moveBonuses, bonusType, value) {
+    if (!Array.isArray(moveBonuses)) return moveBonuses;
+    if (typeof value !== "number" || Number.isNaN(value) || value <= 0) return moveBonuses;
+    const existing = moveBonuses.find((b) => b.bonusType === bonusType);
+    if (existing) {
+        existing.effectiveValue = (existing.effectiveValue || 0) + value;
+    } else {
+        moveBonuses.push({
+            moveId: `persona:${bonusType}`,
+            bonusType,
+            effectiveValue: value,
+            triggerCondition: null,
+            effectType: EFFECT_TYPE.PASSIVE,
+            triggered: false,
+            triggerCount: 0,
+        });
+    }
+    return moveBonuses;
+}
+
+/**
+ * PROC bonusTypes the Boogeyman AMBUSH signature is allowed to scale. SPRAWL_SUCCESS is
+ * DELIBERATELY excluded (over-swings sprawl-heavy loadouts) and left untouched.
+ */
+const AMBUSH_SCALABLE_PROCS = new Set([
+    "ESCAPE_PROBABILITY", "CLINCH_DAMAGE", "STAMINA_DRAIN", "GNP_DAMAGE",
+]);
+
+/** Absolute ceiling on how much AMBUSH may add to a single proc value (future-proof guard). */
+const AMBUSH_PROC_ABS_CAP = 0.02;
+
+/**
+ * Persona (Boogeyman AMBUSH signature) proc scaling. Multiplies the effectiveValue of equipped
+ * PROC entries by `mult`, but ONLY for the whitelisted bonusTypes (SPRAWL_SUCCESS excluded), and
+ * never by more than AMBUSH_PROC_ABS_CAP absolute (`boosted = min(value*mult, value+0.02)`).
+ * Applied at the resolve read-site on the FRESH moveBonuses copy — NEVER baked into the frozen
+ * snapshot. No-op when mult is 1/falsy or not an array.
+ */
+function scaleProcs(moveBonuses, mult) {
+    if (!Array.isArray(moveBonuses)) return moveBonuses;
+    if (typeof mult !== "number" || Number.isNaN(mult) || mult === 1) return moveBonuses;
+    for (const b of moveBonuses) {
+        if (b.effectType !== EFFECT_TYPE.PROC) continue;
+        if (!AMBUSH_SCALABLE_PROCS.has(b.bonusType)) continue;
+        if (typeof b.effectiveValue !== "number") continue;
+        const boosted = Math.min(b.effectiveValue * mult, b.effectiveValue + AMBUSH_PROC_ABS_CAP);
+        b.effectiveValue = boosted;
+    }
+    return moveBonuses;
+}
+
+/**
  * Load a fighter by id and build the FROZEN moveBonuses snapshot (used at camp finalise).
  * Returns [] for a missing fighter. Never throws.
  */
@@ -478,6 +540,9 @@ module.exports = {
     dropRarityWeightsForGym,
     buildMoveBonuses,
     buildMoveBonusesSnapshot,
+    // persona resolve-site helpers (never touch the frozen snapshot)
+    mergePersonaBonus,
+    scaleProcs,
     // exported for tests
     describeMove,
     weightedRarityPick,

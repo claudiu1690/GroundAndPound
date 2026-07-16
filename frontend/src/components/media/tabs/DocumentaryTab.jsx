@@ -1,6 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Video, Lock, Coins, Star, Clock } from "lucide-react";
 import { api } from "../../../api";
+import { PersonaNudgeChip } from "../PersonaNudgeChip";
+import { PersonaPreviewPill } from "../PersonaPreviewPill";
+import { usePersonaPreview } from "../../../hooks/usePersonaPreview";
+import { emitPersonaMoments } from "../personaMoments";
 import { t } from "@/lib/i18n";
 
 // Local label/description maps — backend sends bare enum keys.
@@ -31,7 +35,14 @@ function docLabel(key) {
   return entry ? t(entry.nameKey) : (key || "");
 }
 
-function StepColumn({ num, titleKey, options, value, onPick, readOnly }) {
+// Focus/tone options are hardcoded locally (the backend doesn't echo them in
+// a catalog array the way podcast segments/appearances are), but it does send
+// the per-option nudge maps on the hub payload: `documentary.focusNudges` /
+// `documentary.toneNudges`, each `{ [key]: {dx,dy,quadrant} }`. Timing has no
+// nudge — the backend doesn't send one. `nudges` is an optional
+// key->{dx,dy,quadrant} map; when absent, options render exactly as before
+// (no chip, no crash).
+function StepColumn({ num, titleKey, options, value, onPick, readOnly, nudges }) {
   return (
     <div className={`media-doc-step${value ? " act" : ""}`}>
       <div className="media-doc-step-num">{t("media.documentary.stepLabel", { n: num })}</div>
@@ -45,6 +56,9 @@ function StepColumn({ num, titleKey, options, value, onPick, readOnly }) {
           >
             <div className="media-doc-opt-name">{t(o.nameKey)}</div>
             <div className="media-doc-opt-desc">{t(o.descKey)}</div>
+            {nudges?.[o.key] && (
+              <div className="media-doc-opt-nudge"><PersonaNudgeChip nudge={nudges[o.key]} /></div>
+            )}
           </div>
         ))}
       </div>
@@ -63,16 +77,27 @@ export function DocumentaryTab({ fighter, hub, onMessage, onRefreshFighter, onAf
   const [timing, setTiming] = useState(null);
   const [busy, setBusy] = useState(false);
 
+  // Persona preview — the preview endpoint only takes {focus,tone} for the
+  // documentary (timing doesn't affect persona resolution per the contract),
+  // so fire once both are picked.
+  const { preview: personaPreview, loading: personaPreviewLoading, run: runPersonaPreview, clear: clearPersonaPreview } = usePersonaPreview(fighterId);
+  useEffect(() => {
+    if (!wizard || !focus || !tone) { clearPersonaPreview(); return; }
+    runPersonaPreview({ documentary: { focus, tone } });
+  }, [wizard, focus, tone, runPersonaPreview, clearPersonaPreview]);
+
   const submit = useCallback(async () => {
     if (!fighterId || !focus || !tone || !timing) return;
     setBusy(true);
     try {
       const res = await api.recordDocumentary(fighterId, { focus, tone, timing });
+      emitPersonaMoments(res.personaNudge);
       const r = res.reward || {};
       const bits = [];
       if (r.fame) bits.push(`+${r.fame} fame`);
       if (r.cash) bits.push(`+$${r.cash}`);
       onMessage?.(`Documentary recorded — ${bits.join(" · ") || "done"}${r.deferred ? " (reward deferred)" : ""}`);
+      clearPersonaPreview();
       if (onRefreshFighter && fighterId) await onRefreshFighter(fighterId);
       await onAfterAction?.();
       setWizard(false);
@@ -81,7 +106,7 @@ export function DocumentaryTab({ fighter, hub, onMessage, onRefreshFighter, onAf
     } finally {
       setBusy(false);
     }
-  }, [fighterId, focus, tone, timing, onMessage, onRefreshFighter, onAfterAction]);
+  }, [fighterId, focus, tone, timing, onMessage, onRefreshFighter, onAfterAction, clearPersonaPreview]);
 
   // ── LOCKED ──
   if (status === "locked") {
@@ -109,8 +134,8 @@ export function DocumentaryTab({ fighter, hub, onMessage, onRefreshFighter, onAf
         <div>
           <div className="media-slbl media-slbl--muted">{t("media.documentary.previewLabel")}</div>
           <div className="media-doc-steps">
-            <StepColumn num={1} titleKey="media.documentary.focus" options={FOCUS} value={FOCUS[0].key} readOnly />
-            <StepColumn num={2} titleKey="media.documentary.tone" options={TONE} value={TONE[1].key} readOnly />
+            <StepColumn num={1} titleKey="media.documentary.focus" options={FOCUS} value={FOCUS[0].key} readOnly nudges={doc.focusNudges} />
+            <StepColumn num={2} titleKey="media.documentary.tone" options={TONE} value={TONE[1].key} readOnly nudges={doc.toneNudges} />
             <StepColumn num={3} titleKey="media.documentary.releaseTiming" options={TIMING} value={TIMING[2].key} readOnly />
           </div>
         </div>
@@ -189,10 +214,17 @@ export function DocumentaryTab({ fighter, hub, onMessage, onRefreshFighter, onAf
     <div className="media-pane">
       <div className="media-slbl">{t("media.documentary.wizardLabel")}</div>
       <div className="media-doc-steps">
-        <StepColumn num={1} titleKey="media.documentary.focus" options={FOCUS} value={focus} onPick={setFocus} />
-        <StepColumn num={2} titleKey="media.documentary.tone" options={TONE} value={tone} onPick={setTone} />
+        <StepColumn num={1} titleKey="media.documentary.focus" options={FOCUS} value={focus} onPick={setFocus} nudges={doc.focusNudges} />
+        <StepColumn num={2} titleKey="media.documentary.tone" options={TONE} value={tone} onPick={setTone} nudges={doc.toneNudges} />
         <StepColumn num={3} titleKey="media.documentary.releaseTiming" options={TIMING} value={timing} onPick={setTiming} />
       </div>
+
+      <PersonaPreviewPill
+        loading={personaPreviewLoading}
+        preview={personaPreview}
+        subjectKey="media.persona.preview.subjects.documentary"
+      />
+
       <div className="media-record-row">
         <button type="button" className="media-mini-btn" onClick={() => setWizard(false)} disabled={busy}>{t("common.cancel")}</button>
         <button type="button" className="media-record-btn" disabled={!ready || busy} onClick={submit}>

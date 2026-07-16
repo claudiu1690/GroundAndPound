@@ -35,6 +35,8 @@ const CLIENT_400_MESSAGES = new Set([
     "Unknown appearance type",
     "Active sponsor required for this appearance",
     "Tone required (TRASH or RESPECT)",
+    // persona
+    "Invalid persona preview request",
 ]);
 
 function handleError(res, err) {
@@ -100,6 +102,14 @@ async function postAppearance(req, res) {
     }
 }
 
+async function postPersonaPreview(req, res) {
+    try {
+        res.json(await mediaHubService.previewPersona(req.params.fighterId, req.body || {}));
+    } catch (err) {
+        handleError(res, err);
+    }
+}
+
 async function getRivalry(req, res) {
     try {
         res.json(await mediaHubService.getRivalry(req.params.fighterId));
@@ -126,6 +136,7 @@ module.exports = {
     postDocumentary,
     getAppearances,
     postAppearance,
+    postPersonaPreview,
     getRivalry,
     getArchive,
 };

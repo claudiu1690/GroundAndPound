@@ -1,8 +1,12 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Mic, Lock, Disc3, CalendarDays, Flame, Heart } from "lucide-react";
 import { api } from "../../../api";
 import { segmentMeta, formatListeners, daysAgo } from "../mediaFormat";
 import { TargetPicker } from "../TargetPicker";
+import { PersonaNudgeChip } from "../PersonaNudgeChip";
+import { PersonaPreviewPill } from "../PersonaPreviewPill";
+import { usePersonaPreview } from "../../../hooks/usePersonaPreview";
+import { emitPersonaMoments } from "../personaMoments";
 import { t } from "@/lib/i18n";
 
 /** Build the reward label string straight from the catalog row. */
@@ -36,11 +40,14 @@ function SegmentCard({ seg, selected, disabled, onToggle, children }) {
           <span className="media-seg-reward" style={{ color: rewardColor(seg) }}>{rewardLabel(seg)}</span>
         </div>
         {seg.description && <div className="media-seg-desc">{seg.description}</div>}
-        {locked ? (
-          <span className="media-seg-tag lock"><Lock size={10} /> {seg.lockReason || "Locked"}</span>
-        ) : (
-          <span className={`media-seg-tag ${meta.tagClass}`}><Icon size={10} /> {meta.tagLabel}</span>
-        )}
+        <div className="media-seg-tag-row">
+          {locked ? (
+            <span className="media-seg-tag lock"><Lock size={10} /> {seg.lockReason || "Locked"}</span>
+          ) : (
+            <span className={`media-seg-tag ${meta.tagClass}`}><Icon size={10} /> {meta.tagLabel}</span>
+          )}
+          <PersonaNudgeChip nudge={seg.nudge} />
+        </div>
         {children}
       </div>
     </div>
@@ -98,6 +105,26 @@ export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNaviga
   }, [needsTarget, targets]);
   const readyToRecord = canRecord && selected.length === 2 && allTargetsSet && !duplicateTarget && !busy;
 
+  // Persona preview — debounced on segment/target selection. Sends whatever
+  // targets are filled so far; if a required target is still missing the
+  // preview call may 400, which the hook surfaces as "no pill" (not an error banner).
+  const { preview: personaPreview, loading: personaPreviewLoading, run: runPersonaPreview, clear: clearPersonaPreview } = usePersonaPreview(fighterId);
+  useEffect(() => {
+    if (!fighterId || selected.length === 0) { clearPersonaPreview(); return; }
+    const body = { segments: [...selected], targets: {} };
+    for (const key of selected) {
+      const seg = segments.find((s) => s.key === key);
+      if (seg?.needsTarget) {
+        const tt = targets[key];
+        if (tt?.opponentId) {
+          body.targets[key] = { opponentId: tt.opponentId };
+          if (tt.tone) body.targets[key].tone = tt.tone;
+        }
+      }
+    }
+    runPersonaPreview(body);
+  }, [fighterId, selected, targets, segments, runPersonaPreview, clearPersonaPreview]);
+
   const record = useCallback(async () => {
     if (!fighterId || !readyToRecord) return;
     setBusy(true);
@@ -109,6 +136,7 @@ export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNaviga
         if (t.tone) body.targets[s.key].tone = t.tone;
       }
       const res = await api.recordPodcast(fighterId, body);
+      emitPersonaMoments(res.personaNudge);
       const ep = res.episode || {};
       const reward = [];
       if (ep.fameEarned) reward.push(`+${ep.fameEarned} fame`);
@@ -116,6 +144,7 @@ export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNaviga
       onMessage?.(`${ep.title || `Episode ${ep.episodeNumber}`} recorded — ${reward.join(" · ") || "aired"}`);
       setSelected([]);
       setTargets({});
+      clearPersonaPreview();
       if (onRefreshFighter && fighterId) await onRefreshFighter(fighterId);
       await onAfterAction?.();
     } catch (e) {
@@ -123,7 +152,7 @@ export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNaviga
     } finally {
       setBusy(false);
     }
-  }, [fighterId, readyToRecord, selected, needsTarget, targets, onMessage, onRefreshFighter, onAfterAction]);
+  }, [fighterId, readyToRecord, selected, needsTarget, targets, onMessage, onRefreshFighter, onAfterAction, clearPersonaPreview]);
 
   const listeners = podcast.listenersFormatted
     ?? formatListeners(hub?.listeners ?? hub?.listenersFormatted ?? 0);
@@ -198,6 +227,13 @@ export function PodcastTab({ fighter, hub, onMessage, onRefreshFighter, onNaviga
           })}
         </div>
       </div>
+
+      {/* Persona preview */}
+      <PersonaPreviewPill
+        loading={personaPreviewLoading}
+        preview={personaPreview}
+        subjectKey="media.persona.preview.subjects.podcast"
+      />
 
       {/* Record row */}
       <div className="media-record-row">

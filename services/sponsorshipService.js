@@ -15,6 +15,7 @@ const {
 } = require("../consts/sponsorClauses");
 const { tierRank } = require("../consts/notorietyConfig");
 const notorietyService = require("./notorietyService");
+const personaService = require("./personaService");
 // Safe top-level require: shopService does NOT require sponsorshipService, so no circular dep.
 const { grantEnergyDrinks } = require("./shopService");
 // Shared rotation PRNG helpers (extracted; behavior-preserving).
@@ -27,7 +28,10 @@ function currentRotation() {
 
 function maxSlotsFor(fighter) {
     const tier = fighter?.notoriety?.peakTier || "UNKNOWN";
-    return SPONSOR_SLOTS_BY_TIER[tier] ?? 0;
+    const base = SPONSOR_SLOTS_BY_TIER[tier] ?? 0;
+    // Persona (People's Champ, heat≥70) grants +1 sponsor slot.
+    const bonus = fighter ? (personaService.getModifiers(fighter).sponsorSlotBonus || 0) : 0;
+    return base + bonus;
 }
 
 function offerMeetsFighter(fighter, offer) {
@@ -67,13 +71,20 @@ async function listAvailableOffers(fighterId) {
     const seed = hashSeed(`${fighter._id}:${rotation}`);
     const shuffled = seededShuffle(eligible, seed).slice(0, AVAILABLE_OFFERS_PER_WEEK);
 
+    // Persona payout adjustment — the card must advertise what the fighter will
+    // actually be PAID (resolveAfterFight scales payouts by sponsorPayoutFrac).
+    const personaPayout = personaService.priceAdjust(fighter, "sponsorPayoutFrac");
+    const payoutFrac = personaService.getModifiers(fighter).sponsorPayoutFrac || 0;
+
     return {
         rotation,
         rotationEndsAt,
         offers: shuffled.map((o) => ({
             ...o,
             clauseText: describeClause(o.clause.type, o.clause),
+            ...adjustedPayoutFields(o, payoutFrac),
         })),
+        personaPayout,
         slots: {
             used: activeIds.length,
             max: maxSlotsFor(fighter),
@@ -81,9 +92,30 @@ async function listAvailableOffers(fighterId) {
     };
 }
 
+/**
+ * Persona-adjusted display payouts for an offer/contract row. `base` fields stay
+ * untouched (they're the contract's booked terms); `*Adjusted` is what the
+ * fighter is actually paid at their current persona. Empty when no adjustment.
+ */
+function adjustedPayoutFields(row, payoutFrac) {
+    if (!payoutFrac) return {};
+    const scale = (v) => Math.round((v || 0) * (1 + payoutFrac));
+    return {
+        rewardPerFightAdjusted: scale(row.rewardPerFight),
+        rewardBonusAdjusted: scale(row.rewardBonus),
+    };
+}
+
 async function listActive(fighterId) {
     const rows = await Sponsorship.find({ fighterId, status: "active" }).sort({ createdAt: -1 }).lean();
-    return rows.map(decorate);
+    const fighter = await Fighter.findById(fighterId).lean();
+    const payoutFrac = fighter ? (personaService.getModifiers(fighter).sponsorPayoutFrac || 0) : 0;
+    const personaPayout = fighter ? personaService.priceAdjust(fighter, "sponsorPayoutFrac") : null;
+    return rows.map((row) => ({
+        ...decorate(row),
+        ...adjustedPayoutFields(row, payoutFrac),
+        personaPayout,
+    }));
 }
 
 async function listHistory(fighterId, limit = 20) {
@@ -213,6 +245,10 @@ async function resolveAfterFight(fighter, fight) {
     const events = [];
     let ironDelta = 0;
 
+    // Persona (Role Model +10% / Villain −20% / Boogeyman −20%) sponsor-payout fraction.
+    const sponsorPayoutFrac = personaService.getModifiers(fighter).sponsorPayoutFrac || 0;
+    const scalePayout = (v) => Math.round(v * (1 + sponsorPayoutFrac));
+
     for (const contract of contracts) {
         const prevProgress = contract.progress || {};
         const nextProgress = applyFightToProgress(contract.clause.type, prevProgress, ctx);
@@ -222,14 +258,16 @@ async function resolveAfterFight(fighter, fight) {
 
         // Per-fight payout (pay for attending the dance, even if it's the break fight).
         if (contract.rewardPerFight > 0) {
-            ironDelta += contract.rewardPerFight;
-            contract.totals.ironEarned += contract.rewardPerFight;
+            const paid = scalePayout(contract.rewardPerFight);
+            ironDelta += paid;
+            contract.totals.ironEarned += paid;
         }
 
         if (status === "complete") {
             if (contract.rewardBonus > 0) {
-                ironDelta += contract.rewardBonus;
-                contract.totals.ironEarned += contract.rewardBonus;
+                const paidBonus = scalePayout(contract.rewardBonus);
+                ironDelta += paidBonus;
+                contract.totals.ironEarned += paidBonus;
             }
             if (contract.fameBonusOnComplete > 0) {
                 notorietyService.applyNotorietyDelta(fighter, contract.fameBonusOnComplete, {

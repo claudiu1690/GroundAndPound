@@ -115,6 +115,10 @@ async function getInterviewCandidates(req, res) {
     try {
         const { fighterId, excludeOpponentId } = req.query;
         if (!fighterId) return res.status(400).json({ message: "fighterId is required" });
+        // Ownership guard — a caller may only read their own callout candidates.
+        if (String(fighterId) !== String(req.user && req.user.fighterId)) {
+            return res.status(403).json({ message: "Forbidden — you can only act on your own fighter" });
+        }
         const candidates = await interviewService.listCalloutCandidates(fighterId, excludeOpponentId || null);
         res.json({ candidates });
     } catch (err) {
@@ -130,6 +134,11 @@ async function postInterview(req, res) {
         const { fighterId, choice, targetOpponentId } = req.body;
         if (!fighterId || !choice) {
             return res.status(400).json({ message: "fighterId and choice are required" });
+        }
+        // Ownership guard — a caller may only resolve their own fighter's interview
+        // (this mutates persona/fame/flags/iron). 403 on mismatch.
+        if (String(fighterId) !== String(req.user && req.user.fighterId)) {
+            return res.status(403).json({ message: "Forbidden — you can only act on your own fighter" });
         }
         const result = await interviewService.resolveInterview({
             fighterId, fightId, choice, targetOpponentId: targetOpponentId || null,

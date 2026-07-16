@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, Trophy } from "lucide-react";
 import { SESSION_META } from "./sessionMeta";
+import { PersonaPriceTag } from "../media/PersonaPriceTag";
 import { t } from "@/lib/i18n";
 
 function rankUnlockText(r) {
@@ -65,7 +66,8 @@ export function GymStandingPanel({ gym, onRankUp, otherSessions }) {
                                         const winLabel = gym.relevantWinTypes?.length === 1
                                             ? t("gym.standing.winsOf", { type: gym.relevantWinTypes[0] })
                                             : t("gym.standing.winsGeneric");
-                                        const ironCost = next.requirements.ironCost || 0;
+                                        // Persona-adjusted rank-up cost (backend charges this exact number).
+                                        const ironCost = next.ironCost ?? (next.requirements.ironCost || 0);
                                         const tPct = tReq > 0 ? Math.min(100, Math.round((gym.progress.trainingSessions / tReq) * 100)) : 100;
                                         const wPct = wReq > 0 ? Math.min(100, Math.round((gym.progress.relevantWins / wReq) * 100)) : 100;
                                         return (
@@ -97,6 +99,12 @@ export function GymStandingPanel({ gym, onRankUp, otherSessions }) {
                                                         >
                                                             <Trophy size={12} /> {t("gym.rankUp.rankUpBtn", { cost: ironCost.toLocaleString() })}
                                                         </button>
+                                                        {next.personaCost && (
+                                                            <div className="persona-price-row">
+                                                                <s className="persona-price-base">${(next.ironCostBase || 0).toLocaleString()}</s>
+                                                                <PersonaPriceTag tag={next.personaCost} />
+                                                            </div>
+                                                        )}
                                                         {rankUpError && <div className="rank-up-error">{rankUpError}</div>}
                                                     </>
                                                 )}
