@@ -204,6 +204,10 @@ async function listFighters(limit = 50) {
 function toPublicFighter(fighter) {
     notorietyService.ensureNotorietyShape(fighter);
     const out = fighter.toObject ? fighter.toObject() : { ...fighter };
+    // Never ship the ladder-bot flag to a client. GET /fighters/:id has no ownFighter
+    // middleware, so ANY authed player can read any fighter through here — leaving this in
+    // hands out a free "which ladder opponents are bots" oracle.
+    delete out.isPvpBot;
     out.notoriety = notorietyService.buildNotorietyPublicState(fighter);
     out.injuryLockedStats = getInjuryLockedStats(fighter);
     // Persona (Role Model) hospital discount: the injury card prices shown in the

@@ -33,6 +33,7 @@ const pvpRivalryService = require("./pvpRivalryService");
 const pvpBadgeService = require("./pvpBadgeService");
 const energyService = require("./energyService");
 const { computeDp, applyDpAndDivision } = require("./pvpDpService");
+const { BOT_MAX_DP } = require("../consts/pvpBotConfig");
 const {
     GAMEPLAN_WEIGHTS,
     GAMEPLAN_STRATEGY,
@@ -184,6 +185,23 @@ async function resolveFightForAttacker(attackerFighterId, body = {}) {
     }
 }
 
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * BOT INVARIANT (read before touching any `isPvpBot` branch below)
+ *
+ * Every bot-specific branch in this function keys off `attacker.isPvpBot` /
+ * `defender.isPvpBot` read from the DB-LOADED Fighter document — NEVER off a flag,
+ * option or body field supplied by the caller.
+ *
+ * This is what makes bot treatment SELF-AUTHENTICATING: a human's token resolves to a
+ * human Fighter doc, so no request — however hostile, however crafted — can talk its way
+ * into the bot paths (DP ceiling, badge skip, zero stat XP). Equally, pvpBotService does
+ * not need to ask for bot treatment; it just calls resolveFight like anyone else.
+ *
+ * If you ever add a `{ isBot: true }` option to this function, you have created a
+ * privilege-escalation bug. Don't.
+ * ════════════════════════════════════════════════════════════════════════════
+ */
 async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) {
     const now = new Date();
 
@@ -373,7 +391,12 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         outcomePerspective: engine.outcome,
         endingHealth: attackerEndHealth,
         injuryRiskMult: attackerRiskMult,
-        xpMultiplier: xpPenaltyMult,
+        // BOT BRANCH (c): bots bank ZERO stat XP. A bot's OVR is fixed for life — it is
+        // the roster's balance contract (see consts/pvpBotRoster.js). Bots attack ~daily
+        // AND defend constantly, so any XP at all would compound them into Elite-tier
+        // stats within weeks and quietly break every OVR-based matchmaking bracket.
+        // They still take HP damage and injuries — that is intended and human-like.
+        xpMultiplier: attacker.isPvpBot ? 0 : xpPenaltyMult,
         collagenBuff: null,
     });
 
@@ -634,7 +657,10 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         outcomePerspective: defenderPerspective,
         endingHealth: defenderEndHealth,
         injuryRiskMult: defenderRiskMult,
-        xpMultiplier: xpPenaltyMult,
+        // BOT BRANCH (c), defender side. This site matters MORE than the attacker one:
+        // a bot is attacked far more often than it attacks, so leaving this at
+        // xpPenaltyMult would grow bot OVR purely from being on the ladder.
+        xpMultiplier: defender.isPvpBot ? 0 : xpPenaltyMult,
         collagenBuff: null,
     });
     const defenderMutation = defenderCons.mutation;
@@ -692,8 +718,29 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     const rankBefore = await fighterRank(attackerRecord);
     const attackerStreakBefore = attackerRecord.winStreak;
 
+    // ── BOT BRANCH (a): DP ceiling — ATTACKER ONLY. ──────────────────────────
+    // A bot can climb all of Challenger but can never reach Elite. Clamping here — BEFORE
+    // applyDpAndDivision — is load-bearing, not stylistic:
+    //   · applyDpAndDivision recomputes division from the post-add DP, so a clamp applied
+    //     afterwards would let the bot enter the promote branch (and emit a promotion) for
+    //     an instant before being walked back.
+    //   · peakDp is written inside applyDpAndDivision; clamping first keeps it <= BOT_MAX_DP
+    //     forever instead of banking a peak the bot never actually held.
+    //   · The PVPFight row's dpBefore/dpChange/dpAfter stay internally consistent, because
+    //     the clamped value is the ONE number used for the record, the fight doc, the feed
+    //     and the DTO below.
+    // A bot as DEFENDER needs no clamp: defenderDpChange above is 0 (draw / defense held)
+    // or negative (-28 on a loss). A defending bot can never gain DP by construction.
+    let effectiveAttackerDpChange = attackerDp.dpChange;
+    if (attacker.isPvpBot && effectiveAttackerDpChange > 0) {
+        effectiveAttackerDpChange = Math.max(
+            0,
+            Math.min(effectiveAttackerDpChange, BOT_MAX_DP - attackerRecord.dp)
+        );
+    }
+
     // ── Apply DP + division to both records. ─────────────────────────────────
-    const attackerApply = applyDpAndDivision(attackerRecord, attackerDp.dpChange, { isWin: attackerWon });
+    const attackerApply = applyDpAndDivision(attackerRecord, effectiveAttackerDpChange, { isWin: attackerWon });
     const defenderApply = applyDpAndDivision(defenderRecord, defenderDpChange, { isWin: false });
 
     // ── Counters / streaks. ──────────────────────────────────────────────────
@@ -758,10 +805,15 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     await attackerRecord.save();
     await defenderRecord.save();
     // Attacker badges must ride attacker.save() — mutate badgesEarned BEFORE saving.
-    pvpBadgeService.evaluatePvpFightBadges(attacker, attackerRecord, {
-        ...pvpBadgeCtx,
-        viewerIsAttacker: true,
-    });
+    // BOT BRANCH (b): bots earn no badges. Badges are a player-progression currency (they
+    // gate banner pieces + show on public profiles); a bot accumulating them would both be
+    // meaningless and make the roster's banner rules (consts/pvpBotRoster.js) a lie.
+    if (!attacker.isPvpBot) {
+        pvpBadgeService.evaluatePvpFightBadges(attacker, attackerRecord, {
+            ...pvpBadgeCtx,
+            viewerIsAttacker: true,
+        });
+    }
     // Attacker: consequences already applied in-place; the per-attacker Redis lock makes
     // this save race-free.
     await attacker.save();
@@ -778,10 +830,16 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
                 fightConsequenceService.applyConsequenceMutation(fresh, defenderMutation);
                 // Defender badges must mutate the FRESH (persisted) doc, not the stale
                 // in-memory `defender`, or they would never persist.
-                pvpBadgeService.evaluatePvpFightBadges(fresh, defenderRecord, {
-                    ...pvpBadgeCtx,
-                    viewerIsAttacker: false,
-                });
+                // BOT BRANCH (b), defender side. The guard reads `fresh.isPvpBot` — the
+                // reloaded doc inside this closure — NOT the stale outer `defender`. Same
+                // reason the badge write itself targets `fresh`: this closure re-runs on a
+                // version conflict, and the outer doc is not the one being saved.
+                if (!fresh.isPvpBot) {
+                    pvpBadgeService.evaluatePvpFightBadges(fresh, defenderRecord, {
+                        ...pvpBadgeCtx,
+                        viewerIsAttacker: false,
+                    });
+                }
             }
         );
     } catch (err) {
@@ -809,7 +867,8 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
             winnerId,
             loserId,
             method,
-            attackerDpChange: attackerDp.dpChange,
+            // Clamped value (bots only) — keeps dpBefore + dpChange = dpAfter true.
+            attackerDpChange: effectiveAttackerDpChange,
             defenderDpChange,
             attackerDpBefore,
             attackerDpAfter: attackerRecord.dp,
@@ -898,7 +957,7 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
         attackerWon,
         isDraw,
         method,
-        attackerDpChange: attackerDp.dpChange,
+        attackerDpChange: effectiveAttackerDpChange,
         defenderDpChange,
         promoted: attackerApply.promoted,
         rivalryFlags,
@@ -928,7 +987,7 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
             name: attackerName,
             dpBefore: attackerDpBefore,
             dpAfter: attackerRecord.dp,
-            dpChange: attackerDp.dpChange,
+            dpChange: effectiveAttackerDpChange,
             divisionBefore: attackerDivisionBefore,
             divisionAfter: attackerRecord.division,
             division: attackerRecord.division,

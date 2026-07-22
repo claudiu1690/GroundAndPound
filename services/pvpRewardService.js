@@ -142,6 +142,18 @@ async function finalizeSeason(season) {
             continue;
         }
 
+        // Ladder bots take NOTHING out of the season: no iron/fame/drinks, no badges, no
+        // Hall of Fame entry, no first-season bonus. They exist to give players opponents,
+        // not to draw from the economy or occupy a HoF slot a real player earned.
+        // Marked rewarded (same as the fighter-gone branch) purely so a re-finalize does
+        // not re-walk them.
+        if (fighter.isPvpBot) {
+            record.rewardedAt = new Date();
+            // eslint-disable-next-line no-await-in-loop
+            await record.save().catch(() => {});
+            continue;
+        }
+
         const badgeId = isBelt
             ? badgeIdFor("belt", season.seasonNumber, season.weightClass)
             : (reward.badge ? badgeIdFor(record.division, season.seasonNumber, season.weightClass) : null);

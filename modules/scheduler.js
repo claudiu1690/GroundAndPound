@@ -10,6 +10,7 @@ const injuryHealService = require("../services/injuryHealService");
 const accountService = require("../services/accountService");
 const pvpDecayService = require("../services/pvpDecayService");
 const pvpSeasonService = require("../services/pvpSeasonService");
+const pvpBotService = require("../services/pvpBotService");
 
 /**
  * Build the connection config BullMQ uses for every Queue and Worker.
@@ -159,6 +160,22 @@ const pvpSeasonTransitionWorker = new Worker(
 pvpSeasonTransitionWorker.on("error", (err) => console.error("[PVP transition] Worker error:", err));
 pvpSeasonTransitionWorker.on("failed", (job, err) => console.error("[PVP transition] Job failed:", err));
 
+// ── PVP bot activity — hourly tick; each DUE bot gets exactly one fight ──────
+// Idempotency/retry: the job takes no arguments and carries NO `attempts`. Due-ness lives
+// in PvpBotState.nextActivityAt, so a failed tick needs no retry — the next hourly tick
+// picks up anything still due. Adding retries would only risk re-running a partial sweep.
+const pvpBotActivityQueue = new Queue("pvp-bot-activity", { connection: QUEUE_CONNECTION });
+const pvpBotActivityWorker = new Worker(
+    "pvp-bot-activity",
+    async () => {
+        const { due, fought, skipped } = await pvpBotService.runBotActivityTick();
+        if (due > 0) console.log(`[PVP bots] ${due} bot(s) due — ${fought} fought, ${skipped} skipped.`);
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+pvpBotActivityWorker.on("error", (err) => console.error("[PVP bots] Worker error:", err));
+pvpBotActivityWorker.on("failed", (job, err) => console.error("[PVP bots] Job failed:", err));
+
 async function startEnergyIncrementScheduler() {
     await ensureRedisConnected();
 
@@ -239,7 +256,16 @@ async function startEnergyIncrementScheduler() {
         removeOnComplete: true,
     });
 
-    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h, guest purge: 24h, pvp decay: 0 0 UTC, pvp season transition: every 10m).");
+    // PVP bot activity — top of every hour UTC. The tick only acts on bots whose
+    // nextActivityAt has passed (a cheap indexed query otherwise), so hourly is just the
+    // resolution at which a bot's ~30-48h personal timer can fire.
+    await pvpBotActivityQueue.add("tick", {}, {
+        repeat: { pattern: "0 * * * *", tz: "UTC" },
+        jobId: "pvp-bot-activity-tick",
+        removeOnComplete: true,
+    });
+
+    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h, guest purge: 24h, pvp decay: 0 0 UTC, pvp season transition: every 10m, pvp bot activity: hourly UTC).");
 }
 
 module.exports = {
@@ -252,6 +278,7 @@ module.exports = {
     guestPurgeQueue,
     pvpDecayQueue,
     pvpSeasonTransitionQueue,
+    pvpBotActivityQueue,
     energyWorker,
     energySyncWorker,
     notorietyDecayWorker,
@@ -260,5 +287,6 @@ module.exports = {
     guestPurgeWorker,
     pvpDecayWorker,
     pvpSeasonTransitionWorker,
+    pvpBotActivityWorker,
     redis,
 };
