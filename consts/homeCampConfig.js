@@ -352,7 +352,6 @@ const RARITY_GATES = Object.freeze({
     LEGENDARY: Object.freeze({ minTier: 4, minFameTier: "RISING_STAR" }),
 });
 /** Firing locks the freed slot for a week — a fire/hire churn loop is not a strategy. */
-const SLOT_COOLDOWN_DAYS = 7;
 /**
  * Move drops from a COACH drill prefer that coach's own teach pool. 1.0 = "always prefer the
  * pool when the rolled rarity allows it, otherwise fall back to the catalog"
@@ -1030,7 +1029,6 @@ module.exports = {
     MARKET_NAME_REDRAW_TRIES,
     MARKET_RARITY_ODDS,
     RARITY_GATES,
-    SLOT_COOLDOWN_DAYS,
     FLAGSHIP_POOL_BIAS,
     LEGENDARY_EXCLUSIVE_SESSIONS,
     // PHASE 2 — the masterclass + the teach channel

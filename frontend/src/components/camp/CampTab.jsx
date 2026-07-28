@@ -88,7 +88,7 @@ function describeMarketError(err) {
 /**
  * POST /home-camp/:fighterId/market/:candidateId/hire — errors IN THE ORDER
  * the backend validates them (contract §3.3): market_locked, candidate_expired,
- * candidate_not_found, slot_cooldown, no_slot, archetype_taken,
+ * candidate_not_found, no_slot, archetype_taken,
  * archetype_locked, insufficient_cash, 404s.
  */
 function describeHireError(err) {
@@ -101,8 +101,6 @@ function describeHireError(err) {
       return err.message || t("yourCamp.errors.candidateExpired");
     case "candidate_not_found":
       return err.message || t("yourCamp.errors.candidateNotFound");
-    case "slot_cooldown":
-      return t("yourCamp.errors.slotCooldown", { days: body.daysLeft ?? "?" });
     case "no_slot":
       return err.message || t("yourCamp.errors.noSlot");
     case "archetype_taken":
@@ -178,7 +176,7 @@ function describeDeepCleanError(err) {
 /**
  * Builds the fire-confirm preview (Phase 1, F3). Phase 1 has no "preview a
  * fire" endpoint — the real per-fire numbers (moraleHitTo, condition
- * before/after, cooldown) only exist in the DELETE response. This preview
+ * before/after) only exist in the DELETE response. This preview
  * uses what the currently-loaded CampState already tells us honestly:
  *  - the coach's own rank (really being lost — read straight off the coach),
  *  - the remaining coaches BY NAME, using each one's own visible
@@ -188,7 +186,7 @@ function describeDeepCleanError(err) {
  *  - condition before (from `condition.value`, live) and the predicted after.
  * The -10/-15/7-day figures themselves are the fixed, non-per-request
  * constants given directly in the architect contract (§2.4 MORALE_FIRE_HIT_OTHERS,
- * CONDITION_FIRE_HIT, SLOT_COOLDOWN_DAYS) — copy, not a re-derived game number.
+ * CONDITION_FIRE_HIT) — copy, not a re-derived game number.
  * The ACTUAL post-fire numbers (which is what the success message shows)
  * come straight from the DELETE response, never from this preview.
  */
@@ -713,7 +711,6 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
             value: t("yourCamp.fire.conditionHitVal", { before: firePreview.conditionBefore, after: firePreview.conditionAfter }),
             tone: "bad",
           },
-          { label: t("yourCamp.fire.cooldown"), value: t("yourCamp.fire.cooldownVal"), tone: "warn" },
         ] : []}
       />
 

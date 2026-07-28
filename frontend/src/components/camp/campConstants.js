@@ -91,7 +91,6 @@ const BLOCKED_REASON_TONE = {
   no_slot: "bad",
   archetype_taken: "warn",
   archetype_locked: "warn",
-  slot_cooldown: "warn",
 };
 export function blockedReasonTone(reason) {
   return BLOCKED_REASON_TONE[reason] || "warn";

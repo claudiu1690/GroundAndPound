@@ -338,7 +338,7 @@ function deriveInitialCampState(fighter, gymSlugById = {}) {
             lastSessionDayKey: null,
         },
         coaches: [starter],
-        market: { weekIndex: -1, candidates: [], slotCooldownUntil: null },
+        market: { weekIndex: -1, candidates: [] },
         disciplineFamiliarity,
         lastWeeklyTickIndex: -1,
         nextWageDebitAt: null,
@@ -743,9 +743,8 @@ function buildNeeds(camp, fighter, coachViews, marketView = null) {
     }
 
     // MARKET_RESET — only when there is something the player can actually DO: an open market,
-    // candidates in it, a free slot, and no cooldown running.
+    // candidates in it, and a free slot.
     if (marketView && marketView.open && marketView.candidateCount > 0
-        && !marketView.cooldownActive
         && (camp.coaches || []).length < marketView.slotsUnlocked) {
         const days = marketView.resetsInDays;
         needs.push({
@@ -819,8 +818,6 @@ function buildCampState(fighter, camp) {
         const t = traitDef(c.traitKey);
         return !!(t && t.marketCandidateBonus);
     }) ? 1 : 0;
-    const marketCooldownUntil = camp.market?.slotCooldownUntil ? new Date(camp.market.slotCooldownUntil) : null;
-    const marketCooldownActive = !!marketCooldownUntil && marketCooldownUntil.getTime() > Date.now();
     const marketResetsAt = homeCampWeekEnd(wk);
     const candidateCount = !marketOpen
         ? 0
@@ -892,7 +889,6 @@ function buildCampState(fighter, camp) {
         open: marketOpen,
         candidateCount,
         resetsInDays: state.market.resetsInDays,
-        cooldownActive: marketCooldownActive,
         slotsUnlocked: tierCfg.slots,
     });
     return state;

@@ -52,7 +52,6 @@ const {
     MORALE_START,
     MORALE_FIRE_HIT_OTHERS,
     RARITY_GATES,
-    SLOT_COOLDOWN_DAYS,
     TRAIT_KEYS,
     effectiveTier,
     homeCampWeekIndex,
@@ -336,11 +335,7 @@ function candidateTeachList(candidate) {
  * the button can explain itself before the player clicks, in the SAME precedence order the
  * endpoint validates in, so the card and the error can never disagree.
  */
-function candidateBlock(candidate, { cooldownActive, cooldownUntil, unlocked, filled, rosterDomains, cash }) {
-    if (cooldownActive) {
-        const daysLeft = Math.max(1, Math.ceil((cooldownUntil.getTime() - Date.now()) / DAY_MS));
-        return { reason: "slot_cooldown", label: `The room is still settling — ${daysLeft} day${daysLeft === 1 ? "" : "s"} left` };
-    }
+function candidateBlock(candidate, { unlocked, filled, rosterDomains, cash }) {
     if (filled >= unlocked) {
         return { reason: "no_slot", label: `All ${unlocked} coach slot${unlocked === 1 ? "" : "s"} are full` };
     }
@@ -418,13 +413,9 @@ async function getMarketState(fighterId) {
 
     const tierCfg = CAMP_TIERS[tier] || CAMP_TIERS[1];
     const now = Date.now();
-    const cooldownUntil = camp.market.slotCooldownUntil ? new Date(camp.market.slotCooldownUntil) : null;
-    const cooldownActive = !!cooldownUntil && cooldownUntil.getTime() > now;
     const resetsAt = homeCampWeekEnd(wk);
 
     const ctx = {
-        cooldownActive,
-        cooldownUntil,
         unlocked: tierCfg.slots,
         filled: (camp.coaches || []).length,
         rosterDomains: new Set((camp.coaches || []).map((c) => c.archetype)),
@@ -442,11 +433,6 @@ async function getMarketState(fighterId) {
             resetsInDays: Math.max(0, Math.ceil((resetsAt.getTime() - now) / DAY_MS)),
             candidateCount: candidates.length,
             slots: { unlocked: ctx.unlocked, filled: ctx.filled, free: Math.max(0, ctx.unlocked - ctx.filled) },
-            cooldown: {
-                active: cooldownActive,
-                until: cooldownActive ? cooldownUntil.toISOString() : null,
-                daysLeft: cooldownActive ? Math.max(1, Math.ceil((cooldownUntil.getTime() - now) / DAY_MS)) : 0,
-            },
             cash: fighter.iron ?? 0,
             candidates,
         },
@@ -502,14 +488,6 @@ async function hireCandidate(fighterId, candidateId) {
     if (!candidate) throw campError("candidate_not_found", "That candidate is no longer available", 404);
 
     const now = new Date();
-    const cooldownUntil = camp.market.slotCooldownUntil ? new Date(camp.market.slotCooldownUntil) : null;
-    if (cooldownUntil && cooldownUntil.getTime() > now.getTime()) {
-        throw campError("slot_cooldown", "The room is still settling after your last change", 400, {
-            until: cooldownUntil.toISOString(),
-            daysLeft: Math.max(1, Math.ceil((cooldownUntil.getTime() - now.getTime()) / DAY_MS)),
-        });
-    }
-
     const tierCfg = CAMP_TIERS[tier] || CAMP_TIERS[1];
     const unlocked = tierCfg.slots;
     const filled = (camp.coaches || []).length;
@@ -682,7 +660,7 @@ async function hireCandidate(fighterId, candidateId) {
  *
  * TWO STEPS, and the split is deliberate:
  *   STEP 1 (ATOMIC, must succeed) carries the MUTEX and every EXPLOIT-RELEVANT cost —
- *          removal, −15 condition and the 7-day slot cooldown — in one conditional updateOne
+ *          removal and −15 condition — in one conditional updateOne
  *          guarded by `$expr size > 1`, which is what makes "the camp can never be coachless"
  *          true even under a double-click.
  *   STEP 2 (NON-FATAL) applies the social costs: −10 morale to the coaches who stayed, and
@@ -721,8 +699,6 @@ async function fireCoach(fighterId, coachId) {
     const now = new Date();
     const conditionBefore = Number(camp.condition?.value ?? CONDITION_MAX);
     const conditionAfter = Math.max(0, Math.min(CONDITION_MAX, conditionBefore + CONDITION_FIRE_HIT));
-    const cooldownUntil = new Date(now.getTime() + SLOT_COOLDOWN_DAYS * DAY_MS);
-
     const firedSnapshot = {
         coachId: String(coach._id),
         name: coach.name,
@@ -742,7 +718,6 @@ async function fireCoach(fighterId, coachId) {
             $pull: { coaches: { _id: coach._id } },
             $set: {
                 "condition.value": conditionAfter,
-                "market.slotCooldownUntil": cooldownUntil,
             },
         }
     );
@@ -801,7 +776,6 @@ async function fireCoach(fighterId, coachId) {
     if (conditionAfter !== conditionBefore) message += ` Camp condition ${conditionBefore} → ${conditionAfter}.`;
     if (moraleHitTo.length > 0) message += ` The room took it badly (${MORALE_FIRE_HIT_OTHERS} morale).`;
     if (familiarityBanked) message += ` His discipline experience stays banked for his replacement.`;
-    message += ` The slot reopens in ${SLOT_COOLDOWN_DAYS} days.`;
 
     return {
         fired: {
@@ -810,8 +784,6 @@ async function fireCoach(fighterId, coachId) {
             moraleHit: MORALE_FIRE_HIT_OTHERS,
             conditionBefore,
             conditionAfter,
-            cooldownUntil: cooldownUntil.toISOString(),
-            cooldownDays: SLOT_COOLDOWN_DAYS,
             familiarityBanked: familiarityBanked
                 ? { domain: familiarityBanked.domain, sessions: familiarityBanked.sessions, wins: familiarityBanked.wins }
                 : null,
