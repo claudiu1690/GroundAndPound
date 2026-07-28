@@ -858,6 +858,9 @@ function buildCampState(fighter, camp) {
             nextUnlocksAt: tierCfg.slots >= MAX_COACHES ? null : (NEXT_SLOT_UNLOCK_TIER[tier] || null),
         },
         coaches,
+        // Camp-wide passives (contract addendum). Rendered on the camp bar, not just on the
+        // providing coach's card — the effect applies to sessions run with ANY coach.
+        passives: coachService.buildCampPassives(camp.coaches),
         fallbackSession: {
             key: fb.key,
             name: fb.name,

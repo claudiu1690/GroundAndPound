@@ -577,11 +577,30 @@ function buildPassiveView(coach) {
     const rank = Math.max(1, Math.min(COACH_MAX_RANK, Number(coach.rank) || 1));
     const cut = CONDITIONING_INJURY_REDUCTION_BY_RANK[rank] || 0;
     if (!cut) return null;
+    const pct = Math.round(cut * 100);
     return {
         key: "CONDITIONING_INJURY",
         label: "Camp-wide",
-        effect: `-${Math.round(cut * 100)}% injury risk on every camp session, including sessions with your other coaches`,
+        // `short` exists so the camp bar never has to scrape a number back out of `effect`.
+        short: `-${pct}% injury`,
+        effect: `-${pct}% injury risk on every camp session, including sessions with your other coaches`,
     };
+}
+
+/**
+ * Every camp-wide passive currently active, with the coach providing it.
+ *
+ * Camp-level, NOT per-coach, because the effect is camp-level: it applies while you train
+ * with somebody else entirely. Hiding it behind "select the Conditioning coach" meant the
+ * one bonus that pays you for NOT using him was only visible when you were looking at him.
+ */
+function buildCampPassives(coaches) {
+    const out = [];
+    for (const c of (Array.isArray(coaches) ? coaches : [])) {
+        const p = buildPassiveView(c);
+        if (p) out.push({ ...p, coachId: String(c._id), coachName: c.name });
+    }
+    return out;
 }
 
 /** Tenure blurb for the coach card. */
@@ -1365,6 +1384,7 @@ module.exports = {
     promotionQuote,
     attemptPromotion,
     claimCoachPerk,
+    buildCampPassives,
     claimMissedTeach,
     resolveJoinedAtRank,
     incrementSessions,

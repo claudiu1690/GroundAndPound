@@ -2439,7 +2439,8 @@
       "xpPenalty": "−{pct}% training XP",
       "corner": "{name}'s corner",
       "wagesUnpaid": "{n} week{plural} of wages unpaid — condition and morale are draining",
-      "deepClean": "Deep Clean · ${cost}"
+      "deepClean": "Deep Clean · ${cost}",
+      "passiveTip": "{coach} keeps the whole camp safer: {effect}"
     },
     "needs": {
       "eyebrow": "Needs You Today"
