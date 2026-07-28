@@ -232,6 +232,43 @@ export const api = {
       body: JSON.stringify({ gymId }),
     }),
 
+  // ── Your Camp (Home Camp, Phase 0) ──────────────────────
+  // The only file that should call these is hooks/useHomeCamp.js.
+  getHomeCamp: (fighterId) => request(`/home-camp/${fighterId}`),
+  renameHomeCamp: (fighterId, name) =>
+    request(`/home-camp/${fighterId}/name`, {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    }),
+  trainHomeCamp: (fighterId, { coachId = null, drillKey, quantity = 1 } = {}) =>
+    request(`/home-camp/${fighterId}/train`, {
+      method: "POST",
+      body: JSON.stringify({ coachId, drillKey, quantity }),
+    }),
+  promoteHomeCampCoach: (fighterId, coachId) =>
+    request(`/home-camp/${fighterId}/coaches/${coachId}/promote`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  claimHomeCampCoachPerk: (fighterId, coachId) =>
+    request(`/home-camp/${fighterId}/coaches/${coachId}/claim-perk`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  // Your Camp (Phase 1) — Trainer Market, hire/fire, renovation, deep clean.
+  getHomeCampMarket: (fighterId) => request(`/home-camp/${fighterId}/market`),
+  hireHomeCampCoach: (fighterId, candidateId) =>
+    request(`/home-camp/${fighterId}/market/${candidateId}/hire`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  fireHomeCampCoach: (fighterId, coachId) =>
+    request(`/home-camp/${fighterId}/coaches/${coachId}`, { method: "DELETE" }),
+  renovateHomeCamp: (fighterId) =>
+    request(`/home-camp/${fighterId}/renovate`, { method: "POST", body: JSON.stringify({}) }),
+  deepCleanHomeCamp: (fighterId) =>
+    request(`/home-camp/${fighterId}/deep-clean`, { method: "POST", body: JSON.stringify({}) }),
+
   /** Top fighters by fame score (backend route name unchanged) */
   fameLeaderboard: () => request("/fighters/leaderboard/notoriety"),
 

@@ -13736,6 +13736,10 @@ code {
 .train-toast--badge { border-left: 3px solid var(--c-amber-bright); }
 .train-toast-badge-icon { color: var(--c-amber-bright); flex-shrink: 0; }
 
+/* Coach perk-claimed toast variant (Your Camp) */
+.train-toast--perk { border-left: 3px solid var(--gold-bright); background: rgba(212,168,32,.06); }
+.train-toast-perk-icon { color: var(--gold-bright); flex-shrink: 0; }
+
 /* ══════════════════════════════════════════════════════════════
    CAREER PAGE (Feed + Profile sub-tabs) — ported from the mockup.
    Local vars mirror the mockup palette so the ported classes map 1:1.
@@ -17034,4 +17038,867 @@ code {
   .faceoff-fighter--you, .faceoff-fighter--opp, .faceoff-vs, .faceoff-clash,
   .faceoff-trow, .faceoff-scout, .faceoff-prompt, .faceoff-go { animation: none; opacity: 1; transform: none; }
   .faceoff-clash { display: none; }
+}
+
+/* ============================================================
+   YOUR CAMP (Phase 0) — ported from the approved mock (variant F).
+   All colors map onto existing App.css tokens (see table in the PR notes);
+   every class is prefixed `yc-` and scoped under `.your-camp` so nothing
+   here can collide with the unrelated pre-fight "Fight Camp" CSS above
+   (.camp-tab, .camp-name, .camp-row, etc. — different feature, same word).
+   ============================================================ */
+
+.page-layout:has(.your-camp) { padding: 0; gap: 0; }
+
+.your-camp {
+  --yc-text-dim: #4A4A4A;
+  --yc-r-common: #888888;
+  --yc-r-uncommon: #22c55e;
+  --yc-r-rare: #3b82f6;
+  --yc-r-legendary: #D4A820;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 20px 44px;
+  color: var(--text);
+  font-family: var(--font-body);
+  /* .page-layout (the app shell) is display:flex; flex-direction:column, so
+     this is a flex ITEM. Flex items default to min-width:auto, meaning they
+     refuse to shrink below their max-content width — at a 390px viewport
+     that computed to 728px here, silently clipped by .main's
+     overflow-x:hidden. Every nested overflow-x:auto strip below (staff row,
+     dev-track) only works once this outer box is actually allowed to be
+     narrower than its content.
+     min-width:0 alone is NOT sufficient here — measured in-browser, the box
+     still resolved to 728px because on a column flex container the automatic
+     minimum applies to the main (vertical) axis, so nothing bounded the
+     horizontal one. The explicit width:100% is what actually pins the box to
+     the container. Keep both. */
+  min-width: 0;
+  width: 100%;
+}
+
+.your-camp .yc-state {
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.your-camp .yc-soft-error {
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  border: 1px solid rgba(200,16,46,0.35);
+  background: rgba(200,16,46,0.08);
+  color: #ff9a9a;
+  font-size: 12px;
+  border-radius: 6px;
+}
+.your-camp .yc-action-error {
+  margin-top: 14px;
+  padding: 8px 14px;
+  border: 1px solid rgba(200,16,46,0.35);
+  background: rgba(200,16,46,0.08);
+  color: #ff9a9a;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+/* ---------- shared bits ---------- */
+.your-camp .yc-eyebrow {
+  font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--red);
+}
+.your-camp .yc-divider { width: 1px; align-self: stretch; background: var(--c-border); margin: 0 4px; }
+
+/* Tooltips — owner pick 04-V1 ("game card", gold top edge). The bubble is a
+   REAL child element (.yc-tt), not ::after: a pseudo-element inherited the
+   label's UPPERCASE/letter-spacing/condensed font, which was the "unstyled
+   all caps" bug. The resets below are belt-and-braces on top of that. */
+.your-camp .yc-tip { position: relative; cursor: help; border-bottom: 1px dotted var(--text-muted); }
+.your-camp .yc-tt {
+  position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%) translateY(4px);
+  width: 200px; max-width: 60vw;
+  background: #1C1C1C; border: 1px solid var(--c-border); border-top: 2px solid var(--gold-bright);
+  border-radius: 6px; padding: 9px 11px;
+  font-family: var(--font-body); font-size: 11.5px; font-weight: 400; line-height: 1.5;
+  letter-spacing: 0; text-transform: none; text-align: left; color: #E8E8E8; white-space: normal;
+  opacity: 0; pointer-events: none; transition: opacity .12s ease, transform .12s ease; z-index: 80;
+  box-shadow: 0 10px 26px -6px rgba(0,0,0,.7);
+}
+.your-camp .yc-tt-title {
+  display: block; font-family: var(--font-display); font-weight: 800; font-size: 10.5px;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--gold-bright); margin-bottom: 3px;
+}
+.your-camp .yc-tip:hover .yc-tt, .your-camp .yc-tip.yc-tip-active .yc-tt { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* Tooltips in the camp banner open DOWNWARD — opening up sent them behind the
+   app's sticky header ("under the top bar"). Everywhere else, up is correct. */
+.your-camp .yc-bar .yc-tt { bottom: auto; top: calc(100% + 8px); transform: translateX(-50%) translateY(-4px); }
+.your-camp .yc-bar .yc-tip:hover .yc-tt, .your-camp .yc-bar .yc-tip.yc-tip-active .yc-tt { transform: translateX(-50%) translateY(0); }
+
+.your-camp .yc-rarity-tag {
+  font-family: var(--font-display); font-weight: 800; font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 3px; border: 1px solid; display: inline-block;
+}
+.your-camp .yc-rarity-tag[data-rarity="COMMON"] { color: #AAAAAA; border-color: var(--yc-r-common); background: rgba(255,255,255,.03); }
+.your-camp .yc-rarity-tag[data-rarity="UNCOMMON"] { color: #4ade80; border-color: var(--yc-r-uncommon); background: rgba(34,197,94,.08); }
+.your-camp .yc-rarity-tag[data-rarity="RARE"] { color: #60a5fa; border-color: var(--yc-r-rare); background: rgba(59,130,246,.08); }
+.your-camp .yc-rarity-tag[data-rarity="LEGENDARY"] { color: var(--yc-r-legendary); border-color: var(--yc-r-legendary); background: rgba(212,168,32,.08); }
+
+.your-camp .yc-avatar {
+  --rc: #555; width: 52px; height: 52px; border-radius: 10px;
+  background: linear-gradient(160deg,#242424,#131313); display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 800; letter-spacing: .5px; flex-shrink: 0;
+  border: 2px solid var(--rc); color: var(--rc);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.5), 0 0 16px -3px var(--rc);
+}
+
+@keyframes ycFlashPulse {
+  0% { box-shadow: 0 0 0 0 rgba(212,168,32,.55); }
+  70% { box-shadow: 0 0 0 9px rgba(212,168,32,0); }
+  100% { box-shadow: 0 0 0 0 rgba(212,168,32,0); }
+}
+.your-camp .yc-flash { animation: ycFlashPulse 1s ease-out 2; border-radius: 9px; }
+@media (prefers-reduced-motion: reduce) {
+  .your-camp .yc-coach-tile:hover, .your-camp .yc-coach-tile.selected, .your-camp .yc-need-card:hover { transform: none !important; }
+  .your-camp .yc-flash { animation: none; outline: 2px solid var(--gold-bright); outline-offset: 3px; }
+}
+
+/* ================= CAMP BANNER (owner picks 02-V1 + 01-V2) ================= */
+/* The bar renders ON the player's equipped cosmetic banner composition (the
+   background arrives inline from bannerCatalog via CampBar.jsx), so the camp
+   wears the player's own colors and follows their banner edits. overflow stays
+   VISIBLE — `hidden` clipped the Facility Condition tooltip behind the bar. */
+.your-camp .yc-bar {
+  position: relative; overflow: visible;
+  border: 1px solid var(--c-border); border-radius: 9px;
+  padding: 15px 20px; margin-bottom: 20px;
+  background: linear-gradient(135deg, #0A0A0A 0%, #111 50%, #0A0A0A 100%); /* fallback until the inline composition arrives */
+}
+/* Texture overlays — same treatments as the profile nameplate (.bp2-tex--*). */
+.your-camp .yc-bnr-tex { position: absolute; inset: 0; border-radius: 9px; pointer-events: none; }
+.your-camp .yc-bnr-tex--halftone {
+  background: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1.3px);
+  background-size: 7px 7px;
+  -webkit-mask-image: linear-gradient(100deg, #000 28%, transparent 62%);
+  mask-image: linear-gradient(100deg, #000 28%, transparent 62%);
+}
+.your-camp .yc-bnr-tex--grain {
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.016) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.12) 0 1px, transparent 1px 4px);
+}
+.your-camp .yc-bnr-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; position: relative; z-index: 2; }
+.your-camp .yc-bnr-left { min-width: 0; }
+.your-camp .yc-bnr-name-row { display: flex; align-items: center; gap: 8px; }
+.your-camp .yc-name-input {
+  font-family: var(--font-display); font-weight: 800; font-size: 26px; letter-spacing: .8px; text-transform: uppercase; color: #fff;
+  background: transparent; border: none; outline: none; border-bottom: 1px dashed transparent; padding: 1px 0; min-width: 60px; width: 100%;
+  text-shadow: 0 2px 8px rgba(0,0,0,.6); line-height: 1.05;
+}
+.your-camp .yc-name-input:hover, .your-camp .yc-name-input:focus { border-bottom: 1px dashed rgba(255,255,255,.4); }
+.your-camp .yc-name-err { font-size: 10px; color: #ff9a9a; }
+.your-camp .yc-pencil-btn { background: none; border: none; color: rgba(255,255,255,.55); cursor: pointer; font-size: 12px; padding: 2px; line-height: 1; display: inline-flex; flex-shrink: 0; }
+.your-camp .yc-pencil-btn:hover { color: var(--gold-bright); }
+.your-camp .yc-bnr-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 7px; }
+.your-camp .yc-tier-chip {
+  font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--gold-bright); background: rgba(212,168,32,.12); border: 1px solid rgba(212,168,32,.35); border-radius: 3px; padding: 3px 8px; white-space: nowrap;
+}
+.your-camp .yc-style-chip {
+  font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 1.1px; text-transform: uppercase;
+  color: var(--text-secondary); background: rgba(255,255,255,.05); border: 1px solid var(--c-border); border-radius: 3px; padding: 3px 8px; white-space: nowrap;
+}
+.your-camp .yc-bnr-flavor { font-style: italic; font-weight: 600; font-size: 12px; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+
+/* Right-side stats: condition ring + wages + energy. Live readouts — labels
+   readable, values full white (never --text-muted "disabled grey"). */
+.your-camp .yc-bnr-stats { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+.your-camp .yc-bnr-stat { display: flex; flex-direction: column; gap: 2px; }
+.your-camp .yc-bnr-stat-l { font-family: var(--font-display); font-weight: 700; font-size: 8.5px; letter-spacing: 1.3px; text-transform: uppercase; color: rgba(255,255,255,.6); }
+.your-camp .yc-bnr-stat-v { font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff; }
+.your-camp .yc-energy-cur { color: #7EB2FF; }
+.your-camp .yc-wage-suffix { font-size: 10.5px; font-weight: 500; color: rgba(255,255,255,.6); }
+
+/* Facility Condition gauge ring (01-V2): conic fill arrives inline in the
+   band color; ::before punches the donut hole. */
+.your-camp .yc-cond-metric { display: flex; align-items: center; gap: 10px; }
+.your-camp .yc-ring-wrap { border-bottom: none; display: inline-flex; }
+.your-camp .yc-ring {
+  width: 52px; height: 52px; border-radius: 50%; position: relative;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  box-shadow: 0 3px 10px rgba(0,0,0,.45);
+}
+.your-camp .yc-ring::before { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: #141414; }
+.your-camp .yc-ring b { position: relative; font-family: var(--font-display); font-weight: 800; font-size: 15px; z-index: 1; }
+.your-camp .yc-ring-txt { display: flex; flex-direction: column; gap: 1px; }
+.your-camp .yc-ring-band { font-family: var(--font-display); font-weight: 800; font-size: 12.5px; letter-spacing: .6px; text-transform: uppercase; }
+.your-camp .yc-ring-effect { font-size: 10.5px; color: rgba(255,255,255,.65); }
+
+/* ================= NEEDS YOU TODAY ================= */
+.your-camp .yc-needs { margin: 18px 0 22px; }
+.your-camp .yc-needs-head { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.your-camp .yc-needs-eyebrow { font-family: var(--font-display); font-weight: 800; font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-secondary); }
+.your-camp .yc-needs-count {
+  font-family: var(--font-display); font-weight: 800; font-size: 10px; color: #161200; background: var(--gold-bright);
+  border-radius: 9px; min-width: 16px; text-align: center; padding: 1px 6px; line-height: 1.4;
+}
+.your-camp .yc-needs-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+.your-camp .yc-need-card {
+  --nc: #555;
+  display: flex; align-items: center; gap: 10px; background: var(--c-bg-tile); border: 1px solid var(--c-border-3);
+  border-left: 3px solid var(--nc); border-radius: 8px; padding: 10px 12px; cursor: pointer;
+  transition: border-color .12s ease, transform .12s ease, background .12s ease;
+}
+.your-camp .yc-need-card:hover { border-color: #3c3c3c; transform: translateY(-1px); background: var(--c-bg-tile-2); }
+.your-camp .yc-need-card.gold { --nc: var(--gold-bright); }
+.your-camp .yc-need-card.amber { --nc: var(--c-amber); }
+.your-camp .yc-need-card.warn { --nc: #c0392b; }
+.your-camp .yc-need-card.blue { --nc: var(--blue-bright); }
+.your-camp .yc-need-icon {
+  width: 27px; height: 27px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; background: rgba(255,255,255,.04);
+}
+.your-camp .yc-need-card.gold .yc-need-icon { color: var(--gold-bright); background: rgba(212,168,32,.14); }
+.your-camp .yc-need-card.amber .yc-need-icon { color: #e5a94a; background: rgba(200,122,16,.16); }
+.your-camp .yc-need-card.warn .yc-need-icon { color: #ef6a6a; background: rgba(192,57,43,.16); }
+.your-camp .yc-need-card.blue .yc-need-icon { color: #8bb8ff; background: rgba(59,130,246,.16); }
+.your-camp .yc-need-text { flex: 1; min-width: 0; }
+.your-camp .yc-need-title { font-size: 12px; font-weight: 700; color: #fff; line-height: 1.32; }
+.your-camp .yc-need-sub { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; line-height: 1.35; }
+.your-camp .yc-need-btn {
+  flex-shrink: 0; font-family: var(--font-display); font-weight: 800; font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 7px 12px; border-radius: 5px; cursor: pointer; border: 1px solid; background: transparent; white-space: nowrap;
+}
+.your-camp .yc-need-btn.gold { color: #161200; background: var(--gold-bright); border-color: var(--gold-bright); }
+.your-camp .yc-need-btn.gold:hover { background: #e8bd3a; }
+.your-camp .yc-need-btn.amber { color: #e5a94a; border-color: rgba(200,122,16,.5); background: rgba(200,122,16,.08); }
+.your-camp .yc-need-btn.amber:hover { background: rgba(200,122,16,.2); }
+.your-camp .yc-need-btn.warn { color: #ef6a6a; border-color: rgba(192,57,43,.5); background: rgba(192,57,43,.08); }
+.your-camp .yc-need-btn.warn:hover { background: rgba(192,57,43,.2); }
+.your-camp .yc-need-btn.blue { color: #8bb8ff; border-color: rgba(59,130,246,.5); background: rgba(59,130,246,.08); }
+.your-camp .yc-need-btn.blue:hover { background: rgba(59,130,246,.2); }
+
+/* ================= STAFF SELECTOR ================= */
+.your-camp .yc-section-head { display: flex; align-items: baseline; justify-content: space-between; margin: 26px 0 12px; flex-wrap: wrap; gap: 8px; }
+.your-camp .yc-section-title { font-family: var(--font-display); font-weight: 800; font-size: 15px; letter-spacing: 1.4px; text-transform: uppercase; color: #fff; }
+.your-camp .yc-section-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+.your-camp .yc-staff-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: stretch; }
+
+.your-camp .yc-coach-tile {
+  position: relative; width: 200px; background: var(--c-bg-tile); border: 1px solid var(--c-border); border-radius: 10px;
+  padding: 14px 14px 12px; cursor: pointer; transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.your-camp .yc-coach-tile:hover { border-color: #3c3c3c; transform: translateY(-2px); }
+.your-camp .yc-coach-tile.selected {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 0 1px var(--gold-bright), 0 10px 26px -10px rgba(212,168,32,.55);
+  background: linear-gradient(180deg, rgba(212,168,32,.07), var(--c-bg-tile) 55%);
+  transform: translateY(-3px);
+}
+.your-camp .yc-selected-ribbon {
+  position: absolute; top: -1px; right: -1px; background: var(--gold-bright); color: #161200; font-family: var(--font-display);
+  font-weight: 800; font-size: 8.5px; letter-spacing: 1.2px; padding: 3px 8px 3px 10px; border-radius: 0 9px 0 8px;
+}
+.your-camp .yc-tile-top { display: flex; gap: 10px; align-items: center; }
+.your-camp .yc-tile-top .yc-avatar { width: 52px; height: 52px; font-size: 17px; }
+.your-camp .yc-tile-id { min-width: 0; }
+.your-camp .yc-tile-name {
+  font-family: var(--font-display); font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: .2px; color: #fff;
+  line-height: 1.15; overflow-wrap: break-word;
+}
+.your-camp .yc-tile-archetype { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.your-camp .yc-tile-mood { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .3px; }
+.your-camp .yc-mood-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.your-camp .yc-mood-dot.good { background: var(--green-bright); box-shadow: 0 0 6px rgba(34,197,94,.6); }
+.your-camp .yc-mood-dot.warn { background: var(--c-amber); box-shadow: 0 0 6px rgba(200,122,16,.6); }
+.your-camp .yc-mood-dot.bad { background: var(--red); box-shadow: 0 0 6px rgba(200,16,46,.6); }
+.your-camp .yc-tile-mood.good { color: #7fd99a; }
+.your-camp .yc-tile-mood.warn { color: #e5a94a; }
+.your-camp .yc-tile-mood.bad { color: #ef6a6a; }
+.your-camp .yc-tile-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+.your-camp .yc-rank-dots { display: flex; gap: 4px; }
+.your-camp .yc-rdot { width: 6.5px; height: 6.5px; border-radius: 50%; background: #333; border: 1px solid #444; }
+.your-camp .yc-rdot.filled { background: var(--gold-bright); border-color: var(--gold-bright); }
+.your-camp .yc-rank-label-sm { font-size: 9.5px; color: var(--text-muted); font-family: var(--font-display); font-weight: 700; letter-spacing: 1px; }
+.your-camp .yc-ready-flag {
+  position: absolute; bottom: -1px; left: -1px; background: var(--green-bright); color: #04170a; font-family: var(--font-display);
+  font-weight: 800; font-size: 8px; letter-spacing: .8px; padding: 2px 7px 2px 9px; border-radius: 9px 0 8px 0;
+}
+
+.your-camp .yc-coach-tile.locked, .your-camp .yc-coach-tile.yc-open-slot {
+  cursor: default; align-items: center; justify-content: center; text-align: center; border-style: dashed; opacity: .72;
+}
+.your-camp .yc-coach-tile.locked:hover, .your-camp .yc-coach-tile.yc-open-slot:hover { transform: none; border-color: var(--c-border); }
+.your-camp .yc-lock-icon { color: var(--text-muted); display: flex; }
+.your-camp .yc-locked-title { font-family: var(--font-display); font-weight: 800; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-secondary); }
+.your-camp .yc-locked-sub { font-size: 10px; color: var(--text-muted); }
+
+.your-camp .yc-market-tile {
+  width: 190px; border: 1px dashed rgba(59,130,246,.4); border-radius: 10px; background: rgba(59,130,246,.05);
+  padding: 14px; display: flex; flex-direction: column; gap: 8px; justify-content: center;
+}
+.your-camp .yc-market-title { font-family: var(--font-display); font-weight: 800; font-size: 11.5px; letter-spacing: 1px; text-transform: uppercase; color: #8bb8ff; }
+.your-camp .yc-market-sub { font-size: 10.5px; color: var(--text-muted); line-height: 1.4; }
+/* Only rendered when market.open is true (Phase 1) — a real, clickable
+   affordance. While the market is closed, MarketTile renders no button at
+   all (see StaffRow.jsx) rather than a disabled-looking one. */
+.your-camp .yc-scout-btn {
+  align-self: flex-start; background: transparent; border: 1px solid rgba(59,130,246,.5); color: #8bb8ff;
+  font-family: var(--font-display); font-weight: 800; font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 6px 12px; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+  transition: background .12s;
+}
+.your-camp .yc-scout-btn:hover { background: rgba(59,130,246,.15); }
+
+/* ================= MAIN COACH PANEL ================= */
+.your-camp .yc-coach-main { background: var(--c-bg-tile); border: 1px solid var(--c-border); border-radius: 12px; padding: 22px 24px 24px; margin-top: 16px; }
+.your-camp .yc-cm-header { display: flex; gap: 18px; flex-wrap: wrap; }
+.your-camp .yc-cm-id-block { flex: 1; min-width: 260px; }
+.your-camp .yc-cm-name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.your-camp .yc-cm-name { font-family: var(--font-display); font-weight: 800; font-size: 26px; text-transform: uppercase; letter-spacing: .3px; color: #fff; }
+.your-camp .yc-cm-archetype { font-size: 12.5px; color: var(--text-secondary); margin-top: 2px; }
+.your-camp .yc-cm-meta-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
+.your-camp .yc-cm-meta-item { display: flex; flex-direction: column; gap: 2px; }
+.your-camp .yc-cm-meta-label { font-family: var(--font-display); font-weight: 700; font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--text-muted); }
+.your-camp .yc-cm-meta-val { font-size: 12.5px; color: #eee; font-weight: 600; }
+.your-camp .yc-cm-trait-chip { display: inline-flex; flex-direction: column; gap: 1px; border: 1px solid var(--c-border-3); background: var(--c-bg-tile-2); border-radius: 6px; padding: 6px 10px; max-width: 280px; }
+.your-camp .yc-cm-trait-name { font-family: var(--font-display); font-weight: 800; font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: var(--gold-bright); }
+.your-camp .yc-cm-trait-name.caution { color: var(--c-amber); }
+.your-camp .yc-cm-trait-desc { font-size: 10.5px; color: var(--text-muted); }
+.your-camp .yc-cm-trait-none { font-size: 10.5px; color: var(--yc-text-dim); font-style: italic; }
+
+.your-camp .yc-mood-banner { margin-top: 16px; border-radius: 9px; padding: 13px 16px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--c-border-3); }
+.your-camp .yc-mood-banner.good { background: rgba(34,197,94,.07); border-color: rgba(34,197,94,.25); }
+.your-camp .yc-mood-banner.warn, .your-camp .yc-mood-banner.bad { background: rgba(200,122,16,.09); border-color: rgba(200,122,16,.3); }
+.your-camp .yc-mood-banner-icon { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.your-camp .yc-mood-banner.good .yc-mood-banner-icon { background: rgba(34,197,94,.18); color: var(--green-bright); }
+.your-camp .yc-mood-banner.warn .yc-mood-banner-icon, .your-camp .yc-mood-banner.bad .yc-mood-banner-icon { background: rgba(200,122,16,.2); color: #e5a94a; }
+.your-camp .yc-mood-banner-text { font-size: 12.5px; line-height: 1.45; }
+.your-camp .yc-mood-banner-text b { color: #fff; }
+.your-camp .yc-mood-banner-fix { color: var(--text-secondary); }
+.your-camp .yc-mood-score { margin-left: auto; text-align: right; flex-shrink: 0; }
+.your-camp .yc-mood-score-val { font-family: var(--font-display); font-weight: 800; font-size: 20px; }
+.your-camp .yc-mood-banner.good .yc-mood-score-val { color: var(--green-bright); }
+.your-camp .yc-mood-banner.warn .yc-mood-score-val, .your-camp .yc-mood-banner.bad .yc-mood-score-val { color: #e5a94a; }
+.your-camp .yc-mood-score-lbl { font-size: 8.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
+
+.your-camp .yc-cm-section { margin-top: 24px; }
+.your-camp .yc-cm-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; flex-wrap: wrap; gap: 6px; }
+.your-camp .yc-key-btn {
+  background: none; border: 1px solid var(--c-border); color: var(--text-muted); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .5px; padding: 4px 10px; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+}
+.your-camp .yc-key-btn:hover { color: var(--text-secondary); border-color: #3c3c3c; }
+
+/* Batch training toggle — owner pick 06-V1 (×1 / ×5 / ×10 / MAX). */
+.your-camp .yc-drills-tools { display: flex; align-items: center; gap: 10px; }
+.your-camp .yc-batch-segs { display: flex; border: 1px solid #3a3a3a; border-radius: 5px; overflow: hidden; }
+.your-camp .yc-batch-seg {
+  font-family: var(--font-display); font-weight: 800; font-size: 11px; letter-spacing: .6px;
+  padding: 5px 12px; background: #1c1c1c; color: var(--text-secondary); border: none;
+  border-right: 1px solid #3a3a3a; cursor: pointer; transition: background .1s, color .1s;
+}
+.your-camp .yc-batch-seg:last-child { border-right: none; }
+.your-camp .yc-batch-seg:hover { color: #fff; }
+.your-camp .yc-batch-seg.on { background: var(--gold-bright); color: #161200; }
+.your-camp .yc-fallback-metrics { margin-top: 8px; }
+.your-camp .yc-key-panel {
+  display: none; background: #101010; border: 1px solid var(--c-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;
+  font-size: 11px; color: var(--text-secondary); line-height: 1.6;
+}
+.your-camp .yc-key-panel.open { display: block; }
+.your-camp .yc-key-panel div { margin-bottom: 3px; }
+.your-camp .yc-key-panel b { color: #fff; }
+.your-camp .yc-key-panel-close-row { display: none; }
+.your-camp .yc-key-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 250; }
+
+/* drills */
+/* Drill cards — owner pick 05-V1: family stripe on top, colored stat chips,
+   full-contrast metric values, gold move-drop, compact Train inline right. */
+.your-camp .yc-drills-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
+.your-camp .yc-drill-card { background: var(--c-bg-tile-2); border: 1px solid #2e2e2e; border-radius: 9px; overflow: hidden; display: flex; flex-direction: column; }
+.your-camp .yc-drill-card.locked { opacity: .5; }
+
+/* Legendary masterclass — Phase 2, F4. Gold/red gradient border + "Masterclass"
+   eyebrow so the 5th card reads as a trophy, not just another drill. Applies
+   to BOTH the locked "???" shape and the unlocked real-numbers shape — the
+   locked state is a deliberate visible goal, not a dead card. */
+.your-camp .yc-drill-card--exclusive {
+  border: 2px solid transparent;
+  background-image: linear-gradient(var(--c-bg-tile-2), var(--c-bg-tile-2)), linear-gradient(135deg, var(--gold-bright), var(--red-bright));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: 0 0 16px -5px var(--gold-bright);
+}
+.your-camp .yc-drill-eyebrow {
+  display: flex; align-items: center; gap: 4px;
+  font-family: var(--font-display); font-weight: 800; font-size: 9.5px; letter-spacing: 1.3px; text-transform: uppercase;
+  color: var(--gold-bright);
+}
+.your-camp .yc-drill-stripe { height: 3px; flex-shrink: 0; }
+.your-camp .yc-drill-stripe.spar { background: linear-gradient(90deg, var(--red), transparent 80%); }
+.your-camp .yc-drill-stripe.bag { background: linear-gradient(90deg, var(--amber), transparent 80%); }
+.your-camp .yc-drill-stripe.drill { background: linear-gradient(90deg, #14B8A6, transparent 80%); }
+.your-camp .yc-drill-stripe.plain { background: #2e2e2e; }
+.your-camp .yc-drill-in { padding: 12px 14px 13px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+.your-camp .yc-drill-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.your-camp .yc-drill-name { font-family: var(--font-display); font-weight: 800; font-size: 14.5px; color: #fff; text-transform: uppercase; letter-spacing: .3px; }
+.your-camp .yc-energy-chip {
+  font-family: var(--font-display); font-weight: 800; font-size: 11px; color: #7EB2FF; background: rgba(59,130,246,.13);
+  border: 1px solid rgba(59,130,246,.35); border-radius: 4px; padding: 2px 8px; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;
+}
+.your-camp .yc-drill-stats { display: flex; gap: 5px; flex-wrap: wrap; }
+.your-camp .yc-stat-pill { font-family: var(--font-display); font-weight: 800; font-size: 9.5px; letter-spacing: .6px; border-radius: 3px; padding: 2px 7px; }
+.your-camp .yc-stat-pill.red    { color: #FF8896; background: rgba(200,16,46,.16);  border: 1px solid rgba(200,16,46,.4); }
+.your-camp .yc-stat-pill.blue   { color: #7EB2FF; background: rgba(59,130,246,.13); border: 1px solid rgba(59,130,246,.35); }
+.your-camp .yc-stat-pill.teal   { color: #5EEAD4; background: rgba(20,184,166,.12); border: 1px solid rgba(20,184,166,.35); }
+.your-camp .yc-stat-pill.amber  { color: #F0B45A; background: rgba(200,122,16,.14); border: 1px solid rgba(200,122,16,.4); }
+.your-camp .yc-stat-pill.gold   { color: #E6C24A; background: rgba(212,168,32,.13); border: 1px solid rgba(212,168,32,.4); }
+.your-camp .yc-stat-pill.purple { color: #C4A6FF; background: rgba(139,92,246,.14); border: 1px solid rgba(139,92,246,.4); }
+.your-camp .yc-stat-pill.grey   { color: var(--text-secondary); background: #242424; border: 1px solid var(--c-border-3); }
+.your-camp .yc-drill-metrics { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 10.5px; margin-top: auto; }
+.your-camp .yc-dmetric { display: flex; flex-direction: column; gap: 1px; }
+.your-camp .yc-dmetric-lbl { font-size: 8.5px; letter-spacing: 1.1px; text-transform: uppercase; color: #9A9A9A; }
+.your-camp .yc-dmetric-val { font-family: var(--font-display); font-weight: 800; font-size: 13px; }
+.your-camp .yc-dmetric-val.neu { color: #D8D8D8; }
+.your-camp .yc-dmetric-val.warn { color: #F0B45A; }
+.your-camp .yc-dmetric-val.bad { color: #FF7B7B; }
+.your-camp .yc-dmetric-val.pos { color: #4ade80; }
+.your-camp .yc-dmetric-val.gold { color: var(--gold-bright); }
+.your-camp .yc-dmetric-val.dash { color: #8A8A8A; }
+.your-camp .yc-btn-train {
+  margin-left: auto; align-self: center; background: var(--red); color: #fff; border: none; border-radius: 5px; padding: 7px 16px;
+  font-family: var(--font-display); font-weight: 800; font-size: 11px; letter-spacing: 1.1px; text-transform: uppercase;
+  cursor: pointer; transition: background .12s; white-space: nowrap;
+}
+.your-camp .yc-btn-train:hover:not(:disabled) { background: var(--red-bright); }
+.your-camp .yc-btn-train:disabled { background: #232323; color: #555; cursor: not-allowed; }
+.your-camp .yc-lock-tag { font-size: 9.5px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+
+/* active supplement */
+.your-camp .yc-booster-strip {
+  display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
+  background: linear-gradient(90deg, rgba(212,168,32,.10), rgba(212,168,32,.02));
+  border: 1px solid rgba(212,168,32,.32); border-radius: 8px; padding: 9px 14px; margin-bottom: 13px;
+}
+.your-camp .yc-booster-icon { width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: rgba(212,168,32,.16); border: 1px solid rgba(212,168,32,.4); }
+.your-camp .yc-booster-name { font-family: var(--font-display); font-weight: 800; font-size: 12.5px; letter-spacing: .5px; text-transform: uppercase; color: var(--gold-bright); }
+.your-camp .yc-booster-effect { font-size: 11px; color: #B9B9B9; }
+.your-camp .yc-booster-effect b { color: #EDEDED; font-weight: 700; }
+.your-camp .yc-booster-left { margin-left: auto; font-size: 10.5px; color: #9A9A9A; text-align: right; white-space: nowrap; }
+.your-camp .yc-booster-left b { color: var(--gold-bright); font-family: var(--font-display); font-size: 13px; }
+.your-camp .yc-booster-none {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: #151515; border: 1px dashed var(--c-border); border-radius: 8px; padding: 9px 14px; margin-bottom: 13px;
+  font-size: 11px; color: #9A9A9A;
+}
+.your-camp .yc-xp-chip { font-family: var(--font-display); font-weight: 800; font-size: 10.5px; letter-spacing: .4px; color: #161200; background: var(--gold-bright); border-radius: 4px; padding: 2px 7px; white-space: nowrap; cursor: help; border-bottom: none; }
+
+/* development track */
+/* Development track — owner pick 03-V1: stepper CARDS joined by short flex
+   connectors. No absolute-positioned line, so the "line drifts off the circle
+   centres" bug class is structurally impossible. */
+.your-camp .yc-dev-track-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.your-camp .yc-dev-track { display: flex; align-items: stretch; gap: 0; padding: 2px 0; }
+.your-camp .yc-dev-card {
+  flex: 1; min-width: 118px; background: var(--c-bg-tile); border: 1px solid var(--c-border);
+  border-radius: 8px; padding: 12px 10px; text-align: center;
+}
+.your-camp .yc-dev-card.done { border-color: rgba(212,168,32,.5); }
+.your-camp .yc-dev-card.cur {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 14px -6px rgba(212,168,32,.6);
+  background: linear-gradient(180deg, rgba(212,168,32,.08), var(--c-bg-tile) 60%);
+}
+.your-camp .yc-dev-conn { align-self: center; width: 14px; height: 2px; background: #3a3a3a; flex-shrink: 0; }
+.your-camp .yc-dev-conn.on { background: var(--gold-bright); }
+.your-camp .yc-dev-circle {
+  width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 800; font-size: 13px; background: #111; border: 2px solid #3a3a3a; color: #777;
+}
+.your-camp .yc-dev-card.done .yc-dev-circle { border-color: var(--gold-bright); color: var(--gold-bright); background: rgba(212,168,32,.1); }
+.your-camp .yc-dev-card.cur .yc-dev-circle { background: var(--gold-bright); border-color: var(--gold-bright); color: #161200; }
+.your-camp .yc-dev-rank-lbl { font-family: var(--font-display); font-weight: 800; font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase; color: #9A9A9A; margin-bottom: 3px; }
+.your-camp .yc-dev-card.done .yc-dev-rank-lbl, .your-camp .yc-dev-card.cur .yc-dev-rank-lbl { color: var(--gold-bright); }
+.your-camp .yc-dev-grant { font-size: 10px; color: var(--text-secondary); line-height: 1.35; }
+
+.your-camp .yc-next-rank-card { margin-top: 16px; background: #151515; border: 1px solid var(--c-border-3); border-radius: 9px; padding: 15px 17px; }
+.your-camp .yc-next-rank-card.ready { border-color: rgba(34,197,94,.4); background: rgba(34,197,94,.05); }
+.your-camp .yc-nrc-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 11px; }
+.your-camp .yc-nrc-title { font-family: var(--font-display); font-weight: 800; font-size: 12.5px; letter-spacing: 1px; text-transform: uppercase; color: #fff; }
+.your-camp .yc-nrc-grants { font-size: 11px; color: var(--text-muted); margin-top: 2px; max-width: 520px; }
+.your-camp .yc-ready-badge {
+  font-family: var(--font-display); font-weight: 800; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--green-bright); background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.35); border-radius: 4px; padding: 3px 9px;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.your-camp .yc-nrc-reqs { display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 13px; }
+.your-camp .yc-req-item { min-width: 130px; }
+.your-camp .yc-req-label { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 5px; }
+.your-camp .yc-req-label b { color: #fff; font-weight: 700; }
+.your-camp .yc-req-bar-track { width: 100%; height: 5px; border-radius: 3px; background: #2A2A2A; overflow: hidden; }
+.your-camp .yc-req-bar-fill { height: 100%; border-radius: 3px; background: var(--gold-bright); transition: width .25s ease; }
+.your-camp .yc-req-bar-fill.met { background: var(--green-bright); }
+.your-camp .yc-req-cost { min-width: 100px; }
+.your-camp .yc-promote-btn {
+  background: #232323; color: #666; border: 1px solid var(--c-border-3); border-radius: 6px; padding: 10px 18px;
+  font-family: var(--font-display); font-weight: 800; font-size: 12.5px; letter-spacing: 1.3px; text-transform: uppercase;
+  cursor: not-allowed; width: 100%;
+}
+.your-camp .yc-promote-btn.ready { background: var(--green-bright); color: #04170a; border-color: var(--green-bright); cursor: pointer; box-shadow: 0 0 22px -8px rgba(34,197,94,.7); }
+.your-camp .yc-promote-btn.ready:hover:not(:disabled) { background: #3fdb7f; }
+.your-camp .yc-promote-btn:disabled { opacity: .85; }
+
+/* Rank-4 archetype perk — claim card (unclaimed, gold/unmissable) and held card */
+.your-camp .yc-next-rank-card.claimable {
+  border-color: rgba(212,168,32,.55); background: rgba(212,168,32,.08);
+  box-shadow: 0 0 26px -10px rgba(212,168,32,.55);
+}
+.your-camp .yc-next-rank-card.held { border-color: rgba(212,168,32,.25); background: rgba(212,168,32,.03); }
+.your-camp .yc-claim-badge {
+  font-family: var(--font-display); font-weight: 800; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--gold-bright); background: rgba(212,168,32,.14); border: 1px solid rgba(212,168,32,.4); border-radius: 4px; padding: 3px 9px;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.your-camp .yc-held-badge {
+  font-family: var(--font-display); font-weight: 800; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--gold-bright); background: rgba(212,168,32,.1); border: 1px solid rgba(212,168,32,.3); border-radius: 4px; padding: 3px 9px;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.your-camp .yc-claim-btn {
+  background: var(--gold-bright); color: #1a1400; border: 1px solid var(--gold-bright); border-radius: 6px; padding: 10px 18px;
+  font-family: var(--font-display); font-weight: 800; font-size: 12.5px; letter-spacing: 1.3px; text-transform: uppercase;
+  cursor: pointer; width: 100%; margin-top: 4px;
+  box-shadow: 0 0 22px -8px rgba(212,168,32,.7);
+}
+.your-camp .yc-claim-btn:hover:not(:disabled) { background: #e6bf35; }
+.your-camp .yc-claim-btn:disabled { opacity: .85; cursor: not-allowed; }
+.your-camp .yc-perk-effect-row { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+
+/* teaches */
+.your-camp .yc-teach-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.your-camp .yc-teach-empty { font-size: 11px; color: var(--text-muted); font-style: italic; }
+.your-camp .yc-move-chip {
+  --mc: #888;
+  background: var(--c-bg-tile-2); border: 1px solid var(--c-border-3); border-left: 3px solid #555; border-radius: 6px;
+  padding: 9px 12px; min-width: 170px; flex: 1 1 170px; max-width: 260px; display: flex; flex-direction: column; gap: 4px;
+}
+.your-camp .yc-move-chip.taught { border-left-color: var(--mc); }
+.your-camp .yc-move-chip.next { border-left-color: var(--gold-bright); }
+.your-camp .yc-move-chip.locked { border-left-color: #3a3a3a; opacity: .55; }
+/* Max-rank coach who never learned it — reads as spent, not as pending. Dimmer than
+   `locked` and struck through so it can't be mistaken for something still coming. */
+.your-camp .yc-move-chip.unavailable { border-left-color: #2e2e2e; opacity: .4; }
+.your-camp .yc-move-chip.unavailable .yc-move-name { text-decoration: line-through; text-decoration-color: #6a6a6a; color: var(--text-secondary); }
+.your-camp .yc-move-name { font-family: var(--font-display); font-weight: 700; font-size: 12.5px; color: #fff; text-transform: uppercase; letter-spacing: .2px; }
+.your-camp .yc-move-state { font-size: 9.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
+.your-camp .yc-move-state.taught { color: var(--mc); }
+.your-camp .yc-move-state.next { color: var(--gold-bright); }
+.your-camp .yc-move-state.locked { color: var(--text-muted); }
+.your-camp .yc-move-state.unavailable { color: #6a6a6a; }
+
+/* Open mat — a real, always-available option. Solid, not dashed/dimmed. */
+.your-camp .yc-fallback-panel {
+  margin-top: 18px; border: 1px solid var(--c-border); border-radius: 9px; background: var(--c-bg-tile);
+  padding: 13px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+}
+.your-camp .yc-fallback-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.your-camp .yc-fallback-icon { width: 32px; height: 32px; border-radius: 7px; background: #242424; border: 1px solid #3a3a3a; display: flex; align-items: center; justify-content: center; color: #C9C9C9; flex-shrink: 0; }
+.your-camp .yc-fallback-title { font-family: var(--font-display); font-weight: 800; font-size: 13px; letter-spacing: .4px; text-transform: uppercase; color: #fff; }
+.your-camp .yc-fallback-sub { font-size: 11px; color: #9A9A9A; margin-top: 2px; }
+.your-camp .yc-btn-train-ghost {
+  background: transparent; border: 1px solid #5a5a5a; color: #EDEDED; border-radius: 5px; padding: 6px 18px;
+  font-family: var(--font-display); font-weight: 800; font-size: 11px; letter-spacing: 1.1px; text-transform: uppercase; cursor: pointer;
+}
+.your-camp .yc-btn-train-ghost:hover:not(:disabled) { border-color: var(--red); background: rgba(200,16,46,.12); color: #fff; }
+.your-camp .yc-btn-train-ghost:disabled { opacity: .5; cursor: not-allowed; }
+
+@media (max-width: 980px) {
+  .your-camp { padding: 16px 16px 36px; }
+  .your-camp .yc-bar { padding: 10px 14px; }
+  .your-camp .yc-divider { display: none; }
+  .your-camp .yc-cm-header .yc-avatar { width: 64px; height: 64px; }
+  .your-camp .yc-cm-name { font-size: 21px; }
+  .your-camp .yc-drills-grid { grid-template-columns: 1fr; }
+}
+
+/* ================= MOBILE (<600px) ================= */
+@media (max-width: 600px) {
+  .your-camp { padding: 12px 12px 28px; }
+
+  /* Banner bar stacks: identity block on top, stats row underneath. Nothing
+     is hidden or clipped — the stats wrap on their own row. */
+  .your-camp .yc-bar { padding: 13px 14px; }
+  .your-camp .yc-bnr-row { flex-direction: column; align-items: stretch; gap: 12px; }
+  .your-camp .yc-name-input { font-size: 20px; }
+  .your-camp .yc-bnr-stats { gap: 16px; }
+  .your-camp .yc-ring { width: 46px; height: 46px; }
+  .your-camp .yc-ring b { font-size: 13.5px; }
+  .your-camp .yc-wage-suffix { display: none; }
+  .your-camp .yc-bnr-flavor { display: none; }
+  .your-camp .yc-drills-tools { flex-wrap: wrap; }
+  .your-camp .yc-batch-seg { min-height: 36px; }
+
+  .your-camp .yc-needs-grid { grid-template-columns: 1fr; }
+  .your-camp .yc-need-card { flex-wrap: wrap; row-gap: 8px; }
+  .your-camp .yc-need-text { flex: 1 1 calc(100% - 37px); }
+  .your-camp .yc-need-btn { order: 3; flex: 0 0 auto; margin-left: 37px; min-height: 40px; padding: 8px 14px; }
+
+  .your-camp .yc-staff-row {
+    flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity; padding: 2px 2px 10px; margin: 0 -2px;
+  }
+  .your-camp .yc-coach-tile { width: 78vw; max-width: 250px; flex: 0 0 auto; scroll-snap-align: start; }
+  .your-camp .yc-market-tile { width: 70vw; max-width: 230px; flex: 0 0 auto; scroll-snap-align: start; }
+  .your-camp .yc-coach-tile.locked, .your-camp .yc-coach-tile.yc-open-slot { width: 60vw; max-width: 200px; }
+
+  .your-camp .yc-coach-main { padding: 18px 14px 20px; }
+  .your-camp .yc-cm-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .your-camp .yc-cm-meta-row { gap: 12px; }
+  .your-camp .yc-mood-banner { flex-wrap: wrap; }
+  .your-camp .yc-mood-score { margin-left: 0; text-align: left; }
+
+  .your-camp .yc-drills-grid { grid-template-columns: 1fr; }
+  .your-camp .yc-drill-card { width: 100%; }
+  .your-camp .yc-btn-train { min-height: 40px; }
+
+  .your-camp .yc-dev-track { min-width: 500px; } /* stepper cards scroll inside yc-dev-track-wrap */
+  .your-camp .yc-nrc-reqs { gap: 16px; }
+  .your-camp .yc-promote-btn { min-height: 42px; }
+  .your-camp .yc-claim-btn { min-height: 42px; }
+
+  .your-camp .yc-scout-btn, .your-camp .yc-btn-train-ghost, .your-camp .yc-key-btn { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+
+  .your-camp .yc-fallback-panel { flex-direction: column; align-items: stretch; }
+  .your-camp .yc-btn-train-ghost { width: 100%; }
+
+  .your-camp .yc-key-panel.open {
+    position: fixed; left: 0; right: 0; bottom: 0; margin: 0; z-index: 260; max-width: none;
+    border-radius: 14px 14px 0 0; max-height: 60vh; overflow-y: auto;
+    box-shadow: 0 -12px 32px rgba(0,0,0,.65); border: 1px solid var(--c-border); border-bottom: none;
+    padding: 10px 18px 26px;
+  }
+  .your-camp .yc-key-panel-close-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+  .your-camp .yc-key-panel-close { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: inline-flex; }
+  .your-camp .yc-key-backdrop.show { display: block; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .your-camp .yc-cond-fill, .your-camp .yc-req-bar-fill { transition: none; }
+}
+
+/* ============================================================
+   YOUR CAMP — PHASE 1 (Trainer Market, hire/fire, renovation, deep clean)
+   Same `yc-` prefix as Phase 0. The market panel and confirm dialog portal
+   to document.body (outside `.your-camp`), so their rules are NOT nested
+   under `.your-camp` and never reference its scoped custom properties
+   (--yc-r-*, --yc-text-dim) — only global tokens already used everywhere
+   else in this file (--gold-bright, --c-border, --red, …) plus the `--rc`
+   inline rarity color the same way `.yc-avatar` already does.
+   ============================================================ */
+
+/* ---------- unpaid wages (CampBar) ---------- */
+.your-camp .yc-wage-warn-banner {
+  display: flex; align-items: center; gap: 8px; position: relative; z-index: 2;
+  margin-bottom: 11px; padding: 8px 14px; border-radius: 7px;
+  background: rgba(200,16,46,.14); border: 1px solid rgba(200,16,46,.5);
+  color: #ffb3b3; font-family: var(--font-display); font-weight: 800; font-size: 11.5px; letter-spacing: .4px;
+  animation: ycWageWarnPulse 2.2s ease-in-out infinite;
+}
+@keyframes ycWageWarnPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200,16,46,.35); }
+  50% { box-shadow: 0 0 0 6px rgba(200,16,46,0); }
+}
+.your-camp .yc-bnr-stat.yc-wage-warn .yc-bnr-stat-l { color: #ff9a9a; }
+.your-camp .yc-bnr-stat.yc-wage-warn .yc-bnr-stat-v { color: #ffb3b3; }
+
+/* ---------- Deep Clean button (beside the condition ring) ---------- */
+.your-camp .yc-deep-clean-btn {
+  margin-top: 4px; align-self: flex-start; display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(20,184,166,.12); border: 1px solid rgba(20,184,166,.4); color: #5EEAD4;
+  font-family: var(--font-display); font-weight: 800; font-size: 9px; letter-spacing: .6px; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: background .12s;
+}
+.your-camp .yc-deep-clean-btn:hover { background: rgba(20,184,166,.22); }
+
+/* ---------- renovation CTA ---------- */
+.your-camp .yc-renovate-card {
+  position: relative; z-index: 2; margin-top: 14px; padding: 14px 16px; border-radius: 9px;
+  background: rgba(212,168,32,.05); border: 1px solid rgba(212,168,32,.3);
+}
+.your-camp .yc-renovate-card.ready { background: rgba(34,197,94,.06); border-color: rgba(34,197,94,.4); box-shadow: 0 0 24px -10px rgba(34,197,94,.5); }
+.your-camp .yc-renovate-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.your-camp .yc-renovate-title { font-family: var(--font-display); font-weight: 800; font-size: 13px; letter-spacing: .6px; text-transform: uppercase; color: #fff; }
+.your-camp .yc-renovate-cost { font-family: var(--font-display); font-weight: 800; font-size: 15px; color: var(--gold-bright); }
+.your-camp .yc-renovate-grants { font-size: 11.5px; color: var(--text-secondary); margin-top: 4px; }
+.your-camp .yc-renovate-reqs { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px; }
+.your-camp .yc-renovate-btn {
+  margin-top: 12px; width: 100%; background: #232323; color: #666; border: 1px solid var(--c-border-3); border-radius: 6px; padding: 10px 18px;
+  font-family: var(--font-display); font-weight: 800; font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; cursor: not-allowed;
+}
+.your-camp .yc-renovate-btn.ready { background: var(--green-bright); color: #04170a; border-color: var(--green-bright); cursor: pointer; box-shadow: 0 0 22px -8px rgba(34,197,94,.7); }
+.your-camp .yc-renovate-btn.ready:hover:not(:disabled) { background: #3fdb7f; }
+.your-camp .yc-renovate-btn:disabled { opacity: .85; }
+
+/* ---------- CoachPanel: Fire button + XP multiplier note ---------- */
+.your-camp .yc-cm-header { position: relative; }
+.your-camp .yc-fire-btn {
+  margin-left: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 5px;
+  background: transparent; border: 1px solid rgba(200,16,46,.45); color: #ef6a6a;
+  font-family: var(--font-display); font-weight: 800; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 6px 12px; border-radius: 5px; cursor: pointer; transition: background .12s, color .12s;
+}
+.your-camp .yc-fire-btn:hover:not(:disabled) { background: rgba(200,16,46,.16); color: #fff; }
+.your-camp .yc-fire-btn:disabled { opacity: .5; cursor: not-allowed; }
+.your-camp .yc-cm-xp-note { display: block; font-size: 10px; color: var(--gold-bright); margin-top: 1px; }
+
+/* ---------- Trainer Market overlay (portal, NOT under .your-camp) ---------- */
+.yc-market-overlay {
+  position: fixed; inset: 0; z-index: 50500; background: rgba(0,0,0,.62);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  font-family: var(--font-body); color: var(--text);
+}
+.yc-market-modal {
+  width: 100%; max-width: 980px; max-height: 88vh; overflow-y: auto;
+  background: linear-gradient(180deg, #141414, #0d0d0d); border: 1px solid var(--c-border); border-top: 2px solid var(--gold-bright);
+  border-radius: 12px; padding: 20px 22px 24px; box-shadow: 0 24px 64px -12px rgba(0,0,0,.75);
+}
+.yc-market-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.yc-market-modal-title {
+  display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 800; font-size: 19px;
+  letter-spacing: .6px; text-transform: uppercase; color: #fff;
+}
+.yc-market-modal-sub { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.yc-market-modal-countdown { display: inline-flex; align-items: center; gap: 4px; color: #F0B45A; font-weight: 700; }
+.yc-market-close { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: inline-flex; flex-shrink: 0; }
+.yc-market-close:hover { color: #fff; }
+.yc-market-cash-row {
+  display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding: 9px 14px;
+  background: var(--c-bg-tile); border: 1px solid var(--c-border-3); border-radius: 7px;
+  font-size: 12px; color: var(--text-secondary);
+}
+.yc-market-cash-row b { font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #4ade80; }
+.yc-market-cooldown-banner {
+  display: flex; align-items: center; gap: 7px; margin-top: 10px; padding: 8px 14px; border-radius: 7px;
+  background: rgba(200,122,16,.1); border: 1px solid rgba(200,122,16,.35); color: #e5a94a; font-size: 11.5px; font-weight: 700;
+}
+.yc-market-body { margin-top: 16px; }
+
+/* ---------- Candidate grid + card (the "event" pack look) ---------- */
+.yc-cand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.yc-cand-card {
+  --rc: #888; position: relative; background: var(--c-bg-tile-2); border: 1px solid var(--c-border-3); border-radius: 11px;
+  padding: 15px 16px 16px; display: flex; flex-direction: column; gap: 11px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.3), 0 12px 30px -14px var(--rc);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.yc-cand-card::before {
+  content: ''; position: absolute; inset: 0; border-radius: 11px; padding: 1px; pointer-events: none;
+  background: linear-gradient(160deg, var(--rc), transparent 60%); opacity: .55;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.yc-cand-card:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(0,0,0,.3), 0 18px 38px -14px var(--rc); }
+.yc-cand-card.blocked { opacity: .6; }
+.yc-cand-card.blocked:hover { transform: none; }
+.yc-cand-head { display: flex; align-items: flex-start; gap: 10px; }
+.yc-cand-avatar { width: 48px; height: 48px; font-size: 16px; flex-shrink: 0; }
+.yc-cand-id { min-width: 0; flex: 1; }
+.yc-cand-name-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.yc-cand-name { font-family: var(--font-display); font-weight: 800; font-size: 14.5px; color: #fff; text-transform: uppercase; letter-spacing: .2px; }
+.yc-cand-archetype { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+.yc-cand-expiry {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase;
+  color: #F0B45A; background: rgba(200,122,16,.12); border: 1px solid rgba(200,122,16,.35); border-radius: 4px; padding: 3px 7px; white-space: nowrap;
+}
+.yc-cand-trait-row .yc-cm-trait-chip { width: 100%; max-width: none; }
+.yc-cand-econ { display: flex; gap: 14px; }
+.yc-cand-econ-item { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.yc-cand-econ-label { font-family: var(--font-display); font-weight: 700; font-size: 8.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted); }
+.yc-cand-econ-val { font-family: var(--font-display); font-weight: 800; font-size: 14px; color: #fff; display: flex; align-items: baseline; gap: 6px; }
+.yc-cand-econ-strike { font-size: 11px; font-weight: 600; color: #7A7A7A; text-decoration: line-through; }
+.yc-cand-familiarity {
+  font-size: 11px; color: #7fd99a; background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.3); border-radius: 6px; padding: 7px 10px;
+}
+.yc-cand-teach-label { font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px; }
+.yc-cand-teach .yc-teach-grid { gap: 8px; }
+.yc-cand-teach .yc-move-chip { min-width: 0; flex: 1 1 100%; max-width: none; }
+.yc-cand-hire-btn {
+  margin-top: auto; background: var(--red); color: #fff; border: none; border-radius: 6px; padding: 10px 16px;
+  font-family: var(--font-display); font-weight: 800; font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; cursor: pointer;
+  transition: background .12s;
+}
+.yc-cand-hire-btn:hover:not(:disabled) { background: var(--red-bright); }
+.yc-cand-hire-btn:disabled { background: #232323; color: #666; cursor: not-allowed; }
+.yc-cand-blocked-reason { font-size: 10.5px; color: #e5a94a; text-align: center; margin-top: -4px; }
+
+/* ---------- shared ConfirmDialog shell (portal, NOT under .your-camp) ---------- */
+.yc-dialog-overlay {
+  position: fixed; inset: 0; z-index: 50650; background: rgba(0,0,0,.6);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  font-family: var(--font-body); color: var(--text);
+}
+.yc-dialog {
+  width: 100%; max-width: 440px; background: #141414; border: 1px solid var(--c-border); border-top: 2px solid var(--gold-bright);
+  border-radius: 11px; padding: 18px 20px 20px; box-shadow: 0 24px 60px -14px rgba(0,0,0,.75);
+}
+.yc-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 13px; }
+.yc-dialog-title {
+  display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 800; font-size: 15px;
+  letter-spacing: .4px; color: #fff;
+}
+.yc-dialog-x { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 3px; display: inline-flex; }
+.yc-dialog-x:hover:not(:disabled) { color: #fff; }
+.yc-dialog-x:disabled { opacity: .4; cursor: not-allowed; }
+.yc-dialog-lines { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.yc-dialog-line {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12.5px;
+  padding: 8px 12px; border-radius: 6px; background: var(--c-bg-tile); border: 1px solid var(--c-border-3);
+}
+.yc-dialog-line-label { color: var(--text-secondary); }
+.yc-dialog-line-val { font-family: var(--font-display); font-weight: 800; font-size: 12.5px; color: #eee; text-align: right; }
+.yc-dialog-line.pos .yc-dialog-line-val { color: #4ade80; }
+.yc-dialog-line.bad .yc-dialog-line-val { color: #FF7B7B; }
+.yc-dialog-line.warn .yc-dialog-line-val { color: #F0B45A; }
+.yc-dialog-line.neu .yc-dialog-line-val { color: #D8D8D8; }
+.yc-dialog-error {
+  margin: 6px 0 4px; padding: 8px 12px; border-radius: 6px; font-size: 11.5px; color: #ff9a9a;
+  background: rgba(200,16,46,.1); border: 1px solid rgba(200,16,46,.35);
+}
+.yc-dialog-actions { display: flex; gap: 10px; margin-top: 14px; }
+.yc-dialog-btn {
+  flex: 1; font-family: var(--font-display); font-weight: 800; font-size: 11.5px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 10px 14px; border-radius: 6px; cursor: pointer; transition: background .12s, border-color .12s;
+}
+.yc-dialog-btn--cancel { background: transparent; border: 1px solid #4a4a4a; color: #ccc; }
+.yc-dialog-btn--cancel:hover:not(:disabled) { border-color: #6a6a6a; color: #fff; }
+.yc-dialog-btn--confirm { background: var(--green-bright); border: 1px solid var(--green-bright); color: #04170a; }
+.yc-dialog-btn--confirm:hover:not(:disabled) { background: #3fdb7f; }
+.yc-dialog-btn--confirm.destructive { background: var(--red); border-color: var(--red); color: #fff; }
+.yc-dialog-btn--confirm.destructive:hover:not(:disabled) { background: var(--red-bright); }
+.yc-dialog-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+@media (max-width: 600px) {
+  .yc-market-overlay { padding: 0; align-items: flex-end; }
+  .yc-market-modal {
+    max-width: none; width: 100%; max-height: 92vh; border-radius: 16px 16px 0 0; border-bottom: none;
+    padding: 16px 14px 20px;
+  }
+  .yc-cand-grid { grid-template-columns: 1fr; }
+  .yc-cand-econ { gap: 10px; }
+
+  .yc-dialog-overlay { padding: 0; align-items: flex-end; }
+  .yc-dialog {
+    max-width: none; width: 100%; border-radius: 16px 16px 0 0; border-bottom: none;
+    padding: 16px 16px 22px;
+  }
+  .yc-dialog-actions { flex-direction: column-reverse; }
+
+  .your-camp .yc-renovate-reqs { gap: 14px; }
+  .your-camp .yc-fire-btn { min-height: 36px; }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, memo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { api, authStorage } from "./api";
 import { t } from "@/lib/i18n";
 import "./App.css";
@@ -7,6 +7,7 @@ import { BannerUnlockModal } from "./components/banner/BannerUnlockModal";
 import { GymTraining, SESSION_META } from "./components/gym/GymTraining";
 import { GymSelector } from "./components/gym/GymSelector";
 import { ToastContainer } from "./components/gym/ToastContainer";
+import { CampTab } from "./components/camp/CampTab";
 import { TierUpOverlay, BeltWonOverlay } from "./components/fights/TierUpOverlay";
 import { FightOffers } from "./components/fights/FightOffers";
 import { FightCamp } from "./components/fights/FightCamp";
@@ -75,15 +76,28 @@ import {
   Trophy,
   Crosshair,
   Sparkles,
+  Building2,
 } from "lucide-react";
 
 // ── Navigation definition ──────────────────────────────────
-// Labels are resolved lazily at render time via t() so this array is safe
-// to define at module scope (i18n is sync / no async loading).
-function buildNavItems() {
+// Labels are resolved lazily at render time via t() so this array would be
+// safe to define at module scope for i18n purposes alone — but Phase 2 (Your
+// Camp) makes the "gym" item conditional on the `gymsRetired` flag, which is
+// only known at runtime (learned from a 410 on the boot gyms call). A
+// module-scope call froze that decision at first import forever, so the gym
+// tab would never disappear in production even after the flag flips —
+// this MUST be called from inside the component (see NAV_ITEMS useMemo below).
+function buildNavItems({ gymsRetired = false } = {}) {
   return [
     { id: "home",      label: t("layout.nav.home"),          icon: <LayoutDashboard size={13} strokeWidth={2.2} />, active: true },
-    { id: "gym",       label: t("layout.nav.training"),      icon: <Dumbbell size={13} strokeWidth={2.2} />,       active: true },
+    // "The 10 gyms have closed" (contract §3.5 / P2-D1) — once GYMS_RETIRED
+    // flips, this item drops out of the nav entirely (not disabled — gone).
+    ...(gymsRetired ? [] : [
+      { id: "gym",       label: t("layout.nav.training"),      icon: <Dumbbell size={13} strokeWidth={2.2} />,       active: true },
+    ]),
+    // Your Camp (Phase 0) — coexists with the 10 gyms during rollout (GDD §6);
+    // sits right after Training since it's an alternative training venue.
+    { id: "camp",      label: t("layout.nav.yourCamp"),      icon: <Building2 size={13} strokeWidth={2.2} />,      active: true },
     // Special Moves sits with the "build your fighter" cluster — next to Training,
     // before Fight (train → kit out your moveset → go use it), not buried down by Shop.
     { id: "moves",     label: t("layout.nav.moves"),         icon: <Sparkles size={13} strokeWidth={2.2} />,       active: true },
@@ -99,7 +113,6 @@ function buildNavItems() {
     { id: "library",   label: t("layout.nav.library"),       icon: <BookOpen size={13} strokeWidth={2.2} />,       active: true },
   ];
 }
-const NAV_ITEMS = buildNavItems();
 
 // ── Changelog / What's New ──────────────────────────────────
 const LAST_SEEN_VERSION_KEY = "gnp_last_seen_version";
@@ -122,10 +135,14 @@ function fighterPhotoIndex(id) {
   return (sum % 20) + 1;
 }
 
-function FighterCard({ fighter }) {
+// NOTE: FighterCard/QuickActions below are not currently rendered anywhere in
+// this file (superseded by DashboardTab) — kept in sync with the gymsRetired
+// flag anyway per the Phase 2 contract so they aren't a stale trap if ever
+// revived.
+function FighterCard({ fighter, gymsRetired }) {
   const rec = fighter?.record ?? {};
   const gym = fighter?.gymId;
-  const gymName = gym?.name ?? (typeof gym === "string" ? "—" : "—");
+  const gymName = gymsRetired ? t("layout.nav.yourCamp") : (gym?.name ?? (typeof gym === "string" ? "—" : "—"));
 
   // Use beaten portrait if the fighter is in comeback mode (= last fight was a loss)
   const isBeaten = !!(fighter?.comebackMode || fighter?.consecutiveLosses > 0);
@@ -184,7 +201,7 @@ function FighterCard({ fighter }) {
 
         <div className="fighter-card-footer">
           <span>${fighter?.iron ?? 0}</span>
-          <span>Gym: {gymName}</span>
+          <span>{gymsRetired ? t("layout.nav.yourCamp") : `Gym: ${gymName}`}</span>
           <span className="fighter-card-fame">
             {fighter?.notoriety?.tierLabel && (
               <span className={`fc-tier fc-tier-${fighter.notoriety.peakTier}`}>{fighter.notoriety.tierLabel}</span>
@@ -198,12 +215,12 @@ function FighterCard({ fighter }) {
 }
 
 // ── Quick actions ────────────────────────────────────────────
-const QuickActions = memo(function QuickActions({ onNavigate }) {
+const QuickActions = memo(function QuickActions({ onNavigate, gymsRetired }) {
   return (
     <div className="quick-actions-section">
       <div className="quick-actions-title">{t("layout.quickActions.title")}</div>
       <div className="quick-actions">
-        <button className="qa-btn qa-train" onClick={() => onNavigate("gym")}>{t("layout.quickActions.train")}</button>
+        <button className="qa-btn qa-train" onClick={() => onNavigate(gymsRetired ? "camp" : "gym")}>{t("layout.quickActions.train")}</button>
         <button className="qa-btn qa-fight" onClick={() => onNavigate("fights")}>{t("layout.quickActions.fight")}</button>
       </div>
     </div>
@@ -477,6 +494,13 @@ function App() {
   const [feedRefreshKey, setFeedRefreshKey]     = useState(0);
   const [champions, setChampions]               = useState([]);
   const [activeTab, setActiveTab]               = useState("home");
+  // Your Camp (Phase 2) — learned from the 410 the boot-time `loadGyms` call
+  // gets back once GYMS_RETIRED flips server-side (contract §6.3). Drives:
+  // NAV_ITEMS (drops the gym tab), forcing activeTab "gym"→"camp", the
+  // dashboard quick-action / STEP_RESUME_TAB re-point, and the mid-session
+  // gyms_retired catch in handleTrain below. Defaults false — byte-identical
+  // to today's behaviour until the flag is actually flipped.
+  const [gymsRetired, setGymsRetired]           = useState(false);
   // Post-training toast stack (replaces the old result modal).
   const { toasts, addToast, beginDismiss } = useToasts();
   // Which session card currently shows the success border-flash (null = none).
@@ -486,8 +510,15 @@ function App() {
   // spends up to 25× energy.
   const [training, setTraining] = useState(false);
   // Special-move drop reveal (NEW/UPGRADE outcomes only — DUPLICATE surfaces
-  // as a compact toast instead, see handleTrain).
-  const [moveDropReveal, setMoveDropReveal] = useState(null);
+  // as a compact toast instead, see handleTrain). QUEUED (Phase 2, F2) —
+  // `DropRevealModal` is single-slot, but a Rank-4 Rare coach teaches 2 moves
+  // and a Legendary up to 3 in one promotion (contract §6.1/§10 risk #11).
+  // `onClose` shifts the next one off the front; without this, reveals 2 and
+  // 3 would be silently swallowed.
+  const [moveDropQueue, setMoveDropQueue] = useState([]);
+  const enqueueMoveDrop = useCallback((drop) => setMoveDropQueue((q) => [...q, drop]), []);
+  const advanceMoveDrop = useCallback(() => setMoveDropQueue((q) => q.slice(1)), []);
+  const currentMoveDrop = moveDropQueue[0] || null;
   // Post-fight celebration overlays (belt / tier-up / banner-unlock) — ordered
   // queue so they never stack; each closes into the next. REPLACED (never
   // appended) on every fight resolve so a stale queue can't leak into the
@@ -603,7 +634,14 @@ function App() {
       if (!id) return;
       const list = await api.listGymsForFighter(id);
       setGyms(Array.isArray(list) ? list : []);
-    } catch (_) {}
+    } catch (e) {
+      // The FE learns GYMS_RETIRED from THIS 410 (contract §6.3) — this is the
+      // boot-time call `loadGyms` already makes, so no new endpoint is added.
+      if (e?.status === 410 && e?.code === "gyms_retired") {
+        setGymsRetired(true);
+        setGyms([]);
+      }
+    }
   }, [fighter?._id]);
 
   // Pull account-level status (emailConfirmed + verify-resend cooldown) for
@@ -649,6 +687,14 @@ function App() {
   useEffect(() => {
     if (fighter) syncCampState(fighter);
   }, [fighter?._id, fighter?.acceptedFightId, syncCampState]);
+
+  // Once the gyms have retired, the "gym" tab no longer exists in NAV_ITEMS —
+  // if the player is sitting on it (e.g. it was the last tab before the flag
+  // flipped, or a stale deep link), bounce them to Your Camp rather than
+  // rendering a blank/orphaned screen (contract §6.3/§6.4).
+  useEffect(() => {
+    if (gymsRetired && activeTab === "gym") setActiveTab("camp");
+  }, [gymsRetired, activeTab]);
 
   // Periodic refresh every minute
   useEffect(() => {
@@ -795,16 +841,18 @@ function App() {
   // step's focal elements exist. (During these steps the scrim locks the
   // player to that screen anyway, so forcing the tab can't fight the user.)
   const tutorialResumedRef = useRef(false);
-  const STEP_RESUME_TAB = { training_session: "gym" };
   useEffect(() => {
     if (tutorialResumedRef.current) return;
     const tut = fighter?.tutorial;
     if (!tut || tut.completed) return;
     tutorialResumedRef.current = true;
+    // Gyms retired (contract §6.3): the training_session step's anchors live
+    // in Your Camp now, not the old gym screen.
+    const STEP_RESUME_TAB = { training_session: gymsRetired ? "camp" : "gym" };
     const tab = STEP_RESUME_TAB[tut.current_step];
     if (tab) setActiveTab(tab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fighter?.tutorial?.current_step, fighter?.tutorial?.completed]);
+  }, [fighter?.tutorial?.current_step, fighter?.tutorial?.completed, gymsRetired]);
 
   // Email-verification redirect — same pattern. On success we also flip the
   // local accountStatus so the banner disappears without needing a refetch.
@@ -913,7 +961,7 @@ function App() {
           const newBadges = result.newlyEarnedBadges;
           if (Array.isArray(newBadges) && newBadges.length) {
             for (const b of newBadges) {
-              addToast({ kind: "badge", badgeName: prettifyBadgeId(b.badgeId), badgeContext: b.context || null });
+              addToast({ kind: "badge", badgeName: b.name || prettifyBadgeId(b.badgeId), badgeContext: b.context || null });
             }
           }
 
@@ -944,13 +992,22 @@ function App() {
               setFighter((prev) => (prev ? { ...prev, iron: moveDrop.newBalance } : prev));
             }
           } else {
-            setMoveDropReveal(moveDrop);
+            enqueueMoveDrop(moveDrop);
           }
         }
 
         loadFighter(fighter._id, { clearMessage: false });
         loadGyms();
       } catch (e) {
+        // Mid-session retirement (contract §6.4 / Q on risk #4): the
+        // gymsRetired middleware runs BEFORE the controller, so no energy is
+        // ever deducted here — safe to just redirect and inform, never refund.
+        if (e.code === "gyms_retired") {
+          setGymsRetired(true);
+          setActiveTab("camp");
+          setMessage(t("app.gymsRetiredMessage"));
+          return;
+        }
         // Covers 400 "Not enough energy", clamp-to-0, "quantity must be an
         // integer >= 1", etc.
         setMessage(e.message || "Train failed");
@@ -958,7 +1015,7 @@ function App() {
         setTraining(false);
       }
     },
-    [fighter?._id, loadFighter, loadGyms, training, addToast]
+    [fighter?._id, loadFighter, loadGyms, training, addToast, enqueueMoveDrop]
   );
 
   const handleSwitchGym = useCallback(
@@ -1201,7 +1258,7 @@ const handleGetOffers = useCallback(async () => {
         for (const b of newBadges) {
           addToast({
             kind: "badge",
-            badgeName: prettifyBadgeId(b.badgeId),
+            badgeName: b.name || prettifyBadgeId(b.badgeId),
             badgeContext: b.context || null,
           });
         }
@@ -1263,6 +1320,11 @@ const handleGetOffers = useCallback(async () => {
     setActiveTab("career");
   }, []);
 
+  // Nav items depend on `gymsRetired` — MUST be recomputed per-render (a
+  // module-scope call froze this forever and the gym tab would never
+  // disappear once the flag flipped in production, contract §6.3/§10 risk #14).
+  const NAV_ITEMS = useMemo(() => buildNavItems({ gymsRetired }), [gymsRetired]);
+
   // Show auth page if not logged in. When the user arrived via the
   // password-reset email link we land directly on the forgot-password "apply"
   // form by passing the token through.
@@ -1319,7 +1381,7 @@ const handleGetOffers = useCallback(async () => {
       <ToastContainer toasts={toasts} onDismiss={beginDismiss} />
 
       {/* ── SPECIAL MOVE DROP REVEAL (NEW/UPGRADE only) ── */}
-      <DropRevealModal drop={moveDropReveal} onClose={() => setMoveDropReveal(null)} />
+      <DropRevealModal drop={currentMoveDrop} onClose={advanceMoveDrop} />
 
       {/* ── GLOBAL NOTICE TOAST — surfaces the `message` state (errors + key
           successes from handlers across the app that have no inline surface). ── */}
@@ -1573,6 +1635,7 @@ const handleGetOffers = useCallback(async () => {
               onOpenProfile={() => setMobileDrawerOpen(true)}
               onOpenCareerProfile={openCareerProfile}
               refreshKey={feedRefreshKey}
+              gymsRetired={gymsRetired}
             />
           )}
 
@@ -1594,6 +1657,19 @@ const handleGetOffers = useCallback(async () => {
                 onSwitchGym={handleSwitchGym}
                 onRankUp={handleRankUp}
                 flashSessionKey={flashSessionKey}
+              />
+            </div>
+          )}
+
+          {/* ── YOUR CAMP (Phase 0) ── */}
+          {activeTab === "camp" && (
+            <div className="page-layout">
+              <CampTab
+                fighter={fighter}
+                onRefreshFighter={loadFighter}
+                onMessage={setMessage}
+                addToast={addToast}
+                onMoveDropReveal={enqueueMoveDrop}
               />
             </div>
           )}
@@ -1826,7 +1902,9 @@ const handleGetOffers = useCallback(async () => {
 
       {/* ── MOBILE BOTTOM NAV ── (hidden on desktop via CSS) */}
       <nav className="m-bottom-nav">
-        <button type="button" className={`m-nav-item ${activeTab === "gym" ? "act" : ""}`} onClick={() => handleNavTab("gym")}>
+        {/* Points at Your Camp once the gyms retire (contract §6.3) — the
+            "gym" tab no longer exists in NAV_ITEMS at that point. */}
+        <button type="button" className={`m-nav-item ${activeTab === (gymsRetired ? "camp" : "gym") ? "act" : ""}`} onClick={() => handleNavTab(gymsRetired ? "camp" : "gym")}>
           <Dumbbell size={17} strokeWidth={2.2} /><span>{t("layout.nav.train")}</span>
         </button>
         <button type="button" className={`m-nav-item ${activeTab === "fights" ? "act" : ""}`} onClick={() => handleNavTab("fights")}>

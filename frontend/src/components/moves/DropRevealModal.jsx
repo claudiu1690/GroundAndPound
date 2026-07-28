@@ -49,6 +49,11 @@ export function DropRevealModal({ drop, onClose }) {
     if (!drop || drop.outcome === "DUPLICATE") return null;
 
     const isUpgrade = drop.outcome === "UPGRADE";
+    // Phase 2 (F5): a coach's rank-up teach channel reuses this same modal
+    // (contract §6.1) — `source:"coach"` (set by CampTab#handlePromote before
+    // calling onMoveDropReveal) swaps only the eyebrow copy so a coach-taught
+    // move doesn't read like a sparring-session drop.
+    const fromCoach = drop.source === "coach";
     const shownRarity = isUpgrade ? drop.toRarity : drop.rarity;
     const rarityColor = RARITY_COLORS[shownRarity] || RARITY_COLORS.COMMON;
     const sparkCount = SPARK_COUNT[Math.max(0, rarityIndex(shownRarity))] || SPARK_COUNT[0];
@@ -63,9 +68,9 @@ export function DropRevealModal({ drop, onClose }) {
 
                 <div className="drop-reveal-eyebrow">
                     {isUpgrade ? (
-                        <><ArrowUpCircle size={14} /> {t("moves.dropReveal.upgradeEyebrow")}</>
+                        <><ArrowUpCircle size={14} /> {t(fromCoach ? "moves.dropReveal.coachUpgradeEyebrow" : "moves.dropReveal.upgradeEyebrow")}</>
                     ) : (
-                        <><Sparkles size={14} /> {t("moves.dropReveal.newEyebrow")}</>
+                        <><Sparkles size={14} /> {t(fromCoach ? "moves.dropReveal.coachNewEyebrow" : "moves.dropReveal.newEyebrow")}</>
                     )}
                 </div>
 

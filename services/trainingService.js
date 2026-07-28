@@ -1,8 +1,24 @@
+/**
+ * @deprecated GYM TRAINING — being retired by the Home Camp (`services/homeCampTrainingService.js`).
+ *
+ * ⚠️ STILL LIVE while `GYMS_RETIRED` is false, and DO NOT DELETE until the cutover has been
+ * observed for a full week. `GYMS_RETIRED=false` + restart is the rollback for the entire
+ * cutover; deleting this file makes that rollback impossible without a deploy.
+ *
+ * When it does go, it goes TOGETHER WITH `gymRankService.js`, `gymController.js`,
+ * `gymRoutes.js`, `specialMovesService.rollMoveDrop` and `specialMovesCatalog.DROP_BASE_RATE`
+ * — and NEVER with `data/gyms.json`, `models/gymModel.js`, `fighter.gymRanks`/`gymPerks` or the
+ * 10 gym badge defs, all of which the camp still reads (see data/README-DO-NOT-DELETE.md).
+ *
+ * The shared XP/max-stamina math already lives in `utils/trainingSession.js` and is used by BOTH
+ * paths, so it survives this file's deletion untouched.
+ */
 const Fighter = require("../models/fighterModel");
 const Gym = require("../models/gymModel");
 const { TRAINING_SESSIONS, BACKSTORIES, PROMOTION_TIERS } = require("../consts/gameConstants");
 const { calculateOverall } = require("../utils/overallRating");
-const { applyXpToStat, roundStatXp, STAT_TO_XP_KEY, STAT_TO_VAL_KEY } = require("../utils/statProgression");
+const { STAT_TO_VAL_KEY } = require("../utils/statProgression");
+const { applySessionXp, applyMaxStaminaSession } = require("../utils/trainingSession");
 const fighterService = require("./fighterService");
 const energyService = require("./energyService");
 const gymRankService = require("./gymRankService");
@@ -152,21 +168,17 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
 
     // ── CONDITIONING (raisesMaxStamina) batch path ──
     if (config.raisesMaxStamina) {
-        const hasIronConditioning = (fighter.gymPerks || []).includes("iron_conditioning");
-        const perGain = hasIronConditioning ? 2 : 1;
-
         let maxStaminaGained = 0;
         let staminaCapHit = false;
         let completed = 0;
 
         for (let i = 1; i <= k; i++) {
-            const currentMax = fighter.maxStamina || 100;
-            let nextMax = currentMax;
-            if (currentMax < 120) nextMax = Math.min(120, currentMax + perGain);
-            const actualGain = nextMax - currentMax;
-            fighter.maxStamina = nextMax;
-            maxStaminaGained += actualGain;
-            if (actualGain === 0 && !staminaCapHit) {
+            // Shared helper (utils/trainingSession) — the SAME per-session math the camp's
+            // sc_plus drill runs, so the two paths cannot drift. +1, +2 with iron_conditioning,
+            // capped at 120.
+            const { gained, capHit } = applyMaxStaminaSession(fighter);
+            maxStaminaGained += gained;
+            if (capHit && !staminaCapHit) {
                 staminaCapHit = true;
                 events.push({ type: "stamina_cap_hit", sessionIndex: i });
             }
@@ -307,29 +319,34 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
         const sessionCharged = !!boosterCfg && fighter.activeBooster
             && fighter.activeBooster.sessionsLeft > 0;
 
-        // Apply one session of XP per stat (exact single-session math).
+        // Apply one session of XP per stat (exact single-session math), via the
+        // shared helper so the gym and Home Camp paths can never drift.
+        const session = applySessionXp(fighter, {
+            stats: config.stats,
+            xpBase: config.xpBase,
+            injuryLockedStats,
+            sessionRoll,
+            multiplier: (statName) => {
+                const isFocus = gym.focusStats.includes(statName);
+                const gymMult = isFocus ? gym.focusXpMultiplier : gym.xpMultiplier;
+                const rank3Mult = isFocus ? rank3BonusPct : 0;
+                const boosterMult = (sessionCharged && boosterAffects(statName)) ? (1 + boosterCfg.pct) : 1;
+                return gymMult * totalXpMod * (1 + rank3Mult) * boosterMult;
+            },
+        });
+
+        // Accumulate this session's result into the batch totals. Iterated in
+        // config.stats order so xpGained/wasted key order is byte-identical to the
+        // pre-extraction inline loop (the message string reads from this object).
+        const cappedThisSession = new Set(session.capped);
+        const lockedThisSession = new Set(session.locked);
         for (const statName of config.stats) {
-            if (injuryLockedStats.has(statName)) {
+            if (lockedThisSession.has(statName)) {
                 if (xpGained[statName] === undefined) xpGained[statName] = 0;
                 continue;
             }
-            const xpKey = STAT_TO_XP_KEY[statName];
-            const valKey = STAT_TO_VAL_KEY[statName];
-            if (!xpKey || !valKey) continue;
-
-            const isFocus = gym.focusStats.includes(statName);
-            const gymMult = isFocus ? gym.focusXpMultiplier : gym.xpMultiplier;
-            const rank3Mult = isFocus ? rank3BonusPct : 0;
-
-            const boosterMult = (sessionCharged && boosterAffects(statName)) ? (1 + boosterCfg.pct) : 1;
-            const xp = config.xpBase * sessionRoll * gymMult * totalXpMod * (1 + rank3Mult) * boosterMult / config.stats.length;
-
-            const currentStat = fighter[valKey] || 10;
-
-            // 95-cap wastage: if already at/over the training cap, the whole computed
-            // xp is wasted (applyXpToStat would return it unchanged anyway).
-            if (currentStat >= 95) {
-                wasted[statName] = (wasted[statName] || 0) + Math.round(xp);
+            if (cappedThisSession.has(statName)) {
+                wasted[statName] = (wasted[statName] || 0) + (session.wasted[statName] || 0);
                 if (xpGained[statName] === undefined) xpGained[statName] = 0;
                 if (!statCapEmitted.has(statName)) {
                     statCapEmitted.add(statName);
@@ -337,12 +354,9 @@ async function doTraining(fighterId, gymId, sessionType, quantity = 1) {
                 }
                 continue;
             }
-
-            const currentXp = fighter[xpKey] || 0;
-            const { newStat, newXp } = applyXpToStat(currentStat, currentXp, xp, 100);
-            fighter[valKey] = newStat;
-            fighter[xpKey] = roundStatXp(newXp);
-            xpGained[statName] = (xpGained[statName] || 0) + Math.max(1, Math.round(xp));
+            if (session.applied[statName] !== undefined) {
+                xpGained[statName] = (xpGained[statName] || 0) + session.applied[statName];
+            }
         }
 
         // Booster: consume exactly one charge per COMPLETED XP session (this one is
@@ -510,6 +524,8 @@ module.exports = {
     doTraining,
     doTrainingBatch: doTraining,
     RANK2_SESSIONS,
+    // Shared with homeCampTrainingService so the per-day session counter has ONE home.
+    ensureDailyTrainingState,
     // Exported for unit tests of pure batch logic.
     _deriveStopReason: deriveStopReason,
     _computeRefund: computeRefund,

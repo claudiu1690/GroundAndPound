@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Check, X, TrendingUp, AlertTriangle, ShieldCheck, Coins } from "lucide-react";
+import { Check, X, TrendingUp, AlertTriangle, ShieldCheck, Coins, Award } from "lucide-react";
 import { STAT_CHIP_CLASS } from "./GymTraining";
 import { t } from "@/lib/i18n";
 
@@ -43,6 +43,31 @@ export const TrainingToast = memo(function TrainingToast({ toast, onDismiss }) {
             <span className="train-toast-xp-label">{toast.badgeContext}</span>
           </div>
         )}
+        <div className="train-toast-progress" />
+      </div>
+    );
+  }
+
+  // Coach perk claimed (Your Camp, rank-4 archetype perk) — a compact,
+  // celebratory line. The message is already fully composed server-side
+  // (perkGranted.message), so it's rendered verbatim, no local i18n key.
+  if (toast.kind === "perk") {
+    return (
+      <div className={`train-toast train-toast--perk${toast.dismissing ? " dismissing" : ""}`}>
+        <div className="train-toast-top">
+          <div className="train-toast-title">
+            <Award size={19} className="train-toast-perk-icon" />
+            <span>{toast.message}</span>
+          </div>
+          <button
+            type="button"
+            className="train-toast-close"
+            aria-label={t("gym.toast.dismiss")}
+            onClick={() => onDismiss(toast.id)}
+          >
+            <X size={18} />
+          </button>
+        </div>
         <div className="train-toast-progress" />
       </div>
     );

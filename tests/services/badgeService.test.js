@@ -128,14 +128,28 @@ test("B11: progress current never exceeds target", () => {
     assert.equal(p.target, STAR_THRESHOLD);
 });
 
-test("B12: buildBadgeProfile earnedCount + lockedCount = catalog size (PvE catalog + fixed PVP catalog)", () => {
+test("B12: buildBadgeProfile earnedCount + lockedCount = catalog size, MINUS locked LEGACY badges", () => {
     const f = baseFighter({ record: { wins: 10, koWins: 10 } });
     badgeService.evaluateBadges(f, {});
     const prof = badgeService.buildBadgeProfile(f);
     // The Proving Ground fixed catalog is always rendered (earned + locked), like the
     // PvE categories — so the total is the PvE catalog plus the fixed PVP badge count
     // (this fighter has no earned seasonal/unbounded pvp ids).
-    assert.equal(prof.earnedCount + prof.lockedCount, BADGES.length + Object.keys(PVP_BADGE_DEFS).length);
+    //
+    // ⚠️ PHASE 2 ("Your Camp") CHANGED THIS INVARIANT ON PURPOSE. The six gym badges with no
+    // Home Camp route are flagged `legacy`, and a LOCKED legacy badge is deliberately excluded
+    // from `lockedCount`: once the gyms retire it is unobtainable, so counting it would leave
+    // every player's completion permanently six short — which reads as a bug forever. An
+    // EARNED legacy badge still counts in `earnedCount` and still renders. See
+    // tests/services/badgeCatalog.campRemap.qa.test.js for the full remap coverage.
+    const lockedLegacy = BADGES.filter(
+        (b) => b.legacy && !f.badgesEarned.some((e) => e.badgeId === b.id)
+    ).length;
+    assert.equal(lockedLegacy, 6, "six gym badges have no camp route");
+    assert.equal(
+        prof.earnedCount + prof.lockedCount,
+        BADGES.length + Object.keys(PVP_BADGE_DEFS).length - lockedLegacy
+    );
 });
 
 test("B13: null-guard — empty/garbage fighter does not throw", () => {

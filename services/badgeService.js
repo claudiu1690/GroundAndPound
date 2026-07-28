@@ -35,7 +35,12 @@ function earnedIdSet(fighter) {
  *
  * @param {import("mongoose").Document|Object} fighter
  * @param {Object} [ctx] one-shot fight/event facts
- * @returns {{ newlyEarned: Array<{ badgeId: string, context: (string|null) }> }}
+ * `name` is the catalog display name. It ships with the id so a toast never has to
+ * re-derive one from the slug — `boxer_rank4` prettifies to "Boxer Rank4" while the
+ * badge is really called "Champion Boxer", which is how the same award ended up
+ * announced under two different names inside one action (camp claim-perk).
+ *
+ * @returns {{ newlyEarned: Array<{ badgeId: string, name: string, context: (string|null) }> }}
  */
 function evaluateBadges(fighter, ctx = {}, opts = {}) {
     const result = { newlyEarned: [] };
@@ -69,7 +74,7 @@ function evaluateBadges(fighter, ctx = {}, opts = {}) {
         const entry = { badgeId: def.id, earnedAt: new Date(), context, seen: silent };
         fighter.badgesEarned.push(entry);
         earned.add(def.id);
-        result.newlyEarned.push({ badgeId: def.id, context });
+        result.newlyEarned.push({ badgeId: def.id, name: def.name, context });
 
         // Feed write must never block awarding (and is skipped for silent self-heals).
         if (!silent) try {
@@ -117,8 +122,14 @@ function buildBadgeProfile(fighter) {
         const badges = BADGES.filter((b) => b.category === cat.key).map((def) => {
             const earnedEntry = earnedMap.get(def.id);
             const isEarned = !!earnedEntry;
+            // LEGACY (Phase 2): the six gym badges with no Home Camp route. Once the gyms
+            // retire they are unobtainable, so a LOCKED one must NOT count toward lockedCount —
+            // otherwise every player's completion is permanently six short, which reads as a
+            // bug forever. An EARNED legacy badge still counts in earnedCount and still renders
+            // (with a "Retired" chip): it was earned and it is kept.
+            const isLegacy = !!def.legacy;
             if (isEarned) earnedCount += 1;
-            else lockedCount += 1;
+            else if (!isLegacy) lockedCount += 1;
 
             let progress = null;
             if (!isEarned && typeof def.progress === "function") {
@@ -135,6 +146,9 @@ function buildBadgeProfile(fighter) {
                 description: def.description,
                 category: def.category,
                 subgroup: def.subgroup || null,
+                // Retired route — the UI renders a "Retired" chip and hides it from
+                // "what's left to chase" lists.
+                legacy: isLegacy,
                 earned: isEarned,
                 // "new" = earned but not yet acknowledged by the player.
                 new: isEarned && earnedEntry.seen === false,
