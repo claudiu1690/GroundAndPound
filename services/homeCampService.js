@@ -114,7 +114,7 @@ const {
     CAMP_NAME_MAX,
     DEEP_CLEAN_COST,
     DEEP_CLEAN_GAIN,
-    MARKET_CANDIDATES,
+    marketCandidatesForTier,
     MARKET_MIN_TIER,
     MAX_WEEKLY_CATCHUP,
     MORALE_MAX,
@@ -821,7 +821,7 @@ function buildCampState(fighter, camp) {
     const marketResetsAt = homeCampWeekEnd(wk);
     const candidateCount = !marketOpen
         ? 0
-        : (camp.market?.weekIndex === wk ? (camp.market.candidates || []).length : MARKET_CANDIDATES + wcBonus);
+        : (camp.market?.weekIndex === wk ? (camp.market.candidates || []).length : marketCandidatesForTier(tier) + wcBonus);
 
     const state = {
         camp: {

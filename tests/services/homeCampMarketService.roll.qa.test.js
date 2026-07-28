@@ -298,3 +298,30 @@ test("teachBreadthLabel reads honestly for every breadth", () => {
     assert.equal(market.teachBreadthLabel([{ rarity: "COMMON" }, { rarity: "RARE" }]),
         "Teaches 2 moves (Common / Rare)");
 });
+
+// ── Mid-week top-up ─────────────────────────────────────────────────────────
+// The slate only re-rolls on a week boundary, so without a top-up a change to the market
+// size (or a renovation raising the tier) stays invisible to every existing camp until the
+// next Monday — which is exactly how "I still only see one coach" happens.
+
+test("marketCandidatesForTier scales with tier and never shrinks", () => {
+    const { marketCandidatesForTier, MAX_CAMP_TIER } = require("../../consts/homeCampConfig");
+    let prev = 0;
+    for (let t = 1; t <= MAX_CAMP_TIER; t++) {
+        const n = marketCandidatesForTier(t);
+        assert.ok(n >= prev, `tier ${t} must not offer fewer candidates than tier ${t - 1}`);
+        prev = n;
+    }
+    // There are four disciplines — a board that can't show one of each isn't a choice.
+    const { ARCHETYPE_KEYS } = require("../../consts/homeCampConfig");
+    assert.ok(marketCandidatesForTier(MAX_CAMP_TIER) >= ARCHETYPE_KEYS.length,
+        "the top tier must be able to show every discipline at once");
+});
+
+test("marketCandidatesForTier clamps garbage input instead of returning undefined", () => {
+    const { marketCandidatesForTier } = require("../../consts/homeCampConfig");
+    for (const bad of [null, undefined, 0, -3, 99, NaN, "x"]) {
+        const n = marketCandidatesForTier(bad);
+        assert.ok(Number.isInteger(n) && n > 0, `${String(bad)} → ${n}`);
+    }
+});

@@ -328,7 +328,25 @@ const TRAIT_EFFECT_KEYS = Object.freeze([
 // ── PHASE 1: the weekly trainer market ───────────────────────────────────────
 /** Effective camp tier below this → the market is closed (403 market_locked). */
 const MARKET_MIN_TIER = 2;
-const MARKET_CANDIDATES = 3;              // +1 while a Well-Connected coach is on the roster
+/**
+ * Market size BY CAMP TIER (+1 while a Well-Connected coach is on the roster).
+ *
+ * Was a flat 3 — too small to make a real choice. There are FOUR disciplines and up to four
+ * coach slots, so three cards could not even show one of each: a player hunting a specific
+ * discipline could go weeks without seeing it, which reads as the market being broken rather
+ * than scarce. Scarcity is supposed to come from "no rerolls, the slate is fixed until
+ * Monday", not from the board being too small to contain the choice.
+ *
+ * Scales with tier so the board grows as the camp does, and so a Tier-2 player (2 slots)
+ * isn't reading six cards for two openings.
+ */
+const MARKET_CANDIDATES_BY_TIER = Object.freeze({ 1: 4, 2: 4, 3: 5, 4: 6 });
+const MARKET_CANDIDATES = 4;             // legacy flat fallback / display default
+
+/** Candidate count for a camp tier, ignoring the Well-Connected bonus. */
+function marketCandidatesForTier(tier) {
+    return MARKET_CANDIDATES_BY_TIER[Math.max(1, Math.min(MAX_CAMP_TIER, Number(tier) || 1))] || MARKET_CANDIDATES;
+}
 const MARKET_MAX_PER_DOMAIN = 2;
 const HOME_CAMP_WEEK_MS = 604_800_000;
 /**
@@ -1025,6 +1043,8 @@ module.exports = {
     traitView,
     MARKET_MIN_TIER,
     MARKET_CANDIDATES,
+    MARKET_CANDIDATES_BY_TIER,
+    marketCandidatesForTier,
     MARKET_MAX_PER_DOMAIN,
     MARKET_NAME_REDRAW_TRIES,
     MARKET_RARITY_ODDS,
