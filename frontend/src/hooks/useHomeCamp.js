@@ -15,7 +15,7 @@ import { api } from "../api";
  * so a fast fighter-switch or unmount never lets a stale response clobber
  * newer state.
  *
- * Returns { camp, loading, error, refetch, train, promote, claimPerk, rename,
+ * Returns { camp, loading, error, refetch, train, promote, claimPerk, claimTeach, rename,
  * market, marketLoading, marketError, loadMarket, hire, fire, renovate,
  * deepClean }.
  * `camp` is the raw CampState payload (`{ camp, condition, wages, slots,
@@ -138,6 +138,20 @@ export function useHomeCamp(fighterId) {
   );
 
   /**
+   * POST /home-camp/:fighterId/coaches/:coachId/claim-teach — hands over teach-pool moves
+   * the player paid to promote through before the teach channel existed. `taughtMoves` comes
+   * back in the SAME shape promote uses, so the caller reuses one reveal path.
+   */
+  const claimTeach = useCallback(
+    async (coachId) => {
+      const res = await api.claimHomeCampMissedTeach(fighterId, coachId);
+      if (res?.camp) setCamp(res.camp);
+      return res;
+    },
+    [fighterId]
+  );
+
+  /**
    * GET /home-camp/:fighterId/market — rolls the week lazily on read
    * (contract §4.2). Kept in its own {market, marketLoading, marketError}
    * trio rather than folded into `camp` because it's a separate, heavier
@@ -234,7 +248,7 @@ export function useHomeCamp(fighterId) {
   );
 
   return {
-    camp, loading, error, refetch, train, promote, claimPerk, rename,
+    camp, loading, error, refetch, train, promote, claimPerk, claimTeach, rename,
     market, marketLoading, marketError, loadMarket, hire, fire, renovate, deepClean,
   };
 }

@@ -236,6 +236,8 @@ function generateCandidate(rng, { domain, rarity, taken }) {
         isStarter: false,
         hiredAt: new Date(),      // overwritten at hire; meaningless while on the market
         rank: 1,
+        joinedAtRank: 1,          // every market hire starts at 1 — all later ranks are paid for
+
         sessionsCompleted: 0,
         relevantWins: 0,
         morale: MORALE_START,
@@ -550,6 +552,8 @@ async function hireCandidate(fighterId, candidateId) {
         hiredAt: now,
         morale: MORALE_START,
         rank: 1,
+        joinedAtRank: 1,          // see above — the hire baseline is always 1
+
         lastSessionAt: null,
         sessionsCompleted: familiarityApplied ? familiarityApplied.sessions : 0,
         relevantWins: familiarityApplied ? familiarityApplied.wins : 0,

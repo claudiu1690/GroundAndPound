@@ -220,6 +220,35 @@ const COACH_RANKS = Object.freeze({
 const COACH_MAX_RANK = 4;
 /** Flat XP bonus a Rank-3+ coach adds on top of the tier multiplier. */
 const COACH_RANK3_XP_BONUS = 0.05;
+
+/**
+ * CONDITIONING's camp-wide passive — the fraction shaved off EVERY camp drill's injury risk
+ * while he is on staff, by his rank.
+ *
+ * WHY IT EXISTS: he is the only archetype whose kit contains statless drills (2 of 4), and
+ * both of them pay out in CAPPED resources — Max Stamina stops at 120, Facility Condition at
+ * 100. Every other coach's four drills grant permanent stat XP forever. So once a player
+ * topped both meters out, half his kit was dead and there was no reason left to hold a slot
+ * for him. This gives him a reason that cannot expire: he is insurance, not maintenance.
+ *
+ * Deliberately a PASSIVE, not another drill — it pays while you train with SOMEONE ELSE,
+ * which is what makes a support slot worth its wage. Scaled by rank so promoting him is a
+ * real decision, and multiplicative so it shaves risky sessions hardest (a 0% drill can
+ * never become "more than 0% safe").
+ */
+const CONDITIONING_INJURY_REDUCTION_BY_RANK = Object.freeze({ 1: 0.15, 2: 0.20, 3: 0.25, 4: 0.30 });
+
+/**
+ * Total injury reduction the roster's CONDITIONING coach provides, 0 when there isn't one.
+ * NOT additive across coaches — the roster can only hold one coach per archetype, and this
+ * reads the first match so a future rule change can't silently start stacking.
+ */
+function conditioningInjuryReduction(coaches) {
+    const c = (Array.isArray(coaches) ? coaches : []).find((x) => x && x.archetype === "CONDITIONING");
+    if (!c) return 0;
+    const rank = Math.max(1, Math.min(COACH_MAX_RANK, Number(c.rank) || 1));
+    return CONDITIONING_INJURY_REDUCTION_BY_RANK[rank] || 0;
+}
 const COACH_RANK_LABELS = Object.freeze(["Cornerman", "Coach", "Head Coach", "Master"]);
 /** Hard cap on the coach roster (schema + service enforced). */
 const MAX_COACHES = 4;
@@ -980,6 +1009,8 @@ module.exports = {
     COACH_RANKS,
     COACH_MAX_RANK,
     COACH_RANK3_XP_BONUS,
+    CONDITIONING_INJURY_REDUCTION_BY_RANK,
+    conditioningInjuryReduction,
     COACH_RANK_LABELS,
     COACH_RARITIES,
     MAX_COACHES,

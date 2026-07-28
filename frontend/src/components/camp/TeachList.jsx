@@ -1,10 +1,10 @@
 import { memo } from "react";
-import { Check, Star, Lock, MinusCircle } from "lucide-react";
+import { Check, Star, Lock, MinusCircle, Gift } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { rarityColor } from "./campConstants";
 
 /** What this coach teaches — taught / next-to-unlock / still-locked moves. */
-export const TeachList = memo(function TeachList({ teaches }) {
+export const TeachList = memo(function TeachList({ teaches, onClaim = null, claiming = false }) {
   if (!teaches || teaches.length === 0) {
     return <div className="yc-teach-empty">{t("yourCamp.teach.empty")}</div>;
   }
@@ -40,6 +40,24 @@ export const TeachList = memo(function TeachList({ teaches }) {
               <span className="yc-move-state unavailable">
                 <MinusCircle size={11} /> {t("yourCamp.teach.unavailable", { rank: m.rankReq })}
               </span>
+            )}
+            {/* Owed: the player PAID for this promotion before the teach channel existed, so
+                the move was never delivered. One free click settles it. */}
+            {m.state === "claimable" && (
+              onClaim ? (
+                <button
+                  type="button"
+                  className="yc-move-claim"
+                  disabled={claiming}
+                  onClick={onClaim}
+                >
+                  <Gift size={11} /> {claiming ? t("yourCamp.teach.claiming") : t("yourCamp.teach.claim")}
+                </button>
+              ) : (
+                <span className="yc-move-state claimable">
+                  <Gift size={11} /> {t("yourCamp.teach.owed")}
+                </span>
+              )
             )}
           </div>
         );

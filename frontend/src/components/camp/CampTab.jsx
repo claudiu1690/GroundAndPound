@@ -216,7 +216,7 @@ function buildFirePreview(coach, campState) {
 export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMessage, addToast, onMoveDropReveal }) {
   const fighterId = fighter?._id;
   const {
-    camp: campState, loading, error, refetch, train, promote, claimPerk, rename,
+    camp: campState, loading, error, refetch, train, promote, claimPerk, claimTeach, rename,
     market, marketLoading, marketError, loadMarket, hire, fire, renovate, deepClean,
   } = useHomeCamp(fighterId);
 
@@ -225,6 +225,7 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
   const [training, setTraining] = useState(false);
   const [promotingCoachId, setPromotingCoachId] = useState(null);
   const [claimingCoachId, setClaimingCoachId] = useState(null);
+  const [claimingTeachId, setClaimingTeachId] = useState(null);
   const [actionError, setActionError] = useState("");
 
   // ── Phase 1: Trainer Market ──────────────────────────────────────────
@@ -432,6 +433,36 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
     [fighterId, claimingCoachId, claimPerk, addToast, onMessage, onRefreshFighter]
   );
 
+  /**
+   * Settles teach-pool moves owed from promotions the player bought before the teach channel
+   * shipped. `taughtMoves` arrives in the SAME shape promote returns, so this reuses the exact
+   * branch used there — DUPLICATE becomes a cash toast, everything else a queued reveal.
+   */
+  const handleClaimTeach = useCallback(
+    async (coachId) => {
+      if (!fighterId || claimingTeachId) return;
+      setClaimingTeachId(coachId);
+      try {
+        const res = await claimTeach(coachId);
+        onMessage?.(res?.message || t("yourCamp.teach.claimed"));
+        const moves = Array.isArray(res?.taughtMoves) ? res.taughtMoves : [];
+        for (const m of moves) {
+          if (m.outcome === "DUPLICATE") {
+            addToast?.({ kind: "moveDupe", name: m.name, cashAwarded: m.cashAwarded ?? 0 });
+          } else {
+            onMoveDropReveal?.({ ...m, source: "coach" });
+          }
+        }
+        if (onRefreshFighter) await onRefreshFighter(fighterId);
+      } catch (e) {
+        onMessage?.(e?.message || t("yourCamp.errors.claimTeachFailed"));
+      } finally {
+        setClaimingTeachId(null);
+      }
+    },
+    [fighterId, claimingTeachId, claimTeach, addToast, onMessage, onMoveDropReveal, onRefreshFighter]
+  );
+
   // ── Phase 1: Trainer Market ───────────────────────────────────────────
   const handleScout = useCallback(() => {
     setMarketOpen(true);
@@ -597,6 +628,8 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
           promoting={promotingCoachId === selectedCoach.coachId}
           onClaimPerk={() => handleClaimPerk(selectedCoach.coachId)}
           claimingPerk={claimingCoachId === selectedCoach.coachId}
+          onClaimTeach={() => handleClaimTeach(selectedCoach.coachId)}
+          claimingTeach={claimingTeachId === selectedCoach.coachId}
           actionError={actionError}
           onFireRequest={() => handleRequestFire(selectedCoach)}
           firing={firing && pendingFire?.coachId === selectedCoach.coachId}

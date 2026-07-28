@@ -679,6 +679,42 @@ reports those slots as `unavailable` — the screen says "missed", never a count
 rank he already holds. His Rank-4 archetype perk is still owed and is settled separately
 by `POST …/claim-perk`.
 
+#### The Conditioning coach's camp-wide passive (2026-07-28)
+
+CONDITIONING is the only archetype whose kit contains **statless drills — 2 of 4**
+(`sc_plus`, `recovery_mobility`). Every other archetype's four drills grant permanent stat
+XP. Worse, both of his pay out in **capped** resources: Max Stamina stops at 120, Facility
+Condition at 100. Once a player topped both meters out, half his kit was dead and there was
+no reason left to hold a roster slot for him — a structural problem, not a tuning one, since
+his whole identity was maintenance and maintenance has a ceiling.
+
+He now carries a passive that cannot expire:
+
+| His rank | Injury risk reduction, camp-wide |
+|---|---|
+| 1 | −15% |
+| 2 | −20% |
+| 3 | −25% |
+| 4 | −30% |
+
+Rules, all enforced in `effectiveInjuryRate` (the single home for camp injury math):
+- **It applies to EVERY camp drill, including sessions run with another coach.** That
+  cross-coach reach is what makes a support slot worth its weekly wage — he pays while you
+  train with someone else.
+- **Multiplicative, applied after the FIQ reduction.** It shaves dangerous sessions hardest
+  and can never manufacture risk on a 0% drill.
+- **The 30%-of-nominal floor still binds, and is applied last.** Stacking a Rank-4
+  Conditioning coach onto a high-FIQ fighter reaches the existing floor sooner; it never
+  buys immunity. "Safer, never immune" holds unchanged.
+- **It does not stack** across multiple Conditioning coaches (the roster allows one per
+  archetype anyway; `conditioningInjuryReduction` reads the first match so a future rule
+  change can't silently start summing).
+
+Also fixed alongside it: `sc_plus` is now **blocked** at the Max Stamina cap
+(`canTrain: false`, plus a server-side check ahead of `deductBatchEnergy`). It has
+`stats: []`, `xpBase: 0`, `dropPct: 0`, so at the cap it delivered literally nothing while
+still charging 4 energy — the code already knew (`capHit`) and reported it only afterwards.
+
 #### Legendary masterclass drills
 
 Every Legendary coach carries a fifth drill his domain's `LEGENDARY_EXCLUSIVE_DRILLS`

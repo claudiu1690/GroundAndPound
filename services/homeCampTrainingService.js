@@ -21,7 +21,7 @@ const specialMovesService = require("./specialMovesService");
 const homeCampService = require("./homeCampService");
 const coachService = require("./homeCampCoachService");
 const trainingService = require("./trainingService");
-const { applySessionXp, applyMaxStaminaSession } = require("../utils/trainingSession");
+const { applySessionXp, applyMaxStaminaSession, MAX_STAMINA_CAP } = require("../utils/trainingSession");
 const { rollSessionXp, tierForRoll } = require("../utils/trainingRng");
 const { calculateOverall } = require("../utils/overallRating");
 const { STAT_TO_VAL_KEY } = require("../utils/statProgression");
@@ -41,6 +41,7 @@ const {
     FLAGSHIP_POOL_BIAS,
     MAX_BATCH,
     effectiveTier,
+    conditioningInjuryReduction,
     drillForCoach,
     fallbackDrill,
 } = require("../consts/homeCampConfig");
@@ -50,12 +51,21 @@ const { campError } = coachService;
 /**
  * Effective injury probability for a camp drill (contract §4.1.4). FIQ shaves the rate but can
  * never take it below 30% of the drill's nominal risk — a high-FIQ fighter is safer, never immune.
+ *
+ * `conditioningCut` is the CONDITIONING coach's camp-wide passive (0 when none is on staff),
+ * applied MULTIPLICATIVELY after FIQ. Multiplicative on purpose: it shaves the dangerous
+ * sessions hardest, and it can never manufacture risk on a 0% drill or turn a safe drill
+ * negative. The 30%-of-nominal floor is applied LAST and still binds, so stacking a Rank-4
+ * Conditioning coach onto a high-FIQ fighter cannot buy immunity — only the same floor,
+ * reached sooner.
  */
-function effectiveInjuryRate(injuryPct, fiq) {
+function effectiveInjuryRate(injuryPct, fiq, conditioningCut = 0) {
     const base = Math.max(0, Number(injuryPct) || 0) / 100;
     if (base <= 0) return 0;
     const reduction = Math.max(0, ((Number(fiq) || 10) - 10) * 0.001);
-    return Math.max(base * 0.3, base - reduction);
+    const afterFiq = base - reduction;
+    const cut = Math.max(0, Math.min(1, Number(conditioningCut) || 0));
+    return Math.max(base * 0.3, afterFiq * (1 - cut));
 }
 
 /** Blocked-injury lookup for a drill family. `none` is never blocked. */
@@ -98,6 +108,10 @@ async function runDrill(fighterId, body = {}) {
     trainingService.ensureDailyTrainingState(fighter);
 
     const camp = await homeCampService.ensureCamp(fighter);
+    // The CONDITIONING coach's camp-wide passive — read once here so it applies to EVERY
+    // drill in this batch, including drills run with a different coach. That cross-coach
+    // reach is the entire point: it's what makes a support slot worth its weekly wage.
+    const conditioningCut = conditioningInjuryReduction(camp.coaches);
     const tier = effectiveTier(camp, fighter);
     const tierCfg = CAMP_TIERS[tier] || CAMP_TIERS[1];
 
@@ -132,6 +146,18 @@ async function runDrill(fighterId, body = {}) {
         if (!drill) throw campError("unknown_drill", "Unknown drill", 400);
         if (drill.unlockRank > (Number(coach.rank) || 1)) {
             throw campError("drill_locked", "That drill unlocks at a higher coach rank", 400);
+        }
+        // A `raisesMaxStamina` drill has stats:[], xpBase:0, dropPct:0 — Max Stamina is its
+        // ONLY output, so at the cap it can deliver literally nothing. The card already blocks
+        // it (buildDrillViews), but a stale tab would otherwise still spend the energy and get
+        // back "Max Stamina already at cap". Sits BEFORE deductBatchEnergy: refusing costs
+        // ZERO energy, which is the whole point of the fix.
+        if (drill.raisesMaxStamina && (Number(fighter.maxStamina) || 100) >= MAX_STAMINA_CAP) {
+            throw campError(
+                "max_stamina_capped",
+                `Max Stamina is already at its cap of ${MAX_STAMINA_CAP} — this session has nothing left to give`,
+                400
+            );
         }
 
         // ⚠️ TRAITS ARE APPLIED HERE, BEFORE ANYTHING READS THE DRILL — energy deduction,
@@ -289,7 +315,7 @@ async function runDrill(fighterId, body = {}) {
         }
 
         // Injury — the drill's own percentage, FIQ-shaved; severity split is shared.
-        if (drill.injuryPct > 0 && Math.random() < effectiveInjuryRate(drill.injuryPct, fighter.fiq || 10)) {
+        if (drill.injuryPct > 0 && Math.random() < effectiveInjuryRate(drill.injuryPct, fighter.fiq || 10, conditioningCut)) {
             const injuryType = pickSparringInjuryType(fighter.fiq || 10);
             const inj = buildInjury(injuryType, fighter.promotionTier);
             if (inj && !(injuryGraceActive(fighter) && inj.cannotFight)) {

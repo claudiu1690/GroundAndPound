@@ -35,6 +35,17 @@ const coachSchema = new mongoose.Schema({
     isStarter: { type: Boolean, default: false },
     hiredAt: { type: Date, default: Date.now },
     rank: { type: Number, default: 1, min: 1, max: COACH_MAX_RANK },
+    // The rank this coach was AT WHEN HE JOINED — 1 for every market hire and every new-camp
+    // starter, and the converted gym rank for a migrated head coach.
+    //
+    // ⚠️ THIS IS WHAT SEPARATES "THE PLAYER PAID FOR THIS RANK" FROM "HE ARRIVED WITH IT",
+    // and that distinction decides whether a teach slot he has already ranked past can be
+    // claimed. Promotions the player bought in the camp earn their move; ranks a gym veteran
+    // was converted in at do NOT (that rule exists so a Rank-4 conversion can't hand over a
+    // whole Legendary teach pool for $0). Absent on documents written before this field
+    // existed — `resolveJoinedAtRank` derives a conservative fallback rather than assuming 1,
+    // which would retro-grant exactly the case the rule forbids.
+    joinedAtRank: { type: Number, min: 1, max: COACH_MAX_RANK, default: 1 },
     // Sessions run WITH THIS COACH (not the fighter's career total).
     sessionsCompleted: { type: Number, default: 0, min: 0 },
     relevantWins: { type: Number, default: 0, min: 0 },

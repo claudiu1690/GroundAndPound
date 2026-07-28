@@ -30,6 +30,10 @@ const CODE_STATUS = {
     insufficient_cash: 400,
     perk_not_claimable: 400,
     perk_already_held: 400,
+    // PHASE 2 — settling teach slots owed from pre-teach-channel promotions
+    nothing_to_claim: 400,
+    max_stamina_capped: 400,
+    teach_channel_disabled: 400,
     // PHASE 1 — market, hire/fire, renovation, deep clean
     market_locked: 403,
     candidate_not_found: 404,
@@ -141,6 +145,27 @@ async function claimCoachPerk(req, res) {
     }
 }
 
+/**
+ * POST /home-camp/:fighterId/coaches/:coachId/claim-teach — body {}.
+ * Free: hands over teach-pool moves the player PAID to promote through before the teach
+ * channel existed (v1.6). Returns `taughtMoves` in the SAME shape promote does, so the client
+ * reuses one reveal path for both.
+ */
+async function claimMissedTeach(req, res) {
+    try {
+        const { taughtMoves, coachId, message, fighter, camp } =
+            await homeCampCoachService.claimMissedTeach(req.params.fighterId, req.params.coachId);
+        res.json({
+            coachId,
+            taughtMoves,
+            message,
+            camp: homeCampService.buildCampState(fighter, camp),
+        });
+    } catch (err) {
+        handleError(res, err, "claimTeach");
+    }
+}
+
 /** GET /home-camp/:fighterId/market — rolls this week's candidates lazily on read. */
 async function getMarket(req, res) {
     try {
@@ -203,6 +228,7 @@ module.exports = {
     train,
     promoteCoach,
     claimCoachPerk,
+    claimMissedTeach,
     getMarket,
     hireCandidate,
     fireCoach,

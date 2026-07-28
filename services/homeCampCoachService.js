@@ -21,6 +21,9 @@ const specialMovesService = require("./specialMovesService");
 const badgeService = require("./badgeService");
 const config = require("../config");
 const saveWithVersionRetry = require("../utils/saveWithVersionRetry");
+// The Max Stamina ceiling, from the one module that applies it — a `raisesMaxStamina` drill
+// is pure waste at the cap, and the card must say so before the energy is spent.
+const { MAX_STAMINA_CAP } = require("../utils/trainingSession");
 const { SPECIAL_MOVES_BY_ID, rarityRank } = require("../consts/specialMovesCatalog");
 const {
     CAMP_TIERS,
@@ -29,6 +32,7 @@ const {
     COACH_MAX_RANK,
     COACH_RARITIES,
     COACH_RANK3_XP_BONUS,
+    CONDITIONING_INJURY_REDUCTION_BY_RANK,
     COACH_RANK_LABELS,
     CONDITION_MAX,
     DOMAIN_TEACH_POOLS,
@@ -85,6 +89,9 @@ function createStarterCoach(domain, seed = {}) {
         isStarter: true,
         hiredAt: new Date(),
         rank,
+        // He ARRIVED at this rank — the player paid for none of it. Recording it here is what
+        // stops a converted gym veteran later claiming the teach slots he never promoted through.
+        joinedAtRank: rank,
         sessionsCompleted: Math.max(0, Math.floor(Number(seed.sessionsCompleted)) || 0),
         relevantWins: Math.max(0, Math.floor(Number(seed.relevantWins)) || 0),
         morale: 100,
@@ -213,7 +220,23 @@ function rankGrant(coach, rank) {
     const xpBonusPct = rank === 3 ? Math.round(COACH_RANK3_XP_BONUS * 100) : 0;
     const perk = rank === COACH_MAX_RANK ? perkForArchetype(coach.archetype) : null;
     const teaches = rank > (Number(coach.rank) || 1) ? resolveTeachGrants(coach, rank) : [];
-    return { isJoin: false, drill, xpBonusPct, perk, teaches };
+
+    // What a rank ALREADY PASSED was supposed to teach, and whether it actually did.
+    // `teaches` above is empty for a passed rank (nothing left to grant), which is why the
+    // Development Track silently dropped the fragment — so a Rank-2 node read "Unlocks
+    // Grind-It-Out Rounds" while the teach list separately said the Rank-2 move was missed.
+    // Two panels, one rank, contradictory stories. This lets the node show the move it owed.
+    const pool = Array.isArray(coach.teachPoolMoveIds) ? coach.teachPoolMoveIds : [];
+    const alreadyTaught = new Set(coach.taughtMoveIds || []);
+    const past = [];
+    if (rank <= (Number(coach.rank) || 1)) {
+        for (const i of teachSlotsForRank(coach, rank)) {
+            const moveId = pool[i];
+            if (!moveId || !SPECIAL_MOVES_BY_ID[moveId]) continue;
+            past.push({ moveId, grantRarity: teachRarityFor(coach.rarity, SPECIAL_MOVES_BY_ID[moveId].minRarity), delivered: alreadyTaught.has(moveId) });
+        }
+    }
+    return { isJoin: false, drill, xpBonusPct, perk, teaches, past };
 }
 
 /**
@@ -271,6 +294,14 @@ function rankLabelFor(coach, rank, perkView = null) {
     // Names only — this renders inside a small track node. The rarity lives on the next-rank
     // card (grantsForRank) where there is room for it.
     if (g.teaches.length) parts.push(`Teaches ${g.teaches.map((t) => teachGrantLabel(t, false)).join(", ")}`);
+    // A rank already passed. Delivered moves read normally; ones that never arrived are
+    // wrapped in ~~…~~ so the node shows what it OWED, struck through, instead of quietly
+    // omitting it and contradicting the teach list. The `string[]` contract is unchanged —
+    // the client strips the markers and applies line-through (see DevelopmentTrack).
+    for (const p of (g.past || [])) {
+        const label = `Teaches ${teachGrantLabel(p, false)}`;
+        parts.push(p.delivered ? label : `~~${label}~~`);
+    }
     if (g.perk) parts.push(perkCaption(g.perk, perkView));
     // Honest, not filler: a rank that genuinely adds nothing says so.
     return parts.join(" · ") || "No new unlocks";
@@ -318,9 +349,14 @@ function rankProgress(coach) {
     const archetype = COACH_ARCHETYPES[coach.archetype] || COACH_ARCHETYPES.STRIKING;
     const sessions = Number(coach.sessionsCompleted) || 0;
     const wins = Number(coach.relevantWins) || 0;
+    // `cur` is CLAMPED TO `tgt` for display. `sessionsCompleted` / `relevantWins` are the
+    // coach's lifetime totals while each rank's requirement is an absolute threshold, so a
+    // coach sitting on a met requirement kept counting past it and the card read "34/12" —
+    // which looks like a bug rather than "done". `reqsMet` below still tests the RAW totals,
+    // so clamping changes only what the player sees, never who can promote.
     const reqs = [
-        { key: "sessions", label: "Sessions", cur: sessions, tgt: tgtSessions },
-        { key: "wins", label: archetype.relevantWinLabel, cur: wins, tgt: tgtWins },
+        { key: "sessions", label: "Sessions", cur: Math.min(sessions, tgtSessions), tgt: tgtSessions },
+        { key: "wins", label: archetype.relevantWinLabel, cur: Math.min(wins, tgtWins), tgt: tgtWins },
     ];
     return { next, reqs, reqsMet: sessions >= tgtSessions && wins >= tgtWins };
 }
@@ -469,10 +505,32 @@ function teachGrantLabel(grant, withRarity) {
  * ONE home for roster coaches AND market candidates: a candidate is the same subdoc shape, so
  * a hire must not change what the teach list says.
  */
-function buildTeachList(coach) {
+/**
+ * The rank a coach JOINED at. Everything above it, the player paid for.
+ *
+ * Stored since 2026-07-28; derived conservatively for older documents, where guessing wrong
+ * in the generous direction would retro-grant a whole teach pool for free:
+ *   · a hired coach ALWAYS joins at rank 1 (homeCampMarketService hardcodes it), so every
+ *     rank he holds above 1 was bought — safe to assume 1.
+ *   · a starter in a NEW camp likewise begins at rank 1.
+ *   · a starter in a GYM_MIGRATION camp arrived at an unrecorded converted rank, so we assume
+ *     he arrived at his CURRENT rank and grant nothing. That under-grants a migrated veteran
+ *     who was then promoted further in-camp — deliberately the wrong answer in the safe
+ *     direction, and only for documents predating the field.
+ */
+function resolveJoinedAtRank(coach, campOrigin = null) {
+    const stored = Number(coach && coach.joinedAtRank);
+    if (Number.isFinite(stored) && stored >= 1) return stored;
+    if (!coach || !coach.isStarter) return 1;
+    if (campOrigin && campOrigin.source === "GYM_MIGRATION") return Number(coach.rank) || 1;
+    return 1;
+}
+
+function buildTeachList(coach, campOrigin = null) {
     const pool = coach.teachPoolMoveIds || [];
     const taught = new Set(coach.taughtMoveIds || []);
     const rank = Number(coach.rank) || 1;
+    const joinedAt = resolveJoinedAtRank(coach, campOrigin);
     const out = [];
     for (let i = 0; i < pool.length; i++) {
         const moveId = pool[i];
@@ -483,7 +541,13 @@ function buildTeachList(coach) {
         if (taught.has(moveId)) {
             state = "taught";
         } else if (rank >= rankReq) {
-            state = "unavailable";
+            // Past the slot with nothing recorded. Two very different reasons:
+            //   · the player PAID for that promotion (rankReq > joinedAt) and the teach channel
+            //     simply didn't exist yet — every coach promoted during v1.6 is in this state.
+            //     They earned it, so it's `claimable`, settled by POST …/claim-teach.
+            //   · he ARRIVED already past it (rankReq <= joinedAt) — never promoted, never
+            //     earned. Stays `unavailable`.
+            state = rankReq > joinedAt ? "claimable" : "unavailable";
         } else if (rankReq === rank + 1) {
             state = "next";
         } else {
@@ -498,6 +562,26 @@ function buildTeachList(coach) {
         });
     }
     return out;
+}
+
+/**
+ * The coach's camp-wide passive `{key,label,effect}`, or null.
+ *
+ * CONDITIONING only, for now. His two statless drills pay out in CAPPED resources (Max
+ * Stamina 120, Condition 100), so once both were topped out he was the only coach in the
+ * game with half a dead kit and no reason to keep. This is that reason, and it applies to
+ * every drill in the camp — including ones run with another coach.
+ */
+function buildPassiveView(coach) {
+    if (!coach || coach.archetype !== "CONDITIONING") return null;
+    const rank = Math.max(1, Math.min(COACH_MAX_RANK, Number(coach.rank) || 1));
+    const cut = CONDITIONING_INJURY_REDUCTION_BY_RANK[rank] || 0;
+    if (!cut) return null;
+    return {
+        key: "CONDITIONING_INJURY",
+        label: "Camp-wide",
+        effect: `-${Math.round(cut * 100)}% injury risk on every camp session, including sessions with your other coaches`,
+    };
 }
 
 /** Tenure blurb for the coach card. */
@@ -539,7 +623,12 @@ function moraleView(coach) {
  * "???" for it, so shipping the numbers would spoil the reveal AND leak unearned config.
  * `blocks` = { spar: injuryOrNull, bag: injuryOrNull } resolved once per request by the caller.
  */
-function buildDrillViews(coach, blocks) {
+function buildDrillViews(coach, blocks, fighter = null) {
+    // A `raisesMaxStamina` drill has stats:[], xpBase:0, dropPct:0 — Max Stamina is its ONLY
+    // output. At the cap it therefore delivers nothing at all, so offering it as trainable
+    // sells the player a session that cannot do anything. Blocked here (and re-checked in
+    // runDrill) rather than reported after the energy is already gone.
+    const atStaminaCap = !!fighter && (Number(fighter.maxStamina) || 100) >= MAX_STAMINA_CAP;
     // PHASE 2: `drillsForCoach`, not `drillsForArchetype` — a LEGENDARY carrying an
     // `exclusiveSessionKey` gets a FIFTH card (his masterclass). Everyone else still gets 4.
     // Resolution is by HIS stored key, so the extra card can only appear on a coach who can
@@ -562,6 +651,7 @@ function buildDrillViews(coach, blocks) {
         // +1s AND the resolver applies them. Do not read `raw` past this line.
         const d = applyTraitToDrill(raw, coach.traitKey);
         const blocked = blocks[d.family] || null;
+        const cappedOut = !!d.raisesMaxStamina && atStaminaCap;
         return {
             key: d.key,
             name: d.name,
@@ -581,8 +671,11 @@ function buildDrillViews(coach, blocks) {
             // no stats, no XP and nothing truthful to render.
             raisesMaxStamina: !!d.raisesMaxStamina,
             family: d.family, // "spar" | "bag" | "none" — drives the card's stripe color client-side
-            canTrain: !blocked,
-            blockedReason: blocked ? `${blocked.label} (${blocked.effect})` : null,
+            // Injury wins the message when both apply — it's the more urgent thing to tell them.
+            canTrain: !blocked && !cappedOut,
+            blockedReason: blocked
+                ? `${blocked.label} (${blocked.effect})`
+                : (cappedOut ? `Max Stamina is already at its cap of ${MAX_STAMINA_CAP}` : null),
         };
     });
 }
@@ -650,8 +743,12 @@ function buildCoachView(coach, fighter, blocks, ctx = {}) {
         // null when this archetype has no perk. At max rank this is the ONLY truthful signal
         // the UI has — nextRank is null there and says nothing about the perk.
         perk,
-        teaches: buildTeachList(coach),
-        drills: buildDrillViews(coach, blocks),
+        // Camp-wide passive, or null. Only CONDITIONING has one today. Rendered on his card
+        // because it is the answer to "why hold a slot for him once my meters are full" —
+        // it pays while you train with someone else, and it never caps.
+        passive: buildPassiveView(coach),
+        teaches: buildTeachList(coach, ctx.campOrigin || null),
+        drills: buildDrillViews(coach, blocks, fighter),
     };
 }
 
@@ -1071,6 +1168,124 @@ async function claimCoachPerk(fighterId, coachId) {
 }
 
 /**
+ * Hand over teach-pool moves a coach ranked past WITHOUT being taught them.
+ *
+ * WHY THIS EXISTS: the camp shipped (v1.6) with the rank ladder but no teach channel — that
+ * arrived in v1.7. Every coach a player promoted in between banked the rank and the drill
+ * unlock while the move silently never happened, and the teach list then reported it as
+ * "missed". Those players paid full price for a promotion and got less than someone
+ * promoting the same coach today. This settles that debt, in one explicit free click.
+ *
+ * ⚠️ IT IS NOT A GENERAL RETRO-GRANT. Only slots the player actually PAID to promote through
+ * are eligible — `rankReq > joinedAtRank`. A coach converted in from a gym at Rank 4 never
+ * promoted through anything, so his pool stays permanently out of reach, which is the rule
+ * `deriveInitialCampState` was built around ("never retro-grant a move on migration"). Take
+ * that condition out and a gym veteran collects a full Legendary pool for $0.
+ *
+ * FREE, like claimCoachPerk: the promotions were already bought.
+ *
+ * @returns {Promise<{taughtMoves:Array, coachId:string, message:string, fighter:object, camp:object}>}
+ */
+async function claimMissedTeach(fighterId, coachId) {
+    if (!config.features.campTeachChannel) {
+        throw campError("teach_channel_disabled", "Coaches aren't teaching moves right now", 400);
+    }
+
+    const fighter = await Fighter.findById(fighterId);
+    if (!fighter) throw campError("fighter_not_found", "Fighter not found", 404);
+
+    const camp = await HomeCamp.findOne({ fighterId: fighter._id });
+    if (!camp) throw campError("camp_not_found", "Camp not found", 404);
+
+    let coach;
+    try {
+        coach = camp.coaches.id(coachId);
+    } catch (_) {
+        coach = null;
+    }
+    if (!coach) throw campError("coach_not_found", "Coach not found", 404);
+
+    // Eligible = already ranked past it, never taught, and the rank was PAID for.
+    const joinedAt = resolveJoinedAtRank(coach, camp.origin);
+    const rank = Number(coach.rank) || 1;
+    const taught = new Set(coach.taughtMoveIds || []);
+    const pool = Array.isArray(coach.teachPoolMoveIds) ? coach.teachPoolMoveIds : [];
+    const coachRarityRank = rarityRank[coach.rarity] ?? -1;
+
+    const eligible = [];
+    const seen = new Set();
+    for (let i = 0; i < pool.length; i++) {
+        const moveId = pool[i];
+        if (!moveId || seen.has(moveId)) continue;
+        const rankReq = TEACH_RANK_BY_SLOT[i] ?? COACH_MAX_RANK;
+        if (rank < rankReq) continue;          // not reached — that's `next`/`locked`, not owed
+        if (rankReq <= joinedAt) continue;     // arrived past it — never earned
+        if (taught.has(moveId)) continue;      // already settled
+        const def = SPECIAL_MOVES_BY_ID[moveId];
+        if (!def) continue;
+        if ((rarityRank[def.minRarity] ?? Infinity) > coachRarityRank) continue;  // defence in depth
+        seen.add(moveId);
+        eligible.push({ moveId, grantRarity: teachRarityFor(coach.rarity, def.minRarity) });
+    }
+
+    if (eligible.length === 0) {
+        throw campError("nothing_to_claim", `${coach.name} has nothing owed to you`, 400);
+    }
+
+    // ── THE MUTEX ────────────────────────────────────────────────────────────────────────
+    // Same shape as attemptPromotion's rank bump and claimCoachPerk: ONE atomic conditional
+    // update, filtered on every id still being absent, so two concurrent claims can only
+    // grant once. A read-modify-save is not a mutex here (no `optimisticConcurrency`).
+    const ids = eligible.map((g) => g.moveId);
+    const res = await HomeCamp.updateOne(
+        {
+            _id: camp._id,
+            coaches: { $elemMatch: { _id: coach._id, taughtMoveIds: { $nin: ids } } },
+        },
+        { $addToSet: { "coaches.$.taughtMoveIds": { $each: ids } } }
+    );
+    if (res.modifiedCount !== 1) {
+        throw campError("nothing_to_claim", `${coach.name} has nothing owed to you`, 400);
+    }
+
+    const taughtMoves = [];
+    let saved;
+    try {
+        saved = await saveWithVersionRetry(
+            () => Fighter.findById(fighterId),
+            (doc) => {
+                taughtMoves.length = 0;   // a retry re-runs this on a fresh doc
+                for (const g of eligible) {
+                    const r = specialMovesService.grantOrUpgrade(doc, g.moveId, g.grantRarity);
+                    if (r) taughtMoves.push({ moveId: g.moveId, ...r });
+                }
+            }
+        );
+    } catch (err) {
+        // Undo the teach record so the debt is still claimable. Safe: the filter above proved
+        // every id was absent, so this can only remove what this request added.
+        await HomeCamp.updateOne(
+            { _id: camp._id, coaches: { $elemMatch: { _id: coach._id } } },
+            { $pull: { "coaches.$.taughtMoveIds": { $in: ids } } }
+        ).catch((e) => console.error("[homeCamp] claim-teach rollback failed:", e.message));
+        throw err;
+    }
+
+    const label = taughtMoves
+        .map((m) => `${m.name} (${m.rarity.charAt(0)}${m.rarity.slice(1).toLowerCase()})`)
+        .join(", ");
+    const freshCamp = await HomeCamp.findOne({ fighterId: fighter._id }) || camp;
+
+    return {
+        coachId: String(coach._id),
+        taughtMoves,
+        message: `${coach.name} finally showed you ${label}.`,
+        fighter: saved,
+        camp: freshCamp,
+    };
+}
+
+/**
  * PvE fight-resolved hook (replaces Phase 0's `onFightWin`).
  *
  * Two jobs, deliberately in ONE hook so the fight path has ONE camp call site:
@@ -1150,6 +1365,8 @@ module.exports = {
     promotionQuote,
     attemptPromotion,
     claimCoachPerk,
+    claimMissedTeach,
+    resolveJoinedAtRank,
     incrementSessions,
     isPromoteReady,
     onFightResolved,
