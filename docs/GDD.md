@@ -787,6 +787,35 @@ Between accepting and fighting, the player runs a camp. Camp does **not** raise 
 ### 9.3 Match Status
 Each logged session is rated vs. the opponent's actual game: **Matched** 100%, **Partial** 50%, **Unmatched** 0%, **Wrong** 0% + penalty. Game Plan Study always counts as Partial. Repeating a session diminishes: 2nd use 60%, 3rd 30%.
 
+### 9.3.1 Rank-4 coach perks that act on the fight camp
+
+Three of the four camp Rank-4 perks (§6.21) are fight-camp effects. They were catalogued,
+granted, toasted and badged from the start but **read by nothing until 2026-07-28** — a
+player paid $5,000 for the promotion and received no mechanical effect. Now wired:
+
+| Perk (archetype) | Effect | Where |
+|---|---|---|
+| **Corner Confidence** (STRIKING) | +1 camp slot when the opponent's style is a striker | `createCamp` |
+| **Mat Returns** (WRESTLING) | Takedown Defence never scores below **Partial** | `getMatchStatus` |
+| **Submission Awareness** (BJJ) | Submission Escapes bonus ×1.05 | `buildSessionBonuses` |
+
+The fourth, **Iron Conditioning** (CONDITIONING), acts on training rather than the fight
+camp (+2 Max Stamina per S&C session instead of +1) and was the only one that ever worked.
+
+Three rules govern them:
+- **"Striker-style" is `STYLE_TO_DOMAIN[style] === "STRIKING"`** — Boxer, Kickboxer, Muay
+  Thai, Capoeira — reusing the map that already picks a starter coach's discipline rather
+  than a second hand-maintained list.
+- **Mat Returns is a floor, never a cap.** Against a Wrestler, Takedown Defence is already
+  Matched (100%); applying Partial there would make the perk a *downgrade*.
+- **Submission Awareness multiplies, it does not add.** The +5% rides the session's own
+  match-status and diminishing-returns multipliers, so it cannot resurrect an Unmatched
+  session that earned nothing.
+
+Perks are **snapshotted onto the camp at creation** (`fightCampModel.perks`), matching how
+`maxSlots` is already frozen there. Claiming a perk mid-camp does not retroactively add a
+slot or re-score sessions already logged; it applies from the next fight you accept.
+
 ### 9.4 Camp Rating (S–F, informational, no flat stat modifier)
 S 90–100, A 75–89, B 55–74, C 35–54, D 15–34, F 0–14.
 

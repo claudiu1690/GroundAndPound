@@ -34,6 +34,7 @@ export const CHANGELOG_ENTRIES = [
         "Badge notifications use the badge's real name. A rank-4 award announced itself as \"Boxer Rank4\" in one place and \"Champion Boxer\" in another; it's the proper name everywhere now.",
       ],
       fixed: [
+        "Three of the four Rank-4 coach perks did nothing at all. Corner Confidence, Mat Returns and Submission Awareness were awarded, announced and badged — and then read by no part of the game. They work now: Corner Confidence gives you a genuine extra fight-camp slot against a striker, Mat Returns stops a Takedown Defence session ever being wasted, and Submission Awareness makes your escape training measurably better. If you took a coach to Rank 4 before today, you have been owed this the whole time.",
         "A coach who came over from a gym conversion arrived at Rank 4 with his teaching already behind him, but the screen still showed his moves as upcoming unlocks. His list now reads as missed, and the Rank 4 perk he's genuinely owed still has its claim button.",
         "Being taught more than one move in a single promotion no longer swallows the extras — each move gets its own reveal, one after another.",
       ],

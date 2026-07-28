@@ -359,7 +359,8 @@ export const LIBRARY_ARTICLES = [
         tags: ["rank 4", "perks", "tactician", "elite master", "fight scientist"],
         body: [
             "Reaching Rank 4 at any gym earns a permanent utility perk that changes how something in the game works. These aren't cosmetic — they affect camp performance, weight cuts, fight preparation, and more. Every Rank 4 also grants a profile badge, which is named differently from the perk itself — the badge is the trophy, the perk is the effect. Here's what each one does.",
-            "Your camp's coaches hand out these exact same perks at Rank 4 — a Master Striking Coach grants Corner Confidence, a Master Wrestling Coach grants Mat Returns, a Master BJJ Professor grants Submission Awareness. It's one shared collection, so if you already earned a perk at the gym you keep it, and there's no way to hold the same perk twice.",
+            "Your camp's coaches hand out these exact same perks at Rank 4 — a Master Striking Coach grants Corner Confidence, a Master Wrestling Coach grants Mat Returns, a Master BJJ Professor grants Submission Awareness, and a Master Conditioning Coach grants Iron Conditioning. It's one shared collection, so there's no way to hold the same perk twice.",
+            "Important, now that the gyms have closed: those four are the only perks still obtainable, and your camp is the only place to get them. The other six in the table below came from gyms that no longer exist — they're listed here as a record of what they did, not as something you can still earn.",
             {
                 type: "table",
                 headers: ["Gym", "Perk", "Badge", "What It Actually Means"],
