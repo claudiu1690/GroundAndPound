@@ -5,6 +5,11 @@ const rankingController = require("../controllers/rankingController");
 const shopController = require("../controllers/shopController");
 const specialMovesController = require("../controllers/specialMovesController");
 const ownFighter = require("../middleware/ownFighterMiddleware");
+// PHASE 2 gym retirement — a no-op while GYMS_RETIRED is unset/false. It must sit in FRONT of
+// the three gym-writing handlers, not inside them: `train` deducts energy through Redis before
+// it could ever check a flag, so a controller-level check would cost a mid-session player real
+// energy on a request that returns 410.
+const blockWhenGymsRetired = require("../middleware/gymsRetiredMiddleware");
 
 /**
  * @swagger
@@ -172,15 +177,20 @@ router.post("/:id/debug/recharge-energy", fighterController.debugRechargeEnergy)
  *       500:
  *         description: Internal server error
  */
-router.post("/:id/train", ownFighter, fighterController.train);
+router.post("/:id/train", ownFighter, blockWhenGymsRetired, fighterController.train);
 
 router.post("/:id/doctor-visit", ownFighter, fighterController.doctorVisit);
 router.post("/:id/hospital/skip-recovery", ownFighter, fighterController.hospitalSkipRecovery);
 router.post("/:id/hospital/full-recovery", ownFighter, fighterController.hospitalFullRecovery);
 router.post("/:id/hospital/restore-health", ownFighter, fighterController.hospitalRestoreHealth);
 router.get("/:id/hospital/quote", ownFighter, fighterController.hospitalQuote);
-router.post("/:id/switch-gym", fighterController.switchGym);
-router.post("/:id/rank-up-gym", fighterController.rankUpGym);
+// ⚠️ These two lack an `ownFighter` guard and MOVE CASH — a known Phase-0 §8.2 gap. Phase 2
+// deliberately adds ONLY the retirement middleware in front of them and does NOT add the guard:
+// they are being retired, and widening the change here means touching the gym rank-up path on
+// the same deploy that retires it. If the cutover is ever CANCELLED, the missing guard becomes
+// a real bug worth its own fix. Do not mirror this style on any new route.
+router.post("/:id/switch-gym", blockWhenGymsRetired, fighterController.switchGym);
+router.post("/:id/rank-up-gym", blockWhenGymsRetired, fighterController.rankUpGym);
 router.get("/:id/champions", fighterController.getChampions);
 router.get("/:id/rank", rankingController.getFighterRank);
 router.get("/:id/activity", fighterController.getActivity);

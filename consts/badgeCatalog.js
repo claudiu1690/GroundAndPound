@@ -108,17 +108,95 @@ const GYM_BADGE_NAMES = {
     elite_rank4: { name: "Elite Master", description: "Reach Rank 4 at Elite Fight Academy." },
 };
 
+/**
+ * HOME CAMP RE-POINT (Phase 2, decision P2-D2 — "Option C: re-point 4, legacy 6").
+ *
+ * There are 10 gym badges and only 4 coach archetypes, and `GYM_SLUG_TO_DOMAIN` collapses FOUR
+ * striking gyms into one STRIKING domain — so re-pointing all ten would award four badges for a
+ * single Rank-4 Striking coach. Instead exactly four are re-pointed, chosen so THE BADGE FOLLOWS
+ * THE PERK: each archetype already inherits its Rank-4 perk from one specific gym
+ * (homeCampConfig.COACH_ARCHETYPES[*].perkKey), and that same gym's badge is the one that moves.
+ *
+ *   STRIKING     ← iron-fist-boxing   (corner_confidence)    → boxer_rank4     "Champion Boxer"
+ *   WRESTLING    ← apex-wrestling     (mat_returns)          → wrestling_rank4 "Olympic Wrestler"
+ *   BJJ          ← gracie-ground-game (submission_awareness) → bjj_rank4       "BJJ Black Belt"
+ *   CONDITIONING ← warrior-muay-thai  (iron_conditioning)    → muaythai_rank4  "Grand Kru"
+ *
+ * The other six stay LEGACY: still earnable while the gyms are open, still displayed forever
+ * once earned, unobtainable after the cutover. `badgeService` excludes a LOCKED legacy badge
+ * from `lockedCount` so nobody's completion percentage is permanently six short.
+ */
+const GYM_BADGE_TO_ARCHETYPE = Object.freeze({
+    boxer_rank4: "STRIKING",
+    wrestling_rank4: "WRESTLING",
+    bjj_rank4: "BJJ",
+    muaythai_rank4: "CONDITIONING",
+});
+
+/**
+ * Player-facing archetype wording for the re-pointed descriptions. Hardcoded rather than
+ * imported from `consts/homeCampConfig.js` on purpose: this catalog is required by the fighter
+ * profile path and must not drag the whole camp config (and its boot validator, and its
+ * data/gyms.json read) in behind it.
+ */
+const ARCHETYPE_CAMP_CLAUSE = Object.freeze({
+    STRIKING: "or take a Striking coach to Rank 4 in your camp.",
+    WRESTLING: "or take a Wrestling coach to Rank 4 in your camp.",
+    BJJ: "or take a BJJ Professor to Rank 4 in your camp.",
+    CONDITIONING: "or take a Conditioning coach to Rank 4 in your camp.",
+});
+
+/**
+ * 4 if the fighter has taken this archetype to Rank 4 in their Home Camp, else 0.
+ *
+ * Reads the DENORMALISED `fighter.campRank4Archetypes` (written additively by
+ * homeCampCoachService) because badge conditions are synchronous functions of the fighter
+ * document and cannot query the HomeCamp collection.
+ */
+function campRank4For(f, archetype) {
+    const list = f && f.campRank4Archetypes;
+    return Array.isArray(list) && list.includes(archetype) ? 4 : 0;
+}
+
 function gymBadgeDef(id) {
     const slug = GYM_BADGE_SLUGS[id];
     const meta = GYM_BADGE_NAMES[id];
+    const arche = GYM_BADGE_TO_ARCHETYPE[id] || null;
+
+    /**
+     * ⚠️ `Math.max(gym, camp)` — COMBINED, NEVER REPLACING, NEVER AN if/else.
+     *
+     * THAT ONE WORD IS THE ENTIRE "cannot regress for veterans" GUARANTEE. `gymRankFor` stays
+     * primary and is never consulted conditionally, so this function is monotonically
+     * non-decreasing by construction: a veteran sitting at gym Rank 4 keeps reading 4 whatever
+     * their camp says, and a camp-only player reads 4 from the camp side. Refactoring this into
+     * `arche ? campRank4For(...) : gymRankFor(...)` would silently zero the progress bar of
+     * every player who earned this at a gym and never opened the camp screen.
+     */
+    const rankOf = (f) => Math.max(gymRankFor(f, slug), arche ? campRank4For(f, arche) : 0);
+
     return {
         id,
         category: "gym",
+        // ⚠️ NAMES NEVER CHANGE. A badge already pinned on a Career Page must not be renamed
+        // under the player. Only the four re-pointed DESCRIPTIONS gain an "or" clause.
         name: meta.name,
-        description: meta.description,
+        description: arche ? `${meta.description} — ${ARCHETYPE_CAMP_CLAUSE[arche]}` : meta.description,
         slug,
-        condition: (f) => gymRankFor(f, slug) >= 4,
-        progress: (f) => prog(gymRankFor(f, slug), 4, "rank"),
+        archetype: arche,
+        /**
+         * LEGACY = this badge has no camp route, so once the gyms retire it becomes
+         * unobtainable. Consumed by badgeService (excluded from `lockedCount`) and rendered as
+         * a "Retired" chip. It is NOT a deletion marker:
+         *
+         * ⚠️ ALL 10 GYM BADGE DEFS STAY IN THIS CATALOG FOREVER. `buildBadgeProfile` renders
+         * from the earned ledger by looking each id up here — delete a def and `getBadge(id)`
+         * returns undefined and the badge SILENTLY VANISHES from the Career Page of every
+         * veteran who earned it. That is the sharpest edge in this whole change.
+         */
+        legacy: !arche,
+        condition: (f) => rankOf(f) >= 4,
+        progress: (f) => prog(rankOf(f), 4, "rank"),
     };
 }
 
@@ -377,6 +455,9 @@ module.exports = {
     BADGES,
     BADGE_CATEGORIES,
     GYM_BADGE_SLUGS,
+    // PHASE 2 — the Home Camp re-point (P2-D2 Option C)
+    GYM_BADGE_TO_ARCHETYPE,
+    campRank4For,
     STAR_THRESHOLD,
     getBadge,
 };

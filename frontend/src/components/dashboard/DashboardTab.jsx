@@ -156,6 +156,9 @@ export const DashboardTab = memo(function DashboardTab({
   onNavigate,
   onOpenCareerProfile,
   refreshKey,
+  // Your Camp (Phase 2) — once the gyms retire, "Stats & XP" points at the
+  // camp instead of the now-gone gym tab (contract §6.3).
+  gymsRetired = false,
 }) {
   const fighterId = fighter?._id;
   const { data, loading, error, reload } = useDashboard(fighterId, { refreshKey });
@@ -614,7 +617,7 @@ export const DashboardTab = memo(function DashboardTab({
 
       {/* ── STATS & XP ── */}
       {statRows.length ? (
-        <ModuleCard className="dash-stats" onClick={() => nav("gym")}>
+        <ModuleCard className="dash-stats" onClick={() => nav(gymsRetired ? "camp" : "gym")}>
           <div className="dash-card-head">
             <span className="dash-card-title">
               <BarChart3 size={14} strokeWidth={2.2} />

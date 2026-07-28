@@ -18,6 +18,61 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "1.7",
+    date: "2026-07-28",
+    major: true,
+    highlights: [
+      "Your coaches teach now. Every coach carries a short list of Special Moves he personally knows — visible on his card before you hire him — and promoting him hands them over outright. No roll, no luck: this is the first place in the game where you choose which Special Moves you're going to own.",
+      "Rank 2 teaches the first move on his list. Rank 3 teaches nothing and buys you his permanent +5% XP instead. Rank 4 teaches everything left, all at once — a Rare coach hands you two moves in one promotion, a Legendary up to three. It's the biggest single payout in the camp, and it's worth saving for.",
+      "The copy is his quality: a Rare coach teaches Rare copies. Signing a Legendary is now the most reliable way in the game to get a Legendary version of a move you actually want, instead of hoping one falls out of a sparring session.",
+      "Every Legendary coach hides a fifth drill — his masterclass — locked until his Rank 4. It's the widest session in the game: four stats at once including Fight IQ, which almost nothing else trains, plus the best Special Move chance on the board. You can see it greyed out on his card from day one, so you always know what Rank 4 is worth.",
+      "Heads up, and read this one properly: the gyms are closing. All ten specialty gyms and the free gym are being retired, and My Camp becomes the only place you train. Gym Side Quests end with them. Your gym ranks, gym perks and the ten gym rank-4 badges are being cleared rather than carried across — a Rank 4 you earned at a gym will not become a Rank 4 coach in your camp. We know that stings, and we're not pretending otherwise: everyone affected will be compensated directly, and we'll announce exactly how before the switch happens. Anything you earned in your camp is untouched, including camp coaches you took to Rank 4 and the perks and badges they gave you.",
+    ],
+    sections: {
+      changed: [
+        "A coach's card now tells you the truth about each move on his list: which promotion grants it, or that the promotion has already gone by. Previously every coach advertised his first move as \"unlocks at Rank 2\" even when he was already Rank 4 and had no promotions left — that dangled moves you could never actually get.",
+        "Badge notifications use the badge's real name. A rank-4 award announced itself as \"Boxer Rank4\" in one place and \"Champion Boxer\" in another; it's the proper name everywhere now.",
+      ],
+      fixed: [
+        "A coach who came over from a gym conversion arrived at Rank 4 with his teaching already behind him, but the screen still showed his moves as upcoming unlocks. His list now reads as missed, and the Rank 4 perk he's genuinely owed still has its claim button.",
+        "Being taught more than one move in a single promotion no longer swallows the extras — each move gets its own reveal, one after another.",
+      ],
+      balance: [
+        "A Common coach's Rank 4 teaches no move at all — his one move already arrived at Rank 2, so Rank 4 pays him out in his discipline's permanent perk instead. Rarity is meant to decide how much a coach can teach you, so the cheapest coach teaching as much as the most expensive one would have made rarity cosmetic.",
+        "Rank 3 deliberately teaches nothing. It's the permanent +5% XP node; giving it a move too would leave Rank 4 — the most expensive promotion in the game — with nothing but a perk to show for it.",
+        "The masterclass costs more energy than any other session, carries the most injury risk, and wears the building down fastest. It's the widest and most rewarding drill in the game, so it should be a decision you make, not the only button worth clicking.",
+      ],
+    },
+  },
+  {
+    version: "1.6",
+    date: "2026-07-27",
+    major: true,
+    highlights: [
+      "You have your own camp now — My Camp, a new tab under Training. Your name on the door, your coaches, your drills, and a building that only stays sharp if you show up.",
+      "It's already built and already staffed: a free head coach who matches how you fight walks in on day one — and if you've ranked up at a gym, he walks in at that rank with your gym work behind him. Rank him up with sessions, style wins and cash: Rank 3 is a permanent +5% XP with him, Rank 4 hands you his discipline's perk for good.",
+      "Every coach runs a kit of four drills that open as he ranks up — everyday work, hard flagship rounds, a cheap recovery drill — and Open Mat Sparring is always on the board. Facility Condition tracks the room: skip days and it slides, and a run-down camp trains you slower.",
+      "The Trainer Market opens at Camp Tier 2: every Monday a fresh slate of coaches comes looking for work — real individuals with names, rarities from Common to Legendary, and one of twelve personality traits, from the Taskmaster who pushes harder at a cost to the Loyal cornerman who'll never walk out. No rerolls: when Monday's slate is gone, it's gone.",
+      "Coaches are employees, not furniture. Every hired coach draws a real weekly wage, debited straight from your cash every Monday — and every coach has morale. Miss payroll or bench a coach all week and it drops; let it hit zero and he quits, taking his rank with him. Pay everyone and train with everyone weekly, and morale never becomes your problem. Your free starter never charges a cent.",
+      "Renovate for $2,000 and 3 career wins to open the second coach slot and the market itself, then keep an eye out for the market-only Conditioning Coach — the camp's one source of Max Stamina and Fight IQ training. A $300 Deep Clean is there when the building needs rescue money can fix.",
+    ],
+    sections: {
+      changed: [
+        "Special Move drops in the camp are per-drill instead of one flat rate everywhere: the flagship rounds carry the best chance in the game, Open Mat matches gym sparring, and the cheap safe drills don't roll at all. Gym drops are completely unchanged.",
+        "A coach's flagship rounds now tend to shake loose moves from his own specialty — your striking coach's hard rounds favor striking moves — while Open Mat keeps drawing from the whole catalog.",
+        "Firing a coach is allowed, and priced: his rank is gone for good, the rest of the room takes a morale hit (a Locker-Room Leader prevents it), the building takes damage, and the slot locks for 7 days. A Head Coach or better at least leaves his experience banked for his replacement. You can never be left with an empty camp.",
+        "All eleven gyms still work exactly as before and your ranks, perks and badges are untouched — the camp runs alongside them, so train wherever you like.",
+      ],
+      fixed: [],
+      balance: [
+        "Camp coaches train at the same multipliers as the equivalent gym, so moving your sessions to the camp is never a downgrade — the point is to give you a second home, not to quietly tax the one you already had.",
+        "The flagship rounds cost 9 energy for a bit less XP per point of energy than your cheap drills, and they wear the building down. That's deliberate: the hard session should be a choice you make for the breadth and the drop chance, not the only button worth clicking.",
+        "A Legendary coach is cheap to sign ($5,000 once) and expensive to keep ($2,250 a week) — the wage, not the fee, is the real question, so hiring the best is an ongoing commitment instead of a one-time savings goal.",
+        "Coach neglect is slow on purpose: an actively-run camp takes zero morale decay, and even total abandonment takes around two months to cost you a coach — the system punishes walking away, never playing normally.",
+      ],
+    },
+  },
+  {
     version: "1.5",
     date: "2026-07-15",
     major: true,

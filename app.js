@@ -9,6 +9,8 @@ const { rateLimit } = require("express-rate-limit");
 const cors = require("cors");
 const fighterRoutes = require("./routes/fighterRoutes");
 const gymRoutes = require("./routes/gymRoutes");
+// "Home camp" = the player's own training camp. `camp*` is the FIGHT camp (GDD §9).
+const homeCampRoutes = require("./routes/homeCampRoutes");
 const fightRoutes = require("./routes/fightRoutes");
 const questRoutes = require("./routes/questRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -25,6 +27,8 @@ const accountController = require("./controllers/accountController");
 const pvpController = require("./controllers/pvpController");
 const bugReportController = require("./controllers/bugReportController");
 const authMiddleware = require("./middleware/authMiddleware");
+// PHASE 2 gym retirement — a no-op while GYMS_RETIRED is unset/false.
+const blockWhenGymsRetired = require("./middleware/gymsRetiredMiddleware");
 const adminMiddleware = require("./middleware/adminMiddleware");
 const optionalAuthMiddleware = require("./middleware/optionalAuthMiddleware");
 const mongoose = require("mongoose");
@@ -140,7 +144,9 @@ app.get("/account/email/confirm", accountController.confirmEmailChange);
 
 // Protected — JWT required for all game routes
 app.use("/fighters", authMiddleware, fighterRoutes);
-app.use("/gyms", authMiddleware, gymRoutes);
+// All four /gyms reads sit behind the retirement gate. No-op until GYMS_RETIRED=true.
+app.use("/gyms", authMiddleware, blockWhenGymsRetired, gymRoutes);
+app.use("/home-camp", authMiddleware, homeCampRoutes);
 app.use("/fights", authMiddleware, fightRoutes);
 app.use("/quests", authMiddleware, questRoutes);
 app.use("/sponsorships", authMiddleware, sponsorshipRoutes);
