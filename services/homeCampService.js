@@ -784,6 +784,9 @@ function buildCampState(fighter, camp) {
     const coaches = (camp.coaches || []).map((c) => coachService.buildCoachView(c, fighter, blocks, {
         tierCfg,
         coachCount: (camp.coaches || []).length,
+        // Needed to tell a rank the player PAID for from one a migrated coach arrived with,
+        // for legacy coach docs with no stored `joinedAtRank`.
+        campOrigin: camp.origin || null,
     }));
 
     const conditionValue = Number(camp.condition?.value ?? CONDITION_MAX);

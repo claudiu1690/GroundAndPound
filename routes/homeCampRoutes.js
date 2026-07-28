@@ -158,6 +158,8 @@ router.post("/:fighterId/coaches/:coachId/promote", homeCampController.promoteCo
  *         description: camp_not_found | coach_not_found | fighter_not_found
  */
 router.post("/:fighterId/coaches/:coachId/claim-perk", homeCampController.claimCoachPerk);
+// Settles teach-pool moves owed from promotions bought before the teach channel shipped.
+router.post("/:fighterId/coaches/:coachId/claim-teach", homeCampController.claimMissedTeach);
 
 /**
  * @swagger

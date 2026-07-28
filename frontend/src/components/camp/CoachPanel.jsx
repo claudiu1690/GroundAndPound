@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Smile, Frown, Info, TrendingUp, X, UserMinus } from "lucide-react";
+import { Smile, Frown, Info, TrendingUp, X, UserMinus, ShieldCheck } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { DrillCard } from "./DrillCard";
 import { DevelopmentTrack } from "./DevelopmentTrack";
@@ -69,7 +69,7 @@ function resolveBatchQty(mode, drillEnergy, energyCurrent) {
   return Math.min(Number(mode) || 1, cap);
 }
 
-export const CoachPanel = memo(function CoachPanel({ coach, fighter, training, onTrain, onPromote, promoting, onClaimPerk, claimingPerk, actionError, batchMode = "1", onBatchModeChange, onFireRequest, firing }) {
+export const CoachPanel = memo(function CoachPanel({ coach, fighter, training, onTrain, onPromote, promoting, onClaimPerk, claimingPerk, onClaimTeach, claimingTeach, actionError, batchMode = "1", onBatchModeChange, onFireRequest, firing }) {
   const [keyOpen, setKeyOpen] = useState(false);
   const energyCurrent = fighter?.energy?.current ?? fighter?.energy ?? 0;
 
@@ -107,6 +107,17 @@ export const CoachPanel = memo(function CoachPanel({ coach, fighter, training, o
               <span className="yc-cm-meta-label">{t("yourCamp.panel.trait")}</span>
               <TraitChip trait={coach.trait} />
             </div>
+            {/* Camp-wide passive (CONDITIONING only today). This is the answer to "why keep
+                him once my stamina and condition are full" — it never caps and it applies to
+                sessions run with the OTHER coaches, so it earns its slot passively. */}
+            {coach.passive && (
+              <div className="yc-cm-meta-item">
+                <span className="yc-cm-meta-label">{coach.passive.label}</span>
+                <span className="yc-cm-passive">
+                  <ShieldCheck size={11} /> {coach.passive.effect}
+                </span>
+              </div>
+            )}
             <div className="yc-cm-meta-item">
               <span className="yc-cm-meta-label">{t("yourCamp.panel.xpMultiplier")}</span>
               <span className="yc-cm-meta-val">{t("yourCamp.panel.xpMultiplierVal", { mult: (coach.xpMultiplier ?? 1).toFixed(2) })}</span>
@@ -218,7 +229,7 @@ export const CoachPanel = memo(function CoachPanel({ coach, fighter, training, o
         <div className="yc-cm-section-head">
           <div className="yc-section-title" style={{ fontSize: 13 }}>{t("yourCamp.panel.whatHeTeaches")}</div>
         </div>
-        <TeachList teaches={coach.teaches} />
+        <TeachList teaches={coach.teaches} onClaim={onClaimTeach} claiming={claimingTeach} />
       </div>
     </div>
   );

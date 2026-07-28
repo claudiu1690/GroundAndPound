@@ -17902,3 +17902,53 @@ code {
   .your-camp .yc-renovate-reqs { gap: 14px; }
   .your-camp .yc-fire-btn { min-height: 36px; }
 }
+
+/* ── Profile: Perks Held ─────────────────────────────────────────────────────
+   Perks are permanent, mechanically real, and were previously invisible outside
+   the selected coach's Development Track. Styled as a quiet list, not a trophy
+   case — the badges above already carry the celebration. */
+.perks-card .perks-empty {
+  font-size: 12.5px; color: var(--text-muted); line-height: 1.55; padding: 4px 0 2px;
+}
+.perks-card .perks-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.perks-card .perk-row {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 10px; background: var(--c-bg-tile-2);
+  border: 1px solid var(--c-border-3); border-left: 3px solid var(--gold-bright); border-radius: 6px;
+}
+.perks-card .perk-name {
+  font-family: var(--font-display); font-weight: 700; font-size: 12.5px;
+  text-transform: uppercase; letter-spacing: .4px; color: var(--gold-bright);
+}
+.perks-card .perk-effect { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.perks-card .perks-card-link {
+  background: none; border: none; cursor: pointer; padding: 0;
+  display: flex; align-items: center; gap: 2px;
+  font-size: 11px; color: var(--text-muted);
+}
+.perks-card .perks-card-link:hover { color: var(--gold-bright); }
+
+/* Teach slot the player is OWED — a promotion they paid for before the teach channel
+   existed. Reads as a reward to collect, not as a warning. */
+.your-camp .yc-move-chip.claimable { border-left-color: var(--c-teal, #14b8a6); }
+.your-camp .yc-move-state.claimable { color: var(--c-teal, #14b8a6); }
+.your-camp .yc-move-claim {
+  align-self: flex-start; cursor: pointer;
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 9px; border-radius: 5px;
+  border: 1px solid var(--c-teal, #14b8a6); background: rgba(20,184,166,.12);
+  color: var(--c-teal, #14b8a6);
+  font-family: var(--font-display); font-weight: 800; font-size: 9.5px;
+  letter-spacing: .6px; text-transform: uppercase;
+}
+.your-camp .yc-move-claim:hover:not(:disabled) { background: rgba(20,184,166,.22); }
+.your-camp .yc-move-claim:disabled { opacity: .5; cursor: default; }
+/* A rank node's teach fragment that never actually arrived. */
+.your-camp .yc-dev-grant-missed { text-decoration: line-through; opacity: .6; }
+
+/* Camp-wide coach passive (Conditioning). Reads as protective, not as a warning. */
+.your-camp .yc-cm-passive {
+  display: flex; align-items: flex-start; gap: 5px;
+  font-size: 11.5px; line-height: 1.45; color: var(--c-teal, #14b8a6);
+}
+.your-camp .yc-cm-passive svg { flex: 0 0 auto; margin-top: 2px; }

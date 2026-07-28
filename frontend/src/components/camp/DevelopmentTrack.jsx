@@ -7,6 +7,30 @@ import { t } from "@/lib/i18n";
  * short flex connectors — nothing absolute-positioned, so the "floating line
  * off the circle centres" bug class is structurally impossible.
  */
+/**
+ * Renders a rank-node caption, striking through any `~~…~~` span.
+ *
+ * The server wraps a teach fragment in `~~` when that rank was SUPPOSED to hand over a move
+ * and didn't — a promotion bought before the teach channel existed, or a coach who arrived
+ * already past the rank. Previously the fragment was simply omitted, so the node read
+ * "Unlocks Grind-It-Out Rounds" while the teach list said the Rank-2 move was missed, and
+ * nothing connected the two. The `rankLabels` contract stays `string[]`.
+ */
+function RankGrantText({ text }) {
+  if (!text) return null;
+  return (
+    <>
+      {String(text).split(/(~~[^~]*~~)/g).filter(Boolean).map((part, idx) =>
+        part.startsWith("~~") && part.endsWith("~~") ? (
+          <span key={idx} className="yc-dev-grant-missed">{part.slice(2, -2)}</span>
+        ) : (
+          <span key={idx}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
 function RankNodes({ rank, maxRank, rankLabels }) {
   const cards = [];
   for (let i = 1; i <= maxRank; i++) {
@@ -22,7 +46,7 @@ function RankNodes({ rank, maxRank, rankLabels }) {
             ? t("yourCamp.dev.rankCurrent", { rank: i })
             : t("yourCamp.dev.rank", { rank: i })}
         </div>
-        <div className="yc-dev-grant">{rankLabels?.[i - 1]}</div>
+        <div className="yc-dev-grant"><RankGrantText text={rankLabels?.[i - 1]} /></div>
       </div>
     );
   }

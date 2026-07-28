@@ -255,6 +255,12 @@ export const api = {
       method: "POST",
       body: JSON.stringify({}),
     }),
+  // Settles teach-pool moves owed from promotions bought before the teach channel shipped.
+  claimHomeCampMissedTeach: (fighterId, coachId) =>
+    request(`/home-camp/${fighterId}/coaches/${coachId}/claim-teach`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
   // Your Camp (Phase 1) — Trainer Market, hire/fire, renovation, deep clean.
   getHomeCampMarket: (fighterId) => request(`/home-camp/${fighterId}/market`),
   hireHomeCampCoach: (fighterId, candidateId) =>

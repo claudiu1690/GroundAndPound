@@ -304,10 +304,11 @@ test("at rank 1 the first pool move is 'next' at rankReq 2 — never 'locked at 
 // the +5% XP node and teaches nothing) — so the same taught move reads differently
 // depending on how far the coach has climbed.
 const wrestlingPool = () => DOMAIN_TEACH_POOLS.WRESTLING.slice(0, 3);
-const statesAtRank = (rank, taught) =>
+/** `joinedAt` defaults to 1 — the shape of a coach hired at rank 1 and promoted since. */
+const statesAtRank = (rank, taught, joinedAt = 1) =>
     coachService
         .buildTeachList(coach({
-            rarity: "RARE", archetype: "WRESTLING", rank,
+            rarity: "RARE", archetype: "WRESTLING", rank, joinedAtRank: joinedAt,
             teachPoolMoveIds: wrestlingPool(), taughtMoveIds: taught,
         }))
         .map((t) => t.state);
@@ -320,13 +321,30 @@ test("a taught move reads 'taught'; the ones behind it track the rank that grant
     assert.deepEqual(statesAtRank(3, [pool[0]]), ["taught", "next", "next"]);
 });
 
-test("a max-rank coach's unlearned moves read 'unavailable' — no promotion can ever grant them", () => {
+test("a coach who ARRIVED at max rank can never be taught — 'unavailable', not claimable", () => {
     const pool = wrestlingPool();
-    // The migrated-veteran shape: rank 4 with an empty taughtMoveIds, because the gym→camp
-    // conversion deliberately writes nothing to the fighter. Calling slot 0 "next, unlocks at
-    // Rank 2" here dangled moves the player could never obtain.
-    assert.deepEqual(statesAtRank(4, []), ["unavailable", "unavailable", "unavailable"]);
-    assert.deepEqual(statesAtRank(4, [pool[0]]), ["taught", "unavailable", "unavailable"]);
+    // The migrated-veteran shape: joined AT rank 4 via the gym conversion, so he never
+    // promoted through a single teach slot and the player paid for none of them. Marking
+    // these claimable would hand a converted veteran a full pool for $0 — the exact thing
+    // deriveInitialCampState's "never retro-grant on migration" rule exists to prevent.
+    assert.deepEqual(statesAtRank(4, [], 4), ["unavailable", "unavailable", "unavailable"]);
+    assert.deepEqual(statesAtRank(4, [pool[0]], 4), ["taught", "unavailable", "unavailable"]);
+});
+
+test("a coach PROMOTED to max rank is owed his untaught moves — 'claimable'", () => {
+    const pool = wrestlingPool();
+    // Joined at 1 and was promoted all the way: every slot was bought. This is every coach
+    // anyone promoted during v1.6, before the teach channel existed — they paid full price
+    // and the move silently never happened.
+    assert.deepEqual(statesAtRank(4, [], 1), ["claimable", "claimable", "claimable"]);
+    // Rank 2 only: slot 0 was paid for; the Rank-4 slots are still ahead of him.
+    assert.deepEqual(statesAtRank(2, [], 1), ["claimable", "locked", "locked"]);
+});
+
+test("the claimable/unavailable split is decided by joinedAtRank alone", () => {
+    // Same rank, same empty teach record — only the arrival rank differs.
+    assert.equal(statesAtRank(2, [], 1)[0], "claimable", "promoted through Rank 2 → owed");
+    assert.equal(statesAtRank(2, [], 2)[0], "unavailable", "arrived at Rank 2 → never earned");
 });
 
 test("a slot whose granting rank is still ahead is NEVER 'unavailable'", () => {
@@ -334,13 +352,13 @@ test("a slot whose granting rank is still ahead is NEVER 'unavailable'", () => {
     // move. Only a slot the coach has already climbed past may read as dead.
     for (const rank of [1, 2, 3, 4]) {
         const list = coachService.buildTeachList(coach({
-            rarity: "RARE", archetype: "WRESTLING", rank,
+            rarity: "RARE", archetype: "WRESTLING", rank, joinedAtRank: 1,
             teachPoolMoveIds: wrestlingPool(), taughtMoveIds: [],
         }));
         for (const slot of list) {
             if (slot.rankReq > rank) {
-                assert.notEqual(slot.state, "unavailable",
-                    `rank ${rank}: Rank-${slot.rankReq} slot is still reachable`);
+                assert.ok(!["unavailable", "claimable"].includes(slot.state),
+                    `rank ${rank}: Rank-${slot.rankReq} slot is still reachable, not settled`);
             }
         }
     }
@@ -355,4 +373,26 @@ test("incrementSessions stamps lastSessionAt — the weekly 'unused coach' check
     const untouched = coach({ lastSessionAt: null });
     coachService.incrementSessions(untouched, 0);
     assert.equal(untouched.lastSessionAt, null, "a zero-session call must not fake activity");
+});
+
+// ── Requirement display never overshoots its target ─────────────────────────
+
+test("rankProgress clamps `cur` to `tgt` — a met requirement reads 12/12, never 34/12", () => {
+    const c = coach({ archetype: "WRESTLING", rank: 1, sessionsCompleted: 34, relevantWins: 0, traitKey: null });
+    const { reqs, reqsMet } = coachService.rankProgress(c);
+    const sessions = reqs.find((r) => r.key === "sessions");
+    assert.equal(sessions.cur, sessions.tgt, "a long-since-met requirement must display as complete");
+    assert.ok(sessions.cur <= sessions.tgt, "cur can never exceed tgt");
+    assert.equal(reqsMet, false, "clamping is DISPLAY only — the wins requirement is still unmet");
+});
+
+test("clamping never lets an unmet requirement look met, and never gates a real promotion", () => {
+    const under = coachService.rankProgress(coach({ archetype: "WRESTLING", rank: 1, sessionsCompleted: 5, relevantWins: 1, traitKey: null }));
+    assert.equal(under.reqs.find((r) => r.key === "sessions").cur, 5, "below target passes through untouched");
+    assert.equal(under.reqsMet, false);
+
+    // Wildly over on BOTH counts still promotes — reqsMet reads the raw totals.
+    const over = coachService.rankProgress(coach({ archetype: "WRESTLING", rank: 1, sessionsCompleted: 999, relevantWins: 999, traitKey: null }));
+    assert.equal(over.reqsMet, true, "clamping must not starve the promotion check");
+    for (const r of over.reqs) assert.equal(r.cur, r.tgt);
 });

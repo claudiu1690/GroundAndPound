@@ -210,6 +210,19 @@ function toPublicFighter(fighter) {
     delete out.isPvpBot;
     out.notoriety = notorietyService.buildNotorietyPublicState(fighter);
     out.injuryLockedStats = getInjuryLockedStats(fighter);
+    // Perks the fighter actually holds, resolved to name + effect. `gymPerks` ships as bare
+    // key strings, which is why nothing in the UI ever rendered them — a player could take a
+    // coach to Rank 4, pay $5,000 and have no screen anywhere that showed what they got.
+    // Names/effects come from GYM_PERK_CATALOG (built from data/gyms.json) so the profile,
+    // the camp card and the Library can never disagree about what a perk does. Unknown keys
+    // are dropped rather than rendered raw.
+    {
+        const { GYM_PERK_CATALOG } = require("../consts/homeCampConfig");
+        out.perksOwned = (Array.isArray(fighter.gymPerks) ? fighter.gymPerks : [])
+            .map((key) => GYM_PERK_CATALOG[key])
+            .filter(Boolean)
+            .map((p) => ({ key: p.key, name: p.name, effect: p.effect }));
+    }
     // Persona (Role Model) hospital discount: the injury card prices shown in the
     // hospital UI must match what doctorVisit/skipRecovery actually charge (same
     // fraction + rounding). Base values stay in *Base; the tag explains the delta.

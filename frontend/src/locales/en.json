@@ -561,6 +561,11 @@
       "noHistory": "No PVP history yet",
       "thisSeason": "This season: {wins}W · {losses}L",
       "winStreak": "{n}-streak"
+    },
+    "perks": {
+      "title": "Perks Held",
+      "manage": "Your Camp",
+      "empty": "No perks yet. Take a camp coach to Rank 4 and his discipline's perk is yours permanently."
     }
   },
   "fame": {
@@ -2525,7 +2530,11 @@
       "taught": "Taught",
       "unlocksAtRank": "Unlocks at Rank {rank}",
       "lockedReach": "Locked · Rank {rank}",
-      "unavailable": "Missed · Rank {rank} already passed"
+      "unavailable": "Missed · Rank {rank} already passed",
+      "claim": "Claim it",
+      "claiming": "Claiming…",
+      "owed": "Owed to you",
+      "claimed": "Move claimed!"
     },
     "openMat": {
       "spar": "Spar",
@@ -2618,7 +2627,8 @@
       "renovateFailed": "Renovation failed — try again.",
       "conditionFull": "Your camp is already spotless.",
       "insufficientCashDeepClean": "You need ${cost} to deep clean — you have ${have}.",
-      "deepCleanFailed": "Deep clean failed — try again."
+      "deepCleanFailed": "Deep clean failed — try again.",
+      "claimTeachFailed": "Couldn't claim that move. Try again."
     }
   }
 }

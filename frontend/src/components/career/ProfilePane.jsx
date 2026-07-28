@@ -8,6 +8,7 @@ import { ProfileStatsCard } from "./ProfileStatsCard";
 import { ProfileCareerCard } from "./ProfileCareerCard";
 import { ChampionshipBeltsCard } from "./ChampionshipBeltsCard";
 import { EquippedMovesCard } from "./EquippedMovesCard";
+import { PerksCard } from "./PerksCard";
 import { BadgeGrid } from "./BadgeGrid";
 import { MediaCareerCard } from "./MediaCareerCard";
 import { PvpHistoryCard } from "./PvpHistoryCard";
@@ -122,6 +123,9 @@ export function ProfilePane({
 
         {/* Equipped Special Moves — owner-only (GET /moves is owner-guarded). */}
         {!readOnly && <EquippedMovesCard fighterId={fighterId} onNavigate={onNavigate} />}
+
+        {/* Perks held — owner-only, same reasoning: it's your loadout, not public intel. */}
+        {!readOnly && <PerksCard fighter={fighter} onNavigate={onNavigate} />}
 
         <BadgeGrid badges={badges} />
 
