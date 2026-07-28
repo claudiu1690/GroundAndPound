@@ -1,5 +1,5 @@
 import { memo, useEffect, useState } from "react";
-import { Pencil, AlertTriangle, Sparkles } from "lucide-react";
+import { Pencil, AlertTriangle, Sparkles, ShieldCheck } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { Tip } from "./Tip";
 import { conditionBandColor, DEEP_CLEAN_COST } from "./campConstants";
@@ -135,7 +135,7 @@ function RenovationCard({ renovation, onRenovate, renovating }) {
  *    a Deep Clean button beside the condition ring (shown only below full
  *    condition), and the renovation CTA above.
  */
-export const CampBar = memo(function CampBar({ campMeta, condition, wages, fighter, onRename, onRenovate, renovating, onDeepCleanRequest }) {
+export const CampBar = memo(function CampBar({ campMeta, condition, wages, passives, fighter, onRename, onRenovate, renovating, onDeepCleanRequest }) {
   const energyCurrent = fighter?.energy?.current ?? fighter?.energy ?? 0;
   const energyMax = fighter?.energy?.max ?? 100;
 
@@ -227,6 +227,20 @@ export const CampBar = memo(function CampBar({ campMeta, condition, wages, fight
               )}
             </span>
           </div>
+
+          {/* Camp-wide passives. Shown here rather than only on the providing coach's card
+              because they apply to sessions run with ANY coach — the Conditioning coach's
+              injury cut pays you precisely when you are NOT looking at him. */}
+          {Array.isArray(passives) && passives.length > 0 && passives.map((p) => (
+            <div className="yc-bnr-stat" key={p.key}>
+              <Tip title={p.label} text={t("yourCamp.bar.passiveTip", { coach: p.coachName, effect: p.effect })} className="yc-bnr-stat-l">
+                {p.label}
+              </Tip>
+              <span className="yc-bnr-stat-v yc-bnr-passive">
+                <ShieldCheck size={11} /> {p.short}
+              </span>
+            </div>
+          ))}
 
           <div className="yc-bnr-stat">
             <Tip title={t("yourCamp.bar.energyLabel")} text={t("yourCamp.bar.energyTip")} className="yc-bnr-stat-l">

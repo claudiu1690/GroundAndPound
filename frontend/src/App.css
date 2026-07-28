@@ -17904,29 +17904,23 @@ code {
 }
 
 /* ── Profile: Perks Held ─────────────────────────────────────────────────────
-   Perks are permanent, mechanically real, and were previously invisible outside
-   the selected coach's Development Track. Styled as a quiet list, not a trophy
-   case — the badges above already carry the celebration. */
-.perks-card .perks-empty {
-  font-size: 12.5px; color: var(--text-muted); line-height: 1.55; padding: 4px 0 2px;
+   Scoped under .career-page and built from THAT page's tokens (--sur/--bor/--tp/
+   --ts/--c-amber-bright), matching .loadout-slot next door. The first version used
+   the camp screen's token set and invented its own card wrapper, so it rendered
+   unstyled. Perks are permanent and mechanically real, but the badges above carry
+   the celebration — this reads as a quiet list, not a trophy case. */
+.career-page .perk-list { display: flex; flex-direction: column; gap: 8px; }
+.career-page .perk-row {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 9px 11px; border-radius: 8px;
+  border: 1px solid var(--bor); border-left: 3px solid var(--c-amber-bright);
+  background: #0D0D0D; min-width: 0;
 }
-.perks-card .perks-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.perks-card .perk-row {
-  display: flex; flex-direction: column; gap: 2px;
-  padding: 8px 10px; background: var(--c-bg-tile-2);
-  border: 1px solid var(--c-border-3); border-left: 3px solid var(--gold-bright); border-radius: 6px;
+.career-page .perk-name {
+  font-family: var(--font-display); font-weight: 800; font-size: 11px;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--c-amber-bright);
 }
-.perks-card .perk-name {
-  font-family: var(--font-display); font-weight: 700; font-size: 12.5px;
-  text-transform: uppercase; letter-spacing: .4px; color: var(--gold-bright);
-}
-.perks-card .perk-effect { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
-.perks-card .perks-card-link {
-  background: none; border: none; cursor: pointer; padding: 0;
-  display: flex; align-items: center; gap: 2px;
-  font-size: 11px; color: var(--text-muted);
-}
-.perks-card .perks-card-link:hover { color: var(--gold-bright); }
+.career-page .perk-effect { font-size: 11.5px; line-height: 1.5; color: var(--ts); }
 
 /* Teach slot the player is OWED — a promotion they paid for before the teach channel
    existed. Reads as a reward to collect, not as a warning. */
@@ -17952,3 +17946,4 @@ code {
   font-size: 11.5px; line-height: 1.45; color: var(--c-teal, #14b8a6);
 }
 .your-camp .yc-cm-passive svg { flex: 0 0 auto; margin-top: 2px; }
+.your-camp .yc-bnr-passive { display: inline-flex; align-items: center; gap: 4px; color: var(--c-teal, #14b8a6); }

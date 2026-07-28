@@ -709,6 +709,11 @@ Rules, all enforced in `effectiveInjuryRate` (the single home for camp injury ma
 - **It does not stack** across multiple Conditioning coaches (the roster allows one per
   archetype anyway; `conditioningInjuryReduction` reads the first match so a future rule
   change can't silently start summing).
+- **It is surfaced on the CAMP BAR, not only on his card.** `CampState.passives[]` carries
+  every active camp-wide passive with the coach providing it. Rendering it solely on his
+  coach card meant the one bonus that pays you for training with SOMEONE ELSE was visible
+  only while you were looking at him. Each entry carries a `short` label ("-30% injury") so
+  the bar never re-parses a number out of the prose `effect` string.
 
 Also fixed alongside it: `sc_plus` is now **blocked** at the Max Stamina cap
 (`canTrain: false`, plus a server-side check ahead of `deductBatchEnergy`). It has

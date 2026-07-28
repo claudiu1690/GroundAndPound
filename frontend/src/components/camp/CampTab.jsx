@@ -598,6 +598,7 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
         campMeta={campState.camp}
         condition={campState.condition}
         wages={campState.wages}
+        passives={campState.passives}
         fighter={fighter}
         onRename={rename}
         onRenovate={handleRenovate}
