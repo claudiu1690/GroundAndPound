@@ -41,6 +41,7 @@ const {
     STARTER_COACH_NAMES,
     MORALE_MAX,
     MORALE_NEED_THRESHOLD,
+    MORALE_QUIT_AT,
     MORALE_XP_HALVED_BELOW,
     drillsForCoach,
     teachSlotsForRank,
@@ -625,16 +626,39 @@ function tenureLabel(coach) {
 function moraleView(coach) {
     const value = Number.isFinite(coach && coach.morale) ? coach.morale : MORALE_MAX;
     const t = traitDef(coach && coach.traitKey);
-    if (value >= MORALE_NEED_THRESHOLD) return { value, label: "Thriving", tone: "good", note: "Happy in the room." };
-    if (value >= 40) {
+    const floor = t && t.moraleFloor ? t.moraleFloor : 0;
+
+    // A LOYAL coach's floor (40) sits above the halving threshold (30), so he can never reach
+    // either consequence. Saying so outright is the whole point of paying his +10% wage.
+    if (floor > MORALE_XP_HALVED_BELOW) {
+        return value >= MORALE_NEED_THRESHOLD
+            ? { value, label: "Thriving", tone: "good", note: "Training at full value. He will never walk out." }
+            : { value, label: "Restless", tone: "warn", note: `Still training at full value — and he can't fall below ${floor}, so he will never walk out.` };
+    }
+
+    if (value >= MORALE_NEED_THRESHOLD) {
+        return { value, label: "Thriving", tone: "good", note: "Training at full value." };
+    }
+    // 30–69: unhappy, but nothing has actually been lost yet. Say that, rather than implying
+    // a penalty that hasn't started — and name the number where one does.
+    if (value >= MORALE_XP_HALVED_BELOW) {
         return {
             value,
             label: "Restless",
             tone: "warn",
-            note: t && t.moraleFloor ? "Unhappy, but he'll never walk." : "Losing patience.",
+            note: `Still training at full value. Below ${MORALE_XP_HALVED_BELOW} his training bonus is halved.`,
         };
     }
-    return { value, label: "Ready to walk", tone: "bad", note: "One bad week from quitting." };
+    // Below 30 the penalty is LIVE — this is the only band where the player is losing something.
+    if (value > MORALE_QUIT_AT) {
+        return {
+            value,
+            label: "Struggling",
+            tone: "bad",
+            note: `His training bonus is halved right now. At ${MORALE_QUIT_AT} he walks out and takes his rank with him.`,
+        };
+    }
+    return { value, label: "Ready to walk", tone: "bad", note: "He walks out at the next weekly tick, and his rank goes with him." };
 }
 
 /**

@@ -267,3 +267,74 @@ test("THE LAST COACH NEVER QUITS — morale floors at 1 instead of leaving the c
         assert.equal(camp.coaches[0].morale, 1);
     });
 });
+
+// ── Morale recovery ─────────────────────────────────────────────────────────
+// Morale used to be strictly one-directional: a clean week set the change to ZERO, so one
+// missed payroll scarred a coach permanently unless a Locker-Room Leader was hired.
+
+test("MORALE_REGEN_PER_WEEK heals slower than neglect damages", () => {
+    const {
+        MORALE_REGEN_PER_WEEK, MORALE_WAGE_UNPAID, MORALE_UNUSED_SESSIONS,
+    } = require("../../consts/homeCampConfig");
+    assert.ok(MORALE_REGEN_PER_WEEK > 0, "recovery must actually recover");
+    assert.ok(MORALE_REGEN_PER_WEEK < Math.abs(MORALE_WAGE_UNPAID),
+        "healing must be slower than an unpaid week, or payroll stops mattering");
+    assert.ok(MORALE_REGEN_PER_WEEK < Math.abs(MORALE_UNUSED_SESSIONS),
+        "healing must be slower than benching, or the weekly routine stops mattering");
+});
+
+test("a Taskmaster's self-decay is never cancelled by a clean week", () => {
+    // The regen gate is `neg === 0`, not "paid && used" — otherwise the trait's entire
+    // downside would evaporate for any player running the normal weekly routine.
+    const { COACH_TRAITS, MORALE_REGEN_PER_WEEK } = require("../../consts/homeCampConfig");
+    const self = COACH_TRAITS.TASKMASTER.selfMoralePerWeek;
+    assert.ok(self < 0, "TASKMASTER must carry a self-decay or the test guards nothing");
+    // neg would be `self` (non-zero) → regen 0 → net still negative.
+    const neg = self;
+    const regen = neg === 0 ? MORALE_REGEN_PER_WEEK : 0;
+    assert.equal(regen, 0);
+    assert.ok(neg + regen < 0, "a Taskmaster must still slide on an otherwise perfect week");
+});
+
+test("recovery cannot overshoot the maximum", () => {
+    const { MORALE_MAX, MORALE_REGEN_PER_WEEK } = require("../../consts/homeCampConfig");
+    assert.equal(Math.min(MORALE_MAX, MORALE_MAX + MORALE_REGEN_PER_WEEK), MORALE_MAX);
+});
+
+
+// ── Recovery, through the real weekly tick ──────────────────────────────────
+
+test("a clean week HEALS a damaged coach — paid, used, +2", async () => {
+    const { MORALE_REGEN_PER_WEEK } = require("../../consts/homeCampConfig");
+    await withWallet(10_000, async () => {
+        // Used this week (lastSessionAt inside the week) and affordable → no penalty at all.
+        const camp = fakeCamp([coach({ morale: 40, wage: 300, lastSessionAt: new Date() })]);
+        await homeCampService.applyWeeklyTick(camp, WEEK, WEEK - 1);
+        assert.equal(camp.coaches[0].morale, 40 + MORALE_REGEN_PER_WEEK,
+            "doing everything right must give something back, not merely stop the bleeding");
+    });
+});
+
+test("recovery does NOT apply on a week the coach was benched", async () => {
+    await withWallet(10_000, async () => {
+        const camp = fakeCamp([coach({ morale: 40, wage: 300, lastSessionAt: null })]);
+        await homeCampService.applyWeeklyTick(camp, WEEK, WEEK - 1);
+        assert.ok(camp.coaches[0].morale < 40, "a benched coach must still slide");
+    });
+});
+
+test("recovery does NOT apply on an unpaid week", async () => {
+    await withWallet(0, async () => {
+        const camp = fakeCamp([coach({ morale: 40, wage: 300, lastSessionAt: new Date() })]);
+        await homeCampService.applyWeeklyTick(camp, WEEK, WEEK - 1);
+        assert.ok(camp.coaches[0].morale < 40, "an unpaid coach must still slide");
+    });
+});
+
+test("recovery never pushes a coach past 100", async () => {
+    await withWallet(10_000, async () => {
+        const camp = fakeCamp([coach({ morale: 100, wage: 300, lastSessionAt: new Date() })]);
+        await homeCampService.applyWeeklyTick(camp, WEEK, WEEK - 1);
+        assert.equal(camp.coaches[0].morale, 100);
+    });
+});

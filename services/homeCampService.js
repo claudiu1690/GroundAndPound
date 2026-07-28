@@ -120,6 +120,7 @@ const {
     MORALE_MAX,
     MORALE_NEED_THRESHOLD,
     MORALE_QUIT_AT,
+    MORALE_REGEN_PER_WEEK,
     MORALE_UNUSED_SESSIONS,
     MORALE_WAGE_UNPAID,
     MORALE_XP_HALVED_BELOW,
@@ -1086,9 +1087,19 @@ function computeWeekPatch(camp, ws, paid, weeklyTotal, nextWageDebitAt) {
             : 0;
 
         if (condAtWeekStart < CONDITION_DOUBLE_DECAY_BELOW) neg *= 2;
+
+        // ── RECOVERY ────────────────────────────────────────────────────────────────────
+        // A clean week — paid, used, and no trait self-decay — heals a little. Gated on
+        // `neg === 0` rather than on "paid && used" so a Taskmaster's built-in weekly
+        // self-decay is never cancelled by good behaviour; his downside is the trait.
+        // Before this, morale only ever fell: doing everything right set the change to zero,
+        // so a single missed payroll was permanent short of hiring a Locker-Room Leader.
+        // Clamped to MORALE_MAX below, so recovery can never overshoot.
+        const regen = neg === 0 ? MORALE_REGEN_PER_WEEK : 0;
+
         const floor = t && t.moraleFloor ? t.moraleFloor : 0;   // LOYAL never falls past 40
         const before = Number(coach.morale ?? MORALE_MAX);
-        moraleById.set(String(coach._id), Math.max(floor, Math.min(MORALE_MAX, before + neg + pos)));
+        moraleById.set(String(coach._id), Math.max(floor, Math.min(MORALE_MAX, before + neg + pos + regen)));
     }
 
     // QUITS — at 0 morale a coach walks. No condition hit, no morale hit to the others, no

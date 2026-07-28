@@ -461,6 +461,24 @@ const MORALE_MAX = 100;
 const MORALE_START = 100;
 const MORALE_WAGE_UNPAID = -5;          // per unpaid week, every coach
 const MORALE_UNUSED_SESSIONS = -3;      // per week a coach ran zero sessions
+/**
+ * Weekly morale RECOVERY, granted only when a coach took no penalty at all that week —
+ * paid, used at least once, and no trait self-decay.
+ *
+ * Morale used to be strictly one-directional: paying and using a coach set his weekly change
+ * to ZERO, it never gave anything back. One missed payroll therefore scarred a coach at that
+ * level permanently, with no route home except hiring a Locker-Room Leader. That turned a
+ * single bad month into an irreversible tax, which is a much harsher system than the one the
+ * Library describes ("pay up and the spiral stops").
+ *
+ * Deliberately SLOWER than the damage (+2 vs −5 unpaid / −3 benched): recovering has to take
+ * longer than neglecting, or the weekly routine stops mattering. A coach dragged to 30 takes
+ * ~35 weeks of perfect behaviour to reach 100 — forgiveness, not a reset button.
+ *
+ * Gated on `neg === 0`, NOT on "paid && used", so it can never cancel a trait's own downside:
+ * a Taskmaster grinds himself down every week by design and must keep doing so.
+ */
+const MORALE_REGEN_PER_WEEK = 2;
 const MORALE_XP_HALVED_BELOW = 30;      // halves the coach XP BONUS, never the base multiplier
 const MORALE_NEED_THRESHOLD = 70;       // COACH_MORALE_LOW fires below this — 70 points of warning
 const MORALE_QUIT_AT = 0;
@@ -1064,6 +1082,7 @@ module.exports = {
     homeCampWeekEnd,
     MORALE_MAX,
     MORALE_START,
+    MORALE_REGEN_PER_WEEK,
     MORALE_WAGE_UNPAID,
     MORALE_UNUSED_SESSIONS,
     MORALE_XP_HALVED_BELOW,
