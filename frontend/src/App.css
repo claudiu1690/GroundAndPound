@@ -17113,30 +17113,29 @@ code {
 }
 .your-camp .yc-divider { width: 1px; align-self: stretch; background: var(--c-border); margin: 0 4px; }
 
-/* Tooltips — owner pick 04-V1 ("game card", gold top edge). The bubble is a
-   REAL child element (.yc-tt), not ::after: a pseudo-element inherited the
-   label's UPPERCASE/letter-spacing/condensed font, which was the "unstyled
-   all caps" bug. The resets below are belt-and-braces on top of that. */
-.your-camp .yc-tip { position: relative; cursor: help; border-bottom: 1px dotted var(--text-muted); }
-.your-camp .yc-tt {
-  position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%) translateY(4px);
-  width: 200px; max-width: 60vw;
+/* Tooltips — owner pick 04-V1 ("game card", gold top edge).
+   The bubble is PORTALED to document.body and positioned `fixed` from JS (Tip.jsx). It has
+   to be: an absolutely-positioned bubble is clipped by any ancestor with a non-visible
+   overflow, and this screen has three — the drill card (rounded stripe), `main`
+   (overflow: hidden auto, clips at the sidebar edge), and `.page-layout` (transform, which
+   traps z-index). A portal escapes all of them and can't be re-broken by a future wrapper.
+   It is only in the DOM while open, so there is no hidden/opacity state to style. */
+.yc-tt-layer { position: fixed; top: 0; left: 0; width: 0; height: 0; }
+.yc-tt-layer .yc-tt {
+  position: fixed;
+  width: 200px; max-width: min(280px, calc(100vw - 16px));
   background: #1C1C1C; border: 1px solid var(--c-border); border-top: 2px solid var(--gold-bright);
   border-radius: 6px; padding: 9px 11px;
-  font-family: var(--font-body); font-size: 11.5px; font-weight: 400; line-height: 1.5;
+  font-family: var(--font-body); font-size: 12px; font-weight: 400; line-height: 1.5;
   letter-spacing: 0; text-transform: none; text-align: left; color: #E8E8E8; white-space: normal;
-  opacity: 0; pointer-events: none; transition: opacity .12s ease, transform .12s ease; z-index: 80;
+  pointer-events: none; z-index: 400;
   box-shadow: 0 10px 26px -6px rgba(0,0,0,.7);
 }
-.your-camp .yc-tt-title {
-  display: block; font-family: var(--font-display); font-weight: 800; font-size: 11.5px;
+.yc-tt-layer .yc-tt-title {
+  display: block; font-family: var(--font-display); font-weight: 800; font-size: 11px;
   letter-spacing: 1px; text-transform: uppercase; color: var(--gold-bright); margin-bottom: 3px;
 }
-.your-camp .yc-tip:hover .yc-tt, .your-camp .yc-tip.yc-tip-active .yc-tt { opacity: 1; transform: translateX(-50%) translateY(0); }
-/* Tooltips in the camp banner open DOWNWARD — opening up sent them behind the
-   app's sticky header ("under the top bar"). Everywhere else, up is correct. */
-.your-camp .yc-bar .yc-tt { bottom: auto; top: calc(100% + 8px); transform: translateX(-50%) translateY(-4px); }
-.your-camp .yc-bar .yc-tip:hover .yc-tt, .your-camp .yc-bar .yc-tip.yc-tip-active .yc-tt { transform: translateX(-50%) translateY(0); }
+.your-camp .yc-tip { position: relative; cursor: help; border-bottom: 1px dotted var(--text-muted); }
 
 .your-camp .yc-rarity-tag {
   font-family: var(--font-display); font-weight: 800; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
@@ -17421,7 +17420,12 @@ code {
 /* Drill cards — owner pick 05-V1: family stripe on top, colored stat chips,
    full-contrast metric values, gold move-drop, compact Train inline right. */
 .your-camp .yc-drills-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
-.your-camp .yc-drill-card { background: var(--c-bg-tile-2); border: 1px solid #2e2e2e; border-radius: 9px; overflow: hidden; display: flex; flex-direction: column; }
+/* NO `overflow: hidden` HERE. It used to clip the family stripe into the rounded corner,
+   but it also clipped every stat/metric TOOLTIP inside the card — measured at 30px off the
+   top and 69px off the left, which is why they looked like they were sliding under the card.
+   The stripe rounds its own top corners instead (see .yc-drill-stripe), so the corner still
+   reads correctly and the tooltips can escape. */
+.your-camp .yc-drill-card { background: var(--c-bg-tile-2); border: 1px solid #2e2e2e; border-radius: 9px; display: flex; flex-direction: column; }
 .your-camp .yc-drill-card.locked { opacity: .5; }
 
 /* Legendary masterclass — Phase 2, F4. Gold/red gradient border + "Masterclass"
@@ -17440,7 +17444,7 @@ code {
   font-family: var(--font-display); font-weight: 800; font-size: 9.5px; letter-spacing: 1.3px; text-transform: uppercase;
   color: var(--gold-bright);
 }
-.your-camp .yc-drill-stripe { height: 3px; flex-shrink: 0; }
+.your-camp .yc-drill-stripe { height: 3px; flex-shrink: 0; border-radius: 8px 8px 0 0; }
 .your-camp .yc-drill-stripe.spar { background: linear-gradient(90deg, var(--red), transparent 80%); }
 .your-camp .yc-drill-stripe.bag { background: linear-gradient(90deg, var(--amber), transparent 80%); }
 .your-camp .yc-drill-stripe.drill { background: linear-gradient(90deg, #14B8A6, transparent 80%); }
