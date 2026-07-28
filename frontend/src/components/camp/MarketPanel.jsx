@@ -1,6 +1,6 @@
 import { memo, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Search, Lock as LockIcon, Clock } from "lucide-react";
+import { X, Search, Clock } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { CandidateCard } from "./CandidateCard";
 
@@ -31,7 +31,6 @@ export const MarketPanel = memo(function MarketPanel({
 
   const candidates = market?.candidates || [];
   const resetsInDays = market?.resetsInDays;
-  const cooldown = market?.cooldown;
 
   return createPortal(
     <div
@@ -67,12 +66,6 @@ export const MarketPanel = memo(function MarketPanel({
           <div className="yc-market-cash-row">
             <span>{t("yourCamp.market.cashOnHand")}</span>
             <b>${(market.cash ?? 0).toLocaleString()}</b>
-          </div>
-        )}
-
-        {cooldown?.active && (
-          <div className="yc-market-cooldown-banner">
-            <LockIcon size={13} /> {t("yourCamp.market.cooldownActive", { days: cooldown.daysLeft })}
           </div>
         )}
 

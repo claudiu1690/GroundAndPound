@@ -2548,7 +2548,6 @@
       "resetsIn": "New faces in {n}d",
       "goneInDays": "Gone in {n} days",
       "cashOnHand": "Cash on hand",
-      "cooldownActive": "A slot just opened — settling for {days} more day(s)",
       "loading": "Scouting the market…",
       "empty": "No candidates this week — check back after the reset.",
       "hireFee": "Hire Fee",
@@ -2573,8 +2572,6 @@
       "moraleHitNone": "No other coaches take a hit",
       "conditionHit": "Facility Condition",
       "conditionHitVal": "{before} → {after}",
-      "cooldown": "Slot cooldown",
-      "cooldownVal": "7 days before this slot reopens",
       "success": "{name} has been let go."
     },
     "renovate": {
@@ -2613,7 +2610,6 @@
       "marketLoadFailed": "Couldn't load the Trainer Market — try again.",
       "candidateExpired": "This week's candidates have moved on — rescout.",
       "candidateNotFound": "That candidate is no longer available.",
-      "slotCooldown": "The room is still settling — {days} day(s) left.",
       "noSlot": "Every coach slot is full.",
       "archetypeTaken": "You already employ a coach in that discipline.",
       "archetypeLocked": "That discipline isn't unlocked yet.",

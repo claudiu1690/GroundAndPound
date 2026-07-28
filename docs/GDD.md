@@ -575,16 +575,21 @@ never trap".
 - his **rank and progress are lost forever** (only the familiarity credit above survives);
 - **−10 morale to every remaining coach** — unless a Locker-Room Leader is on the roster,
   in which case the whole room is shielded;
-- **−15 Facility Condition** (a firing is bad for the building's soul);
-- the freed slot takes a **7-day hiring cooldown** — a fire-and-rehire churn loop is not a
-  strategy.
+- **−15 Facility Condition** (a firing is bad for the building's soul).
+
+The freed slot reopens **immediately** (owner decision, 2026-07-28 — the previous 7-day
+hiring cooldown is removed). Churn is still discouraged, just not by a timer: the market
+slate is fixed for the week and cannot be rerolled, so firing buys you no new candidates,
+and you have already paid the real price in the coach's lost rank, the room's morale and
+the building. A lockout on top of that mostly punished players who mis-clicked or changed
+their mind, not farmers.
 
 **The camp can never be coachless.** Firing the last coach is refused at every tier, full
 stop. The starter coach is fireable like anyone else from Tier 2 on — the guard is "last
 coach", not "starter coach".
 
 **Quitting is not firing** (§6.19): a coach who walks out at 0 morale costs no condition,
-no morale hit to the room and no slot cooldown — the weeks of neglect that got him there
+no morale hit to the room — the weeks of neglect that got him there
 were the price. Familiarity is still banked at Rank 3+.
 
 ### 6.19 Wages & morale — the weekly tick

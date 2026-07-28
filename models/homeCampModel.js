@@ -95,7 +95,6 @@ const homeCampSchema = new mongoose.Schema({
     market: {
         weekIndex: { type: Number, default: -1 },
         candidates: { type: [coachSchema], default: () => [] },
-        slotCooldownUntil: { type: Date, default: null },
     },
     // Map<domain, {bankedSessions, bankedWins}> — the "trainer-XP credit" half of the gym
     // migration. Consumed in PHASE 1 when a coach of that domain is hired.
