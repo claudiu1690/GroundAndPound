@@ -594,6 +594,24 @@ were the price. Familiarity is still banked at Rank 3+.
 
 ### 6.19 Wages & morale — the weekly tick
 
+**Morale moves both ways (2026-07-28).** A coach who took NO penalty that week — wages paid,
+at least one session run with him, and no trait self-decay — recovers **+2**. Gated on
+`neg === 0` rather than on "paid && used", so a Taskmaster's built-in weekly self-decay is
+never cancelled by an otherwise clean week.
+
+Recovery is deliberately slower than the damage (+2 against −5 unpaid / −3 benched): a coach
+dragged to 30 needs ~35 perfect weeks to reach 100 again. Before this, morale was strictly
+one-directional — a clean week set the change to zero and gave nothing back — so a single
+missed payroll scarred a coach at that level permanently unless the player hired a
+Locker-Room Leader. That made one bad month an irreversible tax rather than a setback.
+
+**The bands the UI shows are cut at the thresholds that DO something**, not at round numbers:
+≥70 Thriving (full value) · 30–69 Restless (still full value, warning only) · 1–29 Struggling
+(training bonus halved *right now*) · 0 Ready to walk. The previous copy called 39 "Ready to
+walk — one bad week from quitting", which at −3 to −8 a week was 5–13 weeks out, and never
+mentioned 30 at all.
+
+
 Everything on a schedule in the camp shares **one weekly heartbeat**: a Monday 03:30 UTC
 job (with a lazy Monday-aligned week index behind it) that debits wages, applies morale,
 and processes quits. Per week, per camp:

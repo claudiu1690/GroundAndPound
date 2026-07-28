@@ -246,13 +246,47 @@ test("the coach view exposes the trait chip, wage/fee, and a fire guard for the 
     assert.equal(withPeers.fireBlockedReason, null);
 });
 
-test("morale view bands track the mechanics, and a Loyal coach never reads as 'ready to walk'", () => {
+test("morale bands are cut at the thresholds that actually DO something", () => {
+    const { MORALE_NEED_THRESHOLD, MORALE_XP_HALVED_BELOW } = require("../../consts/homeCampConfig");
+
     assert.equal(coachService.moraleView(coach({ morale: 100 })).label, "Thriving");
-    assert.equal(coachService.moraleView(coach({ morale: 70 })).label, "Thriving");
-    assert.equal(coachService.moraleView(coach({ morale: 69 })).label, "Restless");
-    assert.equal(coachService.moraleView(coach({ morale: 39 })).label, "Ready to walk");
-    // Loyal floors at 40, so his worst state is Restless — with a note that says why.
-    assert.match(coachService.moraleView(coach({ morale: 40, traitKey: "LOYAL" })).note, /never walk/);
+    assert.equal(coachService.moraleView(coach({ morale: MORALE_NEED_THRESHOLD })).label, "Thriving");
+
+    // Between the nag threshold and the halving threshold NOTHING has been lost yet. The old
+    // copy called 39 "Ready to walk" and said "one bad week from quitting" — at −3 to −8 a
+    // week that was 5–13 weeks out, and it never mentioned the one number that matters.
+    assert.equal(coachService.moraleView(coach({ morale: MORALE_NEED_THRESHOLD - 1 })).label, "Restless");
+    assert.equal(coachService.moraleView(coach({ morale: MORALE_XP_HALVED_BELOW })).label, "Restless");
+
+    // Below the halving threshold the penalty is LIVE — a different band, and it says so.
+    const struggling = coachService.moraleView(coach({ morale: MORALE_XP_HALVED_BELOW - 1 }));
+    assert.equal(struggling.label, "Struggling");
+    assert.equal(struggling.tone, "bad");
+    assert.match(struggling.note, /halved right now/);
+
+    assert.equal(coachService.moraleView(coach({ morale: 0 })).label, "Ready to walk");
+});
+
+test("every morale note names a real consequence, never mood flavour", () => {
+    // "Happy in the room." told the player nothing. Each band must reference the training
+    // bonus or walking out — the only two things morale actually controls.
+    for (const m of [100, 70, 55, 30, 29, 10, 0]) {
+        const note = coachService.moraleView(coach({ morale: m })).note;
+        assert.match(note, /training|bonus|walk/i, `morale ${m}: "${note}"`);
+    }
+});
+
+test("a Loyal coach can never reach either consequence, and is told so", () => {
+    const { MORALE_XP_HALVED_BELOW, COACH_TRAITS } = require("../../consts/homeCampConfig");
+    const floor = COACH_TRAITS.LOYAL.moraleFloor;
+    assert.ok(floor > MORALE_XP_HALVED_BELOW,
+        "LOYAL's floor must sit above the halving threshold or the trait is mis-sold");
+    for (const m of [100, 60, 40]) {
+        const v = coachService.moraleView(coach({ morale: m, traitKey: "LOYAL" }));
+        assert.notEqual(v.label, "Struggling");
+        assert.notEqual(v.label, "Ready to walk");
+        assert.match(v.note, /never walk/);
+    }
 });
 
 // ── Teach list: rarity is the COACH's, and the states must make sense at rank 1 ──
