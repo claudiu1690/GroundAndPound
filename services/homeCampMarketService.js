@@ -45,7 +45,7 @@ const {
     TEACH_BREADTH_BY_RARITY,
     LEGENDARY_EXCLUSIVE_SESSIONS,
     MARKET_MIN_TIER,
-    MARKET_CANDIDATES,
+    marketCandidatesForTier,
     MARKET_MAX_PER_DOMAIN,
     MARKET_NAME_REDRAW_TRIES,
     MARKET_RARITY_ODDS,
@@ -270,7 +270,7 @@ function rollCandidates(camp, fighter, weekIndex, tier) {
         const t = traitDef(c.traitKey);
         return !!(t && t.marketCandidateBonus);
     });
-    const n = MARKET_CANDIDATES + (hasWellConnected ? 1 : 0);
+    const n = marketCandidatesForTier(tier) + (hasWellConnected ? 1 : 0);
 
     const eligibleDomains = ARCHETYPE_KEYS.filter(
         (a) => ((COACH_ARCHETYPES[a] || {}).minCampTier ?? 1) <= tier
@@ -409,6 +409,29 @@ async function getMarketState(fighterId) {
         camp.market.candidates = rollCandidates(camp, fighter, wk, tier);
         camp.market.weekIndex = wk;
         await camp.save();
+    } else {
+        // ── TOP-UP ──────────────────────────────────────────────────────────────────────
+        // The slate only re-rolls on a week boundary, so a camp that already rolled THIS
+        // week keeps whatever it got — which means a change to the market size (or a
+        // renovation raising the tier mid-week) would be invisible to every existing camp
+        // until the next Monday. Top the slate up in place instead.
+        //
+        // ADDITIVE, NEVER A RE-ROLL: the cards already on the board are untouched, so a
+        // player mid-decision never loses the candidate they were saving for. Only the
+        // shortfall is generated, and only names not already on the board are kept.
+        const want = marketCandidatesForTier(tier)
+            + ((camp.coaches || []).some((c) => { const t = traitDef(c.traitKey); return !!(t && t.marketCandidateBonus); }) ? 1 : 0);
+        const have = (camp.market.candidates || []).length;
+        if (have < want) {
+            const existing = new Set((camp.market.candidates || []).map((c) => c.name));
+            const extra = rollCandidates(camp, fighter, wk, tier)
+                .filter((c) => !existing.has(c.name))
+                .slice(0, want - have);
+            if (extra.length > 0) {
+                camp.market.candidates.push(...extra);
+                await camp.save();
+            }
+        }
     }
 
     const tierCfg = CAMP_TIERS[tier] || CAMP_TIERS[1];

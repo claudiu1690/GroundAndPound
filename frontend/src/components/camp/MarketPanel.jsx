@@ -32,9 +32,15 @@ export const MarketPanel = memo(function MarketPanel({
   const candidates = market?.candidates || [];
   const resetsInDays = market?.resetsInDays;
 
+  // ⚠️ `your-camp` on the overlay below IS LOAD-BEARING, not decoration. This modal is
+  // portaled to document.body, so it renders OUTSIDE the .your-camp subtree — and 296 camp
+  // rules are scoped `.your-camp .yc-*`. Without that class the teach chips lose their
+  // flex-direction (rarity tag and move name collapse into "UNCOMMONSprawl Instinct"), the
+  // rarity tags lose their colour, and the avatars lose their frame. Any future portaled
+  // camp surface needs the same class on its root.
   return createPortal(
     <div
-      className="yc-market-overlay"
+      className="your-camp yc-market-overlay"
       role="dialog"
       aria-modal="true"
       aria-label={t("yourCamp.market.title")}
