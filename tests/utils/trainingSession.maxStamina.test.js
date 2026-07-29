@@ -20,10 +20,14 @@ test("base gain is +1 per session", () => {
     assert.equal(f.maxStamina, 101);
 });
 
-test("iron_conditioning doubles the gain to +2", () => {
+test("iron_conditioning NO LONGER touches stamina gain — it is a health-regen perk now", () => {
+    // The doubling was removed 2026-07-28: the perk takes 60 sessions with the Conditioning
+    // coach to earn, but Max Stamina caps 20 sessions in, so it could never pay out. It now
+    // speeds up health regeneration instead (fighterService.reconcileHealth), which gates how
+    // often you can fight and never finishes.
     const f = fighter(100, ["iron_conditioning"]);
-    assert.deepEqual(applyMaxStaminaSession(f), { gained: 2, capHit: false });
-    assert.equal(f.maxStamina, 102);
+    assert.deepEqual(applyMaxStaminaSession(f), { gained: 1, capHit: false });
+    assert.equal(f.maxStamina, 101, "everyone gains +1, perk or not");
 });
 
 test("an unrelated perk does not change the gain", () => {
@@ -37,7 +41,7 @@ test("a missing maxStamina defaults to 100 (legacy docs)", () => {
     assert.equal(f.maxStamina, 101);
 });
 
-test("the cap is 120 and is never overshot by the +2 perk", () => {
+test("the cap is 120 and is never overshot", () => {
     const f = fighter(119, ["iron_conditioning"]);
     assert.deepEqual(applyMaxStaminaSession(f), { gained: 1, capHit: false });
     assert.equal(f.maxStamina, MAX_STAMINA_CAP);

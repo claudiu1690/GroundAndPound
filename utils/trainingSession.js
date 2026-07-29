@@ -75,7 +75,14 @@ function applySessionXp(fighter, { stats, xpBase, multiplier, injuryLockedStats,
 
 /** Hard ceiling on max stamina from training. */
 const MAX_STAMINA_CAP = 120;
-/** Base max-stamina gain per conditioning session; the iron_conditioning gym perk doubles it. */
+/**
+ * Max-stamina gain per conditioning session.
+ *
+ * `iron_conditioning` used to double this. It was removed 2026-07-28 because it could never
+ * pay out: the perk arrives at 60 sessions with the Conditioning coach, but Max Stamina caps
+ * 20 sessions in (100 → 120 at +1 each), so anyone who earned it normally was already
+ * finished. The perk now speeds up HEALTH REGEN instead — see fighterService.reconcileHealth.
+ */
 const MAX_STAMINA_PER_SESSION = 1;
 
 /**
@@ -83,10 +90,7 @@ const MAX_STAMINA_PER_SESSION = 1;
  *
  * Behaviour-preserving extraction of services/trainingService.js's `raisesMaxStamina` loop
  * body, so the gym's S&C session and the camp's `sc_plus` drill cannot drift: +1 per session,
- * +2 while the fighter holds the `iron_conditioning` gym perk, hard-capped at 120.
- *
- * ⚠️ `gymPerks` is a LIVE legacy field (fightService reads strength_reserve, this reads
- * iron_conditioning). It is read-only here and must never be pruned — see fighterModel.js.
+ * hard-capped at 120.
  *
  * MUTATES fighter.maxStamina only. No saves, no I/O, no RNG.
  * @param {object} fighter Mongoose fighter doc (mutated in place).
@@ -94,9 +98,7 @@ const MAX_STAMINA_PER_SESSION = 1;
  *          because the fighter is already at the cap.
  */
 function applyMaxStaminaSession(fighter) {
-    const perGain = (fighter.gymPerks || []).includes("iron_conditioning")
-        ? MAX_STAMINA_PER_SESSION * 2
-        : MAX_STAMINA_PER_SESSION;
+    const perGain = MAX_STAMINA_PER_SESSION;
 
     const currentMax = fighter.maxStamina || 100;
     let nextMax = currentMax;
