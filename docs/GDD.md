@@ -702,6 +702,22 @@ reports those slots as `unavailable` — the screen says "missed", never a count
 rank he already holds. His Rank-4 archetype perk is still owed and is settled separately
 by `POST …/claim-perk`.
 
+#### 6.21.1 Iron Conditioning — retired as a stamina perk (2026-07-28)
+
+CONDITIONING's Rank-4 perk used to double Max Stamina gain per S&C session (+2 instead of
++1). **It could never pay out.** Max Stamina runs 100 → 120 at +1 per session, so it caps
+after **20** sessions; the perk requires **60** sessions with the coach. Anyone who earned it
+through normal play was already at the ceiling — and since `sc_plus` is now blocked at the cap
+(§6.21 note), the perk had literally nothing left to act on.
+
+It now cuts the **health-regen interval by 30%** — a point every 3.5 minutes instead of 5,
+taking a full 0→100 heal from ~8.3h to ~5.8h. Health gates how often a fighter can compete and
+never "finishes", so unlike the old effect this keeps paying for the rest of a career.
+Implemented in `fighterService.healthRegenIntervalFor`, the single home for the interval.
+
+Together with the camp-wide injury passive below, this gives CONDITIONING a coherent
+durability identity: **fewer injuries, and faster back on your feet when one lands.**
+
 #### The Conditioning coach's camp-wide passive (2026-07-28)
 
 CONDITIONING is the only archetype whose kit contains **statless drills — 2 of 4**
@@ -863,8 +879,9 @@ player paid $5,000 for the promotion and received no mechanical effect. Now wire
 | **Mat Returns** (WRESTLING) | Takedown Defence never scores below **Partial** | `getMatchStatus` |
 | **Submission Awareness** (BJJ) | Submission Escapes bonus ×1.05 | `buildSessionBonuses` |
 
-The fourth, **Iron Conditioning** (CONDITIONING), acts on training rather than the fight
-camp (+2 Max Stamina per S&C session instead of +1) and was the only one that ever worked.
+The fourth, **Iron Conditioning** (CONDITIONING), acts outside the fight camp entirely: it
+cuts the health-regen interval by 30% (a point every 3.5 minutes instead of 5, so a full
+0→100 heal drops from ~8.3h to ~5.8h). See §6.21.1 for why it is no longer a stamina perk.
 
 Three rules govern them:
 - **"Striker-style" is `STYLE_TO_DOMAIN[style] === "STRIKING"`** — Boxer, Kickboxer, Muay

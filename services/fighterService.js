@@ -357,6 +357,26 @@ async function reconcileEnergy(fighter) {
 const HEALTH_REGEN_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes per +1 health
 const HEALTH_MAX = 100;
 
+/**
+ * Seconds-per-health-point for THIS fighter.
+ *
+ * `iron_conditioning` (the CONDITIONING coach's Rank-4 perk) cuts the interval by 30%:
+ * a point every 3.5 minutes instead of every 5, so a full 0→100 heal drops from ~8.3h to
+ * ~5.8h. It replaced the perk's old effect — doubling Max Stamina gain — which could never
+ * pay out, because Max Stamina caps 20 sessions in while the perk takes 60 to earn.
+ *
+ * Health gates how often you can fight and it never "finishes", so unlike the old effect this
+ * one keeps mattering for the rest of the fighter's career.
+ */
+const IRON_CONDITIONING_REGEN_MULT = 0.7;
+
+function healthRegenIntervalFor(fighter) {
+    const perks = (fighter && fighter.gymPerks) || [];
+    return perks.includes("iron_conditioning")
+        ? Math.round(HEALTH_REGEN_INTERVAL_MS * IRON_CONDITIONING_REGEN_MULT)
+        : HEALTH_REGEN_INTERVAL_MS;
+}
+
 function reconcileHealth(fighter) {
     if (!fighter) return fighter;
     const currentHealth = fighter.health ?? HEALTH_MAX;
@@ -366,16 +386,17 @@ function reconcileHealth(fighter) {
         return fighter;
     }
 
+    const interval = healthRegenIntervalFor(fighter);
     const lastRegenAt = fighter.healthLastRegenAt ? new Date(fighter.healthLastRegenAt).getTime() : Date.now();
     const elapsedMs = Math.max(0, Date.now() - lastRegenAt);
-    const pointsEarned = Math.floor(elapsedMs / HEALTH_REGEN_INTERVAL_MS);
+    const pointsEarned = Math.floor(elapsedMs / interval);
     if (pointsEarned <= 0) return fighter;
 
     const capacity = HEALTH_MAX - currentHealth;
     const pointsApplied = Math.min(pointsEarned, capacity);
     fighter.health = currentHealth + pointsApplied;
     // Advance timestamp by exactly the consumed time — preserve partial progress.
-    fighter.healthLastRegenAt = new Date(lastRegenAt + pointsApplied * HEALTH_REGEN_INTERVAL_MS);
+    fighter.healthLastRegenAt = new Date(lastRegenAt + pointsApplied * interval);
     return fighter;
 }
 
