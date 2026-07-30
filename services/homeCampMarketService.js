@@ -46,6 +46,8 @@ const {
     LEGENDARY_EXCLUSIVE_SESSIONS,
     MARKET_MIN_TIER,
     marketCandidatesForTier,
+    pickPortraitKey,
+    portraitFields,
     MARKET_MAX_PER_DOMAIN,
     MARKET_NAME_REDRAW_TRIES,
     MARKET_RARITY_ODDS,
@@ -210,9 +212,10 @@ function drawName(rng, taken) {
  * price on the card the price in the debit.
  *
  * @param {() => number} rng   the week's single seeded stream (draw order is fixed)
- * @param {{domain:string, rarity:string, taken:Set<string>}} opts
+ * @param {{domain:string, rarity:string, taken:Set<string>, takenPortraits?:Set<string>,
+ *          portraitRng?:() => number}} opts
  */
-function generateCandidate(rng, { domain, rarity, taken }) {
+function generateCandidate(rng, { domain, rarity, taken, takenPortraits, portraitRng }) {
     const econ = rarityEconomics(rarity);
     const name = drawName(rng, taken);
 
@@ -236,6 +239,9 @@ function generateCandidate(rng, { domain, rarity, taken }) {
         hiredAt: new Date(),      // overwritten at hire; meaningless while on the market
         rank: 1,
         joinedAtRank: 1,          // every market hire starts at 1 — all later ranks are paid for
+        // Drawn from the SAME seeded rng as the rest of the candidate, so a market re-read
+        // rebuilds the identical face rather than reshuffling it under the player.
+        portraitKey: pickPortraitKey(domain, portraitRng || rng, takenPortraits),
 
         sessionsCompleted: 0,
         relevantWins: 0,
@@ -262,8 +268,14 @@ function generateCandidate(rng, { domain, rarity, taken }) {
  *
  * @returns {object[]} plain candidate objects, ready to assign to market.candidates
  */
-function rollCandidates(camp, fighter, weekIndex, tier) {
+function rollCandidates(camp, fighter, weekIndex, tier, excludePortraits) {
     const rng = mulberry32(hashSeed(`${camp._id}:${weekIndex}`));
+    // SEPARATE STREAM FOR PORTRAITS, deliberately. Picking a face redraws a variable number of
+    // times to dodge a collision, and every one of those draws would otherwise advance the
+    // shared stream — so adding one coach to the roster would shift the NAMES and TRAITS of
+    // every candidate after it. The fixed draw order that keeps a week's market stable is
+    // documented above; a variable-length consumer has to sit outside it.
+    const portraitRng = mulberry32(hashSeed(`${camp._id}:${weekIndex}:portrait`));
 
     const roster = camp.coaches || [];
     const hasWellConnected = roster.some((c) => {
@@ -280,6 +292,17 @@ function rollCandidates(camp, fighter, weekIndex, tier) {
 
     const rarities = eligibleRarities(tier, fighter);
     const taken = new Set(roster.map((c) => c.name));
+    // Faces already on screen. Seeded with the ROSTER, not just the board, because the market
+    // modal opens over the camp — the player sees the 4 roster tiles and the 6 hire cards at
+    // the same time, so a candidate wearing a current coach's face reads as a bug.
+    //
+    // `excludePortraits` carries the faces of cards ALREADY on the board when this is called to
+    // top a slate up mid-week. Without it the top-up filters on name alone and can deal a
+    // second card wearing a face that is sitting two cards to its left.
+    const takenPortraits = new Set([
+        ...roster.map((c) => c.portraitKey),
+        ...(excludePortraits || []),
+    ].filter(Boolean));
     const perDomain = {};
     const out = [];
 
@@ -293,8 +316,9 @@ function rollCandidates(camp, fighter, weekIndex, tier) {
         perDomain[domain] = (perDomain[domain] || 0) + 1;
 
         const rarity = pickRarity(rng, rarities);
-        const candidate = generateCandidate(rng, { domain, rarity, taken });
+        const candidate = generateCandidate(rng, { domain, rarity, taken, takenPortraits, portraitRng });
         taken.add(candidate.name);
+        if (candidate.portraitKey) takenPortraits.add(candidate.portraitKey);
         out.push(candidate);
     }
 
@@ -360,6 +384,9 @@ function buildCandidateView(candidate, fighter, camp, ctx) {
         candidateId: String(candidate._id),
         name: candidate.name,
         initials: candidate.initials,
+        // Same face the coach will wear once hired — `portraitKey` is stamped at generation and
+        // the subdoc moves across on hire, so the hire card and the roster tile always match.
+        ...portraitFields(candidate),
         rarity: candidate.rarity,
         archetype: candidate.archetype,
         archetypeLabel: archetype.label,
@@ -406,7 +433,19 @@ async function getMarketState(fighterId) {
 
     const wk = homeCampWeekIndex();
     if (camp.market.weekIndex !== wk) {
-        camp.market.candidates = rollCandidates(camp, fighter, wk, tier);
+        // Carry LAST week's faces into the new roll so no coach's face comes back the very
+        // next Monday — the freshest memory a player has, and the only recurrence they have a
+        // real chance of catching.
+        //
+        // ⚠️ THIS READ MUST HAPPEN BEFORE THE ASSIGNMENT ON THE NEXT LINE, which overwrites
+        // the very array being read. That ordering is the whole trick: it means a one-week
+        // exclusion needs NO new field, NO migration and NO extra mutable state — the previous
+        // board is already sitting on the doc at exactly this moment. A longer window would
+        // have to persist its own history, which is why it stops being free.
+        //
+        // Empty on a camp's first ever roll, which degrades to the old behaviour by itself.
+        const lastWeekFaces = (camp.market.candidates || []).map((c) => c.portraitKey);
+        camp.market.candidates = rollCandidates(camp, fighter, wk, tier, lastWeekFaces);
         camp.market.weekIndex = wk;
         await camp.save();
     } else {
@@ -424,7 +463,12 @@ async function getMarketState(fighterId) {
         const have = (camp.market.candidates || []).length;
         if (have < want) {
             const existing = new Set((camp.market.candidates || []).map((c) => c.name));
-            const extra = rollCandidates(camp, fighter, wk, tier)
+            // Exclude the faces already dealt, not just the names. A top-up runs with a
+            // different `n` (and possibly a wider domain pool) than the roll that produced the
+            // stored board, so the two sequences diverge — filtering on name alone would let a
+            // topped-up card wear a face already sitting on the same board.
+            const onBoard = (camp.market.candidates || []).map((c) => c.portraitKey);
+            const extra = rollCandidates(camp, fighter, wk, tier, onBoard)
                 .filter((c) => !existing.has(c.name))
                 .slice(0, want - have);
             if (extra.length > 0) {

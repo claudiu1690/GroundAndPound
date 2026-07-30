@@ -1,3 +1,4 @@
+import { CoachAvatar } from "./CoachAvatar";
 import { memo } from "react";
 import { Lock, Search } from "lucide-react";
 import { t } from "@/lib/i18n";
@@ -25,7 +26,7 @@ function CoachTile({ coach, selected, onSelect }) {
       {selected && <div className="yc-selected-ribbon">{t("yourCamp.staff.selected")}</div>}
       {coach.nextRank?.ready && <div className="yc-ready-flag">{t("yourCamp.staff.promoteReady")}</div>}
       <div className="yc-tile-top">
-        <div className="yc-avatar" style={{ "--rc": color }}>{coach.initials}</div>
+        <CoachAvatar coach={coach} style={{ "--rc": color }} />
         <div className="yc-tile-id">
           <div className="yc-tile-name">{coach.name}</div>
           <div className="yc-tile-archetype">{coach.archetypeLabel}</div>

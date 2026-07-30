@@ -46,6 +46,8 @@ const {
     drillsForCoach,
     teachSlotsForRank,
     perkForArchetype,
+    pickPortraitKey,
+    portraitFields,
     traitDef,
     traitView,
 } = require("../consts/homeCampConfig");
@@ -93,6 +95,8 @@ function createStarterCoach(domain, seed = {}) {
         // He ARRIVED at this rank — the player paid for none of it. Recording it here is what
         // stops a converted gym veteran later claiming the teach slots he never promoted through.
         joinedAtRank: rank,
+        // Frozen at creation like the name — a coach's face must never change under the player.
+        portraitKey: pickPortraitKey(archetype),
         sessionsCompleted: Math.max(0, Math.floor(Number(seed.sessionsCompleted)) || 0),
         relevantWins: Math.max(0, Math.floor(Number(seed.relevantWins)) || 0),
         morale: 100,
@@ -789,6 +793,9 @@ function buildCoachView(coach, fighter, blocks, ctx = {}) {
         // Camp-wide passive, or null. Only CONDITIONING has one today. Rendered on his card
         // because it is the answer to "why hold a slot for him once my meters are full" —
         // it pays while you train with someone else, and it never caps.
+        // null -> client renders initials. Built by the shared helper so the asset path lives
+        // in ONE place and the roster and hire cards can never disagree about it.
+        ...portraitFields(coach),
         passive: buildPassiveView(coach),
         teaches: buildTeachList(coach, ctx.campOrigin || null),
         drills: buildDrillViews(coach, blocks, fighter),

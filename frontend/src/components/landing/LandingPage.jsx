@@ -28,6 +28,18 @@ function formatDateShort(isoStr) {
 
 // Showcase card fan — real in-game Special Move art + rarity colors
 // (same palette as the in-game rarity chips).
+/**
+ * My Camp showcase — one painted card per coach discipline, same treatment as FAN_CARDS.
+ * `rar`/`glow` reuse the fan card's CSS custom properties so both rows share one component
+ * style; the colour here is the DISCIPLINE's, not a rarity.
+ */
+const COACH_CARDS = [
+  { id: "coach-striking",     name: "Striking Coach", rar: "#C8102E", glow: "rgba(200,16,46,.34)" },
+  { id: "coach-wrestling",    name: "Wrestling Coach", rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
+  { id: "coach-bjj",          name: "BJJ Professor", rar: "#14B8A6", glow: "rgba(20,184,166,.32)" },
+  { id: "coach-conditioning", name: "Conditioning Coach", rar: "#D4A820", glow: "rgba(212,168,32,.34)" },
+];
+
 const FAN_CARDS = [
   { id: "granite-jaw",     name: "Granite Jaw",     rarity: "Common",    rar: "#888888", glow: "rgba(136,136,136,.25)" },
   { id: "sprawl-instinct", name: "Sprawl Instinct", rarity: "Uncommon",  rar: "#22c55e", glow: "rgba(34,197,94,.3)" },
@@ -175,7 +187,10 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
           src="/assets/landing/arena.jpg"
           alt="MMA Arena"
           loading="eager"
-          fetchPriority="high"
+          // lowercase, NOT `fetchPriority` — React only learned the camelCase spelling in 19,
+          // and on 18 it fails the prop through to the DOM with a warning instead of setting
+          // the attribute. Lowercase is passed through verbatim, which is what browsers read.
+          fetchpriority="high"
         />
         <div className="hero-overlay"></div>
         <div className="hero-body">
@@ -212,7 +227,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
       <section id="features">
         <div className="sec-eye">What you get</div>
         <h2 className="sec-title">Everything a real<br />manager needs</h2>
-        <p className="sec-sub">Six stats to build. Nine gyms to train at. Real opponents to study. Every fight earned, never handed to you.</p>
+        <p className="sec-sub">Eight stats to build. Your own camp to run. Real opponents to study. Every fight earned, never handed to you.</p>
         <div className="features-grid">
           <div className="feat">
             <div className="feat-icon-text">STR</div>
@@ -307,7 +322,53 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
             </div>
           ))}
         </div>
-        <div className="fan-note">Common · Uncommon · Rare · <b>Legendary</b> — better gyms pull rarer.</div>
+        <div className="fan-note">Common · Uncommon · Rare · <b>Legendary</b> — your coaches teach them, hard sessions drop them.</div>
+
+        {/* MY CAMP — the ownership loop. Same card treatment as the moves fan. */}
+        <div className="camp-band">
+          <div className="ss-head ss-head--center">
+            <div className="sec-eye">My Camp</div>
+            <h2 className="sec-title">Your name<br />on the door</h2>
+            <p className="sec-sub">
+              You don&apos;t rent a gym — you run a camp. Hire coaches with names, rarities and
+              personalities, pay them every week, and rank them up. Each one teaches Special Moves
+              you can read on his card <i>before</i> you sign him.
+            </p>
+          </div>
+
+          <div className="camp-row">
+            {COACH_CARDS.map((c) => (
+              <div
+                key={c.id}
+                className="camp-card"
+                style={{ "--rar": c.rar, "--rar-glow": c.glow }}
+                onClick={() => openLightbox(`/assets/camp/${c.id}.webp`, c.name)}
+              >
+                <img src={`/assets/camp/${c.id}.webp`} alt={c.name} loading="lazy" />
+                <div className="fan-plate camp-plate">
+                  <div className="fan-name">{c.name}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="camp-points">
+            <div className="camp-point">
+              <div className="camp-point-k">Weekly wages</div>
+              <div className="camp-point-v">Coaches are staff, not furniture. Miss payroll or bench a coach and morale slides — let it hit zero and he walks out, taking his rank with him.</div>
+            </div>
+            <div className="camp-point">
+              <div className="camp-point-k">Rank them up</div>
+              <div className="camp-point-v">Sessions, style wins and cash. Rank 3 is a permanent XP bonus; Rank 4 hands over his discipline&apos;s perk for good.</div>
+            </div>
+            <div className="camp-point">
+              <div className="camp-point-k">A room that decays</div>
+              <div className="camp-point-v">Facility Condition slides when you don&apos;t show up, and a run-down camp trains you slower. Skip a week and you feel it.</div>
+            </div>
+          </div>
+
+          <div className="fan-note">One Monday market · no rerolls · <b>a Common coach knows one move, a Legendary knows them all</b></div>
+        </div>
 
         {/* PERSONA */}
         <div className="persona-band">

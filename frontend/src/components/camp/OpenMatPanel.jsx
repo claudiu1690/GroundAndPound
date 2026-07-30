@@ -9,7 +9,9 @@ import { injuryToneClass, dropToneClass, conditionDeltaToneClass } from "./campC
  * per the approved mock (NOT dashed/dimmed like a locked option). Button is
  * labelled "Spar", not "Train Alone".
  */
-export const OpenMatPanel = memo(function OpenMatPanel({ session, busy, batchMode = "1", fighter, onTrain }) {
+// `busy` = THIS session is the one running (drives the pulse). `disabled` = some other session
+// is running, so the button is inert but must not change appearance.
+export const OpenMatPanel = memo(function OpenMatPanel({ session, busy, disabled, batchMode = "1", fighter, onTrain }) {
   if (!session) return null;
 
   // Same batch resolution as coach drills (owner pick 06-V1): ×N clamped by
@@ -58,18 +60,18 @@ export const OpenMatPanel = memo(function OpenMatPanel({ session, busy, batchMod
           </div>
         </div>
       </div>
+      {/* Stable label while busy, same reasoning as DrillCard — see the note there. */}
       <button
         type="button"
-        className="yc-btn-train-ghost"
-        disabled={!session.canTrain || busy}
+        className={`yc-btn-train-ghost${busy ? " is-busy" : ""}`}
+        disabled={!session.canTrain || busy || disabled}
+        aria-busy={busy || undefined}
         title={!session.canTrain ? (session.blockedReason || undefined) : undefined}
         onClick={() => onTrain(qty)}
       >
-        {busy
-          ? "…"
-          : qty > 1
-            ? t("yourCamp.openMat.sparBatch", { qty, energy: session.energy * qty })
-            : t("yourCamp.openMat.spar")}
+        {qty > 1
+          ? t("yourCamp.openMat.sparBatch", { qty, energy: session.energy * qty })
+          : t("yourCamp.openMat.spar")}
       </button>
     </div>
   );

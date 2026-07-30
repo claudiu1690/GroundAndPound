@@ -4,6 +4,7 @@ import { t } from "@/lib/i18n";
 import { DrillCard } from "./DrillCard";
 import { DevelopmentTrack } from "./DevelopmentTrack";
 import { TeachList } from "./TeachList";
+import { CoachAvatar } from "./CoachAvatar";
 import { rarityColor, moraleToneClass } from "./campConstants";
 import { resolveBoosterDisplay, boosterEffectLine, pctLabel } from "../shop/shopConstants";
 
@@ -69,7 +70,7 @@ function resolveBatchQty(mode, drillEnergy, energyCurrent) {
   return Math.min(Number(mode) || 1, cap);
 }
 
-export const CoachPanel = memo(function CoachPanel({ coach, fighter, training, onTrain, onPromote, promoting, onClaimPerk, claimingPerk, onClaimTeach, claimingTeach, actionError, batchMode = "1", onBatchModeChange, onFireRequest, firing }) {
+export const CoachPanel = memo(function CoachPanel({ coach, fighter, training, trainingDrillKey = null, onTrain, onPromote, promoting, onClaimPerk, claimingPerk, onClaimTeach, claimingTeach, actionError, batchMode = "1", onBatchModeChange, onFireRequest, firing }) {
   const [keyOpen, setKeyOpen] = useState(false);
   const energyCurrent = fighter?.energy?.current ?? fighter?.energy ?? 0;
 
@@ -85,9 +86,7 @@ export const CoachPanel = memo(function CoachPanel({ coach, fighter, training, o
   return (
     <div className="yc-coach-main" id="yc-coach-main">
       <div className="yc-cm-header">
-        <div className="yc-avatar" style={{ "--rc": color, width: 78, height: 78, fontSize: 26, borderRadius: 12 }}>
-          {coach.initials}
-        </div>
+        <CoachAvatar coach={coach} style={{ "--rc": color }} />
         <div className="yc-cm-id-block">
           <div className="yc-cm-name-row">
             <span className="yc-cm-name">{coach.name}</span>
@@ -203,8 +202,11 @@ export const CoachPanel = memo(function CoachPanel({ coach, fighter, training, o
               key={d.key}
               drill={d}
               activeBooster={activeBooster}
+              // `disabled` blocks the whole grid while a session runs; `busy` marks ONLY the
+              // card that was clicked. Passing the same flag to both is what made every button
+              // in the grid react to a click on one of them.
               disabled={training}
-              busy={training}
+              busy={trainingDrillKey === d.key}
               batchQty={d.locked ? 1 : resolveBatchQty(batchMode, d.energy, energyCurrent)}
               onTrain={onTrain}
             />

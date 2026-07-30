@@ -3,6 +3,7 @@ import { Clock } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { TraitChip } from "./CoachPanel";
 import { TeachList } from "./TeachList";
+import { CoachAvatar } from "./CoachAvatar";
 import { rarityColor } from "./campConstants";
 
 /**
@@ -28,7 +29,7 @@ export const CandidateCard = memo(function CandidateCard({ candidate, resetsInDa
   return (
     <div className={`yc-cand-card${blocked ? " blocked" : ""}`} style={{ "--rc": color }} data-rarity={candidate.rarity}>
       <div className="yc-cand-head">
-        <div className="yc-avatar yc-cand-avatar" style={{ "--rc": color }}>{candidate.initials}</div>
+        <CoachAvatar coach={candidate} className="yc-cand-avatar" style={{ "--rc": color }} />
         <div className="yc-cand-id">
           <div className="yc-cand-name-row">
             <span className="yc-cand-name">{candidate.name}</span>
