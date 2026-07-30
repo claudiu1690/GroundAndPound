@@ -17963,6 +17963,23 @@ code {
   letter-spacing: .06em; text-transform: uppercase; color: var(--c-amber-bright);
 }
 .career-page .perk-effect { font-size: 11.5px; line-height: 1.5; color: var(--ts); }
+/* Persona group inside the same card. Purple left border, NOT the amber of a held perk: the
+   colour is the tell that these are conditional and can switch off, so the two groups must
+   never look interchangeable. */
+.career-page .perk-subhead {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  margin: 14px 0 8px; padding-top: 12px; border-top: 1px solid var(--bor);
+  font-family: var(--font-display); font-weight: 800; font-size: 10px;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--c-purple, #8B5CF6);
+}
+.career-page .perk-subhead-note {
+  font-family: inherit; font-weight: 600; font-size: 9px; letter-spacing: .06em;
+  text-transform: none; color: var(--tm, #666);
+}
+.career-page .perk-subhead + .perk-list .perk-row { border-left-color: var(--c-purple, #8B5CF6); }
+.career-page .perk-subhead + .perk-list .perk-name { color: var(--c-purple, #8B5CF6); }
+.career-page .perk-subhead + .perk-list .perk-effect { font-family: var(--font-display); font-weight: 800; font-size: 13px; }
+.career-page .perk-subhead + .perk-list .perk-effect.bad { color: #FF7B7B; }
 
 /* Teach slot the player is OWED — a promotion they paid for before the teach channel
    existed. Reads as a reward to collect, not as a warning. */

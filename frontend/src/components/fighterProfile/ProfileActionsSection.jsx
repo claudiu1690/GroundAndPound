@@ -28,21 +28,30 @@ export const ProfileActionsSection = memo(function ProfileActionsSection({
             className="form-input"
           />
         </div>
-        <div className="form-row">
-          <label>{t("fighterProfile.edit.homeGymLabel")}</label>
-          <select
-            value={editGymId}
-            onChange={(e) => setEditGymId(e.target.value)}
-            className="form-select"
-          >
-            <option value="">{t("fighterProfile.edit.homeGymNone")}</option>
-            {(gyms || []).map((g) => (
-              <option key={g._id} value={g._id}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/*
+          Only offered when there is something to pick. Once the gyms retire the list comes back
+          empty, and this used to render a "Home gym" dropdown whose only option was "None" —
+          a control for choosing between nothing. Keying off the list rather than the
+          GYMS_RETIRED flag keeps it self-correcting and avoids threading the flag down two
+          component levels to answer a question the data already answers.
+        */}
+        {(gyms || []).length > 0 && (
+          <div className="form-row">
+            <label>{t("fighterProfile.edit.homeGymLabel")}</label>
+            <select
+              value={editGymId}
+              onChange={(e) => setEditGymId(e.target.value)}
+              className="form-select"
+            >
+              <option value="">{t("fighterProfile.edit.homeGymNone")}</option>
+              {gyms.map((g) => (
+                <option key={g._id} value={g._id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="edit-actions">
           <button type="button" className="btn btn-primary btn-sm" onClick={onSaveProfile}>
             {t("common.save")}

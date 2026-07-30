@@ -21,6 +21,10 @@ import { t } from "@/lib/i18n";
  */
 export function PerksCard({ fighter, onNavigate }) {
     const perks = Array.isArray(fighter?.perksOwned) ? fighter.perksOwned : [];
+    // Only modifiers currently doing something. The server already returns [] for an Unwritten
+    // persona, a blackout, or zero heat, so an empty list honestly means "nothing active now".
+    const persona = (Array.isArray(fighter?.personaEffects) ? fighter.personaEffects : [])
+        .filter((m) => m.active && !m.cosmetic);
 
     return (
         <div className="p-card">
@@ -42,6 +46,29 @@ export function PerksCard({ fighter, onNavigate }) {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {/*
+              Persona modifiers, in the same card but under their own heading.
+              THE HEADING IS THE POINT: these are live while you hold the character and gone
+              when heat decays, the archetype flips, or a blackout suppresses them. Listing them
+              above as "held" would promise permanence they don't have.
+            */}
+            {persona.length > 0 && (
+                <>
+                    <div className="perk-subhead">
+                        {t("career.perks.personaTitle")}
+                        <span className="perk-subhead-note">{t("career.perks.personaNote")}</span>
+                    </div>
+                    <div className="perk-list">
+                        {persona.map((m) => (
+                            <div key={m.key} className="perk-row">
+                                <span className="perk-name">{m.label}</span>
+                                <span className={`perk-effect${m.good === false ? " bad" : ""}`}>{m.display}</span>
+                            </div>
+                        ))}
+                    </div>
+                </>
             )}
         </div>
     );

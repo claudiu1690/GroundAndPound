@@ -95,10 +95,13 @@ function buildNavItems({ gymsRetired = false } = {}) {
     ...(gymsRetired ? [] : [
       { id: "gym",       label: t("layout.nav.training"),      icon: <Dumbbell size={13} strokeWidth={2.2} />,       active: true },
     ]),
-    // Your Camp (Phase 0) — coexists with the 10 gyms during rollout (GDD §6);
-    // sits right after Training since it's an alternative training venue.
+    // Your Camp. While the gyms are open it sits right after Training as an alternative
+    // training venue; once GYMS_RETIRED flips, Training is gone from the list above and this
+    // becomes the first item under Home — and the ONLY place to train. Player-facing copy that
+    // positions it ("right under Home") depends on that, so keep it directly after the
+    // conditional block.
     { id: "camp",      label: t("layout.nav.yourCamp"),      icon: <Building2 size={13} strokeWidth={2.2} />,      active: true },
-    // Special Moves sits with the "build your fighter" cluster — next to Training,
+    // Special Moves sits with the "build your fighter" cluster — beside the training venue,
     // before Fight (train → kit out your moveset → go use it), not buried down by Shop.
     { id: "moves",     label: t("layout.nav.moves"),         icon: <Sparkles size={13} strokeWidth={2.2} />,       active: true },
     { id: "fights",    label: t("layout.nav.fight"),         icon: <Swords size={13} strokeWidth={2.2} />,         active: true },

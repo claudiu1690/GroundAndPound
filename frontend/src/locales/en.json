@@ -566,7 +566,9 @@
     "perks": {
       "title": "Perks Held",
       "manage": "Your Camp",
-      "empty": "No perks yet. Take a camp coach to Rank 4 and his discipline's perk is yours permanently."
+      "empty": "No perks yet. Take a camp coach to Rank 4 and his discipline's perk is yours permanently.",
+      "personaTitle": "Persona",
+      "personaNote": "Active while you hold the character"
     }
   },
   "fame": {
@@ -753,7 +755,7 @@
       "focusDescs": {
         "FIGHTER": "Your fighting journey. Broad fame appeal.",
         "UNDERDOG": "Losses and comebacks. More cash payout.",
-        "TECHNICIAN": "Gym mastery focus. Unlocks special perk."
+        "TECHNICIAN": "Training mastery focus. Unlocks special perk."
       },
       "toneOptions": {
         "INSPIRATIONAL": "Inspirational",

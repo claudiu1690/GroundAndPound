@@ -329,11 +329,11 @@ export const LIBRARY_ARTICLES = [
     {
         id: "rank-4-perks",
         category: "Training & Camp",
-        title: "Coach Perks — What Rank 4 Gets You",
+        title: "Coach Perks: What Rank 4 Gets You",
         summary: "The four permanent perks your coaches can earn, what each one actually changes, and the badge that comes with it.",
         tags: ["rank 4", "perks", "coach", "camp", "corner confidence", "mat returns", "submission awareness", "iron conditioning"],
         body: [
-            "Taking a coach to Rank 4 earns a permanent utility perk that changes how something in the game works. These aren't cosmetic — they affect camp preparation, fight recovery and your prep sessions. Each one also grants a profile badge, named differently from the perk itself: the badge is the trophy, the perk is the effect.",
+            "Taking a coach to Rank 4 earns a permanent utility perk that changes how something in the game works. These aren't cosmetic. They affect camp preparation, fight recovery and your prep sessions. Each one also grants a profile badge, named differently from the perk itself: the badge is the trophy, the perk is the effect.",
             "There are four, one per discipline, and your camp is the only place to get them. A Rank 4 Striking Coach grants Corner Confidence, a Rank 4 Wrestling Coach grants Mat Returns, a Rank 4 BJJ Professor grants Submission Awareness, and a Rank 4 Conditioning Coach grants Iron Conditioning.",
             {
                 type: "table",
@@ -342,13 +342,13 @@ export const LIBRARY_ARTICLES = [
                     ["Striking Coach", "Corner Confidence", "Champion Boxer", "An extra camp slot when fighting a striker. More prep time against your most common opponents."],
                     ["Wrestling Coach", "Mat Returns", "Olympic Wrestler", "Takedown Defence always rates at least PARTIAL. Your wrestling preparation never completely misfires."],
                     ["BJJ Professor", "Submission Awareness", "BJJ Black Belt", "Submission Escapes gives +5% extra bonus. More reliable escape probability on the mat."],
-                    ["Conditioning Coach", "Iron Conditioning", "Grand Kru", "Your health regenerates about 30% faster — a full heal drops from roughly 8 hours to under 6. Gets you back in the cage sooner, for the rest of your career."],
+                    ["Conditioning Coach", "Iron Conditioning", "Grand Kru", "Your health regenerates about 30% faster, so a full heal drops from roughly 8 hours to under 6. Gets you back in the cage sooner, for the rest of your career."],
                 ],
             },
-            "Perks are a single shared collection, so there is no way to hold the same one twice — and firing the coach who earned it never takes it back. Once it's yours, it's yours. Collecting all four also earns the Master of All badge.",
-            "If you played before the gyms closed you may hold perks that aren't in this table — Strength Reserve, Tactical Edge, Championship Pedigree and the rest came from gym Rank 4s. They still work exactly as they always did, and you keep them permanently; they simply can't be earned any more. Your profile's Perks Held card lists everything you own.",
+            "Perks are a single shared collection, so there is no way to hold the same one twice, and firing the coach who earned it never takes it back. Once it's yours, it's yours. Collecting all four also earns the Master of All badge.",
+            "If you played before the gyms closed you may hold perks that aren't in this table. Strength Reserve, Tactical Edge, Championship Pedigree and the rest came from gym Rank 4s. They still work exactly as they always did, and you keep them permanently. They simply can't be earned any more. Your profile's Perks Held card lists everything you own.",
         ],
-        keyTakeaway: "Four perks, one per discipline, and your camp is the only source. Iron Conditioning has the widest reach — faster healing means more fights across a whole career.",
+        keyTakeaway: "Four perks, one per discipline, and your camp is the only source. Iron Conditioning has the widest reach, because faster healing means more fights across a whole career.",
     },
     {
         id: "my-camp",
@@ -357,7 +357,7 @@ export const LIBRARY_ARTICLES = [
         summary: "Your own camp, your own coaches, your own building — how to train there, read a drill card, keep the place in shape, and rank a coach up.",
         tags: ["my camp", "camp", "coach", "drills", "facility condition", "open mat", "flagship", "promotion", "training", "renovation", "deep clean", "wages"],
         body: [
-            "My Camp is yours. It has your name on the door, a coach on the payroll, a set of drills that only your coach can run, and a building that quietly falls apart if you stop showing up. It sits right under Training in the menu, and the first time you open it, it's already built — no cost, no unlock, nothing to wait for.",
+            "My Camp is yours. It has your name on the door, a coach on the payroll, a set of drills that only your coach can run, and a building that quietly falls apart if you stop showing up. It's the first thing under Home in the menu, and the first time you open it, it's already built — no cost, no unlock, nothing to wait for.",
             "Your camp opens with a free head coach who matches how you fight: a Striking Coach if you're a Boxer, Kickboxer, Muay Thai or Capoeira fighter, a Wrestling Coach if you're a Wrestler or Judoka, a BJJ Professor if you're Brazilian Jiu-Jitsu or Sambo. Free means free forever — hired coaches draw a weekly wage (see \"Hiring & Keeping Coaches\"), but your starter never costs a cent to keep.",
             "The camp is where all your training happens now. If you played back when the specialty gyms were open, that work came with you: the gym you were training at became your head coach at the rank you'd already earned, and any other gyms you'd ranked up were banked as familiarity in their discipline, credited automatically to your next hire in it. The perks and badges you earned at a gym are permanent and untouched.",
             "You can rename the camp any time — anything from 3 to 28 characters. It starts as your surname plus \"Camp\", which is fine, but most fighters want something with more teeth.",

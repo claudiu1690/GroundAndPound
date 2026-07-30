@@ -223,6 +223,21 @@ function toPublicFighter(fighter) {
             .filter(Boolean)
             .map((p) => ({ key: p.key, name: p.name, effect: p.effect }));
     }
+    /**
+     * Persona modifiers, surfaced next to the perks but as a SEPARATE list.
+     *
+     * ⚠️ DELIBERATELY NOT MERGED INTO `perksOwned`, even though both are "things affecting my
+     * fighter that I want to see in one place". A coach perk is earned once, stored on the
+     * document and irrevocable. A persona modifier is none of those: it is DERIVED at read
+     * time from the current x/y (never stored), it scales with heat, it dies when heat decays
+     * or the archetype flips, and it is suppressed entirely during a blackout. Listing one
+     * under a heading that says "held" would promise permanence the system does not offer,
+     * which is the same trap as reading live roster state for a badge.
+     *
+     * `getDisplayModifiers` already returns [] for UNWRITTEN, for a blackout, and at zero heat,
+     * so an empty array here honestly means "nothing is active right now".
+     */
+    out.personaEffects = personaService.getDisplayModifiers(fighter);
     // Persona (Role Model) hospital discount: the injury card prices shown in the
     // hospital UI must match what doctorVisit/skipRecovery actually charge (same
     // fraction + rounding). Base values stay in *Base; the tag explains the delta.
