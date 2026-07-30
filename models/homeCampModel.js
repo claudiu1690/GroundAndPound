@@ -59,6 +59,15 @@ const coachSchema = new mongoose.Schema({
     // null on an existing doc means "never used" — but the first weekly tick after migration
     // deliberately skips history (lastWeeklyTickIndex < 0), so nobody is retro-punished.
     lastSessionAt: { type: Date, default: null },
+    // Which portrait from the shared pool this coach wears, e.g. "coach_04".
+    //
+    // ⚠️ STAMPED AT GENERATION AND STORED — never derived by hashing `_id` at render time.
+    // Hashing means `id % poolSize`, so adding an 11th portrait would silently reshuffle every
+    // existing coach's face. A portrait is identity, and identity is frozen here for the same
+    // reason `name` is ("a coach's name must never change under the player") and `hireFee` is
+    // ("stored so a later rebalance can never rewrite history"). Null on documents written
+    // before this field existed — the UI falls back to initials rather than inventing one.
+    portraitKey: { type: String, default: null },
     // LEGENDARY only — PHASE 2 builds the drill this key points at. Phase 1 just records it,
     // and deliberately does NOT advertise it on the hire card.
     exclusiveSessionKey: { type: String, default: null },

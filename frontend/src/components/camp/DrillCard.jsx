@@ -129,18 +129,24 @@ export const DrillCard = memo(function DrillCard({ drill, activeBooster, disable
             <ConditionValue delta={drill.condDelta} />
           </div>
 
+          {/*
+            THE LABEL DOES NOT CHANGE WHILE BUSY. It used to swap to "…", which collapsed the
+            button from "Train ×5 · ⚡45" down to three dots — and since this button carries
+            `margin-left: auto` inside a `flex-wrap: wrap` row, that much width change can
+            re-wrap the whole metrics line and snap it back a moment later. Busy is a CSS state
+            on stable text instead, so nothing reflows.
+          */}
           <button
             type="button"
-            className="yc-btn-train"
+            className={`yc-btn-train${busy ? " is-busy" : ""}`}
             disabled={trainDisabled}
+            aria-busy={busy || undefined}
             title={!drill.canTrain ? (drill.blockedReason || t("yourCamp.drill.blocked")) : undefined}
             onClick={() => onTrain(drill, qty)}
           >
-            {busy
-              ? "…"
-              : qty > 1
-                ? t("yourCamp.drill.trainBatch", { qty, energy: totalEnergy })
-                : t("yourCamp.drill.train")}
+            {qty > 1
+              ? t("yourCamp.drill.trainBatch", { qty, energy: totalEnergy })
+              : t("yourCamp.drill.train")}
           </button>
         </div>
       </div>

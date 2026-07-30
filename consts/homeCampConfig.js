@@ -458,6 +458,70 @@ const LEGENDARY_EXCLUSIVE_DRILLS_BY_KEY = Object.freeze(
 // 100 → 0 lands around week 8. An ACTIVE player takes zero decay: paying wages and running
 // one session a week with each coach cancels both negatives outright.
 const MORALE_MAX = 100;
+/**
+ * Coach portrait pool — 46 purpose-built photoreal faces in
+ * `frontend/public/assets/camp/coaches/`, 200x250 to match the fighter art.
+ *
+ * ONE SHARED POOL, not per-archetype. A face carries no discipline: a bald fifty-year-old is
+ * as plausibly a wrestling coach as a striking one, so partitioning would only shrink the
+ * draw for no gain.
+ *
+ * ⚠️ POOL SIZE IS NOT WHAT STOPS REPEATED FACES — the draw is. Faces are picked independently
+ * here, which makes on-screen collisions a birthday problem, and the birthday problem does not
+ * respond to money. At Tier 4 there are 10 faces on screen at once (6 candidates over the 4
+ * roster tiles behind the modal); holding that below a 10% repeat rate by pool size alone
+ * would take **431** portraits. 46 gets it to roughly 65%.
+ *
+ * The fix is to draw WITHOUT replacement and exclude the faces already on the roster, which
+ * takes the on-screen repeat rate to exactly zero for any pool of 10 or more. Until the market
+ * roll does that, 46 buys variety over time (about 8 boards to cycle the pool) but NOT
+ * uniqueness on any single screen.
+ */
+const COACH_PORTRAIT_COUNT = 46;
+const COACH_PORTRAIT_PATH = "/assets/camp/coaches";
+
+/** `"coach_07"`, or null when the pool is empty (client falls back to initials). */
+function pickPortraitKey(archetype, rng, taken) {
+    if (COACH_PORTRAIT_COUNT <= 0) return null;
+    const draw = () => {
+        const r = typeof rng === "function" ? rng() : Math.random();
+        const i = Math.min(COACH_PORTRAIT_COUNT, Math.max(1, Math.floor(r * COACH_PORTRAIT_COUNT) + 1));
+        return `coach_${String(i).padStart(2, "0")}`;
+    };
+    if (!taken || taken.size >= COACH_PORTRAIT_COUNT) return draw();
+
+    // Redraw past faces already on screen. This is what actually prevents a repeated face —
+    // see the pool-size note above: no amount of extra art fixes an independent draw, and a
+    // handful of redraws fixes it completely. Bounded, and it consumes the shared seeded
+    // stream on every attempt so the roll stays deterministic for a given (camp, week).
+    let key = null;
+    for (let i = 0; i < PORTRAIT_REDRAW_TRIES; i++) {
+        key = draw();
+        if (!taken.has(key)) break;
+    }
+    return key;
+}
+
+// Matches MARKET_NAME_REDRAW_TRIES in spirit: enough attempts that a collision is vanishingly
+// unlikely while the pool has room, without ever looping unbounded on a seeded stream.
+const PORTRAIT_REDRAW_TRIES = 12;
+
+/**
+ * The `{ portraitKey, portraitUrl }` pair every coach DTO carries.
+ *
+ * Lives here, beside the path it builds from, because a coach is rendered by TWO independent
+ * view builders — `buildCoachView` (roster) and `buildCandidateView` (hire cards) — and the
+ * hire cards shipped faceless precisely because the roster one grew these fields and the
+ * market one was never told. Same subdoc, same schema, same avatar component; the fields it
+ * needs should not be something each builder remembers to spell out.
+ *
+ * Null key -> both null -> the client renders initials.
+ */
+function portraitFields(coach) {
+    const key = coach?.portraitKey || null;
+    return { portraitKey: key, portraitUrl: key ? `${COACH_PORTRAIT_PATH}/${key}.png` : null };
+}
+
 const MORALE_START = 100;
 const MORALE_WAGE_UNPAID = -5;          // per unpaid week, every coach
 const MORALE_UNUSED_SESSIONS = -3;      // per week a coach ran zero sessions
@@ -1082,6 +1146,10 @@ module.exports = {
     homeCampWeekEnd,
     MORALE_MAX,
     MORALE_START,
+    COACH_PORTRAIT_COUNT,
+    COACH_PORTRAIT_PATH,
+    pickPortraitKey,
+    portraitFields,
     MORALE_REGEN_PER_WEEK,
     MORALE_WAGE_UNPAID,
     MORALE_UNUSED_SESSIONS,

@@ -1,7 +1,7 @@
 {
   "name": "mma-game",
   "version": "2.0.0",
-  "description": "Ground & Pound: Chronicles of the Cage — MMA career RPG backend",
+  "description": "Ground & Pound: Chronicles of the Cage \u2014 MMA career RPG backend",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
@@ -9,6 +9,7 @@
     "start:remote": "cross-env LOCAL_MODE=false node app.js",
     "dev": "nodemon app.js --inspect",
     "dev:local": "cross-env LOCAL_MODE=true nodemon app.js --inspect",
+    "dev:local:retired": "cross-env LOCAL_MODE=true GYMS_RETIRED=true nodemon app.js --inspect",
     "dev:remote": "cross-env LOCAL_MODE=false nodemon app.js --inspect",
     "test": "echo \"Error: no test specified\" && exit 1",
     "seed": "node scripts/seed.js",

@@ -220,7 +220,10 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
 
   const [selectedCoachId, setSelectedCoachId] = useState(null);
   const [batchMode, setBatchMode] = useState("1"); // "1" | "5" | "10" | "max" — owner pick 06-V1
-  const [training, setTraining] = useState(false);
+  // WHICH drill is running, not merely THAT one is. A single boolean put every Train button in
+  // the grid into its busy state at once, so clicking one card visibly changed all of them.
+  const [trainingDrillKey, setTrainingDrillKey] = useState(null);
+  const training = trainingDrillKey !== null;
   const [promotingCoachId, setPromotingCoachId] = useState(null);
   const [claimingCoachId, setClaimingCoachId] = useState(null);
   const [claimingTeachId, setClaimingTeachId] = useState(null);
@@ -280,7 +283,7 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
   const handleTrainDrill = useCallback(
     async (coachId, drill, quantity = 1) => {
       if (!fighterId || training) return;
-      setTraining(true);
+      setTrainingDrillKey(drill.key);
       setActionError("");
       try {
         const result = await train({ coachId, drillKey: drill.key, quantity });
@@ -339,7 +342,7 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
       } catch (e) {
         setActionError(describeTrainError(e));
       } finally {
-        setTraining(false);
+        setTrainingDrillKey(null);
       }
     },
     [fighterId, training, train, addToast, onMoveDropReveal, onRefreshFighter]
@@ -620,6 +623,7 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
           coach={selectedCoach}
           fighter={fighter}
           training={training}
+          trainingDrillKey={trainingDrillKey}
           batchMode={batchMode}
           onBatchModeChange={setBatchMode}
           onTrain={(drill, qty) => handleTrainDrill(selectedCoach.coachId, drill, qty)}
@@ -639,7 +643,8 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
 
       <OpenMatPanel
         session={campState.fallbackSession}
-        busy={training}
+        busy={trainingDrillKey === campState.fallbackSession?.key}
+        disabled={training}
         batchMode={batchMode}
         fighter={fighter}
         onTrain={(qty) =>

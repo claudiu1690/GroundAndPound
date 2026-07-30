@@ -17146,8 +17146,17 @@ code {
 .your-camp .yc-rarity-tag[data-rarity="RARE"] { color: #60a5fa; border-color: var(--yc-r-rare); background: rgba(59,130,246,.08); }
 .your-camp .yc-rarity-tag[data-rarity="LEGENDARY"] { color: var(--yc-r-legendary); border-color: var(--yc-r-legendary); background: rgba(212,168,32,.08); }
 
+/* Avatars are 4:5, not square, because the portrait art is 200×250 and the subject's skull
+   starts at row 4. A square box has to either crop the top of the head off or pillarbox the
+   art down to 38px inside a 52px frame — neither is acceptable. Matching the box to the
+   source aspect means the art fills the full width edge to edge with nothing cropped.
+
+   ONE token drives it: set `--av-w` per context and the height follows. Sizing lives here and
+   NOT inline on the component, because an inline width silently outranks every class selector
+   — which is exactly how the `max-width: 980px` rule below ended up dead on arrival. */
 .your-camp .yc-avatar {
-  --rc: #555; width: 52px; height: 52px; border-radius: 10px;
+  --rc: #555; --av-w: 52px;
+  width: var(--av-w); height: calc(var(--av-w) * 1.25); border-radius: 10px;
   background: linear-gradient(160deg,#242424,#131313); display: flex; align-items: center; justify-content: center;
   font-family: var(--font-display); font-weight: 800; letter-spacing: .5px; flex-shrink: 0;
   border: 2px solid var(--rc); color: var(--rc);
@@ -17304,7 +17313,7 @@ code {
   font-weight: 800; font-size: 10px; letter-spacing: 1.2px; padding: 3px 8px 3px 10px; border-radius: 0 9px 0 8px;
 }
 .your-camp .yc-tile-top { display: flex; gap: 10px; align-items: center; }
-.your-camp .yc-tile-top .yc-avatar { width: 52px; height: 52px; font-size: 17px; }
+.your-camp .yc-tile-top .yc-avatar { --av-w: 52px; font-size: 17px; }
 .your-camp .yc-tile-id { min-width: 0; }
 .your-camp .yc-tile-name {
   font-family: var(--font-display); font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: .2px; color: #fff;
@@ -17357,6 +17366,7 @@ code {
 /* ================= MAIN COACH PANEL ================= */
 .your-camp .yc-coach-main { background: var(--c-bg-tile); border: 1px solid var(--c-border); border-radius: 12px; padding: 22px 24px 24px; margin-top: 16px; }
 .your-camp .yc-cm-header { display: flex; gap: 18px; flex-wrap: wrap; }
+.your-camp .yc-cm-header .yc-avatar { --av-w: 78px; font-size: 26px; border-radius: 12px; }
 .your-camp .yc-cm-id-block { flex: 1; min-width: 260px; }
 .your-camp .yc-cm-name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .your-camp .yc-cm-name { font-family: var(--font-display); font-weight: 800; font-size: 26px; text-transform: uppercase; letter-spacing: .3px; color: #fff; }
@@ -17482,6 +17492,16 @@ code {
 }
 .your-camp .yc-btn-train:hover:not(:disabled) { background: var(--red-bright); }
 .your-camp .yc-btn-train:disabled { background: #232323; color: #555; cursor: not-allowed; }
+/* Holds its width when the batch label changes (⚡45 -> ⚡27 as energy drains, "Train ×5" ->
+   "Train"), so the row never re-wraps mid-session. Wide enough for the longest batch label. */
+.your-camp .yc-btn-train { min-width: 124px; text-align: center; }
+/* The busy cue: a pulse on stable text. Replacing the label with a spinner or an ellipsis is
+   what caused the flicker in the first place — anything here must not change the box. */
+.your-camp .yc-btn-train.is-busy { background: #232323; color: #8A8A8A; animation: ycTrainPulse .9s ease-in-out infinite; }
+@keyframes ycTrainPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) {
+  .your-camp .yc-btn-train.is-busy { animation: none; opacity: .7; }
+}
 .your-camp .yc-lock-tag { font-size: 9.5px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
 
 /* active supplement */
@@ -17621,12 +17641,17 @@ code {
 }
 .your-camp .yc-btn-train-ghost:hover:not(:disabled) { border-color: var(--red); background: rgba(200,16,46,.12); color: #fff; }
 .your-camp .yc-btn-train-ghost:disabled { opacity: .5; cursor: not-allowed; }
+.your-camp .yc-btn-train-ghost { min-width: 148px; text-align: center; white-space: nowrap; }
+.your-camp .yc-btn-train-ghost.is-busy { animation: ycTrainPulse .9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .your-camp .yc-btn-train-ghost.is-busy { animation: none; }
+}
 
 @media (max-width: 980px) {
   .your-camp { padding: 16px 16px 36px; }
   .your-camp .yc-bar { padding: 10px 14px; }
   .your-camp .yc-divider { display: none; }
-  .your-camp .yc-cm-header .yc-avatar { width: 64px; height: 64px; }
+  .your-camp .yc-cm-header .yc-avatar { --av-w: 64px; }
   .your-camp .yc-cm-name { font-size: 21px; }
   .your-camp .yc-drills-grid { grid-template-columns: 1fr; }
 }
@@ -17814,7 +17839,10 @@ code {
 .yc-cand-card.blocked { opacity: .6; }
 .yc-cand-card.blocked:hover { transform: none; }
 .yc-cand-head { display: flex; align-items: flex-start; gap: 10px; }
-.yc-cand-avatar { width: 48px; height: 48px; font-size: 16px; flex-shrink: 0; }
+/* Scoped to `.your-camp` deliberately: the base `.your-camp .yc-avatar` rule that sets the
+   default `--av-w` is (0,2,0), so an unscoped `.yc-cand-avatar` at (0,1,0) loses to it and the
+   hire cards silently render at the roster size. This used to be masked by an inline width. */
+.your-camp .yc-cand-avatar { --av-w: 48px; font-size: 16px; flex-shrink: 0; }
 .yc-cand-id { min-width: 0; flex: 1; }
 .yc-cand-name-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .yc-cand-name { font-family: var(--font-display); font-weight: 800; font-size: 16px; color: #fff; text-transform: uppercase; letter-spacing: .2px; }
@@ -17954,3 +17982,18 @@ code {
 }
 .your-camp .yc-cm-passive svg { flex: 0 0 auto; margin-top: 2px; }
 .your-camp .yc-bnr-passive { display: inline-flex; align-items: center; gap: 4px; color: var(--c-teal, #14b8a6); }
+
+/* Coach portrait inside the rarity ring. The wrapper keeps its size/ring/radius whether a
+   portrait loaded or initials are showing, so a mixed roster still reads as one row.
+
+   `contain`, NOT `cover`. The source art is 200×250 and the subject's skull starts at row 4 —
+   it already touches the top edge, with no headroom to spare. Cropping that 4:5 source to a
+   square by any amount takes the crown of the head off, and shifting `object-position` only
+   moves which end loses. `contain` fits the whole frame and pillarboxes ~10% either side,
+   which the flat backdrop absorbs far better than a decapitated portrait does. */
+/* Bar colour is sampled from the portraits' own backdrop (~#323c44 at the top, darker at the
+   bottom), NOT from the tile behind it. The pillarbox sits INSIDE the rarity ring, touching the
+   art on both sides, so it has to blend with the art's backdrop — a near-black bar next to a
+   blue-grey backdrop reads as a seam splitting the avatar into three strips. */
+.your-camp .yc-avatar.has-portrait { padding: 0; overflow: hidden; background: #232b30; }
+.your-camp .yc-avatar.has-portrait img { width: 100%; height: 100%; object-fit: contain; display: block; }
