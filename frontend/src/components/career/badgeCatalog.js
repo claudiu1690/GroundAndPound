@@ -108,6 +108,15 @@ export const BADGE_CATALOG = {
   sessions_100:     make(Dumbbell, BLUE),
   sessions_250:     make(Dumbbell, GOLD),
 
+  // Camp (coaches) — colour rises with difficulty, so the row reads as a ladder:
+  // teal (first steps) -> blue -> purple -> gold (capstone).
+  coach_first_hire:      make(HeartHandshake, TEAL),
+  coach_full_staff:      make(Users, BLUE),
+  coach_legendary_hire:  make(Crown, GOLD),
+  coach_taught_move:     make(Sparkles, PURPLE),
+  coach_taught_five:     make(Sparkles, GOLD),
+  coach_all_rank4:       make(Crown, GOLD),
+
   // Media (blue family)
   first_episode:     make(Mic, RED),
   media_star:        make(Radio, BLUE),
@@ -123,6 +132,7 @@ const CATEGORY_FALLBACK = {
   championships: make(Award, GOLD),
   style:         make(Swords, PURPLE),
   gym:           make(Dumbbell, TEAL),
+  camp:          make(HeartHandshake, TEAL),
   media:         make(Mic, BLUE),
 };
 

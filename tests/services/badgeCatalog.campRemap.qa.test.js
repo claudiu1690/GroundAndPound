@@ -169,7 +169,10 @@ test("Q3 all 10 gym badges still RENDER, and legacy ones are flagged", () => {
     }
 });
 
-test("Q3 a LOCKED legacy badge is excluded from lockedCount; an EARNED one still counts as earned", () => {
+test("Q3 while the gyms are OPEN a legacy badge is shown and counted; earning it moves it to earned", () => {
+    // NOTE: this suite runs with GYMS_RETIRED unset, i.e. the gyms are still running — so all
+    // six legacy badges are genuinely obtainable and belong in the completion denominator.
+    // They only leave the profile at the cutover; see the GYMS_RETIRED=true test below.
     const none = badgeService.buildBadgeProfile(fighter());
     // Same fighter, but now holding all six legacy badges.
     const veteran = badgeService.buildBadgeProfile(fighter({
@@ -177,10 +180,21 @@ test("Q3 a LOCKED legacy badge is excluded from lockedCount; an EARNED one still
     }));
 
     assert.equal(veteran.earnedCount, none.earnedCount + 6, "earned legacy badges still count as earned");
-    // Locked count is unchanged: the six were never in it (locked) and are not in it now (earned).
-    assert.equal(veteran.lockedCount, none.lockedCount, "legacy badges never contribute to lockedCount");
+    // Earning them MOVES them from locked to earned — it does not change the total.
+    assert.equal(veteran.lockedCount, none.lockedCount - 6, "six moved out of locked into earned");
+    assert.equal(
+        veteran.earnedCount + veteran.lockedCount,
+        none.earnedCount + none.lockedCount,
+        "the denominator is stable — earning a badge never changes the total"
+    );
 
-    // And the six are genuinely absent from the locked tally rather than accidentally counted.
+    // The header must always equal what is actually rendered, in both fixtures.
+    for (const prof of [none, veteran]) {
+        const tiles = prof.categories.reduce((n, c) => n + c.badges.length, 0);
+        assert.equal(prof.earnedCount + prof.lockedCount, tiles, "header must match rendered tiles");
+    }
+
+    // While the gyms are open, all six unearned legacy badges are still on screen to be chased.
     const lockedGymIds = gymBadgesOf(none).filter((b) => !b.earned && b.legacy).map((b) => b.id);
     assert.deepEqual(lockedGymIds.sort(), LEGACY.slice().sort());
 });
