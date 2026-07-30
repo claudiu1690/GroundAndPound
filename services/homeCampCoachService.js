@@ -968,6 +968,13 @@ async function attemptPromotion(fighterId, coachId) {
                     const r = specialMovesService.grantOrUpgrade(doc, g.moveId, g.grantRarity);
                     if (r) taughtMoves.push({ moveId: g.moveId, ...r });
                 }
+                // Counts moves that came from a COACH, which `specialMovesOwned` cannot tell
+                // apart from a session drop. Counted per grant, including UPGRADE and
+                // DUPLICATE: the coach taught it either way, and the badge is for being taught.
+                if (teachGrants.length) {
+                    if (!doc.campStats) doc.campStats = {};
+                    doc.campStats.movesTaught = (doc.campStats.movesTaught || 0) + teachGrants.length;
+                }
             }
         );
         // Read AFTER the duplicate cash-outs above — this is the true balance, not have-cost.
@@ -1308,6 +1315,11 @@ async function claimMissedTeach(fighterId, coachId) {
                 for (const g of eligible) {
                     const r = specialMovesService.grantOrUpgrade(doc, g.moveId, g.grantRarity);
                     if (r) taughtMoves.push({ moveId: g.moveId, ...r });
+                }
+                // Same counter as the promotion path — a move claimed late was still taught.
+                if (eligible.length) {
+                    if (!doc.campStats) doc.campStats = {};
+                    doc.campStats.movesTaught = (doc.campStats.movesTaught || 0) + eligible.length;
                 }
             }
         );

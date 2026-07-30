@@ -40,6 +40,10 @@ const BADGE_CATEGORIES = [
     { key: "championships", label: "Championships" },
     { key: "style", label: "Style" },
     { key: "gym", label: "Gym" },
+    // Coach/roster achievements. SEPARATE from "gym" on purpose: the gym category is now mostly
+    // history (six of its ten badges are retired), and burying live camp goals among retired
+    // ones is what made the collection read as stale.
+    { key: "camp", label: "Camp" },
     { key: "media", label: "Media" },
 ];
 
@@ -156,6 +160,23 @@ const ARCHETYPE_CAMP_CLAUSE = Object.freeze({
 function campRank4For(f, archetype) {
     const list = f && f.campRank4Archetypes;
     return Array.isArray(list) && list.includes(archetype) ? 4 : 0;
+}
+
+/** A `campStats` counter, 0 for legacy fighters written before the field existed. */
+function campStat(f, key) {
+    return num(f && f.campStats && f.campStats[key]);
+}
+
+/**
+ * How many DISTINCT archetypes have been taken to Rank 4.
+ *
+ * De-duplicated rather than trusting `.length`: the array is documented additive-only and
+ * `homeCampCoachService` pushes only when absent, but a badge that reads 5/4 because one write
+ * slipped through twice would be a visible bug, and a Set costs nothing.
+ */
+function rank4ArchetypeCount(f) {
+    const list = (f && f.campRank4Archetypes) || [];
+    return Array.isArray(list) ? new Set(list.filter(Boolean)).size : 0;
 }
 
 function gymBadgeDef(id) {
@@ -406,6 +427,53 @@ const BADGES = [
         description: "Complete 250 training sessions.",
         condition: (f) => num(f && f.careerTrainingSessions) >= 250,
         progress: (f) => prog(num(f && f.careerTrainingSessions), 250, "sessions"),
+    },
+
+    // ── camp (coaches) ──
+    //
+    // Every condition below reads either `campStats` (monotonic career counters, see
+    // fighterModel) or `campRank4Archetypes`. None of them reads live roster state, so firing a
+    // coach can never revoke an earned badge.
+    {
+        id: "coach_first_hire", category: "camp", name: "Cornerman",
+        description: "Sign your first coach from the Trainer Market.",
+        condition: (f) => campStat(f, "coachesHired") >= 1,
+        progress: (f) => prog(campStat(f, "coachesHired"), 1, "coaches"),
+    },
+    {
+        id: "coach_full_staff", category: "camp", name: "Full Staff",
+        description: "Employ four coaches at the same time.",
+        condition: (f) => campStat(f, "peakCoachCount") >= 4,
+        progress: (f) => prog(campStat(f, "peakCoachCount"), 4, "coaches"),
+    },
+    {
+        id: "coach_legendary_hire", category: "camp", name: "Deep Pockets",
+        description: "Sign a Legendary coach.",
+        condition: (f) => campStat(f, "legendaryCoachesHired") >= 1,
+        progress: (f) => prog(campStat(f, "legendaryCoachesHired"), 1, "coaches"),
+    },
+    {
+        id: "coach_taught_move", category: "camp", name: "Passed Down",
+        description: "Learn a special move directly from a coach by promoting them.",
+        condition: (f) => campStat(f, "movesTaught") >= 1,
+        progress: (f) => prog(campStat(f, "movesTaught"), 1, "moves"),
+    },
+    {
+        id: "coach_taught_five", category: "camp", name: "Student of the Game",
+        description: "Learn five special moves from your coaches.",
+        condition: (f) => campStat(f, "movesTaught") >= 5,
+        progress: (f) => prog(campStat(f, "movesTaught"), 5, "moves"),
+    },
+    {
+        /**
+         * The capstone, and the only one here needing no new state: it reads the same
+         * `campRank4Archetypes` the four re-pointed gym badges already use. Earning this means
+         * earning all four of those too, which is the intended shape — it is the set bonus.
+         */
+        id: "coach_all_rank4", category: "camp", name: "Master of All",
+        description: "Take a coach in all four disciplines to Rank 4.",
+        condition: (f) => rank4ArchetypeCount(f) >= 4,
+        progress: (f) => prog(rank4ArchetypeCount(f), 4, "disciplines"),
     },
 
     // ── media ──

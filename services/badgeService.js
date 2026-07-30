@@ -12,6 +12,7 @@
 
 const { BADGES, BADGE_CATEGORIES, getBadge } = require("../consts/badgeCatalog");
 const { resolvePvpBadge, PVP_BADGE_DEFS } = require("../consts/pvpBadges");
+const { features } = require("../config");
 
 let _activityLogService = null;
 function activityLog() {
@@ -119,17 +120,45 @@ function buildBadgeProfile(fighter) {
     let lockedCount = 0;
 
     const categories = BADGE_CATEGORIES.map((cat) => {
-        const badges = BADGES.filter((b) => b.category === cat.key).map((def) => {
+        const badges = BADGES.filter((b) => b.category === cat.key).filter((def) => {
+            /**
+             * ONCE THE GYMS ARE RETIRED, HIDE A RETIRED BADGE NOBODY EARNED.
+             *
+             * A locked legacy badge is unobtainable AND already excluded from `lockedCount`, so
+             * leaving it in the payload showed the player a tile reading "Reach Rank 4 at Renzo
+             * Combat Systems" for a gym that no longer exists — and made the header count
+             * disagree with the number of locked tiles on screen. Both read as bugs.
+             *
+             * EARNED legacy badges are always kept: they were earned and they are history.
+             * While the gyms are still open nothing is hidden, because all ten are still live.
+             *
+             * ⚠️ THIS FILTERS THE VIEW, NOT THE CATALOG. All ten defs stay in badgeCatalog
+             * forever — see the warning on `gymBadgeDef`. Deleting a def would make the badge
+             * vanish from every veteran's Career Page, which is why this is a render-time
+             * decision keyed on `earned` rather than a catalog edit.
+             */
+            if (!features.gymsRetired) return true;
+            if (!def.legacy) return true;
+            return earnedMap.has(def.id);
+        }).map((def) => {
             const earnedEntry = earnedMap.get(def.id);
             const isEarned = !!earnedEntry;
-            // LEGACY (Phase 2): the six gym badges with no Home Camp route. Once the gyms
-            // retire they are unobtainable, so a LOCKED one must NOT count toward lockedCount —
-            // otherwise every player's completion is permanently six short, which reads as a
-            // bug forever. An EARNED legacy badge still counts in earnedCount and still renders
-            // (with a "Retired" chip): it was earned and it is kept.
+            /**
+             * LEGACY (Phase 2): the six gym badges with no Home Camp route.
+             *
+             * COUNT EVERY UNEARNED BADGE THAT SURVIVED THE FILTER ABOVE — the filter is now the
+             * single place that decides obtainability, so the count simply follows it and the
+             * header can never disagree with the tiles on screen.
+             *
+             * This used to read `else if (!isLegacy)`, which excluded legacy badges from
+             * lockedCount unconditionally. That was right after the cutover but wrong before it:
+             * while the gyms are still open those six ARE obtainable, so the completion total
+             * under-reported by six. Now: gyms open -> shown and counted; gyms retired -> the
+             * unearned ones are filtered out, so there is nothing left to miscount.
+             */
             const isLegacy = !!def.legacy;
             if (isEarned) earnedCount += 1;
-            else if (!isLegacy) lockedCount += 1;
+            else lockedCount += 1;
 
             let progress = null;
             if (!isEarned && typeof def.progress === "function") {

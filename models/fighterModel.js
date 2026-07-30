@@ -157,6 +157,31 @@ const fighterSchema = new mongoose.Schema({
      * earned.
      */
     campRank4Archetypes: { type: [String], default: () => [] },
+    /**
+     * Home Camp career counters, denormalised for badge evaluation.
+     *
+     * SAME REASON AS `campRank4Archetypes` ABOVE: badge conditions are synchronous pure
+     * functions of the fighter document and cannot query the HomeCamp collection. A coach badge
+     * therefore needs its trigger recorded here at the moment it happens.
+     *
+     * ⚠️ MONOTONIC. Every field here only ever goes UP — these are career totals and
+     * high-water marks, not current state. Firing a coach must not take a badge back, so
+     * `peakCoachCount` is a max() and never the live roster length. Reading the current roster
+     * would let a player earn "Full Staff" and lose it the moment they restructured, which is
+     * the exact trap the `campRank4Archetypes` note warns about.
+     *
+     * Legacy fighters read 0 for every field via the badge catalog's `num()` guard, so no
+     * backfill is required — the counters simply start counting from the next qualifying action.
+     */
+    campStats: {
+        coachesHired: { type: Number, default: 0, min: 0 },
+        legendaryCoachesHired: { type: Number, default: 0, min: 0 },
+        // High-water mark of simultaneous coaches, NOT the current count. See the note above.
+        peakCoachCount: { type: Number, default: 0, min: 0 },
+        // Special moves granted by the coach TEACH CHANNEL specifically — not session drops.
+        // `specialMovesOwned` records no source, so the two routes are indistinguishable there.
+        movesTaught: { type: Number, default: 0, min: 0 },
+    },
     // GDD 8.6: Badges earned (e.g. "Resilience" for winning a comeback fight)
     badges: [{ type: String }],
     // Career Page badge system — structured earned-badge ledger (catalog ids).

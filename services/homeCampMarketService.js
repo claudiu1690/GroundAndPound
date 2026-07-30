@@ -29,6 +29,7 @@ const Fighter = require("../models/fighterModel");
 const HomeCamp = require("../models/homeCampModel");
 const homeCampService = require("./homeCampService");
 const coachService = require("./homeCampCoachService");
+const badgeService = require("./badgeService");
 const saveWithVersionRetry = require("../utils/saveWithVersionRetry");
 const { hashSeed, mulberry32 } = require("../utils/rotation");
 const { SPECIAL_MOVES_BY_ID } = require("../consts/specialMovesCatalog");
@@ -661,6 +662,18 @@ async function hireCandidate(fighterId, candidateId) {
                     });
                 }
                 doc.iron = (doc.iron ?? 0) - cost;
+
+                // Badge counters ride the SAME write as the charge, so a coach can never be
+                // paid for without being counted. Safe under saveWithVersionRetry: a retry
+                // re-loads the document and re-applies this from the persisted value, exactly
+                // like the `doc.iron` line above — it does not accumulate across attempts.
+                if (!doc.campStats) doc.campStats = {};
+                doc.campStats.coachesHired = (doc.campStats.coachesHired || 0) + 1;
+                if (candidate.rarity === "LEGENDARY") {
+                    doc.campStats.legendaryCoachesHired = (doc.campStats.legendaryCoachesHired || 0) + 1;
+                }
+                // High-water mark, so firing later never revokes "Full Staff".
+                doc.campStats.peakCoachCount = Math.max(doc.campStats.peakCoachCount || 0, filled + 1);
             }
         );
         cashAfter = saved ? (saved.iron ?? 0) : cashAfter;
@@ -691,6 +704,28 @@ async function hireCandidate(fighterId, candidateId) {
         }
     }
 
+    // ── Badges — AFTER the charge commits, NEVER inside the mutator. ──
+    // Same shape and same reason as the promotion path in homeCampCoachService: evaluateBadges
+    // writes an ActivityLog entry per award, and a VersionError retry inside the mutator would
+    // emit a duplicate "Badge Earned" for an award that never persisted.
+    //
+    // WITHOUT THIS the three hire badges still eventually appear — the profile read in
+    // fighterController runs a silent self-heal — but "eventually and silently" is the wrong
+    // moment for them. Signing a Legendary coach should award Deep Pockets there and then, with
+    // the unlock modal, not quietly the next time the Career Page happens to load.
+    // Non-fatal: the coach is hired and paid for, which must not be undone over a badge.
+    let newlyEarnedBadges = [];
+    try {
+        const forBadges = await Fighter.findById(fighterId);
+        if (forBadges) {
+            newlyEarnedBadges = badgeService.evaluateBadges(forBadges, { campHire: true }).newlyEarned;
+            if (newlyEarnedBadges.length > 0) await forBadges.save();
+        }
+    } catch (e) {
+        console.error("[homeCampMarket] badge eval on hire failed:", e.message);
+        newlyEarnedBadges = [];
+    }
+
     const freshFighter = await Fighter.findById(fighterId);
     const freshCamp = await HomeCamp.findOne({ _id: camp._id });
     const hired = freshCamp.coaches.id(candidate._id);
@@ -713,6 +748,9 @@ async function hireCandidate(fighterId, candidateId) {
             wage: hiredDoc.wage || 0,
             cashAfter,
             familiarityApplied,
+            // Same key and same shape the promote/train endpoints use, so CampTab's existing
+            // badge-toast loop applies verbatim with no new branch.
+            newlyEarnedBadges,
             message,
         },
         fighter: freshFighter,

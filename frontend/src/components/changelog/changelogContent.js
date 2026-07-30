@@ -18,6 +18,26 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "1.8",
+    date: "2026-07-30",
+    major: false,
+    highlights: [
+      "Your coaches have faces. Every coach now carries a portrait — on his tile in your staff row, on his card in the Trainer Market, and at the top of his panel. 46 of them, so the man you sign looks like a specific person rather than a set of initials in a coloured box.",
+      "Six new Camp badges, in their own section on your Career page. Sign your first coach, fill all four slots, sign a Legendary, get taught your first move, get taught five, and — the one worth chasing — take a coach in all four disciplines to Rank 4.",
+      "The Trainer Market will never show you the same face twice, and never a face already on your staff. It also won't repeat last week's board, so a fresh Monday looks fresh.",
+    ],
+    sections: {
+      changed: [
+        "Retired gym badges no longer clutter your collection. The six gym rank-4 badges with no camp route can't be earned once the gyms close, so they're hidden unless you actually earned one — and if you did, it stays on your profile forever with a \"Retired\" mark. Previously they sat there as locked tiles telling you to reach Rank 4 at a gym that no longer exists.",
+        "Your badge count now matches the badges on screen. The header said \"74 locked\" while showing 80 locked tiles, because retired badges were left out of the count but still drawn.",
+      ],
+      fixed: [
+        "Train buttons no longer flicker when you start a session. Clicking one card put every button on the screen into its loading state and shrank them all to \"…\", which reflowed the row and snapped it back. Only the card you clicked reacts now, and it keeps its size.",
+      ],
+      balance: [],
+    },
+  },
+  {
     version: "1.7",
     date: "2026-07-28",
     major: true,

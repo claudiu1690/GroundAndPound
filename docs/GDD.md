@@ -191,6 +191,19 @@ Wins count toward ranks only at the **active paid gym**, and only if the win typ
 
 > Note: perk *names* (Strength Reserve, Corner Confidence, …) differ from the *badge* names; `data/gyms.json` is the source of truth for exact perk ids/effects.
 
+**After gym retirement.** Four of the ten badges above are re-pointed to a Home Camp route and
+stay obtainable (`boxer_rank4` → Striking, `wrestling_rank4` → Wrestling, `bjj_rank4` → BJJ,
+`muaythai_rank4` → Conditioning — the badge follows the perk). The other six are **legacy**:
+still earnable while the gyms are open, unobtainable after the cutover.
+
+All ten definitions stay in `consts/badgeCatalog.js` **permanently** — a badge is rendered by
+looking its id up in the catalog, so deleting a def would erase it from the profile of every
+veteran who earned it. Retirement is handled at *render* time instead: once
+`GYMS_RETIRED=true`, `badgeService.buildBadgeProfile` omits a legacy badge that was never
+earned, while an earned one is always kept and marked "Retired" in the UI. Every unearned badge
+still in the payload counts toward `lockedCount`, so the header can never disagree with the
+tiles on screen.
+
 ### 6.6 Training Sessions
 Base sessions (specialty gyms only offer sessions for their focus stats + sparring):
 
@@ -798,6 +811,50 @@ The wipe writes fighter documents and is only reversible through the backup it f
 before its first write; `scripts/restoreGymData.js --from=<backup>` is the tested rollback
 (round-trip verified locally). The flag itself is reversible with a restart — while false,
 the middleware is a pure `next()`.
+
+### 6.23 Coach portraits
+
+A shared pool of **46** photoreal 200×250 portraits in
+`frontend/public/assets/camp/coaches/`, drawn by `pickPortraitKey`. One pool for all four
+archetypes, not four pools: a face carries no discipline, so partitioning would only shrink the
+draw. `portraitKey` is **stamped at generation and stored** on the coach subdoc — never derived
+by hashing `_id`, which would reshuffle every existing coach's face whenever the pool size
+changed. Same rule as `name` and `hireFee`. A null key renders initials.
+
+**Pool size is not what prevents a repeated face — the draw is.** Picking independently makes
+an on-screen collision a birthday problem: at Tier 4 there are 10 faces visible at once (6
+candidates over the 4 roster tiles behind the modal), which repeats ~66% of the time at 46
+portraits and would need ~431 to reach 10%. The market roll therefore draws *without
+replacement*, excluding (a) faces already on the roster, and (b) the previous week's board — the
+latter costs nothing because `market.candidates` still holds last week's faces at the moment the
+new roll overwrites them. On-screen repeats: **0%**. Back-to-back weekly repeats: **0%**.
+A longer exclusion window would have to persist its own history, which is why it stops being free.
+
+### 6.24 Camp badges
+
+Six coach achievements in their own `camp` category (`consts/badgeCatalog.js`), separate from
+`gym` so live goals aren't buried among retired ones:
+
+| Badge | Requirement |
+|---|---|
+| Cornerman | Sign your first coach |
+| Full Staff | Employ four coaches at once |
+| Deep Pockets | Sign a Legendary coach |
+| Passed Down | Be taught one Special Move by a coach |
+| Student of the Game | Be taught five |
+| Master of All | Take a coach in all four disciplines to Rank 4 |
+
+Badge conditions are **synchronous pure functions of the fighter document** and cannot query the
+HomeCamp collection, so each trigger is recorded on `fighter.campStats` at the moment it happens
+(`coachesHired`, `legendaryCoachesHired`, `peakCoachCount`, `movesTaught`). Every field is
+**monotonic** — career totals and high-water marks, never live state — so firing a coach can
+never revoke an earned badge; `peakCoachCount` is a `max()`, not the current roster length.
+*Master of All* needs no new state: it reads the same `campRank4Archetypes` the four re-pointed
+gym badges use, making it the set bonus for earning all four.
+
+The hire path calls `evaluateBadges` after the charge commits (never inside the mutator — a
+version retry would emit a duplicate feed entry). Without that the three hire badges would still
+appear, via the silent self-heal on profile read, but quietly and at the wrong moment.
 
 ---
 
