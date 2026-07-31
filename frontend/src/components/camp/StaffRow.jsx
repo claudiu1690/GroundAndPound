@@ -57,14 +57,39 @@ function OpenSlot() {
   );
 }
 
-function LockedSlot({ slotNumber, nextUnlocksAt }) {
+/**
+ * The next locked slot, labelled by the CAMP TIER that opens it.
+ *
+ * It used to read `nextUnlocksAt`, which only described the promotion route, so a Tier-1 camp
+ * said "Unlocks at Regional Pro" while the renovation card directly below sold that same slot
+ * for 3 wins and $2,000. The tier is true whichever way the player reaches it, and the
+ * renovation card already explains the cheaper route, so naming the tier says one honest thing
+ * instead of two contradictory ones.
+ */
+function LockedSlot({ slotNumber, nextUnlocksAt, nextUnlock }) {
+  let sub;
+  if (nextUnlock && nextUnlock.tier) {
+    /**
+     * NAME THE TIER *AND* HOW TO REACH IT. The tier alone is a dead end for slots 3 and 4:
+     * RENOVATIONS only defines Tier 2, so Tier 3 and Tier 4 come solely from being promotion-
+     * floored, and nothing else on the camp screen says so. "Unlocks at Camp Tier 3" left the
+     * player with no way to find out when that happens.
+     */
+    sub = nextUnlock.via === "renovation"
+      ? t("yourCamp.staff.lockedSubRenovate", { tier: nextUnlock.tier, wins: nextUnlock.wins })
+      : t("yourCamp.staff.lockedSubPromotion", { tier: nextUnlock.tier, promotion: nextUnlock.promotion });
+  } else if (nextUnlocksAt) {
+    // Older payload with no `nextUnlock`. Better than nothing, but it is the message this
+    // component exists to stop showing.
+    sub = t("yourCamp.staff.lockedSub", { tier: nextUnlocksAt });
+  } else {
+    sub = t("yourCamp.staff.lockedSubGeneric");
+  }
   return (
     <div className="yc-coach-tile locked">
       <div className="yc-lock-icon"><Lock size={18} /></div>
       <div className="yc-locked-title">{t("yourCamp.staff.lockedTitle", { n: slotNumber })}</div>
-      <div className="yc-locked-sub">
-        {nextUnlocksAt ? t("yourCamp.staff.lockedSub", { tier: nextUnlocksAt }) : t("yourCamp.staff.lockedSubGeneric")}
-      </div>
+      <div className="yc-locked-sub">{sub}</div>
     </div>
   );
 }
@@ -122,7 +147,7 @@ export const StaffRow = memo(function StaffRow({ coaches, slots, market, selecte
 
   // The single next locked slot, if any remain.
   if (unlocked < max) {
-    tiles.push(<LockedSlot key="locked-next" slotNumber={unlocked + 1} nextUnlocksAt={slots?.nextUnlocksAt} />);
+    tiles.push(<LockedSlot key="locked-next" slotNumber={unlocked + 1} nextUnlocksAt={slots?.nextUnlocksAt} nextUnlock={slots?.nextUnlock} />);
   }
 
   return (

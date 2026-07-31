@@ -45,8 +45,47 @@ function effectiveTier(camp, fighter) {
     return Math.max(stored, floor);
 }
 
-/** The promotion tier at which the NEXT slot unlocks, or null at max. */
+/**
+ * The promotion tier at which the next slot unlocks by PROMOTION ALONE.
+ *
+ * ⚠️ NOT THE WHOLE ANSWER — see `nextSlotUnlock` below. A camp gains slots by two routes,
+ * renovation and promotion, and this map only knows about the second one.
+ */
 const NEXT_SLOT_UNLOCK_TIER = Object.freeze({ 1: "Regional Pro", 2: "Regional Pro", 3: "National" });
+
+/**
+ * Which CAMP TIER opens the next coach slot, plus how that tier is reached.
+ *
+ * ⚠️ THE ANSWER IS THE TIER, NOT A ROUTE. Slots are granted by `CAMP_TIERS[n].slots`, and a camp
+ * reaches a tier by EITHER renovating or being floored there by promotion. Naming one route is
+ * how the original bug happened: the tile read "Unlocks at Regional Pro" (promotion only) while
+ * the renovation card on the same screen sold that same slot for 3 wins and $2,000, so the game
+ * stated two different unlock conditions at once. "Camp Tier 2" is true whichever way you get
+ * there, and the renovation card immediately below already explains the cheaper route.
+ *
+ * The slot count equals the tier number at every tier, so slot N opens at Tier N. That identity
+ * is asserted at boot below rather than assumed, because the whole message depends on it.
+ *
+ * @param {number} storedTier     the camp's own renovation tier (NOT the effective tier)
+ * @param {number} effectiveSlots slots the camp currently has
+ * @returns {?{tier:number, slot:number, via:"renovation"|"promotion", wins:?number, cost:?number, promotion:?string}}
+ */
+function nextSlotUnlock(storedTier, effectiveSlots) {
+    if (effectiveSlots >= MAX_COACHES) return null;          // all four open, nothing to show
+    const slot = effectiveSlots + 1;                         // the slot about to open
+    const tier = slot;                                       // ...and the tier that opens it
+    const reno = RENOVATIONS[storedTier + 1];
+    // Renovation only counts as the route if it actually reaches the tier that grants this slot.
+    const viaReno = !!reno && storedTier + 1 === tier;
+    return {
+        tier,
+        slot,
+        via: viaReno ? "renovation" : "promotion",
+        wins: viaReno ? reno.wins : null,
+        cost: viaReno ? reno.cost : null,
+        promotion: viaReno ? null : (NEXT_SLOT_UNLOCK_TIER[effectiveSlots] || null),
+    };
+}
 
 // ── Coach archetypes ─────────────────────────────────────────────────────────
 // relevantWinTypes strings MUST match gameConstants.FIGHT_OUTCOMES exactly.
@@ -811,6 +850,22 @@ function validateHomeCampConfig() {
     const outcomeSet = new Set(FIGHT_OUTCOMES);
     const fail = (msg) => { throw new Error(`[homeCampConfig] ${msg}`); };
 
+    /**
+     * `nextSlotUnlock` tells the player "slot N unlocks at Camp Tier N", which is only true
+     * while every tier grants exactly its own number of slots. Assert it rather than assume it:
+     * if someone rebalances CAMP_TIERS so Tier 2 grants 3 slots, that message silently starts
+     * lying to players about when their slot arrives, which is the exact class of bug this
+     * function was written to fix.
+     */
+    for (const [tier, cfg] of Object.entries(CAMP_TIERS)) {
+        if (cfg.slots !== Number(tier)) {
+            fail(`CAMP_TIERS[${tier}].slots is ${cfg.slots}, expected ${tier} — the "slot N unlocks at Tier N" message in nextSlotUnlock depends on this identity`);
+        }
+    }
+    if (CAMP_TIERS[MAX_CAMP_TIER].slots !== MAX_COACHES) {
+        fail(`top tier grants ${CAMP_TIERS[MAX_CAMP_TIER].slots} slots but MAX_COACHES is ${MAX_COACHES}`);
+    }
+
     for (const [domain, ids] of Object.entries(DOMAIN_TEACH_POOLS)) {
         if (!COACH_ARCHETYPES[domain]) fail(`teach pool for unknown archetype "${domain}"`);
         for (const id of ids) {
@@ -1090,6 +1145,7 @@ module.exports = {
     MAX_CAMP_TIER,
     TIER_FLOOR_BY_PROMOTION,
     NEXT_SLOT_UNLOCK_TIER,
+    nextSlotUnlock,
     effectiveTier,
     COACH_ARCHETYPES,
     GYM_PERK_CATALOG,

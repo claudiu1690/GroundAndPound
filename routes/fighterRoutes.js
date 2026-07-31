@@ -3,6 +3,7 @@ const router = express.Router();
 const fighterController = require("../controllers/fighterController");
 const rankingController = require("../controllers/rankingController");
 const shopController = require("../controllers/shopController");
+const paymentController = require("../controllers/paymentController");
 const specialMovesController = require("../controllers/specialMovesController");
 const ownFighter = require("../middleware/ownFighterMiddleware");
 // PHASE 2 gym retirement — a no-op while GYMS_RETIRED is unset/false. It must sit in FRONT of
@@ -222,6 +223,9 @@ router.get("/:id/moves/:moveId", ownFighter, specialMovesController.getMoveDetai
 router.get("/:id/shop/catalog", ownFighter, shopController.getCatalog);
 router.post("/:id/shop/buy", ownFighter, shopController.buy);
 router.post("/:id/shop/buy-premium", ownFighter, shopController.buyPremium);
+// Real money. Opens a Stripe Checkout Session and returns its URL; grants NOTHING on its own —
+// goods are handed over only by the signature-verified webhook (POST /webhooks/stripe).
+router.post("/:id/shop/checkout", ownFighter, paymentController.createCheckout);
 router.post("/:id/inventory/use-energy", ownFighter, shopController.useEnergy);
 
 module.exports = router;

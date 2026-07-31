@@ -196,7 +196,9 @@ export const CoachPanel = memo(function CoachPanel({ coach, fighter, training, t
 
         <BoosterStrip activeBooster={activeBooster} />
 
-        <div className="yc-drills-grid">
+        {/* data-tut: tutorial anchor for "choose what to train". Takes over from the gym's
+            `gym-sessions` id, which the tutorial steps still reference by that name. */}
+        <div className="yc-drills-grid" data-tut="gym-sessions">
           {coach.drills.map((d) => (
             <DrillCard
               key={d.key}

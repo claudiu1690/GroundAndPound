@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useState } from "react";
 import { t } from "@/lib/i18n";
 import { useHomeCamp } from "../../hooks/useHomeCamp";
 import { prettifyBadgeId } from "../career/badgeCatalog";
+import { tutorialBus } from "../../utils/tutorialBus";
 import { CampBar } from "./CampBar";
 import { NeedsToday } from "./NeedsToday";
 import { StaffRow } from "./StaffRow";
@@ -327,6 +328,17 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
               addToast?.({ kind: "badge", badgeName: b.name || prettifyBadgeId(b.badgeId), badgeContext: b.context || null });
             }
           }
+
+          /**
+           * Onboarding step 3 advances on this event, and NOTHING ELSE EMITS IT once the gyms
+           * are retired. It used to fire from the gym's `handleTrain` in App.jsx, which is
+           * wired to GymTrainingTab and disappears with the gym tab — leaving the step with no
+           * way to complete and every new player stuck on it.
+           *
+           * Emitted only on a session that actually completed (inside the `completed > 0`
+           * branch), so a blocked or failed train does not advance the tutorial.
+           */
+          tutorialBus.emit("training_complete");
         }
 
         const moveDrop = result.moveDrop || null;

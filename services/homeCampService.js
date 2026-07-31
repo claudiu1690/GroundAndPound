@@ -93,7 +93,7 @@ const { isSparringBlocked, isBagWorkBlocked } = require("../utils/injuryUtils");
 const {
     CAMP_TIERS,
     MAX_CAMP_TIER,
-    NEXT_SLOT_UNLOCK_TIER,
+    nextSlotUnlock,
     effectiveTier,
     COACH_ARCHETYPES,
     CONDITION_MAX,
@@ -853,7 +853,23 @@ function buildCampState(fighter, camp) {
         slots: {
             unlocked: tierCfg.slots,
             max: MAX_COACHES,
-            nextUnlocksAt: tierCfg.slots >= MAX_COACHES ? null : (NEXT_SLOT_UNLOCK_TIER[tier] || null),
+            /**
+             * ⚠️ MUST CONSIDER BOTH UNLOCK ROUTES. This used to read NEXT_SLOT_UNLOCK_TIER
+             * directly, which only knows about promotion — so a Tier-1 camp was told its 2nd
+             * slot "Unlocks at Regional Pro" while the renovation card on the same screen sold
+             * that slot for 3 wins and $2,000. `nextSlotUnlock` resolves the nearer route from
+             * the config tables. Keyed on the STORED tier, because renovation acts on that,
+             * not on the promotion-floored effective tier.
+             */
+            ...(() => {
+                const u = nextSlotUnlock(Number(camp.tier) || 1, tierCfg.slots);
+                return {
+                    // Legacy field, kept so an older client still renders something sane. It
+                    // only ever described the promotion route, which is what made it wrong.
+                    nextUnlocksAt: u && u.via === "promotion" ? u.promotion : null,
+                    nextUnlock: u,
+                };
+            })(),
         },
         coaches,
         // Camp-wide passives (contract addendum). Rendered on the camp bar, not just on the

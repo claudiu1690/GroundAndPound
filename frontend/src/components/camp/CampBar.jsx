@@ -162,7 +162,9 @@ export const CampBar = memo(function CampBar({ campMeta, condition, wages, passi
   const unpaidWeeks = wages?.unpaidWeeks ?? 0;
 
   return (
-    <div className="yc-bar yc-bnr" id="yc-bar" style={{ background: comp?.css }}>
+    // data-tut="camp-info": tutorial anchor for "this is your camp". Replaces the gym's
+    // `gym-info` header, which no longer exists once the gyms retire.
+    <div className="yc-bar yc-bnr" id="yc-bar" data-tut="camp-info" style={{ background: comp?.css }}>
       {comp?.texture && <i className={`yc-bnr-tex yc-bnr-tex--${comp.texture}`} aria-hidden="true" />}
 
       {unpaidWeeks > 0 && (
@@ -242,7 +244,11 @@ export const CampBar = memo(function CampBar({ campMeta, condition, wages, passi
             </div>
           ))}
 
-          <div className="yc-bnr-stat">
+          {/* data-tut: the onboarding tutorial cuts a hole around this to explain energy.
+              The gym carried the original `energy` anchor; with the gym retired this is the
+              only energy readout a new player ever sees, so the id moves here rather than
+              being renamed (tutorialSteps.js anchors by id). */}
+          <div className="yc-bnr-stat" data-tut="energy">
             <Tip title={t("yourCamp.bar.energyLabel")} text={t("yourCamp.bar.energyTip")} className="yc-bnr-stat-l">
               {t("yourCamp.bar.energyLabel")}
             </Tip>

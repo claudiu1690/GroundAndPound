@@ -2459,6 +2459,8 @@
       "openSlotSub": "Hire from the Trainer Market",
       "lockedTitle": "Coach Slot {n}",
       "lockedSub": "Unlocks at {tier}",
+      "lockedSubRenovate": "Camp Tier {tier} · Renovate ({wins} career wins)",
+      "lockedSubPromotion": "Camp Tier {tier} · Reach {promotion}",
       "lockedSubGeneric": "Locked",
       "marketTitle": "Trainer Market",
       "marketOpenSub": "{n} candidates available",

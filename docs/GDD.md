@@ -1297,7 +1297,19 @@ A persistent in-game newspaper — **always available, always current**. It is n
 
 ## 21. Onboarding Tutorial
 
-New accounts run a guided tooltip sequence through the core loop: fighter profile → gym → first training session → request/read a fight offer → camp (Fighter Report, session selection, weight cut) → fight result and fame → rankings → events → hospital. Ends with a completion modal granting a **$500 signing bonus**. Legacy accounts are marked complete and never see it.
+New accounts run a guided tooltip sequence through the core loop: fighter profile → **My Camp** → first training session → request/read a fight offer → fight camp (Fighter Report, session selection, weight cut) → fight result and fame → rankings → events → hospital. Ends with a completion modal granting a **$500 signing bonus**. Legacy accounts are marked complete and never see it.
+
+> **Step ids are historical and MUST NOT be renamed.** Steps 2 and 3 are still called
+> `gym_intro` and `training_session` because `fighter.tutorial.current_step` persists the id and
+> `validateStepAdvance` checks it against `STEP_ORDER`. Renaming would strand every mid-tutorial
+> player on a step the server rejects. They point at My Camp; only the target changed. The same
+> applies to the `gym-sessions` tutorial anchor, which now sits on the camp's drill grid.
+>
+> When the gyms retired, `buildNavItems` stopped rendering the Training item at all, which
+> removed the `nav-gym` anchor step 2 focused and waited on a click for. With no `skipIfAbsent`
+> on that step the tutorial could never advance, and every new player was stuck on step 2 with
+> "Skip tutorial" the only way into the game. Both steps now carry `skipIfAbsent: true`, so a
+> missing anchor degrades to a skipped beat instead of a dead end.
 
 ---
 
