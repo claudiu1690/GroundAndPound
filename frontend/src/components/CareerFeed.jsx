@@ -3,7 +3,7 @@ import { t } from "@/lib/i18n";
 import { api } from "../api";
 import {
     Trophy, X, Minus, ArrowUp, Crown, Flame, Swords, ShieldCheck, Target,
-    AlertTriangle, Mic, Megaphone, Star, FileText, Cross, HeartPulse, Shield,
+    AlertTriangle, Mic, Megaphone, Star, FileText, Cross, HeartPulse, Shield, Gift,
 } from "lucide-react";
 
 // Event type → timeline dot colour + icon + type-pill label.
@@ -35,6 +35,7 @@ const EVENT_CONFIG = {
     CONTRACT:            { color: AMBER,  Icon: FileText,      label: "Contract" },
     INJURY:              { color: RED,    Icon: Cross,         label: "Injury" },
     INJURY_HEALED:       { color: GREEN,  Icon: HeartPulse,    label: "Healed" },
+    GYM_COMPENSATION:    { color: AMBER,  Icon: Gift,          label: "Goodwill" },
     // PVP / The Proving Ground
     pvp_win:             { color: GREEN,  Icon: Trophy,        label: "PVP Win" },
     pvp_loss:            { color: RED,    Icon: X,             label: "PVP Loss" },

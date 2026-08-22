@@ -14,6 +14,9 @@ const activityLogSchema = new mongoose.Schema({
             "TIER_PROMOTION", "TITLE_WON",
             "NEMESIS_SET", "NEMESIS_CLEARED",
             "BADGE_EARNED", "TITLE_SHOT_ELIGIBLE", "MENTAL_RESET",
+            // One-off goodwill payouts (services/compensationService.js). Without this enum
+            // entry the write is silently dropped and the player sees unexplained drinks.
+            "GYM_COMPENSATION",
             // Proving Ground (PVP) — feed writes silently drop if any of these is missing.
             "pvp_win", "pvp_loss", "pvp_draw", "pvp_defended", "pvp_defense_loss",
             "pvp_promoted", "pvp_rivalry_set", "pvp_rivalry_resolved",
