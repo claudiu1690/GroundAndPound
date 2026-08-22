@@ -1,7 +1,7 @@
 {
   "name": "mma-game",
   "version": "2.0.0",
-  "description": "Ground & Pound: Chronicles of the Cage \u2014 MMA career RPG backend",
+  "description": "Ground & Pound: Chronicles of the Cage — MMA career RPG backend",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
@@ -51,6 +51,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.8.0",
     "resend": "^6.12.4",
+    "stripe": "^22.4.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0"
   },

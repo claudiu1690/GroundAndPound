@@ -60,12 +60,39 @@ const BUFFS = {
     "collagen-recovery":  { id: "collagen-recovery",  name: "Collagen Recovery",  category: "buff", price: 1000, injuryMult: 0.80 },
 };
 
+/**
+ * Real-money bundles.
+ *
+ * ⚠️ `amountCents` IS THE ONLY PRICE THE SERVER WILL EVER CHARGE. It is an explicit integer in
+ * the smallest currency unit, never parsed from `priceLabel` and never accepted from the client:
+ * a request carries a bundle id and nothing else, and the amount is looked up here. A checkout
+ * that trusted a client-supplied amount would let anyone buy 100 drinks for one cent.
+ *
+ * `priceLabel` is display text only. Keep the two in step by hand; the boot validator below
+ * asserts they agree so a typo in either cannot ship.
+ */
+const PREMIUM_CURRENCY = "usd";
 const PREMIUM_BUNDLES = {
-    "drinks-6":   { id: "drinks-6",   name: "6 Energy Drinks",   priceLabel: "$4.99",  drinks: 6,   stub: true },
-    "drinks-15":  { id: "drinks-15",  name: "15 Energy Drinks",  priceLabel: "$9.99",  drinks: 15,  popular: true, stub: true },
-    "drinks-40":  { id: "drinks-40",  name: "40 Energy Drinks",  priceLabel: "$19.99", drinks: 40,  stub: true },
-    "drinks-100": { id: "drinks-100", name: "100 Energy Drinks", priceLabel: "$39.99", drinks: 100, stub: true },
+    "drinks-6":   { id: "drinks-6",   name: "6 Energy Drinks",   priceLabel: "$4.99",  amountCents: 499,  drinks: 6 },
+    "drinks-15":  { id: "drinks-15",  name: "15 Energy Drinks",  priceLabel: "$9.99",  amountCents: 999,  drinks: 15, popular: true },
+    "drinks-40":  { id: "drinks-40",  name: "40 Energy Drinks",  priceLabel: "$19.99", amountCents: 1999, drinks: 40 },
+    "drinks-100": { id: "drinks-100", name: "100 Energy Drinks", priceLabel: "$39.99", amountCents: 3999, drinks: 100 },
 };
+
+// Fail at boot, not at checkout: a label/amount mismatch is a mispriced product, and the first
+// person to notice would otherwise be a customer who was charged the wrong amount.
+for (const b of Object.values(PREMIUM_BUNDLES)) {
+    const fromLabel = Math.round(parseFloat(String(b.priceLabel).replace(/[^0-9.]/g, "")) * 100);
+    if (!Number.isInteger(b.amountCents) || b.amountCents <= 0) {
+        throw new Error(`[shopConfig] ${b.id}: amountCents must be a positive integer`);
+    }
+    if (fromLabel !== b.amountCents) {
+        throw new Error(`[shopConfig] ${b.id}: priceLabel ${b.priceLabel} disagrees with amountCents ${b.amountCents}`);
+    }
+    if (!Number.isInteger(b.drinks) || b.drinks <= 0) {
+        throw new Error(`[shopConfig] ${b.id}: drinks must be a positive integer`);
+    }
+}
 
 /**
  * Find any shop item across all families by id.
@@ -97,6 +124,7 @@ module.exports = {
     BOOSTERS,
     BUFFS,
     PREMIUM_BUNDLES,
+    PREMIUM_CURRENCY,
     findItem,
     boosterStatList,
 };

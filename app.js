@@ -26,6 +26,7 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const accountController = require("./controllers/accountController");
 const pvpController = require("./controllers/pvpController");
 const bugReportController = require("./controllers/bugReportController");
+const paymentController = require("./controllers/paymentController");
 const authMiddleware = require("./middleware/authMiddleware");
 // PHASE 2 gym retirement — a no-op while GYMS_RETIRED is unset/false.
 const blockWhenGymsRetired = require("./middleware/gymsRetiredMiddleware");
@@ -63,6 +64,25 @@ const authLimiter = rateLimit({
     standardHeaders: "draft-7",
     legacyHeaders: false,
     message: { message: "Too many attempts — please wait a few minutes and try again." },
+});
+/**
+ * Checkout limiter — real money, so far tighter than the 300/min global.
+ *
+ * ⚠️ THE THREAT IS CARD TESTING, NOT LOAD. Every call opens a live Stripe Checkout Session, and
+ * an unthrottled endpoint that mints payment pages is exactly what fraud rings use to validate
+ * stolen card numbers in bulk. Stripe penalises and can suspend accounts where that traffic
+ * originates, so the cost of leaving this open is the payment account itself, not server CPU.
+ * It also stops the Purchase ledger filling with abandoned sessions.
+ *
+ * 10 per 15 min per IP is far above any real buying pattern (a player buys a bundle now and
+ * then, not ten times an hour) and far below a useful card-testing rate.
+ */
+const checkoutLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: Number(process.env.CHECKOUT_RATE_LIMIT_MAX) || 10,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: { message: "Too many checkout attempts — please wait a few minutes.", code: "rate_limited" },
 });
 // Bug-report limiter — public endpoint, logged-out callers welcome, so throttle
 // per-IP to stop a single source flooding the ops inbox / DB with reports.
@@ -126,6 +146,17 @@ app.use(cors({
 }));
 console.log(`[CORS] Allowlist: ${corsAllowlist.join(", ") || "(empty)"}`);
 
+/**
+ * ⚠️ THE STRIPE WEBHOOK MUST BE MOUNTED BEFORE express.json(), WITH A RAW BODY PARSER.
+ *
+ * Signature verification hashes the exact bytes Stripe transmitted. Once express.json() has
+ * parsed and re-serialised the body, key order and whitespace differ, the computed signature
+ * never matches, and EVERY webhook is rejected — meaning payments are taken and nothing is ever
+ * granted. This ordering is load-bearing; moving it below the json parser silently breaks
+ * fulfilment while checkout keeps working, which is the worst possible failure shape.
+ */
+app.post("/webhooks/stripe", express.raw({ type: "application/json" }), paymentController.stripeWebhook);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -143,6 +174,10 @@ app.use("/auth", authLimiter, authRoutes);
 app.get("/account/email/confirm", accountController.confirmEmailChange);
 
 // Protected — JWT required for all game routes
+// Throttle checkout BEFORE the router sees it. Mounted as its own path (same shape as
+// /auth/guest above) because express-rate-limit must sit in front of the handler, and the
+// route itself lives inside fighterRoutes.
+app.post("/fighters/:id/shop/checkout", checkoutLimiter);
 app.use("/fighters", authMiddleware, fighterRoutes);
 // All four /gyms reads sit behind the retirement gate. No-op until GYMS_RETIRED=true.
 app.use("/gyms", authMiddleware, blockWhenGymsRetired, gymRoutes);

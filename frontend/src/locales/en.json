@@ -2159,8 +2159,11 @@
     "messages": {
       "purchaseComplete": "Purchase complete.",
       "purchaseFailed": "Purchase failed.",
-      "premiumUnavailable": "Premium purchases are not available yet.",
-      "premiumPurchaseUnavailable": "Premium purchase unavailable.",
+      "premiumUnavailable": "Purchases are temporarily unavailable. Try again shortly.",
+      "premiumPurchaseUnavailable": "Could not start checkout. Nothing has been charged.",
+      "premiumAccountRequired": "Add an email and password to your account before buying. A guest account can't be recovered if you lose this device.",
+      "premiumReturnSuccess": "Payment received. Your drinks will appear here within a few seconds.",
+      "premiumReturnCancelled": "Checkout cancelled. You have not been charged.",
       "restoredEnergy": "Restored {restored} energy.",
       "couldNotUse": "Could not use item."
     }

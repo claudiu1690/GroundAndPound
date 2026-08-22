@@ -798,6 +798,38 @@ players are compensated out of band (energy drinks) rather than through an in-pl
 conversion. `scripts/migrateFightersToHomeCamp.js` is therefore **not** part of the
 cutover; it remains only for backfilling camps for players who never opened the screen.
 
+##### The compensation grant (owner decision, 2026-08-04)
+
+**3 Energy Drinks to every non-bot fighter, flat.** Not tiered by how much gym progress a
+player had. A flat grant cannot be argued with, needs no explanation of who counted as
+"affected", and costs a fraction of a scaled payout. Drinks are the currency because the loss
+was mostly *time* (energy sunk into gym sessions), and a drink converts straight back into
+training in the camp that replaced them.
+
+> ⚠️ Sizing note. Drinks are now sold for real money (§15.3), so a grant is forgone revenue and
+> a large one would devalue the shop launching in the same release. 3 is deliberately below the
+> smallest bundle (6 for $4.99): a sincere gesture, not a substitute for buying. It is *not* an
+> actuarial refund — the six gym-only perks are permanent and a consumable cannot replace them.
+> Matching them properly would take hundreds of drinks. This is goodwill, and the GDD should say
+> so rather than pretend the maths balances.
+
+| Piece | Location |
+|---|---|
+| Amount + campaign key | `services/compensationService.js` (`GYM_RETIREMENT_DRINKS`, `GYM_RETIREMENT_CAMPAIGN = "gym-retirement-1.6"`) |
+| Ledger | `models/compensationModel.js` — unique `{fighterId, campaign}` **is** the idempotency key |
+| Runner | `scripts/grantGymRetirementCompensation.js` (dry run by default, `--commit` to pay) |
+| Player notice | `ActivityLog` type `GYM_COMPENSATION`, rendered in the career feed as "Goodwill" |
+
+Exactly-once is enforced in this order: **claim** (insert the ledger row, unique index rejects a
+second attempt), **grant** (one atomic `$min`/`$add` pipeline update, so a player spending drinks
+concurrently cannot lose it), **stamp** (`grantedAt` plus what actually landed). A crash between
+claim and grant leaves an unstamped row that the next run completes; the reverse order would
+double-pay after a crash. The grant clamps to the 99 inventory soft cap, and `granted` is stored
+separately from `drinks` so "I got fewer than promised" is answerable from data.
+
+The script is safe to re-run and pays nobody twice. Fighters created *after* it runs never
+receive it, which is correct: they lost nothing.
+
 ⚠️ **The shared-key rule.** Gym perks and camp perks are the same keys — the camp grants
 into `fighter.gymPerks` rather than defining a parallel perk system — and 4 of the 10 gym
 perks (`corner_confidence`, `mat_returns`, `submission_awareness`, `iron_conditioning`)
@@ -1134,7 +1166,7 @@ The Shop sells consumables for cash. A separate premium currency, the **Energy D
 Inventory caps at 99 per item. Boosters consume one charge per training session; supplements apply to the next fight only.
 
 ### 15.2 Energy Drinks (premium, +50 energy each)
-Earned free through play, or bought in cash/real-money bundles (bundle pricing currently stubbed). **Free-earn sources:**
+Earned free through play, or bought with real money in bundles (§15.3). **Free-earn sources:**
 - **Win streaks:** 5 / 10 / 15 / 20-fight streaks → 1 / 2 / 2 / 3 drinks.
 - **Promotions:** each tier promotion → 3 drinks.
 - **Sponsor contracts:** select contracts award 2–4 drinks on completion (`rewardDrinks`).
@@ -1142,6 +1174,92 @@ Earned free through play, or bought in cash/real-money bundles (bundle pricing c
 > Design intent: cash items should never be trivially spammable relative to fight
 > purses (a buff costs a meaningful fraction of a win), and the premium Energy Drink
 > is the "earn it through achievement" reward channel, not a pay-to-win staple.
+
+### 15.3 Real-money purchases (Stripe Checkout)
+
+Energy Drink bundles are the game's only real-money product. There is no second premium
+currency and no subscription.
+
+| Bundle id | Product | Price | Drinks | Per drink |
+|---|---|---|---|---|
+| `drinks-6` | 6 Energy Drinks | $4.99 | 6 | $0.83 |
+| `drinks-15` | 15 Energy Drinks | $9.99 | 15 | $0.67 |
+| `drinks-40` | 40 Energy Drinks | $19.99 | 40 | $0.50 |
+| `drinks-100` | 100 Energy Drinks | $39.99 | 100 | $0.40 |
+
+Bundles live in `consts/shopConfig.js` (`PREMIUM_BUNDLES`, `PREMIUM_CURRENCY = "usd"`). Larger
+bundles discount to about half the small bundle's unit price. That curve is deliberately mild:
+Energy Drinks are a tempo item, not a power item, so the top bundle should read as convenience
+rather than as the only sane purchase.
+
+**What a drink can and cannot buy.** A drink is +50 energy. Energy buys training sessions and PvP
+attempts, so money buys *tempo*, never stats, never a fight outcome, and never anything unobtainable
+by playing. Drinks are also earned free (§15.2), which keeps the paid channel a shortcut through the
+same door rather than a door of its own. **No item that alters a fight result may ever be sold for
+real money.** That is the line this system is designed around, and moving it would change what the
+game is.
+
+#### 15.3.1 Purchase flow
+
+1. Player picks a bundle in the Shop's Premium tab.
+2. `POST /fighters/:id/shop/checkout` with `{ bundleId }` and nothing else.
+3. Server looks the price up from config, writes a `Purchase` row (`status: "created"`), and
+   returns a Stripe Checkout URL.
+4. Player is redirected to Stripe, pays there, and returns to `/?purchase=success|cancelled`.
+5. Stripe posts `checkout.session.completed` to `POST /webhooks/stripe`. **Fulfilment happens here
+   and nowhere else.**
+
+**Card details never touch this app.** Stripe Hosted Checkout keeps the integration in PCI scope
+SAQ-A: no card field is ever rendered by us and no card data is ever received by us.
+
+#### 15.3.2 Rules that must not be relaxed
+
+- **The server sets the price.** The request carries a bundle id; any `amount`, `price`,
+  `quantity` or `currency` in the body is ignored. A checkout that trusted a client amount would
+  sell 100 drinks for one cent.
+- **The webhook is the only source of truth.** The `?purchase=success` return param is a
+  navigation hint that anyone can type. It refreshes and reports; it never credits.
+- **Fulfilment is exactly-once.** Stripe delivers at-least-once and retries. Granting is gated on
+  an atomic conditional claim (`updateOne` with `status: { $ne: "fulfilled" }`), so a redelivered
+  event matches nothing and grants nothing. Note this is a *conditional update*, not
+  `saveWithVersionRetry`, which is not a mutex.
+- **Amounts are copied, never re-read.** `amountCents` and `drinks` are frozen onto the `Purchase`
+  at creation, so repricing a bundle can never rewrite what an old order was worth.
+- **Webhook metadata is not trusted.** `metadata.fighterId` is echoed back from what we sent, so
+  the handler resolves the order by session id against the ledger and refuses if there is no match.
+- **Missing keys disable payments.** `config.stripe.enabled` is false unless both the secret and
+  webhook-signing keys are present, and there are no fallback defaults. A placeholder signing
+  secret would be worse than none, since forged events would verify against a key in the repo.
+
+#### 15.3.3 Data & endpoints
+
+| Piece | Location |
+|---|---|
+| Bundle catalogue | `consts/shopConfig.js` |
+| Ledger model | `models/purchaseModel.js` (unique index on `stripeSessionId` is the idempotency key) |
+| Business logic | `services/paymentService.js` |
+| HTTP layer | `controllers/paymentController.js` |
+| Checkout route | `POST /fighters/:id/shop/checkout` (auth required, rate limited) |
+| Webhook route | `POST /webhooks/stripe` (raw body, signature verified, no auth) |
+
+Purchase statuses: `created` → `paid` → `fulfilled`, plus `failed` and `refunded`.
+
+> ⚠️ The webhook must be mounted **before** `express.json()` with a raw body parser. Signature
+> verification hashes the exact bytes Stripe sent, so a parsed and re-serialised body fails to
+> verify and every real payment would be rejected.
+
+#### 15.3.4 Access & abuse controls
+
+- **Registered accounts only.** Guests are refused with `account_required`. A guest account can be
+  lost with its device token, and a purchase that cannot be recovered is a refund and a complaint.
+  The player is asked to add an email and password first.
+- **Checkout is rate limited** to 10 attempts per 15 minutes per IP. This is anti-fraud, not
+  anti-load: an open endpoint that mints payment pages is what card-testing rings use to validate
+  stolen cards in bulk, and that traffic gets the *merchant* account penalised. The webhook is
+  deliberately exempt, since rate-limiting Stripe only triggers retries.
+- **Delivery is asynchronous.** The redirect often beats the webhook by a second or two, so the
+  client re-reads the fighter a few seconds after returning. Drinks landing late is normal and
+  must never be presented to the player as a failed purchase.
 
 ---
 

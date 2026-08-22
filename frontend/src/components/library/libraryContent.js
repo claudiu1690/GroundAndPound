@@ -792,6 +792,32 @@ export const LIBRARY_ARTICLES = [
         ],
         keyTakeaway: "One XP Booster active at a time, one Pre-Fight Buff per fight (picked in Camp). Time your spending to the moments that matter instead of buying on autopilot.",
     },
+    {
+        id: "energy-drink-bundles",
+        category: "Shop & Supplements",
+        title: "Buying Energy Drink Bundles",
+        summary: "What's for sale, what it can't buy you, and how a purchase actually works.",
+        tags: ["premium", "energy drink", "bundle", "real money", "purchase", "stripe", "checkout", "payment", "shop"],
+        body: [
+            "Energy Drink bundles are the only thing in Ground & Pound you can buy with real money. There is no second premium currency, no subscription, and no season pass. You'll find them under Premium in the Shop.",
+            {
+                type: "table",
+                headers: ["Bundle", "Price", "Per drink"],
+                rows: [
+                    ["6 Energy Drinks", "$4.99", "$0.83"],
+                    ["15 Energy Drinks", "$9.99", "$0.67"],
+                    ["40 Energy Drinks", "$19.99", "$0.50"],
+                    ["100 Energy Drinks", "$39.99", "$0.40"],
+                ],
+            },
+            "Here is the important part, and we'd rather say it plainly than bury it. A drink is 50 energy. Energy buys training sessions and Proving Ground attempts, so what money buys you is time, not power. It cannot buy stats, it cannot buy a fight result, and there is nothing on sale that you can't also get by playing. We don't sell anything that changes how a fight turns out, and we're not planning to.",
+            "You can earn drinks without spending a cent, and most players do. Win streaks pay out at 5, 10, 15 and 20 fights. Every promotion to a new tier hands you 3. A number of sponsor contracts pay 2 to 4 on completion, and the Proving Ground pays them out at the end of a season. Buying a bundle is a shortcut through a door that's already open.",
+            "When you pick a bundle, we hand you off to Stripe, our payment processor, and you pay on their page. Your card details never pass through this game. We never see them, never store them, and never receive them. When you're done you come straight back here.",
+            "Your drinks are credited by Stripe telling our server the payment went through, which is usually instant but can take a few seconds longer than the trip back to the game. If you land on the Shop and your new drinks aren't showing yet, give it a moment and they'll appear on their own. Nothing is lost. If you close the payment page or cancel, nothing is charged and nothing changes.",
+            "You need a registered account to buy, with an email and a password. Guest accounts can't. That isn't an upsell: a guest account lives on the device that made it, and if you lose that device you lose the account and anything you paid for with it. Securing your account first means a purchase can always be recovered. If you're playing as a guest, add an email and password from your account settings and the Premium tab will open up.",
+        ],
+        keyTakeaway: "Drinks buy tempo, never power, and never a fight result. You can earn every one of them by playing. Buying needs a registered account, and your card details never touch this game.",
+    },
 
     // ──────────────────────────────────────────────────────────────
     // THE PROVING GROUND (PvP)

@@ -142,6 +142,22 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ bundleId }),
     }),
+  /**
+   * Opens a real-money Stripe Checkout Session and returns `{ url }` to redirect to.
+   *
+   * ⚠️ SENDS ONLY THE BUNDLE ID. No amount, quantity or currency — the server resolves what to
+   * charge from its own config. Adding a price field here would be handing the client control
+   * of the charge.
+   *
+   * Grants nothing on its own: goods arrive from the Stripe webhook, so a player who closes the
+   * tab mid-payment still gets what they paid for, and one who fakes a return to the success URL
+   * gets nothing.
+   */
+  createCheckout: (id, bundleId) =>
+    request(`/fighters/${id}/shop/checkout`, {
+      method: "POST",
+      body: JSON.stringify({ bundleId }),
+    }),
   useEnergyItem: (id, itemId) =>
     request(`/fighters/${id}/inventory/use-energy`, {
       method: "POST",

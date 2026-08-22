@@ -306,21 +306,35 @@ export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMess
     }
   }, [fighterId, busyId, afterMutation, onMessage]);
 
+  /**
+   * Real money. Opens a Stripe Checkout Session and hands the browser to Stripe.
+   *
+   * ⚠️ DELIBERATELY GRANTS NOTHING AND REFRESHES NOTHING. The old stub could safely pretend;
+   * this cannot. Goods are granted by the signature-verified webhook, so anything optimistic
+   * here would show drinks the player has not paid for yet — and the payment can still fail,
+   * be abandoned at Stripe, or complete minutes later on a card that needs 3-D Secure.
+   *
+   * `busyId` is intentionally left set: this navigates away, so re-enabling the button would
+   * only offer a second click during the redirect.
+   */
   const handleBuyPremium = useCallback(async (bundleId) => {
     if (!fighterId || busyId) return;
     setBusyId(bundleId);
     setPremiumNotice("");
     try {
-      const res = await api.buyPremium(fighterId, bundleId);
-      // Stub: grant nothing, surface the message. No balance change.
-      const msg = res.message || t("shop.messages.premiumUnavailable");
-      setPremiumNotice(msg);
-      if (onMessage) onMessage(msg);
+      const res = await api.createCheckout(fighterId, bundleId);
+      if (!res || !res.url) throw new Error(t("shop.messages.premiumPurchaseUnavailable"));
+      window.location.assign(res.url);
+      return;
     } catch (e) {
-      const msg = e.message || t("shop.messages.premiumPurchaseUnavailable");
+      // Contract codes carry a specific, actionable message; anything else is generic.
+      const msg = e.code === "account_required"
+        ? t("shop.messages.premiumAccountRequired")
+        : e.code === "payments_disabled"
+          ? t("shop.messages.premiumUnavailable")
+          : (e.message || t("shop.messages.premiumPurchaseUnavailable"));
       setPremiumNotice(msg);
       if (onMessage) onMessage(msg);
-    } finally {
       setBusyId(null);
     }
   }, [fighterId, busyId, onMessage]);

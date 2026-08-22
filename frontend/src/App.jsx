@@ -706,6 +706,40 @@ function App() {
     return () => clearInterval(t);
   }, [fighter?._id, loadFighter]);
 
+  /**
+   * Return leg of a Stripe Checkout: `/?purchase=success` or `/?purchase=cancelled`.
+   *
+   * ⚠️ THE PARAM IS A HINT, NOT PROOF OF PAYMENT. Anyone can type this URL, and the goods are
+   * granted by the signature-verified webhook alone. So this only navigates, refreshes, and
+   * reports — it never credits anything.
+   *
+   * It also RE-READS rather than trusting the first read. The redirect frequently beats the
+   * webhook by a second or two, so a single refresh can show the old inventory and read as a
+   * purchase that vanished. Re-reading a few seconds later lets the drinks appear on their own.
+   *
+   * The param is stripped with replaceState so a page refresh does not replay the message.
+   */
+  const purchaseReturnHandled = useRef(false);
+  useEffect(() => {
+    if (purchaseReturnHandled.current || !fighter?._id) return;
+    const params = new URLSearchParams(window.location.search);
+    const outcome = params.get("purchase");
+    if (!outcome) return;
+    purchaseReturnHandled.current = true;
+
+    window.history.replaceState({}, "", window.location.pathname);
+    setActiveTab("shop");
+
+    if (outcome === "success") {
+      setMessage(t("shop.messages.premiumReturnSuccess"));
+      loadFighter(fighter._id);
+      const again = setTimeout(() => loadFighter(fighter._id), 4000);
+      return () => clearTimeout(again);
+    }
+    if (outcome === "cancelled") setMessage(t("shop.messages.premiumReturnCancelled"));
+    return undefined;
+  }, [fighter?._id, loadFighter]);
+
   // Surface the transient `message` state as an auto-dismissing notice toast.
   // Many handlers (hospital, training, camp, account, etc.) call setMessage/onMessage
   // on both error and success paths, but the app had no global surface for it — so
