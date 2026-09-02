@@ -1,0 +1,26 @@
+# Local dev infrastructure for Ground & Pound.
+# Start:  docker compose up -d
+# Stop:   docker compose down        (data persists in named volumes)
+# Wipe:   docker compose down -v     (deletes all local game data)
+services:
+  mongo:
+    image: mongo:7
+    container_name: gnp-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - gnp-mongo-data:/data/db
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: gnp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - gnp-redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  gnp-mongo-data:
+  gnp-redis-data:

@@ -7,3 +7,10 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# Per-machine Claude Code settings (agents/ and launch.json ARE shared)
+.claude/settings.local.json
+
+# Self-contained mock reviews: multi-MB HTML with every image base64-inlined.
+# Regenerable, and the same screenshots are committed alongside as .jpg.
+mockups/**/*.standalone.html
