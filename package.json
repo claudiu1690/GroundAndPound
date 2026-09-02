@@ -25,7 +25,8 @@
     "retention:local": "cross-env LOCAL_MODE=true node scripts/retention.js",
     "debug:energy": "node scripts/debugRechargeEnergy.js",
     "debug:reset-fight-cap": "node scripts/debugResetDailyFightCap.js",
-    "debug:title-shot": "node scripts/debugTitleShot.js"
+    "debug:title-shot": "node scripts/debugTitleShot.js",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "engines": {
     "node": ">=20.0.0"
