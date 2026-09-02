@@ -1,3 +1,36 @@
+/**
+ * MAIN-ONLY COPY DELTAS — DELETE ON THE SEASON 2 MERGE
+ *
+ * This file was copied wholesale from develop onto a release branch cut from
+ * main, to ship the landing page ahead of the Season 2 launch (Oct 1, 2026).
+ * main still has gyms; the Training Camp does not exist there yet. The items
+ * below were adapted so every sentence is true on main while still
+ * advertising the camp as an upcoming Season 2 feature. Whoever resolves the
+ * Season 2 merge should take develop's side on all of these and delete this
+ * block.
+ *
+ * 1. Badge count feat-tag + its count-source comment: "48 Badges" here ->
+ *    revert to develop's live count (54 at last check, re-verify against
+ *    consts/badgeCatalog.js BADGES.length).
+ * 2. Camp band eyebrow: "Coming in Season 2" -> revert to "Run your camp".
+ * 3. Camp band pill: derived "Opens {date}" -> revert to "Gyms retired".
+ * 4. Camp band intro paragraph (future tense, "Season 2 retires the gyms...")
+ *    -> revert to present tense, "Gyms are gone. You run the camp now...".
+ * 5. CampPlate watermark: "Season 2 <i>·</i> Preview" -> revert to
+ *    "Ground <i>&amp;</i> Pound".
+ * 6. My Camp band sub opener: "In Season 2 you won't rent a gym..." -> revert
+ *    to present tense, "You don't rent a gym, you run a camp.".
+ * 7. My Camp band eyebrow: "Season 2 · My Camp" -> revert to "My Camp".
+ * 8. Special Moves fan-note: restored main's gym-era wording here -> revert
+ *    to develop's "Your coaches teach them, hard sessions drop them.".
+ * 9. Features section sub: dropped the camp clause here -> revert to
+ *    develop's "Eight stats to build. Your own camp to run. Real opponents
+ *    to study. Every fight earned, never handed to you.".
+ * 10. Evergreen hero sub: dropped the camp clause here -> revert to develop's
+ *     "Build your MMA career from zero. Train eight combat stats, run your
+ *     own camp, climb ranked seasons, and take the championship belt.".
+ * 11. Hero secondary CTA: "What Season 2 Brings" -> revert to "What's New".
+ */
 import "./landing.css";
 import { useState, useEffect } from "react";
 import { api, authStorage } from "../../api";
@@ -7,6 +40,7 @@ import { LegalModals } from "../legal/LegalModals";
 import { ReportBugModal } from "../shared/ReportBugModal";
 import { DiscordIcon } from "../shared/DiscordIcon";
 import { useSeasonBand } from "../../hooks/useSeasonBand";
+import { formatDate, formatDateShort, countdownCells, daysUntil, weeksLeftLabel } from "../../lib/countdown";
 
 // Open a legal modal from a footer link without navigating.
 const openLegal = (e, eventName) => {
@@ -14,20 +48,78 @@ const openLegal = (e, eventName) => {
   window.dispatchEvent(new CustomEvent(eventName));
 };
 
-// Formats a Date/ISOstring as "Mon D, YYYY" e.g. "Jul 4, 2026"
-function formatDate(isoStr) {
-  const d = new Date(isoStr);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+/**
+ * The Training Camp collage — cropped captures of the real camp UI.
+ * `col` places each plate: "wide" spans the grid, "side"/"main" are the two
+ * masonry columns, so neither column waits on the other's row height.
+ */
+const CAMP_PLATES = [
+  { col: "wide", img: "crop-staff", eye: "Your staff", title: "Four coaches, four disciplines",
+    copy: "Striking, wrestling, BJJ and conditioning. Each one arrives with a name, a face, a rarity and a mood you can read at a glance." },
+  { col: "side", img: "crop-candidate-2", eye: "The Monday market", title: "Read him before you sign him",
+    copy: "Rarity, trait, hire fee, weekly wage, and the exact Special Moves he can teach you, all on the card. One market a week, no rerolls." },
+  { col: "side", img: "crop-coach-tile", eye: "On the roster", title: "Four pips, four ranks",
+    copy: "Morale is the whole relationship in one number, and rank is the whole investment. A coach you have put sessions and cash into trains you harder than the day you signed him." },
+  { col: "main", img: "crop-campbar", eye: "Camp condition", title: "A room that decays",
+    copy: "Facility Condition slides when you stop showing up, and a run-down camp trains you slower. Wages come out every Monday whether you turned up or not." },
+  { col: "main", img: "crop-devtrack", eye: "Development track", title: "Rank 3 pays. Rank 4 pays forever",
+    copy: "Sessions, style wins and cash push a coach up four ranks. Rank 3 is a permanent XP bonus for as long as he is with you. Rank 4 signs his discipline’s perk over to you outright, and it stays yours even if he does not." },
+  { col: "main", img: "crop-drills", eye: "His drills", title: "Every session is a trade",
+    copy: "Energy against XP, injury risk against move-drop odds, camp condition up or down. There is no free session." },
+  { col: "wide", img: "crop-needs", eye: "Camp needs you", title: "The camp tells you what it wants",
+    copy: "One nudge at the top of the screen the moment a coach starts slipping, and one click to put him back to work." },
+];
+
+function CampPlate({ plate, onOpen }) {
+  const src = `/assets/landing/s2/${plate.img}.jpg`;
+  const open = () => onOpen(src, plate.title);
+  const onKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      e.preventDefault();
+      open();
+    }
+  };
+  return (
+    <figure
+      className="plate reveal"
+      onClick={open}
+      onKeyDown={onKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={`View screenshot: ${plate.title}`}
+    >
+      <div className="plate-img">
+        <img src={src} alt={plate.title} loading="lazy" />
+        <div className="plate-mark">Season 2 <i>&middot;</i> Preview</div>
+      </div>
+      <figcaption className="plate-cap">
+        <div className="plate-eye">{plate.eye}</div>
+        <b>{plate.title}</b>
+        <span>{plate.copy}</span>
+      </figcaption>
+    </figure>
+  );
 }
 
-// Formats a Date/ISOstring as "Mon D" e.g. "Jul 4"
-function formatDateShort(isoStr) {
-  const d = new Date(isoStr);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+// A coloured section rule. Draws out from the centre when scrolled into view.
+function SectionDivider({ c, c2 }) {
+  return <div className="sdiv" style={{ "--c": c, "--c2": c2 || c }} />;
 }
 
 // Showcase card fan — real in-game Special Move art + rarity colors
 // (same palette as the in-game rarity chips).
+/**
+ * My Camp showcase — one painted card per coach discipline, same treatment as FAN_CARDS.
+ * `rar`/`glow` reuse the fan card's CSS custom properties so both rows share one component
+ * style; the colour here is the DISCIPLINE's, not a rarity.
+ */
+const COACH_CARDS = [
+  { id: "coach-striking",     name: "Striking Coach", rar: "#C8102E", glow: "rgba(200,16,46,.34)" },
+  { id: "coach-wrestling",    name: "Wrestling Coach", rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
+  { id: "coach-bjj",          name: "BJJ Professor", rar: "#14B8A6", glow: "rgba(20,184,166,.32)" },
+  { id: "coach-conditioning", name: "Conditioning Coach", rar: "#D4A820", glow: "rgba(212,168,32,.34)" },
+];
+
 const FAN_CARDS = [
   { id: "granite-jaw",     name: "Granite Jaw",     rarity: "Common",    rar: "#888888", glow: "rgba(136,136,136,.25)" },
   { id: "sprawl-instinct", name: "Sprawl Instinct", rarity: "Uncommon",  rar: "#22c55e", glow: "rgba(34,197,94,.3)" },
@@ -39,6 +131,17 @@ const FAN_CARDS = [
 export function LandingPage({ onAuthenticated, initialResetToken }) {
   // Season band (data-driven PVP section)
   const { data: seasonData, loading: seasonLoading, countdown, timerColor, finalHour } = useSeasonBand();
+
+  // The season being promoted across the page: an upcoming season directly, or
+  // the one queued behind the live season. Nav label, hero and the Proving
+  // Ground band all read this, so the page never advertises two seasons at once.
+  const teaser =
+    seasonData && !seasonLoading
+      ? seasonData.status === "upcoming"
+        ? seasonData
+        : seasonData.next || null
+      : null;
+  const promoted = teaser || seasonData;
 
   // Nav scroll darkening
   const [scrolled, setScrolled] = useState(false);
@@ -56,6 +159,73 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // ── Scroll reveals + section dividers ──
+  // Runs after seasonLoading flips, because the hero/camp band mount with the
+  // season data and would otherwise never be observed.
+  useEffect(() => {
+    const targets = document.querySelectorAll(
+      ".landing-page .reveal, .landing-page .sdiv, .landing-page .camp-band, " +
+      ".landing-page .persona-band, .landing-page .fo-band"
+    );
+    if (!targets.length) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          e.target.classList.add("in");
+          io.unobserve(e.target);
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" }
+    );
+    targets.forEach((el) => io.observe(el));
+
+    // Backstop sweep: anything at or above the fold is revealed outright.
+    //
+    // This covers two cases IntersectionObserver alone does not. It only reports
+    // CHANGES, so content already on screen at mount (top of page, or a reload
+    // part-way down) would never be told to appear. And because it delivers
+    // asynchronously, a fast flick-scroll can carry an element in and back out
+    // between deliveries, leaving that section permanently invisible. Content
+    // failing to appear is far worse than an animation being skipped, so this
+    // runs once now and again on scroll until every target has resolved.
+    let pending = targets.length;
+    const sweep = () => {
+      pending = 0;
+      targets.forEach((el) => {
+        if (el.classList.contains("in")) return;
+        if (el.getBoundingClientRect().top < window.innerHeight * 0.95) {
+          el.classList.add("in");
+          io.unobserve(el);
+        } else {
+          pending += 1;
+        }
+      });
+      if (!pending) window.removeEventListener("scroll", onScroll);
+    };
+
+    let ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { ticking = false; sweep(); });
+    }
+
+    sweep();
+    if (pending) window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
+  // Deliberately depends on primitives, not `seasonData` itself: the object
+  // is re-created on every 5-30s poll, which would tear down and rebuild the
+  // observer (plus the scroll backstop) indefinitely while a visitor reads.
+  // seasonNumber + status cover every state transition that actually changes
+  // what's rendered (evergreen -> upcoming -> active -> next season).
+  }, [seasonLoading, seasonData?.seasonNumber, seasonData?.status]);
 
   // Lightbox
   const [lightboxSrc, setLightboxSrc] = useState(null);
@@ -150,10 +320,14 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
       <nav className={scrolled ? "scrolled" : ""}>
         <div className="nav-logo">Ground <span>&amp;</span> Pound</div>
         <div className="nav-links">
-          <a className="nav-link" href="#features">Features</a>
-          <a className="nav-link" href="#how">How It Works</a>
-          <a className="nav-link" href="#screenshots">Showcase</a>
-          <a className="nav-link" href="#pvp">{seasonData ? `Season ${seasonData.seasonNumber}` : "Season 1"}</a>
+          {/* Deliberately sparse. Four section anchors down a page this long read
+              as clutter, and the page is a single scroll — the only link worth a
+              slot is the live season. The label tracks the LIVE season, not the
+              one the hero is teasing: this anchors to #pvp, which renders the
+              season that is actually running. */}
+          <a className="nav-link" href="#pvp">
+            {seasonData ? `Season ${seasonData.seasonNumber}` : "Season 1"}
+          </a>
           <a
             className="nav-link nav-link--icon"
             href="https://discord.gg/jDmh4wuBMb"
@@ -168,27 +342,100 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         </div>
       </nav>
 
-      {/* HERO */}
-      <div className="hero">
-        <img
-          className="hero-bg"
-          src="/assets/landing/arena.jpg"
-          alt="MMA Arena"
-          loading="eager"
-          fetchPriority="high"
-        />
-        <div className="hero-overlay"></div>
-        <div className="hero-body">
-          <div className="hero-eye">Step into the cage</div>
-          <h1 className="hero-title">Ground<br /><span>&amp;</span> Pound</h1>
-          <p className="hero-sub">Build your MMA career from zero. Train across six disciplines, climb ranked seasons, fight real players, and take the championship belt.</p>
-          <div className="hero-actions">
-            <a className="btn-primary" href="#play">Start Your Career</a>
-            <a className="btn-secondary" href="#features">See How It Works</a>
+      {/* HERO — takes over for the season when there is one to promote.
+          `teaser` is the season being counted down to: an upcoming season
+          directly, or the one queued behind the live season (DTO `next`). */}
+      {(() => {
+        const showSeasonHero = !seasonLoading && !!(seasonData && (teaser || seasonData.status === "active"));
+        const head = promoted;
+        // Straight off the DTO — null for the no-twist baseline (Iron Circuit),
+        // in which case the clause renders as nothing at all.
+        const rule = head ? head.twistEffect : null;
+
+        if (!showSeasonHero) {
+          // Evergreen hero — no season data, still loading, or the fetch failed.
+          return (
+            <div className="hero">
+              <img
+                className="hero-bg"
+                src="/assets/landing/arena.jpg"
+                alt="MMA Arena"
+                loading="eager"
+                // lowercase, NOT `fetchPriority` — React only learned the camelCase spelling in 19,
+                // and on 18 it fails the prop through to the DOM with a warning instead of setting
+                // the attribute. Lowercase is passed through verbatim, which is what browsers read.
+                fetchpriority="high"
+              />
+              <div className="hero-overlay"></div>
+              <div className="hero-body">
+                <div className="hero-eye">Step into the cage</div>
+                <h1 className="hero-title">Ground<br /><span>&amp;</span> Pound</h1>
+                <p className="hero-sub">Build your MMA career from zero. Train eight combat stats, climb ranked seasons, and take the championship belt.</p>
+                <div className="hero-actions">
+                  <a className="btn-primary" href="#play">Start Your Career</a>
+                  <a className="btn-secondary" href="#features">See How It Works</a>
+                </div>
+              </div>
+              <div className="hero-scroll">Scroll</div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="hero hero--season">
+            <img
+              className="hero-bg"
+              src="/assets/landing/arena.jpg"
+              alt="MMA Arena"
+              loading="eager"
+              fetchpriority="high"
+            />
+            <div className="hero-overlay"></div>
+            <div className="hero-body">
+              <div className="s2-kicker">
+                <span className="s2-dot" />
+                <b>Season {head.seasonNumber} · {head.name}</b>
+                <i>{teaser ? `Opens ${formatDateShort(teaser.startDate)}` : "Live Now"}</i>
+              </div>
+
+              <h1 className="hero-title">
+                Season <span>{head.seasonNumber}</span><br />{head.name}
+              </h1>
+
+              <p className="hero-sub">
+                {teaser ? "The ladder resets and everyone starts level" : "Ranked PvP against real players"}
+                {rule ? <>. This season: <b style={{ color: "#ddd" }}>{rule}</b>.</> : "."}
+              </p>
+
+              {teaser ? (
+                <div className="cd">
+                  {countdownCells(teaser.startDate).map((c) => (
+                    <div className="cd-cell" key={c.l}>
+                      <div className="cd-n">{c.n}</div>
+                      <div className="cd-l">{c.l}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="cd">
+                  <div className="cd-cell">
+                    <div className="cd-n">{daysUntil(seasonData.endDate)}</div>
+                    <div className="cd-l">Days Left</div>
+                  </div>
+                </div>
+              )}
+
+              <div className="hero-actions">
+                <a className="btn-gold" href="#play">{teaser ? "Claim Your Spot" : "Start Your Career"}</a>
+                <a className="btn-secondary" href="#camp">What Season 2 Brings</a>
+              </div>
+            </div>
+            <div className="hero-scroll">Scroll</div>
           </div>
-        </div>
-        <div className="hero-scroll">Scroll</div>
-      </div>
+        );
+      })()}
+
+      <SectionDivider c="#3b82f6" />
 
       {/* STATS BAR */}
       <div className="stats-bar">
@@ -208,16 +455,64 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         </div>
       </div>
 
+      <SectionDivider c="#D4A820" />
+
+      {/* TRAINING CAMP — the season's headline system, shown with real
+          cropped captures of the live camp UI rather than art. */}
+      <div className="s2band" id="camp">
+        <div className="s2inner">
+          <div className="s2head reveal">
+            <div>
+              <div className="sec-eye" style={{ color: "#D4A820" }}>Coming in Season 2</div>
+              <h2 className="sec-title">The Training<br />Camp</h2>
+            </div>
+            <div className="pvp-pills" style={{ margin: 0 }}>
+              {/* Derived, never typed. teaseSeason() builds the next season from the
+                  live season's endDate, which is exactly what finalizeSeason seeds as
+                  the next startDate, so this pill cannot advertise a date the ladder
+                  will not honour. Omitted entirely when nothing is queued. */}
+              {teaser && <span className="pill">Opens {formatDateShort(teaser.startDate)}</span>}
+              <span className="pill">4 disciplines</span>
+              <span className="pill">12 coach traits</span>
+            </div>
+          </div>
+          <p className="sec-sub reveal d1" style={{ marginTop: "14px" }}>
+            Season 2 retires the gyms. You will run the camp instead, and everyone in it is someone you hire, someone you pay, and someone you can lose.
+          </p>
+
+          <div className="collage">
+            <div className="c-wide">
+              <CampPlate plate={CAMP_PLATES[0]} onOpen={openLightbox} />
+            </div>
+            <div className="c-side">
+              {CAMP_PLATES.filter((p) => p.col === "side").map((p) => (
+                <CampPlate key={p.img} plate={p} onOpen={openLightbox} />
+              ))}
+            </div>
+            <div className="c-main">
+              {CAMP_PLATES.filter((p) => p.col === "main").map((p) => (
+                <CampPlate key={p.img} plate={p} onOpen={openLightbox} />
+              ))}
+            </div>
+            <div className="c-wide">
+              <CampPlate plate={CAMP_PLATES[CAMP_PLATES.length - 1]} onOpen={openLightbox} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <SectionDivider c="#C8102E" />
+
       {/* FEATURES */}
       <section id="features">
-        <div className="sec-eye">What you get</div>
-        <h2 className="sec-title">Everything a real<br />manager needs</h2>
-        <p className="sec-sub">Six stats to build. Nine gyms to train at. Real opponents to study. Every fight earned, never handed to you.</p>
+        <div className="sec-eye reveal">What you get</div>
+        <h2 className="sec-title reveal d1">Everything a real<br />manager needs</h2>
+        <p className="sec-sub reveal d2">Eight stats to build. Real opponents to study. Every fight earned, never handed to you.</p>
         <div className="features-grid">
           <div className="feat">
             <div className="feat-icon-text">STR</div>
             <div className="feat-name">Train &amp; Develop</div>
-            <div className="feat-desc">Build your fighter across Striking, Speed, Kicks, Wrestling, Ground Game, Submissions, Chin and Fight IQ. Every session costs energy — spend it wisely.</div>
+            <div className="feat-desc">Build your fighter across Striking, Speed, Kicks, Wrestling, Ground Game, Submissions, Chin and Fight IQ. Every session costs energy, so spend it wisely.</div>
             <div className="feat-tag">8 Stats</div>
           </div>
           <div className="feat">
@@ -248,10 +543,14 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
             <div className="feat-icon-text">LEG</div>
             <div className="feat-name">Build Your Legacy</div>
             <div className="feat-desc">Earn Fame, unlock badges, grow your ranking. Every fight adds to a permanent career record that other players can see and study.</div>
-            <div className="feat-tag">43 Badges</div>
+            {/* COUNT SOURCE OF TRUTH: consts/badgeCatalog.js -> BADGES.length (48 today).
+                Count the exported array, not `id:` lines — they disagree. */}
+            <div className="feat-tag">48 Badges</div>
           </div>
         </div>
       </section>
+
+      <SectionDivider c="#3b82f6" c2="#14B8A6" />
 
       {/* HOW IT WORKS */}
       <div className="how-wrap" id="how">
@@ -288,7 +587,10 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         <div className="ss-head ss-head--center">
           <div className="sec-eye">Special Moves</div>
           <h2 className="sec-title">Build your arsenal</h2>
-          <p className="sec-sub">Thirteen collectible signature techniques, painted like trading cards. Pull them from sparring, upgrade them by rarity, equip up to three.</p>
+          {/* COUNT SOURCE OF TRUTH: consts/specialMovesCatalog.js (12 move ids today).
+              The landing is unauthenticated so it cannot read the catalog at runtime —
+              if a move is added or removed, this word changes with it. */}
+          <p className="sec-sub">Twelve collectible signature techniques, painted like trading cards. Pull them from sparring, upgrade them by rarity, equip up to three.</p>
         </div>
 
         <div className="fan-row">
@@ -307,7 +609,53 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
             </div>
           ))}
         </div>
-        <div className="fan-note">Common · Uncommon · Rare · <b>Legendary</b> — better gyms pull rarer.</div>
+        <div className="fan-note">Common · Uncommon · Rare · <b>Legendary</b>, better gyms pull rarer.</div>
+
+        {/* MY CAMP — the ownership loop. Same card treatment as the moves fan. */}
+        <div className="camp-band">
+          <div className="ss-head ss-head--center">
+            <div className="sec-eye">Season 2 &middot; My Camp</div>
+            <h2 className="sec-title">Your name<br />on the door</h2>
+            <p className="sec-sub">
+              In Season 2 you won&apos;t rent a gym, you&apos;ll run a camp. Hire coaches with names, rarities and
+              personalities, pay them every week, and rank them up. Each one teaches Special Moves
+              you can read on his card <i>before</i> you sign him.
+            </p>
+          </div>
+
+          <div className="camp-row">
+            {COACH_CARDS.map((c) => (
+              <div
+                key={c.id}
+                className="camp-card"
+                style={{ "--rar": c.rar, "--rar-glow": c.glow }}
+                onClick={() => openLightbox(`/assets/camp/${c.id}.webp`, c.name)}
+              >
+                <img src={`/assets/camp/${c.id}.webp`} alt={c.name} loading="lazy" />
+                <div className="fan-plate camp-plate">
+                  <div className="fan-name">{c.name}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="camp-points">
+            <div className="camp-point">
+              <div className="camp-point-k">Weekly wages</div>
+              <div className="camp-point-v">Coaches are staff, not furniture. Miss payroll or bench a coach and morale slides. Let it hit zero and he walks out, taking his rank with him.</div>
+            </div>
+            <div className="camp-point">
+              <div className="camp-point-k">Rank them up</div>
+              <div className="camp-point-v">Sessions, style wins and cash. Rank 3 is a permanent XP bonus; Rank 4 hands over his discipline&apos;s perk for good.</div>
+            </div>
+            <div className="camp-point">
+              <div className="camp-point-k">A room that decays</div>
+              <div className="camp-point-v">Facility Condition slides when you don&apos;t show up, and a run-down camp trains you slower. Skip a week and you feel it.</div>
+            </div>
+          </div>
+
+          <div className="fan-note">One Monday market · no rerolls · <b>a Common coach knows one move, a Legendary knows them all</b></div>
+        </div>
 
         {/* PERSONA */}
         <div className="persona-band">
@@ -318,14 +666,14 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
           <div className="persona-band-copy">
             <div className="sec-eye">Persona</div>
             <h2 className="sec-title">Who will they<br />call you?</h2>
-            <p className="sec-sub">Every mic you touch shapes your public character. Commit to a corner and the press crowns you — with real rewards, and real costs.</p>
+            <p className="sec-sub">Every mic you touch shapes your public character. Commit to a corner and the press crowns you, with real rewards and real costs.</p>
             <div className="persona-band-archs">
               <span className="arch-chip arch-v">The Villain</span>
               <span className="arch-chip arch-c">People's Champ</span>
               <span className="arch-chip arch-b">Boogeyman</span>
               <span className="arch-chip arch-r">Role Model</span>
             </div>
-            <p className="persona-band-line">Villains get paid but lose sponsors. Champs get the crowd. Boogeymen get feared. Role Models get taken care of. <b>Nothing is ever locked</b> — heel turns are one hot mic away.</p>
+            <p className="persona-band-line">Villains get paid but lose sponsors. Champs get the crowd. Boogeymen get feared. Role Models get taken care of. <b>Nothing is ever locked</b>. Heel turns are one hot mic away.</p>
           </div>
         </div>
 
@@ -334,7 +682,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
           <div className="ss-head--center fo-head">
             <div className="sec-eye">The Face-Off</div>
             <h2 className="sec-title">Square up before<br />you step in</h2>
-            <p className="sec-sub">Take a fight and the tape drops: you in the blue corner, them in the red. Public numbers only — the rest you scout in camp.</p>
+            <p className="sec-sub">Take a fight and the tape drops: you in the blue corner, them in the red. Public numbers only. The rest you scout in camp.</p>
           </div>
 
           <div className="fo-poster">
@@ -370,7 +718,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
                   <span className="fo-tval r">MW</span>
                 </div>
               </div>
-              <div className="fo-scout">Detailed stats stay hidden — scout them in camp.</div>
+              <div className="fo-scout">Detailed stats stay hidden. Scout them in camp.</div>
             </div>
 
             <div className="fo-side fo-side--opp">
@@ -384,18 +732,21 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         </div>
       </div>
 
+      <SectionDivider c="#C8102E" c2="#D4A820" />
+
       {/* PVP CALLOUT */}
       <div className="pvp-band" id="pvp">
         <div className="pvp-inner">
           {/* fallback: data===null, error, OR still loading — renders the hardcoded copy */}
           {(!seasonData || seasonLoading) && (
             <>
-              <div className="pvp-season">Season 1 — Iron Circuit — Live Now</div>
+              <div className="pvp-season">Season 1 &middot; Iron Circuit &middot; Live Now</div>
               <h2 className="pvp-title">The Proving<br />Ground</h2>
               <p className="pvp-sub">Compete in ranked PvP seasons. Earn Division Points, defend your spot on the ladder, and fight your way to the top before the season ends.</p>
               <div className="pvp-pills">
                 <span className="pill hot">Open Now</span>
-                <span className="pill">10 Weeks Remaining</span>
+                {/* No week count here on purpose: this branch renders when the season
+                    fetch failed, so any duration would be invented. */}
                 <span className="pill">All Weight Classes</span>
                 <span className="pill">Real Players Only</span>
               </div>
@@ -404,10 +755,10 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
 
           {/* upcoming */}
           {seasonData && !seasonLoading && seasonData.status === "upcoming" && (() => {
-            const wcPill = seasonData.crossWeightClass ? "Open · All Weight Classes" : seasonData.weightClass;
+            const wcPill = seasonData.weightClassLabel;
             return (
               <>
-                <div className="pvp-season">Season {seasonData.seasonNumber} — {seasonData.name} — Opening Soon</div>
+                <div className="pvp-season">Season {seasonData.seasonNumber} &middot; {seasonData.name} &middot; Opening Soon</div>
                 <h2 className="pvp-title">The Proving<br />Ground</h2>
                 <p className="pvp-sub">Compete in ranked PvP seasons. Earn Division Points, defend your spot on the ladder, and fight your way to the top before the season ends.</p>
                 <div className="pvp-countdown-wrap">
@@ -429,23 +780,22 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
 
           {/* active */}
           {seasonData && !seasonLoading && seasonData.status === "active" && (() => {
-            const wcPill = seasonData.crossWeightClass ? "Open · All Weight Classes" : seasonData.weightClass;
-            const weeksLeft = Math.floor((new Date(seasonData.endDate) - Date.now()) / (7 * 86400000));
-            const weeksPill = weeksLeft >= 2
-              ? `${weeksLeft} Weeks Remaining`
-              : weeksLeft === 1
-                ? "1 Week Remaining"
-                : "Final Week";
+            const wcPill = seasonData.weightClassLabel;
+            const weeksPill = weeksLeftLabel(seasonData.endDate);
             return (
               <>
-                <div className="pvp-season">Season {seasonData.seasonNumber} — {seasonData.name} — Live Now</div>
+                <div className="pvp-season">Season {seasonData.seasonNumber} &middot; {seasonData.name} &middot; Live Now</div>
                 <h2 className="pvp-title">The Proving<br />Ground</h2>
                 <p className="pvp-sub">Compete in ranked PvP seasons. Earn Division Points, defend your spot on the ladder, and fight your way to the top before the season ends.</p>
                 <div className="pvp-pills">
                   <span className="pill hot">Open Now</span>
                   <span className="pill">{weeksPill}</span>
                   <span className="pill">{wcPill}</span>
-                  <span className="pill">Real Players Only</span>
+                  {/* The hero promotes the incoming season; say so here too, or the
+                      page advertises one season at the top and another halfway down. */}
+                  {teaser
+                    ? <span className="pill">Season {teaser.seasonNumber} opens {formatDateShort(teaser.startDate)}</span>
+                    : <span className="pill">Real Players Only</span>}
                 </div>
               </>
             );
@@ -504,7 +854,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
           </div>
           <div className="login-guest-divider"><span>or</span></div>
           <button type="button" className="btn-secondary login-guest-btn" onClick={openGuest}>
-            Play as guest — no email needed
+            Play as guest, no email needed
           </button>
           <div className="login-help login-help-resume">
             <a
@@ -518,7 +868,8 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
       </div>
 
       {/* FOOTER */}
-      <div style={{ borderTop: "1px solid #181818", marginTop: "40px" }}>
+      <SectionDivider c="#D4A820" c2="#C8102E" />
+      <div style={{ marginTop: "40px" }}>
         <footer>
           <div className="foot-logo">Ground <span>&amp;</span> Pound</div>
           <div className="foot-links">
