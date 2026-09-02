@@ -10,14 +10,21 @@ import { timerColorFor, formatHMS, isFinalHour } from "../lib/countdown";
  * Timer + poll logic mirrors PreSeasonCountdown.jsx.
  *
  * Returns:
- *   data        — DTO | null  (null on error / no season / still loading)
+ *   data        — DTO | null  (null on genuine "no season" from the server, or
+ *                 the initial load failing; a POLL failure keeps the last
+ *                 known-good DTO instead of wiping it — see `error`)
  *   loading     — true only on the FIRST fetch (avoids flicker; fallback renders immediately)
+ *   error       — true when the most recent poll failed. Data is stale-but-real
+ *                 in that case, not a fallback — callers that want to surface
+ *                 "can't reach the server" separately from "no season" can
+ *                 check this instead of inferring it from `data === null`.
  *   countdown   — formatted string per spec: "Opening..." | "MM:SS" | "H:MM:SS"
  *   remainingMs — raw ms until startDate (only meaningful when status==="upcoming")
  */
 export function useSeasonBand() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [remainingMs, setRemainingMs] = useState(0);
 
   // Ref so the poll cadence effect can read the latest data without being in
@@ -35,13 +42,21 @@ export function useSeasonBand() {
       const dto = res && typeof res === "object" && res.status ? res : null;
       dataRef.current = dto;
       setData(dto);
+      setError(false);
       if (dto?.startDate) {
         setRemainingMs(Math.max(0, new Date(dto.startDate) - Date.now()));
       }
     } catch {
-      // Any error (network, non-2xx, parse) → fallback (null).
-      dataRef.current = null;
-      setData(null);
+      // A poll failure is transient and indistinguishable from "no season" —
+      // do NOT wipe last-known-good data, or a single dropped request makes
+      // the hero/PVP band regress to hardcoded placeholders mid-session.
+      // The initial load has no last-known-good data to protect, so it keeps
+      // falling back to null exactly as before.
+      setError(true);
+      if (initial) {
+        dataRef.current = null;
+        setData(null);
+      }
     } finally {
       if (initial) setLoading(false);
     }
@@ -94,5 +109,5 @@ export function useSeasonBand() {
     countdown = remainingMs === 0 ? "Opening..." : formatHMS(remainingMs);
   }
 
-  return { data, loading, countdown, remainingMs, timerColor, finalHour };
+  return { data, loading, error, countdown, remainingMs, timerColor, finalHour };
 }

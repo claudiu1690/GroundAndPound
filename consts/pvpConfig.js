@@ -69,6 +69,38 @@ const TWISTS = {
 
 const TWIST_KEYS = Object.keys(TWISTS);
 
+// Display labels for the raw method keys used by TWISTS[].methods. Twist copy renders
+// in the marketing hero and the season hub, so the lowercase internal keys ("ko",
+// "submission") must never reach a player. One home for the labels: here.
+const TWIST_METHOD_LABELS = {
+    ko: "KO",
+    submission: "Submission",
+    decision: "Decision",
+};
+
+/**
+ * Next-season tease for the PUBLIC marketing landing (GET /pvp/season/public → `next`).
+ *
+ * PURELY THE MARKETING ON/OFF SWITCH — there is nothing else to set here. Every teased
+ * value (start date, end date, season number, twist, name, weight-class format) is
+ * DERIVED at read time from the live season by pvpSeasonService.teaseSeason(anchor).
+ *
+ * Why derived and not configured: finalizeSeason seeds season N+1 with
+ * startDate = the ending season's endDate and twist = pickTwistForSeason(N+1), then the
+ * SAME transition sweep immediately flips it to active — so a real "upcoming" doc never
+ * survives long enough to tease, and a hand-maintained date/twist here could silently
+ * disagree with the rollover that actually happens. teaseSeason calls the very same
+ * helpers finalizeSeason does, so the countdown and reality cannot drift apart.
+ *
+ * Display-only: never persisted, never matched on, never scored. Used only when no real
+ * "upcoming" Season doc exists (a real doc always wins).
+ *
+ * >>> Flipping `enabled` is THE marketing switch. <<<
+ */
+const NEXT_SEASON_TEASE = {
+    enabled: true,
+};
+
 // Balance-tuned via Monte-Carlo against the real engine (resolveFight): on identical
 // fighters, each gameplan wins ~51-57% vs a Balanced mirror — a real but non-deciding
 // edge (no dominant pick, no trap). The engine is a damage race, so multipliers are
@@ -211,6 +243,8 @@ module.exports = {
     DP,
     TWISTS,
     TWIST_KEYS,
+    TWIST_METHOD_LABELS,
+    NEXT_SEASON_TEASE,
     GAMEPLAN_WEIGHTS,
     GAMEPLAN_STRATEGY,
     GAMEPLAN_KEYS,

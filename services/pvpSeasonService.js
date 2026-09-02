@@ -11,6 +11,8 @@ const {
     OPEN_WEIGHT_CLASS,
     TWIST_KEYS,
     TWISTS,
+    TWIST_METHOD_LABELS,
+    NEXT_SEASON_TEASE,
     SEASON_LENGTH_DAYS,
 } = require("../consts/pvpConfig");
 
@@ -22,6 +24,43 @@ const ROTATION_TWISTS = TWIST_KEYS;
 // (that produced "Season 1 — Season 1 — Middleweight").
 function seasonNameFor(twist) {
     return (TWISTS[twist] && TWISTS[twist].name) || "Iron Circuit";
+}
+
+/**
+ * THE single producer of player-facing twist copy. Every surface (season hub block,
+ * public landing hero, next-season tease) reads it from here so the wording can never
+ * drift between an authenticated screen and the marketing page.
+ *
+ *   methods + pct → "+25% Division Points on KO/Submission wins"  (labelled, never raw keys)
+ *   streakFrom    → "Streak bonus from 3 straight wins"
+ *   neither       → twistEffect: null   (iron_circuit has no effect line)
+ *
+ * @param {string} twistKey
+ * @returns {{ twistName: string|null, twistEffect: string|null }}
+ */
+function twistCopyFor(twistKey) {
+    const twist = TWISTS[twistKey] || {};
+    const twistName = twist.name || (twistKey ? String(twistKey) : null);
+
+    if (Array.isArray(twist.methods) && twist.methods.length && typeof twist.pct === "number") {
+        const methods = twist.methods.map((m) => TWIST_METHOD_LABELS[m] || m).join("/");
+        return { twistName, twistEffect: `+${Math.round(twist.pct * 100)}% Division Points on ${methods} wins` };
+    }
+    if (typeof twist.streakFrom === "number") {
+        return { twistName, twistEffect: `Streak bonus from ${twist.streakFrom} straight wins` };
+    }
+    return { twistName, twistEffect: null };
+}
+
+/**
+ * Player-facing weight-class label for a season doc. Open (cross-weight-class) seasons
+ * are one merged ladder, so naming the sentinel class ("Open") alone reads like a fifth
+ * division — spell out that everyone is in it.
+ */
+function publicWeightClassLabel(season) {
+    if (!season) return null;
+    if (isCrossWeightClass(season)) return "Open · All Weight Classes";
+    return season.weightClass || null;
 }
 
 /**
@@ -90,11 +129,127 @@ async function getPublicSeason() {
         .sort({ startDate: 1 }).lean();
     if (upcomingOpen) return upcomingOpen;
 
+    // A per-WC cycle seeds 4 docs sharing one startDate, so weightClass is a REQUIRED
+    // tie-break: without it the pick is arbitrary and the landing band can show a
+    // different class on every poll.
     const upcomingWc = await Season.findOne({ weightClass: { $in: WEIGHT_CLASSES_PVP }, status: "upcoming" })
-        .sort({ startDate: 1 }).lean();
+        .sort({ startDate: 1, weightClass: 1 }).lean();
     if (upcomingWc) return upcomingWc;
 
     return null;
+}
+
+/**
+ * Collapse a per-weight-class upcoming CYCLE into one logical season for public display.
+ *
+ * A per-WC cycle seeds 4 docs that share an identical startDate, so
+ * `findOne(...).sort({startDate:1})` has an undefined tie-break: consecutive 30-second
+ * polls could each surface a DIFFERENT weight class and make the landing tease flicker.
+ * When the whole cycle is present we therefore expose it as ONE season carrying
+ * cross-weight-class semantics ("all four classes run") instead of an arbitrary class.
+ *
+ * Display-only projection: it is never saved, and gameplay reads
+ * (getCurrentSeasonForFighter) still resolve the real per-WC doc.
+ *
+ * @returns {object} the collapsed season, or `doc` unchanged when no full cycle exists.
+ */
+async function collapseUpcomingPerWcCycle(doc) {
+    if (!doc) return doc;
+
+    const cycle = await Season.find({
+        seasonNumber: doc.seasonNumber,
+        status: "upcoming",
+        weightClass: { $in: WEIGHT_CLASSES_PVP },
+    }).lean();
+
+    // Not a full cycle (partial seed / genuinely single-class season) — leave it alone.
+    if (!Array.isArray(cycle) || cycle.length < WEIGHT_CLASSES_PVP.length) return doc;
+
+    // Stable base pick so the id/name/dates are identical on every poll.
+    const base = [...cycle].sort(
+        (a, b) => WEIGHT_CLASSES_PVP.indexOf(a.weightClass) - WEIGHT_CLASSES_PVP.indexOf(b.weightClass)
+    )[0] || doc;
+
+    return {
+        ...base,
+        weightClass: OPEN_WEIGHT_CLASS,
+        config: { ...(base.config || {}), crossWeightClass: true },
+    };
+}
+
+/**
+ * The marketing tease, DERIVED ENTIRELY from the live season, shaped like a Season doc
+ * so every consumer (shapers, the self-tease guard) can treat it exactly like a real
+ * one. Returns null when the switch is off or there is no anchor season to derive from.
+ * The `_id` is a sentinel string — it can never collide with an ObjectId.
+ *
+ * Nothing here is hand-maintained. The advertised start IS the anchor's endDate, which
+ * is exactly what pvpRewardService.finalizeSeason seeds season N+1 with, and the twist
+ * comes from the SAME pickTwistForSeason(N+1) call finalizeSeason makes — so the
+ * countdown physically cannot disagree with the rollover it is counting down to.
+ * NEXT_SEASON_TEASE is now only the on/off switch.
+ *
+ * The returned object is FRESH on every call and shares no reference with `anchorSeason`
+ * (public endpoint, polled by every visitor — one mutated poll would poison the next).
+ *
+ * @param {object|null} anchorSeason the live season the tease is derived from
+ * @returns {object|null} a season-shaped tease, or null
+ */
+function teaseSeason(anchorSeason) {
+    if (!NEXT_SEASON_TEASE || !NEXT_SEASON_TEASE.enabled) return null;
+    if (!anchorSeason) return null;
+
+    const start = new Date(anchorSeason.endDate);
+    if (Number.isNaN(start.getTime())) {
+        console.error("[pvpSeasonService] anchor season endDate is unparseable — tease suppressed.");
+        return null;
+    }
+
+    const seasonNumber = anchorSeason.seasonNumber + 1;
+    const twist = pickTwistForSeason(seasonNumber);
+    const crossWeightClass = isCrossWeightClass(anchorSeason);
+
+    return {
+        _id: `tease:season-${seasonNumber}`,
+        seasonNumber,
+        name: seasonNameFor(twist),
+        twist,
+        weightClass: crossWeightClass ? OPEN_WEIGHT_CLASS : null,
+        startDate: start,
+        endDate: addDays(start, SEASON_LENGTH_DAYS),
+        status: "upcoming",
+        beltHolderId: null,
+        config: { crossWeightClass },
+    };
+}
+
+/**
+ * The NEXT season to tease on the public landing. Resolution order:
+ *   (a) a real upcoming Season doc — Open first, then a per-WC cycle (collapsed);
+ *   (b) else the tease derived from `anchorSeason`, when the marketing switch is on;
+ *   (c) else null.
+ *
+ * getPublicSeason resolves active-before-upcoming, so while a season is live the one
+ * after it is invisible to the landing page — exactly the window where a "next season
+ * starts in N days" tease is worth the most, hence this second read. In practice (a) is
+ * almost always empty mid-season: finalizeSeason seeds N+1 with startDate = the ending
+ * season's endDate and the same sweep immediately activates it, so no upcoming doc
+ * survives. That is why (b) exists.
+ *
+ * Cheap + .lean() — this is polled anonymously by every landing visitor.
+ *
+ * @param {object|null} anchorSeason the live season the fallback tease derives from
+ */
+async function getNextSeason(anchorSeason) {
+    const open = await Season.findOne({ weightClass: OPEN_WEIGHT_CLASS, status: "upcoming" })
+        .sort({ startDate: 1, seasonNumber: 1 }).lean();
+    if (open) return open;
+
+    const perWc = await Season.findOne({ weightClass: { $in: WEIGHT_CLASSES_PVP }, status: "upcoming" })
+        .sort({ startDate: 1, seasonNumber: 1, weightClass: 1 }).lean();
+    if (perWc) return collapseUpcomingPerWcCycle(perWc);
+
+    return teaseSeason(anchorSeason);
 }
 
 /**
@@ -261,7 +416,11 @@ module.exports = {
     getCurrentSeason,
     getCurrentSeasonForFighter,
     getPublicSeason,
+    getNextSeason,
+    teaseSeason,
     isCrossWeightClass,
+    twistCopyFor,
+    publicWeightClassLabel,
     getSeasonById,
     seedSeason,
     seedAllForCycle,

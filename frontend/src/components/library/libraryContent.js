@@ -777,7 +777,7 @@ export const LIBRARY_ARTICLES = [
         id: "proving-ground-seasons",
         category: "The Proving Ground",
         title: "Seasons, Twists & Rewards",
-        summary: "How PvP seasons run, what twists do, end-of-season rewards, and the special Open Season 1.",
+        summary: "How PvP seasons run, what twists do, end-of-season rewards, and why the ladder is currently Open to every weight class.",
         tags: ["pvp", "season", "twist", "rewards", "soft reset", "open season", "cross weight class", "belt", "hall of fame"],
         body: [
             "The Proving Ground runs in seasons of 70 days. Each season carries a twist — a rule that rewards a particular way of winning: Blood Sport pays +25% on KO and submission wins, Iron Fist +30% on KOs, Ground War +30% on submissions, The Marathon +20% on decisions, The Contenders switches on streak bonuses sooner, and Iron Circuit is the clean, no-twist baseline. Read the twist when a season opens and lean your gameplan into it.",
@@ -796,9 +796,11 @@ export const LIBRARY_ARTICLES = [
             },
             "After rewards, a soft reset drops each player one tier into the next season and sets their DP to that division's floor — so every season is a fresh climb, but finishing high still buys you a head start. The next season is seeded automatically.",
             "Between seasons there can be a short gap before the next one opens. When that happens, entering the Proving Ground shows a countdown — a live timer ticking down to the new season, with its name, twist, and what's on the line — instead of the ladder. You can't fight during the countdown, but you can set your defense gameplan early: whatever you pick is saved and applied automatically when the new season's ladder is created (it defaults to Balanced if you never touch it). The instant the timer hits zero, the season goes live on its own — no need to refresh.",
-            "Season 1 is special. Normally each weight class runs its own ladder and crowns its own belt, but at launch there aren't enough players to fill four ladders — so Season 1 is run as a single Open season: every weight class shares one ladder, one belt, and one reward pass. You'll be matched against fighters from other weight classes, and you'll see their real weight class on every screen. It's still a fair fight — the engine decides bouts on stats and OVR, not body weight. When the Open season ends, everyone returns to their own weight class for the normal four-ladder Season 2, carrying their soft-reset standing. The one-of-a-kind Open belt is the prize for being the best fighter in the game, full stop.",
+            "The ladder is Open. Each weight class is meant to run its own ladder and crown its own belt, but four ladders need four times the fighters to fill them. Until the population is there, the Proving Ground runs as a single Open season: every weight class shares one ladder, one belt, and one reward pass. Season 1 runs this way and Season 2 will too.",
+            "You will be matched against fighters from other weight classes, and you will see their real weight class on every screen. It is still a fair fight, because the engine decides a bout on the eight stats and OVR. Body weight is not a variable in it. While the format is Open the belt is the prize for being the best fighter in the game, full stop, rather than the best in one class.",
+            "The four-ladder split is deferred, not cancelled. When there are enough fighters to fill four ladders the seasons will separate and each class will crown its own champion. One thing will not come back either way: the Open Champion badge is tied to the Season 1 belt alone and can never be earned again.",
         ],
-        keyTakeaway: "70-day seasons, each with a twist; rewards scale by final division and soft-reset you one tier for the next. Season 1 is a single Open ladder across all weight classes — one belt for everyone.",
+        keyTakeaway: "70-day seasons, each with a twist; rewards scale by final division and soft-reset you one tier for the next. The ladder is currently Open: every weight class on one ladder, one belt for everyone.",
     },
 ];
 
