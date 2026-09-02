@@ -178,39 +178,55 @@ async function collapseUpcomingPerWcCycle(doc) {
 }
 
 /**
- * The configured marketing tease, shaped like a Season doc so every consumer (shapers,
- * the self-tease guard) can treat it exactly like a real one. Returns null when the
- * switch is off. The `_id` is a sentinel string — it can never collide with an ObjectId.
+ * The marketing tease, DERIVED ENTIRELY from the live season, shaped like a Season doc
+ * so every consumer (shapers, the self-tease guard) can treat it exactly like a real
+ * one. Returns null when the switch is off or there is no anchor season to derive from.
+ * The `_id` is a sentinel string — it can never collide with an ObjectId.
+ *
+ * Nothing here is hand-maintained. The advertised start IS the anchor's endDate, which
+ * is exactly what pvpRewardService.finalizeSeason seeds season N+1 with, and the twist
+ * comes from the SAME pickTwistForSeason(N+1) call finalizeSeason makes — so the
+ * countdown physically cannot disagree with the rollover it is counting down to.
+ * NEXT_SEASON_TEASE is now only the on/off switch.
+ *
+ * The returned object is FRESH on every call and shares no reference with `anchorSeason`
+ * (public endpoint, polled by every visitor — one mutated poll would poison the next).
+ *
+ * @param {object|null} anchorSeason the live season the tease is derived from
+ * @returns {object|null} a season-shaped tease, or null
  */
-function teaseSeason() {
-    const cfg = NEXT_SEASON_TEASE;
-    if (!cfg || !cfg.enabled) return null;
+function teaseSeason(anchorSeason) {
+    if (!NEXT_SEASON_TEASE || !NEXT_SEASON_TEASE.enabled) return null;
+    if (!anchorSeason) return null;
 
-    const start = new Date(cfg.startDate);
+    const start = new Date(anchorSeason.endDate);
     if (Number.isNaN(start.getTime())) {
-        console.error("[pvpSeasonService] NEXT_SEASON_TEASE.startDate is unparseable — tease suppressed.");
+        console.error("[pvpSeasonService] anchor season endDate is unparseable — tease suppressed.");
         return null;
     }
-    const twist = TWIST_KEYS.includes(cfg.twist) ? cfg.twist : "iron_circuit";
+
+    const seasonNumber = anchorSeason.seasonNumber + 1;
+    const twist = pickTwistForSeason(seasonNumber);
+    const crossWeightClass = isCrossWeightClass(anchorSeason);
 
     return {
-        _id: `tease:season-${cfg.seasonNumber}`,
-        seasonNumber: cfg.seasonNumber,
+        _id: `tease:season-${seasonNumber}`,
+        seasonNumber,
         name: seasonNameFor(twist),
         twist,
-        weightClass: cfg.crossWeightClass ? OPEN_WEIGHT_CLASS : null,
+        weightClass: crossWeightClass ? OPEN_WEIGHT_CLASS : null,
         startDate: start,
         endDate: addDays(start, SEASON_LENGTH_DAYS),
         status: "upcoming",
         beltHolderId: null,
-        config: { crossWeightClass: !!cfg.crossWeightClass },
+        config: { crossWeightClass },
     };
 }
 
 /**
  * The NEXT season to tease on the public landing. Resolution order:
  *   (a) a real upcoming Season doc — Open first, then a per-WC cycle (collapsed);
- *   (b) else the NEXT_SEASON_TEASE config block, when armed;
+ *   (b) else the tease derived from `anchorSeason`, when the marketing switch is on;
  *   (c) else null.
  *
  * getPublicSeason resolves active-before-upcoming, so while a season is live the one
@@ -221,8 +237,10 @@ function teaseSeason() {
  * survives. That is why (b) exists.
  *
  * Cheap + .lean() — this is polled anonymously by every landing visitor.
+ *
+ * @param {object|null} anchorSeason the live season the fallback tease derives from
  */
-async function getNextSeason() {
+async function getNextSeason(anchorSeason) {
     const open = await Season.findOne({ weightClass: OPEN_WEIGHT_CLASS, status: "upcoming" })
         .sort({ startDate: 1, seasonNumber: 1 }).lean();
     if (open) return open;
@@ -231,7 +249,7 @@ async function getNextSeason() {
         .sort({ startDate: 1, seasonNumber: 1, weightClass: 1 }).lean();
     if (perWc) return collapseUpcomingPerWcCycle(perWc);
 
-    return teaseSeason();
+    return teaseSeason(anchorSeason);
 }
 
 /**
@@ -399,6 +417,7 @@ module.exports = {
     getCurrentSeasonForFighter,
     getPublicSeason,
     getNextSeason,
+    teaseSeason,
     isCrossWeightClass,
     twistCopyFor,
     publicWeightClassLabel,

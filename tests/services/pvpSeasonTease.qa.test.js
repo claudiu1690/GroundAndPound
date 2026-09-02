@@ -1,9 +1,14 @@
 // QA unit tests — next-season tease resolution + player-facing twist copy.
 //
-// Covers services/pvpSeasonService.{twistCopyFor,publicWeightClassLabel,getNextSeason}
-// and the config-driven NEXT_SEASON_TEASE block. No DB: the Season model's query
-// methods are stubbed with a chainable fake, matching this repo's convention that
-// tests/services/*.test.js never spin up Mongo/Redis.
+// Covers services/pvpSeasonService.{twistCopyFor,publicWeightClassLabel,teaseSeason,
+// getNextSeason}. The tease is DERIVED from the live season (the anchor), not
+// configured: NEXT_SEASON_TEASE is only an on/off switch. So these tests assert the
+// derivation against the very helpers finalizeSeason uses (anchor.endDate → startDate,
+// pickTwistForSeason(N+1)) and never against hand-written literals — a literal here
+// would just re-create the drift trap the derivation removes.
+//
+// No DB: the Season model's query methods are stubbed with a chainable fake, matching
+// this repo's convention that tests/services/*.test.js never spin up Mongo/Redis.
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -60,13 +65,58 @@ function wcSeason(weightClass, over = {}) {
     };
 }
 
-// NEXT_SEASON_TEASE is a frozen-by-convention config object; mutate + restore per test.
-const teaseDefaults = { ...NEXT_SEASON_TEASE };
-function setTease(patch) {
-    Object.assign(NEXT_SEASON_TEASE, teaseDefaults, patch);
+// The live season the tease derives from. A deliberately non-round endDate: the tease
+// must reproduce it to the millisecond, not merely to the day.
+const ANCHOR_END_ISO = "2026-09-09T13:47:11.123Z";
+
+function activeOpenAnchor(over = {}) {
+    return {
+        _id: "live-open",
+        seasonNumber: 1,
+        name: "Iron Circuit",
+        twist: "iron_circuit",
+        status: "active",
+        weightClass: OPEN_WEIGHT_CLASS,
+        startDate: new Date("2026-07-01T00:00:00.000Z"),
+        endDate: new Date(ANCHOR_END_ISO),
+        config: { crossWeightClass: true },
+        beltHolderId: null,
+        ...over,
+    };
 }
+
+// NEXT_SEASON_TEASE is a plain config object shared by the whole process. Every test
+// that touches it goes through withTease(), which restores in a `finally` so a failing
+// assertion cannot leak a mutated switch into the next test.
+const teaseDefaults = { ...NEXT_SEASON_TEASE };
+
 function restoreTease() {
+    for (const key of Object.keys(NEXT_SEASON_TEASE)) {
+        if (!(key in teaseDefaults)) delete NEXT_SEASON_TEASE[key];
+    }
     Object.assign(NEXT_SEASON_TEASE, teaseDefaults);
+}
+
+async function withTease(patch, fn) {
+    Object.assign(NEXT_SEASON_TEASE, teaseDefaults, patch);
+    try {
+        return await fn();
+    } finally {
+        restoreTease();
+    }
+}
+
+// Silence + capture the expected server-side error log.
+async function captureErrors(fn) {
+    const original = console.error;
+    const logged = [];
+    console.error = (...args) => logged.push(args);
+    try {
+        const value = await fn();
+        return { value, logged };
+    } finally {
+        console.error = original;
+    }
 }
 
 // ── twistCopyFor — all six twists ───────────────────────────────────────────
@@ -133,53 +183,182 @@ test("publicWeightClassLabel: per-WC season is its own class; null season is nul
     assert.equal(pvpSeasonService.publicWeightClassLabel(null), null);
 });
 
-// ── getNextSeason resolution order ──────────────────────────────────────────
+// ── teaseSeason — the derivation itself ─────────────────────────────────────
 
-test("getNextSeason (a): a real upcoming Open doc beats the config tease", async () => {
-    resetDb();
-    setTease({ enabled: true });
-    db.openUpcoming = { _id: "real", seasonNumber: 9, weightClass: OPEN_WEIGHT_CLASS, status: "upcoming", twist: "iron_fist", config: { crossWeightClass: true } };
-    const next = await pvpSeasonService.getNextSeason();
-    assert.equal(next._id, "real");
-    assert.equal(next.seasonNumber, 9);
-    restoreTease();
+test("teaseSeason: startDate IS the anchor's endDate, to the millisecond", async () => {
+    await withTease({ enabled: true }, () => {
+        const anchor = activeOpenAnchor();
+        const tease = pvpSeasonService.teaseSeason(anchor);
+
+        assert.ok(tease, "an armed tease with a live anchor must produce a season");
+        assert.equal(
+            new Date(tease.startDate).getTime(),
+            new Date(anchor.endDate).getTime(),
+            "finalizeSeason seeds N+1 with startDate = endingSeason.endDate — the countdown must match it exactly"
+        );
+        assert.equal(new Date(tease.startDate).toISOString(), ANCHOR_END_ISO);
+    });
 });
 
-test("getNextSeason (b): falls back to the config tease when nothing is queued", async () => {
-    resetDb();
-    setTease({ enabled: true, seasonNumber: 2, twist: "blood_sport", startDate: "2026-10-01T00:00:00.000Z", crossWeightClass: true });
-    const next = await pvpSeasonService.getNextSeason();
+test("teaseSeason: seasonNumber is anchor+1 and twist is pickTwistForSeason(anchor+1)", async () => {
+    await withTease({ enabled: true }, () => {
+        for (const seasonNumber of [1, 2, 5, 12]) {
+            const anchor = activeOpenAnchor({ seasonNumber });
+            const tease = pvpSeasonService.teaseSeason(anchor);
+            const expectedTwist = pvpSeasonService.pickTwistForSeason(seasonNumber + 1);
 
-    assert.ok(next, "the tease must fire when no upcoming doc exists");
-    assert.equal(next.seasonNumber, 2);
-    assert.equal(next.status, "upcoming");
-    assert.equal(next.twist, "blood_sport");
-    assert.equal(next.name, "Blood Sport", "name is derived from the twist, same as a seeded season");
-    assert.equal(next.weightClass, OPEN_WEIGHT_CLASS);
-    assert.equal(next.config.crossWeightClass, true);
-    assert.equal(new Date(next.startDate).toISOString(), "2026-10-01T00:00:00.000Z");
-    assert.equal(
-        new Date(next.endDate).getTime() - new Date(next.startDate).getTime(),
-        SEASON_LENGTH_DAYS * 24 * 60 * 60 * 1000,
-        "endDate follows SEASON_LENGTH_DAYS — one home for the number"
-    );
-    assert.equal(String(next._id).startsWith("tease:"), true, "sentinel id can never collide with an ObjectId");
-    restoreTease();
+            assert.equal(tease.seasonNumber, seasonNumber + 1);
+            assert.equal(tease.twist, expectedTwist, "the SAME pick finalizeSeason makes — never a literal");
+            assert.equal(tease.name, pvpSeasonService.seasonNameFor(expectedTwist));
+            assert.equal(tease._id, `tease:season-${seasonNumber + 1}`);
+            assert.equal(tease.status, "upcoming");
+            assert.equal(tease.beltHolderId, null);
+        }
+    });
+});
+
+test("teaseSeason: endDate follows SEASON_LENGTH_DAYS — one home for the number", async () => {
+    await withTease({ enabled: true }, () => {
+        const tease = pvpSeasonService.teaseSeason(activeOpenAnchor());
+        assert.equal(
+            new Date(tease.endDate).getTime() - new Date(tease.startDate).getTime(),
+            SEASON_LENGTH_DAYS * 24 * 60 * 60 * 1000
+        );
+    });
+});
+
+test("teaseSeason: carries the anchor's format forward — an Open anchor teases Open", async () => {
+    await withTease({ enabled: true }, () => {
+        const tease = pvpSeasonService.teaseSeason(activeOpenAnchor());
+        assert.equal(tease.config.crossWeightClass, true);
+        assert.equal(tease.weightClass, OPEN_WEIGHT_CLASS);
+        assert.equal(pvpSeasonService.publicWeightClassLabel(tease), "Open · All Weight Classes");
+    });
+});
+
+test("teaseSeason: a per-WC anchor teases crossWeightClass false", async () => {
+    await withTease({ enabled: true }, () => {
+        const perWc = pvpSeasonService.teaseSeason(
+            activeOpenAnchor({ weightClass: "Lightweight", config: { crossWeightClass: false } })
+        );
+        assert.equal(perWc.config.crossWeightClass, false);
+        assert.equal(perWc.weightClass, null);
+
+        const legacy = pvpSeasonService.teaseSeason(
+            activeOpenAnchor({ weightClass: "Lightweight", config: undefined })
+        );
+        assert.equal(legacy.config.crossWeightClass, false, "a config-less legacy doc must not throw or tease Open");
+    });
+});
+
+test("teaseSeason: disarmed switch yields null even with a perfectly good anchor", async () => {
+    await withTease({ enabled: false }, () => {
+        assert.equal(pvpSeasonService.teaseSeason(activeOpenAnchor()), null);
+    });
+});
+
+test("teaseSeason: no anchor yields null (nothing to derive from)", async () => {
+    await withTease({ enabled: true }, () => {
+        assert.equal(pvpSeasonService.teaseSeason(null), null);
+        assert.equal(pvpSeasonService.teaseSeason(undefined), null);
+    });
+});
+
+test("teaseSeason: an unparseable anchor endDate is suppressed and logged, never rendered", async () => {
+    await withTease({ enabled: true }, async () => {
+        const { value, logged } = await captureErrors(async () =>
+            pvpSeasonService.teaseSeason(activeOpenAnchor({ endDate: "not-a-date" }))
+        );
+        assert.equal(value, null, "better no countdown than an Invalid Date on the landing hero");
+        assert.equal(logged.length > 0, true, "the failure is logged server-side, never silent");
+    });
+});
+
+test("teaseSeason: does NOT mutate the anchor (public endpoint, polled by everyone)", async () => {
+    await withTease({ enabled: true }, () => {
+        const anchor = activeOpenAnchor();
+        const beforeEnd = anchor.endDate.getTime();
+        const beforeNumber = anchor.seasonNumber;
+        const beforeConfig = { ...anchor.config };
+        const beforeClass = anchor.weightClass;
+
+        const tease = pvpSeasonService.teaseSeason(anchor);
+        tease.config.crossWeightClass = false;
+        tease.seasonNumber = 999;
+        tease.endDate = new Date(0);
+
+        assert.equal(anchor.endDate.getTime(), beforeEnd, "the anchor's endDate must be untouched");
+        assert.equal(anchor.seasonNumber, beforeNumber);
+        assert.deepEqual(anchor.config, beforeConfig, "config must be a fresh object, not a shared reference");
+        assert.equal(anchor.weightClass, beforeClass);
+        assert.notEqual(tease.config, anchor.config);
+    });
+});
+
+test("teaseSeason: every call returns a FRESH object — one poll cannot poison the next", async () => {
+    await withTease({ enabled: true }, () => {
+        const anchor = activeOpenAnchor();
+        const first = pvpSeasonService.teaseSeason(anchor);
+        first.name = "MUTATED";
+        first.config.crossWeightClass = false;
+
+        const second = pvpSeasonService.teaseSeason(anchor);
+        assert.notEqual(second, first);
+        assert.notEqual(second.config, first.config);
+        assert.notEqual(second.name, "MUTATED");
+        assert.equal(second.config.crossWeightClass, true);
+        assert.equal(new Date(second.startDate).getTime(), new Date(anchor.endDate).getTime());
+    });
+});
+
+// ── getNextSeason resolution order ──────────────────────────────────────────
+
+test("getNextSeason (a): a real upcoming Open doc beats the derived tease", async () => {
+    resetDb();
+    await withTease({ enabled: true }, async () => {
+        db.openUpcoming = { _id: "real", seasonNumber: 9, weightClass: OPEN_WEIGHT_CLASS, status: "upcoming", twist: "iron_fist", config: { crossWeightClass: true } };
+        const next = await pvpSeasonService.getNextSeason(activeOpenAnchor());
+        assert.equal(next._id, "real", "a seeded doc is reality; the tease is only a stand-in");
+        assert.equal(next.seasonNumber, 9);
+    });
+});
+
+test("getNextSeason (b): falls back to the anchor-derived tease when nothing is queued", async () => {
+    resetDb();
+    await withTease({ enabled: true }, async () => {
+        const anchor = activeOpenAnchor();
+        const next = await pvpSeasonService.getNextSeason(anchor);
+        const expectedTwist = pvpSeasonService.pickTwistForSeason(anchor.seasonNumber + 1);
+
+        assert.ok(next, "the tease must fire when no upcoming doc exists");
+        assert.equal(next.seasonNumber, anchor.seasonNumber + 1);
+        assert.equal(next.status, "upcoming");
+        assert.equal(next.twist, expectedTwist);
+        assert.equal(next.name, pvpSeasonService.seasonNameFor(expectedTwist));
+        assert.equal(next.weightClass, OPEN_WEIGHT_CLASS);
+        assert.equal(next.config.crossWeightClass, true);
+        assert.equal(new Date(next.startDate).getTime(), anchor.endDate.getTime());
+        assert.equal(String(next._id).startsWith("tease:"), true, "sentinel id can never collide with an ObjectId");
+    });
 });
 
 test("getNextSeason (c): null when nothing is queued and the tease is disarmed", async () => {
     resetDb();
-    setTease({ enabled: false });
-    assert.equal(await pvpSeasonService.getNextSeason(), null);
-    restoreTease();
+    await withTease({ enabled: false }, async () => {
+        assert.equal(await pvpSeasonService.getNextSeason(activeOpenAnchor()), null);
+    });
 });
 
-test("NEXT_SEASON_TEASE ships DISABLED (arming it is a deliberate marketing switch)", () => {
-    assert.equal(teaseDefaults.enabled, false);
-    assert.equal(teaseDefaults.seasonNumber, 2);
-    assert.equal(teaseDefaults.twist, "blood_sport");
-    assert.equal(teaseDefaults.crossWeightClass, true, "Season 2 is a single Open season with one belt");
-    assert.ok(TWIST_KEYS.includes(teaseDefaults.twist));
+test("getNextSeason (c): null when armed but there is no anchor season at all", async () => {
+    resetDb();
+    await withTease({ enabled: true }, async () => {
+        assert.equal(await pvpSeasonService.getNextSeason(null), null);
+    });
+});
+
+test("NEXT_SEASON_TEASE is the marketing switch and NOTHING else", () => {
+    assert.deepEqual(Object.keys(teaseDefaults), ["enabled"], "any other key is a hand-maintained drift trap");
+    assert.equal(teaseDefaults.enabled, true, "the landing countdown is the point of this release");
 });
 
 // ── per-WC cycle collapse (tie-break determinism) ───────────────────────────
@@ -189,7 +368,7 @@ test("getNextSeason: a full per-WC cycle collapses to ONE logical cross-weight-c
     db.cycle = WEIGHT_CLASSES_PVP.map((wc) => wcSeason(wc));
     db.wcUpcoming = db.cycle[2]; // Mongo's undefined tie-break happened to pick Middleweight
 
-    const next = await pvpSeasonService.getNextSeason();
+    const next = await pvpSeasonService.getNextSeason(activeOpenAnchor());
     assert.equal(next.weightClass, OPEN_WEIGHT_CLASS, "never expose one arbitrary class of a 4-class cycle");
     assert.equal(next.config.crossWeightClass, true);
     assert.equal(next.seasonNumber, 4);
@@ -204,7 +383,7 @@ test("getNextSeason: the collapsed season is STABLE across polls that pick diffe
     for (const wc of WEIGHT_CLASSES_PVP) {
         db.wcUpcoming = db.cycle.find((d) => d.weightClass === wc);
         // eslint-disable-next-line no-await-in-loop
-        results.push(await pvpSeasonService.getNextSeason());
+        results.push(await pvpSeasonService.getNextSeason(activeOpenAnchor()));
     }
     const ids = new Set(results.map((r) => String(r._id)));
     const classes = new Set(results.map((r) => r.weightClass));
@@ -218,7 +397,7 @@ test("getNextSeason: a PARTIAL per-WC cycle is left untouched (genuinely single-
     db.cycle = [wcSeason("Featherweight"), wcSeason("Lightweight")];
     db.wcUpcoming = db.cycle[0];
 
-    const next = await pvpSeasonService.getNextSeason();
+    const next = await pvpSeasonService.getNextSeason(activeOpenAnchor());
     assert.equal(next.weightClass, "Featherweight");
     assert.equal(next.config.crossWeightClass, false);
 });
@@ -228,7 +407,7 @@ test("collapse does not mutate the underlying season docs", async () => {
     db.cycle = WEIGHT_CLASSES_PVP.map((wc) => wcSeason(wc));
     db.wcUpcoming = db.cycle[0];
 
-    await pvpSeasonService.getNextSeason();
+    await pvpSeasonService.getNextSeason(activeOpenAnchor());
     for (const doc of db.cycle) {
         assert.notEqual(doc.weightClass, OPEN_WEIGHT_CLASS, "real docs keep their real class");
         assert.equal(doc.config.crossWeightClass, false);
@@ -245,41 +424,48 @@ function makeRes() {
     return r;
 }
 
-test("GET /pvp/season/public: an armed tease reaches the client, fully shaped", async () => {
+test("GET /pvp/season/public: the derived tease reaches the client, fully shaped", async () => {
     resetDb();
-    setTease({ enabled: true, seasonNumber: 2, twist: "blood_sport", startDate: "2026-10-01T00:00:00.000Z", crossWeightClass: true });
-    db.wcActive = wcSeason("Lightweight", {
-        _id: "live", seasonNumber: 1, status: "active", name: "Iron Circuit", twist: "iron_circuit",
-        startDate: new Date("2026-08-01T00:00:00.000Z"),
+    await withTease({ enabled: true }, async () => {
+        const live = activeOpenAnchor();
+        db.openActive = live;
+
+        const res = makeRes();
+        await pvpController.getPublicSeason({}, res);
+
+        const expectedTwist = pvpSeasonService.pickTwistForSeason(live.seasonNumber + 1);
+
+        assert.equal(res._status, 200);
+        assert.equal(res._body.seasonNumber, live.seasonNumber);
+        assert.equal(res._body.twistEffect, null, "the live season is iron_circuit");
+        assert.equal(res._body.weightClassLabel, "Open · All Weight Classes");
+
+        assert.ok(res._body.next, "the tease must survive to the client");
+        assert.equal(res._body.next.seasonNumber, live.seasonNumber + 1);
+        assert.equal(res._body.next.name, pvpSeasonService.seasonNameFor(expectedTwist));
+        assert.equal(res._body.next.crossWeightClass, true);
+        assert.equal(res._body.next.weightClassLabel, "Open · All Weight Classes");
+        assert.equal(res._body.next.twistEffect, pvpSeasonService.twistCopyFor(expectedTwist).twistEffect);
+        assert.equal(
+            res._body.next.startDate,
+            res._body.endDate,
+            "the advertised start IS the live season's end — the countdown cannot disagree with the rollover"
+        );
+        assert.equal(res._body.next.startDate, ANCHOR_END_ISO);
+        assert.equal("_id" in res._body.next, false, "the sentinel id must never be exposed");
     });
-
-    const res = makeRes();
-    await pvpController.getPublicSeason({}, res);
-
-    assert.equal(res._status, 200);
-    assert.equal(res._body.seasonNumber, 1);
-    assert.equal(res._body.twistEffect, null);
-    assert.equal(res._body.weightClassLabel, "Lightweight");
-    assert.ok(res._body.next, "the tease must survive to the client");
-    assert.equal(res._body.next.seasonNumber, 2);
-    assert.equal(res._body.next.name, "Blood Sport");
-    assert.equal(res._body.next.crossWeightClass, true);
-    assert.equal(res._body.next.weightClassLabel, "Open · All Weight Classes");
-    assert.equal(res._body.next.twistEffect, "+25% Division Points on KO/Submission wins");
-    assert.equal(res._body.next.startDate, "2026-10-01T00:00:00.000Z");
-    assert.equal("_id" in res._body.next, false, "the sentinel id must never be exposed");
-    restoreTease();
 });
 
-test("GET /pvp/season/public: the tease never duplicates the live season number", async () => {
+test("GET /pvp/season/public: no self-tease when the queued doc IS the live season number", async () => {
     resetDb();
-    setTease({ enabled: true, seasonNumber: 2, crossWeightClass: true });
-    db.wcActive = wcSeason("Lightweight", { _id: "live", seasonNumber: 2, status: "active" });
+    await withTease({ enabled: true }, async () => {
+        db.wcActive = wcSeason("Lightweight", { _id: "live", seasonNumber: 4, status: "active" });
+        db.openUpcoming = wcSeason("Lightweight", { _id: "queued", seasonNumber: 4, weightClass: OPEN_WEIGHT_CLASS });
 
-    const res = makeRes();
-    await pvpController.getPublicSeason({}, res);
+        const res = makeRes();
+        await pvpController.getPublicSeason({}, res);
 
-    assert.equal(res._body.seasonNumber, 2);
-    assert.equal(res._body.next, null, "no self-tease when the tease points at the live season");
-    restoreTease();
+        assert.equal(res._body.seasonNumber, 4);
+        assert.equal(res._body.next, null, "never count down to the season already on screen");
+    });
 });

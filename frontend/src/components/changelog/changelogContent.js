@@ -18,28 +18,11 @@
 
 export const CHANGELOG_ENTRIES = [
   {
-    version: "1.7",
-    date: "2026-09-01",
-    major: false,
-    highlights: [
-      "The front page now runs on the season. Whichever season is live, and whichever one is queued behind it, the landing page reads it straight from the ladder: the name, the scoring rule, and a live countdown to the next one opening. No more hand-editing a page every ten weeks.",
-      "Season 2 is on the board: Blood Sport. Every KO and every submission win banks +25% Division Points for the whole season, and the ladder resets to a clean slate when it opens. Decisions still count, they just don't pay like a finish does.",
-      "The front page finally shows the camp. Seven cropped shots straight out of the live game: your staff, the Monday market with a coach's teach list, camp condition, the development track, his drills, and the nudge you get when someone's morale is slipping.",
-    ],
-    sections: {
-      changed: [
-        "The landing page hero switches itself: an evergreen pitch when there's no season to promote, the live season when there is one, and a countdown once the next season is queued.",
-        "Section rules on the landing page are now coloured to their section and animate in as you scroll.",
-      ],
-      fixed: [],
-      balance: [],
-    },
-  },
-  {
-    version: "1.6",
-    date: "2026-07-30",
+    version: "2.0",
+    date: "2026-09-20",
     major: true,
     highlights: [
+      "Season 2 opens on 20 September and it is called Blood Sport. Every KO and every submission win banks +25% Division Points for the whole season, and the ladder resets to a clean slate when it opens. Decisions still count, they just do not pay like a finish does.",
       "You have your own camp now. My Camp sits right under Home in the menu, where Training used to be. Your name on the door, your coaches, your drills, and a building that only stays sharp if you show up. It's already built and already staffed: a free head coach who matches how you fight walks in on day one, and never charges a cent to keep.",
       "Rank your coaches up with sessions, style wins and cash. Rank 3 is a permanent +5% XP with him. Rank 4 hands you his discipline's perk for good. Every coach runs a kit of four drills that open as he ranks up: everyday work, hard flagship rounds, and a cheap recovery drill. Open Mat Sparring is always on the board too.",
       "Your coaches teach. Every one of them knows a short list of Special Moves outright, visible on his card before you ever hire him, and promoting him hands them over. No roll, no luck. This is the first place in the game where you choose which Special Moves you own, and a Legendary coach teaches Legendary copies. Every Legendary also hides a fifth drill, his masterclass, locked until Rank 4: the widest session in the game and the best move chance on the board.",
@@ -48,6 +31,10 @@ export const CHANGELOG_ENTRIES = [
     ],
     sections: {
       changed: [
+        "The front page now runs on the season. Whichever season is live, and whichever one is queued behind it, the landing page reads it straight from the ladder: the name, the scoring rule, and a live countdown to the next one opening.",
+        "The front page shows the camp. Seven cropped shots straight out of the live game: your staff, the Monday market with a coach's teach list, camp condition, the development track, his drills, and the nudge you get when someone's morale is slipping.",
+        "The landing page hero switches itself: an evergreen pitch when there is no season to promote, the live season when there is one, and a countdown once the next season is queued.",
+        "Section rules on the landing page are now coloured to their section and animate in as you scroll.",
         "Special Move drops now live on the individual drill rather than one flat rate everywhere. A coach's flagship rounds carry the best chance in the game and tend to shake loose moves from his own specialty. Open Mat rolls at a lower rate and draws from the whole catalogue. The cheap, safe drills don't roll at all.",
         "Your Career page has a new Camp badge section: sign your first coach, fill all four slots, sign a Legendary, get taught your first move, get taught five, and the one worth chasing, take a coach in all four disciplines to Rank 4. None of them can be lost. Firing a coach never takes a camp badge back.",
         "Four discipline-mastery badges are now earned in your camp instead of at a gym: Champion Boxer from a Striking coach, Olympic Wrestler from Wrestling, BJJ Black Belt from a BJJ Professor, and Grand Kru from Conditioning. The other six gym badges have no camp route, so they can no longer be earned. They're hidden from your collection unless you already hold one, and any you did earn stay on your profile permanently with a \"Retired\" mark. Your completion total is never short because of a badge nobody can get.",
@@ -69,6 +56,17 @@ export const CHANGELOG_ENTRIES = [
         "Iron Conditioning, his Rank 4 perk, regenerates your health about 30% faster, permanently. A full heal drops from roughly eight hours to under six. It's the widest-reaching perk in the game: faster healing means more fights across a whole career.",
       ],
     },
+  },
+  {
+    version: "1.5.1",
+    date: "2026-09-01",
+    major: false,
+    highlights: [
+      "Season 2 opens on 20 September, and it is called Blood Sport. Every KO and every submission win banks +25% Division Points for the whole season, and the ladder resets to a clean slate when it opens. Decisions still count, they just do not pay like a finish does.",
+      "Season 2 also brings the Training Camp. Gyms retire, and you run a camp instead: coaches you hire, pay a weekly wage, keep happy, and rank up, each one teaching Special Moves you can read on his card before you sign him.",
+      "Go and have a look at the front page. It has the countdown to Season 2 and a first look at the camp, with real shots of the coach roster, the Monday trainer market and the drills. It is the page you land on when you are signed out, so open it in a private window if you want to see it without logging out.",
+    ],
+    sections: { changed: [], fixed: [], balance: [] },
   },
   {
     version: "1.5",

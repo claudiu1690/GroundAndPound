@@ -538,10 +538,12 @@ function shapePublicSeason(season) {
  */
 async function resolveNextTease(season) {
     try {
-        const next = await pvpSeasonService.getNextSeason();
+        // The live season is forwarded as the tease anchor — its endDate IS when the
+        // next one opens. Forwarding only: the derivation lives in pvpSeasonService.
+        const next = await pvpSeasonService.getNextSeason(season);
         if (!next) return null;
         // Never tease the season we are already showing: same doc, or the same logical
-        // season number (a collapsed per-WC cycle / config tease has a different id).
+        // season number (a collapsed per-WC cycle / derived tease has a different id).
         const isSameSeason =
             String(next._id) === String(season._id) || next.seasonNumber === season.seasonNumber;
         return isSameSeason ? null : shapePublicSeason(next);
