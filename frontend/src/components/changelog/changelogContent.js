@@ -22,20 +22,11 @@ export const CHANGELOG_ENTRIES = [
     date: "2026-09-01",
     major: false,
     highlights: [
-      "The front page now runs on the season. Whichever season is live, and whichever one is queued behind it, the landing page reads it straight from the ladder: the name, the scoring rule, and a live countdown to the next one opening.",
       "Season 2 opens on 20 September, and it is called Blood Sport. Every KO and every submission win banks +25% Division Points for the whole season, and the ladder resets to a clean slate when it opens. Decisions still count, they just do not pay like a finish does.",
-      "Season 2 also brings the Training Camp. Gyms retire, and you run a camp instead: coaches you hire, pay a weekly wage, keep happy, and rank up, each one teaching Special Moves you can read on his card before you sign him. There is a preview of it on the front page now.",
+      "Season 2 also brings the Training Camp. Gyms retire, and you run a camp instead: coaches you hire, pay a weekly wage, keep happy, and rank up, each one teaching Special Moves you can read on his card before you sign him.",
+      "Go and have a look at the front page. It has the countdown to Season 2 and a first look at the camp, with real shots of the coach roster, the Monday trainer market and the drills. It is the page you land on when you are signed out, so open it in a private window if you want to see it without logging out.",
     ],
-    sections: {
-      changed: [
-        "The landing page hero switches itself: an evergreen pitch when there is no season to promote, the live season when there is one, and a countdown once the next season is queued.",
-        "Section rules on the landing page are now coloured to their section and animate in as you scroll.",
-      ],
-      fixed: [
-        "The Proving Ground library article no longer says the ladder splits back into four weight classes for Season 2. Season 2 stays Open: one ladder, one belt, every weight class.",
-      ],
-      balance: [],
-    },
+    sections: { changed: [], fixed: [], balance: [] },
   },
   {
     version: "1.5",
