@@ -69,6 +69,49 @@ const TWISTS = {
 
 const TWIST_KEYS = Object.keys(TWISTS);
 
+// Display labels for the raw method keys used by TWISTS[].methods. Twist copy renders
+// in the marketing hero and the season hub, so the lowercase internal keys ("ko",
+// "submission") must never reach a player. One home for the labels: here.
+const TWIST_METHOD_LABELS = {
+    ko: "KO",
+    submission: "Submission",
+    decision: "Decision",
+};
+
+/**
+ * Next-season tease for the PUBLIC marketing landing (GET /pvp/season/public → `next`).
+ *
+ * Why config and not a real Season doc: finalizeSeason seeds season N+1 with
+ * startDate = the ending season's endDate, and the SAME transition sweep immediately
+ * flips it to active — so a real "upcoming" doc never survives long enough to tease.
+ * Seeding one early instead would create a live window with no active season.
+ * This block is display-only: it is never persisted, never matched on, never scored.
+ *
+ * >>> Flipping `enabled` to true is THE marketing switch. <<<
+ * Nothing else needs to change to arm or disarm the landing-page tease. It is only
+ * used when no real "upcoming" Season doc exists (a real doc always wins).
+ *
+ * Season 2 is a single OPEN cross-weight-class season with one belt (like Season 1).
+ * NOTE: this block only controls the TEASE COPY. The actual season that gets seeded is
+ * still decided by pvpRewardService.finalizeSeason — keep the two in sync by hand.
+ */
+const NEXT_SEASON_TEASE = {
+    enabled: false,
+    seasonNumber: 2,
+    twist: "blood_sport",
+    startDate: "2026-10-01T00:00:00.000Z",
+    crossWeightClass: true,
+};
+
+// Fail fast at boot on a mistyped tease — a bad twist key would render an empty
+// marketing hero, and a bad date would render "Invalid Date" to every visitor.
+if (!TWIST_KEYS.includes(NEXT_SEASON_TEASE.twist)) {
+    throw new Error(`[pvpConfig] NEXT_SEASON_TEASE.twist "${NEXT_SEASON_TEASE.twist}" is not a TWIST_KEYS key.`);
+}
+if (Number.isNaN(Date.parse(NEXT_SEASON_TEASE.startDate))) {
+    throw new Error(`[pvpConfig] NEXT_SEASON_TEASE.startDate "${NEXT_SEASON_TEASE.startDate}" is not a parseable ISO date.`);
+}
+
 // Balance-tuned via Monte-Carlo against the real engine (resolveFight): on identical
 // fighters, each gameplan wins ~51-57% vs a Balanced mirror — a real but non-deciding
 // edge (no dominant pick, no trap). The engine is a damage race, so multipliers are
@@ -211,6 +254,8 @@ module.exports = {
     DP,
     TWISTS,
     TWIST_KEYS,
+    TWIST_METHOD_LABELS,
+    NEXT_SEASON_TEASE,
     GAMEPLAN_WEIGHTS,
     GAMEPLAN_STRATEGY,
     GAMEPLAN_KEYS,

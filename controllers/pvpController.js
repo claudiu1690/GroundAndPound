@@ -16,7 +16,7 @@ const pvpRecordService = require("../services/pvpRecordService");
 const pvpMatchmakingService = require("../services/pvpMatchmakingService");
 const pvpFightService = require("../services/pvpFightService");
 const analyticsService = require("../services/analyticsService");
-const { WEIGHT_CLASSES_PVP, SEASON_WEIGHT_CLASSES, OPEN_WEIGHT_CLASS, TWISTS, DIVISION_KEYS } = require("../consts/pvpConfig");
+const { WEIGHT_CLASSES_PVP, SEASON_WEIGHT_CLASSES, OPEN_WEIGHT_CLASS, DIVISION_KEYS } = require("../consts/pvpConfig");
 
 // Accepted weightClass query values for the full ladder screen: FW|LW|MW|HW or "All".
 const LADDER_WC_PARAMS = ["FW", "LW", "MW", "HW", "All"];
@@ -33,24 +33,20 @@ function clampLimit(raw, def = 25, max = 100) {
 
 function shapeSeasonBlock(season, beltHolderName = null) {
     if (!season) return null;
-    const twist = TWISTS[season.twist] || {};
-    let twistEffect = null;
-    if (twist.methods && typeof twist.pct === "number") {
-        twistEffect = `+${Math.round(twist.pct * 100)}% DP on ${twist.methods.join("/")} wins`;
-    } else if (typeof twist.streakFrom === "number") {
-        twistEffect = `Streak bonus from ${twist.streakFrom} wins`;
-    }
+    // Twist + weight-class copy comes from pvpSeasonService — one producer, so this
+    // block and the public landing hero can never word the same twist differently.
+    const { twistName, twistEffect } = pvpSeasonService.twistCopyFor(season.twist);
     const crossWeightClass = !!(season.config && season.config.crossWeightClass);
     return {
         id: String(season._id),
         seasonNumber: season.seasonNumber,
         name: season.name,
         twist: season.twist,
-        twistName: twist.name || season.twist,
+        twistName,
         twistEffect,
         weightClass: season.weightClass,
         crossWeightClass,
-        weightClassLabel: crossWeightClass ? "Open · All Weight Classes" : season.weightClass,
+        weightClassLabel: pvpSeasonService.publicWeightClassLabel(season),
         status: season.status,
         beltHolderId: season.beltHolderId ? String(season.beltHolderId) : null,
         beltHolderName,
@@ -508,7 +504,17 @@ async function getPvpFightBreakdown(req, res) {
 // band. No req.user (route bypasses authMiddleware). Cheap + safe to poll.
 
 // Dedicated shaper — must NOT reuse shapeSeasonBlock (it leaks twist/belt/id fields).
-// Returns EXACTLY these 7 fields, nothing else.
+// Strict allow-list: returns EXACTLY these 9 fields, nothing else. Any new field is an
+// explicit decision, never a spread.
+//
+// twistEffect + weightClassLabel are player-facing STRINGS and are produced by
+// pvpSeasonService (twistCopyFor / publicWeightClassLabel) — the controller derives
+// no copy of its own, so the landing hero and the in-game season block always agree.
+//
+// The response adds one key on top of these: `next`, which is either null or an
+// object shaped by THIS SAME function. Reusing the shaper is deliberate — it is
+// what guarantees the teaser season can never leak a field the current one won't.
+// `next` is attached at the call site, never inside this shaper.
 function shapePublicSeason(season) {
     return {
         status: season.status,
@@ -518,7 +524,31 @@ function shapePublicSeason(season) {
         endDate: new Date(season.endDate).toISOString(),
         crossWeightClass: !!(season.config && season.config.crossWeightClass),
         weightClass: season.weightClass,
+        twistEffect: pvpSeasonService.twistCopyFor(season.twist).twistEffect,
+        weightClassLabel: pvpSeasonService.publicWeightClassLabel(season),
     };
+}
+
+/**
+ * Resolve the (purely cosmetic) next-season teaser. ISOLATED on purpose: this endpoint
+ * is public, unauthenticated and polled every 5-30s by every landing visitor, so a
+ * transient failure in an optional second lookup must never discard an already-
+ * successful primary season fetch. Any failure degrades to `next: null` and is logged
+ * server-side (never surfaced to the client).
+ */
+async function resolveNextTease(season) {
+    try {
+        const next = await pvpSeasonService.getNextSeason();
+        if (!next) return null;
+        // Never tease the season we are already showing: same doc, or the same logical
+        // season number (a collapsed per-WC cycle / config tease has a different id).
+        const isSameSeason =
+            String(next._id) === String(season._id) || next.seasonNumber === season.seasonNumber;
+        return isSameSeason ? null : shapePublicSeason(next);
+    } catch (err) {
+        console.error("[pvpController] getPublicSeason next-season teaser failed (degraded to null)", err);
+        return null;
+    }
 }
 
 async function getPublicSeason(req, res) {
@@ -526,7 +556,15 @@ async function getPublicSeason(req, res) {
         const season = await pvpSeasonService.getPublicSeason();
         res.set("Cache-Control", "public, max-age=10");
         if (!season) return res.json(null);
-        return res.json(shapePublicSeason(season));
+
+        // Tease the season after this one, so the landing can run a countdown to
+        // the next season while the current one is still live.
+        const next = await resolveNextTease(season);
+
+        return res.json({
+            ...shapePublicSeason(season),
+            next,
+        });
     } catch (err) {
         console.error("[pvpController] getPublicSeason", err);
         return res.status(500).json({ message: "Internal server error" });

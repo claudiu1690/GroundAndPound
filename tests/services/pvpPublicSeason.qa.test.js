@@ -34,14 +34,95 @@ const fakeUpcoming = {
 
 const fakeLegacyNoConfig = { ...fakeActive, config: undefined };
 
-test("exactly 7 fields, no more", async () => {
+// A genuinely DIFFERENT season doc. fakeUpcoming spreads fakeActive and so shares
+// its _id, which the controller correctly reads as "same season, nothing to tease".
+const fakeNext = {
+  ...fakeUpcoming,
+  _id: { toString: () => "id2" },
+  seasonNumber: 4, name: "Blood Sport", twist: "blood_sport",
+};
+
+// The controller now also reads getNextSeason. Default it to "nothing queued" so
+// every pre-existing test keeps asserting the current season in isolation; the
+// tease-specific tests below override it.
+pvpSeasonService.getNextSeason = async () => null;
+
+// The strict allow-list produced by shapePublicSeason (`next` is attached at the call
+// site, so it is only expected on the OUTER object).
+const PUBLIC_SEASON_FIELDS = [
+  "crossWeightClass","endDate","name","seasonNumber","startDate","status",
+  "twistEffect","weightClass","weightClassLabel",
+].sort();
+
+test("exactly 9 season fields plus `next`, no more", async () => {
   pvpSeasonService.getPublicSeason = async () => fakeActive;
+  pvpSeasonService.getNextSeason = async () => null;
   const res = makeRes();
   await pvpController.getPublicSeason({}, res);
   assert.equal(res._status, 200);
   const keys = Object.keys(res._body).sort();
-  const expected = ["crossWeightClass","endDate","name","seasonNumber","startDate","status","weightClass"].sort();
-  assert.deepEqual(keys, expected);
+  assert.deepEqual(keys, [...PUBLIC_SEASON_FIELDS, "next"].sort());
+});
+
+test("next: null when no season is queued", async () => {
+  pvpSeasonService.getPublicSeason = async () => fakeActive;
+  pvpSeasonService.getNextSeason = async () => null;
+  const res = makeRes();
+  await pvpController.getPublicSeason({}, res);
+  assert.equal(res._body.next, null);
+});
+
+test("next: teases the upcoming season while the current one is live", async () => {
+  pvpSeasonService.getPublicSeason = async () => fakeActive;
+  pvpSeasonService.getNextSeason = async () => fakeNext;
+  const res = makeRes();
+  await pvpController.getPublicSeason({}, res);
+  assert.equal(res._body.status, "active");
+  assert.equal(res._body.seasonNumber, 3);
+  assert.equal(res._body.next.seasonNumber, 4);
+  assert.equal(res._body.next.name, "Blood Sport");
+  assert.equal(res._body.next.status, "upcoming");
+  assert.equal(res._body.next.startDate, "2026-09-01T00:00:00.000Z");
+});
+
+test("next: shaped by the same shaper, so it leaks nothing either", async () => {
+  pvpSeasonService.getPublicSeason = async () => fakeActive;
+  pvpSeasonService.getNextSeason = async () => fakeNext;
+  const res = makeRes();
+  await pvpController.getPublicSeason({}, res);
+  const leaky = ["_id","__v","twist","config","beltHolderId","redistributedAt","createdAt","updatedAt","next"];
+  for (const f of leaky) assert.equal(f in res._body.next, false, f + " must not be present on next");
+  const keys = Object.keys(res._body.next).sort();
+  assert.deepEqual(keys, PUBLIC_SEASON_FIELDS);
+});
+
+test("twistEffect + weightClassLabel come from the service, on both season and next", async () => {
+  pvpSeasonService.getPublicSeason = async () => fakeActive;      // iron_circuit, Featherweight
+  pvpSeasonService.getNextSeason = async () => fakeNext;          // blood_sport, Open
+  const res = makeRes();
+  await pvpController.getPublicSeason({}, res);
+  assert.equal(res._body.twistEffect, null, "iron_circuit has no effect line");
+  assert.equal(res._body.weightClassLabel, "Featherweight");
+  assert.equal(res._body.next.twistEffect, "+25% Division Points on KO/Submission wins");
+  assert.equal(res._body.next.weightClassLabel, "Open · All Weight Classes");
+});
+
+test("twistEffect uses display labels, never raw lowercase method keys", async () => {
+  pvpSeasonService.getPublicSeason = async () => ({ ...fakeActive, twist: "ground_war" });
+  pvpSeasonService.getNextSeason = async () => null;
+  const res = makeRes();
+  await pvpController.getPublicSeason({}, res);
+  assert.equal(res._body.twistEffect, "+30% Division Points on Submission wins");
+  assert.ok(!/\bko\b|\bsubmission\b|\bdecision\b/.test(res._body.twistEffect), "no raw keys in marketing copy");
+});
+
+test("next: null when the current season IS the upcoming one (no self-tease)", async () => {
+  pvpSeasonService.getPublicSeason = async () => fakeUpcoming;
+  pvpSeasonService.getNextSeason = async () => fakeUpcoming;
+  const res = makeRes();
+  await pvpController.getPublicSeason({}, res);
+  assert.equal(res._body.status, "upcoming");
+  assert.equal(res._body.next, null);
 });
 
 test("dates are ISO strings ending in Z", async () => {

@@ -18,6 +18,24 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "1.7",
+    date: "2026-09-01",
+    major: false,
+    highlights: [
+      "The front page now runs on the season. Whichever season is live, and whichever one is queued behind it, the landing page reads it straight from the ladder: the name, the scoring rule, and a live countdown to the next one opening. No more hand-editing a page every ten weeks.",
+      "Season 2 is on the board: Blood Sport. Every KO and every submission win banks +25% Division Points for the whole season, and the ladder resets to a clean slate when it opens. Decisions still count, they just don't pay like a finish does.",
+      "The front page finally shows the camp. Seven cropped shots straight out of the live game: your staff, the Monday market with a coach's teach list, camp condition, the development track, his drills, and the nudge you get when someone's morale is slipping.",
+    ],
+    sections: {
+      changed: [
+        "The landing page hero switches itself: an evergreen pitch when there's no season to promote, the live season when there is one, and a countdown once the next season is queued.",
+        "Section rules on the landing page are now coloured to their section and animate in as you scroll.",
+      ],
+      fixed: [],
+      balance: [],
+    },
+  },
+  {
     version: "1.6",
     date: "2026-07-30",
     major: true,
