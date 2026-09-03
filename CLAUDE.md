@@ -202,8 +202,10 @@ https://claude.ai/code/artifact/78577865-0a15-45ec-a871-794d4ad7ac75
    logged-in token (the frontend drops the Gym tab on its boot call). Nothing
    can write gym data from here. On Railway a variable edit is a STAGED change:
    click Deploy or nothing happens.
-2. `node scripts/wipeGymData.js --commit --backup=./out/gym-backup-<env>-<date>.json`
-   (dry run without `--commit`; `--commit` refuses to run without a backup path).
+2. `node scripts/wipeGymData.js --commit --backup=./out/gym-backup-<env>-<date>.json --yes`
+   (dry run without `--commit`; `--commit` refuses to run without a backup path;
+   without `--yes` it asks to type WIPE on a TTY and silently aborts when run
+   from a tool or CI). `out/` is gitignored. Rehearsed on staging 2026-09-03.
 3. `node scripts/grantGymRetirementCompensation.js --commit` (idempotent, pays
    3 Energy Drinks per fighter once; runs LAST so the feed note makes sense).
 
