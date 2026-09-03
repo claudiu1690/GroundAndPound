@@ -120,6 +120,109 @@ why no update was needed).
 
 \---
 
+## Git, releases and environments
+
+Full playbook (audit, three workflow options, runbooks):
+https://claude.ai/code/artifact/78577865-0a15-45ec-a871-794d4ad7ac75
+
+### Branches (git-flow lite, chosen 2026-09-03)
+
+* `main` = what production runs. `develop` = the next release, what staging runs.
+* `release/X.Y` is cut from `develop` about a week before a drop; only fixes land
+  on it, staging tracks it, it merges into `main` on release day.
+* `feat/*`, `fix/*`, `hotfix/*` are short-lived (days). Name carries the issue:
+  `feat/42-coach-market`. Commit prefix stays `[Area] message`.
+* MERGE between long-lived branches, never cherry-pick. `git merge --no-ff` into
+  `main`. After every release or hotfix, merge `main` back into `develop` the
+  same day. Skipping that back-merge is how the landing page got forked twice.
+* Delete a branch once merged. Old branches that only exist because their commits
+  were cherry-picked are noise; `git cherry main <branch>` tells the truth.
+
+### Versions and tags
+
+* The top entry of `changelogContent.js` IS the version. Nothing else is.
+* Tag = `v` + that version, always three parts (`v2.0.0`), annotated, on `main`
+  only. Pushing a tag is the act of releasing.
+* MAJOR = season number (Season 2 = `v2.0.0`), MINOR = feature release inside a
+  season, PATCH = fixes only.
+* `package.json` versions are not a source of truth; sync them on release or
+  ignore them.
+
+### Checks (no GitHub Actions)
+
+* GitHub Actions is off: the account is billing-locked and will not be paid.
+  Do not add workflow files.
+* `.githooks/pre-push` runs `npm test` and the frontend build before every push.
+  `npm install` enables it (the `prepare` script sets `core.hooksPath`).
+  One-off skip: `SKIP_CHECKS=1 git push`.
+* Known red test: the shop premium bundle check fails on `develop` until
+  `stripe-integration` merges (the test was written for that branch's config).
+* PR template: `.github/pull_request_template.md` (GDD, Library, changelog,
+  tests, balance "why").
+
+### Environments
+
+| | Local | Staging | Production |
+|---|---|---|---|
+| Branch | any | `develop` (or `release/X.Y`) | `main` |
+| API | localhost:4001 | Railway env `staging`, https://groundandpound-staging.up.railway.app | Railway env `production` |
+| Web | localhost:5173 | Vercel project `ground-and-pound-staging`, https://ground-and-pound-staging.vercel.app | Vercel prod project |
+| Mongo | docker compose | Atlas project "GroundAndPound Staging", cluster0, db `mmaGameStaging`, user `gp_staging` | Atlas prod project (M0), db `mmaGame` |
+| Redis | docker compose | Railway Redis in the staging env (`redis.railway.internal`) | Railway Redis in prod env |
+
+* Every push to `develop` redeploys both staging services. Staging has
+  `NODE_ENV=staging`, its own `FRONTEND_URL` / `APP_URL` / `BACKEND_URL`, and
+  `VITE_API_URL` baked into the Vercel build (change it, then redeploy).
+* Staging test login: `pvp@test.com` / `pvptest123` (from `seedTestAccount.js`).
+* Staging is seeded (2026-09-03) with 11 gyms, 201 opponents, Season 1 active
+  with 25 ladder bots. Reseed order: `seedGyms`, `seedOpponents`,
+  `seedPvpSeason1`, `seedPvpBots`, `seedTestAccount`. `scripts/seed.js` is stale
+  (Gym now requires `slug`) and should be deleted with the gyms.
+* Never point staging at the production database, not even to look.
+
+### Running scripts against a database (READ BEFORE `node scripts/...`)
+
+* The local `.env` has `LOCAL_MODE=false` and `USE_ATLAS=true`, so any script run
+  from this folder with no override talks to PRODUCTION.
+* Staging runs use the gitignored `.env.staging` (one line: `MONGODB_URI=...`):
+
+  ```
+  set -a; . ./.env.staging; set +a; USE_ATLAS=false LOCAL_MODE=false node scripts/<x>.js
+  ```
+
+  Check the `[config] Mongo:` boot line shows `cluster0.vcecey2` and
+  `mmaGameStaging` before anything that deletes.
+* Scripts that go through services (`seedTestAccount`, anything touching energy
+  or PvP) open a Redis connection from `REDIS_URL_LOCAL`; local Redis must be
+  running (docker compose) or the script hangs after "Done".
+
+### Season cutover order (gyms to Training Camp)
+
+1. Set `GYMS_RETIRED=true` on the API (gym endpoints answer 410, the frontend
+   drops the Gym tab on its boot call). Nothing can write gym data from here.
+2. `node scripts/grantGymRetirementCompensation.js`
+3. `node scripts/wipeGymData.js`
+
+Never wipe first. Take a `mongodump` right before step 3; that plus
+`restoreGymData.js` is the rollback. Rehearse the whole sequence on staging
+before doing it on production.
+
+### Release runbook (Season 2 = v2.0.0 on 2026-09-20)
+
+1. ~1 week out: `git checkout -b release/2.0 develop`, push, point staging at it.
+2. Fixes only on `fix/*` into `release/2.0`; merge it into `develop` every day
+   or two. Finalise the changelog entry, `major: true`.
+3. Release day: `git checkout main && git merge --no-ff release/2.0`,
+   `git tag -a v2.0.0`, `git push origin main --tags`. Prod deploys with
+   `GYMS_RETIRED` still false.
+4. Season open: cutover order above, on prod.
+5. Same day: `git checkout develop && git merge main && git push`, delete
+   `release/2.0`, close the milestone, open the next one.
+6. Hotfix: `hotfix/*` from `main`, merge `--no-ff`, tag `v2.0.x`, then merge
+   `main` into `develop`. The last step is not optional.
+
+\---
+
 ## Workflows
 
 ### build-feature
