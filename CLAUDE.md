@@ -198,14 +198,18 @@ https://claude.ai/code/artifact/78577865-0a15-45ec-a871-794d4ad7ac75
 
 ### Season cutover order (gyms to Training Camp)
 
-1. Set `GYMS_RETIRED=true` on the API (gym endpoints answer 410, the frontend
-   drops the Gym tab on its boot call). Nothing can write gym data from here.
-2. `node scripts/grantGymRetirementCompensation.js`
-3. `node scripts/wipeGymData.js`
+1. Set `GYMS_RETIRED=true` on the API and confirm `/gyms` answers 410 with a
+   logged-in token (the frontend drops the Gym tab on its boot call). Nothing
+   can write gym data from here. On Railway a variable edit is a STAGED change:
+   click Deploy or nothing happens.
+2. `node scripts/wipeGymData.js --commit --backup=./out/gym-backup-<env>-<date>.json`
+   (dry run without `--commit`; `--commit` refuses to run without a backup path).
+3. `node scripts/grantGymRetirementCompensation.js --commit` (idempotent, pays
+   3 Energy Drinks per fighter once; runs LAST so the feed note makes sense).
 
-Never wipe first. Take a `mongodump` right before step 3; that plus
-`restoreGymData.js` is the rollback. Rehearse the whole sequence on staging
-before doing it on production.
+Never wipe before the flag is live. The backup file plus `restoreGymData.js` is
+the rollback. `migrateFightersToHomeCamp.js` is NOT part of this sequence.
+Rehearse the whole sequence on staging before doing it on production.
 
 ### Release runbook (Season 2 = v2.0.0 on 2026-09-20)
 
