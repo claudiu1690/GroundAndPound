@@ -142,20 +142,62 @@
 .mock-v1.is-playing *,.mock-v1 .v1-division{animation:none!important}
 .mock-v1.is-playing .v1-bill{opacity:1}
 }
-@media (max-width:480px){
-.mock-v1 .v1-scroll{padding:26px 18px 18px}
-.mock-v1 .v1-payout,.mock-v1 .v1-band{margin-left:-18px;margin-right:-18px;padding-left:18px;padding-right:18px}
+@media (max-width:560px){
+.mock-v1{padding:10px}
+.mock-v1 .v1-poster{transform:rotate(-.6deg);max-height:94vh}
+.mock-v1 .v1-scroll{max-height:calc(94vh - 2px);padding:24px 16px 0;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.mock-v1 .v1-frame{inset:7px}
+.mock-v1 .v1-close{width:40px;height:40px;top:7px;right:7px;font-size:22px}
 .mock-v1 .v1-head{padding-right:0}
-.mock-v1 .v1-title{font-size:40px}
-.mock-v1 .v1-stamp{font-size:26px;right:-4px;top:26px}
-.mock-v1 .v1-band .v1-title{font-size:30px;padding-right:0}
-.mock-v1 .v1-stamp-live{font-size:22px;right:12px;top:14px}
-.mock-v1 .v1-division{font-size:48px}
-.mock-v1 .v1-stat strong{font-size:24px}
-.mock-v1 .v1-stat em{font-size:12px}
-.mock-v1 .v1-actions{flex-direction:column-reverse}
-.mock-v1 .v1-btn{width:100%}
+.mock-v1 .v1-eyebrow{padding-right:48px;letter-spacing:2.5px;line-height:1.4}
+.mock-v1 .v1-kicker{font-size:13px;letter-spacing:2px}
+.mock-v1 .v1-title{font-size:34px}
+.mock-v1 .v1-stamp{position:static;display:block;width:max-content;margin:9px 2px 0 auto;padding:5px 10px 4px;border-width:2.5px;font-size:22px}
+.mock-v1 .v1-stamp-closed{--rot:-7deg}
+.mock-v1 .v1-note{margin-top:9px;font-size:12.5px}
+.mock-v1 .v1-rule{margin:14px 0 6px;letter-spacing:2.5px}
+.mock-v1 .v1-division{font-size:44px}
+.mock-v1 .v1-stats{margin-top:10px}
+.mock-v1 .v1-stat{padding:8px 4px}
+.mock-v1 .v1-stat strong{font-size:21px}
+.mock-v1 .v1-stat em{font-size:11px;letter-spacing:.5px}
+.mock-v1 .v1-payout,.mock-v1 .v1-band{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}
+.mock-v1 .v1-payout{margin-top:15px}
+.mock-v1 .v1-stubs{gap:6px}
+.mock-v1 .v1-stub{padding:9px 4px 8px}
+.mock-v1 .v1-stub small{font-size:8px;letter-spacing:1.5px;margin-bottom:5px}
+.mock-v1 .v1-stub strong{font-size:20px}
+.mock-v1 .v1-stub svg{width:24px;height:24px}
+.mock-v1 .v1-stub .v1-badge-name{font-size:12px;letter-spacing:.3px}
+.mock-v1 .v1-serial{font-size:8px;letter-spacing:1px;margin-top:5px}
+.mock-v1 .v1-bonus{font-size:11.5px;margin-top:9px}
+.mock-v1 .v1-band{margin-top:15px;padding-top:14px;padding-bottom:12px}
+.mock-v1 .v1-band .v1-title{font-size:26px;padding-right:0}
+.mock-v1 .v1-stamp-live{position:static;display:block;width:max-content;margin:9px 2px 0 auto;top:auto;right:auto;font-size:19px;--rot:5deg}
+.mock-v1 .v1-bill{font-size:13px;margin-bottom:6px;min-height:18px}
+.mock-v1 .v1-actions{position:sticky;bottom:0;z-index:6;flex-direction:column-reverse;gap:8px;margin:14px -16px 0;padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(21,21,21,0) 0,#151515 34%)}
+.mock-v1 .v1-btn{width:100%;padding:14px 18px;font-size:17px}
 }
+@media (max-height:560px) and (orientation:landscape){
+.mock-v1{padding:8px}
+.mock-v1 .v1-poster{max-height:96vh;transform:rotate(-.5deg)}
+.mock-v1 .v1-scroll{max-height:calc(96vh - 2px);padding:18px 22px 0;overscroll-behavior:contain}
+.mock-v1 .v1-title{font-size:30px}
+.mock-v1 .v1-head{padding-right:130px}
+.mock-v1 .v1-division{font-size:36px}
+.mock-v1 .v1-rule{margin:11px 0 5px}
+.mock-v1 .v1-payout,.mock-v1 .v1-band{margin-top:12px}
+.mock-v1 .v1-actions{position:sticky;bottom:0;z-index:6;margin:12px -22px 0;padding:10px 22px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(21,21,21,0) 0,#151515 34%)}
+}
+@media (max-width:380px){
+.mock-v1 .v1-title{font-size:30px}
+.mock-v1 .v1-division{font-size:38px}
+.mock-v1 .v1-stat strong{font-size:19px}
+.mock-v1 .v1-stub strong{font-size:18px}
+.mock-v1 .v1-stub .v1-badge-name{font-size:11px}
+.mock-v1 .v1-band .v1-title{font-size:23px}
+}
+
 </style>
 <section class="mock-v1" data-variant="1">
   <div class="v1-game" aria-hidden="true"></div>
