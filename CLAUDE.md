@@ -213,6 +213,25 @@ Never wipe before the flag is live. The backup file plus `restoreGymData.js` is
 the rollback. `migrateFightersToHomeCamp.js` is NOT part of this sequence.
 Rehearse the whole sequence on staging before doing it on production.
 
+### Season rollover (automatic, rehearsed on staging 2026-09-03)
+
+* `runSeasonTransitionSweep` in `pvpSeasonService.js` runs from the BullMQ
+  scheduler every 10 minutes. It ends any active season past `endDate`
+  (`pvpRewardService.finalizeSeason`: payouts, Hall of Fame, redistribution of
+  every fighter WITH a record into their real weight class, seeds N+1 with
+  `startDate` = the ending season's `endDate`) and then activates upcoming
+  seasons whose `startDate` has passed. Nobody has to press anything on
+  release night; prod Season 1 ends 2026-09-20 and flips within 10 minutes.
+* Fighters with no Season N record are not carried over; they enrol when they
+  next open the Proving Ground.
+* To force it on staging: set the active season's `endDate` a minute into the
+  past directly in Mongo, then poll `/pvp/season/public` until `seasonNumber`
+  changes. Rehearsal result: S1 Open ended + redistributed, S2 "Blood Sport"
+  active as 4 per-weight-class ladders, 25 bot records moved (6/7/7/5), Hall of
+  Fame empty because the S1 belt was never claimed.
+* Staging is therefore already on Season 2 with gyms retired. To rehearse
+  again, reseed (order above) and repeat.
+
 ### Release runbook (Season 2 = v2.0.0 on 2026-09-20)
 
 1. ~1 week out: `git checkout -b release/2.0 develop`, push, point staging at it.
@@ -221,7 +240,8 @@ Rehearse the whole sequence on staging before doing it on production.
 3. Release day: `git checkout main && git merge --no-ff release/2.0`,
    `git tag -a v2.0.0`, `git push origin main --tags`. Prod deploys with
    `GYMS_RETIRED` still false.
-4. Season open: cutover order above, on prod.
+4. Season open: cutover order above, on prod. The season rollover itself is
+   automatic (see above); just confirm `/pvp/season/public` shows Season 2.
 5. Same day: `git checkout develop && git merge main && git push`, delete
    `release/2.0`, close the milestone, open the next one.
 6. Hotfix: `hotfix/*` from `main`, merge `--no-ff`, tag `v2.0.x`, then merge
