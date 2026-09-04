@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Zap, Lock } from "lucide-react";
 import { usePvpSeason } from "../../hooks/usePvpSeason";
 import { OPEN_LABEL } from "./pvpConst";
@@ -10,8 +10,7 @@ import { HistoryTab } from "./tabs/HistoryTab";
 import { SeasonRewardsTab } from "./tabs/SeasonRewardsTab";
 import { HallOfFameTab } from "./tabs/HallOfFameTab";
 import { DefenseResults } from "./DefenseResults";
-import { SeasonEndModal } from "./SeasonEndModal";
-import { NewSeasonModal } from "./NewSeasonModal";
+import { SeasonPosterModal } from "./SeasonPosterModal";
 import { ReadOnlyProfile } from "./ReadOnlyProfile";
 import { OfflineDefenseBanner } from "./OfflineDefenseBanner";
 import { PreSeasonCountdown } from "./PreSeasonCountdown";
@@ -33,9 +32,12 @@ function buildTabs() {
  * New fields consumed from that response: `justEnded` (boolean) and
  * `lastSeasonRecord` — present when justEnded, else null.
  *
- * Modal flow: SeasonEndModal → NewSeasonModal (linked by "Start New Season"
- * button). Dismissing either calls POST /pvp/acknowledge-season so the
- * banner doesn't reappear on subsequent visits.
+ * Modal flow: a single SeasonPosterModal ("Fight Poster") shows the ended
+ * season's results and the new season's launch in one presentational
+ * component. Any of its three close paths (backdrop/Escape/close button,
+ * "View Final Ladder", "Enter the Ladder") calls POST
+ * /pvp/acknowledge-season exactly once (see `fireAck`) so the poster
+ * doesn't reappear on subsequent visits this session.
  */
 export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFight }) {
   const weightClass = fighter?.weightClass ?? "featherweight";
@@ -47,8 +49,10 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
   const [activeTab, setActiveTab] = useState("ladder");
   const [showDefense, setShowDefense] = useState(false);
   const [showSeasonEnd, setShowSeasonEnd] = useState(false);
-  const [showNewSeason, setShowNewSeason] = useState(false);
   const [ackDone, setAckDone] = useState(false);
+  // Guards the three close paths (backdrop/Escape/close, view ladder, enter
+  // ladder) so a race between them produces exactly one acknowledge POST.
+  const ackFired = useRef(false);
   // Optimistic hide: banner disappears instantly on click before the refetch lands
   const [defenseAcked, setDefenseAcked] = useState(false);
 
@@ -79,30 +83,28 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
     await fireAck();
   }
 
-  function handleStartNewSeason() {
-    setShowSeasonEnd(false);
-    setShowNewSeason(true);
-  }
-
-  async function handleViewLeaderboard() {
+  async function handleViewFinalLadder() {
     setShowSeasonEnd(false);
     setActiveTab("ladder");
     await fireAck();
   }
 
   async function handleEnterLadder() {
-    setShowNewSeason(false);
+    setShowSeasonEnd(false);
     setActiveTab("ladder");
     await fireAck();
   }
 
   async function fireAck() {
+    if (ackFired.current) return; // three close paths, exactly one POST
+    ackFired.current = true;
     setAckDone(true);
     if (lastSeasonRecord?.seasonId) {
       try {
         await api.pvpAcknowledgeSeason(lastSeasonRecord.seasonId);
       } catch {
-        // Non-fatal
+        // Non-fatal — swallowed. The modal already closed and ackDone
+        // prevents re-open this session; it reappears next page load.
       }
     }
   }
@@ -216,25 +218,15 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
 
   return (
     <div className="pvp-hub">
-      {/* Season End Modal */}
+      {/* Season Poster Modal — single "Fight Poster" for the season rollover */}
       {showSeasonEnd && lastSeasonRecord && (
-        <SeasonEndModal
+        <SeasonPosterModal
+          key={lastSeasonRecord.seasonId}
           lastSeasonRecord={lastSeasonRecord}
-          nextSeason={season}
-          onClose={handleSeasonEndClose}
-          onViewLeaderboard={handleViewLeaderboard}
-          onStartNewSeason={handleStartNewSeason}
-        />
-      )}
-
-      {/* New Season Modal */}
-      {showNewSeason && season && (
-        <NewSeasonModal
           season={season}
-          newDivision={lastSeasonRecord?.newDivision ?? null}
-          newDp={lastSeasonRecord?.newDp ?? 0}
-          previousDivision={lastSeasonRecord?.division ?? null}
-          onEnter={handleEnterLadder}
+          onEnterLadder={handleEnterLadder}
+          onViewFinalLadder={handleViewFinalLadder}
+          onClose={handleSeasonEndClose}
         />
       )}
 
@@ -249,7 +241,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
       )}
 
       {/* Read-only profile view-swap — shown when viewingProfileId is set */}
-      {viewingProfileId && !showDefense && !showSeasonEnd && !showNewSeason && (
+      {viewingProfileId && !showDefense && !showSeasonEnd && (
         <ReadOnlyProfile
           fighterId={viewingProfileId}
           viewerFighter={fighter}
@@ -260,7 +252,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
       )}
 
       {/* Main hub — hidden while any overlay or profile view is open */}
-      {!viewingProfileId && !showDefense && !showSeasonEnd && !showNewSeason && (
+      {!viewingProfileId && !showDefense && !showSeasonEnd && (
         <>
           {/* Hero */}
           <div

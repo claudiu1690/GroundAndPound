@@ -301,10 +301,37 @@ function refreshOvrSnapshot(record, fighter) {
 /**
  * Build the "your last season just ended" signal for GET /pvp/season/current.
  *
- * @returns {{ justEnded:boolean, lastSeasonRecord:object|null }}
- *   justEnded is true iff the actor has an ENDED-season PVPRecord for this weight class
- *   with seasonEndSeen=false AND wins+losses>=1. lastSeasonRecord is the shaped block
- *   for that record (else null).
+ * justEnded is true iff the actor has an ENDED-season PVPRecord for this weight class
+ * with seasonEndSeen=false AND wins+losses>=1. lastSeasonRecord is the shaped block
+ * for that record (else null).
+ *
+ * NOTE on `seasonEndDate`: it is the ENDED season's endDate (the ladder close date),
+ * NOT the endDate on the season DTO returned alongside it, which belongs to the NEW
+ * active season. The two are different dates and the poster shows this one.
+ *
+ * @returns {{
+ *   justEnded: boolean,
+ *   lastSeasonRecord: null | {
+ *     seasonId: string,
+ *     seasonNumber: number,
+ *     seasonName: string,
+ *     weightClass: string,
+ *     division: string,
+ *     divisionColor: string,
+ *     dp: number,
+ *     rank: number,
+ *     wins: number,
+ *     losses: number,
+ *     seasonEndDate: string|null,
+ *     poolSize: number,
+ *     isBeltHolder: boolean,
+ *     rewards: { iron:number, fame:number, drinks:number, badge:string|null },
+ *     newDivision: string,
+ *     newDp: number,
+ *     firstSeasonBonusPaid: boolean,
+ *     firstSeasonBonus?: { iron:number, fame:number },
+ *   }
+ * }}
  */
 async function getJustEndedBlock(playerId, weightClass) {
     // Most-recent unacknowledged, eligible record whose season has ended.
@@ -328,6 +355,17 @@ async function getJustEndedBlock(playerId, weightClass) {
         // eslint-disable-next-line no-await-in-loop
         const rank = await computeRank(record);
         const meta = divisionMeta(record.division) || DIVISIONS[0];
+
+        // Denominator for "rank of N fighters" on the poster. MUST use the same
+        // { seasonId, weightClass } scope as computeRank above, or an Open-season
+        // rank would be shown against a pool spanning every weight class.
+        // Index-covered by
+        // { seasonId, weightClass, dp }. Runs at most once — we return below.
+        // eslint-disable-next-line no-await-in-loop
+        const poolSize = await PVPRecord.countDocuments({
+            seasonId: record.seasonId,
+            weightClass: record.weightClass,
+        });
 
         // Rewards earned at season end: belt REPLACES champion (no stack).
         const rewardKey = isBeltHolder ? "beltHolder" : record.division;
@@ -356,6 +394,12 @@ async function getJustEndedBlock(playerId, weightClass) {
                 divisionColor: meta.color,
                 dp: record.dp,
                 rank,
+                wins: record.wins || 0,
+                losses: record.losses || 0,
+                // `season` here is the ENDED season (fetched by record.seasonId and
+                // gated on status === "ended" above), so this is the ladder close date.
+                seasonEndDate: season.endDate ? new Date(season.endDate).toISOString() : null,
+                poolSize,
                 isBeltHolder,
                 rewards: {
                     iron: rewardCfg.iron || 0,
