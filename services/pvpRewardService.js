@@ -19,6 +19,10 @@ const shopService = require("./shopService");
 const activityLogService = require("./activityLogService");
 const pvpSeasonService = require("./pvpSeasonService");
 const pvpBadgeService = require("./pvpBadgeService");
+// Read OPEN_SPLIT_AT_SEASON off the module at CALL time (not destructured): it is the
+// single switch that decides whether an ending Open season rolls into another Open
+// season or fans out into the 4 per-weight-class ladders.
+const pvpConfig = require("../consts/pvpConfig");
 const {
     REWARDS,
     SOFT_RESET,
@@ -214,13 +218,21 @@ async function finalizeSeason(season) {
     await season.save();
 
     // ── Soft reset + seed N+1 (best-effort; failures logged, not fatal). ─────
-    if (pvpSeasonService.isCrossWeightClass(season)) {
-        // Open season → redistribute everyone into their REAL weight class for the
-        // normal per-WC next cycle. Seed the 4 per-WC seasons first (Map<realWC, doc>),
+    // The transition sweep runs this unattended every 10 minutes, so the DEFAULT must be
+    // the boring one: a season rolls into another season of the SAME format. The
+    // Open→per-WC fan-out only fires when an owner has set OPEN_SPLIT_AT_SEASON.
+    const openNow = pvpSeasonService.isCrossWeightClass(season);
+    const nextNumber = season.seasonNumber + 1;
+    const splitAt = pvpConfig.OPEN_SPLIT_AT_SEASON;
+    const splitting = openNow && !!splitAt && nextNumber >= splitAt;
+
+    if (splitting) {
+        // Deferred path: Open season → redistribute everyone into their REAL weight class
+        // for a per-WC next cycle. Seed the 4 per-WC seasons first (Map<realWC, doc>),
         // then per-record soft-reset into the matching target.
         try {
             const nextSeasons = await pvpSeasonService.seedPerWcCycle(
-                season.seasonNumber + 1,
+                nextNumber,
                 season.endDate,
                 "upcoming"
             );
@@ -229,17 +241,24 @@ async function finalizeSeason(season) {
             console.error(`[PVP finalize] open redistribution failed for season ${season._id}:`, err.message);
         }
     } else {
+        // Same-format continuation: Open → Open, or per-WC → the same weight class.
+        // Seed N+1 BEFORE the soft reset (deliberate order): softReset looks up
+        // {weightClass, seasonNumber: N+1} and only falls back to seeding it itself if
+        // that misses, and that fallback used to create a config-less (half-Open) doc.
+        try {
+            const nextTwist = pvpSeasonService.pickTwistForSeason(nextNumber);
+            if (openNow) {
+                await pvpSeasonService.seedOpenSeason(nextNumber, nextTwist, season.endDate, "upcoming");
+            } else {
+                await pvpSeasonService.seedSeason(nextNumber, season.weightClass, nextTwist, season.endDate, "upcoming");
+            }
+        } catch (err) {
+            console.error(`[PVP finalize] seed N+1 failed for season ${season._id}:`, err.message);
+        }
         try {
             await softReset(season, ladder);
         } catch (err) {
             console.error(`[PVP finalize] soft reset failed for season ${season._id}:`, err.message);
-        }
-        try {
-            const startDate = season.endDate;
-            const nextTwist = pvpSeasonService.pickTwistForSeason(season.seasonNumber + 1);
-            await pvpSeasonService.seedSeason(season.seasonNumber + 1, season.weightClass, nextTwist, startDate, "upcoming");
-        } catch (err) {
-            console.error(`[PVP finalize] seed N+1 failed for season ${season._id}:`, err.message);
         }
     }
 
@@ -265,13 +284,17 @@ async function softReset(season, ladder = null) {
         seasonNumber: season.seasonNumber + 1,
     });
     if (!nextSeason) {
-        // N+1 not seeded yet — seed it first so we have a target.
+        // N+1 not seeded yet — seed it first so we have a target. The format MUST be
+        // carried over: without the config a rolling Open season would create a
+        // crossWeightClass:false doc at weightClass "Open" — a half-Open season that
+        // isCrossWeightClass denies, silently partitioning the merged ladder.
         const seeded = await pvpSeasonService.seedSeason(
             season.seasonNumber + 1,
             season.weightClass,
             pvpSeasonService.pickTwistForSeason(season.seasonNumber + 1),
             season.endDate,
-            "upcoming"
+            "upcoming",
+            { crossWeightClass: pvpSeasonService.isCrossWeightClass(season) }
         );
         if (!seeded) return;
         return softResetInto(season, seeded, ladder);
@@ -291,8 +314,14 @@ async function softResetInto(season, nextSeason, ladder) {
                 seasonId: nextSeason._id,
                 weightClass: nextSeason.weightClass,
                 // For a per-WC next season, nextSeason.weightClass IS the real class, so
-                // carrying it forward (or the record's own) is always correct.
-                realWeightClass: record.realWeightClass || nextSeason.weightClass,
+                // falling back to it is correct. For an OPEN next season it is the "Open"
+                // sentinel, which is NOT in the realWeightClass enum (WEIGHT_CLASSES_PVP,
+                // models/pvpRecordModel.js:16) — writing it there throws the whole row and
+                // the record is silently dropped from the new ladder. Legacy/null records
+                // stay null on an Open roll; they get re-stamped on their next fight.
+                realWeightClass:
+                    record.realWeightClass
+                    || (nextSeason.config && nextSeason.config.crossWeightClass ? null : nextSeason.weightClass),
                 division: targetDivision,
                 dp,
                 peakDp: 0,
