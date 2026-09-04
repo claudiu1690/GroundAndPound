@@ -13955,6 +13955,13 @@ code {
 /* ── Hub layout ── */
 .pvp-hub { display: flex; flex-direction: column; min-height: 0; }
 .pvp-hub-loading, .pvp-hub-error { padding: 40px 22px; text-align: center; }
+/* The season fetch usually resolves in ~200ms, and on a rollover the poster
+   immediately covers this card, which read as a flash of a "Loading The
+   Proving Ground" screen. Hold it invisible for 260ms so a fast load never
+   shows it, while a genuinely slow one still gets feedback. */
+.pvp-hub-loading { animation: pvp-loading-delay .18s ease 260ms both; }
+@keyframes pvp-loading-delay { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pvp-hub-loading { animation-duration: .01s; } }
 
 /* ── Hero ── */
 .pvp-hero { background: #080808; background-size: 60%; background-position: center; background-repeat: no-repeat; border-bottom: 1px solid #2A2A2A; position: relative; overflow: hidden; flex-shrink: 0; }
