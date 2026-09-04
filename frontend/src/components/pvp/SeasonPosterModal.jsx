@@ -62,13 +62,13 @@ function buildWhatsNewLines(season) {
  *   season           — the new current season, or null / non-"active" /
  *                       seasonNumber <= lastSeasonRecord.seasonNumber when
  *                       there is no next season yet
- *   onEnterLadder, onViewFinalLadder, onClose — required callbacks. This
+ *   onEnterLadder, onClose — required callbacks. This
  *   component never calls the API itself — PvpHub owns the acknowledge POST.
  *
  * Mount the component keyed by `lastSeasonRecord.seasonId` at the call site
  * so a new ended season always gets a fresh mount (fresh animation timeline).
  */
-export function SeasonPosterModal({ lastSeasonRecord, season, onEnterLadder, onViewFinalLadder, onClose }) {
+export function SeasonPosterModal({ lastSeasonRecord, season, onEnterLadder, onClose }) {
   const posterRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
 
@@ -390,10 +390,7 @@ export function SeasonPosterModal({ lastSeasonRecord, season, onEnterLadder, onV
 
           <div className="sp-actions">
             {hasNextSeason ? (
-              <>
-                <button className="sp-btn" type="button" onClick={onViewFinalLadder}>{t("pvp.seasonPoster.btnLadder")}</button>
-                <button className="sp-btn sp-btn-primary" type="button" onClick={onEnterLadder}>{t("pvp.seasonPoster.btnEnter")}</button>
-              </>
+              <button className="sp-btn sp-btn-primary" type="button" onClick={onEnterLadder}>{t("pvp.seasonPoster.btnEnter")}</button>
             ) : (
               <button className="sp-btn sp-btn-primary" type="button" onClick={onClose}>{t("pvp.seasonPoster.btnClose")}</button>
             )}

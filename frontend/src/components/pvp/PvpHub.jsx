@@ -48,7 +48,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
 
   const [activeTab, setActiveTab] = useState("ladder");
   const [showDefense, setShowDefense] = useState(false);
-  const [showSeasonEnd, setShowSeasonEnd] = useState(false);
+  const [seasonEndDismissed, setSeasonEndDismissed] = useState(false);
   const [ackDone, setAckDone] = useState(false);
   // Guards the three close paths (backdrop/Escape/close, view ladder, enter
   // ladder) so a race between them produces exactly one acknowledge POST.
@@ -69,28 +69,21 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
   const lastSeasonRecord = seasonData?.lastSeasonRecord ?? null;
   const onboarding = seasonData?.onboarding ?? null;
 
-  useEffect(() => {
-    if (justEnded && lastSeasonRecord && !ackDone) {
-      setShowSeasonEnd(true);
-    }
-  }, [justEnded, lastSeasonRecord, ackDone]);
+  // Derived during render, NOT set from an effect. An effect would paint the
+  // hub once with the data and only mount the poster on the next commit, which
+  // showed a one-frame flash of the hero banner before the poster covered it.
+  const showSeasonEnd = justEnded && !!lastSeasonRecord && !ackDone && !seasonEndDismissed;
 
   const unreadDefense = defData?.unreadCount ?? 0;
   const energyCur = fighter?.energy?.current ?? 0;
 
   async function handleSeasonEndClose() {
-    setShowSeasonEnd(false);
-    await fireAck();
-  }
-
-  async function handleViewFinalLadder() {
-    setShowSeasonEnd(false);
-    setActiveTab("ladder");
+    setSeasonEndDismissed(true);
     await fireAck();
   }
 
   async function handleEnterLadder() {
-    setShowSeasonEnd(false);
+    setSeasonEndDismissed(true);
     setActiveTab("ladder");
     await fireAck();
   }
@@ -225,7 +218,6 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
           lastSeasonRecord={lastSeasonRecord}
           season={season}
           onEnterLadder={handleEnterLadder}
-          onViewFinalLadder={handleViewFinalLadder}
           onClose={handleSeasonEndClose}
         />
       )}

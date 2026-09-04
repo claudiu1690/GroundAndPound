@@ -1757,19 +1757,33 @@
       "noNextSeason": "The next season has not been announced yet. Check back soon.",
       "onTheCard": "On the card",
       "btnEnter": "Enter the Ladder",
-      "btnLadder": "View Final Ladder",
       "btnClose": "Close",
       "closeAria": "Close",
       "dialogAria": "Season {n} results and Season {next} launch",
       "whatsNew": {
         "default": {
-          "line1": { "lead": "The ladder reset.", "body": "Everyone starts the new season on a clean slate." },
-          "line2": { "lead": "Badges carry over.", "body": "Your career record and Hall of Fame entries are permanent." },
-          "line3": { "lead": "The belt is vacant.", "body": "First fighter to finish #1 Champion claims it." }
+          "line1": {
+            "lead": "The ladder reset.",
+            "body": "Everyone starts the new season on a clean slate."
+          },
+          "line2": {
+            "lead": "Badges carry over.",
+            "body": "Your career record and Hall of Fame entries are permanent."
+          },
+          "line3": {
+            "lead": "The belt is vacant.",
+            "body": "First fighter to finish #1 Champion claims it."
+          }
         },
         "s2": {
-          "line1": { "lead": "Gyms are gone.", "body": "My Camp is now the only place you train." },
-          "line2": { "lead": "My Camp:", "body": "hire coaches, run drills, and learn Special Moves straight off their cards." }
+          "line1": {
+            "lead": "Gyms are gone.",
+            "body": "My Camp is now the only place you train."
+          },
+          "line2": {
+            "lead": "My Camp:",
+            "body": "hire coaches, run drills, and learn Special Moves straight off their cards."
+          }
         }
       }
     },
