@@ -25,8 +25,27 @@ Single-page web client. Top to bottom: a collapsible **Message Bar**, the **App 
 (left sidebar + content panel), and a fixed **App Footer**.
 
 - **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — cash, fame, rank, class, gym, backstory — badges, stat meters, active injuries), an **Inventory** panel (shown only when the fighter owns shop items), and the nav menu. Nav order groups by intent — *build → compete → manage*: **Home, Training, My Camp, Special Moves, Fight, Career, Proving Ground, Rankings, Contracts, Hospital, Shop, Events, Media, Library**. My Camp sits directly after Training (it is an alternative training venue — see §6.8), and Special Moves sits with them (all three "build your fighter") rather than down among the utility tabs. **Once `GYMS_RETIRED` flips, the Training item is removed from the nav entirely** (not disabled — gone, see `buildNavItems` in App.jsx), so My Camp becomes the first item under Home and the only training venue. Player-facing copy positions it that way, so the two must stay in step.
+- **Home ("Fight Night"):** the landing screen, rebuilt 2026-09-05. It leads with the next bout rather than a grid of status tiles. Top to bottom: a **title-shot strip** (progress toward the three title conditions); a **hero** on the octagon image showing you and your next opponent as two stacked **banners** (the shipped `BannerPreview`, since fighters have no portrait art) with a VS mark, the stakes line and the primary call to action; an **undercard** row of the other waiting offers, which becomes a horizontal snap scroller on phones; then a **grid** of every persistent module, grouped under four band headers, *Ringside* (Proving Ground, Rankings, Fighter card), *Corner report* (Vitals, Injuries, Fight camp, Stats and XP, My Camp), *The purse* (Money and Fame, Sponsorship) and *Press and record* (Octagon Gazette, Recent career). Hierarchy carries urgency: the hero and the Proving Ground tile are the loud elements, routine status stays quiet. See §1a for the data behind it.
+
 - **Footer:** game wordmark, contextual status badges (injury count → Hospital, camp → Fight, Fame → Fame drawer), Sign Out.
 - **Overlays:** Training toast stack, Tier-Up / Belt-Won overlays, Fight-block popup (energy / injury), Fame drawer, Octagon Gazette, Onboarding Tutorial, **Fight-Accept Face-Off** (see §10), Fighter Report, Camp Summary, Badge-unlock celebration, Special-Move drop reveal.
+
+---
+
+### 1a. Home screen data and hooks
+
+Home is served by one call, `GET /fighters/:id/dashboard` (`services/dashboardService.js`), plus the already-loaded fighter payload. The rebuild added four blocks to that response, all additive and all from documents the request already loads or from indexed counts:
+
+- **`heroBout`** the opponent the hero shows. Resolves to the accepted fight if one is signed, otherwise the best current offer, otherwise null. Offers are regenerated per request, so `opponentId` is a display key only: clicking an undercard card navigates to the Fight Hub, it never accepts a bout from Home.
+- **`offers.list`** up to four offers with opponent, record, purse and flags, built from data the offer generator already had in memory.
+- **`pvp.ladderRank` / `ladderSize` / `twistKey` / `twistName`** the ladder standing and the season twist. The twist sentence is frontend copy keyed by `twistKey`, so the server never ships prose.
+- **`homeCamp`** the persistent camp: name, tier, condition band, head coach with rank and morale, wage debit date, and the Monday Trainer Market reset. Read with a single `HomeCamp.findOne`; the dashboard must never call `getCampState`, which lazily ticks and writes.
+
+Two hooks come from the fighter payload rather than the dashboard: the **unread defense report** (`fighter.pvpDefense`) and the **banner** (`fighter.banner`). Home reads the defense summary as a prop and never calls `/pvp/defense-results`, which acknowledges by default and would silently mark reports read on page load.
+
+**Deliberately not shown:** a weekly ladder movement chip. `PVPRecord` stores no historical rank, so it would need a new field plus a weekly snapshot job. The ladder row shows position out of field size only. The per-fight career `ranking.delta` is unaffected and still renders on the Rankings tile.
+
+Every module degrades independently to null and renders an empty state rather than disappearing, because the grid layout assumes its slots. Identity, vitals, stats and the Gazette render synchronously from the fighter payload and are never skeletoned; the modules that wait on the dashboard call render a skeleton only on a cold load, never a wrong state that then flips.
 
 ---
 

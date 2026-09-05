@@ -60,6 +60,21 @@ export const LIBRARY_ARTICLES = [
         keyTakeaway: "Build the fighter. Make the decisions. The cage takes care of the rest.",
     },
     {
+        id: "reading-your-home-screen",
+        category: "Getting Started",
+        title: "Reading Your Home Screen",
+        summary: "What every part of Home is telling you, and what to do first when you sit down.",
+        tags: ["home", "dashboard", "hub", "offers", "undercard", "banner", "title shot"],
+        body: [
+            "Home is built around one question: what is your next fight? The big panel at the top is the main event. On the left is you, on the right is the opponent you are most likely to face next, both shown on your fight banners. If you have already signed a bout, that is who you see. If you have not, it is the best offer currently on your table. Under them sits the purse and the one button that matters.",
+            "The thin strip above the main event tracks your title shot. There are three conditions to meet, and the pips show how many you have. When all three are lit, a title fight appears in your offers.",
+            "Below the main event is the undercard: the rest of the offers waiting for you, with the opponent, their record and the purse on each. On a phone you swipe through them. Tapping one takes you to the Fight Hub, where you actually accept a bout. Nothing on Home signs a fight for you.",
+            "Under that, everything else is grouped into four bands. Ringside is where you stand: your Proving Ground season, your division ranking, and your fighter card. Corner report is your body and your training: energy, health, injuries, the fight camp you are in, your stats, and your camp with its head coach. The purse is money, fame and your sponsor. Press and record is the Octagon Gazette and your recent career.",
+            "The screen is ordered by urgency, not by category. Anything red wants an answer today: an unread defense report because someone attacked you while you were away, a coach whose morale is slipping, wages due. Quiet grey tiles are just telling you where things stand. If you only have a minute, deal with the loud things and take the fight.",
+        ],
+        keyTakeaway: "The top of Home is your next fight. Everything below it is context, ordered by how urgently it wants your attention.",
+    },
+    {
         id: "creating-your-fighter",
         category: "Getting Started",
         title: "Creating Your Fighter",

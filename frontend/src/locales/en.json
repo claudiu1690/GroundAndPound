@@ -375,46 +375,94 @@
       "customize": "Customize Banner →"
     }
   },
-  "dashboard": {
-    "gazette": {
-      "openAriaLabel": "Open The Octagon Gazette",
-      "mastheadName": "The Octagon Gazette",
-      "empty": "Nothing to report yet. Fight your first match and check back.",
-      "footerCta": "Read Full Paper →",
-      "footerUpdated": "Updated {time}"
+  "home": {
+    "strip": {
+      "label": "Title shot",
+      "progress": "{done} of {total}",
+      "locked": "Win {n} more to unlock a shot"
     },
-    "rankings": {
-      "label": "Rankings",
-      "ofTotal": "of {n}",
-      "unranked": "Unranked",
-      "titleContender": "Title contender",
-      "viewCta": "View Rankings →",
-      "divisionSuffix": "Division",
-      "thisSession": "this session",
-      "titleShotConditions": "Title Shot Conditions",
-      "conditionOvr": "OVR threshold reached",
-      "conditionTopFive": "Top 5 in division",
-      "topFiveHint": "(currently #{rank})",
-      "conditionWins": "Contender wins (while top 5)",
-      "winsHint": "({won}/{need})"
+    "hero": {
+      "eyebrow": "Fight night. Main event",
+      "vs": "VS",
+      "bout": "{weightClass}, {rounds} rounds",
+      "roleYou": "You",
+      "roleRival": "Opponent",
+      "roleNemesis": "Nemesis",
+      "roleChampion": "Champion",
+      "stakesRematch": "Rematch.",
+      "stakesTitle": "Title fight.",
+      "stakesPurse": "Best purse on the table: {purse}",
+      "ctaPill": "{n} offers",
+      "noBout": "No bout signed. Pick one in the Fight Hub."
     },
-    "provingGround": {
-      "label": "Proving Ground",
-      "title": "The Proving Ground",
-      "big": "PVP",
-      "desc": "Challenge rivals. Earn badges.",
-      "cta": "Enter →",
+    "under": {
+      "title": "Undercard",
+      "sub": "{n} offers waiting",
+      "link": "Fight Hub",
+      "purse": "purse",
+      "view": "View bout",
+      "empty": "No offers right now. Train or call someone out.",
+      "calloutTitle": "Callout someone",
+      "calloutSub": "Name a fighter, set the terms."
+    },
+    "band": {
+      "ringside": "Ringside",
+      "corner": "Corner report",
+      "purseBand": "The purse",
+      "press": "Press and record"
+    },
+    "pg": {
+      "eyebrow": "Proving Ground",
+      "openBadge": "Open, all weight classes",
+      "cta": "Enter the Proving Ground",
       "statWins": "Wins",
       "statLosses": "Losses",
       "statDp": "DP",
-      "openBadge": "Open · All Weight Classes",
-      "weeksRemaining": "weeks remaining this season",
-      "seasonNotActive": "Season not active"
+      "ladder": "ladder",
+      "rankOf": "#{rank} of {total}",
+      "weeks": "{n} weeks remaining",
+      "twistLine": "Twist: {text}",
+      "twist": {
+        "blood_sport": "+25% DP on KO and submission finishes",
+        "iron_circuit": "No twist this season",
+        "the_contenders": "Bonus DP from win streaks of 3+",
+        "ground_war": "+30% DP on submissions",
+        "iron_fist": "+30% DP on knockouts",
+        "the_marathon": "+20% DP on decisions"
+      },
+      "defenseTitle": "{n} unread defense report",
+      "defenseTitlePlural": "{n} unread defense reports",
+      "defenseBody": "{held} held, {lost} lost",
+      "notPlayed": "No fights this season yet.",
+      "noSeason": "No season running."
     },
-    "hero": {
-      "defaultLabel": "Continue"
+    "rankings": {
+      "eyebrow": "Rankings",
+      "career": "Career",
+      "viewCta": "View rankings",
+      "rankOfDivision": "#{rank} {division} {weightClass}",
+      "upThisSession": "Up {n} this session.",
+      "downThisSession": "Down {n} this session.",
+      "titleShotConditions": "Title shot conditions:",
+      "unranked": "Unranked",
+      "conditionOvr": "OVR threshold reached",
+      "conditionTopFive": "Top 5 in division",
+      "conditionWins": "Contender wins while top 5",
+      "winsHint": "{won} of {need}"
+    },
+    "id": {
+      "title": "Fighter card",
+      "tapProfile": "Tap for profile",
+      "cta": "Career profile",
+      "ovrLabel": "OVR",
+      "tier": "Tier",
+      "fame": "Fame",
+      "record": "Record",
+      "class": "Class"
     },
     "vitals": {
+      "title": "Vitals",
+      "live": "Live",
       "energyLabel": "Energy",
       "energyFullIn": "Full in {eta}",
       "energyRested": "Rested",
@@ -423,38 +471,46 @@
       "healthBangedUp": "Banged up",
       "healthHealthy": "Healthy",
       "healthFullIn": "Full in {eta}",
-      "mentalResetChip": "Mental reset required",
-      "unavailable": "Vitals unavailable."
+      "mentalResetChip": "Mental reset required"
     },
-    "error": {
-      "retry": "Retry"
-    },
-    "camp": {
-      "title": "Fight Camp",
-      "titleFightBadge": "Title Fight",
-      "sessions": "Sessions: {used}/{max}",
-      "grade": "Grade {grade}",
-      "finalised": "Finalised",
-      "cta": "Go to Camp"
-    },
-    "stats": {
-      "title": "Stats & XP",
-      "ovrLabel": "OVR {ovr}"
-    },
-    "injuries": {
+    "injury": {
+      "title": "Injuries",
+      "clearedBadge": "Can still fight",
       "titleSingular": "Injury",
       "titlePlural": "Injuries",
       "cannotFightBadge": "Cannot fight",
-      "recoversIn": "recovers in {h}h",
-      "cta": "Visit Hospital"
+      "untilRecovered": "until recovered",
+      "cta": "Hospital"
     },
-    "feed": {
-      "title": "Recent Career",
-      "noEvents": "No career events yet…",
-      "cta": "View Career"
+    "fightCamp": {
+      "title": "Fight camp",
+      "titleFightBadge": "Title Fight",
+      "sessions": "Camp: {used} of {max} sessions used",
+      "gradeLabel": "camp grade",
+      "finalised": "Finalised",
+      "slotsLeft": "{n} slots left this week.",
+      "cta": "Go to camp"
     },
-    "moneyFame": {
-      "title": "Money & Fame",
+    "stats": {
+      "title": "Stats and XP",
+      "ovrLabel": "OVR {ovr}",
+      "cta": "Train"
+    },
+    "camp": {
+      "title": "My Camp",
+      "condition": "Condition {pct}%",
+      "headCoachLine": "Head coach, {archetype}. {rank}, {morale}",
+      "rank": "Rank {n}",
+      "morale": "Morale {n}",
+      "noCoach": "No head coach hired.",
+      "wages": "Wages {amount} due",
+      "marketOpen": "Trainer Market is open",
+      "marketReset": "Trainer Market resets in {n} days",
+      "none": "No camp yet. Set one up.",
+      "cta": "Visit camp"
+    },
+    "money": {
+      "title": "Money and Fame",
       "cashLabel": "Cash",
       "frozen": "Frozen",
       "fameDecaying": "Fame decaying",
@@ -463,10 +519,31 @@
       "toNextTier": "{remaining} to {tier}",
       "pursePct": "+{pct}% fight purses"
     },
-    "sponsorship": {
+    "sponsor": {
       "title": "Sponsorship",
       "rewardPerFight": "{reward} / fight",
-      "cta": "View Contracts"
+      "cta": "Sponsor terms"
+    },
+    "gazette": {
+      "openAriaLabel": "Open The Octagon Gazette",
+      "mastheadName": "The Octagon Gazette",
+      "empty": "Nothing to report yet. Fight your first match and check back.",
+      "footerCta": "Read full paper",
+      "footerUpdated": "Updated {time}"
+    },
+    "feed": {
+      "title": "Recent career",
+      "cta": "View career"
+    },
+    "error": {
+      "title": "Could not load your home screen.",
+      "retry": "Retry"
+    },
+    "empty": {
+      "injuries": "No injuries. Cleared to fight.",
+      "sponsor": "No sponsor signed.",
+      "feed": "No career events yet.",
+      "fightCamp": "No camp in progress."
     }
   },
   "career": {

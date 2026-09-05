@@ -159,9 +159,11 @@ test("summariseOffers: locked title shot dropped from count, OVR tiebreak picks 
     assert.equal(s.best.opponentOvr, 28);
 });
 
-test("summariseOffers: empty -> count 0, best null", () => {
+test("summariseOffers: empty -> count 0, best null, list []", () => {
+    // `list` was added by the Fight Night home tab (ADDITIVE — count/best are unchanged).
+    // The empty list is a documented frontend empty state, so it must be present, not absent.
     const s = summariseOffers([], "Amateur");
-    assert.deepEqual(s, { count: 0, best: null });
+    assert.deepEqual(s, { count: 0, best: null, list: [] });
 });
 
 test("summariseOffers: unknown tier -> purse null", () => {
