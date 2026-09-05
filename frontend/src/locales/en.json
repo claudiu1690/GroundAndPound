@@ -393,7 +393,8 @@
       "stakesTitle": "Title fight.",
       "stakesPurse": "Best purse on the table: {purse}",
       "ctaPill": "{n} offers",
-      "noBout": "No bout signed. Pick one in the Fight Hub."
+      "noBout": "Nothing on the card yet. Your next move is below.",
+      "eyebrowSolo": "Your corner"
     },
     "under": {
       "title": "Undercard",

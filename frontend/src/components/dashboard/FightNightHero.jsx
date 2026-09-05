@@ -20,11 +20,11 @@ export function FightNightHero({ fighter, heroAction, heroBout, offers, loading,
   const rival = heroBout ? rivalFighter(heroBout) : null;
 
   return (
-    <header className="hn-hero" data-tut={dataTut}>
+    <header className={`hn-hero${copy.hasBout ? "" : " hn-hero--solo"}`} data-tut={dataTut}>
       <div className="hn-hero-bg" />
       <div className="hn-sweep" />
       <div className="hn-hero-inner">
-        <div className="hn-eyebrow hn-hero-eyebrow hn-anim">{t("home.hero.eyebrow")}</div>
+        <div className="hn-eyebrow hn-hero-eyebrow hn-anim">{t(copy.hasBout ? "home.hero.eyebrow" : "home.hero.eyebrowSolo")}</div>
 
         <div className={`hn-bout hn-anim${copy.hasBout ? "" : " hn-bout--solo"}`}>
           <div className="hn-fighter hn-fighter--me hn-anim">

@@ -15,14 +15,14 @@
    every @container rule silently no-ops and the phone layout never engages.
    ═══════════════════════════════════════════════════════════════════════ */
 
-.home{--bg:#0F0F0F;--surface:#141414;--card:#1A1A1A;--hover:#222222;--line:#2A2A2A;--red:#C8102E;--red-hi:#E8102E;--red-dim:#8A0B20;--glow:rgba(227,24,55,.12);--gold:#D4A820;--green:#16a34a;--t1:#FFFFFF;--t2:#AAAAAA;--t3:#888888;--t4:#666666;--disp:'Barlow Condensed','Barlow',system-ui,sans-serif;position:relative;display:block;min-height:100vh;background:var(--bg);color:var(--t1);font-family:'Barlow',system-ui,sans-serif;font-size:14px;line-height:1.4;overflow:hidden;padding-bottom:12px;container-type:inline-size}
+.home{--bg:#0F0F0F;--surface:#141414;--card:#1A1A1A;--hover:#222222;--line:#2A2A2A;--red:#C8102E;--red-hi:#E8102E;--red-dim:#8A0B20;--glow:rgba(227,24,55,.12);--gold:#D4A820;--green:#16a34a;--t1:#FFFFFF;--t2:#AAAAAA;--t3:#888888;--t4:#666666;--disp:var(--font-display);position:relative;display:block;min-height:100vh;background:var(--bg);color:var(--t1);font-family:'Barlow',system-ui,sans-serif;font-size:14px;line-height:1.4;overflow:hidden;padding-bottom:12px;container-type:inline-size}
 /* Mockup used padding-bottom:32px on the root, sized for a standalone page.
    In-app, .main already reserves 56px under 768px viewport for the fixed
    .m-bottom-nav (App.css ~11870) — stacking another 56px here would leave an
    ~88px dead gap. 12px is just breathing room above whatever .main adds; do
    NOT add a second 56px here. */
 .home *,.home *::before,.home *::after{box-sizing:border-box}
-.home button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+:where(.home) button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
 .home a{cursor:pointer;text-decoration:none}
 .home button:focus-visible,.home a:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:6px}
 .hn-eyebrow{font:700 10px/1 var(--disp);letter-spacing:4px;text-transform:uppercase;color:var(--red-hi)}
@@ -276,6 +276,19 @@
 @keyframes hn-deal{from{opacity:0;transform:translateY(28px) rotate(-2deg)}to{opacity:1;transform:none}}
 
 /* tablets: two columns (container query: the section sizes to its own column, not the viewport) */
+
+/* No bout signed and nothing to face off against: the arena collapses to a compact
+   corner strip. A 460px empty octagon with one banner in it read as broken. */
+.hn-hero--solo{min-height:0;padding:18px 20px 20px;align-items:center}
+.hn-hero--solo .hn-hero-bg{opacity:.28}
+.hn-hero--solo .hn-sweep{display:none}
+.hn-hero--solo .hn-hero-inner{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"eye eye" "bout cta" "stakes cta";column-gap:22px;row-gap:8px;align-items:center;text-align:left}
+.hn-hero--solo .hn-hero-eyebrow{grid-area:eye;text-align:left}
+.hn-hero--solo .hn-bout{grid-area:bout;margin:0;max-width:none}
+.hn-hero--solo .hn-stakes{grid-area:stakes;margin:0;max-width:none;font-size:14px}
+.hn-hero--solo .hn-cta-row{grid-area:cta;margin:0;align-items:flex-end}
+.hn-hero--solo .hn-cta{padding:15px 26px;font-size:18px;letter-spacing:2px}
+
 @container (max-width:1000px){
 .hn-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 .hn-tile{grid-column:span 1}
@@ -289,6 +302,9 @@
 .hn-strip-count{display:none}
 .hn-strip .hn-pips{margin-left:auto}
 .hn-hero{min-height:0;padding:20px 16px 28px}
+.hn-hero--solo .hn-hero-inner{grid-template-columns:1fr;grid-template-areas:"eye" "bout" "stakes" "cta";row-gap:10px}
+.hn-hero--solo .hn-cta-row{align-items:stretch}
+
 .hn-hero-bg{background-position:center 42%}
 .hn-bout{grid-template-columns:1fr;max-width:none;gap:4px}
 .hn-fighter--me,.hn-fighter--rival{width:100%;margin:0}

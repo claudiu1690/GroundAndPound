@@ -60,6 +60,15 @@
         "--silent"
       ],
       "port": 4599
+    },
+    {
+      "name": "backend-home",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "start:local"
+      ],
+      "autoPort": true
     }
   ]
 }
