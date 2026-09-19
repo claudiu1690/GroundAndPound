@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useLayoutEffect, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
 import { useDashboard } from "../../hooks/useDashboard";
 import { statMeterRows } from "../fighterProfile/profileModel";
@@ -8,6 +8,11 @@ import { FightNightHero } from "./FightNightHero";
 import { UndercardRow } from "./UndercardRow";
 import { HomeGrid } from "./HomeGrid";
 import "./home.css";
+
+// Set on the first Home mount of the page session; see the entrance effect below.
+let hasPlayedEntrance = false;
+// The per-node marker below is what keeps React StrictMode's setup/cleanup/setup
+// from turning the very first play into an instant one.
 
 /**
  * Fight Night — the home screen (home-contract.md).
@@ -32,21 +37,32 @@ export const DashboardTab = memo(function DashboardTab({
   const [gazetteOpen, setGazetteOpen] = useState(false);
   const rootRef = useRef(null);
 
-  // Single entrance-animation effect for the whole root — never per tile.
-  // The reduced-motion CSS block (home.css) neutralizes every animation once
-  // matched; reading matchMedia here just lets us skip the animation-frame
-  // hop when it won't do anything.
-  useEffect(() => {
+  // Single entrance-animation effect for the whole root — never per tile, and
+  // never twice. Home is the tab players bounce off constantly; replaying the
+  // cascade on every visit turns a flourish into a toll. `hasPlayedEntrance`
+  // lives at module scope so it survives unmount/remount and only resets on a
+  // full page load. Reduced motion needs no branch here: the media block in
+  // home.css neutralizes every animation and shows the settled state.
+  useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return undefined;
-    root.classList.add("is-armed");
-    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      root.classList.add("is-in");
+    // StrictMode runs setup twice on the SAME node, so the module flag alone
+    // would make the first visit skip its own animation. Only a node that never
+    // played gets the instant treatment.
+    if (hasPlayedEntrance && root.dataset.hnEntrance !== "played") {
+      root.classList.add("is-armed", "is-in", "is-instant");
       return undefined;
     }
-    const raf = requestAnimationFrame(() => root.classList.add("is-in"));
-    return () => cancelAnimationFrame(raf);
+    hasPlayedEntrance = true;
+    root.dataset.hnEntrance = "played";
+    // Both classes in one commit, from a layout effect, so no frame ever paints
+    // the armed-but-not-in state. These are CSS animations with `both` fill, so
+    // they start from their own `from` keyframe; no reflow trick is needed.
+    // Deferring `is-in` to requestAnimationFrame used to leave the whole screen
+    // at opacity 0 for as long as the tab stayed hidden (rAF does not run in a
+    // background tab), which is exactly what a restored or cmd-clicked tab is.
+    root.classList.add("is-armed", "is-in");
+    return undefined;
   }, []);
 
   const nav = (target) => {

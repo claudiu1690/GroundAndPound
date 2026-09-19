@@ -30,7 +30,7 @@
 .hn-up{color:#4ade80}
 .hn-warn{color:var(--gold)}
 .hn-bar{display:block;height:4px;margin-top:7px;border-radius:2px;background:#2a2a2a;overflow:hidden}
-.hn-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#f2c94c);transition:width 1.2s cubic-bezier(.2,.8,.2,1) 1.9s}
+.hn-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#f2c94c);transition:width .55s cubic-bezier(.2,.8,.2,1) .3s}
 .hn-bar.is-red i{background:linear-gradient(90deg,var(--red),var(--red-hi))}
 .hn-bar.is-green i{background:linear-gradient(90deg,var(--green),#4ade80)}
 .hn-bar.is-blue i{background:linear-gradient(90deg,#2563eb,#3B82F6)}
@@ -248,23 +248,25 @@
 .hn-skel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:hn-shimmer 1.4s infinite}
 @keyframes hn-shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
 
-/* entrance */
+/* Entrance. Whole cascade is done in ~420ms: it is a flourish on arrival, not a
+   gate you wait behind. Nothing is hidden for longer than a third of a second,
+   and DashboardTab only arms it once per session so re-opening Home is instant. */
 .home.is-armed:not(.is-in) .hn-anim{opacity:0}
-.home.is-in .hn-hero-bg{animation:hn-light 1.1s ease-out both}
-.home.is-in .hn-sweep{animation:hn-sweep 1.2s .15s cubic-bezier(.4,0,.2,1) both}
-.home.is-in .hn-strip{animation:hn-fade .4s both}
-.home.is-in .hn-hero-eyebrow{animation:hn-fade .5s .3s both}
-.home.is-in .hn-fighter--me{animation:hn-in-l .7s .25s cubic-bezier(.2,.8,.2,1) both}
-.home.is-in .hn-fighter--rival{animation:hn-in-r .7s .35s cubic-bezier(.2,.8,.2,1) both}
-.home.is-in .hn-vs{animation:hn-punch .5s .8s cubic-bezier(.2,1.4,.4,1) both}
-.home.is-in .hn-stakes{animation:hn-rise .5s 1s both}
-.home.is-in .hn-cta-row{animation:hn-rise .5s 1.15s both}
-.home.is-in .hn-under-head{animation:hn-fade .4s 1.2s both}
-.home.is-in .hn-bcard{animation:hn-deal .55s cubic-bezier(.2,.8,.2,1) both}
-.home.is-in .hn-bcard:nth-child(1){animation-delay:1.3s}
-.home.is-in .hn-bcard:nth-child(2){animation-delay:1.45s}
-.home.is-in .hn-bcard:nth-child(3){animation-delay:1.6s}
-.home.is-in .hn-eb,.home.is-in .hn-tile{animation:hn-rise .5s both;animation-delay:calc(1.7s + var(--i,0) * .07s)}
+.home.is-in .hn-hero-bg{animation:hn-light .34s ease-out both}
+.home.is-in .hn-sweep{animation:hn-sweep .42s .04s cubic-bezier(.4,0,.2,1) both}
+.home.is-in .hn-strip{animation:hn-fade .18s both}
+.home.is-in .hn-hero-eyebrow{animation:hn-fade .18s .04s both}
+.home.is-in .hn-fighter--me{animation:hn-in-l .26s .05s cubic-bezier(.2,.8,.2,1) both}
+.home.is-in .hn-fighter--rival{animation:hn-in-r .26s .08s cubic-bezier(.2,.8,.2,1) both}
+.home.is-in .hn-vs{animation:hn-punch .22s .13s cubic-bezier(.2,1.4,.4,1) both}
+.home.is-in .hn-stakes{animation:hn-rise .2s .16s both}
+.home.is-in .hn-cta-row{animation:hn-rise .2s .18s both}
+.home.is-in .hn-under-head{animation:hn-fade .18s .18s both}
+.home.is-in .hn-bcard{animation:hn-deal .22s cubic-bezier(.2,.8,.2,1) both}
+.home.is-in .hn-bcard:nth-child(1){animation-delay:.2s}
+.home.is-in .hn-bcard:nth-child(2){animation-delay:.22s}
+.home.is-in .hn-bcard:nth-child(3){animation-delay:.24s}
+.home.is-in .hn-eb,.home.is-in .hn-tile{animation:hn-rise .2s both;animation-delay:calc(.2s + var(--i,0) * .012s)}
 @keyframes hn-light{from{opacity:.12;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}
 @keyframes hn-sweep{0%{transform:translateX(-110%);opacity:1}80%{opacity:1}100%{transform:translateX(110%);opacity:0}}
 @keyframes hn-fade{from{opacity:0}to{opacity:1}}
@@ -352,22 +354,9 @@
 /* Tap targets — every link/card/alert/strip stays reachable with a thumb. */
 .hn-link,.hn-bcard,.hn-alert,.hn-under-head button,.hn-gz-foot button{min-height:44px}
 
-/* Entrance cascade must not leave the screen blank for ~2s on a cold load
-   (mockup's tail is 1.7s + up to 15*.07s = 2.75s). Compress every delayed
-   entrance so the LAST element is fully in by 900ms. */
-.home.is-in .hn-strip{animation-duration:.3s;animation-delay:0s}
-.home.is-in .hn-hero-eyebrow{animation-duration:.3s;animation-delay:.05s}
-.home.is-in .hn-fighter--me{animation-duration:.35s;animation-delay:.1s}
-.home.is-in .hn-fighter--rival{animation-duration:.35s;animation-delay:.15s}
-.home.is-in .hn-vs{animation-duration:.35s;animation-delay:.25s}
-.home.is-in .hn-stakes{animation-duration:.3s;animation-delay:.3s}
-.home.is-in .hn-cta-row{animation-duration:.3s;animation-delay:.35s}
-.home.is-in .hn-under-head{animation-duration:.3s;animation-delay:.4s}
-.home.is-in .hn-bcard{animation-duration:.3s}
-.home.is-in .hn-bcard:nth-child(1){animation-delay:.45s}
-.home.is-in .hn-bcard:nth-child(2){animation-delay:.5s}
-.home.is-in .hn-bcard:nth-child(3){animation-delay:.55s}
-.home.is-in .hn-eb,.home.is-in .hn-tile{animation-duration:.3s;animation-delay:calc(.6s + var(--i,0) * .02s)}
+/* Phones get the tile stagger flattened entirely: one column means --i climbs to
+   ~12 and even a 12ms step reads as a slow wipe down the screen. */
+.home.is-in .hn-eb,.home.is-in .hn-tile{animation-delay:.2s}
 }
 
 /* reduced motion */
@@ -388,3 +377,23 @@
 @media (prefers-reduced-motion:reduce){
   .home .pvp-countdown-mini-timer--final{animation:none}
 }
+
+/* Second and later visits to Home in the same page session. DashboardTab adds
+   `is-instant` alongside `is-in`, so the bars still get their `--w` width and
+   nothing is left hidden, but the entrance cascade does not replay. Must stay
+   LAST in the file: it beats the equal-specificity `.home.is-in` rules and the
+   `animation-name` override inside the phone media block on source order. */
+.home.is-instant .hn-hero-bg,
+.home.is-instant .hn-sweep,
+.home.is-instant .hn-strip,
+.home.is-instant .hn-hero-eyebrow,
+.home.is-instant .hn-fighter--me,
+.home.is-instant .hn-fighter--rival,
+.home.is-instant .hn-vs,
+.home.is-instant .hn-stakes,
+.home.is-instant .hn-cta-row,
+.home.is-instant .hn-under-head,
+.home.is-instant .hn-bcard,
+.home.is-instant .hn-eb,
+.home.is-instant .hn-tile{animation:none}
+.home.is-instant .hn-bar i{transition:none}
