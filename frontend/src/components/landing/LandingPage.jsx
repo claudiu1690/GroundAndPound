@@ -15,7 +15,7 @@ const NEXT_SEASON_TEASE_WINDOW_DAYS = 14;
 const opensWithinTeaseWindow = (season) =>
   !!season?.startDate &&
   new Date(season.startDate) - Date.now() <= NEXT_SEASON_TEASE_WINDOW_DAYS * 86400000;
-import { formatDate, formatDateShort, countdownCells, daysUntil, weeksLeftLabel } from "../../lib/countdown";
+import { formatDate, formatDateShort, countdownCells, weeksLeftLabel } from "../../lib/countdown";
 
 // Open a legal modal from a footer link without navigating.
 const openLegal = (e, eventName) => {
@@ -388,7 +388,11 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
                 {rule ? <>. This season: <b style={{ color: "#ddd" }}>{rule}</b>.</> : "."}
               </p>
 
-              {teaser ? (
+              {/* Countdown only while teasing. A live season shows no clock up
+                  here at all: the weeks pill in the Proving Ground band already
+                  says how long is left, and a lone "Days Left" cell in countdown
+                  styling read as a launch timer for a season that had launched. */}
+              {teaser && (
                 <div className="cd">
                   {countdownCells(teaser.startDate).map((c) => (
                     <div className="cd-cell" key={c.l}>
@@ -396,13 +400,6 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
                       <div className="cd-l">{c.l}</div>
                     </div>
                   ))}
-                </div>
-              ) : (
-                <div className="cd">
-                  <div className="cd-cell">
-                    <div className="cd-n">{daysUntil(seasonData.endDate)}</div>
-                    <div className="cd-l">Days Left</div>
-                  </div>
                 </div>
               )}
 
