@@ -138,6 +138,17 @@ function incrementTrainingSessions(fighter, gymSlug) {
 
 /**
  * After a fight win, increment relevantWins for all gyms where the win type matches.
+ *
+ * @deprecated gym-path. ⚠️ DELIBERATELY LEFT RUNNING AFTER THE CUTOVER — do not "fix" this.
+ *
+ * Once `GYMS_RETIRED=true` this keeps writing `gymRanks[slug].relevantWins` into a counter
+ * nobody can spend: `POST /fighters/:id/train` is 410'd so `trainingSessions` freezes, and a
+ * rank-up needs BOTH counters. The write is additive, harmless and unspendable.
+ *
+ * Guarding it would mean editing the FIGHT RESOLUTION path — the highest blast-radius code in
+ * the repo — purely to prevent a write that has no effect. That trade is not worth taking on
+ * the same change that retires a system. Accepted and documented; this whole function dies with
+ * the file (see the header on `services/trainingService.js`).
  */
 async function onFightWin(fighter, outcome) {
     if (!fighter.gymRanks) return [];

@@ -217,7 +217,18 @@ const SPECIAL_MOVE_SLOT_CONFIG = {
     "Title Fight": 3,
 };
 
-/** Flat 4% chance of A drop per sparring-family session (rarity, not chance, scales by gym). */
+/**
+ * ⚠️ LEGACY — THE GYM PATH ONLY. Flat 4% chance of a drop per sparring-family gym session
+ * (rarity, not chance, scales by gym). Read by `specialMovesService.rollMoveDrop`, which is
+ * itself legacy and lives only as long as `services/trainingService.js` does.
+ *
+ * THE HOME CAMP DOES NOT USE THIS. Camp drops are per-drill (D5): every drill declares its own
+ * `dropPct` in `consts/homeCampConfig.js`, and the camp's control arm `open_mat` declares its
+ * own 4% in `FALLBACK_DRILL.dropPct` — deliberately duplicated there rather than imported from
+ * here, so this constant can die with the gym path without touching the camp.
+ *
+ * Delete this ONLY in the same change that deletes `trainingService.js` and `rollMoveDrop`.
+ */
 const DROP_BASE_RATE = 0.04;
 
 /**
@@ -243,9 +254,20 @@ const DUPLICATE_CASH = { COMMON: 100, UNCOMMON: 250, RARE: 600, LEGENDARY: 1500 
 function validateCatalog() {
     let hasCommonMin = false;
     let hasUncommonValue = false;
+    const seenIds = new Set();
 
     for (const m of SPECIAL_MOVES) {
         if (!m.id || !m.name) throw new Error(`[specialMovesCatalog] move missing id/name: ${JSON.stringify(m)}`);
+
+        // A duplicate id is silently survivable and therefore genuinely dangerous: the
+        // SPECIAL_MOVES_BY_ID map below just keeps the LAST one, so the array and the lookup
+        // disagree forever — drops roll the first def's rarity floor and grant the second def's
+        // effect. Fail the boot instead.
+        //
+        // NOTE: there is deliberately NO `SPECIAL_MOVES.length === 12` assertion. Pinning the
+        // count would make adding a 13th move a boot failure, which is the opposite of useful.
+        if (seenIds.has(m.id)) throw new Error(`[specialMovesCatalog] duplicate move id "${m.id}"`);
+        seenIds.add(m.id);
         const minIdx = rarityRank[m.minRarity];
         if (minIdx === undefined) {
             throw new Error(`[specialMovesCatalog] ${m.id}: unknown minRarity ${m.minRarity}`);
@@ -287,7 +309,7 @@ function validateCatalog() {
     }
 
     // Rarity coverage: at least one move obtainable at COMMON and at least one whose value
-    // table spans UNCOMMON. (The 13-move roster has no minRarity===UNCOMMON entry, so this
+    // table spans UNCOMMON. (The 12-move roster has no minRarity===UNCOMMON entry, so this
     // is checked as value-table coverage rather than minRarity equality — see backend notes.)
     if (!hasCommonMin) throw new Error("[specialMovesCatalog] no move with minRarity COMMON");
     if (!hasUncommonValue) throw new Error("[specialMovesCatalog] no move offering an UNCOMMON-rarity value");

@@ -19,6 +19,14 @@ const fightCampSchema = new Schema({
     maxSlots:      { type: Number, required: true },
     isShortNotice: { type: Boolean, default: false },
 
+    // The camp-affecting rank-4 perks the fighter held WHEN THIS CAMP WAS CREATED.
+    // Frozen deliberately, for the same reason `maxSlots` is: Corner Confidence changes the
+    // slot count, which is decided once at creation and cannot be re-derived later without
+    // the camp silently gaining or losing a slot mid-build. Freezing all three keeps one
+    // rule ("your perks at the moment you accepted the fight") instead of three, and means
+    // the sessions already logged can never be re-scored by a perk claimed afterwards.
+    perks: { type: [String], default: () => [] },
+
     sessions:      { type: [campSessionSchema], default: [] },
 
     // Set on finalise — null until then

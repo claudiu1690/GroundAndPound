@@ -1,0 +1,2 @@
+# Hook scripts run under sh and must keep LF endings on Windows checkouts
+.githooks/* text eol=lf

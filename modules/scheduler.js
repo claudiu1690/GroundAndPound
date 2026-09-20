@@ -11,6 +11,7 @@ const accountService = require("../services/accountService");
 const pvpDecayService = require("../services/pvpDecayService");
 const pvpSeasonService = require("../services/pvpSeasonService");
 const pvpBotService = require("../services/pvpBotService");
+const homeCampService = require("../services/homeCampService");
 
 /**
  * Build the connection config BullMQ uses for every Queue and Worker.
@@ -176,6 +177,51 @@ const pvpBotActivityWorker = new Worker(
 pvpBotActivityWorker.on("error", (err) => console.error("[PVP bots] Worker error:", err));
 pvpBotActivityWorker.on("failed", (job, err) => console.error("[PVP bots] Job failed:", err));
 
+// ── Home camp condition decay — daily neglect tick for idle camps ────────────
+// Idempotency/retry: the job takes no arguments and carries NO `attempts`. Due-ness lives in
+// HomeCamp.condition.lastNeglectDayKey, so running the sweep five times in one day applies the
+// decay ONCE and a failed sweep needs no retry — tomorrow's tick (or the player's next camp
+// visit, which runs the identical helper) picks it up. All logic is in homeCampService;
+// this block only schedules and reports.
+const homeCampConditionQueue = new Queue("home-camp-condition", { connection: QUEUE_CONNECTION });
+const homeCampConditionWorker = new Worker(
+    "home-camp-condition",
+    async () => {
+        const { touched, decayed, failed } = await homeCampService.runConditionDecayBatch();
+        if (touched > 0) console.log(`[Home camp condition] Ticked ${touched} camp(s); ${decayed} lost condition.`);
+        if (failed > 0) console.error(`[Home camp condition] ${failed} camp(s) failed to tick — see prior errors.`);
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+// BOTH handlers — a silent failure in async gameplay is not acceptable.
+homeCampConditionWorker.on("error", (err) => console.error("[Home camp condition] Worker error:", err));
+homeCampConditionWorker.on("failed", (job, err) => console.error("[Home camp condition] Job failed:", err));
+
+// ── Home camp weekly tick — coach wages, morale decay and quits ──────────────
+// Idempotency: each camp is CLAIMED by a compare-and-set on lastWeeklyTickIndex that persists
+// BEFORE any money moves (homeCampService.runWeeklyCampBatch), so running this five times in
+// one week debits exactly once and a crash mid-sweep skips a week rather than double-charging.
+//
+// Retry: `attempts: 3` — unlike the condition sweep, THIS JOB MOVES MONEY. A partial sweep
+// must resume, and it safely can precisely because of the claim: a retry re-processes only the
+// camps that were never claimed. All logic lives in homeCampService; this block only schedules
+// and reports.
+const homeCampWeeklyQueue = new Queue("home-camp-weekly", { connection: QUEUE_CONNECTION });
+const homeCampWeeklyWorker = new Worker(
+    "home-camp-weekly",
+    async () => {
+        const { claimed, paid, unpaid, quit, failed } = await homeCampService.runWeeklyCampBatch();
+        if (claimed > 0) {
+            console.log(`[Home camp weekly] Claimed ${claimed} camp(s): ${paid} week(s) paid, ${unpaid} unpaid, ${quit} coach(es) quit.`);
+        }
+        if (failed > 0) console.error(`[Home camp weekly] ${failed} camp(s) failed to tick — see prior errors.`);
+    },
+    { connection: QUEUE_CONNECTION, concurrency: 1 }
+);
+// BOTH handlers — a silent failure in a job that charges players is not acceptable.
+homeCampWeeklyWorker.on("error", (err) => console.error("[Home camp weekly] Worker error:", err));
+homeCampWeeklyWorker.on("failed", (job, err) => console.error("[Home camp weekly] Job failed:", err));
+
 async function startEnergyIncrementScheduler() {
     await ensureRedisConnected();
 
@@ -265,7 +311,28 @@ async function startEnergyIncrementScheduler() {
         removeOnComplete: true,
     });
 
-    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h, guest purge: 24h, pvp decay: 0 0 UTC, pvp season transition: every 10m, pvp bot activity: hourly UTC).");
+    // Home camp condition — 03:15 UTC daily, after the midnight pvp decay so the two
+    // nightly sweeps don't contend. The tick only acts on camps whose last tick predates
+    // today (an indexed query otherwise).
+    await homeCampConditionQueue.add("decay", {}, {
+        repeat: { pattern: "15 3 * * *", tz: "UTC" },
+        jobId: "home-camp-condition-decay",
+        removeOnComplete: true,
+    });
+
+    // Home camp weekly — Mondays 03:30 UTC, 15 minutes after the daily condition sweep so the
+    // two camp jobs never contend. Monday 00:00 UTC is also the week boundary the market and
+    // wage schedule are aligned to (homeCampConfig.homeCampWeekIndex), so the whole camp
+    // economy turns over on one heartbeat.
+    await homeCampWeeklyQueue.add("tick", {}, {
+        repeat: { pattern: "30 3 * * 1", tz: "UTC" },
+        jobId: "home-camp-weekly-tick",
+        attempts: 3,
+        backoff: { type: "exponential", delay: 60_000 },
+        removeOnComplete: true,
+    });
+
+    console.log("[Energy] BullMQ scheduler started (tick: 60s, sync: 300s, notoriety decay: 24h, injury heal: 1h, hard delete: 24h, guest purge: 24h, pvp decay: 0 0 UTC, pvp season transition: every 10m, pvp bot activity: hourly UTC, home camp condition: 03:15 UTC, home camp weekly: Mon 03:30 UTC).");
 }
 
 module.exports = {
@@ -279,6 +346,8 @@ module.exports = {
     pvpDecayQueue,
     pvpSeasonTransitionQueue,
     pvpBotActivityQueue,
+    homeCampConditionQueue,
+    homeCampWeeklyQueue,
     energyWorker,
     energySyncWorker,
     notorietyDecayWorker,
@@ -288,5 +357,7 @@ module.exports = {
     pvpDecayWorker,
     pvpSeasonTransitionWorker,
     pvpBotActivityWorker,
+    homeCampConditionWorker,
+    homeCampWeeklyWorker,
     redis,
 };

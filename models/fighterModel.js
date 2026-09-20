@@ -118,13 +118,70 @@ const fighterSchema = new mongoose.Schema({
     // Comeback mode after loss
     comebackMode: { type: Boolean, default: false },
     consecutiveLosses: { type: Number, default: 0 },
-    // Gym rank progression: persistent per gym, keyed by gym slug
+    // Gym rank progression: persistent per gym, keyed by gym slug.
+    //
+    // ⚠️ NEVER DELETE, CLEAR OR RESHAPE THIS FIELD — it is a READ-ONLY LEGACY INPUT TO
+    // BADGE EVALUATION AND TO THE HOME CAMP MIGRATION. consts/badgeCatalog.js#gymRankFor()
+    // reads gymRanks for 10 badge progress evaluators, and homeCampService.deriveInitialCampState
+    // reads it (never writes it) to convert a player's gym history into their camp's starter
+    // coach. Deleting it silently zeroes earned badge progress and makes every future camp
+    // conversion produce a blank NEW camp. The Home Camp feature is rollback-safe precisely
+    // BECAUSE it never touches this data. Same rule applies to `gymPerks` below.
     gymRanks: { type: mongoose.Schema.Types.Mixed, default: {} },
     // Active gym membership
     activeGymId: { type: mongoose.Schema.Types.ObjectId, ref: "Gym", default: null },
     activeGymPaidUntil: { type: Date, default: null },
-    // Gym perks earned at Rank 4 (perkId strings, e.g. "corner_confidence")
+    // Gym perks earned at Rank 4 (perkId strings, e.g. "corner_confidence").
+    //
+    // ⚠️ NEVER DELETE OR CLEAR THIS FIELD — it is a READ-ONLY LEGACY INPUT TO BADGE
+    // EVALUATION AND POWERS TWO LIVE PERKS: fightService reads "strength_reserve" and
+    // trainingService reads "iron_conditioning" on every relevant action. Deleting it
+    // silently kills both perks for every player who earned them and zeroes badge
+    // progress that depends on Rank-4 gym unlocks. Same rule as `gymRanks` above.
     gymPerks: [{ type: String }],
+    /**
+     * Coach archetypes taken to Rank 4 in the Home Camp ("STRIKING" | "WRESTLING" | "BJJ" |
+     * "CONDITIONING").
+     *
+     * DENORMALISED READ MODEL FOR BADGE EVALUATION. `consts/badgeCatalog.js` conditions are
+     * SYNCHRONOUS pure functions of the fighter document — they cannot read the HomeCamp
+     * collection — so the four re-pointed gym badges (boxer/wrestling/bjj/muaythai _rank4) read
+     * this field via `campRank4For`. It is a fighter field rather than an evaluation-ctx param
+     * on purpose: `buildBadgeProfile` calls `def.progress(fighter)` with NO ctx, so a ctx-only
+     * source would award the badge at promote time and then render 0/4 progress forever, and
+     * could never self-heal through the lazy `evaluateBadges(f, {}, {silent:true})` path.
+     *
+     * ⚠️ ADDITIVE-ONLY, exactly like `gymPerks`. Written ONLY by services/homeCampCoachService.js
+     * (attemptPromotion + claimCoachPerk), only ever PUSHED when absent, NEVER removed,
+     * reordered or overwritten. Firing a Rank-4 coach does not take the badge back — it was
+     * earned.
+     */
+    campRank4Archetypes: { type: [String], default: () => [] },
+    /**
+     * Home Camp career counters, denormalised for badge evaluation.
+     *
+     * SAME REASON AS `campRank4Archetypes` ABOVE: badge conditions are synchronous pure
+     * functions of the fighter document and cannot query the HomeCamp collection. A coach badge
+     * therefore needs its trigger recorded here at the moment it happens.
+     *
+     * ⚠️ MONOTONIC. Every field here only ever goes UP — these are career totals and
+     * high-water marks, not current state. Firing a coach must not take a badge back, so
+     * `peakCoachCount` is a max() and never the live roster length. Reading the current roster
+     * would let a player earn "Full Staff" and lose it the moment they restructured, which is
+     * the exact trap the `campRank4Archetypes` note warns about.
+     *
+     * Legacy fighters read 0 for every field via the badge catalog's `num()` guard, so no
+     * backfill is required — the counters simply start counting from the next qualifying action.
+     */
+    campStats: {
+        coachesHired: { type: Number, default: 0, min: 0 },
+        legendaryCoachesHired: { type: Number, default: 0, min: 0 },
+        // High-water mark of simultaneous coaches, NOT the current count. See the note above.
+        peakCoachCount: { type: Number, default: 0, min: 0 },
+        // Special moves granted by the coach TEACH CHANNEL specifically — not session drops.
+        // `specialMovesOwned` records no source, so the two routes are indistinguishable there.
+        movesTaught: { type: Number, default: 0, min: 0 },
+    },
     // GDD 8.6: Badges earned (e.g. "Resilience" for winning a comeback fight)
     badges: [{ type: String }],
     // Career Page badge system — structured earned-badge ledger (catalog ids).

@@ -41,6 +41,31 @@ function resolveRedisUrl() {
     return process.env.REDIS_URL_LOCAL || 'redis://127.0.0.1:6379';
 }
 
+/**
+ * Feature flags — PHASE 2 of "Your Camp".
+ *
+ * BOTH DEFAULT TO TODAY'S BEHAVIOUR. Unset ⇒ the gym paths are byte-identical to what
+ * shipped, and the camp teach channel is ON. Each flag is "reversible without a deploy":
+ * flip the env var, restart. That is why the gym cutover is a FLAG FLIP and not a release —
+ * a rollback is a restart, and nothing changed at the moment of the flip.
+ *
+ *   GYMS_RETIRED        — default FALSE. true ⇒ the seven gym endpoints return 410
+ *                         `gyms_retired` via middleware/gymsRetiredMiddleware.js and the
+ *                         frontend drops the Gym tab. While false the middleware is a no-op.
+ *   CAMP_TEACH_CHANNEL  — default TRUE. Set to the literal string "false" for a no-deploy
+ *                         KILL SWITCH on coach-taught moves. A promotion that teaches nothing
+ *                         is still a perfectly valid promotion — this is a brake on the move
+ *                         economy, NOT a rollout gate, and it never removes an already-taught
+ *                         move (those were earned and paid for).
+ *
+ * Parsed as strings on purpose: an unset var, "", "0" and "no" must all resolve to the
+ * documented default rather than to JS truthiness.
+ */
+const features = {
+    gymsRetired: String(process.env.GYMS_RETIRED || '').toLowerCase() === 'true',
+    campTeachChannel: String(process.env.CAMP_TEACH_CHANNEL || '').toLowerCase() !== 'false',
+};
+
 const mongoUri = resolveMongoUri();
 const redisUrl = resolveRedisUrl();
 
@@ -54,10 +79,15 @@ const usingRemoteRedis = !redisUrl.includes('127.0.0.1') && !redisUrl.includes('
 console.log(`[config] Mode: ${LOCAL_MODE ? 'LOCAL_MODE (forced local)' : 'normal'}`);
 console.log(`[config] Mongo: ${usingRemoteMongo ? 'REMOTE' : 'LOCAL'} → ${maskUrl(mongoUri)}`);
 console.log(`[config] Redis: ${usingRemoteRedis ? 'REMOTE' : 'LOCAL'} → ${maskUrl(redisUrl)}`);
+// Both flags printed at boot, in the same shape as the Mongo/Redis lines: after a restart the
+// FIRST question is always "which side of the cutover is this process on?" and the answer must
+// be in the log, not inferred from behaviour.
+console.log(`[config] Features: GYMS_RETIRED=${features.gymsRetired} · CAMP_TEACH_CHANNEL=${features.campTeachChannel}`);
 
 module.exports = {
     port: process.env.PORT || 4001,
     localMode: LOCAL_MODE,
+    features,
     database: {
         url: mongoUri,
         options: {}

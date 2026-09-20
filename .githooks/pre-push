@@ -1,0 +1,10 @@
+#!/bin/sh
+# Local stand-in for CI: runs before every push. Skip once with SKIP_CHECKS=1 git push
+# or git push --no-verify. Enabled by "npm install" (the prepare script sets core.hooksPath).
+[ "$SKIP_CHECKS" = "1" ] && exit 0
+cd "$(git rev-parse --show-toplevel)" || exit 1
+echo "[pre-push] unit tests"
+npm test --silent || { echo "[pre-push] tests failed, push blocked (SKIP_CHECKS=1 to override)"; exit 1; }
+echo "[pre-push] frontend build"
+npm --prefix frontend run build --silent >/dev/null || { echo "[pre-push] frontend build failed, push blocked"; exit 1; }
+echo "[pre-push] ok"

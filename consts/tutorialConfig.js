@@ -12,8 +12,13 @@
 /** Ordered list of step identifiers — progression must follow this sequence. */
 const STEP_ORDER = [
     "profile_intro",    // Step 1  — Fighter Profile Introduction
-    "gym_intro",        // Step 2  — Gym Introduction
-    "training_session", // Step 3  — First Training Session
+    // ⚠️ THESE TWO IDS ARE HISTORICAL AND MUST NOT BE RENAMED. They are persisted on every
+    // fighter as `tutorial.current_step` and validated against this array by
+    // validateStepAdvance, so renaming one strands every player currently sitting on it.
+    // Both now walk the player through MY CAMP, not a gym — see frontend
+    // constants/tutorialSteps.js for what they actually point at.
+    "gym_intro",        // Step 2  — Camp Introduction (id kept from the gym era)
+    "training_session", // Step 3  — First Training Session, run in the camp
     "fight_offer",      // Step 4  — Fight Offer
     "fight_camp",       // Step 5  — Fight Camp
     "fight_result",     // Step 6  — Fight Result & Fame

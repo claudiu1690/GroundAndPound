@@ -361,6 +361,17 @@ function dropRarityWeightsForGym(gym) {
     return { ...weights };
 }
 
+/**
+ * @deprecated THE GYM PATH ONLY — flat `DROP_BASE_RATE` (4%), rarity by gym tier. The Home Camp
+ * uses `rollCampMoveDrop` below (per-drill odds, D5).
+ *
+ * ⚠️ NOT DELETED, AND NOT DELETABLE YET. It is still LIVE while `GYMS_RETIRED` is false, and the
+ * cutover is a flag flip precisely so it can be flipped BACK without a deploy. Removing this
+ * would take the gym training path down with no way to restore it.
+ *
+ * Delete it only in the same change that deletes `services/trainingService.js` and
+ * `DROP_BASE_RATE` — after the cutover has been observed for a full week.
+ */
 function rollMoveDrop(fighter, gym) {
     if (Math.random() >= DROP_BASE_RATE) return null;
 
@@ -383,6 +394,64 @@ function rollMoveDrop(fighter, gym) {
 
     const picked = eligible[Math.floor(Math.random() * eligible.length)];
     return grantOrUpgrade(fighter, picked.id, rolledRarity);
+}
+
+/**
+ * Home Camp drop roll (D5: per-drill odds replace the flat 4%). ADDITIVE — rollMoveDrop(fighter,
+ * gym) above is untouched and still owns the gym path until Phase 2 retires it. Both funnel
+ * ownership through grantOrUpgrade, which remains the SOLE writer of specialMovesOwned.
+ *
+ * Never throws (a mid-training crash must not lose the player's session). Mutates
+ * specialMovesOwned/iron via grantOrUpgrade; the caller saves.
+ *
+ * @param {object} fighter
+ * @param {Object}   opts
+ * @param {number}   opts.dropRate         0..1 chance this session drops at all (drill.dropPct/100)
+ * @param {string}   opts.rarityWeightsKey key into DROP_RARITY_WEIGHTS (the camp tier's dropKey)
+ * @param {string[]} [opts.poolMoveIds]    the coach's domain teach pool — the bias target
+ * @param {number}   [opts.poolBias=0]     0..1 chance to draw from poolMoveIds instead of the full
+ *                                         eligible set. 0 = unbiased (identical content to a gym
+ *                                         drop). PHASE 0 passes 0; the knob exists so tuning the
+ *                                         bias later needs no call-site change.
+ * @returns {object|null} the grantOrUpgrade result, or null
+ */
+function rollCampMoveDrop(fighter, { dropRate, rarityWeightsKey, poolMoveIds = [], poolBias = 0 } = {}) {
+    try {
+        const rate = Number(dropRate);
+        if (!(rate > 0)) return null;
+        if (Math.random() >= rate) return null;
+
+        const weights = DROP_RARITY_WEIGHTS[rarityWeightsKey];
+        if (!weights) {
+            console.warn(`[specialMoves] no drop rarity weights for key "${rarityWeightsKey}"; skipping camp drop`);
+            return null;
+        }
+
+        const rolledRarity = weightedRarityPick(weights);
+        if (!rolledRarity) return null;
+
+        const rolledRank = rarityRank[rolledRarity];
+        const eligible = SPECIAL_MOVES.filter((c) => rarityRank[c.minRarity] <= rolledRank);
+        if (eligible.length === 0) {
+            console.warn(`[specialMoves] no eligible moves for rolled rarity ${rolledRarity}; skipping camp drop`);
+            return null;
+        }
+
+        // Optional pool bias — only when the pool actually has eligible members.
+        let candidates = eligible;
+        const bias = Number(poolBias) || 0;
+        if (bias > 0 && Array.isArray(poolMoveIds) && poolMoveIds.length > 0 && Math.random() < bias) {
+            const poolSet = new Set(poolMoveIds);
+            const biased = eligible.filter((c) => poolSet.has(c.id));
+            if (biased.length > 0) candidates = biased;
+        }
+
+        const picked = candidates[Math.floor(Math.random() * candidates.length)];
+        return grantOrUpgrade(fighter, picked.id, rolledRarity);
+    } catch (e) {
+        console.error("[specialMoves] rollCampMoveDrop failed:", e.message);
+        return null;
+    }
 }
 
 // ── Fight integration ────────────────────────────────────────────────────────
@@ -537,6 +606,7 @@ module.exports = {
     unequipMove,
     grantOrUpgrade,
     rollMoveDrop,
+    rollCampMoveDrop,
     dropRarityWeightsForGym,
     buildMoveBonuses,
     buildMoveBonusesSnapshot,

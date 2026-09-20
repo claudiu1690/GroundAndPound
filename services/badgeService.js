@@ -12,6 +12,7 @@
 
 const { BADGES, BADGE_CATEGORIES, getBadge } = require("../consts/badgeCatalog");
 const { resolvePvpBadge, PVP_BADGE_DEFS } = require("../consts/pvpBadges");
+const { features } = require("../config");
 
 let _activityLogService = null;
 function activityLog() {
@@ -35,7 +36,12 @@ function earnedIdSet(fighter) {
  *
  * @param {import("mongoose").Document|Object} fighter
  * @param {Object} [ctx] one-shot fight/event facts
- * @returns {{ newlyEarned: Array<{ badgeId: string, context: (string|null) }> }}
+ * `name` is the catalog display name. It ships with the id so a toast never has to
+ * re-derive one from the slug — `boxer_rank4` prettifies to "Boxer Rank4" while the
+ * badge is really called "Champion Boxer", which is how the same award ended up
+ * announced under two different names inside one action (camp claim-perk).
+ *
+ * @returns {{ newlyEarned: Array<{ badgeId: string, name: string, context: (string|null) }> }}
  */
 function evaluateBadges(fighter, ctx = {}, opts = {}) {
     const result = { newlyEarned: [] };
@@ -69,7 +75,7 @@ function evaluateBadges(fighter, ctx = {}, opts = {}) {
         const entry = { badgeId: def.id, earnedAt: new Date(), context, seen: silent };
         fighter.badgesEarned.push(entry);
         earned.add(def.id);
-        result.newlyEarned.push({ badgeId: def.id, context });
+        result.newlyEarned.push({ badgeId: def.id, name: def.name, context });
 
         // Feed write must never block awarding (and is skipped for silent self-heals).
         if (!silent) try {
@@ -114,9 +120,43 @@ function buildBadgeProfile(fighter) {
     let lockedCount = 0;
 
     const categories = BADGE_CATEGORIES.map((cat) => {
-        const badges = BADGES.filter((b) => b.category === cat.key).map((def) => {
+        const badges = BADGES.filter((b) => b.category === cat.key).filter((def) => {
+            /**
+             * ONCE THE GYMS ARE RETIRED, HIDE A RETIRED BADGE NOBODY EARNED.
+             *
+             * A locked legacy badge is unobtainable AND already excluded from `lockedCount`, so
+             * leaving it in the payload showed the player a tile reading "Reach Rank 4 at Renzo
+             * Combat Systems" for a gym that no longer exists — and made the header count
+             * disagree with the number of locked tiles on screen. Both read as bugs.
+             *
+             * EARNED legacy badges are always kept: they were earned and they are history.
+             * While the gyms are still open nothing is hidden, because all ten are still live.
+             *
+             * ⚠️ THIS FILTERS THE VIEW, NOT THE CATALOG. All ten defs stay in badgeCatalog
+             * forever — see the warning on `gymBadgeDef`. Deleting a def would make the badge
+             * vanish from every veteran's Career Page, which is why this is a render-time
+             * decision keyed on `earned` rather than a catalog edit.
+             */
+            if (!features.gymsRetired) return true;
+            if (!def.legacy) return true;
+            return earnedMap.has(def.id);
+        }).map((def) => {
             const earnedEntry = earnedMap.get(def.id);
             const isEarned = !!earnedEntry;
+            /**
+             * LEGACY (Phase 2): the six gym badges with no Home Camp route.
+             *
+             * COUNT EVERY UNEARNED BADGE THAT SURVIVED THE FILTER ABOVE — the filter is now the
+             * single place that decides obtainability, so the count simply follows it and the
+             * header can never disagree with the tiles on screen.
+             *
+             * This used to read `else if (!isLegacy)`, which excluded legacy badges from
+             * lockedCount unconditionally. That was right after the cutover but wrong before it:
+             * while the gyms are still open those six ARE obtainable, so the completion total
+             * under-reported by six. Now: gyms open -> shown and counted; gyms retired -> the
+             * unearned ones are filtered out, so there is nothing left to miscount.
+             */
+            const isLegacy = !!def.legacy;
             if (isEarned) earnedCount += 1;
             else lockedCount += 1;
 
@@ -135,6 +175,9 @@ function buildBadgeProfile(fighter) {
                 description: def.description,
                 category: def.category,
                 subgroup: def.subgroup || null,
+                // Retired route — the UI renders a "Retired" chip and hides it from
+                // "what's left to chase" lists.
+                legacy: isLegacy,
                 earned: isEarned,
                 // "new" = earned but not yet acknowledged by the player.
                 new: isEarned && earnedEntry.seen === false,

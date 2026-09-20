@@ -8,13 +8,17 @@ import { api } from "../api";
  */
 export function usePvpSeason(weightClass) {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  // Starts TRUE when a fetch is going to happen on mount. With `false`, the
+  // first render had no data and no loading flag, so PvpHub fell through to the
+  // full hub and painted an empty hero for a frame before the fetch even
+  // started. Consumers gate on `loading && !data`, so this removes that flash.
+  const [loading, setLoading] = useState(Boolean(weightClass));
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
   const fetch = useCallback(
     async ({ silent = false } = {}) => {
-      if (!weightClass) return;
+      if (!weightClass) { setLoading(false); return; }
       if (silent || data !== null) {
         setRefreshing(true);
       } else {

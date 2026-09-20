@@ -23,6 +23,25 @@ const {
     STAT_STRENGTH_LABELS,
     STAT_WEAKNESS_LABELS,
 } = require("../consts/campConfig");
+const { COACH_ARCHETYPES, STYLE_TO_DOMAIN } = require("../consts/homeCampConfig");
+
+/**
+ * The three rank-4 perks that act on the FIGHT CAMP (§9). Read from COACH_ARCHETYPES rather
+ * than written as literals on purpose: these keys were dead for months precisely because
+ * nothing referenced them, and a hand-typed string that drifts from the catalogue fails
+ * silently — the perk simply stops working and no test notices.
+ *
+ * The fourth camp perk, CONDITIONING's `iron_conditioning`, acts on TRAINING, not on the
+ * fight camp, and lives in utils/trainingSession.js. It is the only one that ever worked.
+ */
+const CORNER_CONFIDENCE = COACH_ARCHETYPES.STRIKING.perkKey;      // +1 slot vs a striker
+const MAT_RETURNS = COACH_ARCHETYPES.WRESTLING.perkKey;           // TD Defence floors at PARTIAL
+const SUBMISSION_AWARENESS = COACH_ARCHETYPES.BJJ.perkKey;        // Sub Escapes +5%
+
+/** Extra bonus Submission Awareness adds to a Submission Escapes session. */
+const SUBMISSION_AWARENESS_BONUS = 0.05;
+
+const hasPerk = (perks, key) => Array.isArray(perks) && perks.includes(key);
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
@@ -46,7 +65,7 @@ function assertCampOwnership(camp, fighterId) {
  * - In STYLE_SESSION_MAP → MATCHED
  * - Otherwise → UNMATCHED
  */
-function getMatchStatus(sessionType, opponentStyle) {
+function getMatchStatus(sessionType, opponentStyle, perks = []) {
     const sessionCfg = CAMP_SESSIONS[sessionType];
     if (!sessionCfg) return MATCH_STATUSES.UNMATCHED;
 
@@ -57,9 +76,20 @@ function getMatchStatus(sessionType, opponentStyle) {
     if (sessionCfg.alwaysContributes) return MATCH_STATUSES.MATCHED;
 
     const recommended = STYLE_SESSION_MAP[opponentStyle] || [];
-    return recommended.includes(sessionType)
+    const status = recommended.includes(sessionType)
         ? MATCH_STATUSES.MATCHED
         : MATCH_STATUSES.UNMATCHED;
+
+    // Mat Returns (WRESTLING rank 4) — "Takedown Defence camp session always at least
+    // PARTIAL match". A FLOOR, never a cap: when the opponent's style already makes it
+    // MATCHED the perk must not drag it down to PARTIAL.
+    if (sessionType === "TAKEDOWN_DEFENCE"
+        && status === MATCH_STATUSES.UNMATCHED
+        && hasPerk(perks, MAT_RETURNS)) {
+        return MATCH_STATUSES.PARTIAL;
+    }
+
+    return status;
 }
 
 function countPriorOccurrences(sessions, sessionType) {
@@ -116,14 +146,21 @@ function computeCampRating(sessions, maxSlots) {
  * Build the sessionBonuses array for fight resolution.
  * Each entry has an effectiveValue based on matchStatus.
  */
-function buildSessionBonuses(sessions) {
+function buildSessionBonuses(sessions, perks = []) {
     const bonuses = [];
     for (const session of sessions) {
         const bonusCfg = SESSION_BONUSES[session.sessionType];
         if (!bonusCfg) continue;
 
         const multiplier = MATCH_STATUS_MULTIPLIERS[session.matchStatus] ?? 0;
-        const effectiveValue = bonusCfg.bonusValue * multiplier * session.diminishingFactor;
+        // Submission Awareness (BJJ rank 4) — "Submission Escapes camp session gives +5%
+        // extra bonus". Applied as a multiplier on the session's own value, so it scales
+        // with match status and diminishing returns rather than handing a flat bonus to a
+        // session that was UNMATCHED (multiplier 0) and therefore earned nothing.
+        const perkBoost = (session.sessionType === "SUBMISSION_ESCAPES" && hasPerk(perks, SUBMISSION_AWARENESS))
+            ? 1 + SUBMISSION_AWARENESS_BONUS
+            : 1;
+        const effectiveValue = bonusCfg.bonusValue * multiplier * session.diminishingFactor * perkBoost;
 
         if (effectiveValue <= 0 && session.matchStatus !== MATCH_STATUSES.WRONG) continue;
 
@@ -270,13 +307,30 @@ async function createCamp(fightId, fighterId, promotionTier, isShortNotice = fal
     // Title fights get maximum camp slots regardless of tier
     const slotKey = offerType === "TitleShot" ? "Title Fight" : promotionTier;
     const slotCfg = CAMP_SLOT_CONFIG[slotKey] || CAMP_SLOT_CONFIG["Amateur"];
-    const maxSlots = isShortNotice ? slotCfg.shortNoticeSlots : slotCfg.normalSlots;
+    const baseSlots = isShortNotice ? slotCfg.shortNoticeSlots : slotCfg.normalSlots;
+
+    // Snapshot the fighter's perks here — see the `perks` field on fightCampModel for why
+    // they are frozen. Lean + projected: this runs on every fight acceptance.
+    const owner = await Fighter.findById(fighterId).select("gymPerks").lean();
+    const perks = (owner && owner.gymPerks) || [];
+
+    // Corner Confidence (STRIKING rank 4) — "+1 camp slot when fighting a striker-style
+    // opponent". "Striker-style" reuses STYLE_TO_DOMAIN, the same map the camp already uses
+    // to pick a starter coach's discipline, rather than a second hand-maintained list of
+    // which styles count as strikers.
+    let extraSlots = 0;
+    if (hasPerk(perks, CORNER_CONFIDENCE)) {
+        const fight = await Fight.findById(fightId).populate("opponentId");
+        const opponentStyle = fight && fight.opponentId ? fight.opponentId.style : null;
+        if (opponentStyle && STYLE_TO_DOMAIN[opponentStyle] === "STRIKING") extraSlots = 1;
+    }
 
     const camp = new FightCamp({
         fightId,
         fighterId,
-        maxSlots,
+        maxSlots: baseSlots + extraSlots,
         isShortNotice,
+        perks,
     });
     await camp.save();
     return camp;
@@ -463,7 +517,8 @@ async function addCampSession(fightId, fighterId, sessionType) {
     await energyService.deductEnergy(String(fighterId), sessionCfg.energy);
 
     const opponentStyle = fight.opponentId.style;
-    const matchStatus = getMatchStatus(sessionType, opponentStyle);
+    // camp.perks is the snapshot frozen at creation, never the fighter's live array.
+    const matchStatus = getMatchStatus(sessionType, opponentStyle, camp.perks);
     const priorCount = countPriorOccurrences(camp.sessions, sessionType);
     const diminishingFactor = DIMINISHING_RETURNS[Math.min(priorCount, DIMINISHING_RETURNS.length - 1)];
 
@@ -557,7 +612,7 @@ async function resolveInjury(fightId, fighterId, choice) {
 
         camp.campRating = newGrade;
         camp.campBreakdown = campBreakdown;
-        camp.sessionBonuses = buildSessionBonuses(camp.sessions);
+        camp.sessionBonuses = buildSessionBonuses(camp.sessions, camp.perks);
         // Special Moves: freeze the equipped loadout alongside sessionBonuses so a later
         // UPGRADE drop can't change this already-booked fight's power.
         camp.moveBonuses = await specialMovesService.buildMoveBonusesSnapshot(fighterId);
@@ -596,7 +651,7 @@ async function finaliseCamp(fightId, fighterId, skip = false) {
         const { grade, campBreakdown } = computeCampRating(camp.sessions, camp.maxSlots);
         camp.campRating = grade;
         camp.campBreakdown = campBreakdown;
-        camp.sessionBonuses = buildSessionBonuses(camp.sessions);
+        camp.sessionBonuses = buildSessionBonuses(camp.sessions, camp.perks);
 
         // Generate wildcard from opponent stats
         const fight = await Fight.findById(fightId).populate("opponentId");
@@ -680,5 +735,6 @@ module.exports = {
     finaliseCamp,
     // Exported for fight resolution and testing
     buildSessionBonuses,
+    getMatchStatus,
     generateWildcard,
 };

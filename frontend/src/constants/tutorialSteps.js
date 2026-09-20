@@ -56,7 +56,7 @@ export const TUTORIAL_STEPS = {
                         focus: "profile-resources",
                         anchor: "profile-resources",
                         title: "Cash & Fame",
-                        body: "Cash is your money — earned from fights, spent on gyms, healing and more. Fame is your reputation in the division; it grows as you win and perform.",
+                        body: "Cash is your money, earned from fights and spent on coaches, healing and supplies. Fame is your reputation in the division; it grows as you win and perform.",
                     },
                     {
                         focus: "profile-career",
@@ -75,57 +75,75 @@ export const TUTORIAL_STEPS = {
         ],
     },
 
-    // ── STEP 2 — Gym Introduction ────────────────────────────
+    /**
+     * ── STEP 2 — Camp Introduction ───────────────────────────
+     *
+     * ⚠️ THE ID STAYS `gym_intro`. It is persisted per fighter in
+     * `fighter.tutorial.current_step` and validated against STEP_ORDER in
+     * consts/tutorialConfig.js, so renaming it would strand every mid-tutorial player on a
+     * step id the server rejects. The id is an opaque token; only what it points at changed.
+     *
+     * It used to focus `nav-gym` and advance on clicking it. Once GYMS_RETIRED flips,
+     * buildNavItems REMOVES that nav item entirely, so the anchor ceased to exist and the step
+     * could never advance — every new player hard-stuck on step 2, with "Skip tutorial" the
+     * only way into the game.
+     */
     gym_intro: {
         next: "training_session",
         phases: [
             {
-                focus: "nav-gym",
+                focus: "nav-camp",
+                // Belt and braces: if the anchor is ever missing again, auto-advance instead of
+                // trapping the player. Its absence is exactly what made this unrecoverable.
+                skipIfAbsent: true,
                 advance: { type: "clickFocus" },
                 tooltips: [
                     {
-                        anchor: "nav-gym",
-                        title: "Welcome to the Gym",
-                        body: "This is where your career starts. You spend energy on training sessions — the more you train, the stronger you get. Tap the Gym tab to begin.",
+                        anchor: "nav-camp",
+                        title: "This Is Your Camp",
+                        body: "Your career starts here. This is your own camp, with your own coach on the payroll. Training costs energy, and the more you train the stronger you get. Tap My Camp to begin.",
                     },
                 ],
             },
         ],
     },
 
-    // ── STEP 3 — First Training Session ──────────────────────
+    // ── STEP 3 — First Training Session (run in My Camp) ─────
     training_session: {
         next: "fight_offer",
         phases: [
             {
-                // Each tooltip carries its own `focus` so the cut-out walks
-                // element by element and scroll-into-view keeps each anchor on
-                // screen. Without this the cut-out parks on the floor and the
-                // header anchors (energy/gym-info) — now separated from the
-                // floor by the Sparring Ring — scroll off-screen. Once tooltips
-                // are done, `focusAfterTooltips` returns the cut-out to the
-                // floor for the train action that fires `training_complete`.
+                // Each tooltip carries its own `focus` so the cut-out walks element by element
+                // and scroll-into-view keeps each anchor on screen. Without this the cut-out
+                // parks on the drill grid while the header anchors (energy, camp-info) scroll
+                // off-screen above it. Once the tooltips are done, `focusAfterTooltips` returns
+                // the cut-out to the drills for the train action that fires `training_complete`.
                 focus: "gym-sessions",
                 focusAfterTooltips: "gym-sessions",
+                // Emitted by CampTab on a completed session. It used to come from the gym's
+                // handleTrain in App.jsx, which retires with the gym tab.
                 advance: { type: "event", name: "training_complete" },
+                skipIfAbsent: true,
                 tooltips: [
                     {
                         focus: "energy",
                         anchor: "energy",
                         title: "Your Energy",
-                        body: "Energy is your training fuel. Each session costs energy, and it refills on its own over time — about 1 point a minute, so a full bar takes a couple of hours. Spend it wisely — you can't train when it's empty.",
+                        body: "Energy is your training fuel. Each session costs energy, and it refills on its own over time, about 1 point a minute, so a full bar takes a couple of hours. Spend it carefully, because you can't train when it's empty.",
                     },
                     {
-                        focus: "gym-info",
-                        anchor: "gym-info",
-                        title: "Your Gym",
-                        body: "You're training at the common gym. As you earn cash from fights you can upgrade to better gyms with stronger training bonuses and perks.",
+                        // Anchor ids kept from the gym era on purpose; they now point at camp
+                        // elements. See the note on gym_intro above.
+                        focus: "camp-info",
+                        anchor: "camp-info",
+                        title: "Your Camp",
+                        body: "Your camp came with a free head coach who matches how you fight, and he never charges a wage. Later you can hire more coaches, rank them up, and take over the whole roster.",
                     },
                     {
                         focus: "gym-sessions",
                         anchor: "gym-sessions",
                         title: "Choose What to Train",
-                        body: "Each session improves a specific stat — striking, grappling, footwork, and more. Your overall rating (OVR) is a reflection of all your stats combined. Higher OVR, better fighter.",
+                        body: "Every drill your coach runs improves specific stats, from striking to grappling to fight IQ. Your overall rating (OVR) reflects all of them combined. Higher OVR, better fighter. Pick one and hit Train.",
                     },
                 ],
             },
@@ -244,8 +262,8 @@ export const TUTORIAL_STEPS = {
                 tooltips: [
                     {
                         anchor: "result-iron",
-                        title: "Cash — Your Currency",
-                        body: "Cash is the currency of your career. You earn it from every fight. Use it to upgrade your gym, manage sponsorships, and eventually call out opponents. The better you perform, the more you earn.",
+                        title: "Cash: Your Currency",
+                        body: "Cash is the currency of your career. You earn it from every fight. Use it to hire and promote coaches, pay their weekly wages, renovate your camp, and call out opponents. The better you perform, the more you earn.",
                     },
                     {
                         anchor: "result-fame",

@@ -1330,6 +1330,29 @@ async function resolveFightAndApply(fighterId, userId) {
         }
     }
 
+    // ── Home camp: fight-resolved hook. Credits relevant wins to coaches whose archetype
+    // counts this outcome (WINS ONLY — `isWin` is passed through, not inferred), and applies
+    // the Cornerman trait's post-fight camp bonus, which fires after EVERY fight. That second
+    // effect is why this block sits OUTSIDE the `if (isWin)` above: a cornerman patches the
+    // room up on the nights you lose too.
+    //
+    // ADDITIVE and strictly non-fatal — it writes only the HomeCamp document (never the
+    // fighter), no-ops when the player has no camp yet, and every failure is swallowed +
+    // logged. This must NEVER throw into the fight path. PvE only: PvP deliberately does not
+    // call it (coach ranks and camp condition are PvE-only).
+    try {
+        const homeCampCoachService = require("./homeCampCoachService");
+        const { credited, conditionGained } = await homeCampCoachService.onFightResolved(
+            fighter,
+            result.outcome,
+            { isWin }
+        );
+        if (credited > 0) console.log(`[homeCamp] Credited a ${result.outcome} win to ${credited} coach(es).`);
+        if (conditionGained > 0) console.log(`[homeCamp] Cornerman restored ${conditionGained} camp condition.`);
+    } catch (e) {
+        console.error("[homeCamp] Failed to run the fight-resolved hook:", e.message);
+    }
+
     // ── Newly-earned badge diff (celebration payload) ────────────────────
     // Every badge-awarding eval for this fight has now run: notoriety fame-tier
     // (before the fight eval), the fight-resolve eval, and the gym rank-up eval

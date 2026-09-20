@@ -49,6 +49,29 @@ function rollForSparringInjury(fiq = 10) {
 }
 
 /**
+ * SEVERITY SPLIT ONLY — pick WHICH sparring injury lands, given that one already has.
+ *
+ * rollForSparringInjury (above) owns both the rate AND the severity. The Home Camp gates on
+ * each drill's own injuryPct instead, so it needs the severity split on its own; this keeps
+ * that split in ONE place rather than re-deriving the 0.003/0.033 ratio at the call site.
+ *
+ * At FIQ 10 the major share is the historical 0.003 / (0.003 + 0.03) ≈ 9.1%. Higher FIQ
+ * shifts the mix toward minor injuries, matching rollForSparringInjury's fiq reduction.
+ *
+ * @param {number} fiq
+ * @returns {string} an injury type key (never null — the caller decides IF an injury happens)
+ */
+function pickSparringInjuryType(fiq = 10) {
+    const fiqReduction = Math.max(0, ((Number(fiq) || 10) - 10) * 0.001);
+    const majorChance = Math.max(0.001, 0.003 - fiqReduction);
+    const minorChance = Math.max(0.01, 0.03 - fiqReduction);
+    const majorShare = majorChance / (majorChance + minorChance);
+    return Math.random() < majorShare
+        ? pickRandom(MAJOR_SPARRING_INJURIES)
+        : pickRandom(MINOR_SPARRING_INJURIES);
+}
+
+/**
  * Roll for a fight injury (not KO-induced concussion — that's handled separately).
  * Base rates: 4% major, 12% minor.
  * FIQ reduces both probabilities slightly.
@@ -234,6 +257,7 @@ function quoteFullRecovery(fighter) {
 
 module.exports = {
     rollForSparringInjury,
+    pickSparringInjuryType,
     rollForFightInjury,
     buildInjury,
     applyInjuryToFighter,

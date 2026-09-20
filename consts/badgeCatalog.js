@@ -40,6 +40,10 @@ const BADGE_CATEGORIES = [
     { key: "championships", label: "Championships" },
     { key: "style", label: "Style" },
     { key: "gym", label: "Gym" },
+    // Coach/roster achievements. SEPARATE from "gym" on purpose: the gym category is now mostly
+    // history (six of its ten badges are retired), and burying live camp goals among retired
+    // ones is what made the collection read as stale.
+    { key: "camp", label: "Camp" },
     { key: "media", label: "Media" },
 ];
 
@@ -108,17 +112,112 @@ const GYM_BADGE_NAMES = {
     elite_rank4: { name: "Elite Master", description: "Reach Rank 4 at Elite Fight Academy." },
 };
 
+/**
+ * HOME CAMP RE-POINT (Phase 2, decision P2-D2 — "Option C: re-point 4, legacy 6").
+ *
+ * There are 10 gym badges and only 4 coach archetypes, and `GYM_SLUG_TO_DOMAIN` collapses FOUR
+ * striking gyms into one STRIKING domain — so re-pointing all ten would award four badges for a
+ * single Rank-4 Striking coach. Instead exactly four are re-pointed, chosen so THE BADGE FOLLOWS
+ * THE PERK: each archetype already inherits its Rank-4 perk from one specific gym
+ * (homeCampConfig.COACH_ARCHETYPES[*].perkKey), and that same gym's badge is the one that moves.
+ *
+ *   STRIKING     ← iron-fist-boxing   (corner_confidence)    → boxer_rank4     "Champion Boxer"
+ *   WRESTLING    ← apex-wrestling     (mat_returns)          → wrestling_rank4 "Olympic Wrestler"
+ *   BJJ          ← gracie-ground-game (submission_awareness) → bjj_rank4       "BJJ Black Belt"
+ *   CONDITIONING ← warrior-muay-thai  (iron_conditioning)    → muaythai_rank4  "Grand Kru"
+ *
+ * The other six stay LEGACY: still earnable while the gyms are open, still displayed forever
+ * once earned, unobtainable after the cutover. `badgeService` excludes a LOCKED legacy badge
+ * from `lockedCount` so nobody's completion percentage is permanently six short.
+ */
+const GYM_BADGE_TO_ARCHETYPE = Object.freeze({
+    boxer_rank4: "STRIKING",
+    wrestling_rank4: "WRESTLING",
+    bjj_rank4: "BJJ",
+    muaythai_rank4: "CONDITIONING",
+});
+
+/**
+ * Player-facing archetype wording for the re-pointed descriptions. Hardcoded rather than
+ * imported from `consts/homeCampConfig.js` on purpose: this catalog is required by the fighter
+ * profile path and must not drag the whole camp config (and its boot validator, and its
+ * data/gyms.json read) in behind it.
+ */
+const ARCHETYPE_CAMP_CLAUSE = Object.freeze({
+    STRIKING: "or take a Striking coach to Rank 4 in your camp.",
+    WRESTLING: "or take a Wrestling coach to Rank 4 in your camp.",
+    BJJ: "or take a BJJ Professor to Rank 4 in your camp.",
+    CONDITIONING: "or take a Conditioning coach to Rank 4 in your camp.",
+});
+
+/**
+ * 4 if the fighter has taken this archetype to Rank 4 in their Home Camp, else 0.
+ *
+ * Reads the DENORMALISED `fighter.campRank4Archetypes` (written additively by
+ * homeCampCoachService) because badge conditions are synchronous functions of the fighter
+ * document and cannot query the HomeCamp collection.
+ */
+function campRank4For(f, archetype) {
+    const list = f && f.campRank4Archetypes;
+    return Array.isArray(list) && list.includes(archetype) ? 4 : 0;
+}
+
+/** A `campStats` counter, 0 for legacy fighters written before the field existed. */
+function campStat(f, key) {
+    return num(f && f.campStats && f.campStats[key]);
+}
+
+/**
+ * How many DISTINCT archetypes have been taken to Rank 4.
+ *
+ * De-duplicated rather than trusting `.length`: the array is documented additive-only and
+ * `homeCampCoachService` pushes only when absent, but a badge that reads 5/4 because one write
+ * slipped through twice would be a visible bug, and a Set costs nothing.
+ */
+function rank4ArchetypeCount(f) {
+    const list = (f && f.campRank4Archetypes) || [];
+    return Array.isArray(list) ? new Set(list.filter(Boolean)).size : 0;
+}
+
 function gymBadgeDef(id) {
     const slug = GYM_BADGE_SLUGS[id];
     const meta = GYM_BADGE_NAMES[id];
+    const arche = GYM_BADGE_TO_ARCHETYPE[id] || null;
+
+    /**
+     * ⚠️ `Math.max(gym, camp)` — COMBINED, NEVER REPLACING, NEVER AN if/else.
+     *
+     * THAT ONE WORD IS THE ENTIRE "cannot regress for veterans" GUARANTEE. `gymRankFor` stays
+     * primary and is never consulted conditionally, so this function is monotonically
+     * non-decreasing by construction: a veteran sitting at gym Rank 4 keeps reading 4 whatever
+     * their camp says, and a camp-only player reads 4 from the camp side. Refactoring this into
+     * `arche ? campRank4For(...) : gymRankFor(...)` would silently zero the progress bar of
+     * every player who earned this at a gym and never opened the camp screen.
+     */
+    const rankOf = (f) => Math.max(gymRankFor(f, slug), arche ? campRank4For(f, arche) : 0);
+
     return {
         id,
         category: "gym",
+        // ⚠️ NAMES NEVER CHANGE. A badge already pinned on a Career Page must not be renamed
+        // under the player. Only the four re-pointed DESCRIPTIONS gain an "or" clause.
         name: meta.name,
-        description: meta.description,
+        description: arche ? `${meta.description} — ${ARCHETYPE_CAMP_CLAUSE[arche]}` : meta.description,
         slug,
-        condition: (f) => gymRankFor(f, slug) >= 4,
-        progress: (f) => prog(gymRankFor(f, slug), 4, "rank"),
+        archetype: arche,
+        /**
+         * LEGACY = this badge has no camp route, so once the gyms retire it becomes
+         * unobtainable. Consumed by badgeService (excluded from `lockedCount`) and rendered as
+         * a "Retired" chip. It is NOT a deletion marker:
+         *
+         * ⚠️ ALL 10 GYM BADGE DEFS STAY IN THIS CATALOG FOREVER. `buildBadgeProfile` renders
+         * from the earned ledger by looking each id up here — delete a def and `getBadge(id)`
+         * returns undefined and the badge SILENTLY VANISHES from the Career Page of every
+         * veteran who earned it. That is the sharpest edge in this whole change.
+         */
+        legacy: !arche,
+        condition: (f) => rankOf(f) >= 4,
+        progress: (f) => prog(rankOf(f), 4, "rank"),
     };
 }
 
@@ -330,6 +429,53 @@ const BADGES = [
         progress: (f) => prog(num(f && f.careerTrainingSessions), 250, "sessions"),
     },
 
+    // ── camp (coaches) ──
+    //
+    // Every condition below reads either `campStats` (monotonic career counters, see
+    // fighterModel) or `campRank4Archetypes`. None of them reads live roster state, so firing a
+    // coach can never revoke an earned badge.
+    {
+        id: "coach_first_hire", category: "camp", name: "Cornerman",
+        description: "Sign your first coach from the Trainer Market.",
+        condition: (f) => campStat(f, "coachesHired") >= 1,
+        progress: (f) => prog(campStat(f, "coachesHired"), 1, "coaches"),
+    },
+    {
+        id: "coach_full_staff", category: "camp", name: "Full Staff",
+        description: "Employ four coaches at the same time.",
+        condition: (f) => campStat(f, "peakCoachCount") >= 4,
+        progress: (f) => prog(campStat(f, "peakCoachCount"), 4, "coaches"),
+    },
+    {
+        id: "coach_legendary_hire", category: "camp", name: "Deep Pockets",
+        description: "Sign a Legendary coach.",
+        condition: (f) => campStat(f, "legendaryCoachesHired") >= 1,
+        progress: (f) => prog(campStat(f, "legendaryCoachesHired"), 1, "coaches"),
+    },
+    {
+        id: "coach_taught_move", category: "camp", name: "Passed Down",
+        description: "Learn a special move directly from a coach by promoting them.",
+        condition: (f) => campStat(f, "movesTaught") >= 1,
+        progress: (f) => prog(campStat(f, "movesTaught"), 1, "moves"),
+    },
+    {
+        id: "coach_taught_five", category: "camp", name: "Student of the Game",
+        description: "Learn five special moves from your coaches.",
+        condition: (f) => campStat(f, "movesTaught") >= 5,
+        progress: (f) => prog(campStat(f, "movesTaught"), 5, "moves"),
+    },
+    {
+        /**
+         * The capstone, and the only one here needing no new state: it reads the same
+         * `campRank4Archetypes` the four re-pointed gym badges already use. Earning this means
+         * earning all four of those too, which is the intended shape — it is the set bonus.
+         */
+        id: "coach_all_rank4", category: "camp", name: "Master of All",
+        description: "Take a coach in all four disciplines to Rank 4.",
+        condition: (f) => rank4ArchetypeCount(f) >= 4,
+        progress: (f) => prog(rank4ArchetypeCount(f), 4, "disciplines"),
+    },
+
     // ── media ──
     {
         id: "first_episode", category: "media", name: "On the Mic",
@@ -377,6 +523,9 @@ module.exports = {
     BADGES,
     BADGE_CATEGORIES,
     GYM_BADGE_SLUGS,
+    // PHASE 2 — the Home Camp re-point (P2-D2 Option C)
+    GYM_BADGE_TO_ARCHETYPE,
+    campRank4For,
     STAR_THRESHOLD,
     getBadge,
 };

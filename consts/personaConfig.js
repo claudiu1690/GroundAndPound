@@ -173,10 +173,10 @@ const DOC_TONE_NUDGE = {
  */
 const MODIFIERS = {
     [ARCHETYPE.VILLAIN]: {
-        purseFrac:        { kind: "A", value: 0.15, lane: "fight", key: "purse", label: "Fight purse", good: true, desc: "The promotion pays for heat — you earn a bigger purse on every fight." },
-        calloutCostMult:  { kind: "B", value: 0.5,  lane: "nonfight", key: "calloutCost", label: "Callout cost", good: true, desc: "Calling out rivals costs you less — beef is your business." },
-        sponsorPayoutFrac:{ kind: "A", value: -0.35, lane: "nonfight", key: "sponsorPayout", label: "Sponsor payout", good: false, desc: "Brands keep their distance from the bad guy — your sponsor payouts shrink." },
-        listenersPct:     { kind: "A", value: 0.35, lane: "nonfight", key: "listeners", label: "Listeners", cosmetic: true, desc: "Everyone tunes in hoping you lose. Pure flavor — no gameplay effect." },
+        purseFrac:        { kind: "A", value: 0.15, lane: "fight", key: "purse", label: "Fight purse", good: true, desc: "The promotion pays for heat, so you earn a bigger purse on every fight." },
+        calloutCostMult:  { kind: "B", value: 0.5,  lane: "nonfight", key: "calloutCost", label: "Callout cost", good: true, desc: "Beef is your business, so calling out rivals costs you less." },
+        sponsorPayoutFrac:{ kind: "A", value: -0.35, lane: "nonfight", key: "sponsorPayout", label: "Sponsor payout", good: false, desc: "Brands keep their distance from the bad guy, so your sponsor payouts shrink." },
+        listenersPct:     { kind: "A", value: 0.35, lane: "nonfight", key: "listeners", label: "Listeners", cosmetic: true, desc: "Everyone tunes in hoping you lose. Pure flavor, no gameplay effect." },
         fame: {
             [FAME_CATEGORY.BEEF]:       { kind: "B", value: 2.0 },
             [FAME_CATEGORY.RESPECT]:    { kind: "B", value: 0.5 },
@@ -186,11 +186,11 @@ const MODIFIERS = {
         signature: { fameMult: 1.5, purseFrac: 0.15 },
     },
     [ARCHETYPE.PEOPLES_CHAMP]: {
-        purseFrac:          { kind: "A", value: 0.05, lane: "fight", key: "purse", label: "Fight purse", good: true, desc: "Fan favorites sell tickets — you earn a bigger purse on every fight." },
+        purseFrac:          { kind: "A", value: 0.05, lane: "fight", key: "purse", label: "Fight purse", good: true, desc: "Fan favorites sell tickets, so you earn a bigger purse on every fight." },
         comebackBonusMult:  { kind: "A", value: 0.05, lane: "fight", key: "comebackBonus", label: "Comeback bonuses", good: true, desc: "Your comeback camp and special-move bonuses hit harder when you're down." },
         sponsorSlotBonus:   { kind: "C", value: 1,    lane: "nonfight", key: "sponsorSlot", label: "Sponsor slot", good: true, desc: "An extra sponsor contract slot. Unlocks at 70+ heat." },
         appearancePoolBonus:{ kind: "C", value: 1,    lane: "nonfight", key: "appearancePool", label: "Appearance offers", good: true, desc: "One extra appearance offer in every weekly rotation. Unlocks at 70+ heat." },
-        listenersPct:       { kind: "A", value: 0.20, lane: "nonfight", key: "listeners", label: "Listeners", cosmetic: true, desc: "The people love their champ. Pure flavor — no gameplay effect." },
+        listenersPct:       { kind: "A", value: 0.20, lane: "nonfight", key: "listeners", label: "Listeners", cosmetic: true, desc: "The people love their champ. Pure flavor, no gameplay effect." },
         // Upset-loss penalty: flat, applied in full when the persona is active.
         upsetLossFlatFame:  { value: -150 },
         fame: {
@@ -201,10 +201,10 @@ const MODIFIERS = {
         signature: { comebackWinPurseFrac: 0.30, comebackWinFlatFame: 250 },
     },
     [ARCHETYPE.BOOGEYMAN]: {
-        damageReductionFrac:{ kind: "A", value: 0.02, lane: "fight", key: "damageReduction", label: "Damage taken", good: true, invertDisplay: true, desc: "Opponents hesitate to engage — you take less damage in the cage." },
-        purseFrac:          { kind: "A", value: 0.08, lane: "fight", key: "purse", label: "Fight purse", good: true, desc: "Fear sells — you earn a bigger purse on every fight." },
-        sponsorPayoutFrac:  { kind: "A", value: -0.20, lane: "nonfight", key: "sponsorPayout", label: "Sponsor payout", good: false, desc: "Brands can't market the silence — your sponsor payouts shrink." },
-        listenersPct:       { kind: "A", value: -0.10, lane: "nonfight", key: "listeners", label: "Listeners", cosmetic: true, desc: "You don't talk, so fewer tune in. Pure flavor — no gameplay effect." },
+        damageReductionFrac:{ kind: "A", value: 0.02, lane: "fight", key: "damageReduction", label: "Damage taken", good: true, invertDisplay: true, desc: "Opponents hesitate to engage, so you take less damage in the cage." },
+        purseFrac:          { kind: "A", value: 0.08, lane: "fight", key: "purse", label: "Fight purse", good: true, desc: "Fear sells, so you earn a bigger purse on every fight." },
+        sponsorPayoutFrac:  { kind: "A", value: -0.20, lane: "nonfight", key: "sponsorPayout", label: "Sponsor payout", good: false, desc: "Brands can't market the silence, so your sponsor payouts shrink." },
+        listenersPct:       { kind: "A", value: -0.10, lane: "nonfight", key: "listeners", label: "Listeners", cosmetic: true, desc: "You don't talk, so fewer tune in. Pure flavor, no gameplay effect." },
         fame: {
             [FAME_CATEGORY.CRYPTIC]: { kind: "B", value: 1.5 },
             [FAME_CATEGORY.LOUD]:    { kind: "B", value: 0.5 },
@@ -214,9 +214,14 @@ const MODIFIERS = {
         signature: { ambushProcMult: 1.10 },
     },
     [ARCHETYPE.ROLE_MODEL]: {
-        sponsorPayoutFrac:{ kind: "A", value: 0.10,  lane: "nonfight", key: "sponsorPayout", label: "Sponsor payout", good: true, desc: "Brands love a clean image — your sponsor payouts pay more." },
-        gymRankCostFrac:  { kind: "A", value: -0.10, lane: "nonfight", key: "gymRankCost", label: "Gym rank-up cost", good: true, desc: "Gyms want their example around — rank-ups cost you less." },
-        hospitalBillFrac: { kind: "A", value: -0.15, lane: "nonfight", key: "hospitalBill", label: "Hospital bills", good: true, desc: "The right people take care of you — hospital bills cost less." },
+        sponsorPayoutFrac:{ kind: "A", value: 0.10,  lane: "nonfight", key: "sponsorPayout", label: "Sponsor payout", good: true, desc: "Brands love a clean image, so your sponsor payouts pay more." },
+        // FIELD NAME IS HISTORICAL. It was written for gym rank-ups, but the only consumers now
+        // are the camp: coach promotions (homeCampCoachService.promotionQuote) and camp
+        // renovation (homeCampService). The gym consumers in gymRankService go dead with the
+        // gyms. Renaming the field would touch five files for no behaviour change, so only the
+        // player-facing `key`, `label` and `desc` were updated to say what it actually does.
+        gymRankCostFrac:  { kind: "A", value: -0.10, lane: "nonfight", key: "campUpgradeCost", label: "Camp upgrade costs", good: true, desc: "Coaches want your name on their record, so promoting one costs you less. Renovating the camp does too." },
+        hospitalBillFrac: { kind: "A", value: -0.15, lane: "nonfight", key: "hospitalBill", label: "Hospital bills", good: true, desc: "The right people take care of you, so hospital bills cost less." },
         fame: {
             [FAME_CATEGORY.BEEF_LAPSE]:  { kind: "B", value: 0.5 },
             [FAME_CATEGORY.WEIGHT_MISS]: { kind: "B", value: 0.5 },

@@ -25,10 +25,11 @@ test("B1: STAR_THRESHOLD sourced from notorietyConfig = 40000", () => {
     assert.equal(STAR_THRESHOLD, 40000);
 });
 
-test("B2: catalog has 48 badges and unique ids", () => {
-    assert.equal(BADGES.length, 48);
+test("B2: catalog has 54 badges and unique ids", () => {
+    // 48 + the six "camp" coach badges added with the coach-portrait/badge pass.
+    assert.equal(BADGES.length, 54);
     const ids = new Set(BADGES.map((b) => b.id));
-    assert.equal(ids.size, 48);
+    assert.equal(ids.size, 54);
 });
 
 test("B3: gym slug map matches catalog defs", () => {
@@ -128,14 +129,33 @@ test("B11: progress current never exceeds target", () => {
     assert.equal(p.target, STAR_THRESHOLD);
 });
 
-test("B12: buildBadgeProfile earnedCount + lockedCount = catalog size (PvE catalog + fixed PVP catalog)", () => {
+test("B12: buildBadgeProfile earnedCount + lockedCount = catalog size (gyms OPEN)", () => {
     const f = baseFighter({ record: { wins: 10, koWins: 10 } });
     badgeService.evaluateBadges(f, {});
     const prof = badgeService.buildBadgeProfile(f);
     // The Proving Ground fixed catalog is always rendered (earned + locked), like the
     // PvE categories — so the total is the PvE catalog plus the fixed PVP badge count
     // (this fighter has no earned seasonal/unbounded pvp ids).
-    assert.equal(prof.earnedCount + prof.lockedCount, BADGES.length + Object.keys(PVP_BADGE_DEFS).length);
+    //
+    // ⚠️ THIS RUNS WITH GYMS_RETIRED UNSET, i.e. THE GYMS ARE STILL OPEN — and while they are
+    // open the six legacy gym badges are genuinely obtainable, so they are shown AND counted.
+    // Nothing is subtracted. This previously subtracted the six unconditionally, which
+    // under-reported every player's total by six for as long as the gyms were still running.
+    //
+    // Once GYMS_RETIRED=true, the unearned legacy badges are filtered OUT of the profile
+    // entirely, so the identity still holds against what is actually rendered — the count and
+    // the tiles on screen can never disagree. See badgeCatalog.campRemap.qa.test.js Q3.
+    const lockedLegacy = BADGES.filter(
+        (b) => b.legacy && !f.badgesEarned.some((e) => e.badgeId === b.id)
+    ).length;
+    assert.equal(lockedLegacy, 6, "six gym badges have no camp route");
+    assert.equal(
+        prof.earnedCount + prof.lockedCount,
+        BADGES.length + Object.keys(PVP_BADGE_DEFS).length
+    );
+    // And the header must equal what is actually rendered.
+    const tiles = prof.categories.reduce((n, c) => n + c.badges.length, 0);
+    assert.equal(prof.earnedCount + prof.lockedCount, tiles, "header must match rendered tiles");
 });
 
 test("B13: null-guard — empty/garbage fighter does not throw", () => {

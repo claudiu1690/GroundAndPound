@@ -1,36 +1,3 @@
-/**
- * MAIN-ONLY COPY DELTAS — DELETE ON THE SEASON 2 MERGE
- *
- * This file was copied wholesale from develop onto a release branch cut from
- * main, to ship the landing page ahead of the Season 2 launch (Oct 1, 2026).
- * main still has gyms; the Training Camp does not exist there yet. The items
- * below were adapted so every sentence is true on main while still
- * advertising the camp as an upcoming Season 2 feature. Whoever resolves the
- * Season 2 merge should take develop's side on all of these and delete this
- * block.
- *
- * 1. Badge count feat-tag + its count-source comment: "48 Badges" here ->
- *    revert to develop's live count (54 at last check, re-verify against
- *    consts/badgeCatalog.js BADGES.length).
- * 2. Camp band eyebrow: "Coming in Season 2" -> revert to "Run your camp".
- * 3. Camp band pill: derived "Opens {date}" -> revert to "Gyms retired".
- * 4. Camp band intro paragraph (future tense, "Season 2 retires the gyms...")
- *    -> revert to present tense, "Gyms are gone. You run the camp now...".
- * 5. CampPlate watermark: "Season 2 <i>·</i> Preview" -> revert to
- *    "Ground <i>&amp;</i> Pound".
- * 6. My Camp band sub opener: "In Season 2 you won't rent a gym..." -> revert
- *    to present tense, "You don't rent a gym, you run a camp.".
- * 7. My Camp band eyebrow: "Season 2 · My Camp" -> revert to "My Camp".
- * 8. Special Moves fan-note: restored main's gym-era wording here -> revert
- *    to develop's "Your coaches teach them, hard sessions drop them.".
- * 9. Features section sub: dropped the camp clause here -> revert to
- *    develop's "Eight stats to build. Your own camp to run. Real opponents
- *    to study. Every fight earned, never handed to you.".
- * 10. Evergreen hero sub: dropped the camp clause here -> revert to develop's
- *     "Build your MMA career from zero. Train eight combat stats, run your
- *     own camp, climb ranked seasons, and take the championship belt.".
- * 11. Hero secondary CTA: "What Season 2 Brings" -> revert to "What's New".
- */
 import "./landing.css";
 import { useState, useEffect } from "react";
 import { api, authStorage } from "../../api";
@@ -40,7 +7,15 @@ import { LegalModals } from "../legal/LegalModals";
 import { ReportBugModal } from "../shared/ReportBugModal";
 import { DiscordIcon } from "../shared/DiscordIcon";
 import { useSeasonBand } from "../../hooks/useSeasonBand";
-import { formatDate, formatDateShort, countdownCells, daysUntil, weeksLeftLabel } from "../../lib/countdown";
+
+// How close the NEXT season has to be before the landing hero starts counting
+// down to it instead of showing the live one. Seasons run 70 days, so this gives
+// the live season the hero for eight weeks and the incoming one the final two.
+const NEXT_SEASON_TEASE_WINDOW_DAYS = 14;
+const opensWithinTeaseWindow = (season) =>
+  !!season?.startDate &&
+  new Date(season.startDate) - Date.now() <= NEXT_SEASON_TEASE_WINDOW_DAYS * 86400000;
+import { formatDate, formatDateShort, countdownCells, weeksLeftLabel } from "../../lib/countdown";
 
 // Open a legal modal from a footer link without navigating.
 const openLegal = (e, eventName) => {
@@ -90,7 +65,7 @@ function CampPlate({ plate, onOpen }) {
     >
       <div className="plate-img">
         <img src={src} alt={plate.title} loading="lazy" />
-        <div className="plate-mark">Season 2 <i>&middot;</i> Preview</div>
+        <div className="plate-mark">Ground <i>&amp;</i> Pound</div>
       </div>
       <figcaption className="plate-cap">
         <div className="plate-eye">{plate.eye}</div>
@@ -133,13 +108,19 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
   const { data: seasonData, loading: seasonLoading, countdown, timerColor, finalHour } = useSeasonBand();
 
   // The season being promoted across the page: an upcoming season directly, or
-  // the one queued behind the live season. Nav label, hero and the Proving
-  // Ground band all read this, so the page never advertises two seasons at once.
+  // the one queued behind the live season ONCE IT IS CLOSE. Nav label, hero and
+  // the Proving Ground band all read this, so the page never advertises two
+  // seasons at once. The window matters: the sweep seeds N+1 the moment N goes
+  // live, so without it the hero would flip straight from "Season 2 opens in
+  // 3 days" to a 70-day countdown for Season 3 and never once say Season 2 is
+  // live. Outside the window the live season owns the hero.
   const teaser =
     seasonData && !seasonLoading
       ? seasonData.status === "upcoming"
         ? seasonData
-        : seasonData.next || null
+        : seasonData.next && opensWithinTeaseWindow(seasonData.next)
+          ? seasonData.next
+          : null
       : null;
   const promoted = teaser || seasonData;
 
@@ -370,7 +351,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
               <div className="hero-body">
                 <div className="hero-eye">Step into the cage</div>
                 <h1 className="hero-title">Ground<br /><span>&amp;</span> Pound</h1>
-                <p className="hero-sub">Build your MMA career from zero. Train eight combat stats, climb ranked seasons, and take the championship belt.</p>
+                <p className="hero-sub">Build your MMA career from zero. Train eight combat stats, run your own camp, climb ranked seasons, and take the championship belt.</p>
                 <div className="hero-actions">
                   <a className="btn-primary" href="#play">Start Your Career</a>
                   <a className="btn-secondary" href="#features">See How It Works</a>
@@ -407,7 +388,11 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
                 {rule ? <>. This season: <b style={{ color: "#ddd" }}>{rule}</b>.</> : "."}
               </p>
 
-              {teaser ? (
+              {/* Countdown only while teasing. A live season shows no clock up
+                  here at all: the weeks pill in the Proving Ground band already
+                  says how long is left, and a lone "Days Left" cell in countdown
+                  styling read as a launch timer for a season that had launched. */}
+              {teaser && (
                 <div className="cd">
                   {countdownCells(teaser.startDate).map((c) => (
                     <div className="cd-cell" key={c.l}>
@@ -416,18 +401,11 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="cd">
-                  <div className="cd-cell">
-                    <div className="cd-n">{daysUntil(seasonData.endDate)}</div>
-                    <div className="cd-l">Days Left</div>
-                  </div>
-                </div>
               )}
 
               <div className="hero-actions">
                 <a className="btn-gold" href="#play">{teaser ? "Claim Your Spot" : "Start Your Career"}</a>
-                <a className="btn-secondary" href="#camp">What Season 2 Brings</a>
+                <a className="btn-secondary" href="#camp">What&apos;s New</a>
               </div>
             </div>
             <div className="hero-scroll">Scroll</div>
@@ -463,21 +441,17 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         <div className="s2inner">
           <div className="s2head reveal">
             <div>
-              <div className="sec-eye" style={{ color: "#D4A820" }}>Coming in Season 2</div>
+              <div className="sec-eye" style={{ color: "#D4A820" }}>Run your camp</div>
               <h2 className="sec-title">The Training<br />Camp</h2>
             </div>
             <div className="pvp-pills" style={{ margin: 0 }}>
-              {/* Derived, never typed. teaseSeason() builds the next season from the
-                  live season's endDate, which is exactly what finalizeSeason seeds as
-                  the next startDate, so this pill cannot advertise a date the ladder
-                  will not honour. Omitted entirely when nothing is queued. */}
-              {teaser && <span className="pill">Opens {formatDateShort(teaser.startDate)}</span>}
+              <span className="pill">Gyms retired</span>
               <span className="pill">4 disciplines</span>
               <span className="pill">12 coach traits</span>
             </div>
           </div>
           <p className="sec-sub reveal d1" style={{ marginTop: "14px" }}>
-            Season 2 retires the gyms. You will run the camp instead, and everyone in it is someone you hire, someone you pay, and someone you can lose.
+            Gyms are gone. You run the camp now, and everyone in it is someone you hired, someone you pay, and someone you can lose.
           </p>
 
           <div className="collage">
@@ -507,7 +481,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
       <section id="features">
         <div className="sec-eye reveal">What you get</div>
         <h2 className="sec-title reveal d1">Everything a real<br />manager needs</h2>
-        <p className="sec-sub reveal d2">Eight stats to build. Real opponents to study. Every fight earned, never handed to you.</p>
+        <p className="sec-sub reveal d2">Eight stats to build. Your own camp to run. Real opponents to study. Every fight earned, never handed to you.</p>
         <div className="features-grid">
           <div className="feat">
             <div className="feat-icon-text">STR</div>
@@ -543,9 +517,9 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
             <div className="feat-icon-text">LEG</div>
             <div className="feat-name">Build Your Legacy</div>
             <div className="feat-desc">Earn Fame, unlock badges, grow your ranking. Every fight adds to a permanent career record that other players can see and study.</div>
-            {/* COUNT SOURCE OF TRUTH: consts/badgeCatalog.js -> BADGES.length (48 today).
+            {/* COUNT SOURCE OF TRUTH: consts/badgeCatalog.js -> BADGES.length (54 today).
                 Count the exported array, not `id:` lines — they disagree. */}
-            <div className="feat-tag">48 Badges</div>
+            <div className="feat-tag">54 Badges</div>
           </div>
         </div>
       </section>
@@ -609,15 +583,15 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
             </div>
           ))}
         </div>
-        <div className="fan-note">Common · Uncommon · Rare · <b>Legendary</b>, better gyms pull rarer.</div>
+        <div className="fan-note">Common · Uncommon · Rare · <b>Legendary</b>. Your coaches teach them, hard sessions drop them.</div>
 
         {/* MY CAMP — the ownership loop. Same card treatment as the moves fan. */}
         <div className="camp-band">
           <div className="ss-head ss-head--center">
-            <div className="sec-eye">Season 2 &middot; My Camp</div>
+            <div className="sec-eye">My Camp</div>
             <h2 className="sec-title">Your name<br />on the door</h2>
             <p className="sec-sub">
-              In Season 2 you won&apos;t rent a gym, you&apos;ll run a camp. Hire coaches with names, rarities and
+              You don&apos;t rent a gym, you run a camp. Hire coaches with names, rarities and
               personalities, pay them every week, and rank them up. Each one teaches Special Moves
               you can read on his card <i>before</i> you sign him.
             </p>

@@ -1,6 +1,6 @@
 # Ground & Pound — Game Design Document
 
-> **Status:** Living document, synced to the implemented game as of 2026-06-10.
+> **Status:** Living document, synced to the implemented game as of 2026-07-27.
 > This is the agent-readable canonical GDD (the game-designer and architect agents
 > read this before any proposal). It supersedes the Word original
 > `Ground-And-Pound-GDD.docx` (kept for reference/authoring) and the retired
@@ -24,7 +24,7 @@ promotion tiers — from unknown amateur to GCS champion.
 Single-page web client. Top to bottom: a collapsible **Message Bar**, the **App Body**
 (left sidebar + content panel), and a fixed **App Footer**.
 
-- **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — cash, fame, rank, class, gym, backstory — badges, stat meters, active injuries), an **Inventory** panel (shown only when the fighter owns shop items), and the nav menu. Nav order groups by intent — *build → compete → manage*: **Home, Training, Special Moves, Fight, Career, Proving Ground, Rankings, Contracts, Hospital, Shop, Events, Media, Library**. Special Moves sits with Training (both "build your fighter") rather than down among the utility tabs.
+- **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — cash, fame, rank, class, gym, backstory — badges, stat meters, active injuries), an **Inventory** panel (shown only when the fighter owns shop items), and the nav menu. Nav order groups by intent — *build → compete → manage*: **Home, Training, My Camp, Special Moves, Fight, Career, Proving Ground, Rankings, Contracts, Hospital, Shop, Events, Media, Library**. My Camp sits directly after Training (it is an alternative training venue — see §6.8), and Special Moves sits with them (all three "build your fighter") rather than down among the utility tabs. **Once `GYMS_RETIRED` flips, the Training item is removed from the nav entirely** (not disabled — gone, see `buildNavItems` in App.jsx), so My Camp becomes the first item under Home and the only training venue. Player-facing copy positions it that way, so the two must stay in step.
 - **Footer:** game wordmark, contextual status badges (injury count → Hospital, camp → Fight, Fame → Fame drawer), Sign Out.
 - **Overlays:** Training toast stack, Tier-Up / Belt-Won overlays, Fight-block popup (energy / injury), Fame drawer, Octagon Gazette, Onboarding Tutorial, **Fight-Accept Face-Off** (see §10), Fighter Report, Camp Summary, Badge-unlock celebration, Special-Move drop reveal.
 
@@ -130,6 +130,16 @@ One free community gym is always available; **ten** specialty gyms require a wee
 cash membership. Only one paid membership is active at a time (paying a new gym
 cancels the previous). **Ranks earned at a gym persist permanently**, even after switching.
 
+> **Two training venues coexist right now.** §6.1–§6.7 describe the **gym system**, which
+> is live and unchanged. §6.8–§6.21 describe **My Camp**, the player-owned training camp
+> shipped in Phases 0–1 — a second, parallel place to spend training energy, with its own
+> screen, its own sessions and its own progression. Both are fully playable; a player may
+> use either or both on any given day. **The camp is intended to replace the gyms
+> entirely** in a later phase (the gym tab retires, memberships stop being a cost, and the
+> camp becomes the only training venue). Until that phase lands, treat every gym rule in
+> §6.1–§6.7 as current and additive — nothing about gyms was removed, deprecated or
+> nerfed to make room for the camp.
+
 ### 6.1 The Free Gym
 **Community MMA Center** — always free. Trains all stats at 0.6× base XP. No ranks. The fallback when a membership is unaffordable.
 
@@ -181,6 +191,19 @@ Wins count toward ranks only at the **active paid gym**, and only if the win typ
 
 > Note: perk *names* (Strength Reserve, Corner Confidence, …) differ from the *badge* names; `data/gyms.json` is the source of truth for exact perk ids/effects.
 
+**After gym retirement.** Four of the ten badges above are re-pointed to a Home Camp route and
+stay obtainable (`boxer_rank4` → Striking, `wrestling_rank4` → Wrestling, `bjj_rank4` → BJJ,
+`muaythai_rank4` → Conditioning — the badge follows the perk). The other six are **legacy**:
+still earnable while the gyms are open, unobtainable after the cutover.
+
+All ten definitions stay in `consts/badgeCatalog.js` **permanently** — a badge is rendered by
+looking its id up in the catalog, so deleting a def would erase it from the profile of every
+veteran who earned it. Retirement is handled at *render* time instead: once
+`GYMS_RETIRED=true`, `badgeService.buildBadgeProfile` omits a legacy badge that was never
+earned, while an earned one is always kept and marked "Retired" in the UI. Every unearned badge
+still in the payload counts toward `lockedCount`, so the header can never disagree with the
+tiles on screen.
+
 ### 6.6 Training Sessions
 Base sessions (specialty gyms only offer sessions for their focus stats + sparring):
 
@@ -214,6 +237,624 @@ Rank 2 unlocks one gym-unique advanced session (Combination Drilling, Chain Wres
 | 81–90 | 2,500 |
 | 91–95 | 6,000 |
 | 96–99 | 8,000 — **fight XP only, not trainable** |
+
+### 6.8 My Camp — the player-owned training camp (Phases 0–1)
+
+Every fighter owns exactly **one camp**. Where a gym is somewhere you rent access to, the
+camp is *yours*: it has a name, a discipline, a staff of coaches you rank up, and a
+building that degrades if you stop showing up. It is a **second training venue that runs
+alongside the ten gyms** (see the note at the top of §6) and has its own tab, **My Camp**,
+directly after Training in the nav.
+
+The camp is **created lazily on the first visit** to the tab — there is no build step, no
+cost and no gate. Creation writes nothing to the fighter document, which is why it can
+never damage existing progress.
+
+- **Name** — defaults to `<LastName> Camp`. Renameable at any time: 3–28 characters after
+  trimming, profanity-checked, no uniqueness requirement and no cooldown.
+- **Discipline focus** — seeded once at creation and **immutable**. It decides which
+  archetype the free starting coach is and therefore which drill kit the player begins with.
+
+| Fighting style | Camp focus |
+|---|---|
+| Boxer, Kickboxer, Muay Thai, Capoeira | Striking |
+| Wrestler, Judo | Wrestling |
+| Brazilian Jiu-Jitsu, Sambo | BJJ |
+
+Backend naming note: the `camp` prefix already belongs to **Fight Camp** (§9), so every
+identifier in this system uses `homeCamp` and the API mounts at `/home-camp`. The two
+systems are unrelated — Fight Camp is per-fight, opponent-reactive prep; My Camp is a
+permanent training venue.
+
+### 6.9 Camp creation & gym conversion
+
+The same routine that creates a camp for a brand-new player also converts an existing
+player's gym history. It runs per player on first read, so there is no big-bang migration.
+
+1. **Head coach** — the fighter's *active* gym converts into the starting coach at the
+   **equivalent rank** (a Rank-3 Apex Wrestling player starts with a Rank-3 Wrestling
+   Coach). With no active gym, the highest-ranked banked gym is used; ties break on
+   sessions. With no gym history at all, the coach starts at Rank 1.
+2. **Focus** — taken from the converted gym's discipline, falling back to the style map in
+   §6.8. `elite-fight-academy` (all 8 stats) and the free `community-mma` carry no
+   discipline signal and always fall back to style.
+3. **Discipline familiarity** — every *other* banked gym's sessions and relevant wins are
+   credited to that gym's discipline as **banked familiarity**. Multiple gyms in one
+   discipline sum. The credit is spent when hiring a market coach in that discipline
+   (§6.18).
+4. **Never lowers anything** — a converted coach is floored at his own rank's requirements,
+   so a migrated player is never below the thresholds for the rank he was handed.
+
+5. **The rank-4 perk is owed, not lost** — conversion writes *nothing* to the fighter, so a
+   coach who converts in at Rank 4 does not receive the archetype perk automatically.
+   Instead the camp shows it as **claimable** on that coach and the player claims it in one
+   free click (§6.14). Nothing is auto-granted by a read.
+
+**Nothing is taken away.** Gym ranks, gym perks and gym badges are read during conversion
+and never written, so every badge evaluator and live perk (Strength Reserve, Iron
+Conditioning) behaves exactly as before. `fighter.gymRanks` / `fighter.gymPerks` are
+permanent, read-only legacy inputs — deleting them would silently zero ten badge evaluators
+and kill two live perks.
+
+### 6.10 Camp tier & coach slots
+
+Camp tier is 1–4 and gates two things: how many coaches can be on staff, and the XP
+multiplier of the coachless Open Mat session.
+
+| Tier | Coach slots | Coach XP multiplier | Open Mat multiplier | Drop rarity table |
+|---|---|---|---|---|
+| 1 | 1 | 1.25× | 0.60× | Amateur |
+| 2 | 2 | 1.30× | 1.00× | Amateur |
+| 3 | 3 | 1.40× | 1.15× | Regional Pro |
+| 4 | 4 | 1.50× | 1.30× | National |
+
+The coach multipliers deliberately track the gym focus multipliers (§6.3) so that during
+coexistence the camp is never a nerf relative to the player's current gym.
+
+**Effective tier is floored by promotion tier** — `max(stored tier, promotion floor)` —
+so career progress can never leave a camp behind: Amateur → 1, **Regional Pro → 3**,
+**National / GCS Contender / GCS → 4**. The one *purchasable* step is **renovating Tier
+1 → 2** (§6.20); Tiers 3 and 4 come only from the promotion floor. Since Regional Pro
+already floors the camp at 3, in practice renovation matters exactly for the Amateur who
+wants the second coach slot and the Trainer Market before turning pro.
+
+### 6.11 Coaches & archetypes
+
+A coach is an **individual**: a generated name, an archetype, a **rarity** (Common /
+Uncommon / Rare / Legendary), one of twelve **traits** (§6.17), a frozen **weekly wage**
+and **hire fee**, a **morale** score (§6.19), a rank (1–4), a session counter and a
+relevant-win counter. The free starter coach is the one exception — Common, traitless,
+**$0 wage forever** — so the camp's floor never costs anything to keep. Every other coach
+is hired from the weekly Trainer Market (§6.16).
+
+| Archetype | Stat cluster | Counts as a "style win" | Rank-4 perk |
+|---|---|---|---|
+| Striking Coach | STR, SPD, CHN | KO/TKO | Corner Confidence |
+| Wrestling Coach | WRE, GND, STR | Decision (unanimous or split) | Mat Returns |
+| BJJ Professor | GND, SUB | Submission | Submission Awareness |
+| Conditioning Coach | CHN, FIQ | Any win | Iron Conditioning |
+
+The **Conditioning Coach is market-only** (never a starter, hireable from Camp Tier 2) and
+carries the camp's only Max Stamina training and only FIQ drill — see §6.12. "Any win"
+means all PvE win methods credit him, so he is the easiest coach to feed style wins.
+
+Rank labels are **Cornerman → Coach → Head Coach → Master**. The rank-4 perk is granted
+into `fighter.gymPerks` — the *same* store the gym system uses — so a perk can never exist
+twice with two different effect texts, and a player who already earned it from the gym
+simply keeps it. Roster hard cap is 4 coaches, **one coach per discipline**.
+
+**Rarity decides teaching, not training.** A coach's rarity sets how many Special Moves he
+can ever teach (**teach breadth**: Common 1 / Uncommon 2 / Rare 3 / Legendary his whole
+discipline pool) and the **rarity he teaches them at** — his own rarity, floored by each
+move's own minimum rarity. Teaching itself (granting the moves) is Phase 2; Phase 1
+generates and stores each coach's pool and shows it on his market card, so nothing is sold
+blind. Rarity also sets his price (§6.17). It does **not** change his drill kit or XP
+multiplier — a Legendary trains the same drills at the same rates; you pay for what he can
+teach and who he is.
+
+### 6.12 Drills
+
+Each coach carries a fixed **kit of 4 drills**, unlocking at coach ranks **1 / 1 / 2 / 3**.
+Index 2 is the **flagship** (highest XP, highest energy, real injury risk, the only
+coach drill that can drop a Special Move, and the only one that *costs* Facility
+Condition); index 3 is the **utility** drill (cheap, safe, and the biggest condition gain).
+
+| Coach | Drill | Unlock | Energy | Stats | XP base | Injury | Move drop | Condition |
+|---|---|---|---|---|---|---|---|---|
+| Striking | Pad Work Circuit | R1 | 5 | STR, SPD | 10 | — | — | +2 |
+| Striking | Heavy Bag Assault | R1 | 6 | STR | 15 | 2% | — | 0 |
+| Striking | **Live Championship Rounds** | R2 | 9 | STR, SPD, CHN | 18 | 6% | 5% | −1 |
+| Striking | Chin & Composure Drills | R3 | 4 | CHN | 10 | — | — | +3 |
+| Wrestling | Live Wrestling | R1 | 5 | WRE | 12 | 1% | — | +1 |
+| Wrestling | Cage Control Drilling | R1 | 6 | WRE, GND | 12 | 2% | — | +1 |
+| Wrestling | **Grind-It-Out Rounds** | R2 | 9 | WRE, GND, STR | 18 | 6% | 5% | −1 |
+| Wrestling | Mat Return Repetition | R3 | 4 | WRE | 10 | — | — | +2 |
+| BJJ | Guard Retention Work | R1 | 4 | GND | 10 | — | — | +2 |
+| BJJ | Positional Sparring | R1 | 5 | GND, SUB | 10 | 1% | — | +1 |
+| BJJ | **Live Rolling** | R2 | 9 | GND, SUB, WRE | 18 | 5% | 5% | −1 |
+| BJJ | Film & Technique Study | R3 | 3 | SUB | 8 | — | — | +3 |
+| Conditioning | Strength & Conditioning+ | R1 | 4 | *Max Stamina* | — | — | — | +2 |
+| Conditioning | Recovery & Mobility | R1 | 3 | *(condition only)* | — | — | — | **+5** |
+| Conditioning | **Grueling Fitness Test** | R2 | 8 | CHN, STR | 16 | 4% | 3% | −1 |
+| Conditioning | Veteran Wisdom Sessions | R3 | 4 | FIQ | 10 | — | — | +2 |
+
+The Conditioning kit (Phase 1, market-only coach — §6.11) deliberately breaks the
+stat-XP mold twice. **Strength & Conditioning+** raises **Max Stamina** instead of any
+stat — the same +1 per session (+2 with the Iron Conditioning perk, capped at 120) as the
+gym's Conditioning session, via the same shared routine, and it is the **only Max Stamina
+training in the camp**. **Recovery & Mobility** earns no XP at all — it is the cheapest
+pure-condition purchase in the game, +5 to the building for 3 energy. Both are honest
+statless drills (validated at boot: a statless drill must raise Max Stamina or condition).
+**Veteran Wisdom Sessions** is the camp's only FIQ drill. The flagship's 3% move-drop rate
+(vs 5% on the combat flagships) reflects its two-stat cluster, and it is bag-family so a
+bag-blocking injury gates it — a 4%-injury drill must be blockable.
+
+**Open Mat Sparring** is the fallback session: **always available, never gated, no coach
+required** — 6 energy, all 8 stats, XP base 12, 3% injury, **4% move drop**, no condition
+change. It runs at the tier's *fallback* multiplier (0.60× at Tier 1 up to 1.30× at Tier 4),
+not the coach multiplier, so it is the floor a player without a suitable coach falls back to.
+
+Drills inherit the existing injury blocks by family: `spar` drills are blocked by a
+sparring-blocking injury, `bag` drills by a bag-work-blocking injury, `none` drills are
+never blocked. Effective injury rate is the drill's own percentage shaved by Fight IQ —
+0.1 percentage points per point of FIQ above 10, floored at 30% of the printed rate
+(`max(p × 0.3, p − max(0, FIQ − 10) × 0.1pp)`) — and an injury ends the remaining batch with
+the unused energy refunded. Batches are capped at 25 sessions per request, matching the gym.
+
+Balance note: the flagship is ~2.0 XP per energy against ~2.5 for the cheap Rank-1
+single-stat drills — it is *not* strictly dominant, it buys breadth, the move-drop roll and
+a stat-cluster hit in exchange for injury risk and a decaying building. If flagship share
+exceeds ~70% of camp sessions, the lever is the flagship's XP base (18 → 16), **not** its
+drop odds.
+
+### 6.13 Facility Condition
+
+The camp building has a **Condition** score, 0–100, starting at 100. It is a soft,
+never-blocking XP modifier — a low-condition camp always still trains.
+
+| Value | Band | XP multiplier |
+|---|---|---|
+| 0–19 | Neglected | 0.75× |
+| 20–49 | Run down | 0.90× |
+| 50–100 | Thriving | 1.00× |
+
+- **Decay:** **−2 per idle UTC day** — a calendar day (UTC) in which the player ran zero
+  camp sessions. Any camp session on a day suppresses that day's decay entirely.
+- **Catch-up cap:** at most **14 days** are applied in a single catch-up, so a returning
+  player loses at most 28 condition, not their whole score.
+- **Per-session change:** each drill applies its own condition delta (see §6.12), multiplied
+  by the number of sessions completed in the batch. Recovery drills build the building back
+  up; flagships wear it down.
+- **Applied in two places, once:** a nightly job (03:15 UTC) sweeps stale camps, and every
+  camp read applies the same lazy tick. Both key off a stored UTC day key, so running the
+  job repeatedly in one day still applies exactly one −2, and a broken job degrades to
+  "condition ticks when you visit" rather than to a stuck value.
+
+### 6.14 Coach ranks & promotion
+
+Coaches rank 1 → 4. **Every promotion costs cash, so every promotion is manual** — there is
+no auto-rank-up path anywhere in the camp.
+
+| Rank | Sessions with this coach | Style wins | Cash | Unlocks |
+|---|---|---|---|---|
+| 2 | 12 | 2 | 600 | The flagship drill |
+| 3 | 30 | 5 | 2,000 | The utility drill **and +5% training XP with this coach** |
+| 4 | 60 | 10 | 5,000 | The archetype's perk (§6.11) |
+
+- **Sessions** count only sessions run *with that coach* — Open Mat does not feed a coach.
+- **Style wins** are wins by the coach's own method: KO/TKO for Striking, decisions for
+  Wrestling, submissions for BJJ. **PvE only** — Proving Ground results never credit a
+  coach.
+- Promotion cost is adjusted by the same persona modifier that adjusts gym rank-up cost
+  (§16.6), and the displayed price is produced by the same helper that charges it, so the
+  quote can never disagree with the bill. A double-click cannot double-charge: the rank is
+  re-read and re-checked inside the write.
+
+**Claiming the Rank-4 perk.** Promoting a coach *to* Rank 4 grants the archetype perk as
+part of the promotion. A coach who **converted in at Rank 4** from a gym never went through
+a promotion, so his perk is offered as a separate, **free** claim on the coach card — the
+rank was already earned, the claim just hands over what is owed. The claim is additive and
+one-shot: it only ever adds the missing perk id to `fighter.gymPerks`, never removes or
+overwrites anything, a perk already held (very common — the source gym granted it at its own
+Rank 4) is reported as already held rather than duplicated, and a double-click grants once.
+A maxed coach therefore always states one of exactly three truths: perk held, perk
+claimable, or this archetype has no perk.
+
+### 6.15 Camp XP, move drops & injuries
+
+A camp session's XP multiplier is:
+
+```
+coach drill:  coach multiplier (below)  × condition band × (1 + backstory training mod)
+open mat:     tier fallbackXpMult       × condition band × (1 + backstory training mod)
+
+coach multiplier = tier coachXpMult × (1 + 0.05 if coach rank ≥ 3) × (1 + trait XP bonus)
+                   … and if the coach's morale is below 30, the BONUS above 1.0 is halved
+                   (never the base — a miserable coach is worth less, never worthless)
+```
+
+The only trait XP bonus in Phase 1 is the Taskmaster's +10% (§6.17). The morale halving
+applies to the coach's own bonus only — condition band and backstory stay outside it. The
+condition band is read **once, before the batch**, so all sessions in one click share
+one multiplier. Shop supplements apply on top, per affected stat, consuming one charge per
+completed session — identical to the gym path. Stat XP thresholds, the 95 training cap and
+the great/normal/sluggish session roll are all the shared training maths (§6.7), not a
+camp-specific copy. Trait-adjusted drill numbers (energy, injury, drop, condition — §6.17)
+are applied in exactly one shared routine consumed by both the display payload and the
+training resolver, so the card never advertises a number the session doesn't charge.
+
+**Move drops** follow the per-drill odds in §6.12 rather than the gym's flat rate — see
+§26.3. Rarity is weighted by the camp's tier drop table (§6.10), reusing the existing gym
+rarity tables. **A coach flagship's drop strongly prefers that coach's own teach pool**
+(decision 2026-07-27, superseding Phase 0's no-bias rule): the rarity is rolled first
+against the tier table as always, then the move is drawn from the coach's own teach pool
+(the moves on his card) when it has a candidate at the rolled rarity, falling back to the
+whole catalog only when it doesn't — so the bias can never grant a rarity the roll didn't
+earn. **Open Mat is
+the unbiased control**: whole catalog, 4%, exactly as in Phase 0, keeping one camp session
+directly comparable to the gym path. At most one drop per request.
+
+### 6.16 The Trainer Market (Phase 1)
+
+The market is the camp's only hiring channel — a weekly slate of candidate coaches. It
+**opens at effective Camp Tier 2** (renovation §6.20, or the Regional Pro promotion floor)
+and runs on the camp economy's single heartbeat: **Monday-aligned weeks** (boundaries at
+Monday 00:00 UTC — the same tick that debits wages and runs morale, §6.19, so "market
+resets in 4 days" and "next wage in 4 days" always agree).
+
+- **The slate:** **3 candidates** per week — **4** while a Well-Connected coach (§6.17) is
+  on the roster. Candidates are rolled once per camp per week, **deterministically** from
+  the camp id + week index, and the stored slate is authoritative from then on — there are
+  **no rerolls of any kind** (no paid refresh, no fishing by re-reading). What Monday
+  brings is what the week has.
+- **Candidates expire at the end of the week.** An unhired candidate is gone; a hired one
+  is off the slate for everyone else's purposes (his card is removed on hire).
+- **Rarity odds:** Common 55% / Uncommon 30% / Rare 12% / Legendary 3%, gated:
+  **Rare requires Camp Tier 2**, **Legendary requires Camp Tier 4 AND peak fame ≥ Rising
+  Star** (peak fame, not current — a Legendary prospect doesn't vanish because fame
+  decayed). Ineligible rarities are **removed and the remaining weights renormalised** —
+  never folded into Common — so a Tier-2 camp rolls Common/Uncommon/Rare at 56.7/30.9/12.4,
+  not 58/33/12-with-a-dead-3.
+- **Composition rules:** at most **2 candidates per discipline** per week, and the slate
+  always includes **at least one candidate from a discipline you have no coach in** (when
+  any eligible discipline is unstaffed) — the market never shows a wall of coaches you
+  can't use.
+- **Full disclosure on the card:** every candidate shows his rarity, trait (chip with
+  description), hire fee and weekly wage (trait-adjusted, struck-through base when a trait
+  discounts it), his complete drill kit with trait-adjusted numbers, his full teach pool
+  (moves and the rarity he'd teach them at), and any familiarity credit (§6.18) that would
+  apply. Displayed price is charged price — prices are a pure function of rarity + trait,
+  with no per-individual jitter.
+
+### 6.17 Coach rarity, traits & economics
+
+**Prices by rarity** (hire fee is one-off; wage is weekly, debited every Monday — §6.19).
+Wages **freeze at hire**: the number on the card is the number you pay for as long as he's
+on staff, even if the economy is later rebalanced.
+
+| Rarity | Hire fee | Weekly wage | Teach breadth |
+|---|---|---|---|
+| Common | $500 | $150 | 1 move |
+| Uncommon | $1,250 | $300 | 2 moves |
+| Rare | $3,000 | $750 | 3 moves |
+| Legendary | $5,000 | $2,250 | his whole discipline pool |
+
+A Legendary is deliberately **cheap to sign and expensive to keep** — the $5,000 fee is a
+milestone purchase, but the $2,250/week wage is the real question the player answers every
+Monday.
+
+**Every market coach carries exactly one of twelve traits** (uniform roll; the starter has
+none). A trait's numbers live in exactly one implementation site each, and the payload
+always shows trait-adjusted values:
+
+| Trait | Effect |
+|---|---|
+| Grizzled Vet | −10% weekly wage |
+| Journeyman | −50% hire fee |
+| Prodigy | −15% rank-up requirements (sessions and wins, rounded up) |
+| Taskmaster ⚠ | +10% XP on his sessions · loses 1 morale a week |
+| Perfectionist ⚠ | +1pt move-drop odds · +1pt injury risk on his drills |
+| Safety-First ⚠ | −2pts injury risk · −1pt move-drop odds on his drills |
+| Night Owl | His flagship costs 1 less energy |
+| Handyman | +1 Facility Condition on every one of his sessions |
+| Locker-Room Leader | +2 morale a week to your other coaches · nobody takes the morale hit when you fire someone while he's in the room |
+| Loyal ⚠ | Never quits — morale floor 40 · +10% wage |
+| Cornerman | +2 Facility Condition and +2 own morale after every (PvE) fight |
+| Well-Connected | The weekly market shows 1 extra candidate |
+
+⚠ = double-edged ("caution" traits — the chip renders amber). Guardrails: a trait's
+injury/drop deltas only adjust drills that already carry a non-zero rate (Perfectionist can
+never make a safe drill risky, Safety-First can never create a drop channel on a drill that
+had none), and energy never drops below 1. Wage/fee multipliers are baked in at candidate
+generation; the market card and the debit can therefore never disagree.
+
+### 6.18 Hiring, firing & discipline familiarity
+
+**Hiring** costs the hire fee up front and commits you to the weekly wage. One coach per
+discipline; total slots come from camp tier (§6.10). A new hire starts at Rank 1, morale
+100. A double-submitted hire charges once — the candidate row is claimed atomically before
+any cash moves, and losing that race reports honestly instead of double-billing.
+
+**Discipline familiarity** is the camp's memory of a discipline. It is banked from two
+sources: gym conversion (§6.9) and any **Rank-3+ coach who is fired or quits** (banked at
+Rank 2's requirement levels — 12 sessions / 2 relevant wins — never lowering an existing
+bank). When you hire a coach in a discipline with a bank, the credit is applied to the new
+hire **capped at Rank 2's requirements** — one free rank's worth of progress, never an
+instant veteran — and the bank is then **spent**. Replacing a fired Head Coach is therefore
+cheaper in time than starting cold, which is the design's answer to "firing must hurt but
+never trap".
+
+**Firing** a coach costs, deliberately and visibly (the confirm dialog lists every line):
+- his **rank and progress are lost forever** (only the familiarity credit above survives);
+- **−10 morale to every remaining coach** — unless a Locker-Room Leader is on the roster,
+  in which case the whole room is shielded;
+- **−15 Facility Condition** (a firing is bad for the building's soul).
+
+The freed slot reopens **immediately** (owner decision, 2026-07-28 — the previous 7-day
+hiring cooldown is removed). Churn is still discouraged, just not by a timer: the market
+slate is fixed for the week and cannot be rerolled, so firing buys you no new candidates,
+and you have already paid the real price in the coach's lost rank, the room's morale and
+the building. A lockout on top of that mostly punished players who mis-clicked or changed
+their mind, not farmers.
+
+**The camp can never be coachless.** Firing the last coach is refused at every tier, full
+stop. The starter coach is fireable like anyone else from Tier 2 on — the guard is "last
+coach", not "starter coach".
+
+**Quitting is not firing** (§6.19): a coach who walks out at 0 morale costs no condition,
+no morale hit to the room — the weeks of neglect that got him there
+were the price. Familiarity is still banked at Rank 3+.
+
+### 6.19 Wages & morale — the weekly tick
+
+**Morale moves both ways (2026-07-28).** A coach who took NO penalty that week — wages paid,
+at least one session run with him, and no trait self-decay — recovers **+2**. Gated on
+`neg === 0` rather than on "paid && used", so a Taskmaster's built-in weekly self-decay is
+never cancelled by an otherwise clean week.
+
+Recovery is deliberately slower than the damage (+2 against −5 unpaid / −3 benched): a coach
+dragged to 30 needs ~35 perfect weeks to reach 100 again. Before this, morale was strictly
+one-directional — a clean week set the change to zero and gave nothing back — so a single
+missed payroll scarred a coach at that level permanently unless the player hired a
+Locker-Room Leader. That made one bad month an irreversible tax rather than a setback.
+
+**The bands the UI shows are cut at the thresholds that DO something**, not at round numbers:
+≥70 Thriving (full value) · 30–69 Restless (still full value, warning only) · 1–29 Struggling
+(training bonus halved *right now*) · 0 Ready to walk. The previous copy called 39 "Ready to
+walk — one bad week from quitting", which at −3 to −8 a week was 5–13 weeks out, and never
+mentioned 30 at all.
+
+
+Everything on a schedule in the camp shares **one weekly heartbeat**: a Monday 03:30 UTC
+job (with a lazy Monday-aligned week index behind it) that debits wages, applies morale,
+and processes quits. Per week, per camp:
+
+1. **Wages** — the roster's total weekly wage is debited from cash in one all-or-nothing
+   conditional write (never drives the balance negative). Paid or not, the result shows in
+   the camp bar (`lastDebit`, unpaid-weeks counter). The starter's $0 wage means a
+   one-coach starter camp never pays anything.
+2. **Unpaid week** — every coach takes **−5 morale**, and Facility Condition takes
+   **−5 × consecutive unpaid weeks** (capped at −20/wk). Paying again resets the counter.
+3. **Unused coach** — a coach who ran **zero sessions that week** takes −3 morale (a coach
+   hired mid-week is exempt for that week).
+4. **Squalor doubles the damage** — if condition was **below 20** at the week's start, all
+   the negative morale for that week is **doubled**. Positive morale is never doubled.
+5. **Traits** — Taskmaster burns himself −1/wk; a Locker-Room Leader gives every *other*
+   coach +2/wk; Loyal is floored at 40 and never quits.
+6. **Quits** — a coach at **0 morale quits** (§6.18: no firing side-costs). **The last
+   coach never quits** — his morale floors at 1 and the low-morale warning keeps firing.
+
+**Morale consequences before the cliff:** below **70**, a per-coach warning appears in the
+camp's Needs strip with the actual cause ("wages went unpaid", "hasn't run a session in
+N days"). Below **30**, the coach's **XP bonus is halved** (the bonus over 1.0 — never the
+base, §6.15). At **0** he quits. The tuning target: an *absent* player with two coaches
+goes 100 → 0 in about 8 weeks (−8/wk, doubling once the building rots) — "months of total
+neglect" — while an *active* player who pays wages and runs one session per coach per week
+takes zero decay.
+
+**Safety rails:** the weekly job claims each camp with a compare-and-set before touching
+cash, so a crash mid-sweep skips a week rather than double-charging; catch-up after an
+outage or long absence is capped at **8 weeks** of back-wages; and a camp's first-ever tick
+processes no history — migrated players are never retro-charged or retro-decayed.
+
+### 6.20 Renovation & Deep Clean
+
+**Renovation — Tier 1 → 2: $2,000 + 3 career wins.** Unlocks the **second coach slot**
+and **opens the Trainer Market** (§6.16). The cost is adjusted by the same persona
+rank-discount modifier as gym rank-ups (§16.6), with the displayed price produced by the
+helper that charges it. Tiers 3 and 4 are not purchasable — they arrive with the Regional
+Pro / National promotion floors (§6.10). Renovation is only offered while the stored tier
+equals the effective tier (a promotion that already floored you past a tier means there is
+nothing left to buy at that step).
+
+**Deep Clean — $300 for +40 Facility Condition**, any time condition is below full, no
+cooldown. Cash-for-condition on demand, priced against the alternative: Recovery &
+Mobility buys condition with energy (§6.12); Deep Clean buys it with money when energy is
+worth more to you. It is *not* a training session — it never suppresses that day's idle
+decay, so it can't be used as a $300 attendance stamp. Not persona-adjusted.
+
+### 6.21 The teach channel (Phase 2)
+
+Promoting a coach hands the player Special Moves from that coach's own frozen
+`teachPoolMoveIds`. This is the camp's second move source alongside per-drill drops
+(§6.15), and the only one the player can *aim*: the pool is visible on the coach card
+from the moment he appears on the market, so a hire is a decision about which moves you
+are buying access to.
+
+**Which rank teaches what** — `TEACH_RANK_BY_SLOT`, indexed by pool position:
+
+| Coach rank | Pool slots granted | Notes |
+|---|---|---|
+| 2 | slot 0 | The first move; every rarity has one |
+| 3 | *none* | Rank 3 is the permanent +5% XP node — giving it a move would leave Rank 4 with only the perk |
+| 4 | slots 1…n−1 | **All** remaining slots at once |
+
+Pool breadth is the rarity gate, applied once at generation
+(`DOMAIN_TEACH_POOLS[domain].slice(0, TEACH_BREADTH_BY_RARITY[rarity])`), so no rarity
+check is needed at grant time: Common teaches 1 move, Uncommon 2, Rare 3, Legendary the
+full domain pool. A Common coach's Rank 4 therefore teaches **nothing** — his single move
+already arrived at Rank 2, and Rank 4 pays him out in the archetype perk instead.
+
+**Rarity of the copy.** `teachRarityFor(coachRarity, move.minRarity)` — the coach's own
+rarity, floored by the move's catalogue minimum. A Rare coach hands over Rare copies; he
+can never hand over a copy below what the catalogue allows for that move, and never above
+his own rarity.
+
+**Granting is idempotent.** `resolveTeachGrants` filters against the coach's stored
+`taughtMoveIds` before anything is written, and `grantOrUpgrade` is the single writer of
+`fighter.specialMovesOwned`. Re-promoting a coach whose slots are already recorded grants
+nothing and moves no cash. Outcomes match the drop channel exactly: **NEW** (added),
+**UPGRADE** (owned at a lower rarity — raised in place, never duplicated), **DUPLICATE**
+(owned at the same or higher rarity — paid out in cash).
+
+**A migrated Rank-4 coach teaches nothing, ever.** The gym→camp conversion deliberately
+writes nothing to the fighter (§6.9), so a converted veteran arrives at Rank 4 with an
+empty `taughtMoveIds` and no promotions left to spend. `buildTeachList` derives state from
+the coach's **rank** against each slot's requirement rather than from pool position, and
+reports those slots as `unavailable` — the screen says "missed", never a countdown to a
+rank he already holds. His Rank-4 archetype perk is still owed and is settled separately
+by `POST …/claim-perk`.
+
+#### 6.21.1 Iron Conditioning — retired as a stamina perk (2026-07-28)
+
+CONDITIONING's Rank-4 perk used to double Max Stamina gain per S&C session (+2 instead of
++1). **It could never pay out.** Max Stamina runs 100 → 120 at +1 per session, so it caps
+after **20** sessions; the perk requires **60** sessions with the coach. Anyone who earned it
+through normal play was already at the ceiling — and since `sc_plus` is now blocked at the cap
+(§6.21 note), the perk had literally nothing left to act on.
+
+It now cuts the **health-regen interval by 30%** — a point every 3.5 minutes instead of 5,
+taking a full 0→100 heal from ~8.3h to ~5.8h. Health gates how often a fighter can compete and
+never "finishes", so unlike the old effect this keeps paying for the rest of a career.
+Implemented in `fighterService.healthRegenIntervalFor`, the single home for the interval.
+
+Together with the camp-wide injury passive below, this gives CONDITIONING a coherent
+durability identity: **fewer injuries, and faster back on your feet when one lands.**
+
+#### The Conditioning coach's camp-wide passive (2026-07-28)
+
+CONDITIONING is the only archetype whose kit contains **statless drills — 2 of 4**
+(`sc_plus`, `recovery_mobility`). Every other archetype's four drills grant permanent stat
+XP. Worse, both of his pay out in **capped** resources: Max Stamina stops at 120, Facility
+Condition at 100. Once a player topped both meters out, half his kit was dead and there was
+no reason left to hold a roster slot for him — a structural problem, not a tuning one, since
+his whole identity was maintenance and maintenance has a ceiling.
+
+He now carries a passive that cannot expire:
+
+| His rank | Injury risk reduction, camp-wide |
+|---|---|
+| 1 | −15% |
+| 2 | −20% |
+| 3 | −25% |
+| 4 | −30% |
+
+Rules, all enforced in `effectiveInjuryRate` (the single home for camp injury math):
+- **It applies to EVERY camp drill, including sessions run with another coach.** That
+  cross-coach reach is what makes a support slot worth its weekly wage — he pays while you
+  train with someone else.
+- **Multiplicative, applied after the FIQ reduction.** It shaves dangerous sessions hardest
+  and can never manufacture risk on a 0% drill.
+- **The 30%-of-nominal floor still binds, and is applied last.** Stacking a Rank-4
+  Conditioning coach onto a high-FIQ fighter reaches the existing floor sooner; it never
+  buys immunity. "Safer, never immune" holds unchanged.
+- **It does not stack** across multiple Conditioning coaches (the roster allows one per
+  archetype anyway; `conditioningInjuryReduction` reads the first match so a future rule
+  change can't silently start summing).
+- **It is surfaced on the CAMP BAR, not only on his card.** `CampState.passives[]` carries
+  every active camp-wide passive with the coach providing it. Rendering it solely on his
+  coach card meant the one bonus that pays you for training with SOMEONE ELSE was visible
+  only while you were looking at him. Each entry carries a `short` label ("-30% injury") so
+  the bar never re-parses a number out of the prose `effect` string.
+
+Also fixed alongside it: `sc_plus` is now **blocked** at the Max Stamina cap
+(`canTrain: false`, plus a server-side check ahead of `deductBatchEnergy`). It has
+`stats: []`, `xpBase: 0`, `dropPct: 0`, so at the cap it delivered literally nothing while
+still charging 4 energy — the code already knew (`capHit`) and reported it only afterwards.
+
+#### Legendary masterclass drills
+
+Every Legendary coach carries a fifth drill his domain's `LEGENDARY_EXCLUSIVE_DRILLS`
+entry defines — the widest session in the game (four stats, including FIQ, which is
+otherwise hard to train), the highest move-drop chance, the highest energy cost, and a
+condition cost the building feels. It is **locked until his Rank 4**, shown on the card as
+a visible goal from the moment he is hired. Non-Legendary coaches have no such key, and a
+request naming one is rejected before any energy is spent.
+
+#### Gym retirement — CLEAN REMOVAL, NO CONVERSION (owner decision, 2026-07-28)
+
+`GYMS_RETIRED` (default **false**) retires the gyms in favour of the camp. When flipped,
+the 7 gym endpoints answer `410 gyms_retired` — the 4 `/gyms` routes plus `train`,
+`switch-gym` and `rank-up-gym`. The check is a middleware that runs **before** the
+controller, so a 410'd training request never reaches `deductBatchEnergy` and costs the
+player no energy. The client drops the Training tab, re-points every gym entry point at
+the camp, and gym **Side Quests** end (that route degrades to an empty list rather than
+410-ing, so a quiet ending never renders as a red error).
+
+**Gym progress is NOT converted.** The owner chose a clean break over a migration:
+`scripts/wipeGymData.js` clears `gymRanks`, `gymPerks`, `activeGymId`,
+`activeGymPaidUntil` and the gym rank-4 badges from every non-bot fighter. Affected
+players are compensated out of band (energy drinks) rather than through an in-place
+conversion. `scripts/migrateFightersToHomeCamp.js` is therefore **not** part of the
+cutover; it remains only for backfilling camps for players who never opened the screen.
+
+⚠️ **The shared-key rule.** Gym perks and camp perks are the same keys — the camp grants
+into `fighter.gymPerks` rather than defining a parallel perk system — and 4 of the 10 gym
+perks (`corner_confidence`, `mat_returns`, `submission_awareness`, `iron_conditioning`)
+plus 4 of the 10 gym badges (`boxer_rank4`, `wrestling_rank4`, `bjj_rank4`,
+`muaythai_rank4`) are also reachable through a camp coach's Rank 4. The wipe discriminates
+on `fighter.campRank4Archetypes`, which only the camp ever writes: anything whose archetype
+appears there was earned in the camp and is **kept**. The 6 gym-only perks and 6 gym-only
+badges always go.
+
+The wipe writes fighter documents and is only reversible through the backup it fsyncs
+before its first write; `scripts/restoreGymData.js --from=<backup>` is the tested rollback
+(round-trip verified locally). The flag itself is reversible with a restart — while false,
+the middleware is a pure `next()`.
+
+### 6.23 Coach portraits
+
+A shared pool of **46** photoreal 200×250 portraits in
+`frontend/public/assets/camp/coaches/`, drawn by `pickPortraitKey`. One pool for all four
+archetypes, not four pools: a face carries no discipline, so partitioning would only shrink the
+draw. `portraitKey` is **stamped at generation and stored** on the coach subdoc — never derived
+by hashing `_id`, which would reshuffle every existing coach's face whenever the pool size
+changed. Same rule as `name` and `hireFee`. A null key renders initials.
+
+**Pool size is not what prevents a repeated face — the draw is.** Picking independently makes
+an on-screen collision a birthday problem: at Tier 4 there are 10 faces visible at once (6
+candidates over the 4 roster tiles behind the modal), which repeats ~66% of the time at 46
+portraits and would need ~431 to reach 10%. The market roll therefore draws *without
+replacement*, excluding (a) faces already on the roster, and (b) the previous week's board — the
+latter costs nothing because `market.candidates` still holds last week's faces at the moment the
+new roll overwrites them. On-screen repeats: **0%**. Back-to-back weekly repeats: **0%**.
+A longer exclusion window would have to persist its own history, which is why it stops being free.
+
+### 6.24 Camp badges
+
+Six coach achievements in their own `camp` category (`consts/badgeCatalog.js`), separate from
+`gym` so live goals aren't buried among retired ones:
+
+| Badge | Requirement |
+|---|---|
+| Cornerman | Sign your first coach |
+| Full Staff | Employ four coaches at once |
+| Deep Pockets | Sign a Legendary coach |
+| Passed Down | Be taught one Special Move by a coach |
+| Student of the Game | Be taught five |
+| Master of All | Take a coach in all four disciplines to Rank 4 |
+
+Badge conditions are **synchronous pure functions of the fighter document** and cannot query the
+HomeCamp collection, so each trigger is recorded on `fighter.campStats` at the moment it happens
+(`coachesHired`, `legendaryCoachesHired`, `peakCoachCount`, `movesTaught`). Every field is
+**monotonic** — career totals and high-water marks, never live state — so firing a coach can
+never revoke an earned badge; `peakCoachCount` is a `max()`, not the current roster length.
+*Master of All* needs no new state: it reads the same `campRank4Archetypes` the four re-pointed
+gym badges use, making it the set bonus for earning all four.
+
+The hire path calls `evaluateBadges` after the charge commits (never inside the mutator — a
+version retry would emit a duplicate feed entry). Without that the three hire badges would still
+appear, via the silent self-heal on profile read, but quietly and at the wrong moment.
 
 ---
 
@@ -282,6 +923,36 @@ Between accepting and fighting, the player runs a camp. Camp does **not** raise 
 
 ### 9.3 Match Status
 Each logged session is rated vs. the opponent's actual game: **Matched** 100%, **Partial** 50%, **Unmatched** 0%, **Wrong** 0% + penalty. Game Plan Study always counts as Partial. Repeating a session diminishes: 2nd use 60%, 3rd 30%.
+
+### 9.3.1 Rank-4 coach perks that act on the fight camp
+
+Three of the four camp Rank-4 perks (§6.21) are fight-camp effects. They were catalogued,
+granted, toasted and badged from the start but **read by nothing until 2026-07-28** — a
+player paid $5,000 for the promotion and received no mechanical effect. Now wired:
+
+| Perk (archetype) | Effect | Where |
+|---|---|---|
+| **Corner Confidence** (STRIKING) | +1 camp slot when the opponent's style is a striker | `createCamp` |
+| **Mat Returns** (WRESTLING) | Takedown Defence never scores below **Partial** | `getMatchStatus` |
+| **Submission Awareness** (BJJ) | Submission Escapes bonus ×1.05 | `buildSessionBonuses` |
+
+The fourth, **Iron Conditioning** (CONDITIONING), acts outside the fight camp entirely: it
+cuts the health-regen interval by 30% (a point every 3.5 minutes instead of 5, so a full
+0→100 heal drops from ~8.3h to ~5.8h). See §6.21.1 for why it is no longer a stamina perk.
+
+Three rules govern them:
+- **"Striker-style" is `STYLE_TO_DOMAIN[style] === "STRIKING"`** — Boxer, Kickboxer, Muay
+  Thai, Capoeira — reusing the map that already picks a starter coach's discipline rather
+  than a second hand-maintained list.
+- **Mat Returns is a floor, never a cap.** Against a Wrestler, Takedown Defence is already
+  Matched (100%); applying Partial there would make the perk a *downgrade*.
+- **Submission Awareness multiplies, it does not add.** The +5% rides the session's own
+  match-status and diminishing-returns multipliers, so it cannot resurrect an Unmatched
+  session that earned nothing.
+
+Perks are **snapshotted onto the camp at creation** (`fightCampModel.perks`), matching how
+`maxSlots` is already frozen there. Claiming a perk mid-camp does not retroactively add a
+slot or re-score sessions already logged; it applies from the next fight you accept.
 
 ### 9.4 Camp Rating (S–F, informational, no flat stat modifier)
 S 90–100, A 75–89, B 55–74, C 35–54, D 15–34, F 0–14.
@@ -626,7 +1297,19 @@ A persistent in-game newspaper — **always available, always current**. It is n
 
 ## 21. Onboarding Tutorial
 
-New accounts run a guided tooltip sequence through the core loop: fighter profile → gym → first training session → request/read a fight offer → camp (Fighter Report, session selection, weight cut) → fight result and fame → rankings → events → hospital. Ends with a completion modal granting a **$500 signing bonus**. Legacy accounts are marked complete and never see it.
+New accounts run a guided tooltip sequence through the core loop: fighter profile → **My Camp** → first training session → request/read a fight offer → fight camp (Fighter Report, session selection, weight cut) → fight result and fame → rankings → events → hospital. Ends with a completion modal granting a **$500 signing bonus**. Legacy accounts are marked complete and never see it.
+
+> **Step ids are historical and MUST NOT be renamed.** Steps 2 and 3 are still called
+> `gym_intro` and `training_session` because `fighter.tutorial.current_step` persists the id and
+> `validateStepAdvance` checks it against `STEP_ORDER`. Renaming would strand every mid-tutorial
+> player on a step the server rejects. They point at My Camp; only the target changed. The same
+> applies to the `gym-sessions` tutorial anchor, which now sits on the camp's drill grid.
+>
+> When the gyms retired, `buildNavItems` stopped rendering the Training item at all, which
+> removed the `nav-gym` anchor step 2 focused and waited on a click for. With no `skipIfAbsent`
+> on that step the tutorial could never advance, and every new player was stuck on step 2 with
+> "Skip tutorial" the only way into the game. Both steps now carry `skipIfAbsent: true`, so a
+> missing anchor degrades to a skipped beat instead of a dead end.
 
 ---
 
@@ -700,18 +1383,33 @@ Seasons are controlled by a per-season **config block** (`Season.config`), so be
 
 **Public landing-page season band.** The marketing landing page mirrors the same season state for logged-out visitors via a public, unauthenticated read (`GET /pvp/season/public` → `{ status, seasonNumber, name, startDate, endDate, crossWeightClass, weightClass, twistEffect, weightClassLabel, next }`; returns `null` when no season exists). `twistEffect` and `weightClassLabel` are produced by `pvpSeasonService.twistCopyFor` / `publicWeightClassLabel` so the marketing page and the in-game season block can never word the same twist differently. `next` carries the season queued behind the live one (same shape, never nested) or `null`, sourced from a real upcoming season doc or, when none is queued, from a tease **derived from the live season**: its `startDate` IS the live season's `endDate` (exactly what `finalizeSeason` seeds season N+1 with), its twist is the same `pickTwistForSeason(N+1)` rotation pick, and it carries the live season's Open/per-class format forward. `NEXT_SEASON_TEASE` in `consts/pvpConfig.js` is now only the `{ enabled }` marketing on/off switch: no date, season number or twist is hand-maintained, so the advertised countdown cannot drift from the rollover it counts down to. A failure resolving `next` degrades to `next: null` rather than failing the request. The PVP band is data-driven: an `upcoming` season shows the same live countdown to `startDate` (`H:MM:SS`, `MM:SS` sub-hour, "Opening…" at zero), an `active` season shows "Live Now" with a computed weeks-remaining pill, and a missing/errored fetch falls back to evergreen copy so the page never looks broken. The band polls (30s, 5s near zero) so it ticks down and auto-flips `upcoming → active` without a reload. Presentation only — no player-specific or authenticated data is exposed.
 
+### 22.6a The season rollover poster
+
+The handover between seasons is delivered as a **single full-screen "fight poster" modal**, shown the first time a player opens the Proving Ground after a season they fought in has ended. It replaces the former two-step SeasonEndModal to NewSeasonModal flow: one card now carries the whole story, sequenced with CSS delays rather than a second dialog.
+
+**What it shows, in one scroll.** An "official results" header stamped CLOSED over the ended season's name; the player's final standing (division in gold foil, final rank counting down from the size of their ladder to their real placing, division points, and season record with win rate); the payout as tear-off ticket stubs, one per reward actually earned (cash, fame, energy drinks, the division or belt badge), plus the first-season bonus line when it was paid; then a red band stamped NOW LIVE announcing the new season, the reset position the player starts from, and up to four short "what's new" lines.
+
+**Trigger and gating.** Driven entirely by the existing signal: `GET /pvp/season/current/:weightClass` returns `justEnded: true` with a `lastSeasonRecord` block when the player holds an ended-season `PVPRecord` with `seasonEndSeen: false` and at least one fight. A player who never joined the ended ladder has no record, so `justEnded` is false and the poster never appears for them; they meet the new season through the hub and the landing band instead. Every close path (the X, Escape, the backdrop, "Enter the Ladder", "View Final Ladder") fires exactly one `POST /pvp/acknowledge-season`, guarded by a ref so two racing paths cannot double-post, which flips `seasonEndSeen` and retires the poster for good. A failed acknowledge does not block the close: the modal shuts and reappears on the next page load, which is deliberate, because the alternative is trapping the player behind a network error.
+
+**Data.** Everything comes from `getJustEndedBlock` in `services/pvpRecordService.js`, which now also returns `wins`, `losses`, `seasonEndDate` (the **ended** season's close date, not the new season's end) and `poolSize`. `poolSize` is counted with the same `{ seasonId, weightClass }` scope as `computeRank`, so the "of N fighters" denominator always describes the ladder the rank was measured on, in both Open and per-class formats.
+
+**The what's-new lines.** Line one is derived from the live season's own `twistName` and `twistEffect`, so it can never contradict the twist copy shown elsewhere. The rest resolve from `pvp.seasonPoster.whatsNew.s{seasonNumber}.line{1..3}`, falling back per line to a `default` set (ladder reset, badges carry over, belt is vacant) and dropping any line that resolves to nothing. **A new season therefore needs no code change to render a sensible poster**; writing season-specific lines is optional polish.
+
+**Degradations.** No next season queued renders the results half alone with a single Close button. No twist falls back to the default lines. Zero rewards hides the payout block entirely. A missing badge simply drops that stub and the grid narrows. Belt holders get an extra gold line noting the Hall of Fame entry. Reduced motion skips the animation timeline and renders the settled state immediately.
+
 ### 22.7 The Open (cross-weight-class) format
 PvP is *designed* to run **one season per weight class** (four parallel ladders, four belts). Four ladders need four times the players to populate, so while the pool is thin the Proving Ground runs as a single **"Open"** season flagged `config.crossWeightClass = true`. **Season 1 and Season 2 both run Open.** The four-ladder split is deferred until the population supports it, not cancelled:
 
 - **One merged ladder** across all weight classes, **one belt**, **one reward pass** — the densest possible opponent pool and a single, uniquely prestigious Open belt.
 - Fairness is preserved by the existing OVR matchmaking window (the fight engine has no weight variable, so a same-OVR cross-class fight is mechanically identical to a same-class one) plus the bracket bonus for fighting up. No new guardrail.
 - Throughout the Open season, opponents' **real weight classes are shown** (opponent cards, ladder, pre-fight, fight result) so cross-class matchups read as intentional.
-- **At season end the soft reset is format-agnostic.** `softReset` drops each player one division and sets DP to that division's floor regardless of weight class, so an Open season rolls into another Open season with no redistribution step. Each record still stores the player's real weight class, which drives the ladder filter and the real-class pill on every screen.
-- **Open → per-weight-class fan-out remains supported** for the season where the split finally happens (`seedPerWcCycle` + `softResetOpen`). It is deferred, not deleted.
+- **At season end the soft reset is format-agnostic.** `softReset` drops each player one division and sets DP to that division's floor regardless of weight class, so an Open season rolls into another Open season with no redistribution step. Each record still stores the player's real weight class (stamped at record creation), which drives the ladder filter and the real-class pill on every screen.
+- **Open → per-weight-class fan-out remains supported** for the season where the split finally happens: that path redistributes every player into the season matching their real weight class (`seedPerWcCycle` + `softResetOpen`). It is deferred, not deleted.
+- **Badges.** Each Open season mints its own belt badge (`pvp_belt_s{n}_open`), and the season-keyed Two-Belt / Back-to-Back badges work across them. `pvp_open_champion` is deliberately pinned to the **Season 1** belt only and is never re-earnable.
 
 The flag is **not** hardcoded to a season number: `crossWeightClass` is set per season, so the format is a per-season decision rather than a default.
 
-> **Implementation note (pending).** `finalizeSeason`'s `isCrossWeightClass` branch currently *always* fans an ending Open season out into four per-weight-class ladders. Making Season 2 Open requires that branch to seed an Open season and use the plain `softReset` path. Until that lands, code and this section disagree.
+**How the format is chosen (owner decision, 2026-09-04).** Seasons stay Open indefinitely. `finalizeSeason` continues the ending season's own format: an Open season seeds another Open season and uses the plain `softReset`, a per-class season seeds its own class. The fan-out is gated behind one constant, `OPEN_SPLIT_AT_SEASON` in `consts/pvpConfig.js`, shipped as `null`. Set it to N and season N becomes the first per-weight-class cycle, fanning out when N-1 ends; `seedPerWcCycle` and `softResetOpen` stay in the code for exactly that. It is read at call time, not destructured at require time, so the deferred path stays testable. Covered by `tests/services/pvpSeasonRollover.test.js`, which asserts an ending Open season produces exactly one Open successor and carries every record with a fight onto it.
 
 ### 22.8 The Fight Result screen
 A PvP fight resolves to a result screen led by the **DP swing** (the score), then the outcome + method, opponent line, context pills (streak/rivalry/promotion/belt), a **DP breakdown panel** itemising every modifier, ladder movement (rank before → after), contextual banners (promotion + shield, streak up/broken, rivalry resolved, belt-holder defeated), and a Season-DP progress bar toward the next division. Actions: Fight Again / Back to Ladder.
@@ -802,7 +1500,7 @@ A live ladder is the product. A new player who reaches the Proving Ground and fi
 
 ## 23. System Interconnections
 
-The core loop: spend energy to train at a gym → training earns XP → XP raises stats → higher stats raise Overall → a higher rating qualifies for better gyms and title shots. Before each fight, run a camp (conditional bonuses) and pick a weight-cut gamble; the fight pays cash, notoriety, and XP.
+The core loop: spend energy to train at a gym **or at your own camp (§6.8)** → training earns XP → XP raises stats → higher stats raise Overall → a higher rating qualifies for better gyms and title shots. The camp adds its own sub-loop that reads back into the career: PvE wins by your coach's method rank that coach up, a higher-ranked coach unlocks better drills and more XP, promotion tier raises the camp's effective tier, and skipping days degrades Facility Condition and slows everything down. Since Phase 1 the camp is also a standing **cash sink** — hire fees, weekly coach wages, renovation and Deep Clean all draw on fight purses — and coach morale ties the loop together: paying and using your staff weekly is what keeps their XP bonuses whole (§6.19). Before each fight, run a camp (conditional bonuses) and pick a weight-cut gamble; the fight pays cash, notoriety, and XP.
 
 Notoriety is both a meter and an economy: spent on callouts (forced matchups with full intel), it gates sponsorship slots, and it's earned/lost through fights, event predictions, and media. Beef/Respect flags create grudge and rematch incentives across the division. The Shop and earned Energy Drinks let the player convert cash/achievement into tempo (energy, XP, fight buffs).
 
@@ -928,16 +1626,55 @@ rarity-keyed table lookup. Effect types: **Passive** (always-on), **Proc** (fire
 existing fight trigger), **Signature** (Rare+ only, one bounded one-shot per fight).
 
 ### 26.3 Acquisition, upgrades & duplicates
-- **Drop source:** sparring-family training sessions only, flat **4%** per session.
-- **The 4% is internal-only** (decision 2026-07-08, supersedes the spec's "visible in the
-  Library" stance): player-facing surfaces (gym UI, Library) say *"a chance — more rounds,
-  better odds"*, never the number. The rarity split IF a drop happens **is** shown (stacked
-  bar per gym tier).
-- **Gym tier weights RARITY, not drop chance** — the 4% is constant; a better gym shifts the
+- **Drop source — gyms:** sparring-family training sessions only, flat **4%** per session.
+- **Drop source — My Camp (§6.8): odds are PER DRILL, not flat** (decision 2026-07-27,
+  supersedes the flat-4%-everywhere rule for camp sessions only; the gym path is unchanged).
+  A camp session's drop chance is a property of the drill you clicked:
+
+  | Camp session | Drop chance |
+  |---|---|
+  | Rank-1 and Rank-3 coach drills (pad work, drilling, film study, …) | **0%** |
+  | Coach flagships — Live Championship Rounds / Grind-It-Out Rounds / Live Rolling | **5%** |
+  | Conditioning flagship (ships with the Conditioning coach, §6.12) | **3%** |
+  | Open Mat Sparring (the coachless fallback) | **4%** — the control, matching the gym rate |
+
+  Rationale: the flat rate existed because the gym had exactly one sparring family. The camp
+  has a graded menu, so the loot roll rides the session that already costs the most energy,
+  carries the most injury risk and wears down Facility Condition — the safe cheap drills are
+  deliberately worth 0%, so the drop is a reason to take the hard session rather than a
+  reason to spam the cheapest click. Open Mat holds the old 4% so the two systems remain
+  directly comparable while they coexist.
+- **The exact percentages stay internal-only** (decision 2026-07-08): player-facing surfaces
+  (gym UI, camp UI, Library) say *"a chance — more rounds, better odds"*, never the number.
+  The rarity split IF a drop happens **is** shown (stacked bar per gym tier).
+- **Tier weights RARITY, not drop chance** — a better gym, or a higher camp tier, shifts the
   rarity distribution upward (Community can't roll Legendary; top-tier gyms roll it ~15%).
+  Camp tiers map onto the same tables: Tier 1–2 → Amateur, Tier 3 → Regional Pro, Tier 4 →
+  National.
+- **Coach-flagship drops prefer the coach's own pool** (decision 2026-07-27, Camp Phase 1 —
+  supersedes Phase 0's "no pool bias"). When a **coach flagship** drill drops a move, the
+  rarity is rolled against the tier table first (unchanged), then the concrete move is
+  drawn from **that coach's own teach pool** (the moves on his card — already
+  breadth-limited by his rarity, so the bias never points at moves he can't teach)
+  whenever the pool contains a move available at the rolled rarity, **falling back to the
+  whole catalog** only when it doesn't. Ordering guarantees the bias can never inflate rarity — it only narrows *which*
+  move arrives, making drops feel authored ("my striking coach dropped me a striking
+  move") and previewing the Phase-2 teaching fantasy. **Open Mat Sparring keeps zero bias**
+  (whole catalog, 4%) as the unbiased control, directly comparable to the gym path. Gym
+  drops are untouched. See `docs/special-moves-spec.md` §4 for the amendment record.
+- **Deterministic source — coach teaching (§6.21, Camp Phase 2):** promoting a camp coach
+  grants moves from his own teach pool outright — no roll. Rank 2 grants pool slot 0, Rank 3
+  grants none, Rank 4 grants every remaining slot at once; pool breadth is set by the coach's
+  rarity, so a Common coach teaches one move total and a Legendary teaches his whole domain
+  pool. The copy's rarity is the **coach's** rarity floored by the move's catalogue minimum
+  (`teachRarityFor`), so this channel is how a player *chooses* a Legendary copy instead of
+  waiting for one to roll. Granting is idempotent against the coach's stored `taughtMoveIds`,
+  and a coach migrated in at Rank 4 has no promotions left, so he teaches nothing.
 - **Upgrade vs duplicate:** a pull of a *strictly higher* rarity than owned **upgrades** the
   move in place (keeps `acquiredAt`); an equal-or-lower pull is a **duplicate → cash**
-  (`fighter.iron`): Common 100 / Uncommon 250 / Rare 600 / Legendary 1,500.
+  (`fighter.iron`): Common 100 / Uncommon 250 / Rare 600 / Legendary 1,500. **Teaching uses
+  the identical three outcomes** — one `grantOrUpgrade` is the sole writer of
+  `specialMovesOwned`, so a taught move and a dropped move can never diverge.
 - **No leveling, no pity timer, no PvP** (all deliberately cut from v1).
 
 ### 26.4 The roster (v1 — 12 moves) & balance

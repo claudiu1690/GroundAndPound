@@ -6,7 +6,7 @@ import { t } from "@/lib/i18n";
  * else a progress line ("{current} / {target} {unit}"), else conditionLabel.
  */
 export function BadgeTooltip({ badge }) {
-  const { name, description, earned, context, progress, conditionLabel } = badge;
+  const { name, description, earned, context, progress, conditionLabel, legacy } = badge;
 
   let footer = null;
   if (earned) {
@@ -22,7 +22,14 @@ export function BadgeTooltip({ badge }) {
 
   return (
     <div className="b-tip" role="tooltip">
-      <div className="tt-n">{name}</div>
+      <div className="tt-n">
+        {name}
+        {/* An earned badge whose route no longer exists. The server only sends a legacy badge
+            once it is earned (retired-and-unearned ones are filtered out), so this chip always
+            means "you have this and it can no longer be obtained" — worth saying, because the
+            description still names a gym the player can no longer visit. */}
+        {legacy && <span className="tt-retired">{t("career.badges.retired")}</span>}
+      </div>
       {description && <div className="tt-d">{description}</div>}
       {footer}
     </div>

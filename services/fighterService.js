@@ -210,6 +210,34 @@ function toPublicFighter(fighter) {
     delete out.isPvpBot;
     out.notoriety = notorietyService.buildNotorietyPublicState(fighter);
     out.injuryLockedStats = getInjuryLockedStats(fighter);
+    // Perks the fighter actually holds, resolved to name + effect. `gymPerks` ships as bare
+    // key strings, which is why nothing in the UI ever rendered them — a player could take a
+    // coach to Rank 4, pay $5,000 and have no screen anywhere that showed what they got.
+    // Names/effects come from GYM_PERK_CATALOG (built from data/gyms.json) so the profile,
+    // the camp card and the Library can never disagree about what a perk does. Unknown keys
+    // are dropped rather than rendered raw.
+    {
+        const { GYM_PERK_CATALOG } = require("../consts/homeCampConfig");
+        out.perksOwned = (Array.isArray(fighter.gymPerks) ? fighter.gymPerks : [])
+            .map((key) => GYM_PERK_CATALOG[key])
+            .filter(Boolean)
+            .map((p) => ({ key: p.key, name: p.name, effect: p.effect }));
+    }
+    /**
+     * Persona modifiers, surfaced next to the perks but as a SEPARATE list.
+     *
+     * ⚠️ DELIBERATELY NOT MERGED INTO `perksOwned`, even though both are "things affecting my
+     * fighter that I want to see in one place". A coach perk is earned once, stored on the
+     * document and irrevocable. A persona modifier is none of those: it is DERIVED at read
+     * time from the current x/y (never stored), it scales with heat, it dies when heat decays
+     * or the archetype flips, and it is suppressed entirely during a blackout. Listing one
+     * under a heading that says "held" would promise permanence the system does not offer,
+     * which is the same trap as reading live roster state for a badge.
+     *
+     * `getDisplayModifiers` already returns [] for UNWRITTEN, for a blackout, and at zero heat,
+     * so an empty array here honestly means "nothing is active right now".
+     */
+    out.personaEffects = personaService.getDisplayModifiers(fighter);
     // Persona (Role Model) hospital discount: the injury card prices shown in the
     // hospital UI must match what doctorVisit/skipRecovery actually charge (same
     // fraction + rounding). Base values stay in *Base; the tag explains the delta.
@@ -344,6 +372,26 @@ async function reconcileEnergy(fighter) {
 const HEALTH_REGEN_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes per +1 health
 const HEALTH_MAX = 100;
 
+/**
+ * Seconds-per-health-point for THIS fighter.
+ *
+ * `iron_conditioning` (the CONDITIONING coach's Rank-4 perk) cuts the interval by 30%:
+ * a point every 3.5 minutes instead of every 5, so a full 0→100 heal drops from ~8.3h to
+ * ~5.8h. It replaced the perk's old effect — doubling Max Stamina gain — which could never
+ * pay out, because Max Stamina caps 20 sessions in while the perk takes 60 to earn.
+ *
+ * Health gates how often you can fight and it never "finishes", so unlike the old effect this
+ * one keeps mattering for the rest of the fighter's career.
+ */
+const IRON_CONDITIONING_REGEN_MULT = 0.7;
+
+function healthRegenIntervalFor(fighter) {
+    const perks = (fighter && fighter.gymPerks) || [];
+    return perks.includes("iron_conditioning")
+        ? Math.round(HEALTH_REGEN_INTERVAL_MS * IRON_CONDITIONING_REGEN_MULT)
+        : HEALTH_REGEN_INTERVAL_MS;
+}
+
 function reconcileHealth(fighter) {
     if (!fighter) return fighter;
     const currentHealth = fighter.health ?? HEALTH_MAX;
@@ -353,16 +401,17 @@ function reconcileHealth(fighter) {
         return fighter;
     }
 
+    const interval = healthRegenIntervalFor(fighter);
     const lastRegenAt = fighter.healthLastRegenAt ? new Date(fighter.healthLastRegenAt).getTime() : Date.now();
     const elapsedMs = Math.max(0, Date.now() - lastRegenAt);
-    const pointsEarned = Math.floor(elapsedMs / HEALTH_REGEN_INTERVAL_MS);
+    const pointsEarned = Math.floor(elapsedMs / interval);
     if (pointsEarned <= 0) return fighter;
 
     const capacity = HEALTH_MAX - currentHealth;
     const pointsApplied = Math.min(pointsEarned, capacity);
     fighter.health = currentHealth + pointsApplied;
     // Advance timestamp by exactly the consumed time — preserve partial progress.
-    fighter.healthLastRegenAt = new Date(lastRegenAt + pointsApplied * HEALTH_REGEN_INTERVAL_MS);
+    fighter.healthLastRegenAt = new Date(lastRegenAt + pointsApplied * interval);
     return fighter;
 }
 
