@@ -46,6 +46,29 @@
         "p2verify"
       ],
       "port": 4173
+    },
+    {
+      "name": "mockups",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--yes",
+        "http-server",
+        "mockups",
+        "-p",
+        "4599",
+        "-c-1",
+        "--silent"
+      ],
+      "port": 4599
+    },
+    {
+      "name": "backend-home",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "start:local"
+      ],
+      "autoPort": true
     }
   ]
 }

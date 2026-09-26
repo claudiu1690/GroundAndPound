@@ -147,10 +147,7 @@ const rankingService = require("./rankingService");
 // (Daily fight caps were removed — fights are limited only by energy. `lastFightDate`
 // is still stamped on each fight in resolveFightAndApply for the notoriety "last event".)
 
-/**
- * Generate 3 fight offers for the fighter (Easy, Even, Hard).
- * Uses opponents in DB for same weight class and promotion tier.
- */
+/** Current streak from an opponent's fightHistory, or null below MIN_STREAK_LENGTH. */
 function computeStreak(fightHistory) {
     if (!fightHistory || fightHistory.length < MIN_STREAK_LENGTH) return null;
     const last = fightHistory[fightHistory.length - 1];
@@ -173,6 +170,36 @@ function classifyOfferType(nemesisOvr, fighterOvr) {
     return OFFER_TYPE.EVEN;
 }
 
+/**
+ * Per-bout purse (GDD 7). Pure and deterministic:
+ *   round10( signingFee * OFFER_PURSE_MULT[type] * (1 + gapFrac * OFFER_PURSE_GAP_BONUS_MAX) )
+ * where gapFrac is the opponent's OVR gap normalised inside the slot's window (0 at the
+ * soft end, 1 at the hard end, clamped). TitleShot and unknown types take no gap bonus.
+ * Returns null when the tier has no signing fee.
+ *
+ * @param {string} tier
+ * @param {"Easy"|"Even"|"Hard"|"TitleShot"} offerType
+ * @param {?number} opponentOvr
+ * @param {?number} fighterOvr
+ * @returns {?number}
+ */
+function boutPurse(tier, offerType, opponentOvr, fighterOvr) {
+    const fee = PROMOTION_TIERS[tier]?.signingFee;
+    if (!Number.isFinite(fee)) return null;
+    const {
+        OFFER_PURSE_MULT, OFFER_PURSE_GAP_BONUS_MAX, OFFER_PURSE_GAP_WINDOW, OFFER_PURSE_ROUND_TO,
+    } = require("../consts/offerBoardConfig");
+    const mult = OFFER_PURSE_MULT[offerType] ?? 1;
+    const window = OFFER_PURSE_GAP_WINDOW[offerType];
+    let gapFrac = 0;
+    if (window && Number.isFinite(opponentOvr) && Number.isFinite(fighterOvr)) {
+        const [lo, hi] = window;
+        gapFrac = Math.min(1, Math.max(0, ((opponentOvr - fighterOvr) - lo) / (hi - lo)));
+    }
+    const raw = fee * mult * (1 + gapFrac * OFFER_PURSE_GAP_BONUS_MAX);
+    return Math.round(raw / OFFER_PURSE_ROUND_TO) * OFFER_PURSE_ROUND_TO;
+}
+
 function buildOfferContext(opp) {
     const history = opp.fightHistory ?? [];
     // Derive record from fightHistory so it always reflects actual fights played.
@@ -193,38 +220,67 @@ function buildOfferContext(opp) {
     };
 }
 
-async function generateOffers(fighterId) {
-    const fighter = await Fighter.findById(fighterId);
-    if (!fighter) throw new Error("Fighter not found");
-    const blockingInjury = isFightBlocked(fighter);
-    if (blockingInjury) {
-        throw new Error(fightBlockedMessage(blockingInjury));
-    }
+/**
+ * Live title-shot lock state for the fighter's current tier. Pure read of the
+ * fighter document; derived at every read so the board never stores it.
+ * @returns {{locked:boolean,cooldownRemaining:number,winsNeeded:number,rankNeeded:boolean,currentRank:(number|null)}}
+ */
+function titleShotEligibility(fighter) {
+    const titleConfig = getTitleShotConfig(fighter.promotionTier);
+    const topFiveWins = fighter.topFiveWinsInTier ?? 0;
+    const cooldown    = fighter.titleShotCooldown ?? 0;
+    const winsMet     = topFiveWins >= titleConfig.titleWins;
+    const cooldownOk  = cooldown <= 0;
+    const rankMet     = rankingService.isTopFive(fighter);
+    return {
+        locked: !(winsMet && cooldownOk && rankMet),
+        cooldownRemaining: cooldown,
+        winsNeeded: Math.max(0, titleConfig.titleWins - topFiveWins),
+        rankNeeded: !rankMet,
+        currentRank: rankingService.toDisplayRank(fighter.ranking?.rank ?? null),
+    };
+}
 
+/**
+ * Matchmaking rules for one offer board: pick the opponents, return bare slots.
+ * Uses opponents in DB for the same weight class and promotion tier.
+ *
+ * No decoration, no callout overlay and no injury check (the caller checks).
+ * Keeps two pre-existing write side effects on the hydrated fighter doc: clearing a
+ * stale nemesis and clearing pendingPromotion after an OVR drop. The board
+ * fingerprint must therefore be computed AFTER this runs.
+ *
+ * @param {Object} fighter hydrated Fighter doc
+ * @param {{avoidOpponentIds?:Array}} [opts] soft exclusion for the three OVR window
+ *        samples only (reroll passes the previous picks); backfill ignores it so a thin
+ *        division can still fill all three slots.
+ * @returns {Promise<Array<{offerType:"Easy"|"Even"|"Hard"|"TitleShot", opponentId:*}>>}
+ *          Easy, Even, Hard in ascending OVR, then TitleShot when present.
+ */
+async function pickOfferSlots(fighter, { avoidOpponentIds = [] } = {}) {
     const tier = fighter.promotionTier;
     const tierConfig = PROMOTION_TIERS[tier];
     if (!tierConfig) throw new Error("Invalid promotion tier");
 
     const overall = fighter.overallRating || 14;
     const weightClass = fighter.weightClass;
+    const avoid = Array.isArray(avoidOpponentIds) ? avoidOpponentIds.filter(Boolean) : [];
 
     const randomOpp = (match) =>
         Opponent.aggregate([{ $match: match }, { $sample: { size: 1 } }]);
 
     // Resolve nemesis first so we can force them into the correct slot
-    let nemesisMeta = null;
-    let nemesisOpp  = null;
+    let nemesisOpp = null;
     if (fighter.nemesis?.opponentId) {
         const found = await Opponent.findById(fighter.nemesis.opponentId).lean();
         if (!found || found.promotionTier !== fighter.promotionTier) {
             fighter.nemesis = emptyNemesis();
             await fighter.save();
         } else if (found.isChampion) {
-            // Nemesis is the champion — don't add as regular offer; will show on title shot card
+            // Nemesis is the champion: not a regular offer; the title slot carries the meta.
             nemesisOpp = null;
         } else {
-            nemesisOpp  = found;
-            nemesisMeta = { lossCount: fighter.nemesis.lossCount, setAt: fighter.nemesis.setAt };
+            nemesisOpp = found;
         }
     }
 
@@ -234,34 +290,31 @@ async function generateOffers(fighterId) {
     const base    = { weightClass, promotionTier: tier, isChampion: { $ne: true } };
     const exclude = [];
     if (nemesisOpp) exclude.push(nemesisOpp._id); // never double-pick the nemesis
+    // Window samples skip both the running exclude list and the soft avoid list.
+    const windowNin = () => [...exclude, ...avoid];
 
     // OVR windows are kept strictly disjoint and floor/ceiling-aware so the three
     // difficulty offers can never collide on the same OVR or invert at the edges.
     //   Easy: [max(12, O-6), O-2]   Even: [O-1, O+1]   Hard: [O+2, min(95, O+6)]
-    // At the bottom (O=14) this yields Easy [12,12], Even [13,15], Hard [16,20] —
-    // the old Easy [12,11] inversion (only 2 offers for new fighters) is gone, and
+    // At the bottom (O=14) this yields Easy [12,12], Even [13,15], Hard [16,20].
     // Easy's top (O-2) < Even's bottom (O-1) < Hard's bottom (O+2) guarantees no
     // duplicate-OVR / contradictory-label pairs.
-    const easyOpp = await randomOpp({ ...base, overallRating: { $gte: Math.max(12, overall - 6), $lte: overall - 2 }, _id: { $nin: exclude } });
+    const easyOpp = await randomOpp({ ...base, overallRating: { $gte: Math.max(12, overall - 6), $lte: overall - 2 }, _id: { $nin: windowNin() } });
     if (easyOpp[0]) exclude.push(easyOpp[0]._id);
 
-    const evenOpp = await randomOpp({ ...base, overallRating: { $gte: overall - 1, $lte: overall + 1 }, _id: { $nin: exclude } });
+    const evenOpp = await randomOpp({ ...base, overallRating: { $gte: overall - 1, $lte: overall + 1 }, _id: { $nin: windowNin() } });
     if (evenOpp[0]) exclude.push(evenOpp[0]._id);
 
-    const hardOpp = await randomOpp({ ...base, overallRating: { $gte: overall + 2, $lte: Math.min(95, overall + 6) }, _id: { $nin: exclude } });
+    const hardOpp = await randomOpp({ ...base, overallRating: { $gte: overall + 2, $lte: Math.min(95, overall + 6) }, _id: { $nin: windowNin() } });
     if (hardOpp[0]) exclude.push(hardOpp[0]._id);
 
-    // ── Backfill: guarantee 3 difficulty offers when a narrow window has no seeded
-    // opponent in this weight class. Because the pool is split across weight classes,
-    // a valid-but-narrow window (e.g. Easy [12,12]) can randomly come back empty even
-    // though other eligible opponents exist. We pull the nearest-OVR eligible
-    // opponents (respecting the same base filter + the running exclude list) and slot
-    // them into the empty windows in OVR order, so the final set stays ordered
-    // Easy(lowest) → Even → Hard(highest) with no duplicate picks. The nemesis is
-    // already in `exclude`, so backfill can never re-pick or displace it; its slot is
-    // assigned after, below, and is never treated as "empty" here.
+    // Backfill: guarantee 3 difficulty offers when a narrow window has no seeded
+    // opponent in this weight class. Pull the nearest-OVR eligible opponents (same
+    // base filter + the running exclude list, NOT the soft avoid list) and slot them
+    // into the empty windows in OVR order. The nemesis is already in `exclude`, so
+    // backfill can never re-pick or displace it.
     const windowResults = { [OFFER_TYPE.EASY]: easyOpp[0], [OFFER_TYPE.EVEN]: evenOpp[0], [OFFER_TYPE.HARD]: hardOpp[0] };
-    if (nemesisOpp && nemesisType) windowResults[nemesisType] = nemesisOpp; // nemesis owns its slot — not empty
+    if (nemesisOpp && nemesisType) windowResults[nemesisType] = nemesisOpp; // nemesis owns its slot, not empty
     const emptyCount = Object.values(OFFER_TYPE).filter((t) => !windowResults[t]).length;
 
     if (emptyCount > 0) {
@@ -272,55 +325,28 @@ async function generateOffers(fighterId) {
             { $limit: emptyCount },
         ]);
         // Assign fillers (nearest-OVR first) to empty slots in ascending OVR order so
-        // the lowest filler lands in the lowest open slot, preserving Easy→Even→Hard.
+        // the lowest filler lands in the lowest open slot, preserving Easy, Even, Hard.
         const ordered = [...fillers].sort((a, b) => a.overallRating - b.overallRating);
-        const openSlots = Object.values(OFFER_TYPE).filter((t) => !windowResults[t]); // already Easy→Even→Hard order
+        const openSlots = Object.values(OFFER_TYPE).filter((t) => !windowResults[t]); // already Easy, Even, Hard order
         for (let i = 0; i < ordered.length && i < openSlots.length; i++) {
             windowResults[openSlots[i]] = ordered[i];
         }
     }
 
-    // Make sure the nemesis owns its OVR-correct slot before the final re-order. The
-    // window pick for that slot (if any) was already pushed to `exclude`, so it won't
-    // reappear as a filler.
+    // Make sure the nemesis owns its OVR-correct slot before the final re-order.
     if (nemesisOpp && nemesisType) windowResults[nemesisType] = nemesisOpp;
 
-    // ── Final ordering pass ──────────────────────────────────────
-    // The filler sort only orders fillers among themselves, not against already-filled
-    // window slots, so a backfilled Easy could out-OVR the Even card (the GCS ceiling
-    // case where Hard inverts and is backfilled hits this too). Collect the resolved
-    // opponents, sort by OVR ascending, and re-map by position: lowest → Easy, middle
-    // → Even, highest → Hard. This guarantees Easy.ovr ≤ Even.ovr ≤ Hard.ovr with
-    // labels matching position. classifyOfferType is now OVR-aligned (Fix 1), so the
-    // nemesis already lands where its OVR dictates; we just carry its meta onto
-    // whichever ordered offer is the nemesis so the decoration survives the re-sort.
+    // Final ordering pass: sort the resolved opponents by OVR ascending and re-map by
+    // position (lowest Easy, middle Even, highest Hard), so labels always match OVR.
     const resolved = Object.values(OFFER_TYPE)
         .map((t) => windowResults[t])
         .filter(Boolean)
         .sort((a, b) => a.overallRating - b.overallRating);
 
     const ORDERED_TYPES = [OFFER_TYPE.EASY, OFFER_TYPE.EVEN, OFFER_TYPE.HARD];
-    const nemesisIdStr = nemesisOpp ? String(nemesisOpp._id) : null;
-    let offers = resolved.map((opp, i) => {
-        const offer = { type: ORDERED_TYPES[i], opponent: opp, context: buildOfferContext(opp) };
-        if (nemesisIdStr && String(opp._id) === nemesisIdStr) offer.nemesisMeta = nemesisMeta;
-        return offer;
-    });
+    const slots = resolved.map((opp, i) => ({ offerType: ORDERED_TYPES[i], opponentId: opp._id }));
 
-    // ── Phase 4: Inject active callout into Hard slot ────────────
-    if (fighter.activeCallout?.opponentId) {
-        const calloutService = require("./calloutService");
-        offers = await calloutService.injectIntoOffers(fighter, offers);
-        // buildOfferContext for the injected opponent if context was not carried over.
-        for (const o of offers) {
-            if (o.isCallout && !o.context) {
-                o.context = buildOfferContext(o.opponent);
-            }
-        }
-    }
-
-    // ── Title shot offer (4th card) ──────────────────────────────
-    // Guard: clear pendingPromotion if OVR dropped below threshold
+    // Title shot slot (4th). Guard: clear pendingPromotion if OVR dropped below threshold.
     if (fighter.pendingPromotion) {
         const entry = TIER_LADDER.find((t) => t.from === fighter.promotionTier);
         if (entry && (fighter.overallRating || 0) < entry.minOverall) {
@@ -331,45 +357,97 @@ async function generateOffers(fighterId) {
 
     if (fighter.pendingPromotion) {
         const champion = await championService.getChampion(fighter.promotionTier, weightClass);
-        if (champion) {
-            // Show boosted OVR on the card so the player knows the real challenge
-            const displayChampion = { ...champion, overallRating: Math.round(champion.overallRating * 1.05) };
-            const titleConfig = getTitleShotConfig(fighter.promotionTier);
-            const winsMet     = (fighter.topFiveWinsInTier ?? 0) >= titleConfig.titleWins;
-            const cooldownOk  = (fighter.titleShotCooldown ?? 0) <= 0;
-            const rankMet     = rankingService.isTopFive(fighter);
-            const eligible    = winsMet && cooldownOk && rankMet;
-            offers.push({
-                type: "TitleShot",
-                opponent: displayChampion,
-                context: buildOfferContext(champion),
-                titleShotMeta: { targetTier: fighter.pendingPromotion },
-                locked: !eligible,
-                cooldownRemaining: fighter.titleShotCooldown ?? 0,
-                winsNeeded: Math.max(0, titleConfig.titleWins - (fighter.topFiveWinsInTier ?? 0)),
-                rankNeeded: !rankMet,
-                currentRank: require("./rankingService").toDisplayRank(fighter.ranking?.rank ?? null),
-                nemesisMeta: fighter.nemesis?.opponentId?.toString() === champion._id.toString()
-                    ? { lossCount: fighter.nemesis.lossCount, setAt: fighter.nemesis.setAt }
-                    : null,
-            });
-        }
+        if (champion) slots.push({ offerType: "TitleShot", opponentId: champion._id });
     }
 
-    // Ranking System v1.0 — compute displayed rank for each opponent so the offer card
-    // pill never duplicates the player's rank. Only applies to same-tier opponents.
-    // Stretch-tier (cross-tier) opponents keep their fixedRank as displayed.
+    return slots;
+}
+
+/**
+ * Turn stored board slots into full offer objects (the BoardOffer shape documented in
+ * services/offerBoardService.js, minus `acceptable`, which the board service adds).
+ *
+ * One Opponent.find({_id:{$in}}) for every slot (the champion included), re-mapped to
+ * slot order. Everything below is derived live, never stored: nemesis meta, the callout
+ * overlay (difficulty slots only, applied BEFORE the title slot is appended), title
+ * lock state, context (recomputed for every offer after the overlay), displayRank and
+ * beef/respect flags.
+ *
+ * `missing` is true when any slot's opponent no longer exists (or a stored title
+ * opponent is no longer the champion); the board service then regenerates.
+ *
+ * @param {Object} fighter Fighter doc (hydrated or lean)
+ * @param {Array<{offerType:string, opponentId:*}>} slots
+ * @returns {Promise<{offers:Array<Object>, missing:boolean}>}
+ */
+async function hydrateOffers(fighter, slots) {
+    const list = (Array.isArray(slots) ? slots : []).filter((s) => s && s.opponentId && s.offerType);
+    const ids = list.map((s) => s.opponentId);
+    const docs = ids.length ? await Opponent.find({ _id: { $in: ids } }).lean() : [];
+    const byId = new Map((docs || []).map((d) => [String(d._id), d]));
+
+    const nemesisId = getNemesisOpponentId(fighter);
+    const liveNemesisMeta = () => ({ lossCount: fighter.nemesis.lossCount, setAt: fighter.nemesis.setAt });
+
+    let missing = false;
+    let titleOpp = null;
+    let offers = [];
+    for (const slot of list) {
+        const opp = byId.get(String(slot.opponentId));
+        if (!opp) { missing = true; continue; }
+        if (slot.offerType === "TitleShot") {
+            if (!opp.isChampion) { missing = true; continue; }
+            titleOpp = opp;
+            continue;
+        }
+        const offer = { type: slot.offerType, opponent: opp };
+        if (nemesisId && String(opp._id) === nemesisId) offer.nemesisMeta = liveNemesisMeta();
+        offers.push(offer);
+    }
+
+    // Active callout: a live overlay on the difficulty slots, never stored on the board.
+    if (fighter.activeCallout?.opponentId) {
+        const calloutService = require("./calloutService");
+        offers = await calloutService.injectIntoOffers(fighter, offers);
+    }
+
+    if (titleOpp) {
+        const elig = titleShotEligibility(fighter);
+        offers.push({
+            type: "TitleShot",
+            // Show boosted OVR on the card so the player knows the real challenge
+            opponent: { ...titleOpp, overallRating: Math.round(titleOpp.overallRating * 1.05) },
+            titleShotMeta: { targetTier: fighter.pendingPromotion ?? null },
+            locked: elig.locked,
+            cooldownRemaining: elig.cooldownRemaining,
+            winsNeeded: elig.winsNeeded,
+            rankNeeded: elig.rankNeeded,
+            currentRank: elig.currentRank,
+            nemesisMeta: nemesisId && nemesisId === String(titleOpp._id) ? liveNemesisMeta() : null,
+        });
+    }
+
+    // Context from the opponent's CURRENT fightHistory, for every offer (the callout
+    // overlay copies the replaced slot's context, so it must be overwritten here).
+    // The purse is fixed here too: it is what createOffer stamps on the Fight, so the
+    // card, the bookings row and the payout all agree.
+    for (const o of offers) {
+        o.context = buildOfferContext(o.opponent || {});
+        o.purse = boutPurse(fighter.promotionTier, o.type, o.opponent?.overallRating, fighter.overallRating);
+    }
+
+    // Ranking System v1.0: displayed rank for each opponent so the offer card pill never
+    // duplicates the player's rank. Only same-tier opponents shift; stretch-tier
+    // (cross-tier) opponents keep their fixedRank.
     const playerRankInTier = fighter.ranking?.rank ?? null;
 
-    // Phase 6: Decorate every offer with active beef/respect flag matches so the UI
-    // can badge "this is your grudge match" / "this is the respect rematch".
+    // Phase 6: badge active beef/respect flag matches.
     const beefIds    = new Set((fighter.beefFlags    || []).map((f) => String(f.opponentId)));
     const respectIds = new Set((fighter.respectFlags || []).map((f) => String(f.opponentId)));
     for (const o of offers) {
         const oppId = o.opponent?._id ? String(o.opponent._id) : null;
         if (!oppId) continue;
 
-        // Attach displayRank if same-tier; preserve fixedRank for cross-tier opponents.
         if (o.opponent && typeof o.opponent.fixedRank === "number") {
             const sameTier = o.opponent.promotionTier === fighter.promotionTier;
             o.opponent.displayRank = sameTier
@@ -393,43 +471,44 @@ async function generateOffers(fighterId) {
         }
     }
 
-    return offers;
+    return { offers, missing };
 }
 
 /**
  * Create a fight offer (persist) and return the fight. Does not deduct energy yet.
+ * The opponent must be on the fighter's live offer board (callout overlay included);
+ * the offer type always comes from the board, never from the client.
  */
-async function createOffer(fighterId, opponentId, offerType) {
+async function createOffer(fighterId, opponentId) {
     const fighter = await Fighter.findById(fighterId);
     if (!fighter) throw new Error("Fighter not found");
-    const opponent = await Opponent.findById(opponentId);
-    if (!opponent) throw new Error("Opponent not found");
-    if (opponent.weightClass !== fighter.weightClass) throw new Error("Weight class mismatch");
 
-    // Phase 4: if this opponent matches the fighter's active callout, allow the
-    // stretch tier (one above the fighter's tier) and stamp the fight as a callout.
+    // Lazy require: offerBoardService requires this module at load time.
+    const offerBoardService = require("./offerBoardService");
+    const offer = await offerBoardService.resolveBoardOffer(fighter, opponentId);
+    const opponent = offer.opponent;
+
+    // Phase 4: stamp the fight as a callout when this opponent is the active callout.
     const isCallout =
         fighter.activeCallout?.opponentId &&
         String(fighter.activeCallout.opponentId) === String(opponent._id);
 
-    if (!isCallout && opponent.promotionTier !== fighter.promotionTier) {
-        throw new Error("Promotion tier mismatch");
-    }
-
     const fight = new Fight({
-        fighterId,
+        fighterId: fighter._id,
         opponentId: opponent._id,
-        offerType: offerType || "Even",
+        offerType: offer.type,
         promotionTier: fighter.promotionTier,
         status: "offered",
         isCallout: !!isCallout,
+        purse: Number.isFinite(offer.purse) ? offer.purse : null,
     });
     await fight.save();
     return fight;
 }
 
 /**
- * Accept a fight offer: deduct energy, set status to accepted, link to fighter.
+ * Accept a fight offer: re-validate it against the live board, claim the booking
+ * atomically, deduct energy, set status to accepted.
  */
 async function acceptOffer(fighterId, fightId, userId) {
     const fighter = await Fighter.findById(fighterId);
@@ -438,22 +517,46 @@ async function acceptOffer(fighterId, fightId, userId) {
     const fight = await Fight.findOne({ _id: fightId, fighterId, status: "offered" });
     if (!fight) throw new Error("Fight not found or not available");
 
+    // Lazy require: offerBoardService requires this module at load time.
+    const offerBoardService = require("./offerBoardService");
+    const offer = await offerBoardService.resolveBoardOffer(fighter, fight.opponentId);
+    if (offer.type !== fight.offerType) {
+        throw offerBoardService.boardError("OFFER_NOT_ON_BOARD");
+    }
+
+    // Atomic claim: only one accept can move acceptedFightId off null.
+    const claim = await Fighter.updateOne(
+        { _id: fighter._id, acceptedFightId: null },
+        { $set: { acceptedFightId: fight._id, trainingCampActions: 0 } }
+    );
+    if (!claim || claim.modifiedCount === 0) {
+        throw offerBoardService.boardError("FIGHT_ALREADY_BOOKED");
+    }
+
     const tierConfig = PROMOTION_TIERS[fight.promotionTier];
     const energyCost = tierConfig ? tierConfig.fightEnergyCost : 10;
-    await fighterService.deductEnergy(fighterId, energyCost);
+    try {
+        await fighterService.deductEnergy(fighterId, energyCost);
+    } catch (err) {
+        // Roll the claim back so the fighter is not stuck with a booking they never paid for.
+        try {
+            await Fighter.updateOne(
+                { _id: fighter._id, acceptedFightId: fight._id },
+                { $set: { acceptedFightId: null } }
+            );
+        } catch (rollbackErr) {
+            console.error("[fight] accept claim rollback failed:", rollbackErr.message);
+        }
+        throw err;
+    }
 
     fight.status = "accepted";
     await fight.save();
 
-    await Fighter.findByIdAndUpdate(fighterId, {
-        acceptedFightId: fight._id,
-        trainingCampActions: 0,
-    });
-
     // Create the FightCamp document for this fight (title shots always get full camp, never short notice)
     await campService.createCamp(fight._id, fighterId, fight.promotionTier, false, fight.offerType);
 
-    // Fire-and-forget analytics — userId is threaded from the controller (req.user.id).
+    // Fire-and-forget analytics; userId is threaded from the controller (req.user.id).
     analyticsService.track(
         userId,
         "fight_accepted",
@@ -785,8 +888,12 @@ async function resolveFightAndApply(fighterId, userId) {
     if (isComeback) xpMult = +(xpMult * 1.5).toFixed(2);
 
     // GDD 8.8: Weight miss → -20% iron purse + notoriety penalty
-    // Base purse is the tier's signingFee — every tier pays a purse (Amateur included).
-    const basePurse = tierConfig ? Math.max(0, tierConfig.signingFee || 0) : 0;
+    // Base purse is the per-bout purse stamped on the Fight at offer time (GDD 7: slot
+    // multiplier plus OVR-gap bonus on the tier signingFee). Older Fight docs without one
+    // fall back to the flat tier signingFee.
+    const basePurse = Number.isFinite(fight.purse)
+        ? Math.max(0, fight.purse)
+        : (tierConfig ? Math.max(0, tierConfig.signingFee || 0) : 0);
     const outcomeIronMult = isWin ? 1 : (isDraw ? 0.5 : 0.7);
     // Championship Pedigree perk: +10% fame from fights (handled in notoriety section below)
     const notorietyPurseFrac = notorietyService.getNotorietyPurseFraction(fighter.notoriety.peakTier);
@@ -1074,6 +1181,7 @@ async function resolveFightAndApply(fighterId, userId) {
         notorietyTierUp = { from: peakTierBefore, to: fighter.notoriety.peakTier };
     }
 
+    // The offer-board fingerprint (offerBoardService.boardFingerprint) depends on this stamp.
     fighter.lastFightDate = new Date();
 
     // Gazette v1.0 — snapshot pre-fight state so tomorrow's newspaper has accurate deltas.
@@ -1722,7 +1830,12 @@ async function getFightBreakdown(fightId, viewerFighterId) {
 }
 
 module.exports = {
-    generateOffers,
+    pickOfferSlots,
+    hydrateOffers,
+    buildOfferContext,
+    boutPurse,
+    fightBlockedMessage,
+    titleShotEligibility,
     createOffer,
     acceptOffer,
     setStrategy,

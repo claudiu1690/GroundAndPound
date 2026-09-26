@@ -131,16 +131,28 @@
  *
  *     FightOffer:
  *       type: object
+ *       description: BoardOffer (JSDoc in services/offerBoardService.js)
  *       properties:
- *         type: { type: string, enum: [Easy, Even, Hard] }
+ *         type: { type: string, enum: [Easy, Even, Hard, TitleShot] }
  *         opponent: { $ref: '#/components/schemas/Opponent' }
+ *         acceptable: { type: boolean }
+ *
+ *     OfferBoardResponse:
+ *       type: object
+ *       properties:
+ *         offers:
+ *           type: array
+ *           items: { $ref: '#/components/schemas/FightOffer' }
+ *         board:
+ *           type: object
+ *           description: OfferBoardMeta (JSDoc in services/offerBoardService.js)
  *
  *     CreateOfferRequest:
  *       type: object
  *       required: [opponentId]
  *       properties:
  *         opponentId: { type: string, format: objectId }
- *         offerType: { type: string, enum: [Easy, Even, Hard], default: Even }
+ *         offerType: { type: string, description: Accepted and ignored; the board slot decides the type }
  *
  *     Fight:
  *       type: object

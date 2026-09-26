@@ -25,8 +25,30 @@ Single-page web client. Top to bottom: a collapsible **Message Bar**, the **App 
 (left sidebar + content panel), and a fixed **App Footer**.
 
 - **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — cash, fame, rank, class, gym, backstory — badges, stat meters, active injuries), an **Inventory** panel (shown only when the fighter owns shop items), and the nav menu. Nav order groups by intent — *build → compete → manage*: **Home, Training, My Camp, Special Moves, Fight, Career, Proving Ground, Rankings, Contracts, Hospital, Shop, Events, Media, Library**. My Camp sits directly after Training (it is an alternative training venue — see §6.8), and Special Moves sits with them (all three "build your fighter") rather than down among the utility tabs. **Once `GYMS_RETIRED` flips, the Training item is removed from the nav entirely** (not disabled — gone, see `buildNavItems` in App.jsx), so My Camp becomes the first item under Home and the only training venue. Player-facing copy positions it that way, so the two must stay in step.
+- **Home ("Fight Night"):** the landing screen, rebuilt 2026-09-05. It leads with the next bout rather than a grid of status tiles. Top to bottom: a **title-shot strip** (progress toward the three title conditions); a **hero** on the octagon image showing you and your next opponent as two stacked **banners** (the shipped `BannerPreview`, since fighters have no portrait art) with a VS mark, the stakes line and the primary call to action; an **undercard** row of the other waiting offers, which becomes a horizontal snap scroller on phones; then a **grid** of every persistent module, grouped under four band headers, *Ringside* (Proving Ground, Rankings, Fighter card), *Corner report* (Vitals, Injuries, Fight camp, Stats and XP, My Camp), *The purse* (Money and Fame, Sponsorship) and *Press and record* (Octagon Gazette, Recent career). Hierarchy carries urgency: the hero and the Proving Ground tile are the loud elements, routine status stays quiet. See §1a for the data behind it.
+
 - **Footer:** game wordmark, contextual status badges (injury count → Hospital, camp → Fight, Fame → Fame drawer), Sign Out.
 - **Overlays:** Training toast stack, Tier-Up / Belt-Won overlays, Fight-block popup (energy / injury), Fame drawer, Octagon Gazette, Onboarding Tutorial, **Fight-Accept Face-Off** (see §10), Fighter Report, Camp Summary, Badge-unlock celebration, Special-Move drop reveal.
+
+---
+
+### 1a. Home screen data and hooks
+
+Home is the **Athlete Page** (rebuilt 2026-09-25, mockup `mockups/home-ufc-redesigns.html` variant C, contract `docs/offer-board-contract.md`). Layout, top to bottom: the title-shot strip; a two-column hero with the fighter's identity block on the left (monogram, nickname, name, division line, record, division rank, OVR, streak) and the **Next fight** card on the right; Fighter stats (all eight stat bars) beside Condition (energy, health, injury, fight camp, home camp); the **Bookings** list, one row per bout on the offer board plus a Call out row; then Rankings, Last fight and Purse & fame tiles. On phones the same DOM order stacks into one column.
+
+Home is served by one call, `GET /fighters/:id/dashboard` (`services/dashboardService.js`), plus the already-loaded fighter payload. Blocks of note:
+
+- **`heroBout`** the bout the Next fight card shows. Resolves to the accepted fight if one is signed, otherwise the best bout on the offer board (an unlocked title shot first, otherwise the highest-OVR acceptable offer), otherwise null. Because the board is persisted (§7), `opponentId` is a durable accept handle: Home accepts a bout directly through the same create-offer and accept calls the Fight Hub uses. The card shows the opponent's record, OVR, rank, streak, difficulty and nemesis or callout chips, the purse and the round count. States: offer on the board, fight signed (CTA becomes the hero action, usually "Go to camp"), board frozen, board blocked by injury, nothing on the board.
+- **`offers`** the offer board: `count` (acceptable bouts), `best`, `list` (every slot, including a locked title shot and frozen slots, max four) and the board meta (`generatedAt`, `expiresAt`, `rerollUsed`, `rerollCost`, `canReroll`, `rerollBlockedBy`, `frozen`, `blockedReason`, `blockedCode`).
+- **`lastFight`** the most recent PvE result from the activity log (result, opponent, outcome line, title flag), or null before the debut.
+- **`pvp.ladderRank` / `ladderSize` / `twistKey` / `twistName`** the ladder standing and the season twist. The twist sentence is frontend copy keyed by `twistKey`, so the server never ships prose.
+- **`homeCamp`** the persistent camp: name, tier, condition band, head coach with rank and morale, wage debit date, and the Monday Trainer Market reset. Read with a single `HomeCamp.findOne`; the dashboard must never call `getCampState`, which lazily ticks and writes.
+
+Two hooks come from the fighter payload rather than the dashboard: the **unread defense report** (`fighter.pvpDefense`) and the **banner** (`fighter.banner`). Home reads the defense summary as a prop and never calls `/pvp/defense-results`, which acknowledges by default and would silently mark reports read on page load.
+
+**Deliberately not shown:** a weekly ladder movement chip. `PVPRecord` stores no historical rank, so it would need a new field plus a weekly snapshot job. The ladder row shows position out of field size only. The per-fight career `ranking.delta` is unaffected and still renders on the Rankings tile.
+
+Every module degrades independently to null and renders an empty state rather than disappearing, because the grid layout assumes its slots. Identity, stats and Condition render synchronously from the fighter payload and are never skeletoned; the modules that wait on the dashboard call render a skeleton only on a cold load, never a wrong state that then flips. Accepting from Home runs the same flow as the Fight Hub, including the confirmation when the fighter carries a non-blocking injury; a stale board (bout gone, fight already booked, title still locked) reloads the board instead of failing silently.
 
 ---
 
@@ -860,16 +882,24 @@ appear, via the silent self-heal on profile read, but quietly and at the wrong m
 
 ## 7. Fight Offers & Callouts
 
-Requesting offers returns three opponent cards; a fourth **Title Shot** card appears when eligible.
+Offers live on a persisted **offer board** (`fighter.offerBoard`, `services/offerBoardService.js`, added 2026-09-25). The board holds three opponent slots, plus a fourth **Title Shot** slot when the fighter is a contender. It is "booked by the matchmaker": the player does not request offers, the board is generated the first time anything reads it and the same three names then show on Home, in the Fight Hub and in accept validation until the board is replaced.
 
-| Offer | Opponent Strength |
-|---|---|
-| Easy | 3–5 Overall below the player |
-| Even | Within 3 Overall |
-| Hard | 2–5 Overall above the player |
-| Title Shot | The champion of the current tier |
+| Offer | Opponent Strength | Purse (x tier signing fee) |
+|---|---|---|
+| Easy | 3–5 Overall below the player | 0.70x |
+| Even | Within 3 Overall | 1.00x |
+| Hard | 2–5 Overall above the player | 1.40x |
+| Title Shot | The champion of the current tier | 1.75x |
 
-Accepting costs energy (10–20 by tier) and enters the training-camp phase.
+**Purse by slot** (added 2026-09-25, `consts/offerBoardConfig.js`, `fightService.boutPurse`). Every bout on the board carries its own purse: the tier signing fee times the slot multiplier above, plus up to **5%** more for a tougher opponent inside the slot's OVR window (0% at the soft edge of the window, 5% at the hard edge; a title shot takes no gap bonus), rounded to the nearest $10. The number is deterministic, stamped on the Fight at offer time, and is the base the payout in §8 starts from, so a clean win pays exactly what the card showed. Amateur: Easy $350–370, Even $500–525, Hard $700–740, Title $880. National: Easy $1,540–1,620, Even $2,200–2,310, Hard $3,080–3,230, Title $3,850. Why: the three slots were a difficulty label with no economic weight and the Library had promised otherwise; with Easy 75%, Even 55% and Hard 35% win rates and losses paying 70%, the expected purse across the three slots stays about 0.9x the signing fee, so the economy is not inflated while Hard becomes a real risk-reward call. A callout still lands in the Hard slot, so its +25% win bump now stacks on the Hard purse. Nemesis fights stay fame-only.
+
+**Lifetime.** A board expires **24 hours** after generation ("New set in 18h"). It is also replaced, on the next read, whenever its fingerprint no longer matches the fighter: promotion tier, weight class, nemesis, or contender status changed, or a fight was resolved. Callouts are an overlay, never stored: setting one swaps it into the Hard slot immediately and cancelling brings the original Hard pick back, so a callout can never be used as a free reroll. Title-shot lock state is computed live.
+
+**Frozen.** While a fight is accepted the board is frozen: nothing regenerates and every slot is shown but unacceptable. A blocking injury clears the board and shows the injury reason instead; a fresh board generates once the injury heals.
+
+**Accepting.** `createOffer` resolves the opponent and difficulty from the board. An opponent who is not on the live board is refused, the client never chooses the difficulty, and a locked title shot cannot be accepted. The accept itself is an atomic claim on `acceptedFightId`, so two accepts cannot both go through. Accepting costs energy (10–20 by tier) and enters the training-camp phase.
+
+**Reroll.** Once per board the player can ask the matchmaker for a new set for cash: **20% of the tier's signing fee** (Amateur $100, Regional Pro $150, National $440, GCS Contender $1,200, GCS $2,400). The reroll avoids the three previous picks where the division allows, resets the 24h clock and cannot be used while a fight is booked or while injured. Why a fee rather than a free button: the old "Get offers" was a free reroll and let players fish for a soft matchup; the cost is set so ducking a Hard slot bites into the purse you would have earned.
 
 ### 7.1 Callouts (fame-driven matchmaking)
 Spend **fame** to force a specific opponent into the next Hard slot.
@@ -1014,7 +1044,7 @@ KO/TKO (win), Submission (win), Decision Unanimous (win), Decision Split (win), 
 Multiplied by an outcome modifier: KO/TKO 1.3×, Sub 1.25×, Dec Unanimous 1.1×, Dec Split 1.05×, Draw 1.0×, Loss by Decision 0.8×, Loss by Finish 0.7×. A win in **comeback mode** adds ×1.5.
 
 ### 10.4 Cash Earnings
-Base purse = the tier's signing fee, scaled by outcome: **Win 100%**, **Draw 50%**, **Loss 70%**. Modifiers on top: higher notoriety tier +5%→+50%; comeback +30%; active **Respect** flag on opponent (and you win) +15%; callout win +25%; missing weight −20%.
+Base purse = the bout's own purse from the offer board (§7 "Purse by slot": the tier signing fee times the slot multiplier plus the OVR-gap bonus, stamped on the Fight at offer time; fights created before that carry the flat signing fee), scaled by outcome: **Win 100%**, **Draw 50%**, **Loss 70%**. Modifiers on top: higher notoriety tier +5%→+50%; comeback +30%; active **Respect** flag on opponent (and you win) +15%; callout win +25%; missing weight −20%.
 
 ### 10.5 Fight Description (round-by-round breakdown)
 Every fight produces a **round-by-round event feed** rather than a generic paragraph. It is shown in the right column of the post-fight summary and again in the **career-feed drawer** (§20.4). Both render from the same stored data, so a fight reads identically wherever you open it.
@@ -1383,6 +1413,20 @@ Seasons are controlled by a per-season **config block** (`Season.config`), so be
 
 **Public landing-page season band.** The marketing landing page mirrors the same season state for logged-out visitors via a public, unauthenticated read (`GET /pvp/season/public` → `{ status, seasonNumber, name, startDate, endDate, crossWeightClass, weightClass, twistEffect, weightClassLabel, next }`; returns `null` when no season exists). `twistEffect` and `weightClassLabel` are produced by `pvpSeasonService.twistCopyFor` / `publicWeightClassLabel` so the marketing page and the in-game season block can never word the same twist differently. `next` carries the season queued behind the live one (same shape, never nested) or `null`, sourced from a real upcoming season doc or, when none is queued, from a tease **derived from the live season**: its `startDate` IS the live season's `endDate` (exactly what `finalizeSeason` seeds season N+1 with), its twist is the same `pickTwistForSeason(N+1)` rotation pick, and it carries the live season's Open/per-class format forward. `NEXT_SEASON_TEASE` in `consts/pvpConfig.js` is now only the `{ enabled }` marketing on/off switch: no date, season number or twist is hand-maintained, so the advertised countdown cannot drift from the rollover it counts down to. A failure resolving `next` degrades to `next: null` rather than failing the request. The PVP band is data-driven: an `upcoming` season shows the same live countdown to `startDate` (`H:MM:SS`, `MM:SS` sub-hour, "Opening…" at zero), an `active` season shows "Live Now" with a computed weeks-remaining pill, and a missing/errored fetch falls back to evergreen copy so the page never looks broken. The band polls (30s, 5s near zero) so it ticks down and auto-flips `upcoming → active` without a reload. Presentation only — no player-specific or authenticated data is exposed.
 
+### 22.6a The season rollover poster
+
+The handover between seasons is delivered as a **single full-screen "fight poster" modal**, shown the first time a player opens the Proving Ground after a season they fought in has ended. It replaces the former two-step SeasonEndModal to NewSeasonModal flow: one card now carries the whole story, sequenced with CSS delays rather than a second dialog.
+
+**What it shows, in one scroll.** An "official results" header stamped CLOSED over the ended season's name; the player's final standing (division in gold foil, final rank counting down from the size of their ladder to their real placing, division points, and season record with win rate); the payout as tear-off ticket stubs, one per reward actually earned (cash, fame, energy drinks, the division or belt badge), plus the first-season bonus line when it was paid; then a red band stamped NOW LIVE announcing the new season, the reset position the player starts from, and up to four short "what's new" lines.
+
+**Trigger and gating.** Driven entirely by the existing signal: `GET /pvp/season/current/:weightClass` returns `justEnded: true` with a `lastSeasonRecord` block when the player holds an ended-season `PVPRecord` with `seasonEndSeen: false` and at least one fight. A player who never joined the ended ladder has no record, so `justEnded` is false and the poster never appears for them; they meet the new season through the hub and the landing band instead. Every close path (the X, Escape, the backdrop, "Enter the Ladder", "View Final Ladder") fires exactly one `POST /pvp/acknowledge-season`, guarded by a ref so two racing paths cannot double-post, which flips `seasonEndSeen` and retires the poster for good. A failed acknowledge does not block the close: the modal shuts and reappears on the next page load, which is deliberate, because the alternative is trapping the player behind a network error.
+
+**Data.** Everything comes from `getJustEndedBlock` in `services/pvpRecordService.js`, which now also returns `wins`, `losses`, `seasonEndDate` (the **ended** season's close date, not the new season's end) and `poolSize`. `poolSize` is counted with the same `{ seasonId, weightClass }` scope as `computeRank`, so the "of N fighters" denominator always describes the ladder the rank was measured on, in both Open and per-class formats.
+
+**The what's-new lines.** Line one is derived from the live season's own `twistName` and `twistEffect`, so it can never contradict the twist copy shown elsewhere. The rest resolve from `pvp.seasonPoster.whatsNew.s{seasonNumber}.line{1..3}`, falling back per line to a `default` set (ladder reset, badges carry over, belt is vacant) and dropping any line that resolves to nothing. **A new season therefore needs no code change to render a sensible poster**; writing season-specific lines is optional polish.
+
+**Degradations.** No next season queued renders the results half alone with a single Close button. No twist falls back to the default lines. Zero rewards hides the payout block entirely. A missing badge simply drops that stub and the grid narrows. Belt holders get an extra gold line noting the Hall of Fame entry. Reduced motion skips the animation timeline and renders the settled state immediately.
+
 ### 22.7 The Open (cross-weight-class) format
 PvP is *designed* to run **one season per weight class** (four parallel ladders, four belts). Four ladders need four times the players to populate, so while the pool is thin the Proving Ground runs as a single **"Open"** season flagged `config.crossWeightClass = true`. **Season 1 and Season 2 both run Open.** The four-ladder split is deferred until the population supports it, not cancelled:
 
@@ -1395,7 +1439,7 @@ PvP is *designed* to run **one season per weight class** (four parallel ladders,
 
 The flag is **not** hardcoded to a season number: `crossWeightClass` is set per season, so the format is a per-season decision rather than a default.
 
-> **Implementation note (pending).** `finalizeSeason`'s `isCrossWeightClass` branch currently *always* fans an ending Open season out into four per-weight-class ladders. Making Season 2 Open requires that branch to seed an Open season and use the plain `softReset` path. Until that lands, code and this section disagree.
+**How the format is chosen (owner decision, 2026-09-04).** Seasons stay Open indefinitely. `finalizeSeason` continues the ending season's own format: an Open season seeds another Open season and uses the plain `softReset`, a per-class season seeds its own class. The fan-out is gated behind one constant, `OPEN_SPLIT_AT_SEASON` in `consts/pvpConfig.js`, shipped as `null`. Set it to N and season N becomes the first per-weight-class cycle, fanning out when N-1 ends; `seedPerWcCycle` and `softResetOpen` stay in the code for exactly that. It is read at call time, not destructured at require time, so the deferred path stays testable. Covered by `tests/services/pvpSeasonRollover.test.js`, which asserts an ending Open season produces exactly one Open successor and carries every record with a fight onto it.
 
 ### 22.8 The Fight Result screen
 A PvP fight resolves to a result screen led by the **DP swing** (the score), then the outcome + method, opponent line, context pills (streak/rivalry/promotion/belt), a **DP breakdown panel** itemising every modifier, ladder movement (rank before → after), contextual banners (promotion + shield, streak up/broken, rivalry resolved, belt-holder defeated), and a Season-DP progress bar toward the next division. Actions: Fight Again / Back to Ladder.

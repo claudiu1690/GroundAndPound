@@ -380,6 +380,32 @@ const fighterSchema = new mongoose.Schema({
         calledAt:     { type: Date, default: null },
     },
     /**
+     * Persisted fight offer board (services/offerBoardService.js owns its lifecycle).
+     * Slots hold only {offerType, opponentId}; everything else is hydrated live on read.
+     * Order: Easy, Even, Hard (ascending OVR), then TitleShot when present. The active
+     * callout is a read-time overlay and is never stored here. Liveness is decided by
+     * `fingerprint` + `expiresAt`; promotionTier/weightClass are informational only.
+     * Writes ONLY through a conditional Fighter.updateOne with runValidators, never save().
+     */
+    offerBoard: {
+        type: new mongoose.Schema({
+            slots: {
+                type: [new mongoose.Schema({
+                    offerType:  { type: String, enum: ["Easy", "Even", "Hard", "TitleShot"], required: true },
+                    opponentId: { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", required: true },
+                }, { _id: false })],
+                default: [],
+            },
+            generatedAt:   { type: Date, required: true },
+            expiresAt:     { type: Date, required: true },   // generatedAt + OFFER_BOARD_TTL_HOURS
+            rerollUsed:    { type: Boolean, default: false },
+            promotionTier: { type: String, required: true }, // informational; liveness uses fingerprint
+            weightClass:   { type: String, required: true }, // informational
+            fingerprint:   { type: String, required: true },
+        }, { _id: false }),
+        default: null,
+    },
+    /**
      * Phase 2 — Banner customizer.
      * Unlocks are computed at read time from fighter state (tier, milestones, badges)
      * rather than stored as an inventory, so future catalog additions just work.

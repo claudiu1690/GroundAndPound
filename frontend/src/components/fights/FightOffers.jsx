@@ -1,6 +1,6 @@
-import { memo, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
-import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Trophy, Lock, Megaphone } from "lucide-react";
+import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Lock, Megaphone, RefreshCw } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { CalloutModal } from "./CalloutModal";
 import { ContenderChecklist } from "./ContenderChecklist";
@@ -8,8 +8,9 @@ import { TITLE_WINS } from "../../constants/gameConstants";
 import { OfferCard } from "./OfferCard";
 import { InjuryWarnModal } from "./InjuryWarnModal";
 import { buildCardModel } from "./offerIntel";
-
-const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard", TITLE: "TitleShot" };
+import { useOfferBoard } from "../../hooks/useOfferBoard";
+import { useAcceptOffer } from "../../hooks/useAcceptOffer";
+import { rerollButtonState, formatTimeLeft } from "../dashboard/homeModel";
 
 function rankTileProps(rank) {
   if (rank == null) return { value: "—", label: t("fights.hub.unranked"), tone: "unranked" };
@@ -58,7 +59,14 @@ function StreakTile({ winStreak, loseStreak }) {
   );
 }
 
-function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
+/**
+ * Fight Hub panel, shown when there is nothing acceptable on the board (no
+ * offers at all, or a blocked/empty board). No "Request Offers" button any
+ * more: reads persist and auto-generate the board server-side
+ * (offer-board-contract.md §5). `blockedReason` renders as a danger alert
+ * when present; Call out stays available.
+ */
+function FightHub({ fighter, energyCost, blockedReason, onOpenCallout }) {
   const rec = fighter.record ?? {};
   const energy = fighter.energy?.current ?? fighter.energy ?? 0;
   const health = fighter.health ?? 100;
@@ -103,8 +111,11 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
         <StreakTile winStreak={winStreak} loseStreak={loseStreak} />
       </div>
 
-      {/* Badge display removed — badges still earned/stored; will return as achievements. */}
-
+      {blockedReason && (
+        <div className="fight-hub-alert fight-hub-alert--danger">
+          <AlertTriangle size={12} /> {blockedReason}
+        </div>
+      )}
       {fighter.mentalResetRequired && (
         <div className="fight-hub-alert fight-hub-alert--danger">
           <AlertTriangle size={12} /> {t("fights.hub.alertMentalReset")}
@@ -135,9 +146,6 @@ function FightHub({ fighter, energyCost, onGetOffers, onOpenCallout }) {
             : t("fights.hub.calloutTooltipRank", { rank });
         return (
           <div className="fight-hub-cta">
-            <button type="button" className="btn btn-primary fight-hub-btn" onClick={onGetOffers} disabled={blocked} data-tut="request-offers">
-              <Swords size={14} /> {t("fights.hub.requestOffers")}
-            </button>
             <button
               type="button"
               className="btn btn-secondary fight-hub-btn fight-hub-btn-secondary"
@@ -192,27 +200,98 @@ function ActiveCalloutBanner({ activeCallout, onOpenCallout }) {
   );
 }
 
-export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOffers, onAcceptOffer, onRefreshFighter, onMessage }) {
+/** Callout eligibility for the Fight Hub buttons: rank 14 or better, not blocked. */
+function calloutGate(fighter) {
+  const rank = fighter?.ranking?.rank ?? null;
+  const blockingInjury = (fighter?.injuries ?? []).find((inj) => inj.cannotFight);
+  const blocked = !!fighter?.mentalResetRequired || !!blockingInjury;
+  const eligible = rank != null && rank <= 14;
+  const tooltip = eligible
+    ? t("fights.hub.calloutTooltipEligible")
+    : rank == null
+      ? t("fights.hub.calloutTooltipUnranked")
+      : t("fights.hub.calloutTooltipRank", { rank });
+  return { eligible, disabled: blocked || !eligible, tooltip };
+}
+
+function RerollFooter({ board, fighter, rerolling, rerollError, onReroll, onOpenCallout }) {
+  const state = rerollButtonState(board);
+  const callout = calloutGate(fighter);
+  const [confirming, setConfirming] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!confirming) return undefined;
+    const onDocClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setConfirming(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [confirming]);
+
+  const time = formatTimeLeft(board?.expiresAt);
+
+  return (
+    <div className="bottom-row fight-offers-footer">
+      <span className="fight-offers-expires">
+        {time ? t("fights.board.expiresIn", { time }) : t("fights.board.expiresReady")}
+      </span>
+      {state.visible && (
+        <div ref={ref} className="fight-offers-reroll">
+          <button
+            type="button"
+            className="refresh-btn"
+            disabled={state.disabled || rerolling}
+            title={
+              state.reasonKey === "used" ? t("fights.board.rerollUsed")
+                : state.reasonKey === "cash" ? t("fights.board.rerollCash", { cost: state.cost })
+                : undefined
+            }
+            onClick={() => {
+              if (state.disabled) return;
+              if (!confirming) { setConfirming(true); return; }
+              setConfirming(false);
+              onReroll();
+            }}
+          >
+            <RefreshCw size={13} />
+            {rerolling
+              ? t("fights.board.rerolling")
+              : confirming
+                ? t("fights.board.rerollConfirm", { cost: state.cost })
+                : t("fights.board.reroll", { cost: state.cost })}
+          </button>
+          {rerollError && <span className="fight-offers-reroll-error">{rerollError}</span>}
+        </div>
+      )}
+      <button
+        type="button"
+        className="btn btn-secondary btn-sm fight-offers-callout"
+        onClick={onOpenCallout}
+        disabled={callout.disabled}
+        title={callout.tooltip}
+      >
+        <Megaphone size={13} /> {t("fights.hub.callOut")}
+        {!callout.eligible && <Lock size={10} style={{ marginLeft: 4, opacity: 0.7 }} />}
+      </button>
+    </div>
+  );
+}
+
+export const FightOffers = memo(function FightOffers({ fighter, onAcceptOffer, onRefreshFighter, onMessage }) {
+  const fighterId = fighter?._id;
   const [calloutOpen, setCalloutOpen] = useState(false);
-  // A fight the player picked while carrying a non-blocking injury, held for
-  // confirmation ({ opponentId, type }) — or null.
-  const [pendingFight, setPendingFight] = useState(null);
+  const { offers, board, loading, error, reload, reroll, rerolling, rerollError } = useOfferBoard(fighterId);
+  const { requestAccept, acceptingId, injuryModal } = useAcceptOffer({
+    fighter,
+    onAcceptOffer,
+    onStale: reload,
+    onSuccess: reload,
+  });
+
   if (!fighter) return null;
   const energyCost = FIGHT_ENERGY_COST[fighter.promotionTier] ?? 10;
   const activeCallout = fighter.activeCallout?.opponentId ? fighter.activeCallout : null;
-
-  // Injuries the fighter CAN fight through but that carry a penalty (Broken
-  // Hand, Bruised Rib, etc.). cannotFight injuries are hard-blocked elsewhere,
-  // so they never reach here. Accepting a fight with one of these first asks for
-  // confirmation instead of silently sending the fighter in hurt.
-  const nonBlockingInjuries = (fighter.injuries ?? []).filter((inj) => inj && !inj.cannotFight);
-  const handleAccept = (opponentId, type) => {
-    if (nonBlockingInjuries.length > 0) {
-      setPendingFight({ opponentId, type });
-    } else {
-      onAcceptOffer(opponentId, type);
-    }
-  };
 
   // Show the contender checklist while the player is a title CONTENDER but the
   // shot is not yet ready (cooldown, not top-5, or wins short of the gate).
@@ -226,9 +305,16 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
     return cooldown > 0 || !top5 || wins < titleWins;
   })();
 
-  // Build card model from offers
-  const cardModels = buildCardModel(offers);
-  const isFourCards = cardModels.length === 4;
+  const handleReroll = async () => {
+    const res = await reroll();
+    if (res.ok) {
+      onRefreshFighter?.(fighterId);
+    } else if (res.message) {
+      onMessage?.(res.message);
+    }
+  };
+
+  const bootLoading = loading && offers.length === 0 && !board;
 
   return (
     <section className="panel fight-offers">
@@ -242,35 +328,38 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
           open={calloutOpen}
           fighter={fighter}
           onClose={() => setCalloutOpen(false)}
-          onCalledOut={() => { if (onRefreshFighter) onRefreshFighter(fighter._id); }}
-          onCancelled={() => { if (onRefreshFighter) onRefreshFighter(fighter._id); }}
+          onCalledOut={() => { onRefreshFighter?.(fighterId); reload(); }}
+          onCancelled={() => { onRefreshFighter?.(fighterId); reload(); }}
           onMessage={onMessage}
         />
 
         <InjuryWarnModal
-          open={!!pendingFight}
-          injuries={nonBlockingInjuries}
-          onCancel={() => setPendingFight(null)}
-          onConfirm={() => {
-            const p = pendingFight;
-            setPendingFight(null);
-            if (p) onAcceptOffer(p.opponentId, p.type);
-          }}
+          open={injuryModal.open}
+          injuries={injuryModal.injuries}
+          onCancel={injuryModal.onCancel}
+          onConfirm={injuryModal.onConfirm}
         />
 
-        {offers.length === 0 ? (
+        {bootLoading ? (
+          <div className="fight-offers-loading">{t("fights.board.loading")}</div>
+        ) : error ? (
+          <div className="fight-offers-error">
+            <p>{t("fights.board.loadFailed")}</p>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={reload}>{t("fights.board.retry")}</button>
+          </div>
+        ) : offers.length === 0 || board?.blockedReason ? (
           <FightHub
             fighter={fighter}
             energyCost={energyCost}
-            onGetOffers={onGetOffers}
+            blockedReason={board?.blockedReason ?? null}
             onOpenCallout={() => setCalloutOpen(true)}
           />
         ) : (
           <>
             <OffersStandingBanner fighter={fighter} />
 
-            <div className={`offers-grid${isFourCards ? " offers-grid--four" : ""}`}>
-              {cardModels.map(({ variant, offer }, idx) => {
+            <div className={`offers-grid${buildCardModel(offers).length === 4 ? " offers-grid--four" : ""}`}>
+              {buildCardModel(offers).map(({ variant, offer }, idx) => {
                 // Inject the resolved variant onto the offer so OfferCard can read it
                 const enrichedOffer = { ...offer, _variant: variant };
                 return (
@@ -279,21 +368,20 @@ export const FightOffers = memo(function FightOffers({ fighter, offers, onGetOff
                     offer={enrichedOffer}
                     fighter={fighter}
                     energyCost={energyCost}
-                    onAccept={handleAccept}
+                    onAccept={requestAccept}
                   />
                 );
               })}
             </div>
 
-            <div className="bottom-row">
-              <button
-                type="button"
-                className="refresh-btn"
-                onClick={onGetOffers}
-              >
-                {t("fights.hub.refreshOffers")}
-              </button>
-            </div>
+            <RerollFooter
+              board={board}
+              fighter={fighter}
+              rerolling={rerolling}
+              rerollError={rerollError}
+              onReroll={handleReroll}
+              onOpenCallout={() => setCalloutOpen(true)}
+            />
           </>
         )}
       </div>

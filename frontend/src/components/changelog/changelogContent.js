@@ -18,6 +18,32 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.1",
+    date: "2026-09-25",
+    major: false,
+    highlights: [
+      "Home is now your athlete page. Your name, record, rank, Overall and streak up top, your next fight beside them, all eight stats and your condition underneath, then every bout on your board with an Accept on each. You can sign a fight straight from Home and land in camp.",
+      "The matchmaker books your fights now. The Get Offers button is gone: your three bouts are waiting when you open the Fight Hub or Home, and they are the same three everywhere. The board turns over every 24 hours, or sooner when you fight, move up a tier or your nemesis changes.",
+      "Every bout now carries its own purse, printed on the card. Easy pays 70% of your tier's signing fee, Even pays the full fee, Hard pays 140% and a title shot 175%, with a little extra for the tougher opponent inside each slot. What the card says is what a clean win pays.",
+      "Do not like the set? Reroll it once per board for cash, 20% of your tier's signing fee, and the matchmaker sends three different names where the division allows.",
+      "Your last fight, the latest Gazette issue and your Proving Ground notes now sit together at the bottom of Home, next to your division rankings and your purse.",
+    ],
+    sections: {
+      changed: [
+        "The Fight Hub shows your board on open, with the countdown to the next set and the reroll button in the footer next to Call out.",
+        "Calling someone out no longer touches the rest of your board. Your callout takes the Hard slot while it is active and the original opponent comes back if you cancel.",
+      ],
+      fixed: [
+        "The name on Home's main event never matched the offers in the Fight Hub, because every screen drew a fresh random set. Both now read the same booked board, so the fighter you see on Home is the fighter you can accept.",
+        "Accepting the same bout twice in quick succession could book it twice and charge energy twice. The booking is now claimed once.",
+      ],
+      balance: [
+        "Purses now differ by difficulty. Every fight in a tier used to pay the same, so Easy, Even and Hard were only a stat check. Now Hard pays double what Easy does and the expected purse across the three stays about the same, so the board is a real risk-reward choice without more cash flooding in.",
+        "Rerolling the board costs cash instead of being free, because the old Get Offers button was a free reroll and let you fish for a soft matchup until one appeared. The price is a slice of the purse you would earn, so ducking a Hard opponent is a real choice rather than a click.",
+      ],
+    },
+  },
+  {
     version: "2.0",
     date: "2026-09-20",
     major: true,
@@ -26,6 +52,7 @@ export const CHANGELOG_ENTRIES = [
       "You have your own camp now. My Camp sits right under Home in the menu, where Training used to be. Your name on the door, your coaches, your drills, and a building that only stays sharp if you show up. It's already built and already staffed: a free head coach who matches how you fight walks in on day one, and never charges a cent to keep.",
       "Rank your coaches up with sessions, style wins and cash. Rank 3 is a permanent +5% XP with him. Rank 4 hands you his discipline's perk for good. Every coach runs a kit of four drills that open as he ranks up: everyday work, hard flagship rounds, and a cheap recovery drill. Open Mat Sparring is always on the board too.",
       "Your coaches teach. Every one of them knows a short list of Special Moves outright, visible on his card before you ever hire him, and promoting him hands them over. No roll, no luck. This is the first place in the game where you choose which Special Moves you own, and a Legendary coach teaches Legendary copies. Every Legendary also hides a fifth drill, his masterclass, locked until Rank 4: the widest session in the game and the best move chance on the board.",
+      "When Season 1 closes and Season 2 opens, the Proving Ground hands you a results poster instead of two stacked dialogs. It stamps the old season CLOSED, shows the division you finished in, your final rank, your record and every reward you were paid on tear-off stubs, then announces Blood Sport and the position you restart from. You get it once, the first time you open the Proving Ground after the rollover, and never again. Sit the season out and you will not see it, because there is nothing to pay you.",
       "The Trainer Market opens at Camp Tier 2. Every Monday a fresh slate of coaches comes looking for work, each with his own face, name and rarity from Common to Legendary, plus one of twelve personality traits. They're employees, not furniture. Every hire draws a weekly wage debited each Monday, and every coach has morale. Bench him or miss payroll and it slides. Let it reach zero and he walks, taking his rank with him. There are no rerolls: when Monday's slate is gone, it's gone.",
       "Heads up, and read this one properly. The gyms are closing. All ten specialty gyms and the free gym are retired, and My Camp is now the only place you train. Gym Side Quests end with them. Your gym ranks, gym perks and the ten gym rank-4 badges are being cleared rather than carried across, so a Rank 4 you earned at a gym will not become a Rank 4 coach in your camp. We know that stings and we're not pretending otherwise: everyone affected will be compensated directly, and we'll announce exactly how. Anything you earned in your camp is untouched.",
     ],

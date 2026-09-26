@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const { test } = require("node:test");
 
 const { resolvePvpBadge, PVP_BADGE_DEFS } = require("../../consts/pvpBadges");
+const { badgeIdFor } = require("../../consts/pvpConfig");
 const badgeService = require("../../services/badgeService");
 const {
     evaluatePvpFightBadges,
@@ -279,6 +280,45 @@ test("pvp_belt_s1_open → open_champion", () => {
         isBelt: true, ladderRank: 1, weightClass: "Open", seasonNumber: 1,
     });
     assert.ok(has(f, "pvp_open_champion"));
+});
+
+// ── Open seasons continue past Season 1 (OPEN_SPLIT_AT_SEASON stays null) ───────
+// Every Open season mints its own belt id, so the ids must not collide and the
+// Season-1-only "Open Champion" pin must not leak onto later Open belts.
+
+test("badgeIdFor: an Open Season 2 belt is pvp_belt_s2_open (no S1 collision)", () => {
+    assert.equal(badgeIdFor("belt", 2, "Open"), "pvp_belt_s2_open");
+    assert.notEqual(badgeIdFor("belt", 2, "Open"), badgeIdFor("belt", 1, "Open"));
+});
+
+test("resolvePvpBadge: pvp_belt_s2_open resolves with Open copy", () => {
+    const r = resolvePvpBadge("pvp_belt_s2_open");
+    assert.ok(r, "a second Open belt must not fall through to null");
+    assert.equal(r.season, 2);
+    assert.equal(r.icon, "Crown");
+    assert.equal(r.category, "proving_ground");
+    assert.ok(r.name.includes("Open"), `expected Open copy, got: ${r.name}`);
+    assert.ok(r.description.includes("all weight classes"));
+});
+
+test("pvp_belt_s2_open alone does NOT grant open_champion (Season 1 only)", () => {
+    const f = fighterWith("pvp_belt_s2_open");
+    evaluatePvpSeasonBadges(f, rec({ wins: 6, losses: 1 }), {
+        isBelt: true, ladderRank: 1, weightClass: "Open", seasonNumber: 2,
+    });
+    assert.ok(!has(f, "pvp_open_champion"), "Open Champion is pinned to the Season 1 belt");
+    assert.ok(has(f, "pvp_belt_first"));
+    assert.ok(!has(f, "pvp_belt_2"), "one belt season is not two");
+});
+
+test("Open belts s1+s2 → belt_2 + belt_b2b (the seasonal regexes work across Open)", () => {
+    const f = fighterWith("pvp_belt_s1_open", "pvp_belt_s2_open");
+    evaluatePvpSeasonBadges(f, rec({ wins: 7, losses: 1 }), {
+        isBelt: true, ladderRank: 1, weightClass: "Open", seasonNumber: 2,
+    });
+    assert.ok(has(f, "pvp_belt_2"));
+    assert.ok(has(f, "pvp_belt_b2b"));
+    assert.ok(has(f, "pvp_open_champion"), "the S1 Open belt still grants it");
 });
 
 test("isBelt & losses 0 → undefeated_champ; losses 1 → no", () => {

@@ -221,6 +221,38 @@ function applySessionConditionDelta(camp, delta, now = new Date()) {
     return { before, after, delta: after - before };
 }
 
+// ── Head coach — THE single home ──────────────────────────────────────────────
+
+/** Sessions run, whichever shape the row uses (gym entry vs stored coach subdoc). */
+function sessionsOf(row) {
+    if (!row) return 0;
+    const n = Number(row.sessions ?? row.sessionsCompleted ?? 0);
+    return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * "Who leads this camp" ordering, used for BOTH the gym→camp conversion (which picks a
+ * head coach out of gym history rows) and the dashboard summary (which picks one out of
+ * the stored roster). Highest rank wins, ties broken by sessions run.
+ *
+ * Array#sort is stable in Node, so a full tie preserves roster order — the answer is
+ * deterministic across requests, which matters because the dashboard renders it.
+ */
+function compareHeadCoach(a, b) {
+    return ((Number(b?.rank) || 0) - (Number(a?.rank) || 0)) || (sessionsOf(b) - sessionsOf(a));
+}
+
+/**
+ * The camp's head coach. PURE — no I/O, no writes, safe inside a GET.
+ * @param {object} campDoc lean or hydrated HomeCamp doc
+ * @returns {object|null} the coach subdoc, or null for an empty/absent roster
+ */
+function pickHeadCoach(campDoc) {
+    const roster = Array.isArray(campDoc?.coaches) ? campDoc.coaches.filter(Boolean) : [];
+    if (roster.length === 0) return null;
+    return roster.slice().sort(compareHeadCoach)[0];
+}
+
 // ── Migration (D2) — the conversion IS the constructor ───────────────────────
 
 /** Own-property test — NEVER use `in` on a map keyed by untrusted strings. */
@@ -270,7 +302,7 @@ function deriveInitialCampState(fighter, gymSlugById = {}) {
     const activeSlug = fighter.activeGymId ? gymSlugById[String(fighter.activeGymId)] : null;
     if (activeSlug) head = entries.find((e) => e.slug === activeSlug) || null;
     if (!head && entries.length > 0) {
-        head = entries.slice().sort((a, b) => (b.rank - a.rank) || (b.sessions - a.sessions))[0];
+        head = entries.slice().sort(compareHeadCoach)[0];
     }
 
     // 3. Focus domain. A null-mapped gym (elite-fight-academy trains all 8 stats) never
@@ -912,6 +944,82 @@ function buildCampState(fighter, camp) {
 }
 
 /**
+ * @typedef {Object} DashboardCampSummary
+ * @property {string}  campName
+ * @property {number}  tier                 effectiveTier — stored tier floored by promotion
+ * @property {string}  tierLabel
+ * @property {number}  conditionValue       0..CONDITION_MAX
+ * @property {string}  conditionBand        band KEY, not the label
+ * @property {?{name:string,archetypeLabel:string,rank:number,morale:number}} headCoach
+ * @property {{weeklyTotal:number,nextDebitAt:?string,nextDebitInDays:?number,unpaidWeeks:number}} wages
+ * @property {{open:boolean,resetsAt:?string,resetsInDays:?number}} market
+ */
+
+/**
+ * The dashboard's "My Camp" tile — a strict SUBSET of buildCampState, derived from the same
+ * fields the same way so the tile and the camp screen can never disagree.
+ *
+ * ⚠️ PURE. No I/O, no writes, no lazy tick. The dashboard is a GET, so it must not go through
+ * getCampState (ensureCamp CREATES and SAVES a camp, and the read tick mutates condition).
+ * A player who has never opened the camp screen simply has no HomeCamp doc, and the caller
+ * renders the "no camp yet" empty state instead of quietly creating one from a dashboard load.
+ *
+ * @param {object} campDoc lean or hydrated HomeCamp doc (caller guarantees non-null)
+ * @param {object} fighter fighter doc — READ-ONLY, only promotionTier is used
+ * @returns {DashboardCampSummary}
+ */
+function buildDashboardCampSummary(campDoc, fighter) {
+    const tier = effectiveTier(campDoc, fighter);
+    const tierCfg = CAMP_TIERS[tier] || CAMP_TIERS[1];
+
+    const conditionValue = Number(campDoc.condition?.value ?? CONDITION_MAX);
+    const band = conditionBand(conditionValue);
+
+    const head = pickHeadCoach(campDoc);
+    const headArchetype = head ? COACH_ARCHETYPES[head.archetype] : null;
+    const headCoach = head
+        ? {
+            name: head.name ?? null,
+            archetypeLabel: headArchetype ? headArchetype.label : null,
+            rank: Number(head.rank) || 1,
+            morale: Number.isFinite(Number(head.morale)) ? Number(head.morale) : MORALE_MAX,
+        }
+        : null;
+
+    const coaches = Array.isArray(campDoc.coaches) ? campDoc.coaches : [];
+    const nextDebit = campDoc.nextWageDebitAt ? new Date(campDoc.nextWageDebitAt) : null;
+    const nextDebitValid = !!nextDebit && !Number.isNaN(nextDebit.getTime());
+
+    // Market: same rule as buildCampState — a tier gate, and this read NEVER rolls.
+    const marketOpen = tier >= MARKET_MIN_TIER;
+    const marketResetsAt = homeCampWeekEnd(homeCampWeekIndex());
+
+    return {
+        campName: campDoc.name || null,
+        tier,
+        tierLabel: tierCfg.label,
+        conditionValue,
+        conditionBand: band.key,
+        headCoach,
+        wages: {
+            weeklyTotal: coaches.reduce((sum, c) => sum + (Number(c && c.wage) || 0), 0),
+            nextDebitAt: nextDebitValid ? nextDebit.toISOString() : null,
+            nextDebitInDays: nextDebitValid
+                ? Math.max(0, Math.ceil((nextDebit.getTime() - Date.now()) / 86_400_000))
+                : null,
+            unpaidWeeks: Number(campDoc.consecutiveUnpaidWeeks) || 0,
+        },
+        market: {
+            open: marketOpen,
+            resetsAt: marketOpen ? marketResetsAt.toISOString() : null,
+            resetsInDays: marketOpen
+                ? Math.max(0, Math.ceil((marketResetsAt.getTime() - Date.now()) / 86_400_000))
+                : null,
+        },
+    };
+}
+
+/**
  * GET /home-camp/:fighterId — creates the camp on first call and applies the lazy tick.
  * @returns {Promise<CampState>}
  */
@@ -1281,6 +1389,9 @@ module.exports = {
     deepClean,
     applyWeeklyTick,
     runWeeklyCampBatch,
+    // head coach + dashboard tile — single home (PURE, no I/O)
+    pickHeadCoach,
+    buildDashboardCampSummary,
     // condition — single home
     conditionBand,
     applySessionConditionDelta,

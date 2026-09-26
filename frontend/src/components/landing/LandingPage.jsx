@@ -7,7 +7,15 @@ import { LegalModals } from "../legal/LegalModals";
 import { ReportBugModal } from "../shared/ReportBugModal";
 import { DiscordIcon } from "../shared/DiscordIcon";
 import { useSeasonBand } from "../../hooks/useSeasonBand";
-import { formatDate, formatDateShort, countdownCells, daysUntil, weeksLeftLabel } from "../../lib/countdown";
+
+// How close the NEXT season has to be before the landing hero starts counting
+// down to it instead of showing the live one. Seasons run 70 days, so this gives
+// the live season the hero for eight weeks and the incoming one the final two.
+const NEXT_SEASON_TEASE_WINDOW_DAYS = 14;
+const opensWithinTeaseWindow = (season) =>
+  !!season?.startDate &&
+  new Date(season.startDate) - Date.now() <= NEXT_SEASON_TEASE_WINDOW_DAYS * 86400000;
+import { formatDate, formatDateShort, countdownCells, weeksLeftLabel } from "../../lib/countdown";
 
 // Open a legal modal from a footer link without navigating.
 const openLegal = (e, eventName) => {
@@ -100,13 +108,19 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
   const { data: seasonData, loading: seasonLoading, countdown, timerColor, finalHour } = useSeasonBand();
 
   // The season being promoted across the page: an upcoming season directly, or
-  // the one queued behind the live season. Nav label, hero and the Proving
-  // Ground band all read this, so the page never advertises two seasons at once.
+  // the one queued behind the live season ONCE IT IS CLOSE. Nav label, hero and
+  // the Proving Ground band all read this, so the page never advertises two
+  // seasons at once. The window matters: the sweep seeds N+1 the moment N goes
+  // live, so without it the hero would flip straight from "Season 2 opens in
+  // 3 days" to a 70-day countdown for Season 3 and never once say Season 2 is
+  // live. Outside the window the live season owns the hero.
   const teaser =
     seasonData && !seasonLoading
       ? seasonData.status === "upcoming"
         ? seasonData
-        : seasonData.next || null
+        : seasonData.next && opensWithinTeaseWindow(seasonData.next)
+          ? seasonData.next
+          : null
       : null;
   const promoted = teaser || seasonData;
 
@@ -374,7 +388,11 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
                 {rule ? <>. This season: <b style={{ color: "#ddd" }}>{rule}</b>.</> : "."}
               </p>
 
-              {teaser ? (
+              {/* Countdown only while teasing. A live season shows no clock up
+                  here at all: the weeks pill in the Proving Ground band already
+                  says how long is left, and a lone "Days Left" cell in countdown
+                  styling read as a launch timer for a season that had launched. */}
+              {teaser && (
                 <div className="cd">
                   {countdownCells(teaser.startDate).map((c) => (
                     <div className="cd-cell" key={c.l}>
@@ -382,13 +400,6 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
                       <div className="cd-l">{c.l}</div>
                     </div>
                   ))}
-                </div>
-              ) : (
-                <div className="cd">
-                  <div className="cd-cell">
-                    <div className="cd-n">{daysUntil(seasonData.endDate)}</div>
-                    <div className="cd-l">Days Left</div>
-                  </div>
                 </div>
               )}
 

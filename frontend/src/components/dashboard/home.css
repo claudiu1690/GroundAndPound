@@ -1,0 +1,260 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   ATHLETE PAGE, home screen (offer-board-contract.md §5)
+
+   Ported from mockups/home-ufc-redesigns.html, variant C ("Athlete Page"),
+   section id="v-c". Mechanical rename: every mockup `.c-X` block -> `.ap-X`;
+   the mockup's shared `.tile/.chip/.btn/.bar/.kv/.sil/.rank-list/.eyebrow`
+   rules -> `.ap-tile/.ap-chip/.ap-btn/.ap-bar/.ap-kv/.ap-sil/.ap-checks/.ap-eyebrow`.
+   The mockup's `.phone .c-*` rules feed the `@container (max-width:720px)`
+   block below.
+
+   `container-type: inline-size` on `.home` is load-bearing: every
+   `@container` rule below sizes against this element's own width (correct,
+   since the app has a ~200px desktop sidebar), not the viewport. Without it
+   every @container rule silently no-ops and the phone layout never engages.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.home{--bg:#0F0F0F;--surface:#141414;--card:#1A1A1A;--hover:#222222;--line:#2A2A2A;--red:#C8102E;--red-hi:#E8102E;--red-dim:#8A0B20;--gold:#D4A820;--green:#16a34a;--t1:#FFFFFF;--t2:#AAAAAA;--t3:#888888;--t4:#666666;--disp:var(--font-display);position:relative;display:block;min-height:100vh;background:var(--bg);color:var(--t1);font-family:'Barlow',system-ui,sans-serif;font-size:14px;line-height:1.4;overflow:hidden;padding-bottom:12px;container-type:inline-size}
+/* In-app, .main already reserves 56px under 768px viewport for the fixed
+   .m-bottom-nav (App.css ~11870), stacking another 56px here would leave an
+   ~88px dead gap. 12px is just breathing room above whatever .main adds; do
+   NOT add a second 56px here. */
+.home *,.home *::before,.home *::after{box-sizing:border-box}
+:where(.home) button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.home a{cursor:pointer;text-decoration:none}
+.home button:focus-visible,.home a:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:6px}
+
+/* ── shared (mockup: .eyebrow/.chip/.btn/.bar/.kv/.sil/.rank-list) ────────── */
+.ap-eyebrow{font:700 10px/1 var(--disp);letter-spacing:4px;text-transform:uppercase;color:var(--red-hi)}
+.ap-up{color:#4ade80}
+.ap-warn{color:var(--gold)}
+.ap-wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+
+.ap-chip{display:inline-block;padding:4px 8px;border-radius:3px;font:700 10px/1 var(--disp);letter-spacing:2px;text-transform:uppercase}
+.ap-chip.is-easy{background:#123d22;color:#4ade80}
+.ap-chip.is-even{background:#3a2d06;color:#fbbf24}
+.ap-chip.is-hard{background:#3b0a12;color:#f87171}
+.ap-chip.is-title{background:#3a2d06;color:var(--gold);border:1px solid var(--gold)}
+.ap-chip.is-nem{background:#000;color:#f87171;border:1px solid var(--red-dim)}
+.ap-chip.is-callout{background:#111;color:#93c5fd;border:1px dashed #3b82f6}
+
+.ap-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:6px;font:800 15px/1 var(--disp);letter-spacing:2.5px;text-transform:uppercase;white-space:nowrap;transition:filter .15s,transform .15s}
+.ap-btn.is-red{background:linear-gradient(180deg,var(--red-hi),var(--red));color:#fff;box-shadow:0 8px 24px -8px rgba(232,16,46,.7)}
+.ap-btn.is-red:hover:not(:disabled){filter:brightness(1.08)}
+.ap-btn.is-ghost{border:1px solid #444;color:#ddd}
+.ap-btn.is-ghost:hover:not(:disabled){border-color:#666;color:#fff}
+.ap-btn.is-sm{padding:9px 14px;font-size:12px;letter-spacing:2px}
+.ap-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.ap-bar{display:block;height:5px;background:#2a2a2a;border-radius:3px;overflow:hidden;margin-top:6px}
+.ap-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#f2c94c);transition:width .55s cubic-bezier(.2,.8,.2,1) .3s}
+.ap-bar.is-red i{background:linear-gradient(90deg,var(--red),var(--red-hi))}
+.ap-bar.is-green i{background:linear-gradient(90deg,var(--green),#4ade80)}
+.home.is-in .ap-bar i{width:var(--w)}
+.ap-bar-btn{width:100%;cursor:pointer;padding:0}
+
+.ap-kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--t2);padding:6px 0;border-bottom:1px solid #222}
+.ap-kv:last-child{border:0}
+.ap-kv b{color:#fff;font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.ap-kv-btn{display:flex;width:100%;cursor:pointer}
+.ap-kv-btn:hover span{color:var(--t1)}
+
+.ap-sil{position:relative;overflow:hidden;flex:0 0 auto;border-radius:6px;border:1px solid #333;background:
+  repeating-linear-gradient(60deg,transparent 0 22px,rgba(255,255,255,.035) 22px 23px),
+  repeating-linear-gradient(-60deg,transparent 0 22px,rgba(255,255,255,.035) 22px 23px),#111}
+.ap-sil::before{content:"";position:absolute;left:50%;bottom:0;width:78%;height:88%;transform:translateX(-50%);
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 240'><circle cx='100' cy='54' r='40' fill='%23444'/><rect x='82' y='88' width='36' height='28' fill='%23444'/><path d='M14 240C14 154 56 116 100 116s86 38 86 124z' fill='%23444'/></svg>") center bottom/contain no-repeat}
+.ap-sil::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,var(--bg) 100%)}
+.ap-sil.is-red::before{filter:sepia(1) saturate(5) hue-rotate(-25deg) brightness(.6)}
+.ap-sil.is-blue::before{filter:sepia(1) saturate(5) hue-rotate(185deg) brightness(.6)}
+
+.ap-checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.ap-checks li{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--t3)}
+.ap-checks li i{flex:none;width:18px;height:18px;border-radius:50%;border:1px solid #3a3a3a;display:grid;place-items:center;font:800 10px/1 var(--disp);font-style:normal;color:var(--gold)}
+.ap-checks li.is-done i{background:var(--gold);border-color:var(--gold);color:#111}
+.ap-checks li.is-todo{color:#fff;font-weight:600}
+.ap-checks li.is-todo i{border-color:var(--gold);box-shadow:0 0 10px rgba(212,168,32,.35)}
+.ap-checks li em{margin-left:auto;font:800 14px/1 var(--disp);font-style:normal;color:var(--gold);font-variant-numeric:tabular-nums}
+
+.ap-badge{display:inline-flex;align-items:center;padding:4px 7px;border-radius:4px;font:700 10px/1 var(--disp);letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;margin-top:4px}
+.ap-badge.is-warn{background:rgba(212,168,32,.12);color:var(--gold);border:1px solid rgba(212,168,32,.4)}
+
+/* ── title strip (mockup has no counterpart; ported from the old hn-strip) ── */
+.ap-strip{display:flex;align-items:center;gap:12px;width:100%;padding:9px 20px;background:linear-gradient(90deg,var(--red-dim),var(--red) 55%,var(--red-hi));font:700 12px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:#fff;transition:filter .15s}
+.ap-strip:hover{filter:brightness(1.12)}
+.ap-strip-label{opacity:.7}
+.ap-strip-count{margin-left:auto;opacity:.85}
+.ap-strip-pips{display:inline-flex;gap:4px}
+.ap-strip-pips i{width:22px;height:6px;border-radius:3px;background:rgba(0,0,0,.35)}
+.ap-strip-pips i.on{background:#fff;box-shadow:0 0 8px rgba(255,255,255,.6)}
+
+/* ── hero (mockup .c-hero / .c-id) ─────────────────────────────────────── */
+.ap-hero{position:relative;display:grid;grid-template-columns:1.25fr 1fr;gap:20px;padding:26px 20px 22px;background:linear-gradient(180deg,#151515,var(--bg));border-bottom:1px solid #222;overflow:hidden;max-width:1100px;margin:0 auto}
+/* The glow takes the fighter's banner accent (--ap-glow is set inline by AthleteHero). */
+.ap-hero::before{content:"";position:absolute;left:-40px;top:-60px;width:520px;height:520px;background:radial-gradient(circle,var(--ap-glow,rgba(200,16,46,.22)),transparent 65%);pointer-events:none}
+/* Identity block = the fighter's banner plate: composition + veil set inline, texture overlay below. */
+.ap-id{position:relative;display:flex;gap:18px;padding:16px;border-radius:10px;border:1px solid rgba(255,255,255,.08);overflow:hidden;box-shadow:0 20px 50px -30px rgba(0,0,0,.9)}
+.ap-id-tex{position:absolute;inset:0;pointer-events:none;z-index:0}
+.ap-id-tex--halftone{background:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1.3px);background-size:7px 7px;-webkit-mask-image:linear-gradient(100deg,#000 28%,transparent 62%);mask-image:linear-gradient(100deg,#000 28%,transparent 62%)}
+.ap-id-tex--grain{background:repeating-linear-gradient(0deg,rgba(255,255,255,.016) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(0,0,0,.12) 0 1px,transparent 1px 4px)}
+.ap-id > .ap-mono,.ap-id > .ap-id-txt{position:relative;z-index:1}
+.ap-mono{flex:0 0 150px;height:190px;border-radius:8px;border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;background-color:#141416;background-size:cover;background-position:center;box-shadow:inset 0 0 40px rgba(0,0,0,.35)}
+.ap-mono span{font:800 40px/1 var(--disp);letter-spacing:1px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.ap-id-txt{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
+.ap-nick{font:italic 800 14px var(--disp);letter-spacing:4px;text-transform:uppercase;color:var(--ap-accent,var(--red-hi))}
+.ap-name{font:900 56px/.86 var(--disp);text-transform:uppercase;letter-spacing:-1.5px;margin-top:4px}
+.ap-name small{display:block;font:700 28px/1 var(--disp);color:var(--t2);letter-spacing:0}
+.ap-div{margin-top:10px;font:700 12px var(--disp);letter-spacing:3px;text-transform:uppercase;color:var(--t2)}
+.ap-rec{display:flex;gap:22px;margin-top:12px;flex-wrap:wrap}
+.ap-rec div b{display:block;font:900 28px/1 var(--disp);letter-spacing:.5px;font-variant-numeric:tabular-nums}
+.ap-rec div span{font:700 9px var(--disp);letter-spacing:2.5px;text-transform:uppercase;color:var(--t4)}
+.ap-rec .rank b{color:var(--red-hi)}
+.ap-skel-txt{display:inline-block;min-width:36px;border-radius:4px;background:rgba(255,255,255,.08)}
+.ap-id-link{margin-top:10px;font:700 11px var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--gold);width:max-content}
+.ap-id-link:hover{color:#fff}
+
+/* ── next fight (mockup .c-next) ───────────────────────────────────────── */
+.ap-next{position:relative;background:#000;border:1px solid #333;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.ap-next-eb{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ap-next-lk{font-size:12px;color:var(--t3);text-align:right}
+.ap-next-opp{display:flex;gap:12px;align-items:center}
+.ap-next-opp .ap-sil{width:64px;height:64px}
+.ap-next-opp b{display:block;font:900 24px/1 var(--disp);text-transform:uppercase}
+.ap-next-opp b small{display:block;font:italic 700 11px var(--disp);letter-spacing:2px;color:var(--t3);margin-top:4px;text-transform:none}
+.ap-next-opp span{display:block;margin-top:4px;font-size:12px;color:var(--t3)}
+.ap-next-stk{display:flex;gap:6px;flex-wrap:wrap}
+.ap-next-m{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ap-next-m div{background:#141414;border:1px solid #222;border-radius:6px;padding:8px;text-align:center}
+.ap-next-m b{display:block;font:800 18px/1 var(--disp);font-variant-numeric:tabular-nums}
+.ap-next-m span{font:700 9px var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--t4)}
+.ap-next-m .g b{color:var(--gold)}
+.ap-next-body{margin:0;color:var(--t2);font-size:14px}
+.ap-next-ct{display:flex;gap:8px}
+.ap-next-ct .ap-btn{flex:1}
+
+/* ── two-column band: fighter stats + condition (mockup .c-cols) ────────── */
+.ap-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px auto 0;max-width:1100px;padding:0 20px}
+.ap-stats-row{display:grid;grid-template-columns:90px 1fr 36px;align-items:center;gap:10px;padding:5px 0;font-size:12px;color:var(--t2)}
+.ap-stats-row b{text-align:right;font:800 14px var(--disp);color:#fff;font-variant-numeric:tabular-nums}
+.ap-stats-row .ap-bar{margin:0}
+.ap-stats-cta{margin-top:10px}
+
+/* ── bookings (mockup .c-book / .c-brow) ─────────────────────────────────── */
+.ap-book{margin:16px auto 0;max-width:1100px;padding:0 20px}
+.ap-book-head h2{margin:0 0 8px;font:900 20px var(--disp);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:baseline;flex-wrap:wrap;gap:10px}
+.ap-book-head h2 > span:first-of-type{font:600 12px 'Barlow',sans-serif;letter-spacing:0;text-transform:none;color:var(--t3)}
+.ap-book-rr{margin-left:auto;font:700 11px var(--disp);letter-spacing:2px;color:var(--t3);display:flex;align-items:center;gap:8px}
+.ap-book-rr b{color:var(--gold)}
+.ap-book-reroll{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.ap-book-reroll-reason{font-size:12px;color:var(--t3)}
+.ap-book-reroll-error{font-size:12px;color:#f87171}
+.ap-book-note{margin:0 0 10px;font-size:13px;color:var(--gold)}
+.ap-book-list{display:flex;flex-direction:column;gap:6px}
+.ap-brow{display:grid;grid-template-columns:44px 1fr auto auto auto;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.ap-brow--main{border-color:var(--red-dim);background:linear-gradient(90deg,rgba(200,16,46,.14),var(--card) 40%)}
+.ap-brow--locked{opacity:.55}
+.ap-brow .ap-sil{width:44px;height:44px}
+.ap-brow-nm b{font:800 17px/1 var(--disp);text-transform:uppercase}
+.ap-brow-nm b small{font:italic 700 11px var(--disp);color:var(--t3);letter-spacing:1px;margin-left:6px;text-transform:none}
+.ap-brow-nm span{display:block;font-size:12px;color:var(--t3);margin-top:3px;font-variant-numeric:tabular-nums}
+.ap-brow-p{font:800 14px var(--disp);color:var(--gold);letter-spacing:1px;text-align:right}
+.ap-brow-p small{display:block;font:600 9px 'Barlow',sans-serif;color:var(--t4);letter-spacing:1px;text-transform:uppercase}
+.ap-brow-locked-text{font-size:11px;color:var(--t3);text-align:right;max-width:120px}
+.ap-brow-signed{font:700 11px var(--disp);letter-spacing:2px;text-transform:uppercase;color:#4ade80}
+.ap-brow--callout{grid-template-columns:44px 1fr auto;border-style:dashed}
+.ap-brow--callout .ap-sil{background:#111;border:1px dashed #444}
+.ap-brow--callout .ap-sil::before,.ap-brow--callout .ap-sil::after{display:none}
+
+/* ── tile chrome (mockup .tile) ──────────────────────────────────────────── */
+.ap-tile{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ap-tile-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 4px;font:700 11px/1 var(--disp);letter-spacing:3px;text-transform:uppercase;color:var(--t3)}
+.ap-tile-head i{font-style:normal;color:var(--gold)}
+.ap-tile h3{margin:0;font:800 20px/1.1 var(--disp);text-transform:uppercase;letter-spacing:.5px}
+.ap-tile p{margin:0;color:var(--t2);font-size:13px}
+.ap-link{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;margin-top:auto;padding-top:10px;border-top:1px solid var(--line);font:700 12px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--red-hi);transition:color .15s;min-height:24px}
+.ap-link:hover{color:#fff}
+.ap-link::after{content:"";flex:none;width:7px;height:7px;border-top:2px solid currentColor;border-right:2px solid currentColor;transform:rotate(45deg)}
+.ap-link.is-gold{color:var(--gold)}
+
+/* ── bottom grid: rankings / last fight / purse & fame (mockup .c-grid) ──── */
+.ap-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px auto 0;max-width:1100px;padding:0 20px 20px}
+.ap-last{display:flex;align-items:center;gap:12px}
+.ap-last-res{font:900 30px/1 var(--disp);color:#4ade80;letter-spacing:1px}
+.ap-last-res.is-loss{color:#f87171}
+.ap-last-res.is-draw{color:var(--t3)}
+.ap-last div span{display:block;font-size:12px;color:var(--t3)}
+.ap-last div b{font:800 16px var(--disp);text-transform:uppercase}
+
+/* ── error tile (hero slot) ──────────────────────────────────────────────── */
+.ap-error{align-items:center;text-align:center;gap:14px;padding:32px 20px;margin:16px auto 0;max-width:1100px}
+.ap-error p{color:var(--t2);font-size:15px}
+.ap-error button{padding:10px 22px;border-radius:8px;background:var(--red);color:#fff;font:700 13px/1 var(--disp);letter-spacing:2px;text-transform:uppercase}
+.ap-error button:hover{background:var(--red-hi)}
+
+/* ── skeleton (loading placeholders; only used when loading && !data, no flash on refetch) ── */
+.ap-skel{position:relative;overflow:hidden;background:var(--card);border-radius:10px}
+.ap-skel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:ap-shimmer 1.4s infinite}
+@keyframes ap-shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+/* ── containers ───────────────────────────────────────────────────────────── */
+@container (max-width:1000px){
+.ap-grid{grid-template-columns:1fr 1fr}
+.ap-grid > *:last-child{grid-column:1/-1}
+}
+
+/* phones: single column, DOM order = mobile order, no `order` overrides (offer-board-contract.md §5) */
+@container (max-width:720px){
+.ap-strip{padding:8px 14px;font-size:11px;letter-spacing:1.5px;gap:8px;min-height:44px}
+.ap-strip-count{display:none}
+.ap-strip-pips{margin-left:auto}
+.ap-hero{grid-template-columns:1fr;padding:20px 16px}
+.ap-mono{flex-basis:96px;height:130px}
+.ap-name{font-size:38px}
+.ap-name small{font-size:22px}
+.ap-rec{gap:14px}
+.ap-rec div b{font-size:22px}
+.ap-cols{grid-template-columns:1fr;padding:0 16px}
+.ap-book{padding:0 16px}
+.ap-grid{grid-template-columns:1fr;padding:0 16px 16px}
+.ap-grid > *:last-child{grid-column:auto}
+.ap-brow{grid-template-columns:44px 1fr;gap:8px 12px}
+.ap-brow-p{text-align:left}
+.ap-brow .ap-btn,.ap-brow-signed,.ap-brow-locked-text{grid-column:2;justify-self:start;text-align:left}
+
+/* Tap targets, every link/row/button stays reachable with a thumb. */
+.ap-link,.ap-brow,.ap-kv-btn,.ap-btn{min-height:44px}
+}
+
+/* Entrance. Same mechanics as before: `is-armed`/`is-in`/`is-instant`, gated
+   on `.ap-anim`. DashboardTab arms it once per page session so re-opening
+   Home is instant on later visits. */
+.home.is-armed:not(.is-in) .ap-anim{opacity:0}
+.home.is-in .ap-strip{animation:ap-fade .18s both}
+.home.is-in .ap-hero{animation:ap-fade .22s .02s both}
+.home.is-in .ap-next{animation:ap-rise .22s .08s both}
+.home.is-in .ap-cols .ap-tile{animation:ap-rise .2s both}
+.home.is-in .ap-cols .ap-tile:nth-child(2){animation-delay:.05s}
+.home.is-in .ap-book{animation:ap-rise .2s .12s both}
+.home.is-in .ap-grid .ap-tile{animation:ap-rise .2s both;animation-delay:calc(.14s + var(--i,0) * .05s)}
+@keyframes ap-fade{from{opacity:0}to{opacity:1}}
+@keyframes ap-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* reduced motion */
+@media (prefers-reduced-motion:reduce){
+.home.is-armed:not(.is-in) .ap-anim{opacity:1}
+.home.is-in *,.home.is-in *::before,.home.is-in *::after{animation:none!important;transition:none!important}
+.ap-bar i{transition:none;width:var(--w)}
+}
+
+/* Second and later visits to Home in the same page session. DashboardTab adds
+   `is-instant` alongside `is-in`, so the bars still get their `--w` width and
+   nothing is left hidden, but the entrance cascade does not replay. Must stay
+   LAST in the file: it beats the equal-specificity `.home.is-in` rules on
+   source order. */
+.home.is-instant .ap-strip,
+.home.is-instant .ap-hero,
+.home.is-instant .ap-next,
+.home.is-instant .ap-cols .ap-tile,
+.home.is-instant .ap-book,
+.home.is-instant .ap-grid .ap-tile{animation:none}
+.home.is-instant .ap-bar i{transition:none}

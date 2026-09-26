@@ -168,6 +168,19 @@ const PLACEMENT_FIGHTS = 3;
 const PVP_UNLOCK_WINS = 3;
 
 const SEASON_LENGTH_DAYS = 70;
+/**
+ * THE format switch for what an ending Open season rolls into.
+ *
+ * null  = Open seasons roll into another Open season forever (one cross-weight-class
+ *         ladder, one belt). This is the shipped behaviour.
+ * N     = season N is the first per-weight-class cycle; the 4-ladder fan-out fires when
+ *         season N-1 ends (pvpRewardService.finalizeSeason → seedPerWcCycle +
+ *         softResetOpen, which redistributes every record into its real weight class).
+ *
+ * Read at CALL time by pvpRewardService, never captured at require time, so flipping it
+ * is a one-line config change with no other edit anywhere.
+ */
+const OPEN_SPLIT_AT_SEASON = null;
 const DECAY_AFTER_DAYS = 7;
 const DECAY_AMOUNT = 10;
 const INACTIVITY_DECAY_SKIP = "prospect";
@@ -252,6 +265,7 @@ module.exports = {
     REWARDS,
     SOFT_RESET,
     SEASON_LENGTH_DAYS,
+    OPEN_SPLIT_AT_SEASON,
     DECAY_AFTER_DAYS,
     DECAY_AMOUNT,
     INACTIVITY_DECAY_SKIP,
