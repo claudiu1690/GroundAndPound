@@ -208,6 +208,9 @@ function toPublicFighter(fighter) {
     // middleware, so ANY authed player can read any fighter through here — leaving this in
     // hands out a free "which ladder opponents are bots" oracle.
     delete out.isPvpBot;
+    // The stored offer board is server-internal (slot ids + fingerprint). Clients read it
+    // through GET /fights/offers/:fighterId, which hydrates and validates it.
+    delete out.offerBoard;
     out.notoriety = notorietyService.buildNotorietyPublicState(fighter);
     out.injuryLockedStats = getInjuryLockedStats(fighter);
     // Perks the fighter actually holds, resolved to name + effect. `gymPerks` ships as bare

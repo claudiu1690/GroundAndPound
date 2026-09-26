@@ -381,62 +381,6 @@
       "progress": "{done} of {total}",
       "locked": "Win {n} more to unlock a shot"
     },
-    "hero": {
-      "eyebrow": "Fight night. Main event",
-      "vs": "VS",
-      "bout": "{weightClass}, {rounds} rounds",
-      "roleYou": "You",
-      "roleRival": "Opponent",
-      "roleNemesis": "Nemesis",
-      "roleChampion": "Champion",
-      "stakesRematch": "Rematch.",
-      "stakesTitle": "Title fight.",
-      "stakesPurse": "Best purse on the table: {purse}",
-      "ctaPill": "{n} offers",
-      "noBout": "Nothing on the card yet. Your next move is below.",
-      "eyebrowSolo": "Your corner"
-    },
-    "under": {
-      "title": "Undercard",
-      "sub": "{n} offers waiting",
-      "link": "Fight Hub",
-      "purse": "purse",
-      "view": "View bout",
-      "empty": "No offers right now. Train or call someone out.",
-      "calloutTitle": "Callout someone",
-      "calloutSub": "Name a fighter, set the terms."
-    },
-    "band": {
-      "ringside": "Ringside",
-      "corner": "Corner report",
-      "purseBand": "The purse",
-      "press": "Press and record"
-    },
-    "pg": {
-      "eyebrow": "Proving Ground",
-      "openBadge": "Open, all weight classes",
-      "cta": "Enter the Proving Ground",
-      "statWins": "Wins",
-      "statLosses": "Losses",
-      "statDp": "DP",
-      "ladder": "ladder",
-      "rankOf": "#{rank} of {total}",
-      "weeks": "{n} weeks remaining",
-      "twistLine": "Twist: {text}",
-      "twist": {
-        "blood_sport": "+25% DP on KO and submission finishes",
-        "iron_circuit": "No twist this season",
-        "the_contenders": "Bonus DP from win streaks of 3+",
-        "ground_war": "+30% DP on submissions",
-        "iron_fist": "+30% DP on knockouts",
-        "the_marathon": "+20% DP on decisions"
-      },
-      "defenseTitle": "{n} unread defense report",
-      "defenseTitlePlural": "{n} unread defense reports",
-      "defenseBody": "{held} held, {lost} lost",
-      "notPlayed": "No fights this season yet.",
-      "noSeason": "No season running."
-    },
     "rankings": {
       "eyebrow": "Rankings",
       "career": "Career",
@@ -451,79 +395,9 @@
       "conditionWins": "Contender wins while top 5",
       "winsHint": "{won} of {need}"
     },
-    "id": {
-      "title": "Fighter card",
-      "tapProfile": "Tap for profile",
-      "cta": "Career profile",
-      "ovrLabel": "OVR",
-      "tier": "Tier",
-      "fame": "Fame",
-      "record": "Record",
-      "class": "Class"
-    },
-    "vitals": {
-      "title": "Vitals",
-      "live": "Live",
-      "energyLabel": "Energy",
-      "energyFullIn": "Full in {eta}",
-      "energyRested": "Rested",
-      "healthLabel": "Health",
-      "healthInjured": "Injured",
-      "healthBangedUp": "Banged up",
-      "healthHealthy": "Healthy",
-      "healthFullIn": "Full in {eta}",
-      "mentalResetChip": "Mental reset required"
-    },
-    "injury": {
-      "title": "Injuries",
-      "clearedBadge": "Can still fight",
-      "titleSingular": "Injury",
-      "titlePlural": "Injuries",
-      "cannotFightBadge": "Cannot fight",
-      "untilRecovered": "until recovered",
-      "cta": "Hospital"
-    },
-    "fightCamp": {
-      "title": "Fight camp",
-      "titleFightBadge": "Title Fight",
-      "sessions": "Camp: {used} of {max} sessions used",
-      "gradeLabel": "camp grade",
-      "finalised": "Finalised",
-      "slotsLeft": "{n} slots left this week.",
-      "cta": "Go to camp"
-    },
-    "stats": {
-      "title": "Stats and XP",
-      "ovrLabel": "OVR {ovr}",
-      "cta": "Train"
-    },
-    "camp": {
-      "title": "My Camp",
-      "condition": "Condition {pct}%",
-      "headCoachLine": "Head coach, {archetype}. {rank}, {morale}",
-      "rank": "Rank {n}",
-      "morale": "Morale {n}",
-      "noCoach": "No head coach hired.",
-      "wages": "Wages {amount} due",
-      "marketOpen": "Trainer Market is open",
-      "marketReset": "Trainer Market resets in {n} days",
-      "none": "No camp yet. Set one up.",
-      "cta": "Visit camp"
-    },
-    "money": {
-      "title": "Money and Fame",
-      "cashLabel": "Cash",
-      "frozen": "Frozen",
-      "fameDecaying": "Fame decaying",
-      "topTierReached": "Top tier reached",
-      "keepFighting": "Keep fighting to build fame.",
-      "toNextTier": "{remaining} to {tier}",
-      "pursePct": "+{pct}% fight purses"
-    },
-    "sponsor": {
-      "title": "Sponsorship",
-      "rewardPerFight": "{reward} / fight",
-      "cta": "Sponsor terms"
+    "error": {
+      "title": "Could not load your home screen.",
+      "retry": "Retry"
     },
     "gazette": {
       "openAriaLabel": "Open The Octagon Gazette",
@@ -532,19 +406,131 @@
       "footerCta": "Read full paper",
       "footerUpdated": "Updated {time}"
     },
-    "feed": {
-      "title": "Recent career",
-      "cta": "View career"
+    "athlete": {
+      "record": "W-L-D",
+      "rank": "Division",
+      "unranked": "NR",
+      "ovr": "Overall",
+      "streak": "Streak",
+      "streakWin": "W{n}",
+      "streakLoss": "L{n}",
+      "streakNone": "-",
+      "division": "{weightClass} · {tier} · {style}",
+      "careerLink": "View career"
     },
-    "error": {
-      "title": "Could not load your home screen.",
-      "retry": "Retry"
+    "next": {
+      "eyebrow": "Next fight",
+      "eyebrowSigned": "Your next fight",
+      "booked": "Booked by the matchmaker · {time}",
+      "bookedExpired": "Booked by the matchmaker · new set ready",
+      "signed": "Signed. Camp is open.",
+      "frozen": "Your fight is booked. The board reopens after fight night.",
+      "none": "No bout on the table right now.",
+      "line": "{record} · OVR {ovr}",
+      "lineRank": "{record} · OVR {ovr} · #{rank} {weightClass}",
+      "chipEasy": "Easy",
+      "chipEven": "Even",
+      "chipHard": "Hard",
+      "chipTitle": "Title fight",
+      "chipCallout": "Callout",
+      "chipNemesisOne": "Nemesis · beat you once",
+      "chipNemesisMany": "Nemesis · beat you {n} times",
+      "purse": "Purse",
+      "rounds": "Rounds",
+      "streak": "Streak",
+      "accept": "Accept",
+      "accepting": "Signing...",
+      "otherBouts": "Other bouts"
     },
-    "empty": {
-      "injuries": "No injuries. Cleared to fight.",
-      "sponsor": "No sponsor signed.",
-      "feed": "No career events yet.",
-      "fightCamp": "No camp in progress."
+    "book": {
+      "title": "Bookings",
+      "sub": "{n} bouts on the table",
+      "subOne": "1 bout on the table",
+      "subNone": "No bouts on the table",
+      "newSetIn": "New set in {time}",
+      "newSetReady": "New set ready",
+      "refresh": "Refresh",
+      "frozenNote": "Locked while your fight is booked",
+      "signed": "Signed",
+      "purse": "purse",
+      "accept": "Accept",
+      "nemesisTag": "Nemesis",
+      "calloutTag": "Callout",
+      "calloutTitle": "Call someone out",
+      "calloutSub": "Pick a ranked fighter and set the terms",
+      "calloutManageTitle": "Manage your callout",
+      "calloutManageSub": "{name} is in your Hard slot",
+      "calloutCta": "Call out",
+      "lockedCooldown": "Win {n} more to earn a rematch",
+      "lockedRank": "Reach the top 5 to unlock",
+      "lockedWins": "Win {n} more in the top 5",
+      "lockedDefault": "Title shot locked",
+      "reroll": "Reroll set · {cost}",
+      "rerollConfirm": "Spend {cost} to reroll?",
+      "rerollUsed": "Rerolled already",
+      "rerollCash": "Need {cost} to reroll",
+      "rerolling": "Rerolling...",
+      "rerollFailed": "Reroll failed. Try again."
+    },
+    "statsTile": {
+      "title": "Fighter stats",
+      "trainCamp": "Train at camp",
+      "trainGym": "Train at the gym"
+    },
+    "condition": {
+      "title": "Condition",
+      "energy": "Energy",
+      "energyValue": "{cur} / {max}",
+      "fullIn": "full in {eta}",
+      "health": "Health",
+      "healthValue": "{value} / 100",
+      "injury": "Injury",
+      "injuryNone": "None",
+      "injuryValue": "{label} · {hours}h",
+      "cannotFight": "Can't fight",
+      "fightCamp": "Fight camp",
+      "fightCampNone": "No fight booked",
+      "fightCampValue": "Session {used} of {max}",
+      "fightCampFinalised": "Camp finalised",
+      "homeCamp": "Home camp",
+      "homeCampNone": "No camp yet",
+      "homeCampValue": "{tier} · {condition}% · {coach}",
+      "mentalReset": "Mental reset required"
+    },
+    "last": {
+      "title": "Last fight",
+      "win": "W",
+      "loss": "L",
+      "draw": "D",
+      "vs": "vs {name}",
+      "meta": "{outcome} · {when}",
+      "none": "No fights yet. Your debut is on the board.",
+      "gazette": "Gazette",
+      "gazetteRead": "Read the latest issue",
+      "feed": "Feed",
+      "feedNone": "Nothing yet",
+      "pg": "Proving Ground",
+      "pgDefenseOne": "1 defense report",
+      "pgDefenseMany": "{n} defense reports",
+      "pgRank": "#{rank} of {total}",
+      "pgNotPlayed": "Not entered yet",
+      "pgUpcoming": "Opens in {days}d",
+      "pgNone": "No season running"
+    },
+    "purse": {
+      "title": "Purse & fame",
+      "cash": "Cash",
+      "fame": "Fame",
+      "fameValue": "{score} · {tier}",
+      "frozen": "Frozen",
+      "decaying": "Decaying",
+      "purseBonus": "Purse bonus",
+      "purseBonusValue": "+{pct}%",
+      "sponsor": "Sponsor",
+      "sponsorNone": "None signed",
+      "wages": "Camp wages",
+      "wagesValue": "{amount} in {days}d",
+      "wagesNone": "No wages due"
     }
   },
   "career": {
@@ -1165,13 +1151,11 @@
       "alertBlockingInjury": "Doctor visit required: {label}",
       "alertLowHealth": "Low health — consider resting before your next fight",
       "alertComeback": "Comeback mode active — x1.5 XP on next win",
-      "requestOffers": "Request Offers",
       "callOut": "Call Out",
       "energyCost": "{cost} energy per fight",
       "calloutTooltipEligible": "Spend fame to force a specific opponent into your next Hard offer",
       "calloutTooltipUnranked": "Reach the rankings first (3 fights in this tier)",
       "calloutTooltipRank": "Reach top 14 to unlock callouts — currently #{rank}",
-      "refreshOffers": "Refresh Offers",
       "standingOvr": "OVR",
       "standingRecord": "RECORD",
       "unranked": "UNRANKED",
@@ -1271,10 +1255,24 @@
     },
     "offers": {
       "panelTitle": "Fight Offers",
-      "activeCalloutBanner": "Callout active: {name} will appear in your next Hard offer with full intel.",
+      "activeCalloutBanner": "Callout active: {name} takes your Hard slot with full intel.",
       "manage": "Manage"
     },
+    "board": {
+      "loading": "Loading your bookings...",
+      "loadFailed": "Couldn't load your bookings.",
+      "retry": "Retry",
+      "expiresIn": "New set in {time}",
+      "expiresReady": "New set ready",
+      "reroll": "Reroll set ({cost})",
+      "rerollConfirm": "Spend {cost} to reroll?",
+      "rerollUsed": "Rerolled already",
+      "rerollCash": "Need {cost} to reroll",
+      "rerolling": "Rerolling...",
+      "rerollFailed": "Reroll failed. Try again."
+    },
     "offerCard": {
+      "purse": "Purse ${n} · ",
       "diffEasy": "Easy",
       "diffEven": "Even",
       "diffHard": "Hard",
@@ -1720,9 +1718,6 @@
     "fightNight": "Fight night…",
     "fightAccepting": "Accepting fight…",
     "fightAccepted": "Fight accepted — review your opponent before camp.",
-    "loadingOffers": "Loading offers…",
-    "noOffers": "No offers. Seed opponents?",
-    "offersReady": "{count} offer(s) ready.",
     "emailUpdated": "Email address confirmed and updated.",
     "emailVerified": "Email verified — you're all set.",
     "emailError": {

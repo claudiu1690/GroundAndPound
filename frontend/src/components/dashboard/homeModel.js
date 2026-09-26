@@ -1,10 +1,13 @@
 /**
- * Pure derivations for the Fight Night home screen. No React, no fetching —
- * everything here takes plain data and returns plain data or strings so the
- * components that use them stay declarative. Moved out of the old
- * DashboardTab.jsx during the Fight Night rewrite (see home-contract.md §3).
+ * Pure derivations for the Athlete Page home screen (offer-board-contract.md
+ * §5). No React, no fetching, no i18n, everything here takes plain data and
+ * returns plain data so components stay declarative and this file stays
+ * node-testable (tests/frontend/homeModel.test.js loads it directly).
  */
-import { t } from "@/lib/i18n";
+// Explicit extension: this file is loaded directly by Node (tests/frontend/
+// homeModel.test.js, via pathToFileURL) as well as bundled by Vite. Vite
+// resolves extensionless specifiers; Node's native ESM loader does not.
+import { FIGHT_ENERGY_COST } from "../../constants/gameConstants.js";
 
 // ── Time formatting ───────────────────────────────────────────
 export function formatEta(minutes) {
@@ -27,7 +30,7 @@ export function feedDate(createdAt) {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-/** Relative time label from an ISO date string — "2h ago", "3d ago", etc. */
+/** Relative time label from an ISO date string, "2h ago", "3d ago", etc. */
 export function relativeTime(iso) {
   if (!iso) return "";
   try {
@@ -42,18 +45,21 @@ export function relativeTime(iso) {
   } catch { return ""; }
 }
 
-/** Derive result pill text and color class from leadStory.resultBand. */
-export function gazetteResultPill(leadStory) {
-  const band = leadStory?.resultBand;
-  if (!band?.outcomeLabel) return null;
-  const label = band.outcomeLabel;
-  const method = band.methodRound ? ` · ${band.methodRound}` : "";
-  const text = `${label}${method}`;
-  const l = label.toLowerCase();
-  const cls = l.includes("win") || l.includes("victor") ? "hn-gz-pill--win"
-    : l.includes("loss") || l.includes("defeat") ? "hn-gz-pill--loss"
-    : "hn-gz-pill--draw";
-  return { text, cls };
+/**
+ * Countdown label for a future ISO timestamp, "18h" or "45m". Returns null
+ * once the timestamp is in the past (or invalid), so callers can fall back to
+ * a "ready" copy instead of showing a negative countdown.
+ */
+export function formatTimeLeft(iso, now = Date.now()) {
+  if (!iso) return null;
+  const target = new Date(iso).getTime();
+  if (Number.isNaN(target)) return null;
+  const diffMs = target - now;
+  if (diffMs <= 0) return null;
+  const diffMin = Math.max(1, Math.round(diffMs / 60000));
+  if (diffMin < 60) return `${diffMin}m`;
+  const diffH = Math.max(1, Math.round(diffMin / 60));
+  return `${diffH}h`;
 }
 
 /**
@@ -70,101 +76,102 @@ export function titleShotProgress(ranking) {
   return { done, total: 3, nextLabel };
 }
 
-/** First-name / last-name split for an opponent's plain full name string. NPC
- *  Opponent docs and offers only carry one "opponentName" field, but
- *  BannerPreview (built for real fighters) needs firstName/lastName
- *  separately. Split on the first space; single-word names become the
- *  surname so the nameplate's bold last-name treatment still applies. */
-export function splitName(fullName) {
-  const name = (fullName || "").trim();
-  if (!name) return { firstName: "", lastName: "" };
-  const idx = name.indexOf(" ");
-  if (idx === -1) return { firstName: "", lastName: name };
-  return { firstName: name.slice(0, idx), lastName: name.slice(idx + 1) };
-}
-
-/**
- * Banner config for an unknown/NPC rival — Opponent docs carry no banner of
- * their own (home-contract.md §4). No backend field; this is a frontend-only
- * constant.
- */
-export const RIVAL_BANNER = {
-  backgroundId: "BG_CRIMSON",
-  accentColor: "ACC_WHITE",
-  frameId: "LAYOUT_BROADCAST",
-  badgeSlots: [],
-};
-
-/** Build a plain "fighter" object BannerPreview can render for a heroBout/offer opponent. */
-export function rivalFighter({ opponentName, opponentNickname, opponentOvr, opponentTier, opponentWeightClass, record }) {
-  const { firstName, lastName } = splitName(opponentName);
-  return {
-    firstName,
-    lastName,
-    nickname: opponentNickname ?? null,
-    promotionTier: opponentTier ?? "Amateur",
-    weightClass: opponentWeightClass ?? null,
-    overallRating: opponentOvr ?? "n/a",
-    record: record ?? { wins: 0, losses: 0, draws: 0 },
-  };
-}
-
-/**
- * Copy + role derivations for the Fight Night hero. Pure — the CTA label and
- * sublabel always come from the server's heroAction (every branch of
- * computeHeroAction returns one), never invented client-side prose.
- */
-export function heroCopy(heroAction, heroBout, offers) {
-  const ctaLabel = heroAction?.label ?? "";
-  const ctaSublabel = heroAction?.sublabel ?? null;
-  const offerCount = offers?.count ?? 0;
-
-  if (!heroBout) {
-    return {
-      ctaLabel,
-      ctaSublabel,
-      ctaPillCount: offerCount > 0 ? offerCount : null,
-      hasBout: false,
-      rivalRoleKey: null,
-      stakesBoldKey: null,
-      purseAmount: null,
-      boutWeightClass: null,
-      boutRounds: null,
-    };
-  }
-
-  const rivalRoleKey = heroBout.isNemesis
-    ? "roleNemesis"
-    : heroBout.isTitleShot
-      ? "roleChampion"
-      : "roleRival";
-
-  const stakesBoldKey = heroBout.isRematch
-    ? "stakesRematch"
-    : heroBout.isTitleShot
-      ? "stakesTitle"
-      : null;
-
-  return {
-    ctaLabel,
-    ctaSublabel,
-    ctaPillCount: offerCount > 0 ? offerCount : null,
-    hasBout: true,
-    rivalRoleKey,
-    stakesBoldKey,
-    purseAmount: heroBout.purse ?? null,
-    boutWeightClass: heroBout.opponentWeightClass ?? null,
-    boutRounds: heroBout.rounds ?? null,
-  };
-}
-
-/** "$3,200" style formatting for purses — no currency lib in the frontend. */
+/** "$3,200" style formatting for purses, no currency lib in the frontend. */
 export function formatPurse(n) {
   if (n == null) return "";
   return `$${Number(n).toLocaleString()}`;
 }
 
-/** Plural-aware label for "N unread defense report(s)". */
-export function defenseTitle(n) {
-  return n === 1 ? t("home.pg.defenseTitle", { n }) : t("home.pg.defenseTitlePlural", { n });
+// ── Athlete Page helpers (offer-board-contract.md §5) ──────────────────────
+
+/** {key:"win"|"loss"|"none", n} from the player's own winStreak/consecutiveLosses. */
+export function fighterStreak(fighter) {
+  const win = fighter?.winStreak ?? 0;
+  const loss = fighter?.consecutiveLosses ?? 0;
+  if (win > 0) return { key: "win", n: win };
+  if (loss > 0) return { key: "loss", n: loss };
+  return { key: "none", n: 0 };
+}
+
+/** Same shape as fighterStreak, from an opponent's {result,count} streak. */
+export function oppStreak(streak) {
+  if (!streak || !streak.result || !(streak.count > 0)) return { key: "none", n: 0 };
+  if (streak.result === "win") return { key: "win", n: streak.count };
+  if (streak.result === "loss") return { key: "loss", n: streak.count };
+  return { key: "none", n: 0 };
+}
+
+/**
+ * Vitals, the Condition tile's energy/health meters, computed entirely from
+ * the live `fighter` prop (same formula as dashboardService.buildVitals, run
+ * client-side) so the meters are synchronous and never wait on useDashboard.
+ */
+export function vitalsModel(fighter) {
+  const tier = fighter?.promotionTier;
+  const energyObj = fighter?.energy && typeof fighter.energy === "object" ? fighter.energy : {};
+  const cur = Number.isFinite(energyObj.current) ? energyObj.current : 0;
+  const max = Number.isFinite(energyObj.max) ? energyObj.max : 100;
+  const pct = max > 0 ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0;
+  const fightCost = FIGHT_ENERGY_COST[tier] ?? 10;
+  const low = cur < fightCost;
+  const eta = formatEta(Math.max(0, max - cur));
+
+  const value = Number.isFinite(fighter?.health) ? fighter.health : 100;
+  const healthPct = Math.max(0, Math.min(100, value));
+  const state = value < 25 ? "critical" : value < 60 ? "hurt" : "ok";
+  const healthEta = formatEta((100 - value) * 5);
+
+  return {
+    energy: { cur, max, pct, eta, low },
+    health: { value, pct: healthPct, eta: healthEta, state },
+  };
+}
+
+/**
+ * Reroll button visibility/state from the offers block's OfferBoardMeta
+ * fields. `rerollBlockedBy` is the single source of truth for why the button
+ * is hidden or disabled, see offerBoardService's OfferBoardMeta JSDoc.
+ */
+export function rerollButtonState(offers) {
+  const cost = offers?.rerollCost ?? null;
+  const blockedBy = offers?.rerollBlockedBy ?? null;
+
+  if (blockedBy === "frozen" || blockedBy === "blocked" || blockedBy === "no_board") {
+    return { visible: false, disabled: true, reasonKey: null, cost };
+  }
+  if (blockedBy === "used") {
+    return { visible: true, disabled: true, reasonKey: "used", cost };
+  }
+  if (blockedBy === "cash") {
+    return { visible: true, disabled: true, reasonKey: "cash", cost };
+  }
+  return { visible: true, disabled: false, reasonKey: null, cost };
+}
+
+/**
+ * Locked-TitleShot copy key, precedence: clear a rematch cooldown, then get
+ * ranked top-5, then bank the qualifying wins, mirrors OfferCard's
+ * LockedOverlay so Home and the Fight Hub never disagree about why a title
+ * shot is locked.
+ */
+export function titleLockKey(titleLock) {
+  if (!titleLock) return null;
+  const { cooldownRemaining, winsNeeded, rankNeeded } = titleLock;
+  if (cooldownRemaining > 0) return { key: "lockedCooldown", n: cooldownRemaining };
+  if (rankNeeded) return { key: "lockedRank", n: null };
+  if (winsNeeded > 0) return { key: "lockedWins", n: winsNeeded };
+  return { key: "lockedDefault", n: null };
+}
+
+/**
+ * Booking-row flags: `isMain` when this row is the same opponent the hero
+ * card is leading with (offer branch only, an accepted fight is "signed",
+ * not "main"), `isSigned` when this row IS the accepted fight.
+ */
+export function bookingRowFlags(item, heroBout) {
+  const itemId = item?.opponentId ?? null;
+  const heroId = heroBout?.opponentId ?? null;
+  const isSigned = !!(heroBout && heroBout.source === "accepted" && itemId && heroId === itemId);
+  const isMain = !isSigned && !!(heroBout && heroBout.source === "offer" && itemId && heroId === itemId);
+  return { isMain, isSigned };
 }

@@ -31,6 +31,7 @@ const analyticsEventSchema = new mongoose.Schema({
             "signup",
             "session",
             "fight_accepted",
+            "offers_rerolled",
             "fight_resolved",
             "gym_purchase",
             "pvp_unlocked",

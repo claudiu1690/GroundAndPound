@@ -3017,6 +3017,7 @@ code {
   margin-top: auto;
 }
 .energy-note { font-size: 11px; color: var(--c-text-3, #666); }
+.energy-note .purse-note { color: var(--gold, #D4A820); font-weight: 700; margin-right: 2px; }
 .accept-btn {
   font-family: var(--font-display);
   font-weight: 800;

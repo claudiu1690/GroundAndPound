@@ -28,6 +28,9 @@ const fightSchema = new mongoose.Schema({
     finishRound:         { type: Number, default: null },
     /** Phase 4 — flagged true when this fight was created against the fighter's active callout. */
     isCallout: { type: Boolean, default: false },
+    // Per-bout purse fixed at offer time (consts/offerBoardConfig OFFER_PURSE_MULT). The
+    // payout at resolve uses this as its base so a win pays exactly what the card showed.
+    purse: { type: Number },
     // Post-fight interview (Phase 1). Written once after fight resolution.
     interview: {
         done: { type: Boolean, default: false },

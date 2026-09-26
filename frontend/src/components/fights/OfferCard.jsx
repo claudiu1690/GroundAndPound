@@ -355,6 +355,12 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
     if (isLocked) {
       return <LockedOverlay offer={offer} />;
     }
+    // acceptable === false (offer-board-contract.md §2 BoardOffer.acceptable) means
+    // the board is frozen or this slot can't be taken right now, hide Accept
+    // rather than show a button that would just 409.
+    if (offer.acceptable === false) {
+      return null;
+    }
 
     let btnCls = `accept-btn ${variant}`;
     let btnLabel = t("fights.offerCard.acceptDefault");
@@ -365,13 +371,20 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
       ? t("fights.offerCard.energyFull", { n: cost })
       : t("fights.offerCard.energy", { n: cost });
 
+    const purse = Number.isFinite(offer.purse) ? offer.purse : null;
+
     return (
       <div className="accept-section">
-        <span className="energy-note">{energyLabel}</span>
+        <span className="energy-note">
+          {purse != null && (
+            <b className="purse-note">{t("fights.offerCard.purse", { n: purse.toLocaleString() })}</b>
+          )}
+          {energyLabel}
+        </span>
         <button
           type="button"
           className={btnCls}
-          onClick={() => onAccept && onAccept(opp._id, offer.type)}
+          onClick={() => onAccept && onAccept(opp._id)}
           data-tut="offer-accept"
         >
           {btnLabel}

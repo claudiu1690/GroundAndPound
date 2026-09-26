@@ -1,11 +1,12 @@
 import { t } from "@/lib/i18n";
 import { HomeTile } from "./HomeTile";
+import { titleShotProgress } from "../homeModel";
 
-/** Career rankings tile — ranking.titleShot drives the 3-condition checklist. */
+/** Division rankings tile, ranking.titleShot drives the 3-condition checklist. */
 export function RankingsTile({ ranking, weightClass, loading, onNavigate, index }) {
   if (loading && !ranking) {
     return (
-      <HomeTile tone="plain" span={4} index={index} className="hn-rank hn-skel" head={<span>{t("home.rankings.eyebrow")}</span>}>
+      <HomeTile index={index} className="ap-rank ap-skel" head={<span>{t("home.rankings.eyebrow")}</span>}>
         <div style={{ height: 88 }} />
       </HomeTile>
     );
@@ -13,10 +14,8 @@ export function RankingsTile({ ranking, weightClass, loading, onNavigate, index 
   const ts = ranking?.titleShot;
   return (
     <HomeTile
-      tone="plain"
-      span={4}
       index={index}
-      className="hn-rank"
+      className="ap-rank"
       head={
         <>
           <span>{t("home.rankings.eyebrow")}</span>
@@ -30,7 +29,7 @@ export function RankingsTile({ ranking, weightClass, loading, onNavigate, index 
           <h3>{t("home.rankings.rankOfDivision", { rank: ranking.rank, division: ranking.division ?? "", weightClass: weightClass ?? "" })}</h3>
           {ranking.delta != null && ranking.delta !== 0 ? (
             <p>
-              <span className={ranking.delta > 0 ? "hn-up" : "hn-warn"}>
+              <span className={ranking.delta > 0 ? "ap-up" : "ap-warn"}>
                 {ranking.delta > 0
                   ? t("home.rankings.upThisSession", { n: ranking.delta })
                   : t("home.rankings.downThisSession", { n: Math.abs(ranking.delta) })}
@@ -46,7 +45,7 @@ export function RankingsTile({ ranking, weightClass, loading, onNavigate, index 
       )}
 
       {ts ? (
-        <ul className="hn-checks">
+        <ul className="ap-checks">
           <li className={ts.ovrMet ? "is-done" : "is-todo"}>
             <i>{ts.ovrMet ? "✓" : "1"}</i>
             {t("home.rankings.conditionOvr")}

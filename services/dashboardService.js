@@ -1,12 +1,13 @@
 /**
- * Dashboard aggregator — READ-ONLY composition endpoint.
+ * Dashboard aggregator: composition endpoint on a read path (see the offer-board write
+ * note under Design rules below).
  *
  * THIS JSDoc BLOCK IS THE SINGLE SOURCE OF TRUTH FOR THE GET /fighters/:id/dashboard
  * PAYLOAD SHAPE. The frontend builds against it. Change the shape here and here only.
  *
  * Composes the player "home" view from existing reads:
  *   identity, vitals, hero CTA, heroBout, camp, homeCamp, offers, injuries, feed,
- *   ranking, resources, sponsorship, pvp, nudge.
+ *   lastFight, ranking, resources, sponsorship, pvp, nudge.
  *
  * Design rules (see CLAUDE.md):
  *   - The spine read (fighterService.getFighterById) is required; if it throws
@@ -16,25 +17,35 @@
  *     whole dashboard. Failures are logged server-side, never leaked.
  *   - This file owns ALL aggregation + the hero-CTA pure function. It reuses
  *     existing service functions; it does not re-implement rank/offer/camp logic.
- *   - No new writes. Note: getFighterById and generateOffers have PRE-EXISTING
- *     write side effects (energy/health/injury reconciliation, nemesis cleanup);
- *     those are inherited, not introduced here.
+ *   - Reads may persist a newly generated board (one conditional updateOne on a miss)
+ *     or clear it on a blocked read; both inside offerBoardService. getFighterById and
+ *     board generation also keep their PRE-EXISTING write side effects
+ *     (energy/health/injury reconciliation, nemesis cleanup); inherited, not new here.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * FIGHT NIGHT HOME — the four payload blocks the redesign added. ADDITIVE ONLY:
- * every pre-existing field keeps its shape.
+ * HOME PAYLOAD BLOCKS added by the Fight Night and Athlete Page redesigns. ADDITIVE
+ * ONLY: every pre-existing field keeps its shape.
  * ─────────────────────────────────────────────────────────────────────────────
  *
- * 1. offers — was {count,best}, now ALSO carries `list`:
+ * 1. offers: the persisted offer board, summarised. Every OfferBoardMeta key is spread
+ *    onto the block (OfferBoardMeta and BoardOffer are defined ONCE, in the JSDoc at the top
+ *    of services/offerBoardService.js; read them there):
  *
  *    offers: {
- *      count: number,                     // excludes a LOCKED TitleShot
- *      best: {offerType,opponentName,opponentOvr,isTitleShot,purse}|null,
- *      list: Array<OfferCard>             // max 4, generation order preserved, [] when none
+ *      count: number,                     // offers with acceptable === true
+ *      best: {offerType,opponentName,opponentOvr,isTitleShot,purse}|null,   // among acceptable only
+ *      list: Array<OfferCard>,            // every board slot incl. a locked TitleShot and
+ *                                         // frozen slots; max 4; board order; [] when none
+ *      ...OfferBoardMeta                  // generatedAt, expiresAt, rerollUsed, rerollCost,
+ *                                         // canReroll, rerollBlockedBy, frozen,
+ *                                         // blockedReason, blockedCode
  *    }
  *
+ *    When the board read fails the block degrades through
+ *    summariseOffers([], tier, offerBoardService.emptyBoardMeta(tier)), never a literal.
+ *
  *    @typedef {Object} OfferCard
- *    @property {?string} opponentId       EPHEMERAL — see the warning below
+ *    @property {?string} opponentId       the ACCEPT HANDLE (see the rule below)
  *    @property {?string} opponentName
  *    @property {?string} opponentNickname
  *    @property {?number} opponentOvr
@@ -47,31 +58,51 @@
  *    @property {boolean} isTitleShot
  *    @property {boolean} isNemesis        offer.nemesisMeta != null
  *    @property {boolean} locked           true only for an ineligible TitleShot
- *    @property {?number} purse            PROMOTION_TIERS[tier].signingFee, tier-wide
+ *    @property {?number} purse            per-bout WIN purse from fightService.boutPurse (slot multiplier on the tier signingFee plus OVR-gap bonus); tier signingFee when the offer carries none
+ *    @property {boolean} acceptable       BoardOffer.acceptable
+ *    @property {boolean} isCallout        the active callout overlay on the Hard slot
+ *    @property {?number} nemesisLossCount offer.nemesisMeta?.lossCount
+ *    @property {?number} opponentRank     rankingService.toDisplayRank(opponent.displayRank);
+ *                                         null for the champion or an unranked opponent
+ *    @property {?{cooldownRemaining:number,winsNeeded:number,rankNeeded:boolean}} titleLock
+ *                                         only on a locked TitleShot, else null
  *
- *    ⚠️ opponentId IS NOT A DURABLE HANDLE. The offer set is regenerated on every
- *    request, so a card click must NAVIGATE to the Fight Hub. Home never posts an
- *    acceptance.
+ *    ACCEPT-HANDLE RULE: the board is persisted, so opponentId is stable for the lifetime
+ *    of the board (until offers.expiresAt, a reroll, or a fight resolves). The client may
+ *    POST it to /fights/offers/:fighterId ({opponentId}) and then accept the returned
+ *    Fight. The server re-validates against the live board and answers 409
+ *    OFFER_NOT_ON_BOARD when the slot has gone; the client then reloads.
  *
- * 2. heroBout — the one fight the hero leads with. NULLABLE.
+ * 2. heroBout: the one fight the hero leads with. NULLABLE.
  *
  *    heroBout: {
  *      source: "accepted"|"offer",        // a signed fight always wins
  *      opponentId, opponentName, opponentNickname,
  *      opponentOvr, opponentTier, opponentWeightClass,
+ *      opponentStyle: string|null,
+ *      opponentRank: number|null,         // display rank, null for champion/unranked
  *      record: {wins,losses,draws},
+ *      streak: {result,count}|null,       // from fightService.buildOfferContext
+ *      offerType: "Easy"|"Even"|"Hard"|"TitleShot"|null,
  *      isTitleShot: boolean,
+ *      isCallout: boolean,
  *      isNemesis: boolean,
- *      isRematch: false,                  // see below — ALWAYS false today
+ *      nemesisLossCount: number|null,
+ *      isRematch: false,                  // see below: ALWAYS false today
  *      purse: number|null,
  *      rounds: number|null                // scheduled length, from the engine config
  *    } | null
  *
- *    null means no bout is signed AND no offer is on the table (e.g. heroAction.key
- *    === "injury", where generateOffers throws and offers.list is []). The client then
- *    hides the rival plate and the VS mark and renders the heroAction CTA alone.
+ *    Accepted branch: offerType / isCallout from the Fight doc, streak and record from
+ *    buildOfferContext(opponent), opponentRank from the opponent fixedRank shifted around
+ *    the player's raw rank (same-tier only, like the board). Offer branch: pickBestOffer
+ *    over ACCEPTABLE offers only, so a frozen board never produces an offer hero.
  *
- *    ⚠️ isRematch IS HARDCODED false. The contract defines it as "the opponent appears
+ *    null means no bout is signed AND no acceptable offer is on the table (e.g.
+ *    heroAction.key === "injury", where the board is blocked and offers.list is []). The
+ *    client then renders the heroAction CTA alone.
+ *
+ *    isRematch IS HARDCODED false. The contract defines it as "the opponent appears
  *    in the fighter's already-loaded fight history", but no such history is loaded:
  *    fighterModel has no per-opponent fight log, so answering it truthfully would need
  *    an extra Fight query on a hot endpoint, which the contract forbids. A client that
@@ -79,7 +110,7 @@
  *    definition someone who has beaten you). Give the field a real answer only when a
  *    fought-opponent list lands on the fighter document.
  *
- * 3. pvp — gains the ladder standing and the season twist:
+ * 3. pvp: gains the ladder standing and the season twist:
  *
  *    ladderRank: number|null              1-based dp rank (pvpRecordService.computeRank)
  *    ladderSize: number|null              PVPRecord.countDocuments{seasonId,weightClass}
@@ -93,7 +124,7 @@
  *    The twist EFFECT SENTENCE is frontend i18n keyed off twistKey; the server never
  *    ships prose for it.
  *
- * 4. homeCamp — the "My Camp" tile. NULLABLE. This is the HOME camp; `camp` above is
+ * 4. homeCamp: the "My Camp" tile. NULLABLE. This is the HOME camp; `camp` above is
  *    the FIGHT camp. Two separate tiles, two separate concepts, never merge them.
  *
  *    homeCamp: {
@@ -111,17 +142,35 @@
  *    HomeCamp.findOne plus the PURE homeCampService.buildDashboardCampSummary. It must
  *    never go through getCampState, which creates and saves a camp and ticks condition.
  *
- * ─────────────────────────────────────────────────────────────────────────────
- * DEAD FIELDS — still shipped, deliberately unread.
- *   identity.photoIndex (and the fighterPhotoIndex helper that produces it) is NO LONGER
- *   READ BY HOME. The Fight Night redesign dropped fighter portraits entirely (there is
- *   not enough art), so the home screen renders BannerPreview instead. The field stays in
- *   the payload so older clients do not break. DO NOT restore portraits from it.
+ * 5. lastFight: the most recent PvE fight result. NULLABLE (no fights yet, or degraded).
  *
- * COST — the four blocks above add, per request: one Fight.findById plus its populated
- * Opponent (only when a fight is signed), two PVPRecord countDocuments (only when the
- * player has a season record), and one HomeCamp.findOne. All on primary keys or existing
- * indexes. Keep it that way; this endpoint is hit on every page load.
+ *    lastFight: {
+ *      result: "win"|"loss"|"draw",
+ *      opponentName: string|null,
+ *      outcome: string|null,              // FIGHT_OUTCOMES string
+ *      isTitleFight: boolean,
+ *      fightId: string|null,
+ *      at: ISO                            // ActivityLog createdAt
+ *    } | null
+ *
+ *    ONE ActivityLog.findOne on the {fighterId, createdAt:-1} index, filtered to
+ *    FIGHT_WIN / FIGHT_LOSS / FIGHT_DRAW.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * DEAD FIELDS: still shipped, deliberately unread.
+ *   identity.photoIndex (and the fighterPhotoIndex helper that produces it) is NOT READ BY
+ *   HOME. There is not enough portrait art, so Home renders an initials monogram on the
+ *   fighter's banner background (it no longer renders BannerPreview either). The field
+ *   stays in the payload so older clients do not break. DO NOT restore portraits from it.
+ *
+ * COST per request. Offers on a board hit: 1 Fighter primary-key read + 1 Opponent
+ * find({_id:{$in}}) (the champion slot included) + 1 Opponent.findById for an active
+ * callout. Generation (window samples, backfill, champion findOne) and its one
+ * conditional updateOne run only on a miss (no board, expired, fingerprint changed).
+ * Plus: one Fight.findById with its populated Opponent (only when a fight is signed), two
+ * PVPRecord countDocuments (only when the player has a season record), one
+ * HomeCamp.findOne and one ActivityLog.findOne (lastFight). All on primary keys or
+ * existing indexes. Keep it that way; this endpoint is hit on every page load.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -132,6 +181,7 @@ const HomeCamp = require("../models/homeCampModel");
 const PVPRecord = require("../models/pvpRecordModel");
 const fighterService = require("./fighterService");
 const fightService = require("./fightService");
+const offerBoardService = require("./offerBoardService");
 const campService = require("./campService");
 const rankingService = require("./rankingService");
 const sponsorshipService = require("./sponsorshipService");
@@ -368,25 +418,25 @@ async function buildCamp(fighter, id) {
 }
 
 /**
- * Returns { offers, summary } where `offers` is the raw list (for computeHeroAction)
- * and `summary` is the { count, best } public shape.
+ * Returns { offers, meta, summary }: `offers` is the raw BoardOffer list (for the hero),
+ * `meta` the OfferBoardMeta, `summary` the public offers block.
  */
 async function buildOffers(id, tier) {
     try {
-        const result = await fightService.generateOffers(id);
-        const offers = Array.isArray(result) ? result : [];
-        return { offers, summary: summariseOffers(offers, tier) };
+        const { offers, meta } = await offerBoardService.getBoard(id);
+        const list = Array.isArray(offers) ? offers : [];
+        return { offers: list, meta, summary: summariseOffers(list, tier, meta) };
     } catch (err) {
-        // generateOffers throws on blocking injury / invalid tier — that's a normal
-        // game state for the dashboard, not an error to surface. Degrade quietly.
+        // A blocked or empty board is a 200 from getBoard; only a real failure lands here.
         console.error("[dashboard] offers module failed:", err.message);
-        // Degrade through summariseOffers, never with a hand-written literal — that is how
-        // the shape drifts (this path shipped without `list` until a test caught it).
-        return { offers: [], summary: summariseOffers([], tier) };
+        // Degrade through summariseOffers, never with a hand-written literal: that is how
+        // the shape drifts (this path once shipped without `list` until a test caught it).
+        const meta = offerBoardService.emptyBoardMeta(tier);
+        return { offers: [], meta, summary: summariseOffers([], tier, meta) };
     }
 }
 
-/** Max offer cards the Home undercard renders. generateOffers emits at most 4 anyway. */
+/** Max offer cards the Home undercard renders. A board holds at most 4 anyway. */
 const OFFERS_LIST_MAX = 4;
 
 /** {wins,losses,draws} with every field a real number, whatever the source gave us. */
@@ -396,23 +446,22 @@ function normaliseRecord(rec) {
     return { wins: n(r.wins), losses: n(r.losses), draws: n(r.draws) };
 }
 
-/** Offers that count toward offers.count — a LOCKED TitleShot is not a real offer. */
+/**
+ * Offers that count toward offers.count: only ACCEPTABLE ones. A locked TitleShot and
+ * every slot of a frozen board are acceptable:false (see offerBoardService).
+ */
 function countedOffers(offers) {
-    return (Array.isArray(offers) ? offers : []).filter((o) => {
-        if (!o) return false;
-        if (o.type === "TitleShot" && o.locked) return false;
-        return true;
-    });
+    return (Array.isArray(offers) ? offers : []).filter((o) => o && o.acceptable);
 }
 
 /**
- * THE offer-precedence rule, in one place: an UNLOCKED TitleShot wins; else highest purse
- * (every non-title offer in a tier shares the same signingFee, so opponent OVR is the
- * effective discriminator). Returns the RAW offer so that offers.best and heroBout resolve
+ * THE offer-precedence rule, in one place: an UNLOCKED TitleShot wins; else highest
+ * opponent OVR (which is also the highest purse, since the per-bout purse rises with the
+ * slot and the OVR gap). Returns the RAW offer so that offers.best and heroBout resolve
  * to the SAME bout — if those two ever disagreed, the hero would advertise a fight the
  * undercard does not highlight.
  *
- * @param {Array<Object>} offers raw generateOffers output
+ * @param {Array<Object>} offers raw BoardOffer list (offerBoardService.getBoard)
  * @returns {Object|null} the raw offer, or null
  */
 function pickBestOffer(offers) {
@@ -429,11 +478,10 @@ function pickBestOffer(offers) {
 }
 
 /**
- * One undercard card. Everything here is already in memory from buildOffers — ZERO extra
- * queries. opponentId is EPHEMERAL: the offer set is regenerated on every request, so the
- * client must treat it as a display key and navigate to the Fight Hub, never post it back.
+ * One undercard card. Everything here is already in memory from buildOffers: ZERO extra
+ * queries. opponentId is the accept handle for the lifetime of the board (see the header).
  */
-function offerListItem(offer, purse) {
+function offerListItem(offer, tierPurse) {
     const o = offer.opponent || {};
     const ctx = offer.context || {};
     return {
@@ -450,18 +498,30 @@ function offerListItem(offer, purse) {
         isTitleShot: offer.type === "TitleShot",
         isNemesis: offer.nemesisMeta != null,
         locked: !!offer.locked,
-        purse,
+        purse: Number.isFinite(offer.purse) ? offer.purse : tierPurse,
+        acceptable: !!offer.acceptable,
+        isCallout: !!offer.isCallout,
+        nemesisLossCount: offer.nemesisMeta?.lossCount ?? null,
+        opponentRank: rankingService.toDisplayRank(o.displayRank ?? null),
+        titleLock: offer.type === "TitleShot" && offer.locked
+            ? {
+                cooldownRemaining: offer.cooldownRemaining ?? 0,
+                winsNeeded: offer.winsNeeded ?? 0,
+                rankNeeded: !!offer.rankNeeded,
+            }
+            : null,
     };
 }
 
 /**
- * Build the { count, best, list } offers summary.
- * - count excludes a locked TitleShot.
- * - best: see pickBestOffer.
- * - list: EVERY offer in generation order (a locked TitleShot included, flagged
- *   locked:true so the card can render disabled), capped at OFFERS_LIST_MAX.
+ * Build the { count, best, list, ...OfferBoardMeta } offers block.
+ * - count: acceptable offers only.
+ * - best: see pickBestOffer (acceptable only).
+ * - list: EVERY board slot in board order (a locked TitleShot and frozen slots included,
+ *   flagged acceptable:false so the card can render disabled), capped at OFFERS_LIST_MAX.
+ * - meta: OfferBoardMeta, spread onto the block (omitted when not passed).
  */
-function summariseOffers(offers, tier) {
+function summariseOffers(offers, tier, meta) {
     const all = (Array.isArray(offers) ? offers : []).filter(Boolean);
     const purse = signingFeeFor(tier);
 
@@ -470,7 +530,7 @@ function summariseOffers(offers, tier) {
         opponentName: o.opponent?.name ?? null,
         opponentOvr: o.opponent?.overallRating ?? null,
         isTitleShot: o.type === "TitleShot",
-        purse, // PROMOTION_TIERS[tier].signingFee — same for every offer in the tier; null if tier unknown
+        purse: Number.isFinite(o.purse) ? o.purse : purse, // per-bout purse from hydrateOffers; tier fee fallback
     });
 
     const best = pickBestOffer(all);
@@ -479,25 +539,22 @@ function summariseOffers(offers, tier) {
         count: countedOffers(all).length,
         best: best ? toBest(best) : null,
         list: all.slice(0, OFFERS_LIST_MAX).map((o) => offerListItem(o, purse)),
+        ...(meta && typeof meta === "object" ? meta : {}),
     };
 }
 
 /**
- * Opponent record derived from their fightHistory.
- *
- * ⚠️ MIRRORS fightService.buildOfferContext (the static opponent.record field is seeded
- * flavour and is never displayed). Only the ACCEPTED-fight branch of buildHeroBout needs
- * it — every offer already carries context.record. buildOfferContext is not exported; when
- * it is, delete this and call that instead.
+ * Display rank for the signed opponent, using the same rule as the board: a same-tier NPC
+ * shifts around the player's RAW rank, a cross-tier (stretch callout) opponent keeps its
+ * own fixedRank. Then toDisplayRank (champion and unranked are null).
  */
-function recordFromHistory(history) {
-    return (Array.isArray(history) ? history : []).reduce((acc, f) => {
-        if (!f) return acc;
-        if (f.result === "win") acc.wins += 1;
-        else if (f.result === "loss") acc.losses += 1;
-        else acc.draws += 1;
-        return acc;
-    }, { wins: 0, losses: 0, draws: 0 });
+function signedOpponentRank(opp, fighter, rawFighter) {
+    if (!opp || typeof opp.fixedRank !== "number") return null;
+    const sameTier = opp.promotionTier === fighter?.promotionTier;
+    const internal = sameTier
+        ? rankingService.displayRankForNpc(opp.fixedRank, rawFighter?.ranking?.rank ?? null)
+        : opp.fixedRank;
+    return rankingService.toDisplayRank(internal);
 }
 
 /**
@@ -515,9 +572,10 @@ function recordFromHistory(history) {
  *
  * @param {Object} fighter public fighter (already loaded by buildDashboard)
  * @param {{offers:Array<Object>}} offersData buildOffers output
+ * @param {?Object} [rawFighter] raw {ranking} doc, for the signed opponent's display rank
  * @returns {Promise<Object|null>}
  */
-async function buildHeroBout(fighter, offersData) {
+async function buildHeroBout(fighter, offersData, rawFighter = null) {
     try {
         const nemesisId = fighter?.nemesis?.opponentId ? String(fighter.nemesis.opponentId) : null;
 
@@ -526,6 +584,8 @@ async function buildHeroBout(fighter, offersData) {
                 const fight = await Fight.findById(fighter.acceptedFightId).populate("opponentId").lean();
                 const opp = fight && fight.opponentId;
                 if (opp && typeof opp === "object" && opp._id) {
+                    const ctx = fightService.buildOfferContext(opp);
+                    const isNemesis = !!nemesisId && nemesisId === String(opp._id);
                     return {
                         source: "accepted",
                         opponentId: String(opp._id),
@@ -534,11 +594,17 @@ async function buildHeroBout(fighter, offersData) {
                         opponentOvr: opp.overallRating ?? null,
                         opponentTier: opp.promotionTier ?? null,
                         opponentWeightClass: opp.weightClass ?? null,
-                        record: recordFromHistory(opp.fightHistory),
+                        opponentStyle: opp.style ?? null,
+                        opponentRank: signedOpponentRank(opp, fighter, rawFighter),
+                        record: normaliseRecord(ctx.record),
+                        streak: ctx.streak ?? null,
+                        offerType: fight.offerType ?? null,
                         isTitleShot: fight.offerType === "TitleShot",
-                        isNemesis: !!nemesisId && nemesisId === String(opp._id),
+                        isCallout: !!fight.isCallout,
+                        isNemesis,
+                        nemesisLossCount: isNemesis ? (fighter.nemesis.lossCount ?? null) : null,
                         isRematch: false,
-                        purse: signingFeeFor(fight.promotionTier ?? fighter.promotionTier),
+                        purse: Number.isFinite(fight.purse) ? fight.purse : signingFeeFor(fight.promotionTier ?? fighter.promotionTier),
                         rounds: SCHEDULED_ROUNDS,
                     };
                 }
@@ -560,15 +626,50 @@ async function buildHeroBout(fighter, offersData) {
             opponentOvr: o.overallRating ?? null,
             opponentTier: o.promotionTier ?? null,
             opponentWeightClass: o.weightClass ?? null,
+            opponentStyle: o.style ?? null,
+            opponentRank: rankingService.toDisplayRank(o.displayRank ?? null),
             record: normaliseRecord(best.context?.record),
+            streak: best.context?.streak ?? null,
+            offerType: best.type ?? null,
             isTitleShot: best.type === "TitleShot",
+            isCallout: !!best.isCallout,
             isNemesis: best.nemesisMeta != null,
+            nemesisLossCount: best.nemesisMeta?.lossCount ?? null,
             isRematch: false,
-            purse: signingFeeFor(fighter?.promotionTier),
+            purse: Number.isFinite(best.purse) ? best.purse : signingFeeFor(fighter?.promotionTier),
             rounds: SCHEDULED_ROUNDS,
         };
     } catch (err) {
         console.error("[dashboard] heroBout module failed:", err.message);
+        return null;
+    }
+}
+
+const LAST_FIGHT_RESULT = { FIGHT_WIN: "win", FIGHT_LOSS: "loss", FIGHT_DRAW: "draw" };
+
+/**
+ * lastFight block: the newest FIGHT_WIN / FIGHT_LOSS / FIGHT_DRAW feed entry. ONE
+ * ActivityLog.findOne on the {fighterId, createdAt:-1} index. Degrades to null.
+ */
+async function buildLastFight(id) {
+    try {
+        const log = await ActivityLog.findOne({
+            fighterId: id,
+            type: { $in: Object.keys(LAST_FIGHT_RESULT) },
+        }).sort({ createdAt: -1 }).lean();
+        if (!log || !hasOwn(LAST_FIGHT_RESULT, log.type)) return null;
+        const meta = log.meta && typeof log.meta === "object" ? log.meta : {};
+        const at = log.createdAt ? new Date(log.createdAt) : null;
+        return {
+            result: LAST_FIGHT_RESULT[log.type],
+            opponentName: meta.opponentName ?? null,
+            outcome: meta.outcome ?? null,
+            isTitleFight: !!meta.isTitleFight,
+            fightId: meta.fightId != null ? String(meta.fightId) : null,
+            at: at && Number.isFinite(at.getTime()) ? at.toISOString() : null,
+        };
+    } catch (err) {
+        console.error("[dashboard] lastFight module failed:", err.message);
         return null;
     }
 }
@@ -850,17 +951,18 @@ async function buildDashboard(id) {
     const tier = fighter.promotionTier;
 
     // Run independent modules concurrently. Each builder swallows its own errors.
-    const [camp, offersData, feed, sponsorship, pvp, homeCamp] = await Promise.all([
+    const [camp, offersData, feed, sponsorship, pvp, homeCamp, lastFight] = await Promise.all([
         buildCamp(fighter, id),
         buildOffers(id, tier),
         buildFeed(id),
         buildSponsorship(id),
         buildPvp(fighter),
         buildHomeCamp(id, fighter),
+        buildLastFight(id),
     ]);
 
     // Depends on offersData, so it runs after the batch above rather than inside it.
-    const heroBout = await buildHeroBout(fighter, offersData);
+    const heroBout = await buildHeroBout(fighter, offersData, rawFighter);
 
     const ranking = await buildRanking(fighter, rawFighter, id);
     const injuries = buildInjuries(fighter);
@@ -874,7 +976,7 @@ async function buildDashboard(id) {
         injuries,
         acceptedFightId: fighter.acceptedFightId ? String(fighter.acceptedFightId) : null,
         camp,
-        offers: offersData.offers,
+        offers: offersData.offers.filter((o) => o && o.acceptable),
         energyCurrent: vitals.energy.current,
         fightEnergyCost: fightEnergyCostFor(tier),
         comebackActive,
@@ -910,6 +1012,7 @@ async function buildDashboard(id) {
         offers: offersData.summary,
         injuries,
         feed,
+        lastFight,
         ranking,
         resources: {
             iron: fighter.iron ?? 0,
@@ -926,6 +1029,7 @@ module.exports = {
     computeHeroAction,
     buildHeroBout,
     buildHomeCamp,
+    buildLastFight,
     // exported for testing
     fighterPhotoIndex,
     summariseOffers,

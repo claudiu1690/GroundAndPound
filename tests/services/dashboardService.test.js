@@ -136,9 +136,10 @@ test("8b: empty input is safe (default train)", () => {
 
 // ── summariseOffers ─────────────────────────────────────────────────────────
 test("summariseOffers: unlocked title shot is best; locked title excluded from count", () => {
+    // count/best consider acceptable offers only (offerBoardService sets the flag).
     const offers = [
-        { type: "Easy", opponent: { name: "A", overallRating: 20 } },
-        { type: "TitleShot", locked: false, opponent: { name: "Champ", overallRating: 90 } },
+        { type: "Easy", acceptable: true, opponent: { name: "A", overallRating: 20 } },
+        { type: "TitleShot", locked: false, acceptable: true, opponent: { name: "Champ", overallRating: 90 } },
     ];
     const s = summariseOffers(offers, "Amateur");
     assert.equal(s.count, 2);
@@ -149,9 +150,9 @@ test("summariseOffers: unlocked title shot is best; locked title excluded from c
 
 test("summariseOffers: locked title shot dropped from count, OVR tiebreak picks best", () => {
     const offers = [
-        { type: "Easy", opponent: { name: "A", overallRating: 20 } },
-        { type: "Hard", opponent: { name: "B", overallRating: 28 } },
-        { type: "TitleShot", locked: true, opponent: { name: "C", overallRating: 90 } },
+        { type: "Easy", acceptable: true, opponent: { name: "A", overallRating: 20 } },
+        { type: "Hard", acceptable: true, opponent: { name: "B", overallRating: 28 } },
+        { type: "TitleShot", locked: true, acceptable: false, opponent: { name: "C", overallRating: 90 } },
     ];
     const s = summariseOffers(offers, "Amateur");
     assert.equal(s.count, 2);
@@ -167,6 +168,6 @@ test("summariseOffers: empty -> count 0, best null, list []", () => {
 });
 
 test("summariseOffers: unknown tier -> purse null", () => {
-    const s = summariseOffers([{ type: "Even", opponent: { name: "X", overallRating: 30 } }], "Nope");
+    const s = summariseOffers([{ type: "Even", acceptable: true, opponent: { name: "X", overallRating: 30 } }], "Nope");
     assert.equal(s.best.purse, null);
 });

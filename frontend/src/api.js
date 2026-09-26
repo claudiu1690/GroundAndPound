@@ -86,11 +86,16 @@ export const api = {
   getGym: (id) => request(`/gyms/${id}`),
 
   // ── Fights ──────────────────────────────────────────────
+  // GET returns { offers: BoardOffer[], board: OfferBoardMeta } (offer-board-contract.md §3).
   getOffers: (fighterId) => request(`/fights/offers/${fighterId}`),
+  // body: { opponentId } — offerType is accepted-and-ignored server-side, so it is never sent.
   createOffer: (fighterId, body) =>
     request(`/fights/offers/${fighterId}`, { method: "POST", body: JSON.stringify(body) }),
   acceptOffer: (fighterId, fightId) =>
     request(`/fights/accept/${fighterId}/${fightId}`, { method: "POST" }),
+  // 200 { offers, board, cashAfter }
+  rerollOffers: (fighterId) =>
+    request(`/fights/offers/${fighterId}/reroll`, { method: "POST" }),
   setStrategy: (fighterId, fightId, strategy) =>
     request("/fights/strategy", {
       method: "PUT",

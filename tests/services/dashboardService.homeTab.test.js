@@ -56,9 +56,11 @@ function opp(over = {}) {
 function offer(type, over = {}) {
     return {
         type,
-        opponent: opp(over.opponent),
-        context: { record: { wins: 3, losses: 1, draws: 0 }, streak: { result: "win", count: 3 }, lastThree: [] },
+        // offerBoardService sets this on every BoardOffer; a locked title shot is never acceptable.
+        acceptable: !(type === "TitleShot" && over.locked),
         ...over,
+        opponent: opp(over.opponent),
+        context: over.context || { record: { wins: 3, losses: 1, draws: 0 }, streak: { result: "win", count: 3 }, lastThree: [] },
     };
 }
 
@@ -92,10 +94,12 @@ test("summariseOffers.list carries the full contract shape for every card", () =
 
     assert.equal(list.length, 1);
     assert.deepEqual(Object.keys(list[0]).sort(), [
-        "isNemesis", "isTitleShot", "locked", "opponentId", "opponentName",
-        "opponentNickname", "opponentOvr", "opponentStyle", "opponentTier",
-        "opponentWeightClass", "purse", "record", "streak", "type",
+        "acceptable", "isCallout", "isNemesis", "isTitleShot", "locked",
+        "nemesisLossCount", "opponentId", "opponentName", "opponentNickname",
+        "opponentOvr", "opponentRank", "opponentStyle", "opponentTier",
+        "opponentWeightClass", "purse", "record", "streak", "titleLock", "type",
     ]);
+    assert.equal(Object.keys(list[0]).length, 19);
     assert.deepEqual(list[0], {
         opponentId: "opp-1",
         opponentName: "Rico Vasquez",
@@ -111,6 +115,11 @@ test("summariseOffers.list carries the full contract shape for every card", () =
         isNemesis: false,
         locked: false,
         purse: TIER_PURSE,
+        acceptable: true,
+        isCallout: false,
+        nemesisLossCount: null,
+        opponentRank: null,
+        titleLock: null,
     });
 });
 
@@ -230,7 +239,7 @@ test("heroBout: the OFFER branch issues no Fight query at all", async () => {
 });
 
 test("heroBout: null when there is no signed fight AND no offer (injury case)", async () => {
-    // generateOffers throws on a blocking injury, so buildOffers degrades to offers:[]
+    // A blocking injury makes getBoard return offers:[] (board.blockedCode INJURY)
     // and heroAction.key === "injury". The hero must render with no rival plate.
     assert.equal(await buildHeroBout({ promotionTier: TIER }, { offers: [] }), null);
     assert.equal(await buildHeroBout({ promotionTier: TIER }, { offers: null }), null);
@@ -613,7 +622,7 @@ test("buildDashboard: every new key is PRESENT even when every module degrades",
     const Fighter = require("../../models/fighterModel");
     const ActivityLog = require("../../models/activityLogModel");
     const fighterService = require("../../services/fighterService");
-    const fightService = require("../../services/fightService");
+    const offerBoardService = require("../../services/offerBoardService");
     const campService = require("../../services/campService");
     const sponsorshipService = require("../../services/sponsorshipService");
     const pvpSeasonService = require("../../services/pvpSeasonService");
@@ -630,7 +639,8 @@ test("buildDashboard: every new key is PRESENT even when every module degrades",
     await withStub(fighterService, "getFighterById", async () => fighter, async () => {
         await withStub(Fighter, "findById", boom, async () => {
             await withStub(ActivityLog, "find", boom, async () => {
-                await withStub(fightService, "generateOffers", boom, async () => {
+              await withStub(ActivityLog, "findOne", boom, async () => {
+                await withStub(offerBoardService, "getBoard", boom, async () => {
                     await withStub(campService, "getCampState", boom, async () => {
                         await withStub(sponsorshipService, "listActive", boom, async () => {
                             await withStub(pvpSeasonService, "getCurrentSeasonForFighter", boom, async () => {
@@ -644,8 +654,13 @@ test("buildDashboard: every new key is PRESENT even when every module degrades",
                                     assert.equal(d.pvp, null);
                                     assert.equal(d.camp, null);
                                     assert.equal(d.sponsorship, null);
-                                    assert.deepEqual(d.offers, { count: 0, best: null, list: [] });
+                                    assert.deepEqual(d.offers, {
+                                        count: 0, best: null, list: [],
+                                        ...offerBoardService.emptyBoardMeta("Amateur"),
+                                    });
                                     assert.deepEqual(d.feed, []);
+                                    assert.ok(Object.prototype.hasOwnProperty.call(d, "lastFight"));
+                                    assert.equal(d.lastFight, null);
 
                                     // The synchronous spine still renders.
                                     assert.equal(d.identity.firstName, "Rico");
@@ -656,7 +671,240 @@ test("buildDashboard: every new key is PRESENT even when every module degrades",
                         });
                     });
                 });
+              });
             });
         });
+    });
+});
+
+// ── Offer board (persisted board, acceptable flag, meta spread, lastFight) ──────
+
+const BOARD_META = {
+    generatedAt: "2026-09-25T10:00:00.000Z",
+    expiresAt: "2026-09-26T10:00:00.000Z",
+    rerollUsed: false,
+    rerollCost: 150,
+    canReroll: true,
+    rerollBlockedBy: null,
+    frozen: false,
+    blockedReason: null,
+    blockedCode: null,
+};
+
+test("summariseOffers spreads every OfferBoardMeta key onto the block", () => {
+    const block = summariseOffers([offer("Even")], TIER, BOARD_META);
+    for (const k of Object.keys(BOARD_META)) {
+        assert.ok(Object.prototype.hasOwnProperty.call(block, k), `missing ${k}`);
+        assert.deepEqual(block[k], BOARD_META[k]);
+    }
+    assert.equal(block.count, 1);
+    assert.equal(block.list.length, 1);
+});
+
+test("count and best consider ACCEPTABLE offers only; list keeps every slot", () => {
+    const offers = [
+        offer("Easy", { opponent: { _id: "a", overallRating: 20, name: "A" } }),
+        offer("Hard", { acceptable: false, opponent: { _id: "b", overallRating: 55, name: "B" } }),
+        offer("TitleShot", { locked: true, opponent: { _id: "c", overallRating: 90, name: "C" } }),
+    ];
+    const s = summariseOffers(offers, TIER, BOARD_META);
+    assert.equal(s.count, 1);
+    assert.equal(s.best.opponentName, "A", "an unacceptable Hard can never be best");
+    assert.equal(s.list.length, 3);
+    assert.deepEqual(s.list.map((c) => c.acceptable), [true, false, false]);
+});
+
+test("offerListItem: callout, nemesis loss count, display rank and title lock", () => {
+    const offers = [
+        offer("Easy", { nemesisMeta: { lossCount: 2, setAt: null }, opponent: { _id: "n", displayRank: 6 } }),
+        offer("Hard", { isCallout: true, opponent: { _id: "c", displayRank: 1 } }),
+        offer("TitleShot", {
+            locked: true, cooldownRemaining: 1, winsNeeded: 2, rankNeeded: true,
+            opponent: { _id: "champ", displayRank: 1 },
+        }),
+        offer("TitleShot", { locked: false, opponent: { _id: "champ2" } }),
+    ];
+    const { list } = summariseOffers(offers, TIER);
+    assert.equal(list[0].nemesisLossCount, 2);
+    assert.equal(list[0].opponentRank, 5, "display rank goes through toDisplayRank");
+    assert.equal(list[0].isCallout, false);
+    assert.equal(list[1].isCallout, true);
+    assert.equal(list[1].opponentRank, null, "rank 1 (champion slot) displays as null");
+    assert.deepEqual(list[2].titleLock, { cooldownRemaining: 1, winsNeeded: 2, rankNeeded: true });
+    assert.equal(list[2].acceptable, false);
+    assert.equal(list[3].titleLock, null, "an unlocked title shot carries no lock");
+});
+
+test("heroBout offer branch carries the new fields", async () => {
+    const offers = [offer("Hard", {
+        isCallout: true,
+        nemesisMeta: { lossCount: 3, setAt: null },
+        opponent: { _id: "h", displayRank: 4, style: "Muay Thai" },
+    })];
+    const hero = await buildHeroBout({ promotionTier: TIER }, { offers });
+    assert.equal(hero.source, "offer");
+    assert.equal(hero.offerType, "Hard");
+    assert.equal(hero.isCallout, true);
+    assert.equal(hero.nemesisLossCount, 3);
+    assert.equal(hero.opponentStyle, "Muay Thai");
+    assert.equal(hero.opponentRank, 3);
+    assert.deepEqual(hero.streak, { result: "win", count: 3 });
+});
+
+test("heroBout: a FROZEN board never produces an offer hero; the accepted branch wins", async () => {
+    const frozenOffers = [offer("Even", { acceptable: false, opponent: { _id: "board-opp" } })];
+    assert.equal(await buildHeroBout({ promotionTier: TIER }, { offers: frozenOffers }), null);
+
+    const fightDoc = {
+        offerType: "Hard",
+        isCallout: true,
+        promotionTier: TIER,
+        opponentId: opp({
+            _id: "signed", fixedRank: 4, style: "Wrestling",
+            fightHistory: [{ result: "loss" }, { result: "win" }, { result: "win" }],
+        }),
+    };
+    await withStub(Fight, "findById", () => queryOf(fightDoc), async () => {
+        const fighter = {
+            promotionTier: TIER, acceptedFightId: "f",
+            nemesis: { opponentId: "signed", lossCount: 2 },
+        };
+        const hero = await buildHeroBout(fighter, { offers: frozenOffers }, { ranking: { rank: 3 } });
+        assert.equal(hero.source, "accepted");
+        assert.equal(hero.opponentId, "signed");
+        assert.equal(hero.offerType, "Hard");
+        assert.equal(hero.isCallout, true);
+        assert.equal(hero.opponentStyle, "Wrestling");
+        // fixedRank 4 at/below the player's raw rank 3 shifts to 5, then display 4.
+        assert.equal(hero.opponentRank, 4);
+        assert.deepEqual(hero.streak, { result: "win", count: 2 });
+        assert.deepEqual(hero.record, { wins: 2, losses: 1, draws: 0 });
+        assert.equal(hero.isNemesis, true);
+        assert.equal(hero.nemesisLossCount, 2);
+    });
+});
+
+test("buildLastFight: shape from the newest fight feed entry, on one indexed findOne", async () => {
+    const ActivityLog = require("../../models/activityLogModel");
+    const createdAt = new Date("2026-09-24T20:00:00Z");
+    let query = null;
+    let calls = 0;
+    const fake = (q) => {
+        calls += 1;
+        query = q;
+        return {
+            sort: () => ({
+                lean: async () => ({
+                    type: "FIGHT_LOSS",
+                    createdAt,
+                    meta: { opponentName: "Rico", outcome: "Loss (KO/TKO)", isTitleFight: true, fightId: "fight-9" },
+                }),
+            }),
+        };
+    };
+    await withStub(ActivityLog, "findOne", fake, async () => {
+        const lf = await dashboardService.buildLastFight("f1");
+        assert.deepEqual(lf, {
+            result: "loss",
+            opponentName: "Rico",
+            outcome: "Loss (KO/TKO)",
+            isTitleFight: true,
+            fightId: "fight-9",
+            at: createdAt.toISOString(),
+        });
+    });
+    assert.equal(calls, 1);
+    assert.equal(query.fighterId, "f1");
+    assert.deepEqual(query.type, { $in: ["FIGHT_WIN", "FIGHT_LOSS", "FIGHT_DRAW"] });
+});
+
+test("buildLastFight: null with no fights, null when the read throws", async () => {
+    const ActivityLog = require("../../models/activityLogModel");
+    await withStub(ActivityLog, "findOne", () => ({ sort: () => ({ lean: async () => null }) }), async () => {
+        assert.equal(await dashboardService.buildLastFight("f1"), null);
+    });
+    await withStub(ActivityLog, "findOne", () => { throw new Error("mongo down"); }, async () => {
+        assert.equal(await dashboardService.buildLastFight("f1"), null);
+    });
+});
+
+/** Run buildDashboard with every module stubbed; `board` is what getBoard resolves to. */
+async function dashboardWith({ fighter, board, lastLog = null }, body) {
+    const Fighter = require("../../models/fighterModel");
+    const ActivityLog = require("../../models/activityLogModel");
+    const fighterService = require("../../services/fighterService");
+    const offerBoardService = require("../../services/offerBoardService");
+    const campService = require("../../services/campService");
+    const sponsorshipService = require("../../services/sponsorshipService");
+    const pvpSeasonService = require("../../services/pvpSeasonService");
+    const boom = () => { throw new Error("down"); };
+
+    await withStub(fighterService, "getFighterById", async () => fighter, async () => {
+        await withStub(Fighter, "findById", boom, async () => {
+            await withStub(ActivityLog, "find", boom, async () => {
+                await withStub(ActivityLog, "findOne", () => ({ sort: () => ({ lean: async () => lastLog }) }), async () => {
+                    await withStub(offerBoardService, "getBoard", async () => board, async () => {
+                        await withStub(campService, "getCampState", boom, async () => {
+                            await withStub(sponsorshipService, "listActive", async () => [], async () => {
+                                await withStub(pvpSeasonService, "getCurrentSeasonForFighter", async () => null, async () => {
+                                    await withStub(HomeCamp, "findOne", () => queryOf(null), async () => {
+                                        await body(await dashboardService.buildDashboard("f1"));
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+}
+
+const DASH_FIGHTER = {
+    _id: "f1", firstName: "Rico", lastName: "Vasquez", nickname: null,
+    weightClass: "Lightweight", promotionTier: TIER, overallRating: 35,
+    record: { wins: 4, losses: 1, draws: 0 }, energy: { current: 80, max: 100 },
+    health: 100, injuries: [], acceptedFightId: null, iron: 1000, notoriety: { score: 0 },
+};
+
+test("buildDashboard: offers block carries meta keys on success", async () => {
+    const board = { offers: [offer("Even")], meta: BOARD_META };
+    await dashboardWith({ fighter: DASH_FIGHTER, board }, async (d) => {
+        for (const k of Object.keys(BOARD_META)) {
+            assert.deepEqual(d.offers[k], BOARD_META[k], k);
+        }
+        assert.equal(d.offers.count, 1);
+        assert.equal(d.offers.list.length, 1);
+        assert.equal(d.heroBout.source, "offer");
+    });
+});
+
+test("buildDashboard: computeHeroAction sees ACCEPTABLE offers only", async () => {
+    // An unlocked title shot that is not acceptable (frozen board) must not drive the CTA.
+    const board = {
+        offers: [offer("TitleShot", { locked: false, acceptable: false }), offer("Even", { acceptable: false })],
+        meta: { ...BOARD_META, frozen: true, canReroll: false, rerollBlockedBy: "frozen" },
+    };
+    await dashboardWith({ fighter: DASH_FIGHTER, board }, async (d) => {
+        assert.notEqual(d.heroAction.key, "title_shot");
+        assert.notEqual(d.heroAction.key, "fight_offer");
+        assert.equal(d.offers.count, 0);
+        assert.equal(d.offers.best, null);
+        assert.equal(d.offers.list.length, 2, "frozen slots still render");
+    });
+
+    const live = { offers: [offer("TitleShot", { locked: false })], meta: BOARD_META };
+    await dashboardWith({ fighter: DASH_FIGHTER, board: live }, async (d) => {
+        assert.equal(d.heroAction.key, "title_shot");
+    });
+});
+
+test("buildDashboard: lastFight is wired into the payload", async () => {
+    const lastLog = { type: "FIGHT_WIN", createdAt: new Date("2026-09-20T00:00:00Z"), meta: { opponentName: "X", outcome: "KO/TKO", fightId: "f9" } };
+    await dashboardWith({ fighter: DASH_FIGHTER, board: { offers: [], meta: BOARD_META }, lastLog }, async (d) => {
+        assert.equal(d.lastFight.result, "win");
+        assert.equal(d.lastFight.opponentName, "X");
+        assert.equal(d.lastFight.isTitleFight, false);
+        assert.equal(d.lastFight.fightId, "f9");
     });
 });

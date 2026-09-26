@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home Tab, UFC-inspired directions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,800;1,900&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#0F0F0F;--surface:#141414;--card:#1A1A1A;--hover:#222;--line:#2A2A2A;
+    --red:#C8102E;--red-hi:#E8102E;--red-dim:#8A0B20;--blue:#1E5BD8;--blue-dim:#12357A;
+    --gold:#D4A820;--green:#22c55e;--t1:#fff;--t2:#AAA;--t3:#888;--t4:#666;
+    --disp:'Barlow Condensed',sans-serif;--body:'Barlow',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#080808;color:var(--t1);font:14px/1.4 var(--body)}
+  button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+
+  /* ── mock chrome ─────────────────────────────────────────── */
+  .chrome{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px;padding:10px 16px;background:#000;border-bottom:1px solid #222;flex-wrap:wrap}
+  .chrome b{font:800 14px var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-right:8px}
+  .chrome .tab{padding:7px 14px;border:1px solid #333;border-radius:6px;font:700 12px var(--disp);letter-spacing:1.5px;text-transform:uppercase;color:#bbb}
+  .chrome .tab.on{background:var(--red);border-color:var(--red-hi);color:#fff}
+  .chrome .sp{flex:1}
+  .chrome .w{font:600 11px var(--body);color:#888;padding:6px 10px;border:1px solid #333;border-radius:6px}
+  .chrome .w.on{color:#fff;border-color:#666}
+  .note{max-width:1100px;margin:14px auto 0;padding:0 20px;color:#999;font-size:13px}
+  .note strong{color:#fff}
+  .frame{margin:14px auto 60px;width:1100px;max-width:100%;background:var(--bg);border:1px solid #222;border-radius:12px;overflow:hidden;transition:width .3s}
+  .frame.phone{width:390px}
+  .variant{display:none}.variant.on{display:block}
+
+  /* ── shared ──────────────────────────────────────────────── */
+  .eyebrow{font:700 10px/1 var(--disp);letter-spacing:4px;text-transform:uppercase;color:var(--red-hi)}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+  .chip{display:inline-block;padding:4px 8px;border-radius:3px;font:700 10px/1 var(--disp);letter-spacing:2px;text-transform:uppercase}
+  .chip.easy{background:#123d22;color:#4ade80}.chip.even{background:#3a2d06;color:#fbbf24}.chip.hard{background:#3b0a12;color:#f87171}.chip.title{background:#3a2d06;color:var(--gold);border:1px solid var(--gold)}
+  .chip.nem{background:#000;color:#f87171;border:1px solid var(--red-dim)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:6px;font:800 15px/1 var(--disp);letter-spacing:2.5px;text-transform:uppercase;white-space:nowrap}
+  .btn.red{background:linear-gradient(180deg,var(--red-hi),var(--red));color:#fff;box-shadow:0 8px 24px -8px rgba(232,16,46,.7)}
+  .btn.ghost{border:1px solid #444;color:#ddd}
+  .btn.sm{padding:9px 14px;font-size:12px;letter-spacing:2px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px}
+  .tile h3{margin:0 0 10px;font:700 11px/1 var(--disp);letter-spacing:3px;text-transform:uppercase;color:var(--t3)}
+  .bar{height:5px;background:#2a2a2a;border-radius:3px;overflow:hidden;margin-top:6px}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#f2c94c)}
+  .bar.red i{background:linear-gradient(90deg,var(--red),var(--red-hi))}
+  .bar.green i{background:linear-gradient(90deg,#15803d,#4ade80)}
+  .bar.blue i{background:linear-gradient(90deg,#1d4ed8,#60a5fa)}
+  .kv{display:flex;justify-content:space-between;font-size:13px;color:var(--t2);padding:6px 0;border-bottom:1px solid #222}
+  .kv:last-child{border:0}.kv b{color:#fff;font-variant-numeric:tabular-nums}
+  .sil{position:relative;overflow:hidden;background:
+    repeating-linear-gradient(60deg,transparent 0 22px,rgba(255,255,255,.035) 22px 23px),
+    repeating-linear-gradient(-60deg,transparent 0 22px,rgba(255,255,255,.035) 22px 23px),#111}
+  .sil::before{content:"";position:absolute;left:50%;bottom:0;width:78%;height:88%;transform:translateX(-50%);
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 240'><circle cx='100' cy='54' r='40' fill='%23444'/><rect x='82' y='88' width='36' height='28' fill='%23444'/><path d='M14 240C14 154 56 116 100 116s86 38 86 124z' fill='%23444'/></svg>") center bottom/contain no-repeat}
+  .sil::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,var(--bg) 100%)}
+  .sil.red-c::before{filter:sepia(1) saturate(5) hue-rotate(-25deg) brightness(.6)}
+  .sil.blue-c::before{filter:sepia(1) saturate(5) hue-rotate(185deg) brightness(.6)}
+  .rank-list{list-style:none;margin:0;padding:0}
+  .rank-list li{display:grid;grid-template-columns:34px 1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #222;font-size:13px}
+  .rank-list li:last-child{border:0}
+  .rank-list .n{font:800 16px var(--disp);color:var(--t3)}
+  .rank-list .c .n{color:var(--gold)}
+  .rank-list .me{background:rgba(200,16,46,.12);margin:0 -10px;padding:8px 10px;border-radius:4px;border-bottom:0}
+  .rank-list .me .n{color:#fff}
+  .rank-list .rec{color:var(--t3);font-variant-numeric:tabular-nums}
+  .rank-list .mv{font:700 11px var(--disp);letter-spacing:1px}
+  .up{color:#4ade80}.dn{color:#f87171}
+
+  /* ══════════ VARIANT A: EVENT CARD ══════════ */
+  .a-hero{position:relative;isolation:isolate;min-height:420px;display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+  .a-hero .side{position:relative;min-height:420px}
+  .a-hero .side .sil{position:absolute;inset:0}
+  .a-hero .side.l .sil{clip-path:polygon(0 0,100% 0,84% 100%,0 100%)}
+  .a-hero .side.r .sil{clip-path:polygon(16% 0,100% 0,100% 100%,0 100%)}
+  .a-hero .side.l::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(200,16,46,.28),transparent 60%);pointer-events:none}
+  .a-hero .side.r::after{content:"";position:absolute;inset:0;background:linear-gradient(270deg,rgba(30,91,216,.25),transparent 60%);pointer-events:none}
+  .a-hero .over{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:24px 20px 26px;text-align:center;background:linear-gradient(180deg,rgba(15,15,15,.15),rgba(15,15,15,.1) 40%,rgba(15,15,15,.92) 78%,var(--bg))}
+  .a-hero .ev{font:800 12px/1 var(--disp);letter-spacing:5px;text-transform:uppercase;color:var(--gold)}
+  .a-hero .ev small{display:block;margin-top:6px;font:600 10px var(--body);letter-spacing:2px;color:var(--t3)}
+  .a-hero .names{display:flex;align-items:center;gap:18px;margin-top:8px}
+  .a-hero .nm{font:900 62px/.9 var(--disp);text-transform:uppercase;letter-spacing:-1px}
+  .a-hero .nm small{display:block;font:italic 800 14px/1 var(--disp);letter-spacing:3px;color:var(--t2);margin-bottom:6px}
+  .a-hero .nm.l{text-align:right;color:#fff}
+  .a-hero .nm.r{text-align:left;color:#fff}
+  .a-hero .vs{font:italic 900 34px/1 var(--disp);color:var(--red-hi);text-shadow:0 0 28px rgba(232,16,46,.8)}
+  .a-hero .meta{margin-top:12px;font:700 11px var(--disp);letter-spacing:3px;text-transform:uppercase;color:var(--t2)}
+  .a-hero .meta b{color:#fff}
+  .a-hero .meta i{margin:0 10px;color:var(--red-dim);font-style:normal}
+  .a-hero .ctas{display:flex;gap:10px;margin-top:16px}
+  .a-corner{position:absolute;top:18px;z-index:3;font:800 10px/1 var(--disp);letter-spacing:3px;text-transform:uppercase;padding:6px 9px;border-radius:3px}
+  .a-corner.l{left:18px;background:var(--red);color:#fff}
+  .a-corner.r{right:18px;background:var(--blue);color:#fff}
+  .a-card{margin-top:22px}
+  .a-card .hd{display:flex;align-items:baseline;gap:12px;padding-bottom:8px;border-bottom:2px solid var(--red)}
+  .a-card .hd h2{margin:0;font:900 26px/1 var(--disp);text-transform:uppercase;letter-spacing:1px}
+  .a-card .hd span{color:var(--t3);font-size:12px}
+  .a-card .hd .rr{margin-left:auto;font:700 11px var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--t3)}
+  .a-card .hd .rr b{color:var(--gold)}
+  .a-sec{margin-top:14px;font:800 11px/1 var(--disp);letter-spacing:4px;text-transform:uppercase;color:var(--t3);padding:6px 0}
+  .a-sec.main{color:var(--red-hi)}
+  .a-row{display:grid;grid-template-columns:6px 1fr 64px 1fr auto;gap:0 14px;align-items:center;padding:12px 14px 12px 0;background:var(--card);border:1px solid var(--line);border-radius:6px;margin-top:6px;transition:background .15s}
+  .a-row:hover{background:var(--hover)}
+  .a-row .st{align-self:stretch;border-radius:6px 0 0 6px;background:var(--red)}
+  .a-row.hard .st{background:#f87171}.a-row.easy .st{background:#4ade80}.a-row.even .st{background:#fbbf24}.a-row.title .st{background:var(--gold)}
+  .a-row .f{display:flex;flex-direction:column;gap:3px}
+  .a-row .f.r{text-align:right;align-items:flex-end}
+  .a-row .f b{font:800 19px/1 var(--disp);text-transform:uppercase;letter-spacing:.5px}
+  .a-row .f b small{font:italic 700 12px var(--disp);color:var(--t3);letter-spacing:1px;margin:0 6px}
+  .a-row .f span{font-size:12px;color:var(--t3);font-variant-numeric:tabular-nums}
+  .a-row .f .tag{margin-top:2px}
+  .a-row .mid{text-align:center}
+  .a-row .mid b{display:block;font:italic 900 18px/1 var(--disp);color:var(--red-hi)}
+  .a-row .mid span{display:block;margin-top:3px;font:700 9px var(--disp);letter-spacing:2px;color:var(--t4);text-transform:uppercase}
+  .a-row .act{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .a-row .act .purse{font:800 15px var(--disp);color:var(--gold);letter-spacing:1px}
+  .a-row.callout{grid-template-columns:6px 1fr auto;border-style:dashed}
+  .a-row.callout .st{background:#333}
+  .a-status{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:22px}
+  .a-status .tile{padding:12px 14px}
+  .a-status .big{font:800 26px/1 var(--disp);letter-spacing:.5px}
+  .a-status .big small{font:600 12px var(--body);color:var(--t3);letter-spacing:0;margin-left:4px}
+  .a-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;margin:12px 0 26px}
+
+  /* ══════════ VARIANT B: TALE OF THE TAPE ══════════ */
+  .b-top{background:#000;border-bottom:1px solid #222;padding:10px 20px;display:flex;align-items:center;gap:14px;font:700 11px var(--disp);letter-spacing:3px;text-transform:uppercase;color:var(--t3)}
+  .b-top .live{display:inline-flex;align-items:center;gap:6px;color:#fff}
+  .b-top .live::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--red-hi);box-shadow:0 0 10px var(--red-hi)}
+  .b-top .r{margin-left:auto;color:var(--gold)}
+  .b-hero{position:relative;padding:22px 20px 26px;background:radial-gradient(60% 70% at 50% 0%,rgba(200,16,46,.22),transparent 70%),var(--bg)}
+  .b-tape{max-width:900px;margin:0 auto;background:linear-gradient(180deg,#151515,#0d0d0d);border:1px solid #2a2a2a;border-radius:10px;overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.9)}
+  .b-tape .head{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;padding:18px 22px 14px;border-bottom:1px solid #2a2a2a;background:linear-gradient(90deg,rgba(200,16,46,.22),transparent 40%,transparent 60%,rgba(30,91,216,.2))}
+  .b-tape .head .who{display:flex;flex-direction:column;gap:4px}
+  .b-tape .head .who.r{text-align:right;align-items:flex-end}
+  .b-tape .head .who em{font:italic 700 13px var(--disp);letter-spacing:3px;color:var(--t2);text-transform:uppercase}
+  .b-tape .head .who b{font:900 44px/.9 var(--disp);text-transform:uppercase;letter-spacing:-.5px}
+  .b-tape .head .who span{font-size:12px;color:var(--t3);letter-spacing:1px;font-variant-numeric:tabular-nums}
+  .b-tape .head .who .corner{font:800 9px var(--disp);letter-spacing:3px;padding:4px 7px;border-radius:3px;color:#fff;background:var(--red);width:max-content}
+  .b-tape .head .who.r .corner{background:var(--blue)}
+  .b-tape .head .ctr{text-align:center;padding:0 24px}
+  .b-tape .head .ctr .vs{font:italic 900 40px/1 var(--disp);color:#fff;text-shadow:0 0 30px rgba(232,16,46,.9)}
+  .b-tape .head .ctr .sub{margin-top:6px;font:700 10px var(--disp);letter-spacing:3px;text-transform:uppercase;color:var(--gold)}
+  .b-tape .title-bar{text-align:center;padding:8px;font:800 11px var(--disp);letter-spacing:5px;text-transform:uppercase;background:#000;color:var(--t2)}
+  .b-tape table{width:100%;border-collapse:collapse}
+  .b-tape td{padding:9px 22px;font-size:14px;border-bottom:1px solid #1f1f1f}
+  .b-tape tr:last-child td{border:0}
+  .b-tape td.l{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;width:38%}
+  .b-tape td.r{text-align:left;font-weight:600;font-variant-numeric:tabular-nums;width:38%}
+  .b-tape td.m{text-align:center;font:700 10px var(--disp);letter-spacing:3px;text-transform:uppercase;color:var(--t3);width:24%}
+  .b-tape td.win{color:#fff}.b-tape td.lose{color:var(--t3)}
+  .b-tape .stat{display:flex;align-items:center;gap:10px}
+  .b-tape td.l .stat{justify-content:flex-end}
+  .b-tape .sb{height:6px;width:120px;background:#222;border-radius:3px;overflow:hidden}
+  .b-tape .sb i{display:block;height:100%;background:var(--red-hi)}
+  .b-tape td.l .sb{transform:scaleX(-1)}
+  .b-tape td.r .sb i{background:#3b82f6}
+  .b-tape .foot{display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 22px;background:#000;border-top:1px solid #2a2a2a;flex-wrap:wrap}
+  .b-tape .foot .p{font:800 14px var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-right:auto}
+  .b-tape .foot .p small{display:block;font:600 10px var(--body);letter-spacing:1px;color:var(--t3)}
+  .b-strip{display:flex;align-items:stretch;background:#000;border-top:1px solid #222;border-bottom:1px solid #222;margin-top:20px;overflow:hidden}
+  .b-strip .lab{flex:0 0 auto;padding:12px 18px;background:var(--red);font:800 11px/1 var(--disp);letter-spacing:3px;text-transform:uppercase;display:flex;align-items:center}
+  .b-strip .items{display:flex;flex:1;overflow:hidden}
+  .b-strip .it{flex:1;padding:10px 16px;border-right:1px solid #222;display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0}
+  .b-strip .it span{font:700 9px var(--disp);letter-spacing:2.5px;text-transform:uppercase;color:var(--t4)}
+  .b-strip .it b{font:800 18px/1 var(--disp);letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .b-strip .it b small{font:500 11px var(--body);color:var(--t3);margin-left:6px}
+  .b-bouts{margin-top:18px}
+  .b-bouts h2{margin:0 0 10px;font:900 20px var(--disp);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:baseline;gap:10px}
+  .b-bouts h2 span{font:600 12px var(--body);letter-spacing:0;text-transform:none;color:var(--t3)}
+  .b-bouts .row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .b-bout{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:6px;position:relative}
+  .b-bout .tp{display:flex;justify-content:space-between;align-items:center}
+  .b-bout .tp span{font:700 10px var(--disp);letter-spacing:2px;color:var(--t3);text-transform:uppercase}
+  .b-bout b{font:800 20px/1 var(--disp);text-transform:uppercase}
+  .b-bout b small{font:italic 700 12px var(--disp);color:var(--t3);letter-spacing:1px;margin-left:6px}
+  .b-bout .rc{font-size:12px;color:var(--t3);font-variant-numeric:tabular-nums}
+  .b-bout .ft{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .b-bout .ft .purse{font:800 15px var(--disp);color:var(--gold);letter-spacing:1px}
+  .b-bout.selected{border-color:var(--red-hi);box-shadow:0 0 0 1px rgba(232,16,46,.4),0 0 30px -10px rgba(232,16,46,.6)}
+  .b-bout.selected::before{content:"ON THE TAPE";position:absolute;top:-8px;left:12px;background:var(--red);color:#fff;font:800 9px var(--disp);letter-spacing:2px;padding:3px 7px;border-radius:3px}
+  .b-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 26px}
+  .b-grid .tile.w2{grid-column:span 2}
+  .b-score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;text-align:center;gap:8px;padding:8px 0}
+  .b-score b{font:900 34px/1 var(--disp)}
+  .b-score span{font:700 10px var(--disp);letter-spacing:2px;color:var(--t3);text-transform:uppercase;display:block}
+  .b-score .dash{color:var(--t4);font:900 20px var(--disp)}
+
+  /* ══════════ VARIANT C: ATHLETE PAGE ══════════ */
+  .c-hero{position:relative;display:grid;grid-template-columns:1.25fr 1fr;gap:20px;padding:26px 20px 22px;background:linear-gradient(180deg,#151515,var(--bg));border-bottom:1px solid #222;overflow:hidden}
+  .c-hero::before{content:"";position:absolute;left:-40px;top:-60px;width:520px;height:520px;background:radial-gradient(circle,rgba(200,16,46,.22),transparent 65%);pointer-events:none}
+  .c-id{position:relative;display:flex;gap:18px}
+  .c-id .sil{flex:0 0 150px;height:190px;border-radius:8px;border:1px solid #333}
+  .c-id .txt{display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
+  .c-id .nick{font:italic 800 14px var(--disp);letter-spacing:4px;text-transform:uppercase;color:var(--red-hi)}
+  .c-id .name{font:900 64px/.86 var(--disp);text-transform:uppercase;letter-spacing:-1.5px;margin-top:4px}
+  .c-id .name small{display:block;font:700 30px/1 var(--disp);color:var(--t2);letter-spacing:0}
+  .c-id .div{margin-top:10px;font:700 12px var(--disp);letter-spacing:3px;text-transform:uppercase;color:var(--t2)}
+  .c-id .div b{color:var(--gold)}
+  .c-id .rec{display:flex;gap:22px;margin-top:12px}
+  .c-id .rec div b{display:block;font:900 30px/1 var(--disp);letter-spacing:.5px;font-variant-numeric:tabular-nums}
+  .c-id .rec div span{font:700 9px var(--disp);letter-spacing:2.5px;text-transform:uppercase;color:var(--t4)}
+  .c-id .rec .rank b{color:var(--red-hi)}
+  .c-next{position:relative;background:#000;border:1px solid #333;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px}
+  .c-next .eb{display:flex;justify-content:space-between;align-items:center}
+  .c-next .eb .eyebrow{color:var(--gold)}
+  .c-next .eb .lk{font-size:12px;color:var(--t3)}
+  .c-next .opp{display:flex;gap:12px;align-items:center}
+  .c-next .opp .sil{flex:0 0 64px;height:64px;border-radius:6px;border:1px solid #333}
+  .c-next .opp b{display:block;font:900 26px/1 var(--disp);text-transform:uppercase}
+  .c-next .opp b small{display:block;font:italic 700 11px var(--disp);letter-spacing:3px;color:var(--t3);margin-top:4px}
+  .c-next .opp span{display:block;margin-top:4px;font-size:12px;color:var(--t3)}
+  .c-next .stk{display:flex;gap:6px;flex-wrap:wrap}
+  .c-next .m{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .c-next .m div{background:#141414;border:1px solid #222;border-radius:6px;padding:8px;text-align:center}
+  .c-next .m b{display:block;font:800 18px/1 var(--disp);font-variant-numeric:tabular-nums}
+  .c-next .m span{font:700 9px var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--t4)}
+  .c-next .m .g b{color:var(--gold)}
+  .c-next .ct{display:flex;gap:8px}
+  .c-next .ct .btn{flex:1}
+  .c-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .c-stats .row{display:grid;grid-template-columns:90px 1fr 36px;align-items:center;gap:10px;padding:5px 0;font-size:12px;color:var(--t2)}
+  .c-stats .row b{text-align:right;font:800 14px var(--disp);color:#fff;font-variant-numeric:tabular-nums}
+  .c-stats .row .bar{margin:0}
+  .c-book{margin-top:16px}
+  .c-book h2{margin:0 0 8px;font:900 20px var(--disp);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:baseline;gap:10px}
+  .c-book h2 span{font:600 12px var(--body);letter-spacing:0;text-transform:none;color:var(--t3)}
+  .c-book h2 .rr{margin-left:auto;font:700 11px var(--disp);letter-spacing:2px;color:var(--t3)}
+  .c-book h2 .rr b{color:var(--gold)}
+  .c-book .list{display:flex;flex-direction:column;gap:6px}
+  .c-brow{display:grid;grid-template-columns:44px 1fr auto auto auto;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+  .c-brow.main{border-color:var(--red-dim);background:linear-gradient(90deg,rgba(200,16,46,.14),var(--card) 40%)}
+  .c-brow .sil{width:44px;height:44px;border-radius:4px}
+  .c-brow .nm b{font:800 17px/1 var(--disp);text-transform:uppercase}
+  .c-brow .nm b small{font:italic 700 11px var(--disp);color:var(--t3);letter-spacing:1px;margin-left:6px}
+  .c-brow .nm span{display:block;font-size:12px;color:var(--t3);margin-top:3px;font-variant-numeric:tabular-nums}
+  .c-brow .p{font:800 14px var(--disp);color:var(--gold);letter-spacing:1px;text-align:right}
+  .c-brow .p small{display:block;font:600 9px var(--body);color:var(--t4);letter-spacing:1px;text-transform:uppercase}
+  .c-brow.callout{grid-template-columns:44px 1fr auto;border-style:dashed}
+  .c-brow.callout .sil{background:#111;border:1px dashed #444}
+  .c-brow.callout .sil::before,.c-brow.callout .sil::after{display:none}
+  .c-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0 26px}
+  .c-last{display:flex;align-items:center;gap:12px}
+  .c-last .res{font:900 30px/1 var(--disp);color:#4ade80;letter-spacing:1px}
+  .c-last .res.l{color:#f87171}
+  .c-last div span{display:block;font-size:12px;color:var(--t3)}
+  .c-last div b{font:800 16px var(--disp);text-transform:uppercase}
+
+  /* ── phone stacking ──────────────────────────────────────── */
+  .phone .a-hero{grid-template-columns:1fr;min-height:400px}
+  .phone .a-hero .side.r{display:none}
+  .phone .a-hero .side.l .sil{clip-path:none}
+  .phone .a-hero .nm{font-size:40px}
+  .phone .a-hero .names{gap:10px}
+  .phone .a-hero .ctas{flex-direction:column;width:100%}
+  .phone .a-hero .ctas .btn{width:100%}
+  .phone .a-row{grid-template-columns:6px 1fr;gap:6px 12px;padding-right:12px}
+  .phone .a-row .st{grid-row:1/5}
+  .phone .a-row .f.r{text-align:left;align-items:flex-start}
+  .phone .a-row .mid{text-align:left;display:flex;gap:8px;align-items:baseline}
+  .phone .a-row .act{flex-direction:row;justify-content:space-between;align-items:center;width:100%}
+  .phone .a-row.callout{grid-template-columns:6px 1fr}
+  .phone .a-status{grid-template-columns:1fr 1fr}
+  .phone .a-grid,.phone .b-grid,.phone .c-grid,.phone .c-cols,.phone .b-bouts .row{grid-template-columns:1fr}
+  .phone .b-grid .tile.w2{grid-column:auto}
+  .phone .b-tape .head{grid-template-columns:1fr;gap:10px;text-align:left}
+  .phone .b-tape .head .who.r{text-align:left;align-items:flex-start}
+  .phone .b-tape .head .who b{font-size:34px}
+  .phone .b-tape .head .ctr{padding:0}
+  .phone .b-tape td{padding:8px 12px;font-size:13px}
+  .phone .b-tape .sb{width:56px}
+  .phone .b-tape .foot .p{width:100%;margin:0 0 6px}
+  .phone .b-tape .foot .btn{flex:1}
+  .phone .b-strip{flex-direction:column}
+  .phone .b-strip .items{flex-wrap:wrap}
+  .phone .b-strip .it{flex:1 1 50%;border-bottom:1px solid #222}
+  .phone .c-hero{grid-template-columns:1fr}
+  .phone .c-id .sil{flex-basis:96px;height:130px}
+  .phone .c-id .name{font-size:40px}
+  .phone .c-id .name small{font-size:22px}
+  .phone .c-id .rec{gap:14px}
+  .phone .c-id .rec div b{font-size:22px}
+  .phone .c-brow{grid-template-columns:44px 1fr;gap:8px 12px}
+  .phone .c-brow .p{text-align:left}
+  .phone .c-brow .btn{grid-column:2}
+  .phone .wrap{padding:0 14px}
+</style>
+</head>
+<body>
+
+<div class="chrome">
+  <b>Home tab</b>
+  <button class="tab on" data-v="a">A · Event Card</button>
+  <button class="tab" data-v="b">B · Tale of the Tape</button>
+  <button class="tab" data-v="c">C · Athlete Page</button>
+  <span class="sp"></span>
+  <button class="w on" data-w="desk">Desktop</button>
+  <button class="w" data-w="phone">Phone</button>
+</div>
+<p class="note" id="note"></p>
+
+<div class="frame" id="frame">
+
+<!-- ═══════════════════════════ A · EVENT CARD ═══════════════════════════ -->
+<section class="variant on" id="v-a">
+  <div class="a-hero">
+    <div class="side l"><div class="sil red-c"></div></div>
+    <div class="side r"><div class="sil blue-c"></div></div>
+    <span class="a-corner l">Red corner · You</span>
+    <span class="a-corner r">Blue corner · Nemesis</span>
+    <div class="over">
+      <div class="ev">Fight Night · Regional Lightweight<small>3 rounds · Main event purse $3,200</small></div>
+      <div class="names">
+        <div class="nm l"><small>"Iron"</small>Kovac</div>
+        <div class="vs">VS</div>
+        <div class="nm r"><small>"El Toro"</small>Ruiz</div>
+      </div>
+      <div class="meta"><b>7-2-0</b> · OVR 42 · #6 <i>|</i> <b>9-4-0</b> · OVR 43 · #5 · Beat you twice</div>
+      <div class="ctas">
+        <button class="btn red">Accept main event</button>
+        <button class="btn ghost">Tale of the tape</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="a-card">
+      <div class="hd"><h2>Tonight's card</h2><span>3 bouts booked by the matchmaker, pick one</span><span class="rr">New card in <b>18h</b></span></div>
+
+      <div class="a-sec main">Main card</div>
+      <div class="a-row even">
+        <div class="st"></div>
+        <div class="f r"><b>Dan Kovac <small>"Iron"</small></b><span>7-2-0 · OVR 42 · Muay Thai</span></div>
+        <div class="mid"><b>VS</b><span>Even</span></div>
+        <div class="f"><b>Marco Ruiz <small>"El Toro"</small></b><span>9-4-0 · OVR 43 · Wrestler</span><span class="tag chip nem">Nemesis · 2 losses</span></div>
+        <div class="act"><span class="purse">$3,200</span><button class="btn red sm">Accept</button></div>
+      </div>
+      <div class="a-row hard">
+        <div class="st"></div>
+        <div class="f r"><b>Dan Kovac <small>"Iron"</small></b><span>7-2-0 · OVR 42</span></div>
+        <div class="mid"><b>VS</b><span>Hard</span></div>
+        <div class="f"><b>Yusuf Adeyemi</b><span>11-2-0 · OVR 46 · Boxer · W4</span></div>
+        <div class="act"><span class="purse">$3,200</span><button class="btn ghost sm">Accept</button></div>
+      </div>
+
+      <div class="a-sec">Prelims</div>
+      <div class="a-row easy">
+        <div class="st"></div>
+        <div class="f r"><b>Dan Kovac <small>"Iron"</small></b><span>7-2-0 · OVR 42</span></div>
+        <div class="mid"><b>VS</b><span>Easy</span></div>
+        <div class="f"><b>Tommy Doyle</b><span>4-6-0 · OVR 38 · BJJ · L2</span></div>
+        <div class="act"><span class="purse">$3,200</span><button class="btn ghost sm">Accept</button></div>
+      </div>
+      <div class="a-row callout">
+        <div class="st"></div>
+        <div class="f"><b>Call someone out</b><span>Name a fighter ranked above you and set the terms. Rank 14 or better required.</span></div>
+        <div class="act"><button class="btn ghost sm">Call out</button></div>
+      </div>
+
+      <div class="a-sec" style="margin-top:18px">Title picture</div>
+      <div class="a-row title">
+        <div class="st"></div>
+        <div class="f r"><b>Dan Kovac</b><span>#6 · 2 of 3 conditions met</span></div>
+        <div class="mid"><b>VS</b><span>Title</span></div>
+        <div class="f"><b>Viktor Halvorsen</b><span>14-0-0 · OVR 51 · Champion</span><span class="tag chip title">Locked · win 1 more in top 5</span></div>
+        <div class="act"><span class="purse">$8,000</span><button class="btn ghost sm" disabled style="opacity:.5">Locked</button></div>
+      </div>
+    </div>
+
+    <div class="a-status">
+      <div class="tile"><h3>Energy</h3><div class="big">64<small>/ 100 · full in 3h</small></div><div class="bar green"><i style="width:64%"></i></div></div>
+      <div class="tile"><h3>Health</h3><div class="big">88<small>/ 100</small></div><div class="bar red"><i style="width:88%"></i></div></div>
+      <div class="tile"><h3>Fight camp</h3><div class="big">Day 3<small>of 5 · Cardio block</small></div><div class="bar"><i style="width:60%"></i></div></div>
+      <div class="tile"><h3>Injuries</h3><div class="big" style="color:#fbbf24">Bruised rib<small>4 days · can fight</small></div><div class="bar" style="opacity:.3"><i style="width:30%"></i></div></div>
+    </div>
+
+    <div class="a-grid">
+      <div class="tile">
+        <h3>Lightweight rankings · Regional</h3>
+        <ul class="rank-list">
+          <li class="c"><span class="n">C</span><span>Viktor Halvorsen</span><span class="rec">14-0</span><span class="mv">—</span></li>
+          <li><span class="n">1</span><span>Yusuf Adeyemi</span><span class="rec">11-2</span><span class="mv up">▲1</span></li>
+          <li><span class="n">5</span><span>Marco Ruiz</span><span class="rec">9-4</span><span class="mv dn">▼1</span></li>
+          <li class="me"><span class="n">6</span><span>Dan Kovac</span><span class="rec">7-2</span><span class="mv up">▲2</span></li>
+          <li><span class="n">7</span><span>Kenji Watanabe</span><span class="rec">8-5</span><span class="mv">—</span></li>
+        </ul>
+      </div>
+      <div class="tile">
+        <h3>Proving Ground · Season 2</h3>
+        <div class="kv"><span>Ladder</span><b>#14 of 312</b></div>
+        <div class="kv"><span>Record</span><b>6-3</b></div>
+        <div class="kv"><span>Twist</span><b style="color:var(--gold)">Blood Sport</b></div>
+        <div class="kv"><span>Defense reports</span><b style="color:#f87171">2 unread</b></div>
+        <button class="btn ghost sm" style="margin-top:10px;width:100%">Enter</button>
+      </div>
+      <div class="tile">
+        <h3>The purse</h3>
+        <div class="kv"><span>Cash</span><b>$12,480</b></div>
+        <div class="kv"><span>Fame</span><b>1,240</b></div>
+        <div class="kv"><span>Sponsor</span><b>Venom · 2 fights left</b></div>
+        <div class="kv"><span>Camp wages</span><b>$400 in 2d</b></div>
+        <div class="kv"><span>Gazette</span><b style="color:var(--red-hi)">New issue</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ B · TALE OF THE TAPE ═══════════════════════════ -->
+<section class="variant" id="v-b">
+  <div class="b-top"><span class="live">Fight week</span><span>Regional · Lightweight</span><span class="r">Title shot 2 / 3</span></div>
+  <div class="b-hero">
+    <div class="b-tape">
+      <div class="head">
+        <div class="who"><span class="corner">Red corner</span><em>"Iron"</em><b>Dan Kovac</b><span>7-2-0 · Muay Thai · #6</span></div>
+        <div class="ctr"><div class="vs">VS</div><div class="sub">Main event · 3 rds</div></div>
+        <div class="who r"><span class="corner">Blue corner</span><em>"El Toro"</em><b>Marco Ruiz</b><span>9-4-0 · Wrestler · #5</span></div>
+      </div>
+      <div class="title-bar">Tale of the tape</div>
+      <table>
+        <tr><td class="l lose">42</td><td class="m">Overall</td><td class="r win">43</td></tr>
+        <tr><td class="l win">W2</td><td class="m">Streak</td><td class="r lose">L1</td></tr>
+        <tr><td class="l win"><div class="stat"><span class="sb"><i style="width:72%"></i></span>72</div></td><td class="m">Striking</td><td class="r lose"><div class="stat">58<span class="sb"><i style="width:58%"></i></span></div></td></tr>
+        <tr><td class="l lose"><div class="stat"><span class="sb"><i style="width:41%"></i></span>41</div></td><td class="m">Grappling</td><td class="r win"><div class="stat">77<span class="sb"><i style="width:77%"></i></span></div></td></tr>
+        <tr><td class="l lose"><div class="stat"><span class="sb"><i style="width:48%"></i></span>48</div></td><td class="m">Wrestling</td><td class="r win"><div class="stat">81<span class="sb"><i style="width:81%"></i></span></div></td></tr>
+        <tr><td class="l win"><div class="stat"><span class="sb"><i style="width:66%"></i></span>66</div></td><td class="m">Cardio</td><td class="r lose"><div class="stat">60<span class="sb"><i style="width:60%"></i></span></div></td></tr>
+        <tr><td class="l win">5 KO</td><td class="m">Finishes</td><td class="r lose">2 KO · 4 SUB</td></tr>
+        <tr><td class="l lose">0-2</td><td class="m">Head to head</td><td class="r win" style="color:#f87171">2-0 · Nemesis</td></tr>
+      </table>
+      <div class="foot">
+        <div class="p">Purse $3,200<small>Even matchup · win pays +14 rank points</small></div>
+        <button class="btn ghost">Other bouts (2)</button>
+        <button class="btn red">Accept this fight</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="b-strip">
+    <div class="lab">Corner report</div>
+    <div class="items">
+      <div class="it"><span>Energy</span><b>64<small>full in 3h</small></b></div>
+      <div class="it"><span>Health</span><b>88</b></div>
+      <div class="it"><span>Injury</span><b style="color:#fbbf24">Bruised rib<small>4d</small></b></div>
+      <div class="it"><span>Fight camp</span><b>Day 3 / 5</b></div>
+      <div class="it"><span>Home camp</span><b>Tier 2<small>Sharp</small></b></div>
+      <div class="it"><span>Cash</span><b>$12,480</b></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="b-bouts">
+      <h2>Booked bouts <span>the matchmaker sent 3, new set in 18h</span></h2>
+      <div class="row">
+        <div class="b-bout selected"><div class="tp"><span class="chip even">Even</span><span>Nemesis</span></div><b>Marco Ruiz<small>"El Toro"</small></b><div class="rc">9-4-0 · OVR 43 · Wrestler</div><div class="ft"><span class="purse">$3,200</span><button class="btn ghost sm">On the tape</button></div></div>
+        <div class="b-bout"><div class="tp"><span class="chip hard">Hard</span><span>W4</span></div><b>Yusuf Adeyemi</b><div class="rc">11-2-0 · OVR 46 · Boxer</div><div class="ft"><span class="purse">$3,200</span><button class="btn ghost sm">Compare</button></div></div>
+        <div class="b-bout"><div class="tp"><span class="chip easy">Easy</span><span>L2</span></div><b>Tommy Doyle</b><div class="rc">4-6-0 · OVR 38 · BJJ</div><div class="ft"><span class="purse">$3,200</span><button class="btn ghost sm">Compare</button></div></div>
+      </div>
+    </div>
+
+    <div class="b-grid">
+      <div class="tile w2">
+        <h3>Lightweight rankings · Regional</h3>
+        <ul class="rank-list">
+          <li class="c"><span class="n">C</span><span>Viktor Halvorsen</span><span class="rec">14-0</span><span class="mv">—</span></li>
+          <li><span class="n">5</span><span>Marco Ruiz</span><span class="rec">9-4</span><span class="mv dn">▼1</span></li>
+          <li class="me"><span class="n">6</span><span>Dan Kovac</span><span class="rec">7-2</span><span class="mv up">▲2</span></li>
+          <li><span class="n">7</span><span>Kenji Watanabe</span><span class="rec">8-5</span><span class="mv">—</span></li>
+        </ul>
+      </div>
+      <div class="tile">
+        <h3>Proving Ground</h3>
+        <div class="b-score"><div><b>6</b><span>Wins</span></div><span class="dash">–</span><div><b>3</b><span>Losses</span></div></div>
+        <div class="kv"><span>Ladder</span><b>#14 of 312</b></div>
+        <div class="kv"><span>Twist</span><b style="color:var(--gold)">Blood Sport</b></div>
+        <button class="btn ghost sm" style="margin-top:10px;width:100%">Enter</button>
+      </div>
+      <div class="tile">
+        <h3>Press &amp; purse</h3>
+        <div class="kv"><span>Gazette</span><b style="color:var(--red-hi)">New issue</b></div>
+        <div class="kv"><span>Sponsor</span><b>Venom · 2 left</b></div>
+        <div class="kv"><span>Fame</span><b>1,240</b></div>
+        <div class="kv"><span>Wages</span><b>$400 in 2d</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ C · ATHLETE PAGE ═══════════════════════════ -->
+<section class="variant" id="v-c">
+  <div class="c-hero">
+    <div class="c-id">
+      <div class="sil red-c"></div>
+      <div class="txt">
+        <div class="nick">"Iron"</div>
+        <div class="name">Dan <small>Kovac</small></div>
+        <div class="div">Lightweight · <b>Regional</b> · Muay Thai</div>
+        <div class="rec">
+          <div><b>7-2-0</b><span>W-L-D</span></div>
+          <div class="rank"><b>#6</b><span>Division</span></div>
+          <div><b>42</b><span>Overall</span></div>
+          <div><b>W2</b><span>Streak</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="c-next">
+      <div class="eb"><span class="eyebrow">Next fight</span><span class="lk">Booked by the matchmaker · 18h</span></div>
+      <div class="opp">
+        <div class="sil blue-c"></div>
+        <div><b>Marco Ruiz<small>"El Toro" · Wrestler</small></b><span>9-4-0 · OVR 43 · #5 Lightweight</span></div>
+      </div>
+      <div class="stk"><span class="chip even">Even</span><span class="chip nem">Nemesis · beat you twice</span></div>
+      <div class="m"><div class="g"><b>$3,200</b><span>Purse</span></div><div><b>3</b><span>Rounds</span></div><div><b>+14</b><span>Rank pts</span></div></div>
+      <div class="ct"><button class="btn red">Accept</button><button class="btn ghost">Other bouts</button></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="c-cols">
+      <div class="tile c-stats">
+        <h3>Fighter stats</h3>
+        <div class="row"><span>Striking</span><div class="bar red"><i style="width:72%"></i></div><b>72</b></div>
+        <div class="row"><span>Grappling</span><div class="bar"><i style="width:41%"></i></div><b>41</b></div>
+        <div class="row"><span>Wrestling</span><div class="bar"><i style="width:48%"></i></div><b>48</b></div>
+        <div class="row"><span>Cardio</span><div class="bar green"><i style="width:66%"></i></div><b>66</b></div>
+        <div class="row"><span>Chin</span><div class="bar blue"><i style="width:55%"></i></div><b>55</b></div>
+        <button class="btn ghost sm" style="margin-top:10px">Train at camp</button>
+      </div>
+      <div class="tile">
+        <h3>Condition</h3>
+        <div class="kv"><span>Energy</span><b>64 / 100 · full in 3h</b></div>
+        <div class="bar green" style="margin-top:-2px;margin-bottom:6px"><i style="width:64%"></i></div>
+        <div class="kv"><span>Health</span><b>88 / 100</b></div>
+        <div class="bar red" style="margin-top:-2px;margin-bottom:6px"><i style="width:88%"></i></div>
+        <div class="kv"><span>Injury</span><b style="color:#fbbf24">Bruised rib · 4 days</b></div>
+        <div class="kv"><span>Fight camp</span><b>Day 3 of 5 · Cardio</b></div>
+        <div class="kv"><span>Home camp</span><b>Tier 2 · Sharp · Coach Reyes</b></div>
+      </div>
+    </div>
+
+    <div class="c-book">
+      <h2>Bookings <span>3 bouts on the table</span><span class="rr">New set in <b>18h</b></span></h2>
+      <div class="list">
+        <div class="c-brow main"><div class="sil blue-c"></div><div class="nm"><b>Marco Ruiz<small>"El Toro"</small></b><span>9-4-0 · OVR 43 · Wrestler · Nemesis</span></div><span class="chip even">Even</span><div class="p">$3,200<small>purse</small></div><button class="btn red sm">Accept</button></div>
+        <div class="c-brow"><div class="sil"></div><div class="nm"><b>Yusuf Adeyemi</b><span>11-2-0 · OVR 46 · Boxer · W4</span></div><span class="chip hard">Hard</span><div class="p">$3,200<small>purse</small></div><button class="btn ghost sm">Accept</button></div>
+        <div class="c-brow"><div class="sil"></div><div class="nm"><b>Tommy Doyle</b><span>4-6-0 · OVR 38 · BJJ · L2</span></div><span class="chip easy">Easy</span><div class="p">$3,200<small>purse</small></div><button class="btn ghost sm">Accept</button></div>
+        <div class="c-brow callout"><div class="sil"></div><div class="nm"><b>Call someone out</b><span>Pick a ranked fighter and set the terms</span></div><button class="btn ghost sm">Call out</button></div>
+      </div>
+    </div>
+
+    <div class="c-grid">
+      <div class="tile">
+        <h3>Division · Regional Lightweight</h3>
+        <ul class="rank-list">
+          <li class="c"><span class="n">C</span><span>Halvorsen</span><span class="rec">14-0</span><span class="mv">—</span></li>
+          <li><span class="n">5</span><span>Ruiz</span><span class="rec">9-4</span><span class="mv dn">▼1</span></li>
+          <li class="me"><span class="n">6</span><span>Kovac</span><span class="rec">7-2</span><span class="mv up">▲2</span></li>
+          <li><span class="n">7</span><span>Watanabe</span><span class="rec">8-5</span><span class="mv">—</span></li>
+        </ul>
+        <div class="kv" style="margin-top:6px"><span>Title shot</span><b style="color:var(--gold)">2 of 3 · win 1 more</b></div>
+      </div>
+      <div class="tile">
+        <h3>Last fight</h3>
+        <div class="c-last"><span class="res">W</span><div><b>vs Kenji Watanabe</b><span>KO, round 2 · 3 days ago</span></div></div>
+        <div class="kv" style="margin-top:10px"><span>Gazette</span><b style="color:var(--red-hi)">New issue out</b></div>
+        <div class="kv"><span>Feed</span><b>Sponsor paid $600</b></div>
+        <div class="kv"><span>Proving Ground</span><b>2 defense reports</b></div>
+      </div>
+      <div class="tile">
+        <h3>Purse &amp; fame</h3>
+        <div class="kv"><span>Cash</span><b>$12,480</b></div>
+        <div class="kv"><span>Fame</span><b>1,240</b></div>
+        <div class="kv"><span>Sponsor</span><b>Venom · 2 fights left</b></div>
+        <div class="kv"><span>Camp wages</span><b>$400 in 2d</b></div>
+        <div class="kv"><span>Proving Ground</span><b>#14 of 312</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script>
+  const notes = {
+    a: '<strong>A · Event Card.</strong> UFC event page: split-poster hero with red and blue corners, then the fight card as Main Card / Prelims rows. Every offer is a row; the main event is just the top row. One "Accept" per row, straight from Home. Needs the persisted offer board so the rows and the hero are the same three fights.',
+    b: '<strong>B · Tale of the Tape.</strong> Broadcast graphic: you vs the opponent in a stat comparison table, win/lose column per stat, head to head at the bottom. Below it a lower-third "corner report" strip and the three bouts as swappable cards. Best when the game wants players to think about matchups, not just click Fight.',
+    c: '<strong>C · Athlete Page.</strong> UFC.com athlete profile: your name huge, record, rank, stat bars, then "Next fight" as one booking card and a bookings list below. Most "this is my career" of the three. The hero never shows an opponent unless one is actually on the board.'
+  };
+  const note = document.getElementById('note');
+  const frame = document.getElementById('frame');
+  function show(v){
+    document.querySelectorAll('.variant').forEach(s=>s.classList.toggle('on', s.id==='v-'+v));
+    document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+    note.innerHTML = notes[v];
+    location.hash = v;
+  }
+  document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>show(b.dataset.v)));
+  document.querySelectorAll('.w').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.w').forEach(x=>x.classList.toggle('on',x===b));
+    frame.classList.toggle('phone', b.dataset.w==='phone');
+  }));
+  show(['a','b','c'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'a');
+</script>
+</body>
+</html>

@@ -1,13 +1,12 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   FIGHT NIGHT — home screen (home-contract.md §6)
+   ATHLETE PAGE, home screen (offer-board-contract.md §5)
 
-   Ported from mockups/home-tab-redesigns.html, the `.home-v1` block, variant 1
-   ("Fight Night"), approved by the owner as-is. Mechanical rename: root
-   `.home-v1` -> `.home`, every `.home-v1-X` -> `.hn-X`. The fighter-banner port
-   block (`.home-v1-bp*`) was DROPPED — real fighters render with the shipped
-   BannerPreview/.bp2 component instead of a re-implemented nameplate — except
-   `.hn-id-mono`, the identity-tile initials monogram, which survives because
-   there is no BannerPreview usage on the identity tile.
+   Ported from mockups/home-ufc-redesigns.html, variant C ("Athlete Page"),
+   section id="v-c". Mechanical rename: every mockup `.c-X` block -> `.ap-X`;
+   the mockup's shared `.tile/.chip/.btn/.bar/.kv/.sil/.rank-list/.eyebrow`
+   rules -> `.ap-tile/.ap-chip/.ap-btn/.ap-bar/.ap-kv/.ap-sil/.ap-checks/.ap-eyebrow`.
+   The mockup's `.phone .c-*` rules feed the `@container (max-width:720px)`
+   block below.
 
    `container-type: inline-size` on `.home` is load-bearing: every
    `@container` rule below sizes against this element's own width (correct,
@@ -15,385 +14,247 @@
    every @container rule silently no-ops and the phone layout never engages.
    ═══════════════════════════════════════════════════════════════════════ */
 
-.home{--bg:#0F0F0F;--surface:#141414;--card:#1A1A1A;--hover:#222222;--line:#2A2A2A;--red:#C8102E;--red-hi:#E8102E;--red-dim:#8A0B20;--glow:rgba(227,24,55,.12);--gold:#D4A820;--green:#16a34a;--t1:#FFFFFF;--t2:#AAAAAA;--t3:#888888;--t4:#666666;--disp:var(--font-display);position:relative;display:block;min-height:100vh;background:var(--bg);color:var(--t1);font-family:'Barlow',system-ui,sans-serif;font-size:14px;line-height:1.4;overflow:hidden;padding-bottom:12px;container-type:inline-size}
-/* Mockup used padding-bottom:32px on the root, sized for a standalone page.
-   In-app, .main already reserves 56px under 768px viewport for the fixed
-   .m-bottom-nav (App.css ~11870) — stacking another 56px here would leave an
+.home{--bg:#0F0F0F;--surface:#141414;--card:#1A1A1A;--hover:#222222;--line:#2A2A2A;--red:#C8102E;--red-hi:#E8102E;--red-dim:#8A0B20;--gold:#D4A820;--green:#16a34a;--t1:#FFFFFF;--t2:#AAAAAA;--t3:#888888;--t4:#666666;--disp:var(--font-display);position:relative;display:block;min-height:100vh;background:var(--bg);color:var(--t1);font-family:'Barlow',system-ui,sans-serif;font-size:14px;line-height:1.4;overflow:hidden;padding-bottom:12px;container-type:inline-size}
+/* In-app, .main already reserves 56px under 768px viewport for the fixed
+   .m-bottom-nav (App.css ~11870), stacking another 56px here would leave an
    ~88px dead gap. 12px is just breathing room above whatever .main adds; do
    NOT add a second 56px here. */
 .home *,.home *::before,.home *::after{box-sizing:border-box}
 :where(.home) button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
 .home a{cursor:pointer;text-decoration:none}
 .home button:focus-visible,.home a:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:6px}
-.hn-eyebrow{font:700 10px/1 var(--disp);letter-spacing:4px;text-transform:uppercase;color:var(--red-hi)}
-.hn-wrap{max-width:1100px;margin:0 auto;padding:0 20px}
-.hn-up{color:#4ade80}
-.hn-warn{color:var(--gold)}
-.hn-bar{display:block;height:4px;margin-top:7px;border-radius:2px;background:#2a2a2a;overflow:hidden}
-.hn-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#f2c94c);transition:width .55s cubic-bezier(.2,.8,.2,1) .3s}
-.hn-bar.is-red i{background:linear-gradient(90deg,var(--red),var(--red-hi))}
-.hn-bar.is-green i{background:linear-gradient(90deg,var(--green),#4ade80)}
-.hn-bar.is-blue i{background:linear-gradient(90deg,#2563eb,#3B82F6)}
-.home.is-in .hn-bar i{width:var(--w)}
-.hn-pips{display:inline-flex;gap:4px}
-.hn-pips i{width:22px;height:6px;border-radius:3px;background:rgba(255,255,255,.12)}
-.hn-pips i.on{background:var(--gold);box-shadow:0 0 8px rgba(212,168,32,.5)}
 
-/* title strip */
-.hn-strip{display:flex;align-items:center;gap:12px;width:100%;padding:9px 20px;background:linear-gradient(90deg,var(--red-dim),var(--red) 55%,var(--red-hi));font:700 12px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:#fff;transition:filter .15s}
-.hn-strip:hover{filter:brightness(1.12)}
-.hn-strip-label{opacity:.7}
-.hn-strip-count{margin-left:auto;opacity:.85}
-.hn-strip .hn-pips i{background:rgba(0,0,0,.35)}
-.hn-strip .hn-pips i.on{background:#fff;box-shadow:0 0 8px rgba(255,255,255,.6)}
+/* ── shared (mockup: .eyebrow/.chip/.btn/.bar/.kv/.sil/.rank-list) ────────── */
+.ap-eyebrow{font:700 10px/1 var(--disp);letter-spacing:4px;text-transform:uppercase;color:var(--red-hi)}
+.ap-up{color:#4ade80}
+.ap-warn{color:var(--gold)}
+.ap-wrap{max-width:1100px;margin:0 auto;padding:0 20px}
 
-/* hero */
-.hn-hero{position:relative;isolation:isolate;display:flex;align-items:flex-end;min-height:460px;padding:26px 20px 36px}
-.hn-hero-bg{position:absolute;inset:0;z-index:-2;background:url(/pvp/octagon.webp) center 30%/cover no-repeat}
-.hn-hero-bg::after{content:"";position:absolute;inset:0;background:radial-gradient(55% 65% at 50% 42%,rgba(200,16,46,.3),transparent 72%),linear-gradient(180deg,rgba(15,15,15,.6) 0%,rgba(15,15,15,.3) 35%,rgba(15,15,15,.88) 78%,#0F0F0F 100%)}
-.hn-sweep{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.16) 47%,rgba(232,16,46,.38) 53%,transparent 66%);transform:translateX(-110%)}
-.hn-hero-inner{width:100%;max-width:980px;margin:0 auto;text-align:center}
-.hn-hero-eyebrow{display:inline-flex;align-items:center;gap:10px}
-.hn-hero-eyebrow::before,.hn-hero-eyebrow::after{content:"";width:28px;height:1px;background:var(--red-hi);opacity:.7}
-.hn-bout{display:grid;grid-template-columns:1fr;justify-items:stretch;gap:6px;max-width:680px;margin:18px auto 0;position:relative}
-.hn-bout.hn-bout--solo{max-width:340px}
-.hn-fighter{margin:0;position:relative;width:100%}
-.hn-fighter--rival{margin-left:auto;width:calc(100% - 26px)}
-.hn-fighter--me{width:calc(100% - 26px)}
-.hn-bout--solo .hn-fighter--me{width:100%;margin:0}
-/* Hero-specific chrome on the WRAPPER, never inside BannerPreview/.bp2. */
-.hn-fighter--me .bp2{box-shadow:0 0 0 1px rgba(232,16,46,.35),0 0 40px -6px rgba(232,16,46,.45),0 24px 60px -20px rgba(0,0,0,.8);border-color:var(--red-hi)}
-.hn-fighter--rival .bp2{box-shadow:0 24px 60px -20px rgba(0,0,0,.8);filter:saturate(.7) contrast(1.1)}
-.hn-role{position:absolute;top:8px;left:18px;z-index:2;font:700 9px/1 'Barlow',sans-serif;letter-spacing:3px;text-transform:uppercase;padding:4px 7px;border-radius:3px;background:var(--red);color:#fff}
-.hn-fighter--rival .hn-role{left:auto;right:18px;background:#111;border:1px solid var(--red-dim);color:var(--t2)}
-.hn-vs{justify-self:center;font:900 46px/1 var(--disp);font-style:italic;letter-spacing:-2px;color:#fff;transform:skewX(-8deg);text-shadow:0 0 34px rgba(232,16,46,.9),0 4px 0 var(--red-dim);margin:-4px 0;z-index:3;position:relative}
-.hn-vs small{display:block;margin-top:8px;font:700 10px/1 var(--disp);font-style:normal;letter-spacing:4px;color:var(--gold);text-shadow:none}
-.hn-stakes{margin:24px auto 0;max-width:560px;font-size:16px;color:var(--t2)}
-.hn-stakes strong{color:#fff;font:800 20px/1 var(--disp);text-transform:uppercase;letter-spacing:1px;margin-right:6px}
-.hn-stakes em{font-style:normal;color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums}
-.hn-cta-row{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:18px}
-.hn-cta{display:inline-flex;align-items:center;justify-content:center;gap:12px;padding:17px 40px;border-radius:8px;background:linear-gradient(180deg,var(--red-hi),var(--red));color:#fff;font:800 22px/1 var(--disp);letter-spacing:3px;text-transform:uppercase;box-shadow:0 10px 30px -8px rgba(232,16,46,.7),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .15s,box-shadow .15s}
-.hn-cta:hover{transform:translateY(-2px);box-shadow:0 16px 36px -8px rgba(232,16,46,.9),inset 0 1px 0 rgba(255,255,255,.28)}
-.hn-cta::after{content:"";width:8px;height:8px;border-top:2px solid #fff;border-right:2px solid #fff;transform:rotate(45deg)}
-.hn-cta-pill{padding:5px 8px;border-radius:999px;background:rgba(0,0,0,.35);font:700 11px/1 var(--disp);letter-spacing:2px;color:#ffd7dc}
-.hn-cta-note{font-size:12px;color:var(--t3);max-width:520px}
-.hn-cta-note b{color:var(--gold);font-weight:600}
+.ap-chip{display:inline-block;padding:4px 8px;border-radius:3px;font:700 10px/1 var(--disp);letter-spacing:2px;text-transform:uppercase}
+.ap-chip.is-easy{background:#123d22;color:#4ade80}
+.ap-chip.is-even{background:#3a2d06;color:#fbbf24}
+.ap-chip.is-hard{background:#3b0a12;color:#f87171}
+.ap-chip.is-title{background:#3a2d06;color:var(--gold);border:1px solid var(--gold)}
+.ap-chip.is-nem{background:#000;color:#f87171;border:1px solid var(--red-dim)}
+.ap-chip.is-callout{background:#111;color:#93c5fd;border:1px dashed #3b82f6}
 
-/* undercard */
-.hn-under{margin-top:-4px}
-.hn-under-head{display:flex;align-items:baseline;gap:12px;margin-bottom:12px;flex-wrap:wrap}
-.hn-under-head h2{margin:0;font:800 22px/1 var(--disp);text-transform:uppercase;letter-spacing:1px}
-.hn-under-head span{color:var(--t3);font-size:12px}
-.hn-under-head button{background:none;border:0;cursor:pointer;font-family:inherit}
-.hn-under-head a,.hn-under-head button{margin-left:auto;color:var(--gold);font:700 12px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;min-height:24px;display:inline-flex;align-items:center}
-.hn-under-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.hn-under-row.hn-under-row--empty{grid-template-columns:1fr}
-.hn-bcard{display:flex;flex-direction:column;gap:6px;width:100%;padding:16px;border-radius:10px;background:var(--card);border:1px solid var(--line);transition:background .15s,border-color .15s,transform .15s;min-height:44px}
-.hn-bcard:hover{background:var(--hover);border-color:#3a3a3a;transform:translateY(-2px)}
-.hn-bcard-top{display:flex;justify-content:space-between;align-items:center;font:700 10px/1 var(--disp);letter-spacing:3px;text-transform:uppercase;color:var(--t3)}
-.hn-bcard-top i{font-style:normal;color:var(--gold)}
-.hn-bcard b{font:800 22px/1 var(--disp);text-transform:uppercase;letter-spacing:.5px}
-.hn-bcard span{color:var(--t2);font-size:13px}
-.hn-bcard-foot{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;border-top:1px solid var(--line)}
-.hn-purse{font:800 20px/1 var(--disp);color:#fff}
-.hn-purse small{margin-left:6px;font:700 10px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--t3)}
-.hn-go{font:700 12px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--red-hi)}
-.hn-callout{align-items:center;justify-content:center;text-align:center;min-height:160px;border-style:dashed;border-color:#3a3a3a;background:transparent}
-.hn-callout:hover{background:var(--glow);border-color:var(--red)}
-.hn-callout-plus{width:42px;height:42px;border-radius:50%;border:2px solid var(--red);display:grid;place-items:center;font:800 26px/1 var(--disp);color:var(--red-hi);margin-bottom:6px}
+.ap-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:6px;font:800 15px/1 var(--disp);letter-spacing:2.5px;text-transform:uppercase;white-space:nowrap;transition:filter .15s,transform .15s}
+.ap-btn.is-red{background:linear-gradient(180deg,var(--red-hi),var(--red));color:#fff;box-shadow:0 8px 24px -8px rgba(232,16,46,.7)}
+.ap-btn.is-red:hover:not(:disabled){filter:brightness(1.08)}
+.ap-btn.is-ghost{border:1px solid #444;color:#ddd}
+.ap-btn.is-ghost:hover:not(:disabled){border-color:#666;color:#fff}
+.ap-btn.is-sm{padding:9px 14px;font-size:12px;letter-spacing:2px}
+.ap-btn:disabled{opacity:.5;cursor:not-allowed}
 
-/* dashboard grid */
-.hn-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;margin-top:28px}
-.hn-eb{grid-column:1/-1;display:flex;align-items:baseline;gap:12px;margin-top:14px;padding-bottom:6px;border-bottom:1px solid var(--line)}
-.hn-eb:first-child{margin-top:0}
-.hn-eb h2{margin:0;font:800 20px/1 var(--disp);text-transform:uppercase;letter-spacing:1px}
-.hn-eb span{color:var(--t3);font-size:12px}
-.hn-eb em{margin-left:auto;font:700 10px/1 var(--disp);letter-spacing:3px;text-transform:uppercase;font-style:normal;color:var(--red-hi)}
-.hn-s3{grid-column:span 3}.hn-s4{grid-column:span 4}.hn-s5{grid-column:span 5}.hn-s6{grid-column:span 6}.hn-s7{grid-column:span 7}.hn-s8{grid-column:span 8}
-.hn-tile{position:relative;display:flex;flex-direction:column;gap:10px;min-width:0;padding:16px 18px;border-radius:10px;background:var(--card);border:1px solid var(--line);transition:border-color .15s}
-.hn-tile:hover{border-color:#3a3a3a}
-.hn-tile.is-hot{border-color:rgba(232,16,46,.45);background:linear-gradient(160deg,rgba(200,16,46,.18),var(--card) 60%);box-shadow:0 24px 60px -20px rgba(0,0,0,.6),0 0 0 1px rgba(232,16,46,.08)}
-.hn-tile.is-gold{border-color:rgba(212,168,32,.4);background:linear-gradient(160deg,rgba(212,168,32,.13),var(--card) 60%)}
-.hn-tile.is-quiet{background:var(--surface);padding:14px 16px;gap:8px}
-.hn-tile-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font:700 10px/1 var(--disp);letter-spacing:3px;text-transform:uppercase;color:var(--t3)}
-.hn-tile-head i{font-style:normal;color:var(--gold)}
-.hn-tile h3{margin:0;font:800 22px/1.05 var(--disp);text-transform:uppercase;letter-spacing:.5px}
-.hn-tile.is-quiet h3{font-size:18px}
-.hn-tile p{margin:0;color:var(--t2);font-size:13px}
-.hn-tile p b{color:#fff;font-weight:600}
-.hn-link{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;margin-top:auto;padding-top:10px;border-top:1px solid var(--line);font:700 12px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--red-hi);transition:color .15s;min-height:24px}
-.hn-link:hover{color:#fff}
-.hn-link::after{content:"";flex:none;width:7px;height:7px;border-top:2px solid currentColor;border-right:2px solid currentColor;transform:rotate(45deg)}
-.hn-link.is-gold{color:var(--gold)}
-.hn-kpis{display:flex;gap:20px;flex-wrap:wrap}
-.hn-kpi b{display:block;font:800 28px/1 var(--disp);font-variant-numeric:tabular-nums;white-space:nowrap}
-.hn-kpi b em{font-style:normal;font-size:14px;letter-spacing:1px;margin-left:4px}
-.hn-kpi small{display:block;margin-top:4px;font:700 9px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--t3)}
-.hn-badge{display:inline-flex;align-items:center;padding:4px 7px;border-radius:4px;font:700 10px/1 var(--disp);letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap}
-.hn-badge.is-open{background:rgba(22,163,74,.15);color:#4ade80;border:1px solid rgba(22,163,74,.4)}
-.hn-badge.is-warn{background:rgba(212,168,32,.12);color:var(--gold);border:1px solid rgba(212,168,32,.4)}
-.hn-alert{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(232,16,46,.45);background:var(--glow);transition:background .15s;min-height:44px}
-.hn-alert:hover{background:rgba(227,24,55,.22)}
-.hn-alert i{flex:none;width:30px;height:30px;border-radius:7px;display:grid;place-items:center;background:var(--red);color:#fff;font:800 14px/1 var(--disp);box-shadow:0 0 16px rgba(232,16,46,.6)}
-.hn-alert span{flex:1;min-width:0;font-size:12px;color:var(--t2)}
-.hn-alert span b{display:block;font-size:14px;font-weight:700;color:var(--red-hi)}
-.hn-alert em{flex:none;font:800 20px/1 var(--disp);font-style:normal;color:var(--red-hi);font-variant-numeric:tabular-nums}
-.hn-checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
-.hn-checks li{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--t3)}
-.hn-checks li i{flex:none;width:18px;height:18px;border-radius:50%;border:1px solid #3a3a3a;display:grid;place-items:center;font:800 10px/1 var(--disp);font-style:normal;color:var(--gold)}
-.hn-checks li.is-done i{background:var(--gold);border-color:var(--gold);color:#111}
-.hn-checks li.is-todo{color:#fff;font-weight:600}
-.hn-checks li.is-todo i{border-color:var(--gold);box-shadow:0 0 10px rgba(212,168,32,.35)}
-.hn-checks li em{margin-left:auto;font:800 14px/1 var(--disp);font-style:normal;color:var(--gold);font-variant-numeric:tabular-nums}
+.ap-bar{display:block;height:5px;background:#2a2a2a;border-radius:3px;overflow:hidden;margin-top:6px}
+.ap-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#f2c94c);transition:width .55s cubic-bezier(.2,.8,.2,1) .3s}
+.ap-bar.is-red i{background:linear-gradient(90deg,var(--red),var(--red-hi))}
+.ap-bar.is-green i{background:linear-gradient(90deg,var(--green),#4ade80)}
+.home.is-in .ap-bar i{width:var(--w)}
+.ap-bar-btn{width:100%;cursor:pointer;padding:0}
 
-/* identity */
-.hn-id-top{display:flex;align-items:center;gap:10px}
-.hn-id-mono{display:grid;place-items:center;width:52px;height:64px;flex:0 0 auto;border-radius:6px;background:linear-gradient(115deg,#232327 0%,#141416 62%);border:1px solid rgba(255,255,255,.08);font:800 20px/1 'Barlow Condensed',sans-serif;letter-spacing:1px;color:#ef4444}
-.hn-id-name{flex:1;min-width:0;font-family:var(--disp);text-transform:uppercase;line-height:1.05}
-.hn-id-name b{display:block;font-size:19px;font-weight:800}
-.hn-id-name i{display:block;margin-top:3px;font:italic 500 13px/1 'Playfair Display',Georgia,serif;text-transform:none;color:var(--gold)}
-.hn-id-ovr{flex:none;text-align:center;font:800 30px/1 var(--disp);color:#fff}
-.hn-id-ovr small{display:block;font:700 9px/1 var(--disp);letter-spacing:2px;color:var(--t3);margin-top:2px}
-.hn-id-list{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}
-.hn-id-list span{display:block;font-size:12px;font-weight:600;color:var(--t2);line-height:1.2}
-.hn-id-list small{display:block;font:700 9px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--t4);margin-bottom:2px}
+.ap-kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--t2);padding:6px 0;border-bottom:1px solid #222}
+.ap-kv:last-child{border:0}
+.ap-kv b{color:#fff;font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.ap-kv-btn{display:flex;width:100%;cursor:pointer}
+.ap-kv-btn:hover span{color:var(--t1)}
 
-/* vitals, injury, camp */
-.hn-meter{display:flex;flex-direction:column}
-.hn-meter-top{display:flex;align-items:baseline;gap:8px}
-.hn-meter-top b{font:700 11px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--t3)}
-.hn-meter-top em{margin-left:auto;font:800 24px/1 var(--disp);font-style:normal;font-variant-numeric:tabular-nums}
-.hn-meter-top em small{font-size:12px;letter-spacing:1px;color:var(--t3);margin-left:3px}
-.hn-meter-sub{margin-top:6px;font-size:12px;color:var(--t2)}
-.hn-meter-sub b{color:#fff;font-variant-numeric:tabular-nums}
-.hn-injury h3{color:var(--gold)}
-.hn-injury-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.hn-injury-line b{font:800 22px/1 var(--disp);color:#fff;font-variant-numeric:tabular-nums}
-.hn-injury-line small{font:700 10px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--t3)}
-.hn-camp-row{display:flex;align-items:center;gap:16px}
-.hn-grade{font:800 34px/1 var(--disp);color:var(--gold);text-shadow:0 0 18px rgba(212,168,32,.35)}
-.hn-grade small{display:block;font:700 9px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-top:3px}
+.ap-sil{position:relative;overflow:hidden;flex:0 0 auto;border-radius:6px;border:1px solid #333;background:
+  repeating-linear-gradient(60deg,transparent 0 22px,rgba(255,255,255,.035) 22px 23px),
+  repeating-linear-gradient(-60deg,transparent 0 22px,rgba(255,255,255,.035) 22px 23px),#111}
+.ap-sil::before{content:"";position:absolute;left:50%;bottom:0;width:78%;height:88%;transform:translateX(-50%);
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 240'><circle cx='100' cy='54' r='40' fill='%23444'/><rect x='82' y='88' width='36' height='28' fill='%23444'/><path d='M14 240C14 154 56 116 100 116s86 38 86 124z' fill='%23444'/></svg>") center bottom/contain no-repeat}
+.ap-sil::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,var(--bg) 100%)}
+.ap-sil.is-red::before{filter:sepia(1) saturate(5) hue-rotate(-25deg) brightness(.6)}
+.ap-sil.is-blue::before{filter:sepia(1) saturate(5) hue-rotate(185deg) brightness(.6)}
 
-/* stats */
-.hn-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px}
-.hn-stat{display:grid;grid-template-columns:36px 1fr 30px;align-items:center;gap:0 10px}
-.hn-stat b{font:800 13px/1 var(--disp);letter-spacing:2px;color:var(--t2)}
-.hn-stat .hn-bar{margin:0}
-.hn-stat em{font:800 18px/1 var(--disp);font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
-.hn-stat small{grid-column:2/4;margin-top:4px;font-size:11px;color:var(--gold);font-weight:600}
-.hn-stat.is-next b,.hn-stat.is-next em{color:var(--gold)}
-.hn-stat.is-next .hn-bar{box-shadow:0 0 10px rgba(212,168,32,.45)}
-.hn-stats-foot{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--t3)}
-.hn-stats-foot b{font:800 22px/1 var(--disp);color:#fff}
-.hn-stats-foot .hn-bar{flex:1;margin:0}
+.ap-checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.ap-checks li{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--t3)}
+.ap-checks li i{flex:none;width:18px;height:18px;border-radius:50%;border:1px solid #3a3a3a;display:grid;place-items:center;font:800 10px/1 var(--disp);font-style:normal;color:var(--gold)}
+.ap-checks li.is-done i{background:var(--gold);border-color:var(--gold);color:#111}
+.ap-checks li.is-todo{color:#fff;font-weight:600}
+.ap-checks li.is-todo i{border-color:var(--gold);box-shadow:0 0 10px rgba(212,168,32,.35)}
+.ap-checks li em{margin-left:auto;font:800 14px/1 var(--disp);font-style:normal;color:var(--gold);font-variant-numeric:tabular-nums}
 
-/* my camp (head coach) */
-.hn-coach-top{display:flex;align-items:center;gap:12px}
-.hn-coach-top b{display:block;font:800 19px/1.05 var(--disp);text-transform:uppercase}
-.hn-coach-top span{display:block;margin-top:3px;font-size:12px;color:var(--t2)}
-.hn-coach-line{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:12px;color:var(--t2)}
-.hn-coach-line em{font:800 16px/1 var(--disp);font-style:normal;color:var(--gold);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ap-badge{display:inline-flex;align-items:center;padding:4px 7px;border-radius:4px;font:700 10px/1 var(--disp);letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;margin-top:4px}
+.ap-badge.is-warn{background:rgba(212,168,32,.12);color:var(--gold);border:1px solid rgba(212,168,32,.4)}
 
-/* money, sponsor */
-.hn-money .hn-kpi b,.hn-sponsor .hn-kpi b{color:#ffe9a8}
-.hn-fame-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--t3)}
-.hn-fame-row b{color:#fff;font:700 13px/1 var(--disp);letter-spacing:1px;text-transform:uppercase}
-.hn-perk{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:4px;background:rgba(212,168,32,.12);border:1px solid rgba(212,168,32,.3);font:700 11px/1 var(--disp);letter-spacing:1.5px;text-transform:uppercase;color:var(--gold)}
-.hn-sponsor h3 span{color:var(--gold)}
-.hn-money-chips{display:flex;gap:6px;flex-wrap:wrap}
-.hn-money-chip{display:inline-flex;align-items:center;gap:4px;font:700 9px/1 var(--disp);letter-spacing:1.5px;text-transform:uppercase;padding:3px 6px;border-radius:4px}
-.hn-money-chip.is-frozen{background:rgba(59,130,246,.14);color:#7fb0ff}
-.hn-money-chip.is-decay{background:rgba(212,168,32,.14);color:var(--gold)}
+/* ── title strip (mockup has no counterpart; ported from the old hn-strip) ── */
+.ap-strip{display:flex;align-items:center;gap:12px;width:100%;padding:9px 20px;background:linear-gradient(90deg,var(--red-dim),var(--red) 55%,var(--red-hi));font:700 12px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:#fff;transition:filter .15s}
+.ap-strip:hover{filter:brightness(1.12)}
+.ap-strip-label{opacity:.7}
+.ap-strip-count{margin-left:auto;opacity:.85}
+.ap-strip-pips{display:inline-flex;gap:4px}
+.ap-strip-pips i{width:22px;height:6px;border-radius:3px;background:rgba(0,0,0,.35)}
+.ap-strip-pips i.on{background:#fff;box-shadow:0 0 8px rgba(255,255,255,.6)}
 
-/* gazette */
-.hn-gazette{background:#171512;border-color:#33301f;color:#EADFC5;font-family:'Playfair Display',Georgia,serif}
-.hn-masthead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:8px;border-bottom:3px double #4a4431}
-.hn-masthead b{font:700 20px/1 'Playfair Display',Georgia,serif;letter-spacing:.5px;color:#F4EBD2}
-.hn-masthead span{font:700 10px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:#9b9174;white-space:nowrap}
-.hn-gazette h3{font:900 34px/1 var(--disp);letter-spacing:.5px;color:#F8F0DB}
-.hn-gazette p{color:#cfc4a8;font:italic 500 15px/1.35 'Playfair Display',Georgia,serif}
-.hn-gz-pill{display:inline-block;align-self:flex-start;font:700 10px/1 'Barlow',sans-serif;letter-spacing:2px;text-transform:uppercase;padding:4px 8px;border-radius:3px;background:rgba(255,255,255,.08)}
-.hn-gz-pill--win{color:#8fd99a;background:rgba(74,222,128,.14)}
-.hn-gz-pill--loss{color:#ff97a3;background:rgba(232,16,46,.16)}
-.hn-gz-pill--draw{color:#d9cfb3;background:rgba(217,207,179,.14)}
-.hn-gz-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.hn-gz-list li{display:flex;gap:10px;font:500 13px/1.3 'Barlow',system-ui,sans-serif;color:#d9cfb3}
-.hn-gz-list li::before{content:"";flex:none;width:6px;height:6px;margin-top:5px;background:var(--red-hi);transform:rotate(45deg)}
-.hn-gz-foot{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;border-top:1px solid #33301f}
-.hn-gz-foot button{background:none;border:0;cursor:pointer;font-family:inherit}
-.hn-gz-foot a,.hn-gz-foot button{font:700 12px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--gold);min-height:24px;display:inline-flex;align-items:center}
-.hn-gz-foot a:hover,.hn-gz-foot button:hover{color:#fff}
-.hn-gz-foot span{font:600 11px/1 'Barlow',system-ui,sans-serif;color:#9b9174}
-.hn-gazette .hn-tile-head{color:#9b9174}
-.hn-gazette .hn-tile-head i{color:var(--gold)}
+/* ── hero (mockup .c-hero / .c-id) ─────────────────────────────────────── */
+.ap-hero{position:relative;display:grid;grid-template-columns:1.25fr 1fr;gap:20px;padding:26px 20px 22px;background:linear-gradient(180deg,#151515,var(--bg));border-bottom:1px solid #222;overflow:hidden;max-width:1100px;margin:0 auto}
+/* The glow takes the fighter's banner accent (--ap-glow is set inline by AthleteHero). */
+.ap-hero::before{content:"";position:absolute;left:-40px;top:-60px;width:520px;height:520px;background:radial-gradient(circle,var(--ap-glow,rgba(200,16,46,.22)),transparent 65%);pointer-events:none}
+/* Identity block = the fighter's banner plate: composition + veil set inline, texture overlay below. */
+.ap-id{position:relative;display:flex;gap:18px;padding:16px;border-radius:10px;border:1px solid rgba(255,255,255,.08);overflow:hidden;box-shadow:0 20px 50px -30px rgba(0,0,0,.9)}
+.ap-id-tex{position:absolute;inset:0;pointer-events:none;z-index:0}
+.ap-id-tex--halftone{background:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1.3px);background-size:7px 7px;-webkit-mask-image:linear-gradient(100deg,#000 28%,transparent 62%);mask-image:linear-gradient(100deg,#000 28%,transparent 62%)}
+.ap-id-tex--grain{background:repeating-linear-gradient(0deg,rgba(255,255,255,.016) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(0,0,0,.12) 0 1px,transparent 1px 4px)}
+.ap-id > .ap-mono,.ap-id > .ap-id-txt{position:relative;z-index:1}
+.ap-mono{flex:0 0 150px;height:190px;border-radius:8px;border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;background-color:#141416;background-size:cover;background-position:center;box-shadow:inset 0 0 40px rgba(0,0,0,.35)}
+.ap-mono span{font:800 40px/1 var(--disp);letter-spacing:1px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.ap-id-txt{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
+.ap-nick{font:italic 800 14px var(--disp);letter-spacing:4px;text-transform:uppercase;color:var(--ap-accent,var(--red-hi))}
+.ap-name{font:900 56px/.86 var(--disp);text-transform:uppercase;letter-spacing:-1.5px;margin-top:4px}
+.ap-name small{display:block;font:700 28px/1 var(--disp);color:var(--t2);letter-spacing:0}
+.ap-div{margin-top:10px;font:700 12px var(--disp);letter-spacing:3px;text-transform:uppercase;color:var(--t2)}
+.ap-rec{display:flex;gap:22px;margin-top:12px;flex-wrap:wrap}
+.ap-rec div b{display:block;font:900 28px/1 var(--disp);letter-spacing:.5px;font-variant-numeric:tabular-nums}
+.ap-rec div span{font:700 9px var(--disp);letter-spacing:2.5px;text-transform:uppercase;color:var(--t4)}
+.ap-rec .rank b{color:var(--red-hi)}
+.ap-skel-txt{display:inline-block;min-width:36px;border-radius:4px;background:rgba(255,255,255,.08)}
+.ap-id-link{margin-top:10px;font:700 11px var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--gold);width:max-content}
+.ap-id-link:hover{color:#fff}
 
-/* career feed */
-.hn-feed{list-style:none;margin:0;padding:0}
-.hn-feed li{display:grid;grid-template-columns:76px 1fr auto;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
-.hn-feed li:first-child{border-top:0;padding-top:0}
-.hn-feed time{font:700 10px/1.2 var(--disp);letter-spacing:1.5px;text-transform:uppercase;color:var(--t4)}
-.hn-feed span{color:var(--t2);min-width:0}
-.hn-feed span b{color:#fff;font-weight:600}
-.hn-feed em{font:800 13px/1 var(--disp);letter-spacing:1px;text-transform:uppercase;font-style:normal;white-space:nowrap}
-.hn-feed em.is-l{color:var(--red-hi)}.hn-feed em.is-w{color:#4ade80}.hn-feed em.is-b{color:var(--gold)}
+/* ── next fight (mockup .c-next) ───────────────────────────────────────── */
+.ap-next{position:relative;background:#000;border:1px solid #333;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.ap-next-eb{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ap-next-lk{font-size:12px;color:var(--t3);text-align:right}
+.ap-next-opp{display:flex;gap:12px;align-items:center}
+.ap-next-opp .ap-sil{width:64px;height:64px}
+.ap-next-opp b{display:block;font:900 24px/1 var(--disp);text-transform:uppercase}
+.ap-next-opp b small{display:block;font:italic 700 11px var(--disp);letter-spacing:2px;color:var(--t3);margin-top:4px;text-transform:none}
+.ap-next-opp span{display:block;margin-top:4px;font-size:12px;color:var(--t3)}
+.ap-next-stk{display:flex;gap:6px;flex-wrap:wrap}
+.ap-next-m{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ap-next-m div{background:#141414;border:1px solid #222;border-radius:6px;padding:8px;text-align:center}
+.ap-next-m b{display:block;font:800 18px/1 var(--disp);font-variant-numeric:tabular-nums}
+.ap-next-m span{font:700 9px var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--t4)}
+.ap-next-m .g b{color:var(--gold)}
+.ap-next-body{margin:0;color:var(--t2);font-size:14px}
+.ap-next-ct{display:flex;gap:8px}
+.ap-next-ct .ap-btn{flex:1}
 
-/* error tile (hero slot, section 9) */
-.hn-error{align-items:center;text-align:center;gap:14px;padding:32px 20px}
-.hn-error p{color:var(--t2);font-size:15px}
-.hn-error button{padding:10px 22px;border-radius:8px;background:var(--red);color:#fff;font:700 13px/1 var(--disp);letter-spacing:2px;text-transform:uppercase}
-.hn-error button:hover{background:var(--red-hi)}
+/* ── two-column band: fighter stats + condition (mockup .c-cols) ────────── */
+.ap-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px auto 0;max-width:1100px;padding:0 20px}
+.ap-stats-row{display:grid;grid-template-columns:90px 1fr 36px;align-items:center;gap:10px;padding:5px 0;font-size:12px;color:var(--t2)}
+.ap-stats-row b{text-align:right;font:800 14px var(--disp);color:#fff;font-variant-numeric:tabular-nums}
+.ap-stats-row .ap-bar{margin:0}
+.ap-stats-cta{margin-top:10px}
 
-/* skeleton (loading placeholders; only used when loading && !data, no flash on refetch) */
-.hn-skel{position:relative;overflow:hidden;background:var(--card);border-radius:10px}
-.hn-skel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:hn-shimmer 1.4s infinite}
-@keyframes hn-shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+/* ── bookings (mockup .c-book / .c-brow) ─────────────────────────────────── */
+.ap-book{margin:16px auto 0;max-width:1100px;padding:0 20px}
+.ap-book-head h2{margin:0 0 8px;font:900 20px var(--disp);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:baseline;flex-wrap:wrap;gap:10px}
+.ap-book-head h2 > span:first-of-type{font:600 12px 'Barlow',sans-serif;letter-spacing:0;text-transform:none;color:var(--t3)}
+.ap-book-rr{margin-left:auto;font:700 11px var(--disp);letter-spacing:2px;color:var(--t3);display:flex;align-items:center;gap:8px}
+.ap-book-rr b{color:var(--gold)}
+.ap-book-reroll{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.ap-book-reroll-reason{font-size:12px;color:var(--t3)}
+.ap-book-reroll-error{font-size:12px;color:#f87171}
+.ap-book-note{margin:0 0 10px;font-size:13px;color:var(--gold)}
+.ap-book-list{display:flex;flex-direction:column;gap:6px}
+.ap-brow{display:grid;grid-template-columns:44px 1fr auto auto auto;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.ap-brow--main{border-color:var(--red-dim);background:linear-gradient(90deg,rgba(200,16,46,.14),var(--card) 40%)}
+.ap-brow--locked{opacity:.55}
+.ap-brow .ap-sil{width:44px;height:44px}
+.ap-brow-nm b{font:800 17px/1 var(--disp);text-transform:uppercase}
+.ap-brow-nm b small{font:italic 700 11px var(--disp);color:var(--t3);letter-spacing:1px;margin-left:6px;text-transform:none}
+.ap-brow-nm span{display:block;font-size:12px;color:var(--t3);margin-top:3px;font-variant-numeric:tabular-nums}
+.ap-brow-p{font:800 14px var(--disp);color:var(--gold);letter-spacing:1px;text-align:right}
+.ap-brow-p small{display:block;font:600 9px 'Barlow',sans-serif;color:var(--t4);letter-spacing:1px;text-transform:uppercase}
+.ap-brow-locked-text{font-size:11px;color:var(--t3);text-align:right;max-width:120px}
+.ap-brow-signed{font:700 11px var(--disp);letter-spacing:2px;text-transform:uppercase;color:#4ade80}
+.ap-brow--callout{grid-template-columns:44px 1fr auto;border-style:dashed}
+.ap-brow--callout .ap-sil{background:#111;border:1px dashed #444}
+.ap-brow--callout .ap-sil::before,.ap-brow--callout .ap-sil::after{display:none}
 
-/* Entrance. Whole cascade is done in ~420ms: it is a flourish on arrival, not a
-   gate you wait behind. Nothing is hidden for longer than a third of a second,
-   and DashboardTab only arms it once per session so re-opening Home is instant. */
-.home.is-armed:not(.is-in) .hn-anim{opacity:0}
-.home.is-in .hn-hero-bg{animation:hn-light .34s ease-out both}
-.home.is-in .hn-sweep{animation:hn-sweep .42s .04s cubic-bezier(.4,0,.2,1) both}
-.home.is-in .hn-strip{animation:hn-fade .18s both}
-.home.is-in .hn-hero-eyebrow{animation:hn-fade .18s .04s both}
-.home.is-in .hn-fighter--me{animation:hn-in-l .26s .05s cubic-bezier(.2,.8,.2,1) both}
-.home.is-in .hn-fighter--rival{animation:hn-in-r .26s .08s cubic-bezier(.2,.8,.2,1) both}
-.home.is-in .hn-vs{animation:hn-punch .22s .13s cubic-bezier(.2,1.4,.4,1) both}
-.home.is-in .hn-stakes{animation:hn-rise .2s .16s both}
-.home.is-in .hn-cta-row{animation:hn-rise .2s .18s both}
-.home.is-in .hn-under-head{animation:hn-fade .18s .18s both}
-.home.is-in .hn-bcard{animation:hn-deal .22s cubic-bezier(.2,.8,.2,1) both}
-.home.is-in .hn-bcard:nth-child(1){animation-delay:.2s}
-.home.is-in .hn-bcard:nth-child(2){animation-delay:.22s}
-.home.is-in .hn-bcard:nth-child(3){animation-delay:.24s}
-.home.is-in .hn-eb,.home.is-in .hn-tile{animation:hn-rise .2s both;animation-delay:calc(.2s + var(--i,0) * .012s)}
-@keyframes hn-light{from{opacity:.12;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}
-@keyframes hn-sweep{0%{transform:translateX(-110%);opacity:1}80%{opacity:1}100%{transform:translateX(110%);opacity:0}}
-@keyframes hn-fade{from{opacity:0}to{opacity:1}}
-@keyframes hn-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-@keyframes hn-in-l{from{opacity:0;transform:translateX(-80px)}to{opacity:1;transform:none}}
-@keyframes hn-in-r{from{opacity:0;transform:translateX(80px)}to{opacity:1;transform:none}}
-@keyframes hn-punch{0%{opacity:0;transform:skewX(-8deg) scale(3.4)}60%{opacity:1;transform:skewX(-8deg) scale(.9)}100%{opacity:1;transform:skewX(-8deg) scale(1)}}
-@keyframes hn-punch-m{0%{opacity:0;transform:translate(-50%,-50%) skewX(-8deg) scale(3.4)}60%{opacity:1;transform:translate(-50%,-50%) skewX(-8deg) scale(.9)}100%{opacity:1;transform:translate(-50%,-50%) skewX(-8deg) scale(1)}}
-@keyframes hn-deal{from{opacity:0;transform:translateY(28px) rotate(-2deg)}to{opacity:1;transform:none}}
+/* ── tile chrome (mockup .tile) ──────────────────────────────────────────── */
+.ap-tile{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ap-tile-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 4px;font:700 11px/1 var(--disp);letter-spacing:3px;text-transform:uppercase;color:var(--t3)}
+.ap-tile-head i{font-style:normal;color:var(--gold)}
+.ap-tile h3{margin:0;font:800 20px/1.1 var(--disp);text-transform:uppercase;letter-spacing:.5px}
+.ap-tile p{margin:0;color:var(--t2);font-size:13px}
+.ap-link{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;margin-top:auto;padding-top:10px;border-top:1px solid var(--line);font:700 12px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--red-hi);transition:color .15s;min-height:24px}
+.ap-link:hover{color:#fff}
+.ap-link::after{content:"";flex:none;width:7px;height:7px;border-top:2px solid currentColor;border-right:2px solid currentColor;transform:rotate(45deg)}
+.ap-link.is-gold{color:var(--gold)}
 
-/* tablets: two columns (container query: the section sizes to its own column, not the viewport) */
+/* ── bottom grid: rankings / last fight / purse & fame (mockup .c-grid) ──── */
+.ap-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px auto 0;max-width:1100px;padding:0 20px 20px}
+.ap-last{display:flex;align-items:center;gap:12px}
+.ap-last-res{font:900 30px/1 var(--disp);color:#4ade80;letter-spacing:1px}
+.ap-last-res.is-loss{color:#f87171}
+.ap-last-res.is-draw{color:var(--t3)}
+.ap-last div span{display:block;font-size:12px;color:var(--t3)}
+.ap-last div b{font:800 16px var(--disp);text-transform:uppercase}
 
-/* No bout signed and nothing to face off against: the arena collapses to a compact
-   corner strip. A 460px empty octagon with one banner in it read as broken. */
-.hn-hero--solo{min-height:0;padding:18px 20px 20px;align-items:center}
-.hn-hero--solo .hn-hero-bg{opacity:.28}
-.hn-hero--solo .hn-sweep{display:none}
-.hn-hero--solo .hn-hero-inner{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"eye eye" "bout cta" "stakes cta";column-gap:22px;row-gap:8px;align-items:center;text-align:left}
-.hn-hero--solo .hn-hero-eyebrow{grid-area:eye;text-align:left}
-.hn-hero--solo .hn-bout{grid-area:bout;margin:0;max-width:none}
-.hn-hero--solo .hn-stakes{grid-area:stakes;margin:0;max-width:none;font-size:14px}
-.hn-hero--solo .hn-cta-row{grid-area:cta;margin:0;align-items:flex-end}
-.hn-hero--solo .hn-cta{padding:15px 26px;font-size:18px;letter-spacing:2px}
+/* ── error tile (hero slot) ──────────────────────────────────────────────── */
+.ap-error{align-items:center;text-align:center;gap:14px;padding:32px 20px;margin:16px auto 0;max-width:1100px}
+.ap-error p{color:var(--t2);font-size:15px}
+.ap-error button{padding:10px 22px;border-radius:8px;background:var(--red);color:#fff;font:700 13px/1 var(--disp);letter-spacing:2px;text-transform:uppercase}
+.ap-error button:hover{background:var(--red-hi)}
 
+/* ── skeleton (loading placeholders; only used when loading && !data, no flash on refetch) ── */
+.ap-skel{position:relative;overflow:hidden;background:var(--card);border-radius:10px}
+.ap-skel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:ap-shimmer 1.4s infinite}
+@keyframes ap-shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+/* ── containers ───────────────────────────────────────────────────────────── */
 @container (max-width:1000px){
-.hn-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-.hn-tile{grid-column:span 1}
-.hn-s7,.hn-s8{grid-column:1/-1}
+.ap-grid{grid-template-columns:1fr 1fr}
+.ap-grid > *:last-child{grid-column:1/-1}
 }
 
-/* phones: one column in priority order (home-contract.md §8 — mobile is the
-   owner's explicit priority) */
+/* phones: single column, DOM order = mobile order, no `order` overrides (offer-board-contract.md §5) */
 @container (max-width:720px){
-.hn-strip{padding:8px 14px;font-size:11px;letter-spacing:1.5px;gap:8px;min-height:44px}
-.hn-strip-count{display:none}
-.hn-strip .hn-pips{margin-left:auto}
-.hn-hero{min-height:0;padding:20px 16px 28px}
-.hn-hero--solo .hn-hero-inner{grid-template-columns:1fr;grid-template-areas:"eye" "bout" "stakes" "cta";row-gap:10px}
-.hn-hero--solo .hn-cta-row{align-items:stretch}
+.ap-strip{padding:8px 14px;font-size:11px;letter-spacing:1.5px;gap:8px;min-height:44px}
+.ap-strip-count{display:none}
+.ap-strip-pips{margin-left:auto}
+.ap-hero{grid-template-columns:1fr;padding:20px 16px}
+.ap-mono{flex-basis:96px;height:130px}
+.ap-name{font-size:38px}
+.ap-name small{font-size:22px}
+.ap-rec{gap:14px}
+.ap-rec div b{font-size:22px}
+.ap-cols{grid-template-columns:1fr;padding:0 16px}
+.ap-book{padding:0 16px}
+.ap-grid{grid-template-columns:1fr;padding:0 16px 16px}
+.ap-grid > *:last-child{grid-column:auto}
+.ap-brow{grid-template-columns:44px 1fr;gap:8px 12px}
+.ap-brow-p{text-align:left}
+.ap-brow .ap-btn,.ap-brow-signed,.ap-brow-locked-text{grid-column:2;justify-self:start;text-align:left}
 
-.hn-hero-bg{background-position:center 42%}
-.hn-bout{grid-template-columns:1fr;max-width:none;gap:4px}
-.hn-fighter--me,.hn-fighter--rival{width:100%;margin:0}
-.hn-fighter .bp2{min-height:86px}
-.hn-vs{font-size:34px}
-.hn-vs small{display:none}
-.home.is-in .hn-vs{animation-name:hn-punch-m}
-.hn-stakes{font-size:15px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.hn-cta{width:100%;padding:16px 20px;min-height:52px}
-.hn-wrap{padding:0 16px}
-.hn-under-row{display:flex;gap:12px;margin:0 -16px;padding:2px 16px 10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.hn-under-row::-webkit-scrollbar{display:none}
-.hn-under-row.hn-under-row--empty{display:block;margin:0;padding:0;overflow:visible}
-.hn-bcard{flex:0 0 78%;scroll-snap-align:start}
-.hn-grid{grid-template-columns:1fr;gap:12px;margin-top:22px}
-.hn-tile,.hn-s7,.hn-s8{grid-column:auto}
-
-/* Mobile priority order (home-contract.md §8) differs from the desktop DOM
-   order (which is grouped by band for clean 12-col spans): Identity drops
-   behind My Camp, and My Camp comes before Stats & XP. Reordered here with
-   `order` rather than in JSX so desktop keeps its band-grouped source order. */
-.hn-eb--ringside{order:1}
-.hn-pg{order:2}
-.hn-rank{order:3}
-.hn-eb--corner{order:4}
-.hn-vitals{order:5}
-.hn-injury{order:6}
-.hn-camp{order:7}
-.hn-coach{order:8}
-.hn-id{order:9}
-.hn-stats{order:10}
-.hn-eb--purse{order:11}
-.hn-money{order:12}
-.hn-sponsor{order:13}
-.hn-eb--press{order:14}
-.hn-gazette{order:15}
-.hn-career{order:16}
-.hn-eb{flex-wrap:wrap;gap:6px 10px}
-.hn-eb em{margin-left:auto}
-.hn-stats-grid{grid-template-columns:1fr;gap:8px}
-.hn-gazette h3{font-size:28px}
-.hn-masthead{flex-wrap:wrap;gap:4px}
-.hn-feed li{grid-template-columns:64px 1fr auto}
-
-/* Tap targets — every link/card/alert/strip stays reachable with a thumb. */
-.hn-link,.hn-bcard,.hn-alert,.hn-under-head button,.hn-gz-foot button{min-height:44px}
-
-/* Phones get the tile stagger flattened entirely: one column means --i climbs to
-   ~12 and even a 12ms step reads as a slow wipe down the screen. */
-.home.is-in .hn-eb,.home.is-in .hn-tile{animation-delay:.2s}
+/* Tap targets, every link/row/button stays reachable with a thumb. */
+.ap-link,.ap-brow,.ap-kv-btn,.ap-btn{min-height:44px}
 }
+
+/* Entrance. Same mechanics as before: `is-armed`/`is-in`/`is-instant`, gated
+   on `.ap-anim`. DashboardTab arms it once per page session so re-opening
+   Home is instant on later visits. */
+.home.is-armed:not(.is-in) .ap-anim{opacity:0}
+.home.is-in .ap-strip{animation:ap-fade .18s both}
+.home.is-in .ap-hero{animation:ap-fade .22s .02s both}
+.home.is-in .ap-next{animation:ap-rise .22s .08s both}
+.home.is-in .ap-cols .ap-tile{animation:ap-rise .2s both}
+.home.is-in .ap-cols .ap-tile:nth-child(2){animation-delay:.05s}
+.home.is-in .ap-book{animation:ap-rise .2s .12s both}
+.home.is-in .ap-grid .ap-tile{animation:ap-rise .2s both;animation-delay:calc(.14s + var(--i,0) * .05s)}
+@keyframes ap-fade{from{opacity:0}to{opacity:1}}
+@keyframes ap-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
 /* reduced motion */
 @media (prefers-reduced-motion:reduce){
-.home.is-armed:not(.is-in) .hn-anim{opacity:1}
+.home.is-armed:not(.is-in) .ap-anim{opacity:1}
 .home.is-in *,.home.is-in *::before,.home.is-in *::after{animation:none!important;transition:none!important}
-.hn-sweep{display:none}
-.hn-bar i{transition:none;width:var(--w)}
-}
-
-/* ── Pre-season countdown on the Proving Ground tile (PvpSeasonCountdown.jsx) —
-   was `.dashboard-tab .pvp-countdown-mini*` in App.css, moved here verbatim.
-   pvp-ps-pulse itself stays in App.css (used by other in-app countdowns too). */
-.home .pvp-countdown-mini{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;margin:6px 0;text-align:center}
-.home .pvp-countdown-mini-label{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:#666;margin-bottom:6px}
-.home .pvp-countdown-mini-timer{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:34px;line-height:1;letter-spacing:1px;color:#F0F0F0;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;white-space:nowrap}
-.home .pvp-countdown-mini-timer--final{transform-origin:center;animation:pvp-ps-pulse 1.2s ease-in-out infinite}
-@media (prefers-reduced-motion:reduce){
-  .home .pvp-countdown-mini-timer--final{animation:none}
+.ap-bar i{transition:none;width:var(--w)}
 }
 
 /* Second and later visits to Home in the same page session. DashboardTab adds
    `is-instant` alongside `is-in`, so the bars still get their `--w` width and
    nothing is left hidden, but the entrance cascade does not replay. Must stay
-   LAST in the file: it beats the equal-specificity `.home.is-in` rules and the
-   `animation-name` override inside the phone media block on source order. */
-.home.is-instant .hn-hero-bg,
-.home.is-instant .hn-sweep,
-.home.is-instant .hn-strip,
-.home.is-instant .hn-hero-eyebrow,
-.home.is-instant .hn-fighter--me,
-.home.is-instant .hn-fighter--rival,
-.home.is-instant .hn-vs,
-.home.is-instant .hn-stakes,
-.home.is-instant .hn-cta-row,
-.home.is-instant .hn-under-head,
-.home.is-instant .hn-bcard,
-.home.is-instant .hn-eb,
-.home.is-instant .hn-tile{animation:none}
-.home.is-instant .hn-bar i{transition:none}
+   LAST in the file: it beats the equal-specificity `.home.is-in` rules on
+   source order. */
+.home.is-instant .ap-strip,
+.home.is-instant .ap-hero,
+.home.is-instant .ap-next,
+.home.is-instant .ap-cols .ap-tile,
+.home.is-instant .ap-book,
+.home.is-instant .ap-grid .ap-tile{animation:none}
+.home.is-instant .ap-bar i{transition:none}

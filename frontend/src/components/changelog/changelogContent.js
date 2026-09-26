@@ -22,9 +22,26 @@ export const CHANGELOG_ENTRIES = [
     date: "2026-09-25",
     major: false,
     highlights: [
-      "The Home screen is rebuilt. It opens on your next fight: you and your opponent on your banners, the purse, and one button to take it. The rest of the offers sit underneath as an undercard you can swipe through on a phone. Everything else you had is still there, grouped into four bands so the screen tells you what needs answering today instead of showing you twelve identical grey boxes. Your camp, your coach's morale and the wages due now appear on Home for the first time, as does the report waiting for you when somebody attacks you while you are offline.",
+      "Home is now your athlete page. Your name, record, rank, Overall and streak up top, your next fight beside them, all eight stats and your condition underneath, then every bout on your board with an Accept on each. You can sign a fight straight from Home and land in camp.",
+      "The matchmaker books your fights now. The Get Offers button is gone: your three bouts are waiting when you open the Fight Hub or Home, and they are the same three everywhere. The board turns over every 24 hours, or sooner when you fight, move up a tier or your nemesis changes.",
+      "Every bout now carries its own purse, printed on the card. Easy pays 70% of your tier's signing fee, Even pays the full fee, Hard pays 140% and a title shot 175%, with a little extra for the tougher opponent inside each slot. What the card says is what a clean win pays.",
+      "Do not like the set? Reroll it once per board for cash, 20% of your tier's signing fee, and the matchmaker sends three different names where the division allows.",
+      "Your last fight, the latest Gazette issue and your Proving Ground notes now sit together at the bottom of Home, next to your division rankings and your purse.",
     ],
-    sections: { changed: [], fixed: [], balance: [] },
+    sections: {
+      changed: [
+        "The Fight Hub shows your board on open, with the countdown to the next set and the reroll button in the footer next to Call out.",
+        "Calling someone out no longer touches the rest of your board. Your callout takes the Hard slot while it is active and the original opponent comes back if you cancel.",
+      ],
+      fixed: [
+        "The name on Home's main event never matched the offers in the Fight Hub, because every screen drew a fresh random set. Both now read the same booked board, so the fighter you see on Home is the fighter you can accept.",
+        "Accepting the same bout twice in quick succession could book it twice and charge energy twice. The booking is now claimed once.",
+      ],
+      balance: [
+        "Purses now differ by difficulty. Every fight in a tier used to pay the same, so Easy, Even and Hard were only a stat check. Now Hard pays double what Easy does and the expected purse across the three stays about the same, so the board is a real risk-reward choice without more cash flooding in.",
+        "Rerolling the board costs cash instead of being free, because the old Get Offers button was a free reroll and let you fish for a soft matchup until one appeared. The price is a slice of the purse you would earn, so ducking a Hard opponent is a real choice rather than a click.",
+      ],
+    },
   },
   {
     version: "2.0",

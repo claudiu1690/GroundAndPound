@@ -1,35 +1,28 @@
 /**
- * Shared Fight Night grid tile (home-contract.md §3).
+ * Shared Athlete Page grid tile (offer-board-contract.md §5).
  *
- * The card surface itself is never clickable — only the explicit `link` row
- * (and any interactive children a tile renders, like the Proving Ground's
- * defense-report alert) fire navigation. This is deliberate: on a phone the
- * undercard/grid scroll with a thumb, and a whole-tile onClick would fire on
- * scroll-drag release (home-contract.md §8).
+ * Ported from the old Fight Night `hn-tile`, mechanically renamed to
+ * `ap-tile`. `span` was dropped: the Athlete Page grids (`ap-cols`, `ap-grid`)
+ * size their own columns via CSS, no per-tile span classes needed.
  *
  * Props:
- *   tone     — "plain" | "hot" | "gold" | "quiet" (mockup's is-hot/is-gold/is-quiet)
- *   span     — 3 | 4 | 5 | 6 | 7 | 8 (grid-column span, desktop 12-col grid)
- *   index    — desktop entrance-stagger index (mockup's `--i`, e.g. tile 1..15);
- *              feeds `animation-delay:calc(1.7s + var(--i,0) * .07s)` in home.css
- *   head     — node rendered in the tile-head eyebrow row (optional)
- *   children — tile body
- *   link     — { label, onClick, gold? } renders the bottom hn-link row (optional)
- *   dataTut  — data-tut passthrough (identity tile keeps "dashboard-identity")
+ *   index   , desktop entrance-stagger index, feeds `animation-delay` in home.css
+ *   head    , node rendered in the tile-head eyebrow row (optional)
+ *   children, tile body
+ *   link    , { label, onClick, gold? } renders the bottom ap-link row (optional)
+ *   dataTut , data-tut passthrough
  */
-export function HomeTile({ tone = "plain", span, index, head, children, link, dataTut, className = "" }) {
-  const toneClass = tone === "hot" ? "is-hot" : tone === "gold" ? "is-gold" : tone === "quiet" ? "is-quiet" : "";
-  const spanClass = span ? `hn-s${span}` : "";
+export function HomeTile({ index, head, children, link, dataTut, className = "" }) {
   return (
     <article
-      className={`hn-tile ${toneClass} ${spanClass} hn-anim ${className}`.trim()}
+      className={`ap-tile ap-anim ${className}`.trim()}
       data-tut={dataTut}
       style={index != null ? { "--i": index } : undefined}
     >
-      {head ? <div className="hn-tile-head">{head}</div> : null}
+      {head ? <div className="ap-tile-head">{head}</div> : null}
       {children}
       {link ? (
-        <button type="button" className={`hn-link${link.gold ? " is-gold" : ""}`} onClick={link.onClick}>
+        <button type="button" className={`ap-link${link.gold ? " is-gold" : ""}`} onClick={link.onClick}>
           {link.label}
         </button>
       ) : null}

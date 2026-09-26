@@ -34,10 +34,13 @@ Single-page web client. Top to bottom: a collapsible **Message Bar**, the **App 
 
 ### 1a. Home screen data and hooks
 
-Home is served by one call, `GET /fighters/:id/dashboard` (`services/dashboardService.js`), plus the already-loaded fighter payload. The rebuild added four blocks to that response, all additive and all from documents the request already loads or from indexed counts:
+Home is the **Athlete Page** (rebuilt 2026-09-25, mockup `mockups/home-ufc-redesigns.html` variant C, contract `docs/offer-board-contract.md`). Layout, top to bottom: the title-shot strip; a two-column hero with the fighter's identity block on the left (monogram, nickname, name, division line, record, division rank, OVR, streak) and the **Next fight** card on the right; Fighter stats (all eight stat bars) beside Condition (energy, health, injury, fight camp, home camp); the **Bookings** list, one row per bout on the offer board plus a Call out row; then Rankings, Last fight and Purse & fame tiles. On phones the same DOM order stacks into one column.
 
-- **`heroBout`** the opponent the hero shows. Resolves to the accepted fight if one is signed, otherwise the best current offer, otherwise null. Offers are regenerated per request, so `opponentId` is a display key only: clicking an undercard card navigates to the Fight Hub, it never accepts a bout from Home.
-- **`offers.list`** up to four offers with opponent, record, purse and flags, built from data the offer generator already had in memory.
+Home is served by one call, `GET /fighters/:id/dashboard` (`services/dashboardService.js`), plus the already-loaded fighter payload. Blocks of note:
+
+- **`heroBout`** the bout the Next fight card shows. Resolves to the accepted fight if one is signed, otherwise the best bout on the offer board (an unlocked title shot first, otherwise the highest-OVR acceptable offer), otherwise null. Because the board is persisted (§7), `opponentId` is a durable accept handle: Home accepts a bout directly through the same create-offer and accept calls the Fight Hub uses. The card shows the opponent's record, OVR, rank, streak, difficulty and nemesis or callout chips, the purse and the round count. States: offer on the board, fight signed (CTA becomes the hero action, usually "Go to camp"), board frozen, board blocked by injury, nothing on the board.
+- **`offers`** the offer board: `count` (acceptable bouts), `best`, `list` (every slot, including a locked title shot and frozen slots, max four) and the board meta (`generatedAt`, `expiresAt`, `rerollUsed`, `rerollCost`, `canReroll`, `rerollBlockedBy`, `frozen`, `blockedReason`, `blockedCode`).
+- **`lastFight`** the most recent PvE result from the activity log (result, opponent, outcome line, title flag), or null before the debut.
 - **`pvp.ladderRank` / `ladderSize` / `twistKey` / `twistName`** the ladder standing and the season twist. The twist sentence is frontend copy keyed by `twistKey`, so the server never ships prose.
 - **`homeCamp`** the persistent camp: name, tier, condition band, head coach with rank and morale, wage debit date, and the Monday Trainer Market reset. Read with a single `HomeCamp.findOne`; the dashboard must never call `getCampState`, which lazily ticks and writes.
 
@@ -45,7 +48,7 @@ Two hooks come from the fighter payload rather than the dashboard: the **unread 
 
 **Deliberately not shown:** a weekly ladder movement chip. `PVPRecord` stores no historical rank, so it would need a new field plus a weekly snapshot job. The ladder row shows position out of field size only. The per-fight career `ranking.delta` is unaffected and still renders on the Rankings tile.
 
-Every module degrades independently to null and renders an empty state rather than disappearing, because the grid layout assumes its slots. Identity, vitals, stats and the Gazette render synchronously from the fighter payload and are never skeletoned; the modules that wait on the dashboard call render a skeleton only on a cold load, never a wrong state that then flips.
+Every module degrades independently to null and renders an empty state rather than disappearing, because the grid layout assumes its slots. Identity, stats and Condition render synchronously from the fighter payload and are never skeletoned; the modules that wait on the dashboard call render a skeleton only on a cold load, never a wrong state that then flips. Accepting from Home runs the same flow as the Fight Hub, including the confirmation when the fighter carries a non-blocking injury; a stale board (bout gone, fight already booked, title still locked) reloads the board instead of failing silently.
 
 ---
 
@@ -879,16 +882,24 @@ appear, via the silent self-heal on profile read, but quietly and at the wrong m
 
 ## 7. Fight Offers & Callouts
 
-Requesting offers returns three opponent cards; a fourth **Title Shot** card appears when eligible.
+Offers live on a persisted **offer board** (`fighter.offerBoard`, `services/offerBoardService.js`, added 2026-09-25). The board holds three opponent slots, plus a fourth **Title Shot** slot when the fighter is a contender. It is "booked by the matchmaker": the player does not request offers, the board is generated the first time anything reads it and the same three names then show on Home, in the Fight Hub and in accept validation until the board is replaced.
 
-| Offer | Opponent Strength |
-|---|---|
-| Easy | 3–5 Overall below the player |
-| Even | Within 3 Overall |
-| Hard | 2–5 Overall above the player |
-| Title Shot | The champion of the current tier |
+| Offer | Opponent Strength | Purse (x tier signing fee) |
+|---|---|---|
+| Easy | 3–5 Overall below the player | 0.70x |
+| Even | Within 3 Overall | 1.00x |
+| Hard | 2–5 Overall above the player | 1.40x |
+| Title Shot | The champion of the current tier | 1.75x |
 
-Accepting costs energy (10–20 by tier) and enters the training-camp phase.
+**Purse by slot** (added 2026-09-25, `consts/offerBoardConfig.js`, `fightService.boutPurse`). Every bout on the board carries its own purse: the tier signing fee times the slot multiplier above, plus up to **5%** more for a tougher opponent inside the slot's OVR window (0% at the soft edge of the window, 5% at the hard edge; a title shot takes no gap bonus), rounded to the nearest $10. The number is deterministic, stamped on the Fight at offer time, and is the base the payout in §8 starts from, so a clean win pays exactly what the card showed. Amateur: Easy $350–370, Even $500–525, Hard $700–740, Title $880. National: Easy $1,540–1,620, Even $2,200–2,310, Hard $3,080–3,230, Title $3,850. Why: the three slots were a difficulty label with no economic weight and the Library had promised otherwise; with Easy 75%, Even 55% and Hard 35% win rates and losses paying 70%, the expected purse across the three slots stays about 0.9x the signing fee, so the economy is not inflated while Hard becomes a real risk-reward call. A callout still lands in the Hard slot, so its +25% win bump now stacks on the Hard purse. Nemesis fights stay fame-only.
+
+**Lifetime.** A board expires **24 hours** after generation ("New set in 18h"). It is also replaced, on the next read, whenever its fingerprint no longer matches the fighter: promotion tier, weight class, nemesis, or contender status changed, or a fight was resolved. Callouts are an overlay, never stored: setting one swaps it into the Hard slot immediately and cancelling brings the original Hard pick back, so a callout can never be used as a free reroll. Title-shot lock state is computed live.
+
+**Frozen.** While a fight is accepted the board is frozen: nothing regenerates and every slot is shown but unacceptable. A blocking injury clears the board and shows the injury reason instead; a fresh board generates once the injury heals.
+
+**Accepting.** `createOffer` resolves the opponent and difficulty from the board. An opponent who is not on the live board is refused, the client never chooses the difficulty, and a locked title shot cannot be accepted. The accept itself is an atomic claim on `acceptedFightId`, so two accepts cannot both go through. Accepting costs energy (10–20 by tier) and enters the training-camp phase.
+
+**Reroll.** Once per board the player can ask the matchmaker for a new set for cash: **20% of the tier's signing fee** (Amateur $100, Regional Pro $150, National $440, GCS Contender $1,200, GCS $2,400). The reroll avoids the three previous picks where the division allows, resets the 24h clock and cannot be used while a fight is booked or while injured. Why a fee rather than a free button: the old "Get offers" was a free reroll and let players fish for a soft matchup; the cost is set so ducking a Hard slot bites into the purse you would have earned.
 
 ### 7.1 Callouts (fame-driven matchmaking)
 Spend **fame** to force a specific opponent into the next Hard slot.
@@ -1033,7 +1044,7 @@ KO/TKO (win), Submission (win), Decision Unanimous (win), Decision Split (win), 
 Multiplied by an outcome modifier: KO/TKO 1.3×, Sub 1.25×, Dec Unanimous 1.1×, Dec Split 1.05×, Draw 1.0×, Loss by Decision 0.8×, Loss by Finish 0.7×. A win in **comeback mode** adds ×1.5.
 
 ### 10.4 Cash Earnings
-Base purse = the tier's signing fee, scaled by outcome: **Win 100%**, **Draw 50%**, **Loss 70%**. Modifiers on top: higher notoriety tier +5%→+50%; comeback +30%; active **Respect** flag on opponent (and you win) +15%; callout win +25%; missing weight −20%.
+Base purse = the bout's own purse from the offer board (§7 "Purse by slot": the tier signing fee times the slot multiplier plus the OVR-gap bonus, stamped on the Fight at offer time; fights created before that carry the flat signing fee), scaled by outcome: **Win 100%**, **Draw 50%**, **Loss 70%**. Modifiers on top: higher notoriety tier +5%→+50%; comeback +30%; active **Respect** flag on opponent (and you win) +15%; callout win +25%; missing weight −20%.
 
 ### 10.5 Fight Description (round-by-round breakdown)
 Every fight produces a **round-by-round event feed** rather than a generic paragraph. It is shown in the right column of the post-fight summary and again in the **career-feed drawer** (§20.4). Both render from the same stored data, so a fight reads identically wherever you open it.

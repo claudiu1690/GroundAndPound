@@ -487,7 +487,6 @@ function App() {
   const [accountStatus, setAccountStatus] = useState(null);
   const [fighter,  setFighter]                  = useState(null);
   const [gyms,     setGyms]                     = useState([]);
-  const [offers,   setOffers]                   = useState([]);
   const [message,  setMessage]                  = useState("");
   const [loading,  setLoading]                  = useState(true);
   const [resolving, setResolving]               = useState(false);
@@ -741,12 +740,13 @@ function App() {
     try { alreadySeen = localStorage.getItem(storageKey) === "1"; } catch (_) {}
     if (alreadySeen) return;
 
-    // Resolve the champion name for the target tier: prefer a loaded title-shot
-    // offer, fall back to the champions roster for the current tier.
+    // Resolve the champion name for the target tier from the champions roster.
+    // (Used to also check a loaded title-shot offer, but Home no longer holds
+    // an offers list in App state, offer boards are fetched per-surface now,
+    // see offer-board-contract.md §5.)
     const currentTier = fighter.promotionTier ?? "Amateur";
-    const titleOffer = (offers ?? []).find((o) => o?.type === "TitleShot");
     const rosterChamp = (champions ?? []).find((c) => c.championTier === currentTier);
-    const champName = titleOffer?.opponent?.name ?? rosterChamp?.name ?? null;
+    const champName = rosterChamp?.name ?? null;
 
     try { localStorage.setItem(storageKey, "1"); } catch (_) {}
     setContenderModal({ currentTier, targetTier: target, champName });
@@ -755,7 +755,6 @@ function App() {
     fighter?.pendingPromotion,
     fighter?.promotionTier,
     fighter?.tutorial?.completed,
-    offers,
     champions,
   ]);
 
@@ -888,7 +887,6 @@ function App() {
     authStorage.clear();
     setAuthed(false);
     setFighter(null);
-    setOffers([]);
     setLastFightSummary(null);
     setLastFightCommentary([]);
     setActiveTab("home");
@@ -1057,29 +1055,18 @@ function App() {
     [fighter?._id, loadFighter, loadGyms]
   );
 
-const handleGetOffers = useCallback(async () => {
-    if (!fighter?._id) return;
-    setMessage(t("app.loadingOffers"));
-    try {
-      const list = await api.getOffers(fighter._id);
-      setOffers(Array.isArray(list) ? list : []);
-      setMessage(list?.length ? t("app.offersReady", { count: list.length }) : t("app.noOffers"));
-    } catch (e) {
-      const errMsg = e.message || "Failed to get offers";
-      maybeShowBlockPopup(errMsg, e.code);
-      setMessage(errMsg);
-      setOffers([]);
-    }
-  }, [fighter?._id, maybeShowBlockPopup]);
-
+  // Shared by the Fights tab (FightOffers) and Home (DashboardTab/NextFightCard/
+  // BookingsList) via useAcceptOffer, offer-board-contract.md §5 "Accept from
+  // Home: exact sequence". Returns {ok:true} or {ok:false, code, message}
+  // instead of throwing, so both callers can clear their own in-flight state
+  // (acceptingId) without a try/catch at every call site.
   const handleAcceptOffer = useCallback(
-    async (opponentId, offerType = "Even") => {
-      if (!fighter?._id) return;
+    async (opponentId) => {
+      if (!fighter?._id) return { ok: false, code: null, message: "No fighter loaded" };
       setMessage(t("app.fightAccepting"));
       try {
-        const fight = await api.createOffer(fighter._id, { opponentId, offerType });
+        const fight = await api.createOffer(fighter._id, { opponentId });
         await api.acceptOffer(fighter._id, fight._id);
-        setOffers([]);
 
         // Fetch Fighter Report and camp state immediately after accept
         const [report, state] = await Promise.all([
@@ -1118,10 +1105,12 @@ const handleGetOffers = useCallback(async () => {
         // NOTE: tutorialBus.emit("fight_accepted") fires from the FaceOff's
         // onDone (below in render) — not here — so the tutorial waits for the
         // face-off to finish before advancing to the Fighter Report tooltip.
+        return { ok: true };
       } catch (e) {
         const errMsg = e.message || "Accept failed";
         maybeShowBlockPopup(errMsg, e.code);
         setMessage(errMsg);
+        return { ok: false, code: e.code, message: errMsg };
       }
     },
     [fighter?._id, loadFighter, maybeShowBlockPopup]
@@ -1635,10 +1624,12 @@ const handleGetOffers = useCallback(async () => {
             <DashboardTab
               fighter={fighter}
               onNavigate={handleNavTab}
-              onOpenProfile={() => setMobileDrawerOpen(true)}
               onOpenCareerProfile={openCareerProfile}
               refreshKey={feedRefreshKey}
               gymsRetired={gymsRetired}
+              onAcceptOffer={handleAcceptOffer}
+              onRefreshFighter={loadFighter}
+              onMessage={setMessage}
             />
           )}
 
@@ -1888,8 +1879,6 @@ const handleGetOffers = useCallback(async () => {
               ) : (
                 <FightOffers
                   fighter={fighter}
-                  offers={offers}
-                  onGetOffers={handleGetOffers}
                   onAcceptOffer={handleAcceptOffer}
                   onRefreshFighter={loadFighter}
                   onMessage={setMessage}

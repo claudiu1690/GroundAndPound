@@ -225,8 +225,11 @@ async function cancelCallout(fighterId) {
 }
 
 /**
- * In-memory helper used by generateOffers: swap the called-out opponent into the
- * Hard slot. If the opponent is already present in the offers, do nothing.
+ * In-memory helper used by fightService.hydrateOffers: swap the called-out opponent
+ * into the Hard slot. If the opponent is already present in the offers, do nothing.
+ * The callout is a read-time overlay on the stored offer board, never persisted. The
+ * `context` copied onto the callout offer below is overwritten by hydrateOffers, which
+ * recomputes context from each opponent's own fightHistory.
  * @param {object} fighter mongoose doc
  * @param {Array} offers
  * @returns {Promise<Array>} possibly-modified offers

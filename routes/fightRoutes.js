@@ -2,12 +2,18 @@ const express = require("express");
 const router = express.Router();
 const fightController = require("../controllers/fightController");
 const campController = require("../controllers/campController");
+const { ownFighterParam } = require("../middleware/ownFighterMiddleware");
 
 /**
  * @swagger
  * /fights/offers/{fighterId}:
  *   get:
- *     summary: Generate 3 fight offers (Easy, Even, Hard) for the fighter
+ *     summary: Read the fighter's persisted offer board (generated on a miss)
+ *     description: >
+ *       Returns the live board (Easy, Even, Hard, plus TitleShot when pending) with the
+ *       active callout overlaid on the Hard slot. A blocking injury or an empty division
+ *       is a 200 with offers [] and board.blockedReason / board.blockedCode. Shapes:
+ *       BoardOffer and OfferBoardMeta in services/offerBoardService.js.
  *     tags: [Fights]
  *     parameters:
  *       - in: path
@@ -16,24 +22,25 @@ const campController = require("../controllers/campController");
  *         schema: { type: string, format: objectId }
  *     responses:
  *       200:
- *         description: Array of offers, each with type and opponent
+ *         description: "{ offers: BoardOffer[], board: OfferBoardMeta }"
  *         content:
  *           application/json:
- *             schema:
- *               type: array
- *               items: { $ref: '#/components/schemas/FightOffer' }
+ *             schema: { $ref: '#/components/schemas/OfferBoardResponse' }
+ *       403:
+ *         description: Not your fighter
  *       404:
  *         description: Fighter not found
  *       500:
  *         description: Internal server error
  */
-router.get("/offers/:fighterId", fightController.getOffers);
+router.get("/offers/:fighterId", ownFighterParam("fighterId"), fightController.getOffers);
 
 /**
  * @swagger
  * /fights/offers/{fighterId}:
  *   post:
- *     summary: Create a fight offer (persist; does not deduct energy yet)
+ *     summary: Create a fight offer for an opponent on the live board (does not deduct energy yet)
+ *     description: The offer type always comes from the board slot; a client offerType is ignored.
  *     tags: [Fights]
  *     parameters:
  *       - in: path
@@ -52,19 +59,50 @@ router.get("/offers/:fighterId", fightController.getOffers);
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Fight' }
  *       400:
- *         description: Weight class or promotion tier mismatch
+ *         description: OFFER_INVALID_INPUT / FIGHT_BLOCKED_INJURY / TITLE_SHOT_LOCKED
+ *       403:
+ *         description: Not your fighter
  *       404:
- *         description: Fighter not found / Opponent not found
+ *         description: Fighter not found
+ *       409:
+ *         description: OFFER_NOT_ON_BOARD / FIGHT_ALREADY_BOOKED
  *       500:
  *         description: Internal server error
  */
-router.post("/offers/:fighterId", fightController.createOffer);
+router.post("/offers/:fighterId", ownFighterParam("fighterId"), fightController.createOffer);
+
+/**
+ * @swagger
+ * /fights/offers/{fighterId}/reroll:
+ *   post:
+ *     summary: Replace the live offer board once, for 20% of the tier signing fee
+ *     tags: [Fights]
+ *     parameters:
+ *       - in: path
+ *         name: fighterId
+ *         required: true
+ *         schema: { type: string, format: objectId }
+ *     responses:
+ *       200:
+ *         description: "{ offers: BoardOffer[], board: OfferBoardMeta, cashAfter: number }"
+ *       400:
+ *         description: NOT_ENOUGH_CASH / FIGHT_BLOCKED_INJURY
+ *       403:
+ *         description: Not your fighter
+ *       404:
+ *         description: Fighter not found
+ *       409:
+ *         description: OFFER_BOARD_FROZEN / REROLL_USED / OFFER_BOARD_STALE / OFFER_POOL_EMPTY
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/offers/:fighterId/reroll", ownFighterParam("fighterId"), fightController.rerollOffers);
 
 /**
  * @swagger
  * /fights/accept/{fighterId}/{fightId}:
  *   post:
- *     summary: Accept a fight offer (deducts energy; links fight to fighter)
+ *     summary: Accept a fight offer (re-validated against the live board; deducts energy; links fight to fighter)
  *     tags: [Fights]
  *     parameters:
  *       - in: path
@@ -82,13 +120,17 @@ router.post("/offers/:fighterId", fightController.createOffer);
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Fight' }
  *       400:
- *         description: Not enough energy
+ *         description: FIGHT_NOT_ENOUGH_ENERGY / FIGHT_BLOCKED_INJURY / TITLE_SHOT_LOCKED
+ *       403:
+ *         description: Not your fighter
  *       404:
- *         description: Fight not found or not available
+ *         description: Fight not found or not available (also for a malformed fightId) / Fighter not found
+ *       409:
+ *         description: OFFER_NOT_ON_BOARD (slot left the board or its type changed) / FIGHT_ALREADY_BOOKED
  *       500:
  *         description: Internal server error
  */
-router.post("/accept/:fighterId/:fightId", fightController.acceptOffer);
+router.post("/accept/:fighterId/:fightId", ownFighterParam("fighterId"), fightController.acceptOffer);
 
 // ── Fight Camp v1.1 routes ─────────────────────────────────────────────────
 // :fightId = Fight document _id (not the fighter's id)
