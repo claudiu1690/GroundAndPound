@@ -97,10 +97,10 @@ const COACH_CARDS = [
 
 const FAN_CARDS = [
   { id: "granite-jaw",     name: "Granite Jaw",     rarity: "Common",    rar: "#888888", glow: "rgba(136,136,136,.25)" },
-  { id: "sprawl-instinct", name: "Sprawl Instinct", rarity: "Uncommon",  rar: "#22c55e", glow: "rgba(34,197,94,.3)" },
-  { id: "the-finisher",    name: "The Finisher",    rarity: "Legendary", rar: "#D4A820", glow: "rgba(212,168,32,.45)" },
+  { id: "sprawl-instinct", name: "Sprawl",          rarity: "Uncommon",  rar: "#22c55e", glow: "rgba(34,197,94,.3)" },
+  { id: "the-finisher",    name: "Overhand Right",  rarity: "Legendary", rar: "#D4A820", glow: "rgba(212,168,32,.45)" },
   { id: "heavy-hands",     name: "Heavy Hands",     rarity: "Rare",      rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
-  { id: "killer-instinct", name: "Killer Instinct", rarity: "Rare",      rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
+  { id: "killer-instinct", name: "Crucifix",        rarity: "Rare",      rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
 ];
 
 export function LandingPage({ onAuthenticated, initialResetToken }) {
@@ -561,10 +561,10 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         <div className="ss-head ss-head--center">
           <div className="sec-eye">Special Moves</div>
           <h2 className="sec-title">Build your arsenal</h2>
-          {/* COUNT SOURCE OF TRUTH: consts/specialMovesCatalog.js (12 move ids today).
+          {/* COUNT SOURCE OF TRUTH: consts/specialMovesCatalog.js (24 move ids today).
               The landing is unauthenticated so it cannot read the catalog at runtime —
               if a move is added or removed, this word changes with it. */}
-          <p className="sec-sub">Twelve collectible signature techniques, painted like trading cards. Pull them from sparring, upgrade them by rarity, equip up to three.</p>
+          <p className="sec-sub">Twenty-four collectible signature techniques, painted like trading cards. Pull them from sparring, upgrade them by rarity, equip up to three.</p>
         </div>
 
         <div className="fan-row">

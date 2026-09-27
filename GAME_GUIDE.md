@@ -6,6 +6,7 @@
 
 **Getting Started**
 - What Is Ground & Pound?
+- Reading Your Home Screen
 - Creating Your Fighter
 - The Eight Stats — What Each One Does
 - Guest Accounts & Securing Your Progress
@@ -30,14 +31,12 @@
 - Division Points, Divisions & the Belt
 - Seasons, Twists & Rewards
 
-**Training & Gyms**
+**Training & Camp**
 - How Training Works
-- The Gym System — Choosing Where to Train
-- Gym Ranks — The Long Game
-- Rank 4 Perks — What They Do
-- Training Sessions — What Each One Does
+- Coach Perks: What Rank 4 Gets You
 - My Camp — Your Own Training Room
 - Hiring & Keeping Coaches
+- What Your Coach Teaches You
 
 **Career**
 - The Five Tiers — Your Roadmap to the Top
@@ -78,13 +77,31 @@
 
 Ground & Pound is a text-based MMA career simulation. You are not watching fights happen — you are building the fighter who wins them. Every decision you make before stepping into the cage determines what happens when the door shuts.
 
-Your career starts at the bottom of the Amateur division, completely unknown, with raw stats and a borrowed locker at the community gym. From there, every training session, every fight camp, every sponsorship deal, and every callout is a step toward the only thing that matters: the GCS Championship.
+Your career starts at the bottom of the Amateur division, completely unknown, with raw stats and a camp nobody has heard of. From there, every training session, every fight camp, every sponsorship deal, and every callout is a step toward the only thing that matters: the GCS Championship.
 
 There are five promotion tiers standing between you and the top. Almost every one makes you look the tier's champion in the eye and take what's theirs — starting with the Amateur belt that turns you pro. Only one tier promotes on Overall Rating alone. The game doesn't hand you anything.
 
 The fight itself resolves instantly — press Fight and the simulation runs. The real game happens in the hours and days before that moment. How you trained, which sessions you picked in camp, how you read the Fighter Report — that's where championships are won and lost.
 
 > **Key takeaway:** Build the fighter. Make the decisions. The cage takes care of the rest.
+
+### Reading Your Home Screen
+
+*What every part of Home is telling you, and what to do first when you sit down.*
+
+Home is your athlete page. The top left is you: nickname, name, division, tier and style, then four numbers that sum up your career at a glance: record, division rank, Overall and current streak. Tap the name to open your full career profile.
+
+The top right is your Next fight. This is the best bout the matchmaker has booked for you, the same one you will find on your bookings list and in the Fight Hub. It shows the opponent's record, Overall, rank and streak, the difficulty, any nemesis or callout tag, the purse and the round count. Accept signs it right there. Other bouts scrolls you down to the rest. If you have already signed a fight, the card shows that fight instead and the button takes you to camp.
+
+The thin strip above it tracks your title shot. There are three conditions to meet and the pips show how many you have. When all three are lit, a title fight appears on your board.
+
+Below the hero are your Fighter stats, all eight bars, with a button to go train, and your Condition: energy and when it refills, health, any injury, the fight camp you are in and the state of your home camp.
+
+Bookings lists every bout on your board with an Accept on each, a greyed row for a title shot you have not unlocked yet, and a Call out row to name an opponent yourself. The header tells you when the next set arrives and lets you reroll the board for cash. Read the Fight Offers article for how the board works.
+
+The bottom row is context: your division rankings, your last fight with the latest Gazette and Proving Ground notes, and your purse: cash, fame, sponsor and camp wages. Anything red wants an answer today. If you only have a minute, deal with the red things and take the fight.
+
+> **Key takeaway:** Top right is your next fight and you can accept it from Home. Everything else on the page is context for that decision.
 
 ### Creating Your Fighter
 
@@ -187,7 +204,7 @@ The Fame drawer (★ Fame button in the footer) gives you a focused view of fame
 
 The Octagon Gazette is your career written up like a sports newspaper. You'll find it as the cream-coloured tile in the top row of your dashboard, next to Rankings and the Proving Ground. It's always there and always current — there's no daily popup to catch and no edition to miss.
 
-Click the tile to open the full paper. Up top is the masthead — your issue number, edition, and a 'Breaking' banner. Below it the lead story recaps your latest big moment, complete with a result band (outcome, method, round, record), a couple of paragraphs of write-up, and a pull quote. Down the side, four shorter pieces cover your rankings, nemesis, fight offers, the Proving Ground, injuries, gym work, and sponsor contracts. Three secondary stories and an 'In Brief' rundown round out the page.
+Click the tile to open the full paper. Up top is the masthead — your issue number, edition, and a 'Breaking' banner. Below it the lead story recaps your latest big moment, complete with a result band (outcome, method, round, record), a couple of paragraphs of write-up, and a pull quote. Down the side, four shorter pieces cover your rankings, nemesis, fight offers, the Proving Ground, injuries, camp work, and sponsor contracts. Three secondary stories and an 'In Brief' rundown round out the page.
 
 The paper rewrites itself after every meaningful career event — a win or loss, a promotion, a title fight, a badge, a nemesis set or settled, a Proving Ground result. Each rewrite prints a new issue, so your issue number climbs over a career and you build up a paper of record that's entirely your own.
 
@@ -205,9 +222,13 @@ Brand new and haven't fought yet? The Gazette simply says there's nothing to rep
 
 *How fight offers work, what the four types mean, and how to choose.*
 
-When you're ready to fight, you request offers from the promoter. Three cards come back — Easy, Even, and Hard. A fourth Title Shot card appears when you've earned it.
+You do not ask for offers any more. The matchmaker books you a board of three bouts, Easy, Even and Hard, and a fourth Title Shot when you have earned it. The same three names show on Home, in the Fight Hub and on your bookings list, and they stay put until the board is replaced.
 
-Easy opponents are 3–5 Overall below you. They're safer wins but pay less cash and earn less notoriety. Even opponents are within 3 OVR either way — competitive fights that pay fair. Hard opponents are 2–5 OVR above you — the upset potential is real, and so is the payout.
+A board lasts 24 hours, and you will see "New set in 18h" counting down. It is also replaced the moment something real changes: you fight, you move up a tier, your nemesis changes or you become a contender. While a fight is signed the board is frozen and you cannot take a second bout. A blocking injury clears it until you heal.
+
+Do not like the set? Once per board you can ask the matchmaker for a new one for cash, 20% of your tier's signing fee (100 dollars at Amateur, 150 at Regional Pro, 440 at National, 1,200 at GCS Contender, 2,400 at GCS). It avoids the three fighters you just saw where the division allows, and it resets the 24 hour clock. There is no free reroll: if ducking a Hard opponent is worth a chunk of your purse, pay it, otherwise take the fight in front of you. Calling someone out is not a reroll either. It swaps your callout into the Hard slot and puts the original opponent back if you cancel.
+
+Every bout carries its own purse, and it is printed on the card. Easy opponents are 3 to 5 Overall below you and pay 70% of your tier's signing fee. Even opponents are within 3 OVR and pay the full fee. Hard opponents are 2 to 5 OVR above you and pay 140%. A title shot pays 175%. Inside a slot, the tougher the opponent the better the purse, up to 5% more. The number you see is what a clean win pays before your fame, comeback and persona bonuses are added; a loss still pays 70% of it and a draw 50%.
 
 Each card carries a scouting preview: the opponent's top stats with a reliability tag — Confirmed, Suspected, or Unknown — drawn from the same fog-of-war system as the full Fighter Report. The less tape exists on a fighter, the foggier the read; champions are especially restricted (only two fight logs). The card's threat tags follow the same rule — a tag like "Exploitable chin" or "Elite KO power" only shows when scouting actually supports it, so unscouted stats stay hidden. Calling an opponent out unlocks full intel — every stat Confirmed, no fog. Use Game Plan Study or Sparring to fill the gaps before a fight you're unsure about.
 
@@ -329,17 +350,30 @@ There's one rule to plan around: at most 2 always-on Passive moves can be equipp
 | Proc | Fires when a specific situation comes up in the fight — for example, when your opponent shoots a takedown. |
 | Signature | Only Rare and Legendary moves can be Signature-type. One big, one-shot moment per fight, capped to fire once. |
 
+There are 24 moves in the catalogue, spread across the four coaching disciplines. Which discipline a move belongs to is also which coach can teach it.
+
+| Discipline | Passive | Proc | Signature |
+| --- | --- | --- | --- |
+| Striking | Heavy Hands, Body Snatcher, High Guard | Dirty Boxing, Second Gear | Overhand Right, Superman Punch |
+| Wrestling | Double-Leg Precision | Sprawl, Full Mount, Top Control | Crucifix, Blast Double |
+| Brazilian Jiu-Jitsu | Veteran IQ, Frame & Base | Hip Escape, Guillotine Choke | Rubber Guard, Arm Triangle |
+| Conditioning | Granite Jaw, Pace Pusher | Second Wind, Deep Waters, Fighting Spirit | none |
+
+Want the full picture? Open the Catalog at the top of the Special Moves tab. It lists all 24 moves, what each one is worth at every rarity, which ones you own and at what rarity, and how to get the rest: which coach can teach it and at what rank, and which sessions can drop it. A coach's rarity decides whether he can ever teach a move, which is separate from the rarity a move can drop at. Overhand Right can drop at Rare from training even though only a Legendary Striking Coach can teach it. Tap any move for the details, including the ones you do not own yet.
+
+Seven moves were renamed in v2.2. Same moves, same numbers, same cards, only the name on the front changed: Sprawl Instinct is now Sprawl, Never Tap is Hip Escape, Clinch Killer is Dirty Boxing, Mount Reaper is Full Mount, The Finisher is Overhand Right, Iron Recovery is Rubber Guard, and Killer Instinct is Crucifix.
+
 Moves come in four rarities — Common, Uncommon, Rare, and Legendary — and rarity is the only thing that scales a move's power. There's no separate leveling system: if you pull a copy of a move you already own at a higher rarity, it upgrades the one you have. Pull an equal-or-lower rarity copy instead, and it's sold automatically for a small cash payout rather than sitting uselessly in your collection.
 
 A move's strength is shown as a Rating — "+30 Defense Rating" — with magnitude pips from Slight (Common) up to Brutal (Legendary), and the exact percentage in the fine print for the mathematically curious. Don't let small-looking percentages fool you: these edges are deliberately subtle per exchange but they compound across every round of every fight — a top-rarity move is worth several extra wins per hundred fights on its own, and that's before it stacks with your camp prep.
 
-You earn Special Moves by training — specifically Sparring and each gym's unique sparring-family sessions (the advanced sessions gyms unlock at Rank 2). Every sparring-family round has a chance to drop a move — it's a rare event, so more rounds mean better odds. A better gym doesn't make drops more frequent — what it does is shift the odds toward rarer moves once a drop happens. The free Community gym can still drop a move, but Legendary is effectively locked behind the top-tier gyms; grinding sparring at the Community gym will mostly get you Commons and Uncommons.
+There are two ways to earn Special Moves, and only one of them is luck. The first is training: the hard sessions in your camp roll for a drop. Your coach's flagship rounds (unlocked at coach Rank 2) have the best chance in the game, and Open Mat Sparring rolls too, at a lower rate. The cheap, safe drills never drop a move at all — that's the trade you make when you take one. Drops are rare events, so more rounds mean better odds, and it's your camp's tier that decides how rare a drop can be, not how often one happens.
 
-My Camp drops moves too, but the odds live on the individual drill rather than being the same everywhere. Only the hard sessions roll for one: your coach's flagship rounds (unlocked at coach Rank 2) have the best chance in the game, and Open Mat Sparring rolls at the same rate as gym sparring. The cheap, safe drills never drop a move at all. As at a gym, it's your camp's tier that decides how rare a drop can be, not how often one happens.
+The second way is your coaches, and it isn't a roll at all. Every coach knows a short list of moves outright and hands them over when you promote him — visible on his card before you ever hire him. That makes it the only way to choose which moves you end up owning, and a Legendary coach teaches Legendary copies. See "What Your Coach Teaches You".
 
 Special Moves only apply in PvE — regular fights against the game's roster. They have no effect in the Proving Ground (PvP); your gameplan, not your equipped moves, is what matters there.
 
-> **Key takeaway:** Equip up to 3 moves, unlocked by tier — but no more than 2 always-on Passives at once, so your 3rd slot should be a Proc or Signature. Sparring-family sessions have a chance to drop moves; better gyms roll better rarities, not more drops.
+> **Key takeaway:** Equip up to 3 moves, unlocked by tier — but no more than 2 always-on Passives at once, so your 3rd slot should be a Proc or Signature. Hard camp sessions roll for drops; promoting a coach is the only way to pick which move you get. The Catalog shows every move and exactly how to get it.
 
 ---
 
@@ -405,32 +439,38 @@ You watch all of this on the Ladder screen. It's one single ladder — not five 
 
 ### Seasons, Twists & Rewards
 
-*How PvP seasons run, what twists do, end-of-season rewards, and the special Open Season 1.*
+*How PvP seasons run, what twists do, end-of-season rewards, and why the ladder is currently Open to every weight class.*
 
-The Proving Ground runs in seasons of 70 days. Each season carries a twist — a rule that rewards a particular way of winning: Blood Sport pays +25% on KO and submission wins, Iron Fist +30% on KOs, Ground War +30% on submissions, The Marathon +20% on decisions, The Contenders switches on streak bonuses sooner, and Iron Circuit is the clean, no-twist baseline. Read the twist when a season opens and lean your gameplan into it.
+The Proving Ground runs in seasons of 70 days. Each season carries a twist, a rule that rewards a particular way of winning: Blood Sport pays +25% on KO and submission wins, Iron Fist +30% on KOs, Ground War +30% on submissions, The Marathon +20% on decisions, The Contenders switches on streak bonuses sooner, and Iron Circuit is the clean, no-twist baseline. Read the twist when a season opens and lean your gameplan into it.
 
-When a season ends, everyone who fought at least once is paid by the division they finished in. The belt holder's reward replaces the Champion reward — it doesn't stack on top of it.
+When a season ends, everyone who fought at least once is paid by the division they finished in. The belt holder's reward replaces the Champion reward. It does not stack on top of it.
 
 | Final division | Cash | Fame | Energy drinks | Badge |
 | --- | --- | --- | --- | --- |
-| Prospect | 500 | 500 | 0 | — |
-| Contender | 1,200 | 1,200 | 0 | — |
+| Prospect | 500 | 500 | 0 | None |
+| Contender | 1,200 | 1,200 | 0 | None |
 | Challenger | 2,500 | 2,500 | 0 | Challenger |
 | Elite | 5,000 | 5,000 | 2 | Elite |
 | Champion | 10,000 | 10,000 | 5 | Champion |
 | Belt holder | 15,000 | 15,000 | 7 | Belt |
 
-After rewards, a soft reset drops each player one tier into the next season and sets their DP to that division's floor — so every season is a fresh climb, but finishing high still buys you a head start. The next season is seeded automatically.
+After rewards, a soft reset drops each player one tier into the next season and sets their DP to that division's floor, so every season is a fresh climb while finishing high still buys you a head start. The next season is seeded automatically.
 
-Between seasons there can be a short gap before the next one opens. When that happens, entering the Proving Ground shows a countdown — a live timer ticking down to the new season, with its name, twist, and what's on the line — instead of the ladder. You can't fight during the countdown, but you can set your defense gameplan early: whatever you pick is saved and applied automatically when the new season's ladder is created (it defaults to Balanced if you never touch it). The instant the timer hits zero, the season goes live on its own — no need to refresh.
+Between seasons there can be a short gap before the next one opens. When that happens, entering the Proving Ground shows a countdown instead of the ladder: a live timer ticking down to the new season, with its name, twist, and what is on the line. You can't fight during the countdown, but you can set your defense gameplan early: whatever you pick is saved and applied automatically when the new season's ladder is created (it defaults to Balanced if you never touch it). The instant the timer hits zero, the season goes live on its own, with no need to refresh.
 
-Season 1 is special. Normally each weight class runs its own ladder and crowns its own belt, but at launch there aren't enough players to fill four ladders — so Season 1 is run as a single Open season: every weight class shares one ladder, one belt, and one reward pass. You'll be matched against fighters from other weight classes, and you'll see their real weight class on every screen. It's still a fair fight — the engine decides bouts on stats and OVR, not body weight. When the Open season ends, everyone returns to their own weight class for the normal four-ladder Season 2, carrying their soft-reset standing. The one-of-a-kind Open belt is the prize for being the best fighter in the game, full stop.
+The ladder is Open. Each weight class is meant to run its own ladder and crown its own belt, but four ladders need four times the fighters to fill them. Until the population is there, the Proving Ground runs as a single Open season: every weight class shares one ladder, one belt, and one reward pass. Season 1 ran this way and Season 2 does too.
 
-> **Key takeaway:** 70-day seasons, each with a twist; rewards scale by final division and soft-reset you one tier for the next. Season 1 is a single Open ladder across all weight classes — one belt for everyone.
+You will be matched against fighters from other weight classes, and you will see their real weight class on every screen. It is still a fair fight, because the engine decides a bout on the eight stats and OVR. Body weight is not a variable in it. While the format is Open the belt is the prize for being the best fighter in the game, full stop, rather than the best in one class.
+
+The first time you open the Proving Ground after a season you fought in has ended, a results poster takes over the screen. It stamps the old season CLOSED and shows the division you finished in, your final rank out of everyone on your ladder, your record, and every reward the season paid you, on tear-off stubs. Below that it announces the new season, the division and DP you restart from, and a short list of what changed. Close it, enter the ladder, or view the final ladder and it is marked seen: you get it once per season and never again. If you sat a season out you will not see it at all, because there is nothing to pay you.
+
+The four-ladder split is deferred, not cancelled. When there are enough fighters to fill four ladders the seasons will separate and each class will crown its own champion. One thing will not come back either way: the Open Champion badge is tied to the Season 1 belt alone and can never be earned again.
+
+> **Key takeaway:** 70-day seasons, each with a twist; rewards scale by final division and soft-reset you one tier for the next. The ladder is currently Open: every weight class on one ladder, one belt for everyone.
 
 ---
 
-## Training & Gyms
+## Training & Camp
 
 ### How Training Works
 
@@ -444,92 +484,42 @@ The XP cost to raise a stat increases as it gets higher. Early points are cheap 
 
 Your fighting style determines how stats are weighted in your OVR calculation. Training a primary stat raises your OVR faster than training an off-style stat. That's not a reason to ignore off-style stats — a well-rounded fighter is harder to exploit — but it explains why a Boxer training LEG sees slower OVR growth than a Boxer training STR.
 
-> **Key takeaway:** Stats grow through XP. Higher stats cost more XP per point. The right gym makes everything faster.
+> **Key takeaway:** Stats grow through XP. Higher stats cost more XP per point. Training your style's primary stats is the fastest route to a higher Overall.
 
-### The Gym System — Choosing Where to Train
+### Coach Perks: What Rank 4 Gets You
 
-*How gyms work, what separates them, and how to decide where your cash goes.*
+*The four permanent perks your coaches can earn, what each one actually changes, and the badge that comes with it.*
 
-There are eleven gyms in Ground & Pound — one free community gym and ten specialty gyms that require a weekly cash membership. You can only have one paid membership active at a time. Switching gyms cancels your current membership immediately.
+Taking a coach to Rank 4 earns a permanent utility perk that changes how something in the game works. These aren't cosmetic. They affect camp preparation, fight recovery and your prep sessions. Each one also grants a profile badge, named differently from the perk itself: the badge is the trophy, the perk is the effect.
 
-The Community MMA Center is always available at no cost. It trains all stats at 0.6× base XP — slower than any specialty gym but always there when your cash runs low. It has no ranks and no progression. Think of it as the safety net, not the goal.
+There are four, one per discipline, and your camp is the only place to get them. A Rank 4 Striking Coach grants Corner Confidence, a Rank 4 Wrestling Coach grants Mat Returns, a Rank 4 BJJ Professor grants Submission Awareness, and a Rank 4 Conditioning Coach grants Iron Conditioning.
 
-Specialty gyms focus on 2–3 stats and give faster XP in those areas. An Amateur-tier gym gives 1.25× XP on focus stats. A National-tier gym gives 1.5× on focus stats. Elite Fight Academy gives 1.5× on all stats. The further up the career ladder you climb, the better your training options become — but they also get significantly more expensive.
-
-Choosing the right gym means matching the gym's focus to your style's primary stats. A Boxer should be at Iron Fist Boxing (STR, SPD, CHN). A BJJ fighter belongs at Gracie Ground Game (GND, SUB). Training your primary stats at the right gym is the fastest path to a high OVR.
-
-> **Key takeaway:** Match the gym to your style's primary stats. The right gym makes your strong stats stronger faster.
-
-### Gym Ranks — The Long Game
-
-*How gym ranks work, what they unlock, and why they follow you forever.*
-
-Every specialty gym has four ranks. You earn them by accumulating training sessions and scoring specific types of wins while enrolled at that gym. Ranks are permanent — they follow you even if you switch gyms or can't afford the membership. Earn a rank, keep it forever.
-
-Rank 1 is granted automatically when you join. It gives you access to the gym's training sessions. Rank 2 unlocks a unique advanced session only available at that gym. Rank 3 gives a permanent +5% XP bonus to focus stats — a compounding advantage that pays off across your entire career. Rank 4 is the pinnacle: a utility perk and a permanent badge on your fighter profile.
-
-Win types matter for ranks. Striking gyms count KO/TKO wins. BJJ and submission gyms count submission wins. Tactical gyms count decision wins. If you're training at a wrestling gym but winning all your fights by KO, those wins don't contribute to your gym rank progress.
-
-Ranks 3 and 4 also require a cash payment in addition to the training and win thresholds. The cash cost is significant — these are career investments, not freebies. But the permanent XP bonus from Rank 3 and the utility perk from Rank 4 are some of the most powerful advantages in the game.
-
-> **Key takeaway:** Gym ranks are permanent and compound over time. Rank 3's +5% XP bonus is worth planning your career around.
-
-### Rank 4 Perks — What They Do
-
-*Every gym's Rank 4 perk explained and which ones to prioritise.*
-
-Reaching Rank 4 at any gym earns a permanent utility perk that changes how something in the game works. These aren't cosmetic — they affect camp performance, weight cuts, fight preparation, and more. Every Rank 4 also grants a profile badge, which is named differently from the perk itself — the badge is the trophy, the perk is the effect. Here's what each one does.
-
-Your camp's coaches hand out these exact same perks at Rank 4 — a Master Striking Coach grants Corner Confidence, a Master Wrestling Coach grants Mat Returns, a Master BJJ Professor grants Submission Awareness. It's one shared collection, so if you already earned a perk at the gym you keep it, and there's no way to hold the same perk twice.
-
-| Gym | Perk | Badge | What It Actually Means |
+| Coach | Perk | Badge | What It Actually Means |
 | --- | --- | --- | --- |
-| Iron Fist Boxing | Corner Confidence | Champion Boxer | An extra camp slot when fighting a striker. More prep time against your most common opponents. |
-| Dragon Kickboxing | Low Kick Instinct | Grand Master Kickboxer | Cardio Push costs 1 less energy. Makes stamina preservation cheaper in camp. |
-| Warrior Muay Thai | Iron Conditioning | Grand Kru | Conditioning raises Max Stamina by +2 instead of +1. Faster path to a higher stamina ceiling. |
-| Apex Wrestling | Mat Returns | Olympic Wrestler | Takedown Defence always rates at least PARTIAL. Your wrestling preparation never completely misfires. |
-| Gracie Ground Game | Submission Awareness | BJJ Black Belt | Submission Escapes gives +5% extra bonus. More reliable escape probability on the mat. |
-| Renzo Combat | Film Room Access | Submission Master | Fighter Report shows 1 extra fight log. Better intel in every camp. |
-| Precision MMA Lab | Pattern Recognition | Fight Scientist | Game Plan Study counts as MATCHED instead of PARTIAL. The safe fallback becomes a full-value session. |
-| Titan Performance | Strength Reserve | Titan | Weight cut bad roll floor raised by 3. Reduces the damage ceiling of a failed aggressive cut. |
-| The War Room | Tactical Edge | Tactician | 30% chance the opponent's wildcard is revealed before camp. Information you can act on. |
-| Elite Fight Academy | Championship Pedigree | Elite Master | +10% fame from all fights. Every fight, forever, pays more notoriety. |
+| Striking Coach | Corner Confidence | Champion Boxer | An extra camp slot when fighting a striker. More prep time against your most common opponents. |
+| Wrestling Coach | Mat Returns | Olympic Wrestler | Takedown Defence always rates at least PARTIAL. Your wrestling preparation never completely misfires. |
+| BJJ Professor | Submission Awareness | BJJ Black Belt | Submission Escapes gives +5% extra bonus. More reliable escape probability on the mat. |
+| Conditioning Coach | Iron Conditioning | Grand Kru | Your health regenerates about 30% faster, so a full heal drops from roughly 8 hours to under 6. Gets you back in the cage sooner, for the rest of your career. |
 
-> **Key takeaway:** Fight Scientist (Game Plan Study = MATCHED) and Elite Master (+10% fame forever) are among the most universally powerful perks. Tactician (wildcard reveal) is transformative if you hate surprises.
+Perks are a single shared collection, so there is no way to hold the same one twice, and firing the coach who earned it never takes it back. Once it's yours, it's yours. Collecting all four also earns the Master of All badge.
 
-### Training Sessions — What Each One Does
+If you played before the gyms closed you may hold perks that aren't in this table. Strength Reserve, Tactical Edge, Championship Pedigree and the rest came from gym Rank 4s. They still work exactly as they always did, and you keep them permanently. They simply can't be earned any more. Your profile's Perks Held card lists everything you own.
 
-*Every available session, its energy cost, and what stats it trains.*
-
-Sessions are the atomic unit of training. Each one costs energy and earns XP in specific stats. Here's a complete reference.
-
-| Session | Energy | Stats Trained | Notes |
-| --- | --- | --- | --- |
-| Bag Work | 4 | STR | Pure striking power. Core session for Boxers and Kickboxers. |
-| Footwork | 4 | SPD | Hand speed and movement. Builds fast combinations. |
-| Kick Drills | 4 | LEG | Lower body attacks. Essential for Muay Thai and Kickboxers. |
-| Pad Work | 5 | STR, SPD | Combination striking. Two stats for one session — efficient. |
-| Wrestling | 5 | WRE | Takedown offence. Core for Wrestlers and Sambo fighters. |
-| Clinch Work | 5 | WRE, STR | Dirty boxing and clinch pressure. Two stats, useful for Muay Thai. |
-| BJJ | 6 | GND, SUB | Ground control and submission chains. Two stats — good value. |
-| Submissions | 6 | SUB | Pure submission hunting. More targeted than BJJ sessions. |
-| Sparring | 8 | All 8 stats | Most expensive but broadest — XP is spread thin across every stat. 3% injury risk, and the only gym session type that can drop a Special Move. |
-| Film Study | 3 | FIQ | Cheapest session. Tactical awareness. Often overlooked, valuable for decision fighters. |
-| Conditioning | 4 | Max Stamina | Raises your stamina ceiling, not the stat itself. Stacks over time. |
-
-> **Key takeaway:** Sparring trains everything but carries injury risk. Film Study is the cheapest session in the game and directly improves Fight IQ — don't ignore it.
+> **Key takeaway:** Four perks, one per discipline, and your camp is the only source. Iron Conditioning has the widest reach, because faster healing means more fights across a whole career.
 
 ### My Camp — Your Own Training Room
 
 *Your own camp, your own coaches, your own building — how to train there, read a drill card, keep the place in shape, and rank a coach up.*
 
-A gym is somewhere you rent. My Camp is yours. It has your name on the door, a coach on the payroll, a set of drills that only your coach can run, and a building that quietly falls apart if you stop showing up. It sits right under Training in the menu, and the first time you open it, it's already built — no cost, no unlock, nothing to wait for.
+My Camp is yours. It has your name on the door, a coach on the payroll, a set of drills that only your coach can run, and a building that quietly falls apart if you stop showing up. It's the first thing under Home in the menu, and the first time you open it, it's already built — no cost, no unlock, nothing to wait for.
 
-Your camp opens with a free head coach who matches how you fight: a Striking Coach if you're a Boxer, Kickboxer, Muay Thai or Capoeira fighter, a Wrestling Coach if you're a Wrestler or Judoka, a BJJ Professor if you're Brazilian Jiu-Jitsu or Sambo. Free means free forever — hired coaches draw a weekly wage (see "Hiring & Keeping Coaches"), but your starter never costs a cent to keep. If you've already put in work at a gym, that work walks in the door with you — your current gym becomes your head coach at the same rank you earned there, and any other gyms you've ranked up are banked as familiarity in their discipline for later. Nothing is taken away: your gym ranks, gym perks and gym badges all stay exactly where they are, and the gyms keep working. For now you can train at either, on the same energy, whenever you like.
+Your camp opens with a free head coach who matches how you fight: a Striking Coach if you're a Boxer, Kickboxer, Muay Thai or Capoeira fighter, a Wrestling Coach if you're a Wrestler or Judoka, a BJJ Professor if you're Brazilian Jiu-Jitsu or Sambo. Free means free forever — hired coaches draw a weekly wage (see "Hiring & Keeping Coaches"), but your starter never costs a cent to keep.
+
+The camp is where all your training happens now. If you played back when the specialty gyms were open, that work came with you: the gym you were training at became your head coach at the rank you'd already earned, and any other gyms you'd ranked up were banked as familiarity in their discipline, credited automatically to your next hire in it. The perks and badges you earned at a gym are permanent and untouched.
 
 You can rename the camp any time — anything from 3 to 28 characters. It starts as your surname plus "Camp", which is fine, but most fighters want something with more teeth.
 
-Training in the camp works like the gym: pick a session, spend energy, earn stat XP, and you can queue up a batch of repeats in one click. The difference is that your sessions come from your coach's kit — four drills that unlock as he ranks up — plus one session that's always there no matter what.
+Training here is straightforward: pick a session, spend energy, earn stat XP, and queue up a batch of repeats in one click if you want. What makes it yours is that the sessions come from your coach's kit — four drills that unlock as he ranks up — plus one session that's always there no matter what.
 
 | What's on a drill card | What it means for you |
 | --- | --- |
@@ -576,7 +566,7 @@ And when your camp has something waiting for you — a coach ready for promotion
 
 *The weekly Trainer Market, coach rarities and traits, wages, morale — and what it really costs to fire someone.*
 
-Once your camp reaches Tier 2 — either by renovating for $2,000 and 3 career wins, or automatically when you turn Regional Pro — the Trainer Market opens. Every Monday a fresh slate of coaches comes looking for work: three candidates, or four if you employ a Well-Connected coach. What Monday brings is what the week has — there are no rerolls, no refreshes, and anyone you don't hire is gone when the next slate arrives. If a discipline in your camp has no coach, the market always makes sure at least one candidate works that discipline.
+Once your camp reaches Tier 2 — either by renovating for $2,000 and 3 career wins, or automatically when you turn Regional Pro — the Trainer Market opens. Every Monday a fresh slate of coaches comes looking for work. How many depends on your camp: four candidates at Tier 1–2, five at Tier 3, and six at Tier 4 — plus one extra while you employ a Well-Connected coach. The board grows as your camp does, so there is always enough on offer to fill the slots you have. What Monday brings is what the week has — there are no rerolls, no refreshes, and anyone you don't hire is gone when the next slate arrives. If a discipline in your camp has no coach, the market always makes sure at least one candidate works that discipline.
 
 Every coach is an individual: a name, a discipline, a rarity, and one personality trait. The card tells you everything before you spend a cent — his hire fee, his weekly wage, his full drill kit with his trait already priced in, and exactly which Special Moves he'd be able to teach you and at what quality. Nothing is hidden and nothing is haggled: the price on the card is the price you pay.
 
@@ -587,7 +577,7 @@ Every coach is an individual: a name, a discipline, a rarity, and one personalit
 | Rare | 12% — needs Camp Tier 2 | $3,000 | $750 | 3 moves |
 | Legendary | 3% — needs Camp Tier 4 and having been a Rising Star | $5,000 | $2,250 | His whole discipline |
 
-Read the Legendary line twice: he's cheap to sign and expensive to keep. The $5,000 handshake is a one-off; the $2,250 leaves your account every single Monday. The fame gate checks the highest you've ever been — once a Rising Star, always eligible, even if your name has faded since. (Move-teaching itself is coming in a future update — the pools are already on the cards so you know exactly what you're buying into.)
+Read the Legendary line twice: he's cheap to sign and expensive to keep. The $5,000 handshake is a one-off; the $2,250 leaves your account every single Monday. The fame gate checks the highest you've ever been — once a Rising Star, always eligible, even if your name has faded since. The "can teach" column is the real reason to care about rarity: those moves are yours the moment you promote him. See "What Your Coach Teaches You" for how that works.
 
 The trait is the coach's personality, and it's always exactly one of these twelve. Traits marked with a warning cut both ways.
 
@@ -606,17 +596,53 @@ The trait is the coach's personality, and it's always exactly one of these twelv
 | Cornerman | +2 Facility Condition and +2 to his own morale after every fight you take. |
 | Well-Connected | The weekly market shows one extra candidate while he's on staff. |
 
-Hiring is simple: pay the fee, and he's yours — one coach per discipline, with total staff size set by your camp tier. If you've built history in his discipline before — a converted gym, or a previous Head Coach you let go — that banked familiarity is credited to the new hire automatically, giving him a head start of up to a full rank's worth of progress. The credit is spent when it's used, so it's one head start per bank, not a permanent discount.
+Hiring is simple: pay the fee, and he's yours — one coach per discipline, with total staff size set by your camp tier. If you've built history in his discipline before — a previous Head Coach you let go, or a gym your camp was built from back when gyms existed — that banked familiarity is credited to the new hire automatically, giving him a head start of up to a full rank's worth of progress. The credit is spent when it's used, so it's one head start per bank, not a permanent discount.
 
 Then come the wages. Every Monday, your full staff's wages are drawn from your cash — real money, automatically, every week, for as long as they're employed (your free starter coach is the exception: he never draws a wage). The camp bar shows what's due and when. If the money isn't there, nobody walks on day one, but everything starts to slide: every coach loses morale each unpaid week, and the building itself decays harder the longer the debt runs. Pay up and the spiral stops immediately.
 
-Morale is each coach's patience with you, from 100 down to 0, and it only moves for reasons you control. Unpaid wages cost morale. A coach who goes a whole week without running a single session feels benched and loses morale. A squalid building — Condition under 20 — doubles every hit. When a coach drops below 70 you get a warning at the top of the camp screen with the actual reason; below 30 his training bonus is halved until you patch things up; at 0 he quits, walks out, and takes his rank with him. The routine that keeps everyone at 100 is not demanding: pay the wages, and run at least one session with each coach every week.
+Morale is each coach's patience with you, from 100 down to 0, and it only moves for reasons you control. It moves both ways: a clean week — wages paid and at least one session run with him — gives him +2 back. Recovery is deliberately slower than the damage, so a bad month costs you real time to undo, but it is never permanent. Unpaid wages cost morale. A coach who goes a whole week without running a single session feels benched and loses morale. A squalid building — Condition under 20 — doubles every hit. When a coach drops below 70 you get a warning at the top of the camp screen with the actual reason. Below 30 his training bonus is halved — that is the only point where poor morale actually costs you output. At 0 he quits, walks out, and takes his rank with him. The routine that keeps everyone at 100 is not demanding: pay the wages, and run at least one session with each coach every week.
 
-Firing is your right, and it costs you, visibly — the confirm dialog lists every line before you commit. The fired coach's rank and progress are gone for good. The rest of the room takes it badly: −10 morale to every remaining coach (unless a Locker-Room Leader is there to hold the room together). The building takes −15 Condition. And the freed slot is locked for 7 days, so churning through staff is never a strategy. The one consolation: a Head Coach or better leaves his experience behind as banked familiarity for whoever you hire into the discipline next. A coach who quits at 0 morale, by contrast, costs you none of that — the weeks of neglect were the price — and he banks familiarity the same way. Either way, you can never end up with an empty camp: your last coach can't be fired and will never quit.
+Firing is your right, and it costs you, visibly — the confirm dialog lists every line before you commit. The fired coach's rank and progress are gone for good. The rest of the room takes it badly: −10 morale to every remaining coach (unless a Locker-Room Leader is there to hold the room together). The building takes −15 Condition, and the slot is free again immediately. The one consolation: a Head Coach or better leaves his experience behind as banked familiarity for whoever you hire into the discipline next. A coach who quits at 0 morale, by contrast, costs you none of that — the weeks of neglect were the price — and he banks familiarity the same way. Either way, you can never end up with an empty camp: your last coach can't be fired and will never quit.
 
 One hire deserves a special mention: the Conditioning Coach, available only from the market, from Tier 2. He's the only coach in the game who trains Max Stamina and the only one with a Fight IQ drill, plus the cheapest way to repair the building with energy instead of cash. If your camp only ever makes one hire, it's usually him.
 
+Worth knowing before you commit a slot to him long-term: Max Stamina caps at 120, and once you reach it his Strength & Conditioning+ session is finished for good — it raises Max Stamina and nothing else, so the game locks it rather than let you spend energy on nothing. His other three sessions keep their value: Recovery & Mobility is still the cheapest way to repair the building, the Grueling Fitness Test still trains Chin and Strength, and Veteran Wisdom is still one of the few places to train Fight IQ. But if you hired him purely for the stamina, that job ends at 120.
+
+His Rank 4 perk, Iron Conditioning, is about recovery too: your health regenerates roughly 30% faster, permanently. A full heal drops from about eight hours to under six. It used to make his stamina sessions count double, which sounded good and was worthless — Max Stamina caps twenty sessions in, and reaching his Rank 4 takes sixty, so the bonus arrived long after the job was done.
+
+The real reason to keep him, though, isn't a session at all. While a Conditioning Coach is on your staff, every training session in the camp is safer — including the ones you run with your other coaches. He starts at -15% injury risk and reaches -30% at Rank 4. It's the only bonus in the camp that pays you while you're training with somebody else, it never caps, and it's why he keeps earning his wage long after your stamina bar has stopped moving. He makes your hard sessions cheaper in the only currency that really hurts: time on the shelf.
+
 > **Key takeaway:** Check the market every Monday, read the trait before the price, and remember a coach costs his wage every week — pay everyone and train with everyone weekly and morale never becomes your problem.
+
+### What Your Coach Teaches You
+
+*Promote a coach and he hands you Special Moves outright — no luck involved. Which rank gives what, what quality you get, and the one coach who can't teach at all.*
+
+Every coach carries a short list of Special Moves he personally knows — you can read it on his card before you ever hire him, under "What He Teaches". Promote him far enough and those moves are simply handed to you. No roll, no luck, no waiting: this is the one place in the game where you choose which Special Moves you're going to own.
+
+Which promotion pays out is fixed, and it isn't evenly spread:
+
+| Promotion | What you get |
+| --- | --- |
+| To Rank 2 | The first move on his list. |
+| To Rank 3 | No move — this is the rank that buys you his permanent +5% training XP. |
+| To Rank 4 | Everything left on his list, all at once. |
+
+So Rank 4 is the big one. A Rare coach hands you two moves in a single promotion; a Legendary hired today can hand you up to six. Save for it — it's the largest single payout in the camp. His list is fixed the day you hire him: coaches already on your roster keep the list on their card, and the moves added in v2.2 only appear on coaches hired since.
+
+How long his list is comes down to his rarity, and it's the same number you saw on the market card: a Common coach knows one move, an Uncommon two, a Rare three, and a Legendary knows his entire discipline. Because a Common only knows one move and that move arrives at Rank 2, promoting a Common all the way to Rank 4 teaches you nothing further — his Rank 4 pays out in his discipline's permanent perk instead. That's not a bug, and the card says so before you spend the money.
+
+The quality of the copy is his quality. A Rare coach teaches Rare copies. He can't teach you a version better than he is, and he'll never hand you something flimsier than the move is supposed to be at minimum — which is why a Legendary coach is the most reliable way in the game to get a Legendary copy of a move you actually want, instead of hoping one falls out of a sparring session.
+
+If he teaches you a move you already own, the same rules apply as a training drop: a better copy upgrades what you have, and a copy you've already matched or beaten is bought off you for cash. Nothing is ever wasted, and nothing is ever taught twice — once he's shown you a move, that slot is spent for good.
+
+If a move on his list shows a Claim button, take it — it is already yours. Coaches only started teaching in a later update, so a promotion you paid for before that quietly handed over nothing. Those moves are marked as owed to you, and one free click settles them. It only ever appears for ranks you actually bought: a coach who arrived at a rank rather than earning it has nothing to claim.
+
+One thing to know if you were here before the gyms closed and your camp was built from your gym work. Your head coach arrived already at the rank you'd earned — but he arrived with his teaching behind him. He has no promotions left to spend, so his list shows as "missed" rather than a countdown, and he will not teach you those moves. Nothing was taken from you: he skipped the promotions that would have taught them. His Rank 4 perk is still owed, and there's a button on his card to claim it. If you want his discipline's moves, that's what the Trainer Market is for.
+
+Finally, the Legendaries hide one more thing. Every Legendary coach has a fifth drill — his masterclass — that stays locked until you get him to Rank 4. It's the widest session in the game: four stats at once, including Fight IQ, which almost nothing else trains. It's also the most expensive session you can run, the most likely to hurt you, and the hardest on the building. It carries the best Special Move chance on the board. You can see it on his card from day one, greyed out, as a promise of what Rank 4 unlocks.
+
+> **Key takeaway:** A coach's teach list is a shopping list, not a lottery — Rank 2 gives you the first move, Rank 4 gives you the rest at his rarity, and a coach who came over from a gym has already spent his promotions and can't teach you anything.
 
 ---
 
@@ -688,17 +714,21 @@ After 3 consecutive losses, your notoriety freezes — no gains until you win ag
 
 *Every badge in the game, how to earn it, and what it means for your profile.*
 
-Badges are permanent markers earned through career achievements and gym mastery. They appear on your fighter profile and can be pinned to your banner. Once earned, they never go away.
+Badges are permanent markers earned through career achievements and mastery in your camp. They appear on your fighter profile and can be pinned to your banner. Once earned, they never go away.
 
 Career badges come from doing exceptional things in your fights: winning while in comeback mode earns the Resilience badge. Your first belt — beating the Amateur champion to turn pro — earns the distinct Amateur Champion badge. Every pro title after it (Regional Pro and up) earns the generic Champion badge. Winning a callout fight earns the Callout Win badge. Recording your documentary at Star fame tier earns the Documentary badge and unlocks the Legacy banner piece.
 
-Gym badges are earned by reaching Rank 4 at each specialty gym — Champion Boxer, BJJ Black Belt, Tactician, Elite Master, and the rest. These are the hardest to earn because they require sustained dedication to one gym across training sessions and specific win types. A fighter with multiple Rank 4 gym badges has put in serious time.
+The discipline-mastery badges — Champion Boxer, Olympic Wrestler, BJJ Black Belt, Grand Kru — are earned by taking a coach in that discipline to Rank 4 in your camp. They're among the hardest in the game, because a coach reaches Rank 4 only through sustained sessions with him and wins by his method, and they come with his permanent perk attached.
+
+Six more badges from the same family — Grand Master Kickboxer, Submission Master, Fight Scientist, Titan, Tactician and Elite Master — belonged to the specialty gyms and have no camp route, so they can no longer be earned. They're hidden from your collection unless you already have one; any you did earn stay on your profile permanently, marked "Retired". Your completion total is never short because of a badge nobody can get anymore.
+
+Camp badges are their own section, and they're about your staff rather than your fights. Sign your first coach for Cornerman. Fill all four slots at once for Full Staff. Sign a Legendary for Deep Pockets. Get taught your first Special Move by promoting a coach for Passed Down, and five for Student of the Game. The one worth building toward is Master of All: take a coach in all four disciplines to Rank 4, which also means collecting all four discipline-mastery badges along the way. None of these can be lost — firing a coach never takes a camp badge back, because they record what you achieved, not what you currently own.
 
 The Proving Ground has its own badge line, grouped on your profile under Proving Ground. Some are quick first steps (your first PvP win, first finish, first successful defense); others mark real ladder progress (reaching Contender → Champion, win streaks of 3/5/10, beating opponents rated well above you); and the rarest are seasonal prestige — holding a season belt, going back-to-back, winning the belt without a single loss, or finishing a season on the podium. They're awarded as you fight and at season's end, and sit permanently alongside your career badges.
 
-Badges aren't just cosmetic. Several unlock banner pieces for the customizer, and the gym badges come with the Rank 4 utility perks that change how the game works for you permanently.
+Badges aren't just cosmetic. Several unlock banner pieces for the customizer, and the discipline-mastery badges come with the Rank 4 utility perks that change how the game works for you permanently.
 
-> **Key takeaway:** Gym badges require the most work but come with permanent perks. Career and Proving Ground badges tell the story of your biggest moments in both the cage and on the ladder.
+> **Key takeaway:** Discipline-mastery badges require the most work but come with permanent perks. Career, Camp and Proving Ground badges tell the story of your biggest moments in the cage, in your gym and on the ladder.
 
 ### Banner Customizer — Your Fighter's Identity
 

@@ -69,6 +69,36 @@
         "start:local"
       ],
       "autoPort": true
+    },
+    {
+      "name": "backend-4102",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "cross-env",
+        "LOCAL_MODE=true",
+        "PORT=4102",
+        "node",
+        "app.js"
+      ],
+      "port": 4102
+    },
+    {
+      "name": "frontend-4173",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "cross-env",
+        "VITE_API_URL=http://localhost:4102",
+        "npm",
+        "--prefix",
+        "frontend",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "4173",
+        "--strictPort"
+      ],
+      "port": 4173
     }
   ]
 }

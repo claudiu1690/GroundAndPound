@@ -436,6 +436,7 @@ export const api = {
 
   // ── Special Moves ───────────────────────────────────────
   getMoves: (fighterId) => request(`/fighters/${fighterId}/moves`),
+  getMovesCatalog: (fighterId) => request(`/fighters/${fighterId}/moves/catalog`),
   equipMove: (fighterId, moveId, slotIndex) =>
     request(`/fighters/${fighterId}/moves/equip`, {
       method: "POST",
