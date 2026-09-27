@@ -1,0 +1,3725 @@
+{
+  "striker-mirror-3r::none": {
+    "outcome": "KO/TKO",
+    "winner": "player",
+    "finishCause": "ko",
+    "playerHealthAfter": 83,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 89,
+    "rngDraws": 10,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 17,
+        "opponentDamage": 15,
+        "playerHealth": 83,
+        "opponentHealth": 85,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [],
+    "sessionBonuses": []
+  },
+  "striker-mirror-3r::offense_L": {
+    "outcome": "KO/TKO",
+    "winner": "player",
+    "finishCause": "ko",
+    "playerHealthAfter": 83,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 89,
+    "rngDraws": 10,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 17,
+        "opponentDamage": 16,
+        "playerHealth": 83,
+        "opponentHealth": 84,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "HEAVY_HANDS",
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "THE_FINISHER",
+        "bonusType": "SIG_FINISHER_STRIKE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "KILLER_INSTINCT",
+        "bonusType": "SIG_KILLER_INSTINCT",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "striker-mirror-3r::defense_R": {
+    "outcome": "KO/TKO",
+    "winner": "player",
+    "finishCause": "ko",
+    "playerHealthAfter": 84,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 89,
+    "rngDraws": 10,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 16,
+        "opponentDamage": 15,
+        "playerHealth": 84,
+        "opponentHealth": 85,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "GRANITE_JAW",
+        "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "NEVER_TAP",
+        "bonusType": "ESCAPE_PROBABILITY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "striker-mirror-3r::grapple_L": {
+    "outcome": "KO/TKO",
+    "winner": "player",
+    "finishCause": "ko",
+    "playerHealthAfter": 83,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 89,
+    "rngDraws": 10,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 17,
+        "opponentDamage": 15,
+        "playerHealth": 83,
+        "opponentHealth": 85,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "SPRAWL_INSTINCT",
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "MOUNT_REAPER",
+        "bonusType": "GNP_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "IRON_RECOVERY",
+        "bonusType": "SIG_IRON_RECOVERY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "striker-mirror-3r::tempo_U": {
+    "outcome": "Loss (KO/TKO)",
+    "winner": "opponent",
+    "finishCause": "ko",
+    "playerHealthAfter": 0,
+    "opponentHealthAfter": 60,
+    "playerStaminaAfter": 68,
+    "rngDraws": 36,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 17,
+        "opponentDamage": 15,
+        "playerHealth": 83,
+        "opponentHealth": 85,
+        "campCommentary": [
+          "campBodyShot"
+        ]
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 12,
+        "opponentDamage": 12,
+        "playerHealth": 71,
+        "opponentHealth": 73,
+        "campCommentary": [
+          "campBodyShot"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 13,
+        "opponentDamage": 13,
+        "playerHealth": 58,
+        "opponentHealth": 60,
+        "campCommentary": [
+          "campBodyShot"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "BODY_SNATCHER",
+        "bonusType": "BODY_DAMAGE",
+        "triggered": true,
+        "triggerCount": 3
+      },
+      {
+        "moveId": "CLINCH_KILLER",
+        "bonusType": "CLINCH_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "SECOND_WIND",
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "grappler-vs-striker-5r::none": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 26,
+    "opponentHealthAfter": 87,
+    "playerStaminaAfter": 50,
+    "rngDraws": 45,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 17,
+        "opponentDamage": 3,
+        "playerHealth": 83,
+        "opponentHealth": 97,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 19,
+        "opponentDamage": 3,
+        "playerHealth": 64,
+        "opponentHealth": 94,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 14,
+        "opponentDamage": 3,
+        "playerHealth": 50,
+        "opponentHealth": 91,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 14,
+        "opponentDamage": 2,
+        "playerHealth": 36,
+        "opponentHealth": 89,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 10,
+        "opponentDamage": 2,
+        "playerHealth": 26,
+        "opponentHealth": 87,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [],
+    "sessionBonuses": []
+  },
+  "grappler-vs-striker-5r::offense_L": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 26,
+    "opponentHealthAfter": 86,
+    "playerStaminaAfter": 50,
+    "rngDraws": 45,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 17,
+        "opponentDamage": 3,
+        "playerHealth": 83,
+        "opponentHealth": 97,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 19,
+        "opponentDamage": 3,
+        "playerHealth": 64,
+        "opponentHealth": 94,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 14,
+        "opponentDamage": 3,
+        "playerHealth": 50,
+        "opponentHealth": 91,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 14,
+        "opponentDamage": 3,
+        "playerHealth": 36,
+        "opponentHealth": 88,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 10,
+        "opponentDamage": 2,
+        "playerHealth": 26,
+        "opponentHealth": 86,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "HEAVY_HANDS",
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 5
+      },
+      {
+        "moveId": "THE_FINISHER",
+        "bonusType": "SIG_FINISHER_STRIKE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "KILLER_INSTINCT",
+        "bonusType": "SIG_KILLER_INSTINCT",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "grappler-vs-striker-5r::defense_R": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 29,
+    "opponentHealthAfter": 87,
+    "playerStaminaAfter": 50,
+    "rngDraws": 45,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 16,
+        "opponentDamage": 3,
+        "playerHealth": 84,
+        "opponentHealth": 97,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 19,
+        "opponentDamage": 3,
+        "playerHealth": 65,
+        "opponentHealth": 94,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 13,
+        "opponentDamage": 3,
+        "playerHealth": 52,
+        "opponentHealth": 91,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 13,
+        "opponentDamage": 2,
+        "playerHealth": 39,
+        "opponentHealth": 89,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 10,
+        "opponentDamage": 2,
+        "playerHealth": 29,
+        "opponentHealth": 87,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "GRANITE_JAW",
+        "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 5
+      },
+      {
+        "moveId": "NEVER_TAP",
+        "bonusType": "ESCAPE_PROBABILITY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "grappler-vs-striker-5r::grapple_L": {
+    "outcome": "Submission",
+    "winner": "player",
+    "finishCause": null,
+    "playerHealthAfter": 50,
+    "opponentHealthAfter": 55,
+    "playerStaminaAfter": 49,
+    "rngDraws": 43,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 17,
+        "opponentDamage": 3,
+        "playerHealth": 83,
+        "opponentHealth": 97,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 19,
+        "opponentDamage": 3,
+        "playerHealth": 64,
+        "opponentHealth": 94,
+        "campCommentary": [
+          "campTakedownDefence"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 14,
+        "opponentDamage": 2,
+        "playerHealth": 50,
+        "opponentHealth": 92,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 21,
+        "playerHealth": 50,
+        "opponentHealth": 71,
+        "campCommentary": [
+          "campGnpPosture"
+        ]
+      },
+      {
+        "round": 5,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 16,
+        "playerHealth": 50,
+        "opponentHealth": 55,
+        "campCommentary": [
+          "campGnpPosture"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "SPRAWL_INSTINCT",
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "MOUNT_REAPER",
+        "bonusType": "GNP_DAMAGE",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "moveId": "IRON_RECOVERY",
+        "bonusType": "SIG_IRON_RECOVERY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "grappler-vs-striker-5r::tempo_U": {
+    "outcome": "Loss (KO/TKO)",
+    "winner": "opponent",
+    "finishCause": "ko",
+    "playerHealthAfter": 0,
+    "opponentHealthAfter": 97,
+    "playerStaminaAfter": 92,
+    "rngDraws": 13,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 17,
+        "opponentDamage": 3,
+        "playerHealth": 83,
+        "opponentHealth": 97,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "BODY_SNATCHER",
+        "bonusType": "BODY_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "CLINCH_KILLER",
+        "bonusType": "CLINCH_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "SECOND_WIND",
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "striker-vs-grappler-5r::none": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 7,
+    "opponentHealthAfter": 100,
+    "playerStaminaAfter": 42,
+    "rngDraws": 36,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 25,
+        "opponentDamage": 0,
+        "playerHealth": 75,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 22,
+        "opponentDamage": 0,
+        "playerHealth": 53,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 19,
+        "opponentDamage": 0,
+        "playerHealth": 34,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 15,
+        "opponentDamage": 0,
+        "playerHealth": 19,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 12,
+        "opponentDamage": 0,
+        "playerHealth": 7,
+        "opponentHealth": 100,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [],
+    "sessionBonuses": []
+  },
+  "striker-vs-grappler-5r::offense_L": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 7,
+    "opponentHealthAfter": 100,
+    "playerStaminaAfter": 42,
+    "rngDraws": 36,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 25,
+        "opponentDamage": 0,
+        "playerHealth": 75,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 22,
+        "opponentDamage": 0,
+        "playerHealth": 53,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 19,
+        "opponentDamage": 0,
+        "playerHealth": 34,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 15,
+        "opponentDamage": 0,
+        "playerHealth": 19,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 12,
+        "opponentDamage": 0,
+        "playerHealth": 7,
+        "opponentHealth": 100,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "HEAVY_HANDS",
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "THE_FINISHER",
+        "bonusType": "SIG_FINISHER_STRIKE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "KILLER_INSTINCT",
+        "bonusType": "SIG_KILLER_INSTINCT",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "striker-vs-grappler-5r::defense_R": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 7,
+    "opponentHealthAfter": 100,
+    "playerStaminaAfter": 42,
+    "rngDraws": 36,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 25,
+        "opponentDamage": 0,
+        "playerHealth": 75,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 22,
+        "opponentDamage": 0,
+        "playerHealth": 53,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 19,
+        "opponentDamage": 0,
+        "playerHealth": 34,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 15,
+        "opponentDamage": 0,
+        "playerHealth": 19,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 12,
+        "opponentDamage": 0,
+        "playerHealth": 7,
+        "opponentHealth": 100,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "GRANITE_JAW",
+        "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 5
+      },
+      {
+        "moveId": "NEVER_TAP",
+        "bonusType": "ESCAPE_PROBABILITY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "striker-vs-grappler-5r::grapple_L": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 7,
+    "opponentHealthAfter": 100,
+    "playerStaminaAfter": 44,
+    "rngDraws": 36,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 25,
+        "opponentDamage": 0,
+        "playerHealth": 75,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 22,
+        "opponentDamage": 0,
+        "playerHealth": 53,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 19,
+        "opponentDamage": 0,
+        "playerHealth": 34,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 15,
+        "opponentDamage": 0,
+        "playerHealth": 19,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 12,
+        "opponentDamage": 0,
+        "playerHealth": 7,
+        "opponentHealth": 100,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "SPRAWL_INSTINCT",
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "moveId": "MOUNT_REAPER",
+        "bonusType": "GNP_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "IRON_RECOVERY",
+        "bonusType": "SIG_IRON_RECOVERY",
+        "triggered": true,
+        "triggerCount": 1
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "striker-vs-grappler-5r::tempo_U": {
+    "outcome": "Loss (submission)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 7,
+    "opponentHealthAfter": 100,
+    "playerStaminaAfter": 43,
+    "rngDraws": 37,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 25,
+        "opponentDamage": 0,
+        "playerHealth": 75,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 22,
+        "opponentDamage": 0,
+        "playerHealth": 53,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 19,
+        "opponentDamage": 0,
+        "playerHealth": 34,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 15,
+        "opponentDamage": 0,
+        "playerHealth": 19,
+        "opponentHealth": 100,
+        "campCommentary": [
+          "campCardio"
+        ]
+      },
+      {
+        "round": 5,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 12,
+        "opponentDamage": 0,
+        "playerHealth": 7,
+        "opponentHealth": 100,
+        "campCommentary": [
+          "campCardio"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "BODY_SNATCHER",
+        "bonusType": "BODY_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "CLINCH_KILLER",
+        "bonusType": "CLINCH_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "SECOND_WIND",
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": true,
+        "triggerCount": 2
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "grappler-mirror-sub-hunt-5r::none": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 53,
+    "opponentHealthAfter": 87,
+    "playerStaminaAfter": 52,
+    "rngDraws": 47,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 5,
+        "playerHealth": 96,
+        "opponentHealth": 95,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 4,
+        "playerHealth": 92,
+        "opponentHealth": 91,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 4,
+        "playerHealth": 88,
+        "opponentHealth": 87,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 19,
+        "opponentDamage": 0,
+        "playerHealth": 69,
+        "opponentHealth": 87,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 16,
+        "opponentDamage": 0,
+        "playerHealth": 53,
+        "opponentHealth": 87,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [],
+    "sessionBonuses": []
+  },
+  "grappler-mirror-sub-hunt-5r::offense_L": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 53,
+    "opponentHealthAfter": 86,
+    "playerStaminaAfter": 52,
+    "rngDraws": 47,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 6,
+        "playerHealth": 96,
+        "opponentHealth": 94,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 4,
+        "playerHealth": 92,
+        "opponentHealth": 90,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 4,
+        "playerHealth": 88,
+        "opponentHealth": 86,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 4,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 19,
+        "opponentDamage": 0,
+        "playerHealth": 69,
+        "opponentHealth": 86,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 16,
+        "opponentDamage": 0,
+        "playerHealth": 53,
+        "opponentHealth": 86,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "HEAVY_HANDS",
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 3
+      },
+      {
+        "moveId": "THE_FINISHER",
+        "bonusType": "SIG_FINISHER_STRIKE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "KILLER_INSTINCT",
+        "bonusType": "SIG_KILLER_INSTINCT",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "grappler-mirror-sub-hunt-5r::defense_R": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 55,
+    "opponentHealthAfter": 87,
+    "playerStaminaAfter": 50,
+    "rngDraws": 49,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 5,
+        "playerHealth": 96,
+        "opponentHealth": 95,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 4,
+        "playerHealth": 92,
+        "opponentHealth": 91,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 3,
+        "opponentDamage": 4,
+        "playerHealth": 89,
+        "opponentHealth": 87,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 19,
+        "opponentDamage": 0,
+        "playerHealth": 70,
+        "opponentHealth": 87,
+        "campCommentary": [
+          "campSubmissionEscape"
+        ]
+      },
+      {
+        "round": 5,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 15,
+        "opponentDamage": 0,
+        "playerHealth": 55,
+        "opponentHealth": 87,
+        "campCommentary": [
+          "campSubmissionEscape"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "GRANITE_JAW",
+        "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 5
+      },
+      {
+        "moveId": "NEVER_TAP",
+        "bonusType": "ESCAPE_PROBABILITY",
+        "triggered": true,
+        "triggerCount": 2
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "grappler-mirror-sub-hunt-5r::grapple_L": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 53,
+    "opponentHealthAfter": 87,
+    "playerStaminaAfter": 52,
+    "rngDraws": 47,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 5,
+        "playerHealth": 96,
+        "opponentHealth": 95,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 4,
+        "playerHealth": 92,
+        "opponentHealth": 91,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 4,
+        "playerHealth": 88,
+        "opponentHealth": 87,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 19,
+        "opponentDamage": 0,
+        "playerHealth": 69,
+        "opponentHealth": 87,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 16,
+        "opponentDamage": 0,
+        "playerHealth": 53,
+        "opponentHealth": 87,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "SPRAWL_INSTINCT",
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "MOUNT_REAPER",
+        "bonusType": "GNP_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "IRON_RECOVERY",
+        "bonusType": "SIG_IRON_RECOVERY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "grappler-mirror-sub-hunt-5r::tempo_U": {
+    "outcome": "Loss (submission)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 32,
+    "opponentHealthAfter": 94,
+    "playerStaminaAfter": 62,
+    "rngDraws": 34,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 6,
+        "playerHealth": 96,
+        "opponentHealth": 94,
+        "campCommentary": [
+          "campBodyShot",
+          "campClinchControl"
+        ]
+      },
+      {
+        "round": 2,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 24,
+        "opponentDamage": 0,
+        "playerHealth": 72,
+        "opponentHealth": 94,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 21,
+        "opponentDamage": 0,
+        "playerHealth": 51,
+        "opponentHealth": 94,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Stuck on bottom; opponent grinds.",
+        "grapplingControl": -1,
+        "playerDamage": 19,
+        "opponentDamage": 0,
+        "playerHealth": 32,
+        "opponentHealth": 94,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "BODY_SNATCHER",
+        "bonusType": "BODY_DAMAGE",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "CLINCH_KILLER",
+        "bonusType": "CLINCH_DAMAGE",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "SECOND_WIND",
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "brawler-vs-striker-3r::none": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 47,
+    "opponentHealthAfter": 56,
+    "playerStaminaAfter": 64,
+    "rngDraws": 29,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 18,
+        "opponentDamage": 17,
+        "playerHealth": 82,
+        "opponentHealth": 83,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 20,
+        "opponentDamage": 14,
+        "playerHealth": 62,
+        "opponentHealth": 69,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 13,
+        "playerHealth": 47,
+        "opponentHealth": 56,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [],
+    "sessionBonuses": []
+  },
+  "brawler-vs-striker-3r::offense_L": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 47,
+    "opponentHealthAfter": 54,
+    "playerStaminaAfter": 64,
+    "rngDraws": 32,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 18,
+        "opponentDamage": 18,
+        "playerHealth": 82,
+        "opponentHealth": 82,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 20,
+        "opponentDamage": 15,
+        "playerHealth": 62,
+        "opponentHealth": 67,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 13,
+        "playerHealth": 47,
+        "opponentHealth": 54,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "HEAVY_HANDS",
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 3
+      },
+      {
+        "moveId": "THE_FINISHER",
+        "bonusType": "SIG_FINISHER_STRIKE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "KILLER_INSTINCT",
+        "bonusType": "SIG_KILLER_INSTINCT",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "brawler-vs-striker-3r::defense_R": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 49,
+    "opponentHealthAfter": 56,
+    "playerStaminaAfter": 64,
+    "rngDraws": 32,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 17,
+        "opponentDamage": 17,
+        "playerHealth": 83,
+        "opponentHealth": 83,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 19,
+        "opponentDamage": 14,
+        "playerHealth": 64,
+        "opponentHealth": 69,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 13,
+        "playerHealth": 49,
+        "opponentHealth": 56,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "GRANITE_JAW",
+        "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 3
+      },
+      {
+        "moveId": "NEVER_TAP",
+        "bonusType": "ESCAPE_PROBABILITY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "brawler-vs-striker-3r::grapple_L": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 47,
+    "opponentHealthAfter": 56,
+    "playerStaminaAfter": 64,
+    "rngDraws": 29,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 18,
+        "opponentDamage": 17,
+        "playerHealth": 82,
+        "opponentHealth": 83,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 20,
+        "opponentDamage": 14,
+        "playerHealth": 62,
+        "opponentHealth": 69,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 13,
+        "playerHealth": 47,
+        "opponentHealth": 56,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "SPRAWL_INSTINCT",
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "MOUNT_REAPER",
+        "bonusType": "GNP_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "IRON_RECOVERY",
+        "bonusType": "SIG_IRON_RECOVERY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "brawler-vs-striker-3r::tempo_U": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 54,
+    "opponentHealthAfter": 57,
+    "playerStaminaAfter": 67,
+    "rngDraws": 40,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 18,
+        "opponentDamage": 17,
+        "playerHealth": 82,
+        "opponentHealth": 83,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 15,
+        "playerHealth": 67,
+        "opponentHealth": 68,
+        "campCommentary": [
+          "campBodyShot"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 13,
+        "opponentDamage": 11,
+        "playerHealth": 54,
+        "opponentHealth": 57,
+        "campCommentary": [
+          "campClinchControl"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "BODY_SNATCHER",
+        "bonusType": "BODY_DAMAGE",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "CLINCH_KILLER",
+        "bonusType": "CLINCH_DAMAGE",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "SECOND_WIND",
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "default-mirror-5r::none": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 74,
+    "opponentHealthAfter": 73,
+    "playerStaminaAfter": 54,
+    "rngDraws": 50,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 6,
+        "opponentDamage": 7,
+        "playerHealth": 94,
+        "opponentHealth": 93,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 6,
+        "opponentDamage": 6,
+        "playerHealth": 88,
+        "opponentHealth": 87,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 5,
+        "opponentDamage": 5,
+        "playerHealth": 83,
+        "opponentHealth": 82,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 5,
+        "opponentDamage": 5,
+        "playerHealth": 78,
+        "opponentHealth": 77,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 4,
+        "playerHealth": 74,
+        "opponentHealth": 73,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [],
+    "sessionBonuses": []
+  },
+  "default-mirror-5r::offense_L": {
+    "outcome": "Decision (split)",
+    "winner": "player",
+    "finishCause": null,
+    "playerHealthAfter": 74,
+    "opponentHealthAfter": 72,
+    "playerStaminaAfter": 54,
+    "rngDraws": 47,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 6,
+        "opponentDamage": 7,
+        "playerHealth": 94,
+        "opponentHealth": 93,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 6,
+        "opponentDamage": 7,
+        "playerHealth": 88,
+        "opponentHealth": 86,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 5,
+        "opponentDamage": 5,
+        "playerHealth": 83,
+        "opponentHealth": 81,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 5,
+        "opponentDamage": 5,
+        "playerHealth": 78,
+        "opponentHealth": 76,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 4,
+        "playerHealth": 74,
+        "opponentHealth": 72,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "HEAVY_HANDS",
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 5
+      },
+      {
+        "moveId": "THE_FINISHER",
+        "bonusType": "SIG_FINISHER_STRIKE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "KILLER_INSTINCT",
+        "bonusType": "SIG_KILLER_INSTINCT",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "default-mirror-5r::defense_R": {
+    "outcome": "Decision (split)",
+    "winner": "player",
+    "finishCause": null,
+    "playerHealthAfter": 75,
+    "opponentHealthAfter": 73,
+    "playerStaminaAfter": 54,
+    "rngDraws": 47,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 6,
+        "opponentDamage": 7,
+        "playerHealth": 94,
+        "opponentHealth": 93,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 5,
+        "opponentDamage": 6,
+        "playerHealth": 89,
+        "opponentHealth": 87,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 5,
+        "opponentDamage": 5,
+        "playerHealth": 84,
+        "opponentHealth": 82,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 5,
+        "opponentDamage": 5,
+        "playerHealth": 79,
+        "opponentHealth": 77,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 4,
+        "playerHealth": 75,
+        "opponentHealth": 73,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "GRANITE_JAW",
+        "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 5
+      },
+      {
+        "moveId": "NEVER_TAP",
+        "bonusType": "ESCAPE_PROBABILITY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "default-mirror-5r::grapple_L": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 74,
+    "opponentHealthAfter": 73,
+    "playerStaminaAfter": 52,
+    "rngDraws": 51,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 6,
+        "opponentDamage": 7,
+        "playerHealth": 94,
+        "opponentHealth": 93,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 6,
+        "opponentDamage": 6,
+        "playerHealth": 88,
+        "opponentHealth": 87,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 5,
+        "opponentDamage": 5,
+        "playerHealth": 83,
+        "opponentHealth": 82,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 5,
+        "opponentDamage": 5,
+        "playerHealth": 78,
+        "opponentHealth": 77,
+        "campCommentary": [
+          "campTakedownDefence"
+        ]
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 4,
+        "playerHealth": 74,
+        "opponentHealth": 73,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "SPRAWL_INSTINCT",
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "MOUNT_REAPER",
+        "bonusType": "GNP_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "IRON_RECOVERY",
+        "bonusType": "SIG_IRON_RECOVERY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "default-mirror-5r::tempo_U": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 74,
+    "opponentHealthAfter": 74,
+    "playerStaminaAfter": 52,
+    "rngDraws": 61,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 6,
+        "opponentDamage": 7,
+        "playerHealth": 94,
+        "opponentHealth": 93,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 6,
+        "opponentDamage": 6,
+        "playerHealth": 88,
+        "opponentHealth": 87,
+        "campCommentary": [
+          "campBodyShot"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 5,
+        "opponentDamage": 4,
+        "playerHealth": 83,
+        "opponentHealth": 83,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 5,
+        "opponentDamage": 5,
+        "playerHealth": 78,
+        "opponentHealth": 78,
+        "campCommentary": [
+          "campBodyShot"
+        ]
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 4,
+        "opponentDamage": 4,
+        "playerHealth": 74,
+        "opponentHealth": 74,
+        "campCommentary": [
+          "campCardio",
+          "campClinchControl"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "BODY_SNATCHER",
+        "bonusType": "BODY_DAMAGE",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "moveId": "CLINCH_KILLER",
+        "bonusType": "CLINCH_DAMAGE",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "SECOND_WIND",
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": true,
+        "triggerCount": 1
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "grappler-vs-brawler-ironwill-5r::none": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 39,
+    "opponentHealthAfter": 72,
+    "playerStaminaAfter": 48,
+    "rngDraws": 45,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 6,
+        "playerHealth": 85,
+        "opponentHealth": 94,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 7,
+        "playerHealth": 70,
+        "opponentHealth": 87,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 12,
+        "opponentDamage": 5,
+        "playerHealth": 58,
+        "opponentHealth": 82,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 10,
+        "opponentDamage": 6,
+        "playerHealth": 48,
+        "opponentHealth": 76,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 9,
+        "opponentDamage": 4,
+        "playerHealth": 39,
+        "opponentHealth": 72,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [],
+    "sessionBonuses": []
+  },
+  "grappler-vs-brawler-ironwill-5r::offense_L": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 39,
+    "opponentHealthAfter": 72,
+    "playerStaminaAfter": 48,
+    "rngDraws": 45,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 6,
+        "playerHealth": 85,
+        "opponentHealth": 94,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 7,
+        "playerHealth": 70,
+        "opponentHealth": 87,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 12,
+        "opponentDamage": 5,
+        "playerHealth": 58,
+        "opponentHealth": 82,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 10,
+        "opponentDamage": 6,
+        "playerHealth": 48,
+        "opponentHealth": 76,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 9,
+        "opponentDamage": 4,
+        "playerHealth": 39,
+        "opponentHealth": 72,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "HEAVY_HANDS",
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 5
+      },
+      {
+        "moveId": "THE_FINISHER",
+        "bonusType": "SIG_FINISHER_STRIKE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "KILLER_INSTINCT",
+        "bonusType": "SIG_KILLER_INSTINCT",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "grappler-vs-brawler-ironwill-5r::defense_R": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 43,
+    "opponentHealthAfter": 71,
+    "playerStaminaAfter": 50,
+    "rngDraws": 43,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 14,
+        "opponentDamage": 6,
+        "playerHealth": 86,
+        "opponentHealth": 94,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 14,
+        "opponentDamage": 7,
+        "playerHealth": 72,
+        "opponentHealth": 87,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 12,
+        "opponentDamage": 5,
+        "playerHealth": 60,
+        "opponentHealth": 82,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 9,
+        "opponentDamage": 6,
+        "playerHealth": 51,
+        "opponentHealth": 76,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 8,
+        "opponentDamage": 5,
+        "playerHealth": 43,
+        "opponentHealth": 71,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "GRANITE_JAW",
+        "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 5
+      },
+      {
+        "moveId": "NEVER_TAP",
+        "bonusType": "ESCAPE_PROBABILITY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "grappler-vs-brawler-ironwill-5r::grapple_L": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 39,
+    "opponentHealthAfter": 72,
+    "playerStaminaAfter": 48,
+    "rngDraws": 45,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 6,
+        "playerHealth": 85,
+        "opponentHealth": 94,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 7,
+        "playerHealth": 70,
+        "opponentHealth": 87,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 12,
+        "opponentDamage": 5,
+        "playerHealth": 58,
+        "opponentHealth": 82,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 10,
+        "opponentDamage": 6,
+        "playerHealth": 48,
+        "opponentHealth": 76,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 9,
+        "opponentDamage": 4,
+        "playerHealth": 39,
+        "opponentHealth": 72,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "SPRAWL_INSTINCT",
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "MOUNT_REAPER",
+        "bonusType": "GNP_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "IRON_RECOVERY",
+        "bonusType": "SIG_IRON_RECOVERY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "grappler-vs-brawler-ironwill-5r::tempo_U": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 42,
+    "opponentHealthAfter": 73,
+    "playerStaminaAfter": 43,
+    "rngDraws": 61,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 7,
+        "playerHealth": 85,
+        "opponentHealth": 93,
+        "campCommentary": [
+          "campBodyShot",
+          "campClinchControl"
+        ]
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 15,
+        "opponentDamage": 7,
+        "playerHealth": 70,
+        "opponentHealth": 86,
+        "campCommentary": [
+          "campClinchControl"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 10,
+        "opponentDamage": 5,
+        "playerHealth": 60,
+        "opponentHealth": 81,
+        "campCommentary": []
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 11,
+        "opponentDamage": 4,
+        "playerHealth": 49,
+        "opponentHealth": 77,
+        "campCommentary": [
+          "campCardio"
+        ]
+      },
+      {
+        "round": 5,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 7,
+        "opponentDamage": 4,
+        "playerHealth": 42,
+        "opponentHealth": 73,
+        "campCommentary": [
+          "campCardio",
+          "campBodyShot"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "BODY_SNATCHER",
+        "bonusType": "BODY_DAMAGE",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "moveId": "CLINCH_KILLER",
+        "bonusType": "CLINCH_DAMAGE",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "moveId": "SECOND_WIND",
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": true,
+        "triggerCount": 2
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "striker-vs-grappler-with-camp-3r::none": {
+    "outcome": "Decision (unanimous)",
+    "winner": "player",
+    "finishCause": null,
+    "playerHealthAfter": 68,
+    "opponentHealthAfter": 73,
+    "playerStaminaAfter": 70,
+    "rngDraws": 25,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 26,
+        "opponentDamage": 0,
+        "playerHealth": 74,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 3,
+        "opponentDamage": 14,
+        "playerHealth": 71,
+        "opponentHealth": 86,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 3,
+        "opponentDamage": 13,
+        "playerHealth": 68,
+        "opponentHealth": 73,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      }
+    ],
+    "moveBonuses": [],
+    "sessionBonuses": [
+      {
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ]
+  },
+  "striker-vs-grappler-with-camp-3r::offense_L": {
+    "outcome": "Decision (unanimous)",
+    "winner": "player",
+    "finishCause": null,
+    "playerHealthAfter": 68,
+    "opponentHealthAfter": 72,
+    "playerStaminaAfter": 70,
+    "rngDraws": 25,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 26,
+        "opponentDamage": 0,
+        "playerHealth": 74,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 3,
+        "opponentDamage": 14,
+        "playerHealth": 71,
+        "opponentHealth": 86,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 3,
+        "opponentDamage": 14,
+        "playerHealth": 68,
+        "opponentHealth": 72,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "HEAVY_HANDS",
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "moveId": "THE_FINISHER",
+        "bonusType": "SIG_FINISHER_STRIKE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "KILLER_INSTINCT",
+        "bonusType": "SIG_KILLER_INSTINCT",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": [
+      {
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ]
+  },
+  "striker-vs-grappler-with-camp-3r::defense_R": {
+    "outcome": "Decision (unanimous)",
+    "winner": "player",
+    "finishCause": null,
+    "playerHealthAfter": 69,
+    "opponentHealthAfter": 73,
+    "playerStaminaAfter": 70,
+    "rngDraws": 25,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 26,
+        "opponentDamage": 0,
+        "playerHealth": 74,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 3,
+        "opponentDamage": 14,
+        "playerHealth": 71,
+        "opponentHealth": 86,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 2,
+        "opponentDamage": 13,
+        "playerHealth": 69,
+        "opponentHealth": 73,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "GRANITE_JAW",
+        "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 3
+      },
+      {
+        "moveId": "NEVER_TAP",
+        "bonusType": "ESCAPE_PROBABILITY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": [
+      {
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ]
+  },
+  "striker-vs-grappler-with-camp-3r::grapple_L": {
+    "outcome": "Decision (unanimous)",
+    "winner": "player",
+    "finishCause": null,
+    "playerHealthAfter": 68,
+    "opponentHealthAfter": 73,
+    "playerStaminaAfter": 70,
+    "rngDraws": 25,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 26,
+        "opponentDamage": 0,
+        "playerHealth": 74,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 3,
+        "opponentDamage": 14,
+        "playerHealth": 71,
+        "opponentHealth": 86,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 3,
+        "opponentDamage": 13,
+        "playerHealth": 68,
+        "opponentHealth": 73,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "SPRAWL_INSTINCT",
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "MOUNT_REAPER",
+        "bonusType": "GNP_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "IRON_RECOVERY",
+        "bonusType": "SIG_IRON_RECOVERY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": [
+      {
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ]
+  },
+  "striker-vs-grappler-with-camp-3r::tempo_U": {
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
+    "finishCause": null,
+    "playerHealthAfter": 50,
+    "opponentHealthAfter": 86,
+    "playerStaminaAfter": 71,
+    "rngDraws": 27,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 26,
+        "opponentDamage": 0,
+        "playerHealth": 74,
+        "opponentHealth": 100,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 3,
+        "opponentDamage": 14,
+        "playerHealth": 71,
+        "opponentHealth": 86,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Opponent took you down.",
+        "grapplingControl": -1,
+        "playerDamage": 21,
+        "opponentDamage": 0,
+        "playerHealth": 50,
+        "opponentHealth": 86,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "BODY_SNATCHER",
+        "bonusType": "BODY_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "CLINCH_KILLER",
+        "bonusType": "CLINCH_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "SECOND_WIND",
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": [
+      {
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ]
+  },
+  "dominant-wrestler-5r::none": {
+    "outcome": "Submission",
+    "winner": "player",
+    "finishCause": "submission",
+    "playerHealthAfter": 100,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 72,
+    "rngDraws": 27,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 40,
+        "playerHealth": 100,
+        "opponentHealth": 60,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 36,
+        "playerHealth": 100,
+        "opponentHealth": 24,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 32,
+        "playerHealth": 100,
+        "opponentHealth": 0,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [],
+    "sessionBonuses": []
+  },
+  "dominant-wrestler-5r::offense_L": {
+    "outcome": "Submission",
+    "winner": "player",
+    "finishCause": "submission",
+    "playerHealthAfter": 100,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 72,
+    "rngDraws": 27,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 40,
+        "playerHealth": 100,
+        "opponentHealth": 60,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 36,
+        "playerHealth": 100,
+        "opponentHealth": 24,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 32,
+        "playerHealth": 100,
+        "opponentHealth": 0,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "HEAVY_HANDS",
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "THE_FINISHER",
+        "bonusType": "SIG_FINISHER_STRIKE",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "KILLER_INSTINCT",
+        "bonusType": "SIG_KILLER_INSTINCT",
+        "triggered": true,
+        "triggerCount": 1
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "dominant-wrestler-5r::defense_R": {
+    "outcome": "Submission",
+    "winner": "player",
+    "finishCause": "submission",
+    "playerHealthAfter": 100,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 72,
+    "rngDraws": 27,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 40,
+        "playerHealth": 100,
+        "opponentHealth": 60,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 36,
+        "playerHealth": 100,
+        "opponentHealth": 24,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 32,
+        "playerHealth": 100,
+        "opponentHealth": 0,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "GRANITE_JAW",
+        "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 3
+      },
+      {
+        "moveId": "NEVER_TAP",
+        "bonusType": "ESCAPE_PROBABILITY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "dominant-wrestler-5r::grapple_L": {
+    "outcome": "KO/TKO",
+    "winner": "player",
+    "finishCause": "tko",
+    "playerHealthAfter": 100,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 78,
+    "rngDraws": 20,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 47,
+        "playerHealth": 100,
+        "opponentHealth": 53,
+        "campCommentary": [
+          "campGnpPosture"
+        ]
+      },
+      {
+        "round": 2,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 41,
+        "playerHealth": 100,
+        "opponentHealth": 12,
+        "campCommentary": [
+          "campGnpPosture"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "SPRAWL_INSTINCT",
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "MOUNT_REAPER",
+        "bonusType": "GNP_DAMAGE",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "moveId": "IRON_RECOVERY",
+        "bonusType": "SIG_IRON_RECOVERY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "dominant-wrestler-5r::tempo_U": {
+    "outcome": "Submission",
+    "winner": "player",
+    "finishCause": "submission",
+    "playerHealthAfter": 100,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 72,
+    "rngDraws": 27,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 40,
+        "playerHealth": 100,
+        "opponentHealth": 60,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 36,
+        "playerHealth": 100,
+        "opponentHealth": 24,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 32,
+        "playerHealth": 100,
+        "opponentHealth": 0,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "BODY_SNATCHER",
+        "bonusType": "BODY_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "CLINCH_KILLER",
+        "bonusType": "CLINCH_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "SECOND_WIND",
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "dominant-striker-5r::none": {
+    "outcome": "KO/TKO",
+    "winner": "player",
+    "finishCause": "tko",
+    "playerHealthAfter": 100,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 64,
+    "rngDraws": 30,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 22,
+        "playerHealth": 100,
+        "opponentHealth": 78,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 0,
+        "opponentDamage": 40,
+        "playerHealth": 100,
+        "opponentHealth": 38,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 0,
+        "opponentDamage": 30,
+        "playerHealth": 100,
+        "opponentHealth": 8,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [],
+    "sessionBonuses": []
+  },
+  "dominant-striker-5r::offense_L": {
+    "outcome": "KO/TKO",
+    "winner": "player",
+    "finishCause": "tko",
+    "playerHealthAfter": 100,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 64,
+    "rngDraws": 30,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 22,
+        "playerHealth": 100,
+        "opponentHealth": 78,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 0,
+        "opponentDamage": 42,
+        "playerHealth": 100,
+        "opponentHealth": 36,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 0,
+        "opponentDamage": 31,
+        "playerHealth": 100,
+        "opponentHealth": 5,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "HEAVY_HANDS",
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "moveId": "THE_FINISHER",
+        "bonusType": "SIG_FINISHER_STRIKE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "KILLER_INSTINCT",
+        "bonusType": "SIG_KILLER_INSTINCT",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "dominant-striker-5r::defense_R": {
+    "outcome": "KO/TKO",
+    "winner": "player",
+    "finishCause": "tko",
+    "playerHealthAfter": 100,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 64,
+    "rngDraws": 30,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 22,
+        "playerHealth": 100,
+        "opponentHealth": 78,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 0,
+        "opponentDamage": 40,
+        "playerHealth": 100,
+        "opponentHealth": 38,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 0,
+        "opponentDamage": 30,
+        "playerHealth": 100,
+        "opponentHealth": 8,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "GRANITE_JAW",
+        "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 3
+      },
+      {
+        "moveId": "NEVER_TAP",
+        "bonusType": "ESCAPE_PROBABILITY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "dominant-striker-5r::grapple_L": {
+    "outcome": "KO/TKO",
+    "winner": "player",
+    "finishCause": "ko",
+    "playerHealthAfter": 100,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 61,
+    "rngDraws": 36,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 26,
+        "playerHealth": 100,
+        "opponentHealth": 74,
+        "campCommentary": [
+          "campGnpPosture"
+        ]
+      },
+      {
+        "round": 2,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 23,
+        "playerHealth": 100,
+        "opponentHealth": 51,
+        "campCommentary": [
+          "campGnpPosture"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 21,
+        "playerHealth": 100,
+        "opponentHealth": 30,
+        "campCommentary": [
+          "campGnpPosture"
+        ]
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 0,
+        "opponentDamage": 34,
+        "playerHealth": 100,
+        "opponentHealth": 0,
+        "campCommentary": [
+          "campTakedownDefence"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "SPRAWL_INSTINCT",
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "MOUNT_REAPER",
+        "bonusType": "GNP_DAMAGE",
+        "triggered": true,
+        "triggerCount": 3
+      },
+      {
+        "moveId": "IRON_RECOVERY",
+        "bonusType": "SIG_IRON_RECOVERY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "dominant-striker-5r::tempo_U": {
+    "outcome": "KO/TKO",
+    "winner": "player",
+    "finishCause": "ko",
+    "playerHealthAfter": 100,
+    "opponentHealthAfter": 0,
+    "playerStaminaAfter": 60,
+    "rngDraws": 46,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 22,
+        "playerHealth": 100,
+        "opponentHealth": 78,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 0,
+        "opponentDamage": 43,
+        "playerHealth": 100,
+        "opponentHealth": 35,
+        "campCommentary": [
+          "campClinchControl"
+        ]
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 0,
+        "opponentDamage": 31,
+        "playerHealth": 100,
+        "opponentHealth": 4,
+        "campCommentary": [
+          "campBodyShot"
+        ]
+      },
+      {
+        "round": 4,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 0,
+        "opponentDamage": 27,
+        "playerHealth": 100,
+        "opponentHealth": 0,
+        "campCommentary": [
+          "campCardio"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "BODY_SNATCHER",
+        "bonusType": "BODY_DAMAGE",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "CLINCH_KILLER",
+        "bonusType": "CLINCH_DAMAGE",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "SECOND_WIND",
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": true,
+        "triggerCount": 1
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "dominant-sub-hunter-3r::none": {
+    "outcome": "Decision (unanimous)",
+    "winner": "player",
+    "finishCause": null,
+    "playerHealthAfter": 86,
+    "opponentHealthAfter": 38,
+    "playerStaminaAfter": 75,
+    "rngDraws": 23,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 29,
+        "playerHealth": 100,
+        "opponentHealth": 71,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 27,
+        "playerHealth": 100,
+        "opponentHealth": 44,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 14,
+        "opponentDamage": 6,
+        "playerHealth": 86,
+        "opponentHealth": 38,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [],
+    "sessionBonuses": []
+  },
+  "dominant-sub-hunter-3r::offense_L": {
+    "outcome": "Decision (unanimous)",
+    "winner": "player",
+    "finishCause": null,
+    "playerHealthAfter": 86,
+    "opponentHealthAfter": 38,
+    "playerStaminaAfter": 75,
+    "rngDraws": 23,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 29,
+        "playerHealth": 100,
+        "opponentHealth": 71,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 27,
+        "playerHealth": 100,
+        "opponentHealth": 44,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 14,
+        "opponentDamage": 6,
+        "playerHealth": 86,
+        "opponentHealth": 38,
+        "campCommentary": [
+          "campStrikingAccuracy"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "HEAVY_HANDS",
+        "bonusType": "STRIKE_DAMAGE",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "THE_FINISHER",
+        "bonusType": "SIG_FINISHER_STRIKE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "KILLER_INSTINCT",
+        "bonusType": "SIG_KILLER_INSTINCT",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "dominant-sub-hunter-3r::defense_R": {
+    "outcome": "Decision (unanimous)",
+    "winner": "player",
+    "finishCause": null,
+    "playerHealthAfter": 87,
+    "opponentHealthAfter": 38,
+    "playerStaminaAfter": 75,
+    "rngDraws": 23,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 29,
+        "playerHealth": 100,
+        "opponentHealth": 71,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 27,
+        "playerHealth": 100,
+        "opponentHealth": 44,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 13,
+        "opponentDamage": 6,
+        "playerHealth": 87,
+        "opponentHealth": 38,
+        "campCommentary": []
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "GRANITE_JAW",
+        "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 3
+      },
+      {
+        "moveId": "NEVER_TAP",
+        "bonusType": "ESCAPE_PROBABILITY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "dominant-sub-hunter-3r::grapple_L": {
+    "outcome": "Submission",
+    "winner": "player",
+    "finishCause": null,
+    "playerHealthAfter": 100,
+    "opponentHealthAfter": 37,
+    "playerStaminaAfter": 79,
+    "rngDraws": 17,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 34,
+        "playerHealth": 100,
+        "opponentHealth": 66,
+        "campCommentary": [
+          "campGnpPosture"
+        ]
+      },
+      {
+        "round": 2,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 29,
+        "playerHealth": 100,
+        "opponentHealth": 37,
+        "campCommentary": [
+          "campGnpPosture"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "SPRAWL_INSTINCT",
+        "bonusType": "SPRAWL_SUCCESS",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "MOUNT_REAPER",
+        "bonusType": "GNP_DAMAGE",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "moveId": "IRON_RECOVERY",
+        "bonusType": "SIG_IRON_RECOVERY",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  },
+  "dominant-sub-hunter-3r::tempo_U": {
+    "outcome": "Decision (unanimous)",
+    "winner": "player",
+    "finishCause": null,
+    "playerHealthAfter": 86,
+    "opponentHealthAfter": 38,
+    "playerStaminaAfter": 75,
+    "rngDraws": 26,
+    "rounds": [
+      {
+        "round": 1,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 29,
+        "playerHealth": 100,
+        "opponentHealth": 71,
+        "campCommentary": []
+      },
+      {
+        "round": 2,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 27,
+        "playerHealth": 100,
+        "opponentHealth": 44,
+        "campCommentary": []
+      },
+      {
+        "round": 3,
+        "event": "Striking exchange.",
+        "grapplingControl": 0,
+        "playerDamage": 14,
+        "opponentDamage": 6,
+        "playerHealth": 86,
+        "opponentHealth": 38,
+        "campCommentary": [
+          "campClinchControl"
+        ]
+      }
+    ],
+    "moveBonuses": [
+      {
+        "moveId": "BODY_SNATCHER",
+        "bonusType": "BODY_DAMAGE",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "CLINCH_KILLER",
+        "bonusType": "CLINCH_DAMAGE",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
+        "moveId": "SECOND_WIND",
+        "bonusType": "STAMINA_DRAIN",
+        "triggered": false,
+        "triggerCount": 0
+      }
+    ],
+    "sessionBonuses": []
+  }
+}

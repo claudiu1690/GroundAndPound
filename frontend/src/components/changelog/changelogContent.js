@@ -18,6 +18,30 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.2",
+    date: "2026-09-26",
+    major: true,
+    highlights: [
+      "Twelve new Special Moves double the roster to 24, across all four disciplines. Striking gets High Guard, Second Gear and Superman Punch. Wrestling gets Double-Leg Precision, Top Control and Blast Double. Brazilian Jiu-Jitsu gets Frame & Base, Guillotine Choke and Arm Triangle. Conditioning gets Pace Pusher, Deep Waters and Fighting Spirit.",
+      "Three new Signatures, each a one-shot moment per fight. Superman Punch is a first-round power surge. Blast Double makes your first takedown hit harder. Arm Triangle means the first time you get on top, you hunt the tap.",
+      "Coaches hired from now on know more. A Legendary coach covers his whole expanded discipline, up to seven moves. Coaches already on your roster keep the list on their card, so what you read at hire is what you get.",
+      "Seven moves have new names. Same moves, same numbers, same cards: Sprawl Instinct is now Sprawl, Never Tap is Hip Escape, Clinch Killer is Dirty Boxing, Mount Reaper is Full Mount, The Finisher is Overhand Right, Iron Recovery is Rubber Guard, and Killer Instinct is Crucifix.",
+      "A new Catalog sits at the top of the Special Moves tab. All 24 moves in one place: what each one is worth at every rarity, which ones you own and at what rarity, and how to get the rest, down to which coach teaches it and at what rank.",
+    ],
+    sections: {
+      changed: [
+        "Drops can now land on any of 24 moves, so each one turns up about half as often as before. Coach teaching is how you aim at the move you actually want.",
+        "The Boogeyman's Ambush now boosts the new proc moves too, under the same cap as before.",
+      ],
+      fixed: [],
+      balance: [
+        "Second Gear and Deep Waters ship at about half strength. They stack with Heavy Hands on the same punch, and the three together swung fights past the limit we hold every loadout to.",
+        "Pace Pusher was cut to under a third of its first draft after testing. A single Legendary copy swung mirror fights by more than any other passive in the game, so it now sits in line with the rest.",
+        "Fighting Spirit starts deliberately small. Nothing else in the game touches knockdown odds this way, so it ships cautious and will be revisited with real fight data.",
+      ],
+    },
+  },
+  {
     version: "2.1",
     date: "2026-09-25",
     major: false,

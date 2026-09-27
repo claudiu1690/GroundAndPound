@@ -2320,6 +2320,35 @@
     "loading": "Loading special moves…",
     "retry": "Retry",
     "campLockedHint": "Locked during fight camp",
+    "mode": {
+      "aria": "Special Moves view",
+      "mine": "My Moves",
+      "catalog": "Catalog"
+    },
+    "catalog": {
+      "loading": "Loading the catalog…",
+      "collected": "{owned} / {total} collected",
+      "filters": {
+        "disciplineAria": "Filter by discipline",
+        "typeAria": "Filter by type",
+        "ownershipAria": "Filter by ownership",
+        "all": "All",
+        "owned": "Owned",
+        "notOwned": "Not owned"
+      },
+      "emptyFiltered": "No moves match these filters.",
+      "clearFilters": "Clear filters",
+      "notOwned": "Not owned",
+      "notOwnedAria": "{name}, not owned",
+      "ladder": {
+        "aria": "Rating at each rarity",
+        "yours": "Yours",
+        "notAvailable": "Not available at {rarity}"
+      },
+      "howToGet": {
+        "title": "How to get it"
+      }
+    },
     "header": {
       "eyebrow": "Fighter Identity",
       "title": "Special Moves",

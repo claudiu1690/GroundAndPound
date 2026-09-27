@@ -717,6 +717,21 @@ check is needed at grant time: Common teaches 1 move, Uncommon 2, Rare 3, Legend
 full domain pool. A Common coach's Rank 4 therefore teaches **nothing** — his single move
 already arrived at Rank 2, and Rank 4 pays him out in the archetype perk instead.
 
+**Domain pools since Special Moves v2** (`DOMAIN_TEACH_POOLS`, pool order is teach order; the
+v1 prefix of each pool was never reordered, and the v2 ids were appended so existing coaches'
+stored pools still match):
+
+| Domain | Pool (in slot order) | Size |
+|---|---|---|
+| Striking | HEAVY_HANDS, BODY_SNATCHER, CLINCH_KILLER, THE_FINISHER, HIGH_GUARD, SECOND_GEAR, SUPERMAN_PUNCH | 7 |
+| Wrestling | SPRAWL_INSTINCT, MOUNT_REAPER, KILLER_INSTINCT, DOUBLE_LEG_PRECISION, TOP_CONTROL, BLAST_DOUBLE | 6 |
+| BJJ | NEVER_TAP, VETERAN_IQ, IRON_RECOVERY, FRAME_AND_BASE, GUILLOTINE_CHOKE, ARM_TRIANGLE | 6 |
+| Conditioning | GRANITE_JAW, SECOND_WIND, PACE_PUSHER, DEEP_WATERS, FIGHTING_SPIRIT | 5 |
+
+`TEACH_RANK_BY_SLOT` now covers slots 0 to 6 (slot 0 at Rank 2, every other slot at Rank 4)
+so the longest pool boots. A coach's pool is frozen at generation: coaches hired before v2.2
+keep the shorter list on their card and are never backfilled.
+
 **Rarity of the copy.** `teachRarityFor(coachRarity, move.minRarity)` — the coach's own
 rarity, floored by the move's catalogue minimum. A Rare coach hands over Rare copies; he
 can never hand over a copy below what the catalogue allows for that move, and never above
@@ -1219,7 +1234,7 @@ A **public character** that emerges from the media choices the player already ma
 |---|---|---|---|---|
 | **The Villain** | Hated+Loud | +15% purses; trash-talk fame ×2; callout fame cost ×0.5; listeners +35% (cosmetic) | sponsor payouts −35%; beef-lapse penalty ×2; respect/charity fame ×0.5; **beef-loss heat drain** (−15/axis toward center) | **Bad Blood** — nemesis + active-Beef fights pay ×1.5 fame & +15% purse (stacks on the +30% grudge base) |
 | **The People's Champ** | Loved+Loud | comeback-mode fight bonuses +5%; +1 sponsor slot; +1 appearance-pool slot; listeners +20% | purses only +5%; trash-talk fame ×0.5; upset-loss −150 fame (lose to a lower-rated foe) | **Hometown Hero** — comeback-mode win adds +30% purse (additive) & +250 flat fame |
-| **The Boogeyman** | Hated+Quiet | damage taken −2% (shares the OPPONENT_DAMAGE_REDUCTION lane); +8% purses; cryptic fame ×1.5 | listeners −10%; sponsor payouts −20%; loud-action fame ×0.5 | **Ambush** — equipped **Proc** special moves fire ×1.10 (excludes Sprawl Instinct's lane; capped +0.02/move) |
+| **The Boogeyman** | Hated+Quiet | damage taken −2% (shares the OPPONENT_DAMAGE_REDUCTION lane); +8% purses; cryptic fame ×1.5 | listeners −10%; sponsor payouts −20%; loud-action fame ×0.5 | **Ambush** — equipped **Proc** special moves fire ×1.10 (excludes Sprawl's lane; capped +0.02/move). Since Special Moves v2, Ambush also scales the STRIKE_DAMAGE, SUBMISSION_SUCCESS and FLASH_KO_RESISTANCE proc lanes (Second Gear, Deep Waters, Guillotine Choke, Fighting Spirit), still under the +0.02 cap. |
 | **The Role Model** | Loved+Quiet | sponsor payouts +10%; gym rank-up cost −10%; hospital bills −15%; beef-lapse/weight-miss fame penalties halved | no purse bonus; heat builds 25% slower; Trash a Rival relies on Breaking Character | **Legacy** — documentary & win-milestone fame ×1.5 |
 
 **Modifier shapes:** Type A additive fraction (`full × heatFrac`), Type B reward multiplier (`1 + (mult−1) × heatFrac`), Type C flat counts (+1 sponsor slot / +1 appearance slot — no fractional scale, unlock in full only at heat ≥70). `heatFrac` uses the floored curve above (0.5 at heat 25 → 1.0 at heat 100), so e.g. a fresh Villain already earns beef fame ×1.5 and +7.5% purses.
@@ -1625,7 +1640,7 @@ version constant and no backend endpoint — the version ships inside the bundle
 
 ## 26. Special Moves
 
-Collectible, named techniques (*Granite Jaw*, *Sprawl Instinct*, *The Finisher*) that
+Collectible, named techniques (*Granite Jaw*, *Sprawl*, *Overhand Right*) that
 give a **small, permanent in-fight edge** — a fighter-identity layer on top of stats.
 Distinct from Fight Camp (§9): camp is *per-fight, opponent-reactive prep*; Special
 Moves are *permanent, always-equipped*. **PvE-only** — they do **not** apply in the
@@ -1687,7 +1702,9 @@ existing fight trigger), **Signature** (Rare+ only, one bounded one-shot per fig
   drawn from **that coach's own teach pool** (the moves on his card — already
   breadth-limited by his rarity, so the bias never points at moves he can't teach)
   whenever the pool contains a move available at the rolled rarity, **falling back to the
-  whole catalog** only when it doesn't. Ordering guarantees the bias can never inflate rarity — it only narrows *which*
+  whole catalog** only when it doesn't (in practice this fallback can never trigger: boot
+  rule 12 keeps a Common-minimum move at slot 0 of every pool, so every pool has an eligible
+  move at any rolled rarity and flagship drops are effectively pool-only). Ordering guarantees the bias can never inflate rarity — it only narrows *which*
   move arrives, making drops feel authored ("my striking coach dropped me a striking
   move") and previewing the Phase-2 teaching fantasy. **Open Mat Sparring keeps zero bias**
   (whole catalog, 4%) as the unbiased control, directly comparable to the gym path. Gym
@@ -1700,6 +1717,10 @@ existing fight trigger), **Signature** (Rare+ only, one bounded one-shot per fig
   (`teachRarityFor`), so this channel is how a player *chooses* a Legendary copy instead of
   waiting for one to roll. Granting is idempotent against the coach's stored `taughtMoveIds`,
   and a coach migrated in at Rank 4 has no promotions left, so he teaches nothing.
+  A coach's teach list is frozen at hire; coaches hired before v2.2 keep their shorter lists.
+- **Drop dilution (Special Moves v2):** catalog-wide drops now spread across 24 moves instead
+  of 12, so each individual move drops about half as often. Coach-pool bias and teaching are
+  the ways to aim at a specific move.
 - **Upgrade vs duplicate:** a pull of a *strictly higher* rarity than owned **upgrades** the
   move in place (keeps `acquiredAt`); an equal-or-lower pull is a **duplicate → cash**
   (`fighter.iron`): Common 100 / Uncommon 250 / Rare 600 / Legendary 1,500. **Teaching uses
@@ -1707,7 +1728,7 @@ existing fight trigger), **Signature** (Rare+ only, one bounded one-shot per fig
   `specialMovesOwned`, so a taught move and a dropped move can never diverge.
 - **No leveling, no pity timer, no PvP** (all deliberately cut from v1).
 
-### 26.4 The roster (v1 — 12 moves) & balance
+### 26.4 The roster (v2, 24 moves) & balance
 Values are per-rarity (C/U/R/L). Passive/Proc reuse existing engine `bonusType` branches;
 Signatures use new per-fight, per-move one-shot state. **Numbers below are the post-QA
 balance pass** — a Monte-Carlo sweep against the real engine showed the pre-trim values
@@ -1719,8 +1740,25 @@ Legendary loadout is a **smaller swing than a matched Fight Camp**, consistent w
 A 5th passive concept, **Complete Package** (`ALL_STATS`), was **cut** from v1: the sweep
 proved `ALL_STATS` is untunable in this engine — it responds non-monotonically across styles
 (≈+7 pts on Boxer but ≈0 on BJJ at the same value, then spiking with a tiny bump), so no
-value gives consistent, fair behavior. The roster is intentionally **4 Passive / 5 Proc /
-3 Signature**; `ALL_STATS` remains a valid engine branch but is used by no move.
+value gives consistent, fair behavior. The roster is intentionally **8 Passive / 10 Proc /
+6 Signature**; `ALL_STATS` remains a valid engine branch but is used by no move.
+
+**v2 expansion (2026-09, `docs/special-moves-v2-spec.md`).** Twelve new moves took the
+roster from 12 to 24, and seven of the shipped moves were renamed (display name only; ids,
+art slugs and values unchanged). Balance decisions from the v2 sweeps: Second Gear and Deep
+Waters ship trimmed because they share the STRIKE_DAMAGE lane with Heavy Hands; the trio
+measured +10.2 pts ungated before the trim and +4.4 after. Fighting Spirit ships at half its
+draft values because there is no precedent for a flash-KO lever anywhere in the bonus system.
+Pace Pusher's lane (OPPONENT_STAMINA_DRAIN) is quantized: stamina is kept in whole points
+and the per-round drain is an integer 8 to 13, so the value only acts in rounds where
+drain x value rounds up to an extra point. The draft .16 measured +8.4 pts alone on the
+Boxer mirror (+16.7 on Capoeira); .08 and .06 both measured +5.3 to +6.3 because both fire
+in nearly every round. It ships at .04/.042/.046/.05 so each rarity sits on its own step
+(1, 2, 3 and 4 rounds in 6) and Legendary lands near the +4 passive ceiling. Tune this lane
+by step, not by percentage (Capoeira amplifies flat bonuses about 2x, so judge it against
+the camp baseline).
+High Guard (+1.9 pts) and Top Control (about 0) were verified on the real engine, and Full
+Mount + Top Control stacked also measured about 0.
 
 | Move | Type | bonusType | Trigger | C / U / R / L |
 |---|---|---|---|---|
@@ -1728,18 +1766,33 @@ value gives consistent, fair behavior. The roster is intentionally **4 Passive /
 | Heavy Hands | Passive | STRIKE_DAMAGE | always | **.009/.016/.026/.035** |
 | Body Snatcher | Passive | BODY_DAMAGE | always | **.016/.028/.05/.065** |
 | Veteran IQ | Passive | OPPONENT_DAMAGE_REDUCTION | always | **.007/.012/.02/.028** (collapse-stacks w/ Granite Jaw) |
-| Sprawl Instinct | Proc | SPRAWL_SUCCESS | opp. shoots TD | .05/.09/.14/.18 |
-| Never Tap | Proc | ESCAPE_PROBABILITY | opp. sub attempt | .04/.075/.12/.16 |
-| Clinch Killer | Proc | CLINCH_DAMAGE | striking exchange | **.035/.06/.10/.14** |
+| High Guard | Passive | OPPONENT_DAMAGE_REDUCTION | always | .006/.011/.019/.026 (collapse-stacks w/ Granite Jaw, Veteran IQ) |
+| Double-Leg Precision | Passive | TAKEDOWN_SUCCESS | always (your TD attempts) | .02/.035/.06/.08 |
+| Frame & Base | Passive | GROUND_DAMAGE_REDUCTION | always (on your back) | .015/.026/.044/.06 |
+| Pace Pusher | Passive | OPPONENT_STAMINA_DRAIN | always | **.04/.042/.046/.05** (quantized lane; see balance note) |
+| Sprawl *(was Sprawl Instinct)* | Proc | SPRAWL_SUCCESS | opp. shoots TD | .05/.09/.14/.18 |
+| Hip Escape *(was Never Tap)* | Proc | ESCAPE_PROBABILITY | opp. sub attempt | .04/.075/.12/.16 |
+| Dirty Boxing *(was Clinch Killer)* | Proc | CLINCH_DAMAGE | striking exchange | **.035/.06/.10/.14** |
 | Second Wind | Proc | STAMINA_DRAIN | stamina < 70% | .04/.07/.12/.16 |
-| Mount Reaper | Proc | GNP_DAMAGE | top position | .04/.07/.13/.17 |
-| The Finisher | Signature | SIG_FINISHER_STRIKE | opp. HP < 25% | R .08 / L .15 |
-| Iron Recovery | Signature | SIG_IRON_RECOVERY | own HP < 25% | R .10 / L .18 |
-| Killer Instinct | Signature | SIG_KILLER_INSTINCT | opp. HP < 25% | R .015 / L .035 |
+| Full Mount *(was Mount Reaper)* | Proc | GNP_DAMAGE | top position | .04/.07/.13/.17 |
+| Second Gear | Proc | STRIKE_DAMAGE | opp. stamina < 70 | **.005/.009/.015/.020** (trimmed) |
+| Top Control | Proc | GNP_DAMAGE | top position | .025/.045/.075/.10 (collapse-stacks w/ Full Mount) |
+| Guillotine Choke | Proc | SUBMISSION_SUCCESS | any sub attempt you make | .03/.05/.08/.11 |
+| Deep Waters | Proc | STRIKE_DAMAGE | round > ceil(total/2) | **.008/.015/.025/.033** (trimmed) |
+| Fighting Spirit | Proc | FLASH_KO_RESISTANCE | own HP < 25% (flash KO only) | **.004/.008/.012/.018** (half of draft) |
+| Overhand Right *(was The Finisher)* | Signature | SIG_FINISHER_STRIKE | opp. HP < 25% | R .08 / L .15 |
+| Rubber Guard *(was Iron Recovery)* | Signature | SIG_IRON_RECOVERY | own HP < 25% | R .10 / L .18 |
+| Crucifix *(was Killer Instinct)* | Signature | SIG_KILLER_INSTINCT | opp. HP < 25% | R .015 / L .035 |
+| Superman Punch | Signature | SIG_FAST_START | round-1 striking exchange | R .10 / L .18 |
+| Blast Double | Signature | SIG_TAKEDOWN_BLITZ | first TD you land | R .10 / L .18 |
+| Arm Triangle | Signature | SIG_SUBMISSION_HUNT | first time on top (= first TD) | R .12 / L .20 |
 
-**Collapse rule:** two equipped moves sharing a `bonusType` (e.g. Granite Jaw + Veteran IQ)
-**sum** into one effect at the shared engine branch; move values and camp values also **add**.
-Signatures never merge — each fires independently, keyed by `moveId`.
+**Collapse rule:** equipped entries sharing a `bonusType` AND a trigger (e.g. Granite Jaw +
+Veteran IQ, or Full Mount + Top Control) **sum** into one effect at the shared engine branch;
+move values and camp values also **add**. STRIKE_DAMAGE may carry three triggers (always /
+opp. stamina < 70 / late rounds), each applied only when its own gate is true, so Heavy Hands,
+Second Gear and Deep Waters stay separate entries. Signatures never merge: each fires
+independently, keyed by `moveId`.
 
 **Presentation — Ratings (display-only rebase).** Raw fractions read as "almost nothing"
 (0.8%), so the UI presents every move value as an integer **Rating = fraction × 1000**
@@ -1758,6 +1811,36 @@ mid-camp **upgrade** drop from silently changing an already-booked fight, the lo
 off that frozen snapshot, not live owned-rarity. Data lives on the fighter
 (`specialMovesOwned` / `specialMovesEquipped`); the catalog is code
 (`consts/specialMovesCatalog.js`), not a DB collection.
+
+**v2 engine surface.** Five new engine lanes, all move-exclusive (Fight Camp emits none of
+them): TAKEDOWN_SUCCESS (additive to the player's takedown success roll),
+GROUND_DAMAGE_REDUCTION (scales down damage taken while on the bottom), SUBMISSION_SUCCESS
+(additive to the player's submission finish roll), OPPONENT_STAMINA_DRAIN (raises the
+opponent's per-round stamina loss) and FLASH_KO_RESISTANCE (subtracts from the flash-KO
+probability while the player is under 25% HP). Three new per-fight one-shot signatures:
+SIG_FAST_START (Superman Punch, round 1 only), SIG_TAKEDOWN_BLITZ (Blast Double, the first
+takedown landed) and SIG_SUBMISSION_HUNT (Arm Triangle, the first time on top). `totalRounds`
+is now passed into `resolveRound` so the LATE_ROUNDS gate (Deep Waters) can evaluate
+`roundNum > ceil(totalRounds / 2)`.
+
+### 26.6 The Catalog view (v2.2)
+The Special Moves tab has two sub-tabs: **My Moves** (equip slots and owned collection,
+unchanged) and **Catalog** (read-only, all 24 moves). Presentation only: no new rates, costs
+or fighter fields. Each entry shows the move's discipline (the teach pool it sits in,
+`DOMAIN_TEACH_POOLS`), its type, its Rating at every rarity it exists at (dense from
+`minRarity`, the x1000 contract of §26.4, base values, never persona-adjusted), the
+fighter's owned rarity or Not owned, and a How to get it block. The teach line is derived,
+never authored: pool index i is first teachable by the lowest coach rarity whose
+`TEACH_BREADTH_BY_RARITY` exceeds i (0 Common, 1 Uncommon, 2 Rare, 3+ Legendary), at
+`TEACH_RANK_BY_SLOT[i]` (Rank 2 for slot 0, Rank 4 otherwise); exported as `MOVE_DOMAIN` /
+`MOVE_TEACH_SLOT` from `consts/homeCampConfig.js`, and boot rule 14 requires every catalog
+move to sit in exactly one pool. With `CAMP_TEACH_CHANNEL` off the line reads 'Not currently
+teachable. Train for it instead.' The coach-rarity gate on teaching is independent of the
+catalogue `minRarity` on drops (Overhand Right drops at Rare from training but is taught
+only by a Legendary Striking Coach). The training line says a move drops from the flagship
+session of a coach who knows it (flagship drops are restricted to that coach's own pool, see
+§26.3) and from Open Mat Sparring, never a percentage; gym drops are not shown. Endpoint
+`GET /fighters/:id/moves/catalog`. Design record: `docs/special-moves-catalog-spec.md`.
 
 ---
 

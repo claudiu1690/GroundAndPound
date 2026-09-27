@@ -326,3 +326,113 @@ test("equipMove: swapping one passive for another (still 2 total) is allowed", a
     assert.ok(res.equipped.some((e) => e.moveId === "BODY_SNATCHER"));
     assert.ok(!res.equipped.some((e) => e.moveId === "HEAVY_HANDS"));
 });
+
+// ── Special Moves v2: collapse key is bonusType|triggerCondition ─────────────────
+
+function equippedAt(moveIds, rarity = RARITY.LEGENDARY) {
+    return makeFighter({
+        promotionTier: "National",
+        specialMovesOwned: moveIds.map((id) => ({ moveId: id, rarity, acquiredAt: new Date() })),
+        specialMovesEquipped: [...moveIds],
+    });
+}
+
+const V2_NEW_IDS = [
+    "HIGH_GUARD", "DOUBLE_LEG_PRECISION", "FRAME_AND_BASE", "PACE_PUSHER",
+    "SECOND_GEAR", "TOP_CONTROL", "GUILLOTINE_CHOKE", "DEEP_WATERS", "FIGHTING_SPIRIT",
+    "SUPERMAN_PUNCH", "BLAST_DOUBLE", "ARM_TRIANGLE",
+];
+
+test("v2 buildMoveBonuses: HEAVY_HANDS + SECOND_GEAR + DEEP_WATERS stay 3 STRIKE_DAMAGE entries, each with its own trigger and value", () => {
+    const mb = specialMovesService.buildMoveBonuses(equippedAt(["HEAVY_HANDS", "SECOND_GEAR", "DEEP_WATERS"]));
+    const strike = mb.filter((b) => b.bonusType === "STRIKE_DAMAGE");
+    assert.equal(strike.length, 3);
+    assert.deepEqual(strike.map((b) => b.triggerCondition).sort(), ["ALWAYS", "LATE_ROUNDS", "OPPONENT_STAMINA_BELOW_70"]);
+    for (const b of strike) {
+        assert.equal(b.effectiveValue, SPECIAL_MOVES_BY_ID[b.moveId].values.LEGENDARY, `${b.moveId} keeps its own value`);
+    }
+});
+
+test("v2 buildMoveBonuses: MOUNT_REAPER + TOP_CONTROL collapse into ONE summed GNP_DAMAGE entry", () => {
+    const mb = specialMovesService.buildMoveBonuses(equippedAt(["MOUNT_REAPER", "TOP_CONTROL"]));
+    assert.equal(mb.length, 1);
+    assert.equal(mb[0].bonusType, "GNP_DAMAGE");
+    assert.equal(mb[0].triggerCondition, "PLAYER_TOP_POSITION");
+    assert.ok(Math.abs(mb[0].effectiveValue - (0.17 + 0.10)) < 1e-12);
+});
+
+test("v2 buildMoveBonuses: GRANITE_JAW + HIGH_GUARD collapse into one entry and mergePersonaBonus still sums into it", () => {
+    const mb = specialMovesService.buildMoveBonuses(equippedAt(["GRANITE_JAW", "HIGH_GUARD"]));
+    assert.equal(mb.length, 1);
+    assert.ok(Math.abs(mb[0].effectiveValue - (0.03 + 0.026)) < 1e-12);
+    specialMovesService.mergePersonaBonus(mb, "OPPONENT_DAMAGE_REDUCTION", 0.01);
+    assert.equal(mb.length, 1, "persona bonus must not append a second (silently ignored) entry");
+    assert.ok(Math.abs(mb[0].effectiveValue - (0.03 + 0.026 + 0.01)) < 1e-12);
+});
+
+test("v2 buildMoveBonuses: the 3 new signatures are 3 separate entries", () => {
+    const mb = specialMovesService.buildMoveBonuses(equippedAt(["SUPERMAN_PUNCH", "BLAST_DOUBLE", "ARM_TRIANGLE"]));
+    assert.equal(mb.length, 3);
+    assert.deepEqual(mb.map((b) => b.bonusType).sort(), ["SIG_FAST_START", "SIG_SUBMISSION_HUNT", "SIG_TAKEDOWN_BLITZ"]);
+    assert.deepEqual(mb.map((b) => b.moveId).sort(), ["ARM_TRIANGLE", "BLAST_DOUBLE", "SUPERMAN_PUNCH"]);
+});
+
+// HIGH_GUARD reuses the SHIPPED OPPONENT_DAMAGE_REDUCTION string (shared with Granite Jaw and
+// Veteran IQ), which still carries an em dash. The v2 contract leaves existing describeMove strings
+// untouched, so the em-dash check is scoped to strings v2 actually added.
+const REUSES_SHIPPED_STRING = new Set(["HIGH_GUARD"]);
+
+for (const id of V2_NEW_IDS) {
+    test(`v2 describeMove(${id}): non-flavor, em-dash-free, names a Rating and carries the number`, () => {
+        const def = SPECIAL_MOVES_BY_ID[id];
+        const value = def.values.LEGENDARY;
+        const withValue = specialMovesService.describeMove(def, value);
+        const withoutValue = specialMovesService.describeMove(def, null);
+        for (const s of [withValue, withoutValue]) {
+            assert.notEqual(s, def.flavor, "must not fall through to the flavor text");
+            if (!REUSES_SHIPPED_STRING.has(id)) assert.ok(!s.includes("—"), `em dash in: ${s}`);
+        }
+        assert.match(withValue, /Rating/);
+        assert.ok(withValue.includes(String(Math.round(value * 1000))), `rating number missing: ${withValue}`);
+        assert.ok(withValue.includes(String(parseFloat((value * 100).toFixed(2)))), `percentage missing: ${withValue}`);
+        assert.ok(!withValue.includes("{r}") && !withValue.includes("{p}"), "placeholders fully replaced");
+    });
+}
+
+test("v2 describeMove: Second Gear and Deep Waters text differs from Heavy Hands (STRIKE_DAMAGE branches on trigger)", () => {
+    const d = (id) => specialMovesService.describeMove(SPECIAL_MOVES_BY_ID[id], 0.02);
+    assert.notEqual(d("SECOND_GEAR"), d("HEAVY_HANDS"));
+    assert.notEqual(d("DEEP_WATERS"), d("HEAVY_HANDS"));
+    assert.notEqual(d("SECOND_GEAR"), d("DEEP_WATERS"));
+    assert.match(d("SECOND_GEAR"), /70% stamina/);
+    assert.match(d("DEEP_WATERS"), /late rounds/);
+});
+
+test("v2 scaleProcs: scales SECOND_GEAR, GUILLOTINE_CHOKE, FIGHTING_SPIRIT; leaves HEAVY_HANDS (PASSIVE) and SPRAWL_INSTINCT alone", () => {
+    const mb = specialMovesService.buildMoveBonuses(equippedAt(["SECOND_GEAR", "GUILLOTINE_CHOKE", "FIGHTING_SPIRIT"]));
+    mb.push(...specialMovesService.buildMoveBonuses(equippedAt(["HEAVY_HANDS", "SPRAWL_INSTINCT"])));
+    const before = Object.fromEntries(mb.map((b) => [b.moveId, b.effectiveValue]));
+    specialMovesService.scaleProcs(mb, 1.5);
+    const after = Object.fromEntries(mb.map((b) => [b.moveId, b.effectiveValue]));
+    for (const id of ["SECOND_GEAR", "GUILLOTINE_CHOKE", "FIGHTING_SPIRIT"]) {
+        const expected = Math.min(before[id] * 1.5, before[id] + 0.02);
+        assert.ok(Math.abs(after[id] - expected) < 1e-12, `${id} scaled (capped at +0.02)`);
+        assert.ok(after[id] > before[id], `${id} grew`);
+    }
+    assert.equal(after.HEAVY_HANDS, before.HEAVY_HANDS, "PASSIVE STRIKE_DAMAGE is never scaled");
+    assert.equal(after.SPRAWL_INSTINCT, before.SPRAWL_INSTINCT, "SPRAWL_SUCCESS stays excluded");
+});
+
+test("v2 buildMoveBonuses: every v1 single-move and v1 pair output is unchanged by the new merge key", () => {
+    const v1 = ["GRANITE_JAW", "HEAVY_HANDS", "BODY_SNATCHER", "VETERAN_IQ", "SPRAWL_INSTINCT", "NEVER_TAP",
+        "CLINCH_KILLER", "SECOND_WIND", "MOUNT_REAPER", "THE_FINISHER", "IRON_RECOVERY", "KILLER_INSTINCT"];
+    for (let i = 0; i < v1.length; i++) {
+        for (let j = i + 1; j < v1.length; j++) {
+            const mb = specialMovesService.buildMoveBonuses(equippedAt([v1[i], v1[j]]));
+            const types = mb.map((b) => b.bonusType);
+            // v1 had exactly one entry per non-SIG bonusType; that must still hold.
+            const nonSig = types.filter((t) => !t.startsWith("SIG_"));
+            assert.equal(new Set(nonSig).size, nonSig.length, `${v1[i]}+${v1[j]} produced duplicate bonusType entries`);
+        }
+    }
+});

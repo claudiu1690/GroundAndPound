@@ -221,11 +221,13 @@ router.delete("/:id/callouts", fighterController.cancelCallout);
 router.post("/:id/media-event", fighterController.mediaEventStub);
 
 // ── Special Moves v1 ───────────────────────────────────────
-// Literal routes MUST precede the /:moveId param route so /moves/equip and
-// /moves/unequip are not swallowed by /moves/:moveId.
+// Literal routes MUST precede the /:moveId param route so /moves/equip,
+// /moves/unequip and /moves/catalog are not swallowed by /moves/:moveId
+// (a GET /moves/catalog landing there would 404 "Unknown move").
 router.get("/:id/moves", ownFighter, specialMovesController.listMoves);
 router.post("/:id/moves/equip", ownFighter, specialMovesController.equipMove);
 router.post("/:id/moves/unequip", ownFighter, specialMovesController.unequipMove);
+router.get("/:id/moves/catalog", ownFighter, specialMovesController.getCatalog);
 router.get("/:id/moves/:moveId", ownFighter, specialMovesController.getMoveDetail);
 
 // ── Shop, Inventory & Pre-Fight Supplements v1.0 ───────────

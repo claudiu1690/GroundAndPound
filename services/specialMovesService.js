@@ -1,19 +1,22 @@
 /**
- * Special Moves v1 — service layer (no HTTP concerns).
+ * Special Moves (v1 + v2 roster) — service layer (no HTTP concerns).
  *
- * Owns: slot derivation, the equip/unequip/collection views, the drop roll (weighted by
- * gym tier), grant/upgrade/duplicate ownership resolution, and building the per-fight
- * `moveBonuses` array consumed by utils/fightResolution.js.
+ * Owns: slot derivation, the equip/unequip/collection views, the read-only Catalog view
+ * (buildCatalog), the drop roll (weighted by gym tier), grant/upgrade/duplicate ownership
+ * resolution, and building the per-fight `moveBonuses` array consumed by
+ * utils/fightResolution.js.
  *
  * INVARIANT: grantOrUpgrade is the SOLE writer of fighter.specialMovesOwned — at most one
  * entry per moveId, kept at the best-pulled rarity.
  */
 
 const Fighter = require("../models/fighterModel");
+const config = require("../config");
 const {
     RARITY,
     EFFECT_TYPE,
     rarityRank,
+    RARITY_ORDER,
     SPECIAL_MOVES,
     SPECIAL_MOVES_BY_ID,
     SPECIAL_MOVE_SLOT_CONFIG,
@@ -21,6 +24,14 @@ const {
     DROP_RARITY_WEIGHTS,
     DUPLICATE_CASH,
 } = require("../consts/specialMovesCatalog");
+// No require cycle: homeCampConfig requires only consts, never a service.
+const {
+    MOVE_DOMAIN,
+    MOVE_TEACH_SLOT,
+    DISCIPLINE_LABELS,
+    COACH_ARCHETYPES,
+    ARCHETYPE_KEYS,
+} = require("../consts/homeCampConfig");
 
 const MAX_SLOTS = 3;
 
@@ -69,6 +80,16 @@ function describeMove(def, value) {
             return fmt("+{r} Defense Rating — shrugs off incoming strikes. ({p}% less strike damage taken)",
                 "Raises your Defense Rating — shrugs off incoming strikes.");
         case "STRIKE_DAMAGE":
+            // Three moves share this bonusType on different gates (engine: triggerGatedMoveBonus),
+            // so the text must say WHEN it applies or Heavy Hands / Second Gear / Deep Waters read alike.
+            if (def.triggerCondition === "OPPONENT_STAMINA_BELOW_70") {
+                return fmt("+{r} Power Rating once your opponent tires below 70% stamina. (+{p}% strike damage)",
+                    "Raises your Power Rating once your opponent tires.");
+            }
+            if (def.triggerCondition === "LATE_ROUNDS") {
+                return fmt("+{r} Power Rating in the late rounds, once the fight passes halfway. (+{p}% strike damage)",
+                    "Raises your Power Rating in the late rounds.");
+            }
             return fmt("+{r} Power Rating — every punch lands heavier. (+{p}% strike damage)",
                 "Raises your Power Rating — every punch lands heavier.");
         case "ALL_STATS":
@@ -92,6 +113,30 @@ function describeMove(def, value) {
         case "GNP_DAMAGE":
             return fmt("+{r} Ground-and-Pound Rating from top position. (+{p}% ground strikes damage)",
                 "Raises your Ground-and-Pound Rating from top position.");
+        case "TAKEDOWN_SUCCESS":
+            return fmt("+{r} Takedown Rating when you shoot for a takedown. (+{p}% takedown success)",
+                "Raises your Takedown Rating when you shoot for a takedown.");
+        case "GROUND_DAMAGE_REDUCTION":
+            return fmt("+{r} Ground Defense Rating while you're stuck on your back. ({p}% less ground-and-pound damage taken)",
+                "Raises your Ground Defense Rating while you're stuck on your back.");
+        case "SUBMISSION_SUCCESS":
+            return fmt("+{r} Submission Rating whenever you attempt a submission. (+{p}% submission finish chance)",
+                "Raises your Submission Rating whenever you attempt a submission.");
+        case "OPPONENT_STAMINA_DRAIN":
+            return fmt("+{r} Pressure Rating: your opponent burns more gas every round. (+{p}% opponent stamina drain)",
+                "Raises your Pressure Rating: your opponent burns more gas every round.");
+        case "FLASH_KO_RESISTANCE":
+            return fmt("+{r} Grit Rating once you drop below 25% health. (-{p}% flash-KO chance against you)",
+                "Raises your Grit Rating once you're badly hurt.");
+        case "SIG_FAST_START":
+            return fmt("Signature: +{r} Blitz Rating on your opening exchange in round 1, once per fight. (+{p}% strike damage that exchange)",
+                "Signature: a first-round power surge on your opening exchange.");
+        case "SIG_TAKEDOWN_BLITZ":
+            return fmt("Signature: +{r} Slam Rating on the first takedown you land, once per fight. (+{p}% ground-and-pound damage that round)",
+                "Signature: your first takedown of the night hits harder.");
+        case "SIG_SUBMISSION_HUNT":
+            return fmt("Signature: +{r} Hunter Rating the first time you take top position, once per fight. (+{p}% submission finish chance that round)",
+                "Signature: the first time you get on top, you hunt the tap.");
         case "SIG_FINISHER_STRIKE":
             return fmt("Signature — +{r} Finisher Rating for the round the opponent first drops below 25% health, once per fight. (+{p}% strike damage that round)",
                 "Signature — a once-per-fight Finisher Rating surge when the opponent is badly hurt.");
@@ -104,6 +149,43 @@ function describeMove(def, value) {
         default:
             return def.flavor || "";
     }
+}
+
+/**
+ * The per-bonusType unit word each describeMove template prints after "+{r}". Lifted verbatim
+ * from the templates above so the Catalog ladder ("+26 Power Rating") and the card text can
+ * never disagree; a test asserts describeMove(def, v) contains `+${rating} ${unit}` for every
+ * rung of every move. If a template's unit word changes, change it HERE too (not the reverse).
+ */
+const RATING_UNIT_BY_BONUS_TYPE = Object.freeze({
+    OPPONENT_DAMAGE_REDUCTION: "Defense Rating",
+    STRIKE_DAMAGE: "Power Rating", // all three triggers (ALWAYS / OPPONENT_STAMINA_BELOW_70 / LATE_ROUNDS)
+    ALL_STATS: "All-Round Rating",
+    BODY_DAMAGE: "Body-Shot Rating",
+    SPRAWL_SUCCESS: "Sprawl Rating",
+    ESCAPE_PROBABILITY: "Escape Rating",
+    CLINCH_DAMAGE: "Clinch Rating",
+    STAMINA_DRAIN: "Cardio Rating",
+    GNP_DAMAGE: "Ground-and-Pound Rating",
+    TAKEDOWN_SUCCESS: "Takedown Rating",
+    GROUND_DAMAGE_REDUCTION: "Ground Defense Rating",
+    SUBMISSION_SUCCESS: "Submission Rating",
+    OPPONENT_STAMINA_DRAIN: "Pressure Rating",
+    FLASH_KO_RESISTANCE: "Grit Rating",
+    SIG_FAST_START: "Blitz Rating",
+    SIG_TAKEDOWN_BLITZ: "Slam Rating",
+    SIG_SUBMISSION_HUNT: "Hunter Rating",
+    SIG_FINISHER_STRIKE: "Finisher Rating",
+    SIG_IRON_RECOVERY: "Recovery Rating",
+    SIG_KILLER_INSTINCT: "KO Rating",
+});
+
+/** Unit word for a move's Rating, or the generic "Rating" for an unmapped bonusType. */
+function ratingUnitFor(def) {
+    const bt = def && def.bonusType;
+    return typeof bt === "string" && Object.prototype.hasOwnProperty.call(RATING_UNIT_BY_BONUS_TYPE, bt)
+        ? RATING_UNIT_BY_BONUS_TYPE[bt]
+        : "Rating";
 }
 
 // ── Slots ────────────────────────────────────────────────────────────────────
@@ -205,6 +287,173 @@ function getMoveDetail(fighter, moveId) {
     }
     const ownedEntry = ownedEntryFor(fighter, moveId);
     return buildMoveView(fighter, def, ownedEntry, equippedIndexOf(fighter, moveId));
+}
+
+// ── Catalog (read-only view of the whole roster) ─────────────────────────────
+
+/** Type order inside a discipline: Passive, Proc, Signature (matches the Library table). */
+const CATALOG_TYPE_ORDER = Object.freeze([EFFECT_TYPE.PASSIVE, EFFECT_TYPE.PROC, EFFECT_TYPE.SIGNATURE]);
+
+/**
+ * Every catalog id in display order: discipline (ARCHETYPE_KEYS order), then type
+ * (CATALOG_TYPE_ORDER), then SPECIAL_MOVES index. Computed once at load from consts.
+ * INTERNAL: always map over it, never hand it out (callers could mutate the shared order).
+ * A move with no discipline sorts last; buildCatalog skips it (rule 14 makes that unreachable).
+ */
+const CATALOG_ORDER = Object.freeze((() => {
+    const rankOf = (arr, v) => {
+        const i = arr.indexOf(v);
+        return i === -1 ? arr.length : i;
+    };
+    return SPECIAL_MOVES
+        .map((def, index) => ({
+            id: def.id,
+            domainRank: rankOf(ARCHETYPE_KEYS, MOVE_DOMAIN[def.id]),
+            typeRank: rankOf(CATALOG_TYPE_ORDER, def.effectType),
+            index,
+        }))
+        .sort((a, b) => a.domainRank - b.domainRank || a.typeRank - b.typeRank || a.index - b.index)
+        .map((x) => x.id);
+})());
+
+// Player-facing "How to get it" copy. Server-generated so the client never re-derives a rule.
+// {coach} = COACH_ARCHETYPES[domain].label verbatim, {rank} = the slot's teach rank.
+// NO EM DASHES in any of these strings (player-facing copy rule).
+const TEACH_TEXT_BY_MIN_RARITY = Object.freeze({
+    COMMON: "Taught by a {coach}: any rarity, at Rank {rank}.",
+    UNCOMMON: "Taught by an Uncommon-or-better {coach}, at Rank {rank}.",
+    RARE: "Taught by a Rare-or-better {coach}, at Rank {rank}.",
+    LEGENDARY: "Legendary {coach} only, at Rank {rank}.",
+});
+/** Teaching line while CAMP_TEACH_CHANNEL is off. */
+const TEACH_OFF_TEXT = "Not currently teachable. Train for it instead.";
+
+/** Fill a copy template. Function replacers so a `$` in a label can never act as a pattern. */
+function fillCopy(template, coachLabel, rank) {
+    return template.replace("{coach}", () => String(coachLabel)).replace("{rank}", () => String(rank));
+}
+
+/** Teaching line for a live `teach` block, or TEACH_OFF_TEXT if its rarity has no template. */
+function teachTextFor(teach) {
+    const tpl = Object.prototype.hasOwnProperty.call(TEACH_TEXT_BY_MIN_RARITY, teach.minCoachRarity)
+        ? TEACH_TEXT_BY_MIN_RARITY[teach.minCoachRarity]
+        : null;
+    if (!tpl) {
+        console.warn(`[specialMoves] no teach copy for coach rarity "${teach.minCoachRarity}"; showing the off text`);
+        return TEACH_OFF_TEXT;
+    }
+    return fillCopy(tpl, teach.coachLabel, teach.rank);
+}
+
+/**
+ * Training line (decision D1, Variant B). Same for every move of a discipline; never a
+ * percentage. Gyms are retired, so the gym sparring drop path is deliberately not named.
+ */
+function trainTextFor(coachLabel) {
+    return `Also drops from the flagship session of any ${coachLabel} who knows it, and from Open Mat Sparring: a chance, more rounds, better odds. Your camp's tier decides how rare a drop can be, not how often one happens.`;
+}
+
+/**
+ * One rung of a move's rarity ladder.
+ * @typedef {Object} CatalogLadderRung
+ * @property {"COMMON"|"UNCOMMON"|"RARE"|"LEGENDARY"} rarity
+ * @property {number} value   raw engine fraction at that rarity (e.g. 0.026)
+ * @property {number} rating  player-facing integer, Math.round(value * 1000)
+ * @property {string} unit    per-bonusType unit word, e.g. "Power Rating"
+ */
+
+/**
+ * SINGLE DEFINITION of a Catalog entry (GET /fighters/:id/moves/catalog -> moves[]).
+ * The first 14 fields are EXACTLY the buildMoveView shape used by GET /fighters/:id/moves and
+ * GET /fighters/:id/moves/:moveId, so the client can reuse its move card/modal as-is.
+ *
+ * @typedef {Object} CatalogMove
+ * @property {string} moveId
+ * @property {string} name
+ * @property {?string} rarity             owned (best-pulled) rarity, null when not owned
+ * @property {"PASSIVE"|"PROC"|"SIGNATURE"} effectType
+ * @property {string} bonusType
+ * @property {string} triggerCondition
+ * @property {?number} value              value at the owned rarity, null when not owned
+ * @property {string} description          owned: describeMove at the owned rarity; unowned:
+ *                                         the numberless describeMove(def, null). Never
+ *                                         persona-adjusted.
+ * @property {string} flavor
+ * @property {string} art
+ * @property {?(Date|string)} acquiredAt   null when not owned
+ * @property {boolean} owned
+ * @property {boolean} isEquipped          only ever true for an OWNED move
+ * @property {?number} slotIndex           equipped slot, null when not equipped
+ * @property {"COMMON"|"RARE"} minRarity   lowest rarity the move exists at (Signatures RARE)
+ * @property {"STRIKING"|"WRESTLING"|"BJJ"|"CONDITIONING"} domain
+ * @property {string} domainLabel          "Striking" | "Wrestling" | "BJJ" | "Conditioning"
+ * @property {CatalogLadderRung[]} ladder  dense from minRarity upward, in rarity order
+ *                                         (4 rungs, or 2 for a Signature); never padded
+ * @property {{
+ *   teach: ?{ slotIndex: number, minCoachRarity: "COMMON"|"UNCOMMON"|"RARE"|"LEGENDARY", rank: number, coachLabel: string },
+ *   teachText: string,
+ *   trainText: string
+ * }} howToGet                             teach is null (and teachText the off text) while
+ *                                         CAMP_TEACH_CHANNEL is off
+ */
+
+/**
+ * @typedef {Object} MovesCatalogResponse
+ * @property {boolean} teachChannel        CAMP_TEACH_CHANNEL as of this request
+ * @property {CatalogMove[]} moves         every catalog move, in catalog display order
+ */
+
+/**
+ * The full read-only Catalog for a fighter. Pure view: never mutates the fighter, never
+ * persona-adjusts a number, and builds every nested object FRESH per call so nothing a
+ * request handler does to one response can leak into the next.
+ *
+ * The CAMP_TEACH_CHANNEL flag is read on EVERY call (never cached at load), so flipping the
+ * kill switch changes the next response without a restart of this module.
+ *
+ * @param {object} fighter
+ * @returns {MovesCatalogResponse}
+ */
+function buildCatalog(fighter) {
+    const teachChannel = !!config.features.campTeachChannel;
+    const moves = [];
+    for (const id of CATALOG_ORDER) {
+        const def = SPECIAL_MOVES_BY_ID[id];
+        const domain = Object.prototype.hasOwnProperty.call(MOVE_DOMAIN, id) ? MOVE_DOMAIN[id] : null;
+        if (!def || !domain) {
+            console.warn(`[specialMoves] buildCatalog: ${id} has no catalog def or discipline; omitting`);
+            continue;
+        }
+        const ownedEntry = ownedEntryFor(fighter, id);
+        // Only an OWNED move can read as equipped: a corrupt equipped-but-unowned id must never
+        // render a slot badge on a locked tile.
+        const base = buildMoveView(fighter, def, ownedEntry, ownedEntry ? equippedIndexOf(fighter, id) : -1);
+
+        const coachLabel = COACH_ARCHETYPES[domain].label;
+        const unit = ratingUnitFor(def);
+        const ladder = RARITY_ORDER
+            .filter((r) => Object.prototype.hasOwnProperty.call(def.values, r))
+            .map((r) => ({ rarity: r, value: def.values[r], rating: toRating(def.values[r]), unit }));
+
+        const slot = MOVE_TEACH_SLOT[id];
+        const teach = teachChannel && slot
+            ? { slotIndex: slot.teachSlotIndex, minCoachRarity: slot.minTeachCoachRarity, rank: slot.teachRank, coachLabel }
+            : null;
+
+        moves.push({
+            ...base,
+            minRarity: def.minRarity,
+            domain,
+            domainLabel: DISCIPLINE_LABELS[domain],
+            ladder,
+            howToGet: {
+                teach,
+                teachText: teach ? teachTextFor(teach) : TEACH_OFF_TEXT,
+                trainText: trainTextFor(coachLabel),
+            },
+        });
+    }
+    return { teachChannel, moves };
 }
 
 // ── Equip / Unequip ──────────────────────────────────────────────────────────
@@ -461,9 +710,15 @@ function rollCampMoveDrop(fighter, { dropRate, rarityWeightsKey, poolMoveIds = [
  * campService.buildSessionBonuses entries. Returns FRESH objects every call (the array is
  * mutated during resolution — no state may leak across fights).
  *
- * COLLAPSE RULE: PASSIVE/PROC entries that share a bonusType are merged into ONE entry with
- * SUMMED effectiveValue (triggerBonus/getBonusValue use first-match .find()). SIGNATURE
- * (SIG_*) entries are NEVER merged — each fires independently, keyed by moveId downstream.
+ * COLLAPSE RULE: PASSIVE/PROC entries that share BOTH bonusType AND triggerCondition are merged
+ * into ONE entry with SUMMED effectiveValue (triggerBonus/getBonusValue use first-match .find()).
+ * Entries with the same bonusType but a different triggerCondition stay SEPARATE, because each
+ * carries its own gate; that only happens for bonusTypes in the catalog's
+ * MULTI_TRIGGER_BONUS_TYPES (today STRIKE_DAMAGE: Heavy Hands / Second Gear / Deep Waters), whose
+ * engine read site (triggerGatedMoveBonus) evaluates every entry. validateCatalog guarantees
+ * every other bonusType has exactly one triggerCondition, so for them this is still "one entry
+ * per bonusType" and the v1 output is byte-identical. SIGNATURE (SIG_*) entries are NEVER
+ * merged — each fires independently, keyed by moveId downstream.
  *
  * Never emits NaN (R5): an equipped move with a missing owned entry / catalog def / value is
  * skipped and logged, never thrown.
@@ -473,7 +728,7 @@ function buildMoveBonuses(fighter) {
     const ownedById = {};
     for (const o of fighter.specialMovesOwned || []) ownedById[o.moveId] = o;
 
-    const mergedByType = {}; // bonusType -> merged PASSIVE/PROC entry
+    const mergedByKey = {}; // `${bonusType}|${triggerCondition}` -> merged PASSIVE/PROC entry
     const signatures = [];
 
     for (const moveId of equipped) {
@@ -503,10 +758,13 @@ function buildMoveBonuses(fighter) {
                 triggered: false,
                 triggerCount: 0,
             });
-        } else if (mergedByType[def.bonusType]) {
-            mergedByType[def.bonusType].effectiveValue += value; // collapse: sum
+            continue;
+        }
+        const mergeKey = `${def.bonusType}|${def.triggerCondition}`;
+        if (mergedByKey[mergeKey]) {
+            mergedByKey[mergeKey].effectiveValue += value; // collapse: sum
         } else {
-            mergedByType[def.bonusType] = {
+            mergedByKey[mergeKey] = {
                 moveId,
                 bonusType: def.bonusType,
                 effectiveValue: value,
@@ -518,7 +776,7 @@ function buildMoveBonuses(fighter) {
         }
     }
 
-    return [...Object.values(mergedByType), ...signatures];
+    return [...Object.values(mergedByKey), ...signatures];
 }
 
 /**
@@ -529,6 +787,13 @@ function buildMoveBonuses(fighter) {
  * match, so a persona bonus MUST be SUMMED into any existing same-bonusType entry rather than
  * appended (an appended second entry would be silently ignored). When no such entry exists,
  * we push one shaped like a merged PASSIVE entry so downstream trigger/getBonusValue reads it.
+ *
+ * Since v2 buildMoveBonuses merges on bonusType|triggerCondition, so "the first same-bonusType
+ * entry" is only guaranteed to be THE entry for bonusTypes with a single triggerCondition
+ * catalog-wide (validateCatalog enforces that for everything outside MULTI_TRIGGER_BONUS_TYPES).
+ * OPPONENT_DAMAGE_REDUCTION qualifies: Granite Jaw, Veteran IQ and High Guard are all ALWAYS and
+ * collapse into one entry. Do NOT call this with a MULTI_TRIGGER bonusType (e.g. STRIKE_DAMAGE):
+ * the first match could be a gated entry such as Second Gear.
  *
  * No-op when `value` is falsy/non-positive or `moveBonuses` is not an array. Mutates in place.
  */
@@ -555,9 +820,14 @@ function mergePersonaBonus(moveBonuses, bonusType, value) {
 /**
  * PROC bonusTypes the Boogeyman AMBUSH signature is allowed to scale. SPRAWL_SUCCESS is
  * DELIBERATELY excluded (over-swings sprawl-heavy loadouts) and left untouched.
+ *
+ * v2 adds STRIKE_DAMAGE (Second Gear / Deep Waters; scaleProcs only touches PROC entries, so the
+ * PASSIVE Heavy Hands entry is never scaled), SUBMISSION_SUCCESS (Guillotine Choke) and
+ * FLASH_KO_RESISTANCE (Fighting Spirit). The AMBUSH_PROC_ABS_CAP still bounds every one of them.
  */
 const AMBUSH_SCALABLE_PROCS = new Set([
     "ESCAPE_PROBABILITY", "CLINCH_DAMAGE", "STAMINA_DRAIN", "GNP_DAMAGE",
+    "STRIKE_DAMAGE", "SUBMISSION_SUCCESS", "FLASH_KO_RESISTANCE",
 ]);
 
 /** Absolute ceiling on how much AMBUSH may add to a single proc value (future-proof guard). */
@@ -602,6 +872,7 @@ module.exports = {
     deriveSlots,
     listMoves,
     getMoveDetail,
+    buildCatalog,
     equipMove,
     unequipMove,
     grantOrUpgrade,
@@ -613,6 +884,10 @@ module.exports = {
     // persona resolve-site helpers (never touch the frozen snapshot)
     mergePersonaBonus,
     scaleProcs,
+    // display helpers (Catalog ladder)
+    toRating,
+    ratingUnitFor,
+    RATING_UNIT_BY_BONUS_TYPE,
     // exported for tests
     describeMove,
     weightedRarityPick,

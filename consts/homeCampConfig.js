@@ -14,7 +14,7 @@
  * so a bad slug map / teach id / stat key fails the boot rather than a live request.
  */
 const { STAT_NAMES, STYLES, FIGHT_OUTCOMES } = require("./gameConstants");
-const { SPECIAL_MOVES_BY_ID, rarityRank } = require("./specialMovesCatalog");
+const { SPECIAL_MOVES, SPECIAL_MOVES_BY_ID, rarityRank } = require("./specialMovesCatalog");
 const { TIER_KEYS: NOTORIETY_TIER_KEYS } = require("./notorietyConfig");
 
 // ── Tiers ────────────────────────────────────────────────────────────────────
@@ -293,19 +293,88 @@ const COACH_RANK_LABELS = Object.freeze(["Cornerman", "Coach", "Head Coach", "Ma
 const MAX_COACHES = 4;
 
 // ── Teach pools (stored at coach creation; GRANTING is PHASE 2) ──────────────
+// Special Moves v2 APPENDED its ids to the END of each pool, so the v1 prefix (what existing
+// coaches already carry in `teachPoolMoveIds`) never moves. Never reorder the v1 prefix, and
+// never backfill new ids into existing coaches' stored pools: a coach's pool is frozen at
+// generation, so only coaches generated after v2 carry the longer pools.
 const DOMAIN_TEACH_POOLS = Object.freeze({
-    STRIKING: Object.freeze(["HEAVY_HANDS", "BODY_SNATCHER", "CLINCH_KILLER", "THE_FINISHER"]),
-    WRESTLING: Object.freeze(["SPRAWL_INSTINCT", "MOUNT_REAPER", "KILLER_INSTINCT"]),
-    BJJ: Object.freeze(["NEVER_TAP", "VETERAN_IQ", "IRON_RECOVERY"]),
-    CONDITIONING: Object.freeze(["GRANITE_JAW", "SECOND_WIND"]),
+    STRIKING: Object.freeze(["HEAVY_HANDS", "BODY_SNATCHER", "CLINCH_KILLER", "THE_FINISHER", "HIGH_GUARD", "SECOND_GEAR", "SUPERMAN_PUNCH"]),
+    WRESTLING: Object.freeze(["SPRAWL_INSTINCT", "MOUNT_REAPER", "KILLER_INSTINCT", "DOUBLE_LEG_PRECISION", "TOP_CONTROL", "BLAST_DOUBLE"]),
+    BJJ: Object.freeze(["NEVER_TAP", "VETERAN_IQ", "IRON_RECOVERY", "FRAME_AND_BASE", "GUILLOTINE_CHOKE", "ARM_TRIANGLE"]),
+    CONDITIONING: Object.freeze(["GRANITE_JAW", "SECOND_WIND", "PACE_PUSHER", "DEEP_WATERS", "FIGHTING_SPIRIT"]),
 });
 
 /** How many moves a coach of each rarity can ever teach. */
 const TEACH_BREADTH_BY_RARITY = Object.freeze({ COMMON: 1, UNCOMMON: 2, RARE: 3, LEGENDARY: Infinity });
-/** Coach rank required to teach the move in each teach-pool slot. */
-const TEACH_RANK_BY_SLOT = Object.freeze({ 0: 2, 1: 4, 2: 4, 3: 4 });
+/**
+ * Coach rank required to teach the move in each teach-pool slot. Must cover the LONGEST pool
+ * (rule 13 fails the boot otherwise); v2's longest pool is STRIKING at 7.
+ */
+const TEACH_RANK_BY_SLOT = Object.freeze({ 0: 2, 1: 4, 2: 4, 3: 4, 4: 4, 5: 4, 6: 4 });
 
 const COACH_RARITIES = Object.freeze(["COMMON", "UNCOMMON", "RARE", "LEGENDARY"]);
+
+// ── Special Moves Catalog: move -> discipline / teach slot (derived, read-only) ──
+// The Catalog view places every move in a discipline and tells the player which coach can
+// teach it and at what rank. BOTH answers are DERIVED from the teach pools above, never
+// hand-authored, so a pool edit can never leave the Catalog advertising a stale teach path.
+// Rule 14 in validateHomeCampConfig fails the boot if a move sits in no pool (the Catalog
+// could not place it) or in two (its discipline would be ambiguous).
+
+/** Player-facing discipline names. Keys MUST equal ARCHETYPE_KEYS exactly (rule 14). */
+const DISCIPLINE_LABELS = Object.freeze({
+    STRIKING: "Striking",
+    WRESTLING: "Wrestling",
+    BJJ: "BJJ",
+    CONDITIONING: "Conditioning",
+});
+
+/**
+ * PURE. Reverse-index the teach pools into two lookups:
+ *   moveDomain[id]    = the domain whose pool holds the move
+ *   moveTeachSlot[id] = { teachSlotIndex, minTeachCoachRarity, teachRank }
+ *
+ * minTeachCoachRarity is the LOWEST coach rarity whose teach breadth reaches the slot
+ * (breadth[R] > slotIndex), or null if none does. teachRank is the SAME expression
+ * homeCampCoachService.buildTeachList uses (`TEACH_RANK_BY_SLOT[i] ?? COACH_MAX_RANK`), so the
+ * Catalog and the coach card can never quote different ranks for the same slot.
+ *
+ * First occurrence wins; every later repeat of an id is pushed onto `duplicateIds` so the
+ * validator can fail the boot instead of silently picking one discipline. Parameters exist
+ * only so the validator's negative path is testable; production callers use the defaults.
+ */
+function buildMoveTeachTables(pools = DOMAIN_TEACH_POOLS, breadthByRarity = TEACH_BREADTH_BY_RARITY, rankBySlot = TEACH_RANK_BY_SLOT) {
+    const moveDomain = {};
+    const moveTeachSlot = {};
+    const duplicateIds = [];
+    for (const [domain, pool] of Object.entries(pools || {})) {
+        const ids = Array.isArray(pool) ? pool : [];
+        for (let i = 0; i < ids.length; i++) {
+            const id = ids[i];
+            // Inline own-property test: `hasOwnKey` is a const declared further down this file
+            // and would still be in its TDZ when this runs at module load.
+            if (Object.prototype.hasOwnProperty.call(moveDomain, id)) {
+                duplicateIds.push(id);
+                continue;
+            }
+            moveDomain[id] = domain;
+            moveTeachSlot[id] = {
+                teachSlotIndex: i,
+                minTeachCoachRarity: COACH_RARITIES.find((R) => breadthByRarity[R] > i) ?? null,
+                teachRank: rankBySlot[i] ?? COACH_MAX_RANK,
+            };
+        }
+    }
+    return { moveDomain, moveTeachSlot, duplicateIds };
+}
+
+const MOVE_TEACH_TABLES = buildMoveTeachTables();
+/** moveId -> domain key (e.g. "STRIKING"). Frozen. Look up only with catalog ids. */
+const MOVE_DOMAIN = Object.freeze(MOVE_TEACH_TABLES.moveDomain);
+/** moveId -> frozen { teachSlotIndex, minTeachCoachRarity, teachRank }. Frozen. */
+const MOVE_TEACH_SLOT = Object.freeze(Object.fromEntries(
+    Object.entries(MOVE_TEACH_TABLES.moveTeachSlot).map(([id, v]) => [id, Object.freeze(v)])
+));
 
 // ── PHASE 1: rarity economics ────────────────────────────────────────────────
 // DETERMINISTIC PER RARITY+TRAIT — there is NO per-individual jitter anywhere. "Displayed
@@ -1128,6 +1197,37 @@ function validateHomeCampConfig() {
         }
     }
 
+    // RULE 14 — the Special Moves Catalog places every move in exactly ONE discipline and
+    // quotes its teach path from MOVE_DOMAIN / MOVE_TEACH_SLOT. A move in no pool would render
+    // with no discipline; a move in two pools would render under whichever came first while
+    // the other coach also teaches it. Both are boot failures, not a quiet UI gap.
+    const { duplicateIds } = buildMoveTeachTables();
+    if (duplicateIds.length > 0) {
+        fail(`move id(s) ${duplicateIds.map((id) => `"${id}"`).join(", ")} appear in more than one teach pool`);
+    }
+    for (const m of SPECIAL_MOVES) {
+        if (!Object.prototype.hasOwnProperty.call(MOVE_DOMAIN, m.id)) {
+            fail(`move "${m.id}" is in no teach pool; the Catalog cannot place it in a discipline`);
+        }
+    }
+    for (const [id, slot] of Object.entries(MOVE_TEACH_SLOT)) {
+        if (!COACH_RARITIES.includes(slot.minTeachCoachRarity)) {
+            fail(`MOVE_TEACH_SLOT["${id}"].minTeachCoachRarity ${slot.minTeachCoachRarity} is not a coach rarity — no coach could ever teach slot ${slot.teachSlotIndex}`);
+        }
+        if (!(Number.isInteger(slot.teachRank) && slot.teachRank >= 2 && slot.teachRank <= COACH_MAX_RANK)) {
+            fail(`MOVE_TEACH_SLOT["${id}"].teachRank ${slot.teachRank} must be an integer in 2..${COACH_MAX_RANK}`);
+        }
+    }
+    const labelKeys = Object.keys(DISCIPLINE_LABELS);
+    if (labelKeys.length !== ARCHETYPE_KEYS.length || !ARCHETYPE_KEYS.every((k) => labelKeys.includes(k))) {
+        fail(`DISCIPLINE_LABELS keys [${labelKeys}] must be exactly ARCHETYPE_KEYS [${ARCHETYPE_KEYS}]`);
+    }
+    for (const k of labelKeys) {
+        if (typeof DISCIPLINE_LABELS[k] !== "string" || DISCIPLINE_LABELS[k].trim() === "") {
+            fail(`DISCIPLINE_LABELS.${k} must be a non-empty string`);
+        }
+    }
+
     // RULE 10 — the morale thresholds must be ordered, or the warning fires after the coach
     // has already lost half his value (or never fires at all).
     if (!(MORALE_XP_HALVED_BELOW < MORALE_NEED_THRESHOLD && MORALE_NEED_THRESHOLD <= MORALE_MAX)) {
@@ -1225,6 +1325,11 @@ module.exports = {
     DOMAIN_TEACH_POOLS,
     TEACH_BREADTH_BY_RARITY,
     TEACH_RANK_BY_SLOT,
+    // Special Moves Catalog — derived move -> discipline / teach-slot lookups
+    MOVE_DOMAIN,
+    MOVE_TEACH_SLOT,
+    DISCIPLINE_LABELS,
+    buildMoveTeachTables,
     STYLE_TO_DOMAIN,
     DEFAULT_DOMAIN,
     GYM_SLUG_TO_DOMAIN,

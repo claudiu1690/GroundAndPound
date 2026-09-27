@@ -15975,6 +15975,13 @@ code {
   border: 1px solid rgba(0, 0, 0, .4);
 }
 
+/* ── MoveArt "locked" (Catalog, unowned move) — neutral dashed frame, no glow ── */
+.move-art--locked { border-style: dashed; box-shadow: none; }
+.move-art--locked .move-art-img { filter: grayscale(1) brightness(.45); }
+.move-art--locked .move-art-placeholder { opacity: .35; }
+.move-art-lock { position: absolute; top: 3px; right: 3px; color: var(--text-muted); display: flex; }
+.move-grid-item.is-locked .move-grid-item-name { color: var(--text-muted); }
+
 /* ── Move detail modal — tall painted-card treatment (sponsor-card style) ── */
 .move-detail-root { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .move-detail-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .72); backdrop-filter: blur(2px); }
@@ -16313,6 +16320,52 @@ code {
 .rarity-pip { width: 7px; height: 7px; border-radius: 50%; background: transparent; border: 1px solid var(--c-border); }
 .rarity-pip.is-filled { background: var(--rarity-color); border-color: var(--rarity-color); box-shadow: 0 0 6px -1px var(--rarity-color); }
 .rarity-pips-word { margin-left: 6px; font-family: var(--font-display); font-weight: 800; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--rarity-color); }
+
+/* ── Special Moves Catalog — sub-tab, filters, groups (docs/special-moves-
+   catalog-spec.md). The detail-modal additions below (.move-detail-*,
+   .move-ladder*) are UNSCOPED — MoveDetailModal is portaled to
+   document.body, so anything scoped under .moves-tab would silently no-op
+   there, same as the existing .move-detail-* / .move-art* rules above. ── */
+.moves-mode-toggle { margin: 14px 24px 0; align-self: flex-start; }
+
+.moves-catalog-summary { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
+
+.moves-catalog-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+
+.moves-catalog-group { margin-bottom: 20px; }
+.moves-catalog-group .col-label { margin-bottom: 10px; }
+
+.move-detail-discipline { font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); border: 1px solid var(--c-border); padding: 2px 9px; border-radius: 3px; }
+
+.move-detail-unowned { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 2px 9px; border-radius: 3px; border: 1px solid var(--c-border); color: var(--text-muted); }
+
+/* ── Rarity ladder (Catalog detail modal) ── */
+.move-ladder { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 4px; }
+.move-ladder-unit { font-size: 9.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
+.move-ladder-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; }
+.move-ladder-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  border: 1px solid var(--rarity-color);
+  background: var(--c-bg-tile);
+}
+.move-ladder-cell.is-empty { border-style: dashed; border-color: var(--c-border); opacity: .45; }
+.move-ladder-cell.is-owned { border-width: 2px; box-shadow: 0 0 8px -2px var(--rarity-color), inset 0 0 10px -6px var(--rarity-color); }
+.move-ladder-rarity { font-size: 8.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--rarity-color); }
+.move-ladder-cell.is-empty .move-ladder-rarity { color: var(--text-muted); }
+.move-ladder-rating { font-family: var(--font-display); font-weight: 800; font-size: 11px; color: #fff; }
+.move-ladder-owned-tag { font-size: 7.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: var(--rarity-color); }
+
+/* ── "How to get it" block (Catalog detail modal) ── */
+.move-detail-howto { width: 100%; display: flex; flex-direction: column; gap: 4px; margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--c-border); }
+.move-detail-howto-title { font-size: 9.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); }
+.move-detail-howto-line { margin: 0; font-size: 11px; line-height: 1.5; color: var(--text-secondary); text-align: center; }
+.move-detail-howto-line--off { color: var(--text-muted); font-style: italic; }
 
 /* ── Duplicate-drop toast accent (reuses .train-toast base) ── */
 .train-toast--movedupe { border-color: rgba(212, 168, 32, .4); }
