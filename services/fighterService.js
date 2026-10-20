@@ -6,6 +6,7 @@ const { xpRequiredForNextPoint, roundStatXp, normalizeBankedXp } = require("../u
 const notorietyService = require("./notorietyService");
 const energyService = require("./energyService");
 const personaService = require("./personaService");
+const { validateNickname } = require("../utils/nickname");
 
 /** Persona (Role Model) hospital-bill discount fraction (≤0). Injury-clearing charges only. */
 function hospitalBillFrac(fighter) {
@@ -140,12 +141,27 @@ async function createFighter(data) {
     if (!firstName || !lastName || !weightClass || !style) {
         throw new Error("firstName, lastName, weightClass, and style are required");
     }
-    // Names are visible to every other player (ladders, gazette, Hall of Fame) —
-    // reject profane first/last name or nickname.
+    // Names are visible to every other player (ladders, gazette, Hall of Fame):
+    // reject profane first/last names. The nickname runs the same shared rules as
+    // PUT /fighters/:id (length, charset, double spaces, profanity), so creation
+    // can never store a nickname the edit path would reject. Everything here runs
+    // before the Fighter is built, so a rejected request writes nothing.
     const { assertCleanName } = require("../utils/profanity");
     assertCleanName(firstName, "First name");
     assertCleanName(lastName, "Last name");
-    if (nickname) assertCleanName(nickname, "Nickname");
+    let cleanNickname = null;
+    if (nickname !== undefined && nickname !== null) {
+        const checked = validateNickname(nickname);
+        if (!checked.ok) {
+            // Same { statusCode: 400, validation: true } convention as assertCleanName,
+            // which POST /fighters, /auth/register and /auth/guest map to a 400.
+            const err = new Error(checked.message);
+            err.statusCode = 400;
+            err.validation = true;
+            throw err;
+        }
+        cleanNickname = checked.value;
+    }
     const built = buildStartingStats(style, backstory || null);
     const maxStamina = 100 + (built.maxStaminaBonus || 0);
     delete built.maxStaminaBonus;
@@ -153,7 +169,7 @@ async function createFighter(data) {
     const fighter = new Fighter({
         firstName,
         lastName,
-        nickname: nickname || null,
+        nickname: cleanNickname,
         weightClass,
         style,
         backstory: backstory || null,
@@ -180,7 +196,7 @@ async function createFighter(data) {
     try {
         const { generatePodcastName } = require("../consts/mediaHubConfig");
         fighter.media = fighter.media || {};
-        fighter.media.podcastName = generatePodcastName(firstName, lastName, nickname || null);
+        fighter.media.podcastName = generatePodcastName(firstName, lastName, cleanNickname);
     } catch (_) { /* non-fatal */ }
     fighter.overallRating = calculateOverall(fighter);
     await fighter.save();
@@ -204,9 +220,10 @@ async function listFighters(limit = 50) {
 function toPublicFighter(fighter) {
     notorietyService.ensureNotorietyShape(fighter);
     const out = fighter.toObject ? fighter.toObject() : { ...fighter };
-    // Never ship the ladder-bot flag to a client. GET /fighters/:id has no ownFighter
-    // middleware, so ANY authed player can read any fighter through here — leaving this in
-    // hands out a free "which ladder opponents are bots" oracle.
+    // Never ship the ladder-bot flag to a client. This is the OWNER payload: GET /fighters/:id
+    // is guarded by ownFighter, and GET /fighters/:id/profile returns this only to the owner
+    // (non-owners get toPublicProjection). The flag stays stripped anyway as defence in depth:
+    // leaking it would hand out a free "which ladder opponents are bots" oracle.
     delete out.isPvpBot;
     // The stored offer board is server-internal (slot ids + fingerprint). Clients read it
     // through GET /fights/offers/:fighterId, which hydrates and validates it.
@@ -259,6 +276,113 @@ function toPublicFighter(fighter) {
         out.ranking.rank = require("./rankingService").toDisplayRank(out.ranking.rank);
     }
     return out;
+}
+
+/**
+ * Top-level keys of the non-owner fighter view. Anything not listed here (iron, energy,
+ * inventory, offer board, callouts, PvP defence, gameplans, special moves, persona, XP
+ * banks, userId, ...) never reaches another player.
+ */
+const PUBLIC_FIGHTER_KEYS = Object.freeze([
+    "_id", "firstName", "lastName", "nickname", "weightClass", "style", "promotionTier", "overallRating",
+    "str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq",
+    "winStreak", "consecutiveLosses",
+    "record", "ranking", "gymId", "notoriety", "media", "banner", "pinnedBadges",
+]);
+
+/**
+ * @typedef {Object} PublicFighterProjection
+ * @property {*} _id
+ * @property {string} firstName
+ * @property {string} lastName
+ * @property {string|null} nickname
+ * @property {string} weightClass
+ * @property {string} style
+ * @property {string} promotionTier
+ * @property {number} overallRating
+ * @property {number} str
+ * @property {number} spd
+ * @property {number} leg
+ * @property {number} wre
+ * @property {number} gnd
+ * @property {number} sub
+ * @property {number} chn
+ * @property {number} fiq
+ * @property {number} winStreak
+ * @property {number} consecutiveLosses
+ * @property {{ wins: number, losses: number, draws: number, koWins: number, subWins: number, decisionWins: number }} record
+ * @property {{ rank: number|null }} ranking  display rank (rankingService.toDisplayRank)
+ * @property {{ _id: *, name: string }|null} gymId  null unless populated with a name
+ * @property {Object} notoriety  notorietyService.buildNotorietyPublicState
+ * @property {{ podcastName: string|null, episodeCount: number, documentaryStatus: string|null, documentaryRecordedAt: Date|null }} media
+ * @property {{ backgroundId: string|null, frameId: string|null, accentColor: string|null, badgeSlots: string[] }} banner
+ * @property {string[]} pinnedBadges
+ */
+
+/**
+ * Whitelisted fighter view for players who do not own the fighter (rival profile view on
+ * GET /fighters/:id/profile). Pure and synchronous: no DB, no Redis, never saves. Builds a
+ * NEW object from an explicit key list, so a field added to the schema later stays private
+ * until someone adds it here on purpose.
+ * @param {import("mongoose").Document|Object} fighter
+ * @returns {PublicFighterProjection}
+ */
+function toPublicProjection(fighter) {
+    notorietyService.ensureNotorietyShape(fighter);
+    const src = fighter.toObject ? fighter.toObject() : fighter;
+    const record = src.record || {};
+    const media = src.media || {};
+    const banner = src.banner || {};
+    const gym = src.gymId;
+    const rawRank = src.ranking ? src.ranking.rank : null;
+    return {
+        _id: src._id,
+        firstName: src.firstName,
+        lastName: src.lastName,
+        nickname: src.nickname ?? null,
+        weightClass: src.weightClass,
+        style: src.style,
+        promotionTier: src.promotionTier,
+        overallRating: src.overallRating,
+        str: src.str,
+        spd: src.spd,
+        leg: src.leg,
+        wre: src.wre,
+        gnd: src.gnd,
+        sub: src.sub,
+        chn: src.chn,
+        fiq: src.fiq,
+        winStreak: src.winStreak ?? 0,
+        consecutiveLosses: src.consecutiveLosses ?? 0,
+        record: {
+            wins: record.wins ?? 0,
+            losses: record.losses ?? 0,
+            draws: record.draws ?? 0,
+            koWins: record.koWins ?? 0,
+            subWins: record.subWins ?? 0,
+            decisionWins: record.decisionWins ?? 0,
+        },
+        ranking: {
+            rank: typeof rawRank === "number" ? require("./rankingService").toDisplayRank(rawRank) : null,
+        },
+        gymId: gym && typeof gym === "object" && typeof gym.name === "string"
+            ? { _id: gym._id, name: gym.name }
+            : null,
+        notoriety: notorietyService.buildNotorietyPublicState(fighter),
+        media: {
+            podcastName: media.podcastName ?? null,
+            episodeCount: media.episodeCount ?? 0,
+            documentaryStatus: media.documentaryStatus ?? null,
+            documentaryRecordedAt: media.documentaryRecordedAt ?? null,
+        },
+        banner: {
+            backgroundId: banner.backgroundId ?? null,
+            frameId: banner.frameId ?? null,
+            accentColor: banner.accentColor ?? null,
+            badgeSlots: Array.isArray(banner.badgeSlots) ? [...banner.badgeSlots] : [],
+        },
+        pinnedBadges: Array.isArray(src.pinnedBadges) ? [...src.pinnedBadges] : [],
+    };
 }
 
 /**
@@ -341,16 +465,21 @@ async function getFighterById(id) {
 }
 
 /**
- * Update fighter profile fields and recalculate overall rating.
+ * Update the player-editable profile fields (nickname only). The input is
+ * destructured, never spread, so no other field can reach the update. Nickname
+ * does not feed the overall rating, so there is no recompute or extra save.
  * @param {string} id
- * @param {Object} data
+ * @param {{ nickname: string|null }} data  already validated by the controller
  * @returns {Promise<Object>}
  */
-async function updateFighter(id, data) {
-    const fighter = await Fighter.findByIdAndUpdate(id, data, { new: true }).populate("gymId");
+async function updateFighter(id, { nickname }) {
+    const fighter = await Fighter.findByIdAndUpdate(
+        id,
+        { $set: { nickname } },
+        { new: true, runValidators: true },
+    ).populate("gymId");
     if (!fighter) throw new Error("Fighter not found");
-    fighter.overallRating = calculateOverall(fighter);
-    await fighter.save();
+    // media.podcastName is NOT regenerated here; it keeps whatever name it was built with.
     await reconcileEnergy(fighter);
     return toPublicFighter(fighter);
 }
@@ -785,6 +914,8 @@ module.exports = {
     listFighters,
     getFighterById,
     toPublicFighter,
+    PUBLIC_FIGHTER_KEYS,
+    toPublicProjection,
     updateFighter,
     reconcileEnergy,
     reconcileHealth,

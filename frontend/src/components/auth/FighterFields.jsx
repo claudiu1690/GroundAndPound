@@ -54,7 +54,7 @@ export function FighterFields({
       </div>
       <div className="auth-field">
         <label>{t("auth.register.nicknameLabel")} <span className="auth-hint">{t("auth.register.nicknameHint")}</span></label>
-        <input value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder={t("auth.register.nicknamePlaceholder")} />
+        <input value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder={t("auth.register.nicknamePlaceholder")} maxLength={20} />
       </div>
       <div className="auth-row">
         <div className="auth-field">

@@ -119,7 +119,9 @@ export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab
       onAuthenticated(fighterId);
     } catch (err) {
       setError(err.message);
-      setStep(1); // back to account step on conflict errors
+      // Only an email conflict belongs to the account step; a fighter-detail 400
+      // (e.g. an invalid nickname) must stay on step 2 next to the field it names.
+      if (err.status === 409) setStep(1);
     } finally {
       setLoading(false);
     }

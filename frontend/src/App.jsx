@@ -900,8 +900,11 @@ function App() {
         await api.updateFighter(id, body);
         await loadFighter(id);
         setMessage(t("app.profileUpdated"));
+        return { ok: true };
       } catch (e) {
-        setMessage(e.message || "Update failed");
+        const message = e.message || "Update failed";
+        setMessage(message);
+        return { ok: false, message };
       }
     },
     [loadFighter]
@@ -1578,7 +1581,6 @@ function App() {
         <aside className="sidebar">
           <FighterProfile
             fighter={fighter}
-            gyms={gyms}
             campSlotsUsed={campState?.slotsUsed}
             onUpdateFighter={handleUpdateFighter}
             onRefreshFighter={loadFighter}
@@ -1934,7 +1936,6 @@ function App() {
             <div className="m-drawer-body">
               <FighterProfile
                 fighter={fighter}
-                gyms={gyms}
                 campSlotsUsed={campState?.slotsUsed}
                 onUpdateFighter={handleUpdateFighter}
                 onRefreshFighter={loadFighter}

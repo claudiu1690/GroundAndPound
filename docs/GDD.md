@@ -56,6 +56,8 @@ Every module degrades independently to null and renders an empty state rather th
 
 Three choices: weight class, fighting style, optional backstory.
 
+**Nickname** is optional and follows one rule wherever it is set (creation, the profile editor and Account settings; `utils/nickname.js`, 2026-10-20): 2 to 20 characters, letters, numbers, spaces, hyphens and apostrophes only, no double spaces, and it must pass the profanity filter. Nicknames set before the rule existed are kept until the player changes them.
+
 ### 2.1 Weight Classes (permanent for the career)
 | Weight Class | Limit |
 |---|---|

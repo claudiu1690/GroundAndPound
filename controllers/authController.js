@@ -48,8 +48,16 @@ async function register(req, res) {
         // for fresh accounts.
         const user = await User.create({ email, passwordHash, emailConfirmed: false });
 
-        // Create the fighter linked to this account
-        const newFighter = await fighterService.createFighter({ ...fighter, userId: user._id });
+        // Create the fighter linked to this account. createFighter throws on invalid
+        // fields or profanity; remove the just-created User so a rejected signup leaves
+        // nothing behind (same cleanup as accountService.createGuestAccount).
+        let newFighter;
+        try {
+            newFighter = await fighterService.createFighter({ ...fighter, userId: user._id });
+        } catch (err) {
+            await User.deleteOne({ _id: user._id }).catch(() => {});
+            throw err;
+        }
         user.fighterId = newFighter._id;
         await user.save();
 
@@ -67,8 +75,13 @@ async function register(req, res) {
         const token = signToken(user);
         res.status(201).json({ token, fighterId: newFighter._id });
     } catch (err) {
+        // Client-fixable fighter errors (invalid nickname, profane name) carry the
+        // { statusCode: 400, validation: true } convention: echo them as a 400.
+        if (err && (err.statusCode === 400 || err.validation)) {
+            return res.status(400).json({ message: err.message || "Invalid fighter details" });
+        }
         console.error("Register error:", err);
-        res.status(500).json({ message: err.message || "Internal server error" });
+        res.status(500).json({ message: "Internal server error" });
     }
 }
 

@@ -68,7 +68,7 @@ router.post("/", fighterController.create);
  * @swagger
  * /fighters/{id}:
  *   get:
- *     summary: Get a fighter by ID
+ *     summary: Get your own fighter by ID (full owner payload plus statProgress)
  *     tags: [Fighters]
  *     parameters:
  *       - in: path
@@ -81,18 +81,20 @@ router.post("/", fighterController.create);
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Fighter' }
+ *       403:
+ *         description: Not your fighter (other players read GET /fighters/{id}/profile)
  *       404:
  *         description: Fighter not found
  *       500:
  *         description: Internal server error
  */
-router.get("/:id", fighterController.getById);
+router.get("/:id", ownFighter, fighterController.getById);
 
 /**
  * @swagger
  * /fighters/{id}:
  *   put:
- *     summary: Update a fighter (e.g. gymId, nickname)
+ *     summary: Update your own fighter's nickname (the only player-editable field)
  *     tags: [Fighters]
  *     parameters:
  *       - in: path
@@ -100,58 +102,33 @@ router.get("/:id", fighterController.getById);
  *         required: true
  *         schema: { type: string, format: objectId }
  *     requestBody:
+ *       required: true
  *       content:
  *         application/json:
- *           schema: { $ref: '#/components/schemas/Fighter' }
+ *           schema:
+ *             type: object
+ *             additionalProperties: false
+ *             required: [nickname]
+ *             properties:
+ *               nickname:
+ *                 type: string
+ *                 description: 2 to 20 chars of letters, digits, space, apostrophe or hyphen (no double spaces), profanity filtered. Empty string clears it. Same rule as utils/nickname.js.
  *     responses:
  *       200:
  *         description: Fighter updated
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Fighter' }
- *       404:
- *         description: Fighter not found
- *       500:
- *         description: Internal server error
- */
-router.put("/:id", fighterController.update);
-
-/**
- * @swagger
- * /fighters/{id}/energy:
- *   patch:
- *     summary: Deduct energy from a fighter (e.g. for testing)
- *     tags: [Fighters]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: string, format: objectId }
- *       - in: query
- *         name: amount
- *         schema: { type: integer, default: 1 }
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               amount: { type: integer }
- *     responses:
- *       200:
- *         description: Energy deducted
- *         content:
- *           application/json:
- *             schema: { $ref: '#/components/schemas/Fighter' }
  *       400:
- *         description: Not enough energy
+ *         description: "Invalid body. { message, code } where code is invalid_body, unknown_fields (plus fields: string[]), no_fields or invalid_nickname"
+ *       403:
+ *         description: Not your fighter
  *       404:
  *         description: Fighter not found
  *       500:
  *         description: Internal server error
  */
-router.patch("/:id/energy", fighterController.deductEnergy);
-router.post("/:id/debug/recharge-energy", fighterController.debugRechargeEnergy);
+router.put("/:id", ownFighter, fighterController.update);
 
 /**
  * @swagger
@@ -194,31 +171,50 @@ router.post("/:id/hospital/skip-recovery", ownFighter, fighterController.hospita
 router.post("/:id/hospital/full-recovery", ownFighter, fighterController.hospitalFullRecovery);
 router.post("/:id/hospital/restore-health", ownFighter, fighterController.hospitalRestoreHealth);
 router.get("/:id/hospital/quote", ownFighter, fighterController.hospitalQuote);
-// ⚠️ These two lack an `ownFighter` guard and MOVE CASH — a known Phase-0 §8.2 gap. Phase 2
-// deliberately adds ONLY the retirement middleware in front of them and does NOT add the guard:
-// they are being retired, and widening the change here means touching the gym rank-up path on
-// the same deploy that retires it. If the cutover is ever CANCELLED, the missing guard becomes
-// a real bug worth its own fix. Do not mirror this style on any new route.
-router.post("/:id/switch-gym", blockWhenGymsRetired, fighterController.switchGym);
-router.post("/:id/rank-up-gym", blockWhenGymsRetired, fighterController.rankUpGym);
+router.post("/:id/switch-gym", ownFighter, blockWhenGymsRetired, fighterController.switchGym);
+router.post("/:id/rank-up-gym", ownFighter, blockWhenGymsRetired, fighterController.rankUpGym);
 router.get("/:id/champions", fighterController.getChampions);
 router.get("/:id/rank", rankingController.getFighterRank);
 router.get("/:id/activity", fighterController.getActivity);
-// Career Page / badge system — same (no extra) auth middleware as /:id/activity and /:id/banner.
+// Career Page / badge system. The profile read stays public (rival profile view); the badge writes are owner-only.
+/**
+ * @swagger
+ * /fighters/{id}/profile:
+ *   get:
+ *     summary: Career Page payload { fighter, belts, badges, pvp }
+ *     description: >
+ *       Public read. For the owner, `fighter` is the full fighter payload. For any other
+ *       player, `fighter` is the public projection (fighterService.PUBLIC_FIGHTER_KEYS only:
+ *       identity, stats, record, display rank, gym name, public notoriety, media, banner,
+ *       pinnedBadges). belts, badges and pvp are the same for everyone.
+ *     tags: [Fighters]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: objectId }
+ *     responses:
+ *       200:
+ *         description: Career profile
+ *       404:
+ *         description: Fighter not found
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/:id/profile", fighterController.getCareerProfile);
-router.put("/:id/pinned-badges", fighterController.setPinnedBadges);
-router.post("/:id/badges/seen", fighterController.markBadgesSeen);
+router.put("/:id/pinned-badges", ownFighter, fighterController.setPinnedBadges);
+router.post("/:id/badges/seen", ownFighter, fighterController.markBadgesSeen);
 router.get("/:id/dashboard", ownFighter, fighterController.getDashboard);
 router.get("/:id/fame-events", fighterController.getFameEvents);
 router.get("/:id/banner/catalog", fighterController.getBannerCatalog);
-router.put("/:id/banner", fighterController.saveBanner);
+router.put("/:id/banner", ownFighter, fighterController.saveBanner);
 
 // ── Phase 4: Callouts ──────────────────────────────────────
-router.get("/:id/callouts/roster", fighterController.getCalloutRoster);
-router.post("/:id/callouts", fighterController.createCallout);
-router.delete("/:id/callouts", fighterController.cancelCallout);
+router.get("/:id/callouts/roster", ownFighter, fighterController.getCalloutRoster);
+router.post("/:id/callouts", ownFighter, fighterController.createCallout);
+router.delete("/:id/callouts", ownFighter, fighterController.cancelCallout);
 /** Reserved for media events (notoriety) — returns 501 until implemented */
-router.post("/:id/media-event", fighterController.mediaEventStub);
+router.post("/:id/media-event", ownFighter, fighterController.mediaEventStub);
 
 // ── Special Moves v1 ───────────────────────────────────────
 // Literal routes MUST precede the /:moveId param route so /moves/equip,

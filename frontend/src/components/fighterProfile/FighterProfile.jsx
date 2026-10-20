@@ -26,7 +26,6 @@ function FighterProfileLoading() {
  */
 export const FighterProfile = memo(function FighterProfile({
   fighter,
-  gyms,
   campSlotsUsed,
   onUpdateFighter,
   onRefreshFighter,
@@ -35,7 +34,7 @@ export const FighterProfile = memo(function FighterProfile({
 }) {
   const [editing, setEditing] = useState(false);
   const [editNickname, setEditNickname] = useState("");
-  const [editGymId, setEditGymId] = useState("");
+  const [saving, setSaving] = useState(false);
   const [bannerEditorOpen, setBannerEditorOpen] = useState(false);
 
   // Deep-link CTA from the banner-unlock modal's "Customize Banner" button —
@@ -45,18 +44,37 @@ export const FighterProfile = memo(function FighterProfile({
     if (openBannerEditorSignal) setBannerEditorOpen(true);
   }, [openBannerEditorSignal]);
 
+  // Prefill the box with the current nickname each time the editor opens: an empty
+  // nickname on save clears it server-side, so a blank box must be a deliberate choice.
+  const currentNickname = fighter?.nickname || "";
+  useEffect(() => {
+    if (editing) setEditNickname(currentNickname);
+    // Only on open; typing must not be overwritten by a background fighter refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing]);
+
   const saveProfile = useCallback(async () => {
-    if (!fighter?._id || !onUpdateFighter) return;
-    try {
-      await onUpdateFighter(fighter._id, {
-        nickname: editNickname.trim() || undefined,
-        gymId: editGymId || null,
-      });
+    if (!fighter?._id || !onUpdateFighter || saving) return;
+    // Unchanged nickname: skip the request so a legacy nickname that predates the
+    // validation rules can be left alone without the server rejecting it.
+    if (editNickname.trim() === (fighter.nickname ?? "").trim()) {
       setEditing(false);
-    } catch (_) {
-      /* parent / API surfaces errors elsewhere if needed */
+      return;
     }
-  }, [fighter, onUpdateFighter, editNickname, editGymId]);
+    setSaving(true);
+    try {
+      const result = await onUpdateFighter(fighter._id, {
+        nickname: editNickname.trim(),
+      });
+      // Keep the editor open on failure so the player can correct the nickname;
+      // the parent has already shown the server's message.
+      if (!result || result.ok !== false) setEditing(false);
+    } catch (_) {
+      /* parent surfaces the error; leave the editor open */
+    } finally {
+      setSaving(false);
+    }
+  }, [fighter, onUpdateFighter, editNickname, saving]);
 
   if (!fighter) {
     return <FighterProfileLoading />;
@@ -98,16 +116,14 @@ export const FighterProfile = memo(function FighterProfile({
 
       <ProfileActionsSection
         fighter={fighter}
-        gyms={gyms}
         editing={editing}
         setEditing={setEditing}
         editNickname={editNickname}
         setEditNickname={setEditNickname}
-        editGymId={editGymId}
-        setEditGymId={setEditGymId}
         onRefreshFighter={onRefreshFighter}
         onMessage={onMessage}
         onSaveProfile={saveProfile}
+        saving={saving}
       />
 
       {fighter.statProgress && (

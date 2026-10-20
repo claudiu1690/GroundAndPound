@@ -37,9 +37,8 @@ npm run seed
 | Area | Method | Path | Notes |
 |------|--------|------|--------|
 | **Fighters** | POST | `/fighters` | Create fighter (firstName, lastName, weightClass, style, backstory?) |
-| | GET | `/fighters/:id` | Get fighter (with gym populated) |
-| | PUT | `/fighters/:id` | Update fighter |
-| | PATCH | `/fighters/:id/energy` | Deduct energy (body: `{ amount }`) |
+| | GET | `/fighters/:id` | Get your own fighter (with gym populated); 403 for anyone else's |
+| | PUT | `/fighters/:id` | Update your fighter's nickname (body: `{ nickname }`) |
 | | POST | `/fighters/:id/train` | Training session (body: `{ gymId, sessionType }`) |
 | **Gyms** | GET | `/gyms` | List gyms (?tier=T1) |
 | | GET | `/gyms/:id` | Get gym |

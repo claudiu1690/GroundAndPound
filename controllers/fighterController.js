@@ -1,6 +1,7 @@
 const fighterService = require("../services/fighterService");
 const dashboardService = require("../services/dashboardService");
 const analyticsService = require("../services/analyticsService");
+const { validateNickname } = require("../utils/nickname");
 
 async function list(req, res) {
     try {
@@ -42,48 +43,38 @@ async function getById(req, res) {
     }
 }
 
+// PUT /fighters/:id accepts exactly one player-editable field. Anything else is
+// rejected before the service is called, so a hostile body can never reach Mongo.
+// Nickname rules are shared with character creation (utils/nickname.js).
+const UPDATABLE_FIELDS = ["nickname"];
+
 async function update(req, res) {
+    const body = req.body;
+    if (body === null || typeof body !== "object" || Array.isArray(body)) {
+        return res.status(400).json({ message: "Request body must be a JSON object.", code: "invalid_body" });
+    }
+    const unknown = Object.keys(body).filter((k) => !UPDATABLE_FIELDS.includes(k));
+    if (unknown.length > 0) {
+        return res.status(400).json({
+            message: `Unknown field(s): ${unknown.join(", ")}`,
+            code: "unknown_fields",
+            fields: unknown,
+        });
+    }
+    if (!Object.prototype.hasOwnProperty.call(body, "nickname")) {
+        return res.status(400).json({ message: "Nothing to update. Send a nickname.", code: "no_fields" });
+    }
+    const checked = validateNickname(body.nickname);
+    if (!checked.ok) {
+        return res.status(400).json({ message: checked.message, code: "invalid_nickname" });
+    }
     try {
-        const fighter = await fighterService.updateFighter(req.params.id, req.body);
+        const fighter = await fighterService.updateFighter(req.params.id, { nickname: checked.value });
         res.json(fighter);
     } catch (err) {
         if (err.message === "Fighter not found") {
             return res.status(404).json({ message: err.message });
         }
-        console.error(err);
-        res.status(500).json({ message: "Internal server error" });
-    }
-}
-
-async function deductEnergy(req, res) {
-    try {
-        const amount = parseInt(req.body.amount || req.query.amount, 10) || 1;
-        const fighter = await fighterService.deductEnergy(req.params.id, amount);
-        res.json(fighter);
-    } catch (err) {
-        if (err.message === "Fighter not found") res.status(404).json({ message: err.message });
-        else if (err.message === "Not enough energy") res.status(400).json({ message: err.message });
-        else {
-            console.error(err);
-            res.status(500).json({ message: "Internal server error" });
-        }
-    }
-}
-
-function isDebugEnergyRechargeAllowed() {
-    return process.env.NODE_ENV !== "production" || process.env.DEBUG_ALLOW_ENERGY_RECHARGE === "1";
-}
-
-/** DEBUG: refill energy to max (disabled in production unless DEBUG_ALLOW_ENERGY_RECHARGE=1). */
-async function debugRechargeEnergy(req, res) {
-    if (!isDebugEnergyRechargeAllowed()) {
-        return res.status(404).json({ message: "Not found" });
-    }
-    try {
-        const fighter = await fighterService.debugRefillEnergyToMax(req.params.id);
-        res.json(fighter);
-    } catch (err) {
-        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
         console.error(err);
         res.status(500).json({ message: "Internal server error" });
     }
@@ -414,6 +405,9 @@ async function getCareerProfile(req, res) {
 
         const fighter = await Fighter.findById(req.params.id).populate("gymId", "name");
         if (!fighter) return res.status(404).json({ message: "Fighter not found" });
+        // The profile read is public (rival profile view). Only the owner gets the full
+        // fighter payload; everyone else gets the whitelisted public projection.
+        const isOwner = !!(req.user && req.user.fighterId) && String(req.user.fighterId) === String(req.params.id);
 
         // Lazy self-heal: award any state-derivable badges the fighter now qualifies for
         // (e.g. championship badges proven by promotion tier) so the belts and the badge
@@ -449,7 +443,7 @@ async function getCareerProfile(req, res) {
         });
 
         res.json({
-            fighter: fighterService.toPublicFighter(fighter),
+            fighter: isOwner ? fighterService.toPublicFighter(fighter) : fighterService.toPublicProjection(fighter),
             belts,
             badges: badgeService.buildBadgeProfile(fighter),
             pvp: null,
@@ -549,8 +543,6 @@ module.exports = {
     create,
     getById,
     update,
-    deductEnergy,
-    debugRechargeEnergy,
     train,
     doctorVisit,
     switchGym,

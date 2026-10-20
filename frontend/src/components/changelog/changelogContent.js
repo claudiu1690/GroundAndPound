@@ -18,6 +18,23 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.2.1",
+    date: "2026-10-20",
+    major: false,
+    highlights: [],
+    sections: {
+      changed: [
+        "Nicknames follow one rule everywhere you can set them: 2 to 20 characters, letters, numbers, spaces, hyphens and apostrophes. It used to be enforced only in Account settings, so a nickname picked at sign-up could be one you were then not allowed to save. A nickname you already have stays as it is.",
+      ],
+      fixed: [
+        "Other players can no longer see your cash, inventory, booked fight, Proving Ground defense plan or equipped Special Moves when they open your profile. They see your record, stats, rank, banner and badges, like before.",
+        "Another player could change things on your fighter, such as your banner, pinned badges or a callout, by sending requests with your fighter's id. Every change to a fighter now has to come from that fighter's own account.",
+        "Signing up with a nickname the game refuses now tells you why and keeps you on the fighter step, instead of sending you back to the account step or failing with a generic error.",
+      ],
+      balance: [],
+    },
+  },
+  {
     version: "2.2",
     date: "2026-09-26",
     major: true,

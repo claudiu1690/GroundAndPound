@@ -75,11 +75,6 @@ export const api = {
   getDashboard: (id) => request(`/fighters/${id}/dashboard`),
   updateFighter: (id, body) =>
     request(`/fighters/${id}`, { method: "PUT", body: JSON.stringify(body) }),
-  deductEnergy: (id, amount = 1) =>
-    request(`/fighters/${id}/energy`, {
-      method: "PATCH",
-      body: JSON.stringify({ amount }),
-    }),
 
   // ── Gym ─────────────────────────────────────────────────
   listGyms: (tier) => request(tier ? `/gyms?tier=${tier}` : "/gyms"),

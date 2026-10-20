@@ -58,13 +58,14 @@ before(async () => {
     app.use("/gyms", blockWhenGymsRetired, gymRouter);
 
     // — mirrors fighterRoutes.js. `ownFighter` is a pass-through stub here; what matters is that
-    //   blockWhenGymsRetired sits in FRONT of the controller. The train spy stands in for the
-    //   controller, which is where deductBatchEnergy would be called.
+    //   blockWhenGymsRetired sits in FRONT of the controller. All three gym-writing routes are
+    //   [ownFighter, blockWhenGymsRetired, handler]. The train spy stands in for the controller,
+    //   which is where deductBatchEnergy would be called.
     const ownFighter = (req, res, next) => { reached.push("ownFighter"); next(); };
     const fighterRouter = express.Router();
     fighterRouter.post("/:id/train", ownFighter, blockWhenGymsRetired, hit("fighters.train"));
-    fighterRouter.post("/:id/switch-gym", blockWhenGymsRetired, hit("fighters.switchGym"));
-    fighterRouter.post("/:id/rank-up-gym", blockWhenGymsRetired, hit("fighters.rankUpGym"));
+    fighterRouter.post("/:id/switch-gym", ownFighter, blockWhenGymsRetired, hit("fighters.switchGym"));
+    fighterRouter.post("/:id/rank-up-gym", ownFighter, blockWhenGymsRetired, hit("fighters.rankUpGym"));
     app.use("/fighters", fighterRouter);
 
     // A route the retirement must NOT touch — the camp has to keep working through the cutover.

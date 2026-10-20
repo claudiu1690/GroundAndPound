@@ -980,9 +980,7 @@
     },
     "edit": {
       "nicknameLabel": "Nickname",
-      "nicknamePlaceholder": "The Destroyer",
-      "homeGymLabel": "Home gym",
-      "homeGymNone": "None"
+      "nicknamePlaceholder": "The Destroyer"
     }
   },
   "gym": {
