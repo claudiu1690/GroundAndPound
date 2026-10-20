@@ -29,6 +29,7 @@ const analyticsEventSchema = new mongoose.Schema({
         index: true,
         enum: [
             "signup",
+            "guest_signup",
             "session",
             "fight_accepted",
             "offers_rerolled",
