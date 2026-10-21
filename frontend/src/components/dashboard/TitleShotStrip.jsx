@@ -1,5 +1,5 @@
 import { t } from "@/lib/i18n";
-import { titleShotProgress, titleShotStep } from "./homeModel";
+import { titleShotStep } from "./homeModel";
 
 /** Copy for the first unmet step; "One" variants are used when n is 1. */
 function stepText({ key, n, rank, gcs, champion }) {
@@ -32,29 +32,18 @@ function stepText({ key, n, rank, gcs, champion }) {
  * Title-shot progress strip, the thin red bar above the hero. Hidden until
  * `ranking` resolves (no flicker on load); ranking is otherwise always
  * present once the dashboard payload lands. Shows the first unmet step, not
- * a fixed message.
+ * a fixed message. No requirement counter or pips: the sentence is the whole
+ * message, and the Rankings tile lists the three requirements.
  */
 export function TitleShotStrip({ ranking, onNavigate }) {
   if (!ranking) return null;
   const step = titleShotStep(ranking);
   if (step.key === "hidden") return null;
-  const showProgress = step.key !== "autoPromote" && step.key !== "autoPromoteNextFight";
-  const { done, total } = titleShotProgress(ranking);
 
   return (
     <button type="button" className="ap-strip ap-anim" onClick={() => onNavigate?.("rankings")}>
       <span className="ap-strip-label">{step.gcs ? t("home.strip.labelGcs") : t("home.strip.label")}</span>
       <span>{stepText(step)}</span>
-      {showProgress ? (
-        <>
-          <span className="ap-strip-count">{t("home.strip.progress", { done, total })}</span>
-          <span className="ap-strip-pips" aria-label={t("home.strip.progress", { done, total })}>
-            {Array.from({ length: total }, (_, i) => (
-              <i key={i} className={i < done ? "on" : ""} />
-            ))}
-          </span>
-        </>
-      ) : null}
     </button>
   );
 }

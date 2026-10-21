@@ -379,7 +379,6 @@
     "strip": {
       "label": "Title shot",
       "labelGcs": "GCS title shot",
-      "progress": "{done} of {total}",
       "getRanked": "Play {n} more fights to get ranked",
       "getRankedOne": "Play 1 more fight to get ranked",
       "reachTop5": "Climb to #{n}. You're #{rank}",

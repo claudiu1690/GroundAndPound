@@ -126,7 +126,7 @@ Frontend (`tests/frontend/homeModel.test.js`): GCS ready gives `{ key: "ready", 
 - GDD: section 5.1 (~144) GCS belt rules; blockquote ~146-147 and section 20.2 (~1312): GCS Champion badge is earned only by winning the GCS title, not tier-derived; section 8 (~933-940) GCS exception list.
 - `docs/offer-board-contract.md`: fingerprint segment is now the contender token; titleShotMeta shape.
 - Library: `champions-and-title-shots`, `promotion-tiers`, `rankings` articles.
-- Changelog: NEW entry `2.3` above the uncommitted `2.2.2` (this is a new mechanic; 2.2.2 stays fixes-only).
+- Changelog: folded into the unreleased `2.2` entry (2026-10-21: every change not yet in production ships as 2.2).
 
 ## Risks
 

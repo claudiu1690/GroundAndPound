@@ -18,78 +18,37 @@
 
 export const CHANGELOG_ENTRIES = [
   {
-    version: "2.3",
-    date: "2026-10-20",
-    major: false,
-    highlights: [
-      "The GCS belt is finally up for grabs. Every GCS fighter is now a title contender: get into the title zone, bank 3 wins there, and the GCS Title Fight appears on your board.",
-      "Win it and you're the GCS Champion: 200 fame, the GCS Champion badge, 3 Energy Drinks and a title purse.",
-      "There's no tier above GCS, so the belt never stops. Every GCS title win after your first is a title defense, and your Rankings row carries a trophy while you hold it.",
-    ],
-    sections: {
-      changed: [
-        "Title shot screens count the right wins. The Path to the Belt checklist and the sidebar progress now count wins earned in the title zone, the same as the game does.",
-        "The title zone is #4 or better, because the champion holds the first of the top five places. Screens that called #5 \"top 5\" now agree with the game.",
-      ],
-      fixed: [
-        "Fighters in GCS could never get a title shot, so the GCS belt and its badge were out of reach.",
-      ],
-      balance: [
-        "A GCS title defense pays 100 fame instead of 200. The first belt is the milestone; defenses stay worth fighting without turning the belt into a fame farm.",
-      ],
-    },
-  },
-  {
-    version: "2.2.2",
-    date: "2026-10-20",
-    major: false,
-    highlights: [],
-    sections: {
-      changed: [],
-      fixed: [
-        "The title shot bar on Home now tells you the next real step. An unranked fighter used to be told to win 3 more fights, even though wins only count once you are in the top 5.",
-      ],
-      balance: [],
-    },
-  },
-  {
-    version: "2.2.1",
-    date: "2026-10-20",
-    major: false,
-    highlights: [],
-    sections: {
-      changed: [
-        "Nicknames follow one rule everywhere you can set them: 2 to 20 characters, letters, numbers, spaces, hyphens and apostrophes. It used to be enforced only in Account settings, so a nickname picked at sign-up could be one you were then not allowed to save. A nickname you already have stays as it is.",
-      ],
-      fixed: [
-        "Other players can no longer see your cash, inventory, booked fight, Proving Ground defense plan or equipped Special Moves when they open your profile. They see your record, stats, rank, banner and badges, like before.",
-        "Another player could change things on your fighter, such as your banner, pinned badges or a callout, by sending requests with your fighter's id. Every change to a fighter now has to come from that fighter's own account.",
-        "Signing up with a nickname the game refuses now tells you why and keeps you on the fighter step, instead of sending you back to the account step or failing with a generic error.",
-      ],
-      balance: [],
-    },
-  },
-  {
     version: "2.2",
-    date: "2026-09-26",
+    date: "2026-10-21",
     major: true,
     highlights: [
       "Twelve new Special Moves double the roster to 24, across all four disciplines. Striking gets High Guard, Second Gear and Superman Punch. Wrestling gets Double-Leg Precision, Top Control and Blast Double. Brazilian Jiu-Jitsu gets Frame & Base, Guillotine Choke and Arm Triangle. Conditioning gets Pace Pusher, Deep Waters and Fighting Spirit.",
       "Three new Signatures, each a one-shot moment per fight. Superman Punch is a first-round power surge. Blast Double makes your first takedown hit harder. Arm Triangle means the first time you get on top, you hunt the tap.",
       "Coaches hired from now on know more. A Legendary coach covers his whole expanded discipline, up to seven moves. Coaches already on your roster keep the list on their card, so what you read at hire is what you get.",
-      "Seven moves have new names. Same moves, same numbers, same cards: Sprawl Instinct is now Sprawl, Never Tap is Hip Escape, Clinch Killer is Dirty Boxing, Mount Reaper is Full Mount, The Finisher is Overhand Right, Iron Recovery is Rubber Guard, and Killer Instinct is Crucifix.",
       "A new Catalog sits at the top of the Special Moves tab. All 24 moves in one place: what each one is worth at every rarity, which ones you own and at what rarity, and how to get the rest, down to which coach teaches it and at what rank.",
+      "The GCS belt is finally up for grabs. Every GCS fighter is a title contender: get into the title zone, bank 3 wins there, and the GCS Title Fight appears on your board. Win it for 200 fame, the GCS Champion badge, 3 Energy Drinks and a title purse. There is no tier above GCS, so every later GCS title win is a title defense, and your Rankings row carries a trophy while you hold the belt.",
     ],
     sections: {
       changed: [
+        "Seven moves have new names. Same moves, same numbers, same cards: Sprawl Instinct is now Sprawl, Never Tap is Hip Escape, Clinch Killer is Dirty Boxing, Mount Reaper is Full Mount, The Finisher is Overhand Right, Iron Recovery is Rubber Guard, and Killer Instinct is Crucifix.",
         "Drops can now land on any of 24 moves, so each one turns up about half as often as before. Coach teaching is how you aim at the move you actually want.",
         "The Boogeyman's Ambush now boosts the new proc moves too, under the same cap as before.",
+        "Title shot screens count the right wins. The Path to the Belt checklist and the sidebar progress now count wins earned in the title zone, the same as the game does.",
+        "The title zone is #4 or better, because the champion holds the first of the top five places. Screens that called #5 \"top 5\" now agree with the game.",
+        "Nicknames follow one rule everywhere you can set them: 2 to 20 characters, letters, numbers, spaces, hyphens and apostrophes. It used to be enforced only in Account settings, so a nickname picked at sign-up could be one you were then not allowed to save. A nickname you already have stays as it is.",
       ],
-      fixed: [],
+      fixed: [
+        "Fighters in GCS could never get a title shot, so the GCS belt and its badge were out of reach.",
+        "The title shot bar on Home now tells you the next real step, like getting ranked or climbing to #4. An unranked fighter used to be told to win 3 more fights, even though wins only count once you are in the title zone. The bar also dropped its unexplained \"0 of 3\" counter.",
+        "Other players can no longer see your cash, inventory, booked fight, Proving Ground defense plan or equipped Special Moves when they open your profile. They see your record, stats, rank, banner and badges, like before.",
+        "Another player could change things on your fighter, such as your banner, pinned badges or a callout, by sending requests with your fighter's id. Every change to a fighter now has to come from that fighter's own account.",
+        "Signing up with a nickname the game refuses now tells you why and keeps you on the fighter step, instead of sending you back to the account step or failing with a generic error.",
+      ],
       balance: [
         "Second Gear and Deep Waters ship at about half strength. They stack with Heavy Hands on the same punch, and the three together swung fights past the limit we hold every loadout to.",
         "Pace Pusher was cut to under a third of its first draft after testing. A single Legendary copy swung mirror fights by more than any other passive in the game, so it now sits in line with the rest.",
         "Fighting Spirit starts deliberately small. Nothing else in the game touches knockdown odds this way, so it ships cautious and will be revisited with real fight data.",
+        "A GCS title defense pays 100 fame instead of 200. The first belt is the milestone; defenses stay worth fighting without turning the belt into a fame farm.",
       ],
     },
   },
