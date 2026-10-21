@@ -623,3 +623,52 @@ test("rerollBoard: a lost conditional write maps to the fresh state (REROLL_USED
         });
     }
 });
+
+// ── GCS contender token (docs/gcs-title-contract.md B16) ────────────────────
+
+test("boardFingerprint: a GCS fighter carries the GCS contender token", () => {
+    const f = baseFighter({ promotionTier: "GCS", pendingPromotion: null });
+    assert.equal(boardFingerprint(f), `GCS|Lightweight|-|GCS|${f.lastFightDate.getTime()}`);
+    // Lower tiers keep their old segment: the pending tier, or "-".
+    assert.equal(boardFingerprint(baseFighter()).split("|")[3], "-");
+    assert.equal(boardFingerprint(baseFighter({ pendingPromotion: "National" })).split("|")[3], "National");
+});
+
+test("boardFingerprint: gcsTitleWins is NOT in the fingerprint", () => {
+    const f = baseFighter({ promotionTier: "GCS", pendingPromotion: null, gcsTitleWins: 0 });
+    const base = boardFingerprint(f);
+    assert.equal(boardFingerprint({ ...f, gcsTitleWins: 1 }), base);
+    assert.equal(boardFingerprint({ ...f, gcsTitleWins: 7 }), base);
+    assert.ok(!base.includes("gcsTitleWins"));
+});
+
+test("getBoard: a GCS board regenerates once (old fingerprint) and is stable across reads", async () => {
+    const gcsRoster = {
+        g1: oppDoc("g1", 76, { promotionTier: "GCS" }), g2: oppDoc("g2", 80, { promotionTier: "GCS" }),
+        g3: oppDoc("g3", 84, { promotionTier: "GCS" }),
+    };
+    const SET_G = [
+        { offerType: "Easy", opponentId: "g1" },
+        { offerType: "Even", opponentId: "g2" },
+        { offerType: "Hard", opponentId: "g3" },
+    ];
+    const f = baseFighter({ promotionTier: "GCS", overallRating: 80, pendingPromotion: null, gcsTitleWins: 0 });
+    // A board stored before this change: the contender segment was "-".
+    const legacy = liveBoard(f, SET_G, { fingerprint: `GCS|Lightweight|-|-|${f.lastFightDate.getTime()}` });
+    const db = makeDb(baseFighter({ ...f, offerBoard: legacy }), { picks: [SET_G] });
+    Object.assign(db.roster, gcsRoster);
+    await withDb(db, async () => {
+        await getBoard("f1");
+        assert.equal(db.pickCalls.length, 1, "one-time regeneration for the old fingerprint");
+        assert.equal(db.fighter.offerBoard.fingerprint.split("|")[3], "GCS");
+
+        await getBoard("f1");
+        await getBoard("f1");
+        assert.equal(db.pickCalls.length, 1, "stable afterwards");
+
+        // Winning the belt bumps gcsTitleWins but must not regenerate the board.
+        db.fighter.gcsTitleWins = 1;
+        await getBoard("f1");
+        assert.equal(db.pickCalls.length, 1, "gcsTitleWins never regenerates the board");
+    });
+});

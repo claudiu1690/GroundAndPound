@@ -48,7 +48,7 @@ export function RankingsTile({ ranking, weightClass, loading, onNavigate, index 
         <ul className="ap-checks">
           <li className={ts.ovrMet ? "is-done" : "is-todo"}>
             <i>{ts.ovrMet ? "✓" : "1"}</i>
-            {t("home.rankings.conditionOvr")}
+            {ranking?.division === "GCS" ? t("home.rankings.conditionOvrGcs") : t("home.rankings.conditionOvr")}
           </li>
           <li className={ts.topFive ? "is-done" : "is-todo"}>
             <i>{ts.topFive ? "✓" : "2"}</i>

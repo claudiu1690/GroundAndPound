@@ -9,7 +9,7 @@ The codebase is JavaScript. No em dashes in any code, comment or string.
 
 1. **Invalidation uses a fingerprint, not an invalidate helper.** The fields that drive offers are only written in three places: `fightService.resolveFightAndApply`, `calloutService.createCallout/cancelCallout`, and generation itself (stale-nemesis and `pendingPromotion` cleanup). `fighter.lastFightDate` is stamped in exactly one place (`fightService.js` ~line 1077, PvE resolve only), so it is the "fight resolved" signal. With the fingerprint, no mutating service needs a code change.
 2. **Callout is a live overlay, not a stored slot.** It is left out of the fingerprint on purpose. If callouts regenerated the board, the player would get unlimited free rerolls: `createCallout` spends fame, `cancelCallout` refunds it in full, and each call would produce a new board. Instead, `calloutService.injectIntoOffers` runs at every read on top of the stored picks. Setting a callout swaps it into the Hard slot right away. Cancelling brings the original Hard pick back.
-3. **Title-shot lock state is derived live at read time.** `titleShotCooldown` and `topFiveWinsInTier` are therefore not in the fingerprint. They only change inside resolve anyway, which bumps `lastFightDate`. `pendingPromotion` is in the fingerprint because it decides whether a TitleShot slot exists.
+3. **Title-shot lock state is derived live at read time.** `titleShotCooldown` and `topFiveWinsInTier` are therefore not in the fingerprint. They only change inside resolve anyway, which bumps `lastFightDate`. The contender token (`pendingPromotion`, or the top tier for a GCS fighter) is in the fingerprint because it decides whether a TitleShot slot exists.
 4. **Blocking injury.** A read that finds a blocking injury (and no accepted fight) returns an empty list and clears any stored board with a compare-and-set. Once the injury clears, the next read generates a fresh board. Nothing is persisted while blocked.
 5. **Client `offerType` is accepted and ignored.** It is not validated against the board. This keeps old clients and the e2e helper working during deploy skew. The type always comes from the board.
 6. **Reroll avoids the previous picks.** It passes the old Easy/Even/Hard ids as a soft exclusion so the player does not pay 20% of a purse to get the same three back. Thin divisions can still backfill with them.
@@ -67,10 +67,13 @@ Dependencies: top-level requires `Fighter`, `fightService`, `analyticsService`, 
 
 ```js
 function boardFingerprint(fighter) // -> string
-// `${promotionTier}|${weightClass}|${nemesis?.opponentId ?? "-"}|${pendingPromotion ?? "-"}|${lastFightDate ? lastFightDate.getTime() : 0}`
+// `${promotionTier}|${weightClass}|${nemesis?.opponentId ?? "-"}|${contender}|${lastFightDate ? lastFightDate.getTime() : 0}`
+// contender = fightService.isTitleContender(fighter) ? (pendingPromotion ?? fightService.TOP_TIER) : "-"
 ```
 
 Plain joined string, not a hash. Compute it AFTER `pickOfferSlots` runs, because generation can clear a stale nemesis or `pendingPromotion`.
+
+The fourth segment is the **contender token** (GCS title shot, `docs/gcs-title-contract.md` B16). A contender is a fighter with a pending promotion, or any GCS fighter (the GCS belt is defended forever, and GCS never gets a `pendingPromotion`). Lower tiers are unchanged: the pending destination tier, or `"-"`. A GCS fighter gets `"GCS"`, so each GCS board stored before this change regenerates once on its first read and is stable afterwards. `gcsTitleWins` is NOT in the fingerprint: winning or defending the belt must not reroll the board on its own (the fight already bumps `lastFightDate`).
 
 ```js
 function isBoardLive(board, fighter, now = new Date()) // -> boolean
@@ -150,6 +153,7 @@ Built with `boardError(code, message, status)`, same shape as `campError` in `ho
     nemesisMeta?, isCallout?, calloutMeta?, titleShotMeta?, locked?, cooldownRemaining?,
     winsNeeded?, rankNeeded?, currentRank?, beefMatch?, respectMatch?, acceptable }
   ```
+  TitleShot `titleShotMeta`: `{ targetTier: string|null, tier: string, titleDefense: boolean, gcsTitleWins: number }`. `targetTier` is the promotion on a win (`pendingPromotion`, null at GCS); `tier` is the fighter's tier (the belt on the line); `titleDefense` is true at GCS once the player already holds the belt (`gcsTitleWins > 0`); `gcsTitleWins` is the career GCS belt count. The canonical typedef lives in `services/offerBoardService.js`.
 
 ---
 

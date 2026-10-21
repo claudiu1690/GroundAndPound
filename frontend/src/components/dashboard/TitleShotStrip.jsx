@@ -1,25 +1,60 @@
 import { t } from "@/lib/i18n";
-import { titleShotProgress } from "./homeModel";
+import { titleShotProgress, titleShotStep } from "./homeModel";
+
+/** Copy for the first unmet step; "One" variants are used when n is 1. */
+function stepText({ key, n, rank, gcs, champion }) {
+  switch (key) {
+    case "getRanked":
+      return n === 1 ? t("home.strip.getRankedOne") : t("home.strip.getRanked", { n });
+    case "reachTop5":
+      return rank != null ? t("home.strip.reachTop5", { n, rank }) : t("home.strip.reachTop5NoRank", { n });
+    case "winTop5":
+      if (champion) return n === 1 ? t("home.strip.winTop5ChampionOne") : t("home.strip.winTop5Champion", { n });
+      return n === 1 ? t("home.strip.winTop5One") : t("home.strip.winTop5", { n });
+    case "rematch":
+      return n === 1 ? t("home.strip.rematchOne") : t("home.strip.rematch", { n });
+    case "reachOvr":
+      return t("home.strip.reachOvr", { n });
+    case "autoPromote":
+      return t("home.strip.autoPromote", { n });
+    case "autoPromoteNextFight":
+      return t("home.strip.autoPromoteNextFight");
+    case "lockInOvr":
+      return t("home.strip.lockInOvr");
+    case "ready":
+      return gcs ? t("home.strip.readyGcs") : t("home.strip.ready");
+    default:
+      return null;
+  }
+}
 
 /**
  * Title-shot progress strip, the thin red bar above the hero. Hidden until
  * `ranking` resolves (no flicker on load); ranking is otherwise always
- * present once the dashboard payload lands.
+ * present once the dashboard payload lands. Shows the first unmet step, not
+ * a fixed message.
  */
 export function TitleShotStrip({ ranking, onNavigate }) {
   if (!ranking) return null;
-  const { done, total, nextLabel } = titleShotProgress(ranking);
+  const step = titleShotStep(ranking);
+  if (step.key === "hidden") return null;
+  const showProgress = step.key !== "autoPromote" && step.key !== "autoPromoteNextFight";
+  const { done, total } = titleShotProgress(ranking);
 
   return (
     <button type="button" className="ap-strip ap-anim" onClick={() => onNavigate?.("rankings")}>
-      <span className="ap-strip-label">{t("home.strip.label")}</span>
-      <span>{nextLabel != null ? t("home.strip.locked", { n: nextLabel }) : t("home.strip.progress", { done, total })}</span>
-      <span className="ap-strip-count">{t("home.strip.progress", { done, total })}</span>
-      <span className="ap-strip-pips" aria-label={t("home.strip.progress", { done, total })}>
-        {Array.from({ length: total }, (_, i) => (
-          <i key={i} className={i < done ? "on" : ""} />
-        ))}
-      </span>
+      <span className="ap-strip-label">{step.gcs ? t("home.strip.labelGcs") : t("home.strip.label")}</span>
+      <span>{stepText(step)}</span>
+      {showProgress ? (
+        <>
+          <span className="ap-strip-count">{t("home.strip.progress", { done, total })}</span>
+          <span className="ap-strip-pips" aria-label={t("home.strip.progress", { done, total })}>
+            {Array.from({ length: total }, (_, i) => (
+              <i key={i} className={i < done ? "on" : ""} />
+            ))}
+          </span>
+        </>
+      ) : null}
     </button>
   );
 }

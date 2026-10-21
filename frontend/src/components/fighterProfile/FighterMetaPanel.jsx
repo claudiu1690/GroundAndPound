@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { t } from "@/lib/i18n";
+import { isTopFiveDisplayRank } from "../../constants/gameConstants";
 
 function MetaRow({ label, children, rowClassName = "", valueClassName = "" }) {
   return (
@@ -75,7 +76,7 @@ function RankBlock({ ranking, tier }) {
     );
   }
   // Title-shot zone = top 5 in division (champion + top 4 contenders).
-  const isTopFive = rank <= 4;
+  const isTopFive = isTopFiveDisplayRank(rank);
   return (
     <span className={`meta-rank ${isTopFive ? "meta-rank-top5" : ""}`} title={isTopFive ? t("fighterProfile.meta.titleZoneTitle") : null}>
       <span className="meta-rank-num">#{rank}</span>

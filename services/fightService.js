@@ -76,6 +76,7 @@ const NO_CHAMPION_TIERS = ["GCS Contender"];
  *   titleWins  — wins-in-current-tier required before the title shot unlocks
  *   beltFame   — fame (notoriety) awarded for winning the belt
  *   beltBadge  — badge pushed onto the fighter when the belt is won
+ *   defenseFame (GCS only): fame for a repeat GCS title win (a title defense)
  * Any tier not listed falls back to TITLE_SHOT_DEFAULT.
  */
 const TITLE_SHOT_DEFAULT = { titleWins: 3, beltFame: 200, beltBadge: "Champion" };
@@ -83,7 +84,7 @@ const TITLE_SHOT_BY_TIER = {
     "Amateur":      { titleWins: 2, beltFame: 75,  beltBadge: "Amateur Champion" },
     "Regional Pro": { titleWins: 3, beltFame: 200, beltBadge: "Champion" },
     "National":     { titleWins: 3, beltFame: 200, beltBadge: "Champion" },
-    "GCS":          { titleWins: 3, beltFame: 200, beltBadge: "Champion" },
+    "GCS":          { titleWins: 3, beltFame: 200, defenseFame: 100, beltBadge: "Champion" },
 };
 
 /** Read the title-shot config for a tier, defaulting for any unlisted tier. */
@@ -93,7 +94,8 @@ function getTitleShotConfig(tier) {
 
 /**
  * Check if a fighter qualifies for a tier promotion.
- * For gated tiers (Amateur, Regional Pro, National, GCS): sets pendingPromotion instead of promoting.
+ * For gated tiers (Amateur, Regional Pro, National): sets pendingPromotion instead of promoting.
+ * The top tier (GCS) has no ladder entry and returns null; see isTitleContender.
  * For non-gated tiers (GCS Contender): returns new tier name for immediate promotion.
  */
 function checkPromotion(fighter) {
@@ -109,6 +111,134 @@ function checkPromotion(fighter) {
     fighter.pendingPromotion = entry.to;
     return null;
 }
+
+/** The top promotion tier ("GCS"). It has no TIER_LADDER entry: the belt is defended, not left. */
+const TOP_TIER = TIER_ORDER[TIER_ORDER.length - 1];
+
+/**
+ * Contender = waiting on a belt fight in the current tier: a pending promotion, or being
+ * in the top tier (GCS defends forever). Use this, not `!!pendingPromotion`, wherever the
+ * question is "does this fighter have a title fight to work toward". pendingPromotion keeps
+ * its own meaning (destination tier) and is never set to the top tier.
+ * @param {Object} fighter
+ * @returns {boolean}
+ */
+function isTitleContender(fighter) {
+    return fighter.promotionTier === TOP_TIER || !!fighter.pendingPromotion;
+}
+
+/**
+ * Apply a title-shot WIN to the fighter, in memory only (no save, no stateful imports
+ * beyond notorietyService.applyNotorietyDelta, which is itself an in-memory mutation).
+ *
+ * Lower tiers: promote to pendingPromotion, zero both win counters, reset the ranking,
+ * belt fame and badge (unchanged behaviour).
+ * Top tier (GCS): no promotion. gcsTitleWins += 1; the first win pays beltFame and the
+ * badge, every later win is a title defense paying defenseFame and no badge. Only
+ * topFiveWinsInTier and titleShotCooldown reset; ranking, winsInCurrentTier and
+ * pendingPromotion are left alone.
+ *
+ * @param {Object} fighter
+ * @param {{fightId?:*}} [opts]
+ * @returns {{promoted:(Object|null), beltTier:string, titleDefense:boolean, fameAwarded:number, badgeAwarded:(string|null)}}
+ */
+function applyTitleShotWin(fighter, { fightId } = {}) {
+    const beltTier = fighter.promotionTier;
+    const cfg = getTitleShotConfig(beltTier);
+    fighter.badges = fighter.badges || [];
+
+    if (beltTier === TOP_TIER) {
+        fighter.gcsTitleWins = (fighter.gcsTitleWins ?? 0) + 1;
+        const titleDefense = fighter.gcsTitleWins > 1;
+        fighter.topFiveWinsInTier = 0;
+        fighter.titleShotCooldown = 0;
+        const fameAwarded = titleDefense ? cfg.defenseFame : cfg.beltFame;
+        notorietyService.applyNotorietyDelta(fighter, fameAwarded, {
+            skipFreezeBlock: true,
+            code: "BELT_WON",
+            reason: titleDefense ? "Defended the GCS belt" : "Won the GCS belt",
+            meta: { fightId, tier: TOP_TIER, defense: titleDefense },
+        });
+        let badgeAwarded = null;
+        if (!titleDefense && !fighter.badges.includes(cfg.beltBadge)) {
+            fighter.badges.push(cfg.beltBadge);
+            badgeAwarded = cfg.beltBadge;
+        }
+        return { promoted: null, beltTier, titleDefense, fameAwarded, badgeAwarded };
+    }
+
+    // Lower tiers: the player is leaving this tier permanently. The champion stays in the
+    // roster, so the next player in this tier still faces the same champion (Ranking
+    // System v1.0: NPC ranks are immutable).
+    const targetTier = fighter.pendingPromotion;
+    fighter.promotionTier = targetTier;
+    fighter.pendingPromotion = null;
+    fighter.winsInCurrentTier = 0;
+    fighter.topFiveWinsInTier = 0;
+    fighter.titleShotCooldown = 0;
+    // Ranking System v1.0: wipe rank, fights/wins-in-tier counters for the new tier.
+    rankingService.resetRankingForNewTier(fighter);
+    // Per-tier belt rewards, keyed to the tier where the belt was held (beltTier).
+    notorietyService.applyNotorietyDelta(fighter, cfg.beltFame, {
+        skipFreezeBlock: true,
+        code: "BELT_WON",
+        reason: `Won the ${beltTier} belt`,
+        meta: { fightId, tier: targetTier },
+    });
+    let badgeAwarded = null;
+    if (!fighter.badges.includes(cfg.beltBadge)) {
+        fighter.badges.push(cfg.beltBadge);
+        badgeAwarded = cfg.beltBadge;
+    }
+    return {
+        promoted: { from: beltTier, to: targetTier, viaTitleShot: true },
+        beltTier,
+        titleDefense: false,
+        fameAwarded: cfg.beltFame,
+        badgeAwarded,
+    };
+}
+
+/**
+ * Activity-log entry and newBadges list for a belt win, from applyTitleShotWin's result.
+ * Pure. Never dereferences `promoted` on the GCS path (it is null there).
+ *
+ * @param {Object} p
+ * @param {{promoted:(Object|null), beltTier:string, titleDefense:boolean}} p.win
+ * @param {string} p.weightClass
+ * @param {number} p.gcsTitleWins   fighter.gcsTitleWins after the win
+ * @param {number} p.drinksGranted
+ * @param {string} p.fightId
+ * @returns {{log:{type:string,text:string,meta:Object}, badge:(string|null)}}
+ *          badge: the belt badge to list in newBadges, null on a title defense
+ */
+function describeTitleWin({ win, weightClass, gcsTitleWins, drinksGranted, fightId }) {
+    const { beltTier, titleDefense } = win;
+    const badge = titleDefense ? null : getTitleShotConfig(beltTier).beltBadge;
+    if (beltTier === TOP_TIER) {
+        const n = (gcsTitleWins ?? 1) - 1; // number of defenses
+        return {
+            log: {
+                type: "TITLE_WON",
+                text: titleDefense
+                    ? `Defended the GCS ${weightClass} Title (x${n})`
+                    : `Won the GCS ${weightClass} Title`,
+                meta: { tier: TOP_TIER, weightClass, defense: titleDefense, gcsTitleWins, drinksGranted, fightId },
+            },
+            badge,
+        };
+    }
+    const { from, to } = win.promoted || { from: beltTier, to: null };
+    return {
+        log: {
+            type: "TITLE_WON",
+            text: `Won ${from} ${weightClass} Title \u2014 promoted to ${to}`,
+            meta: { from, to, weightClass, tier: from, drinksGranted },
+        },
+        badge,
+    };
+}
+
 const fighterService = require("./fighterService");
 const questService = require("./questService");
 const { resolveFight } = require("../utils/fightResolution");
@@ -355,7 +485,9 @@ async function pickOfferSlots(fighter, { avoidOpponentIds = [] } = {}) {
         }
     }
 
-    if (fighter.pendingPromotion) {
+    // Contender, not pendingPromotion: a GCS fighter never has one but always has a belt to
+    // fight for. The OVR-drop guard above stays on pendingPromotion (it never applies at GCS).
+    if (isTitleContender(fighter)) {
         const champion = await championService.getChampion(fighter.promotionTier, weightClass);
         if (champion) slots.push({ offerType: "TitleShot", opponentId: champion._id });
     }
@@ -417,7 +549,14 @@ async function hydrateOffers(fighter, slots) {
             type: "TitleShot",
             // Show boosted OVR on the card so the player knows the real challenge
             opponent: { ...titleOpp, overallRating: Math.round(titleOpp.overallRating * 1.05) },
-            titleShotMeta: { targetTier: fighter.pendingPromotion ?? null },
+            // targetTier is null at GCS (no promotion); titleDefense is true once the
+            // player already holds the GCS belt.
+            titleShotMeta: {
+                targetTier: fighter.pendingPromotion ?? null,
+                tier: fighter.promotionTier,
+                titleDefense: fighter.promotionTier === TOP_TIER && (fighter.gcsTitleWins ?? 0) > 0,
+                gcsTitleWins: fighter.gcsTitleWins ?? 0,
+            },
             locked: elig.locked,
             cooldownRemaining: elig.cooldownRemaining,
             winsNeeded: elig.winsNeeded,
@@ -1096,6 +1235,9 @@ async function resolveFightAndApply(fighterId, userId) {
         fightOfTheNight,
         giantKiller,
         grudgeMatchWin: isWin && (isCalloutFight || !!beefMatch), // Phase 4/6: callout or beef win grants grudge +30%
+        // Both stay false for PvE. Belt fame is paid separately by applyTitleShotWin
+        // (beltFame / defenseFame). Setting titleDefenceWin here would make
+        // notorietyService add its flat +300 TITLE_DEF on top of the +100 defense fame.
         titleFightWin: false,
         titleDefenceWin: false,
         finishedHigherRanked: false,
@@ -1239,35 +1381,20 @@ async function resolveFightAndApply(fighterId, userId) {
     const oldTier = fighter.promotionTier;
     let promoted = null;
     let beltWon = false;
+    // Title-win shape. On a GCS win promoted stays null and beltWon is true, so nothing
+    // below may read promoted.* inside a beltWon path: use beltTier / titleWin instead.
+    let beltTier = null;
+    let titleDefense = false;
+    let titleWin = null;
 
-    // Title shot WIN: promote the player. Champion stays in the roster — the player
-    // is leaving this tier permanently, so the next player in this tier still faces the
-    // same champion (Ranking System v1.0: NPC ranks are immutable).
+    // Title shot WIN: lower tiers promote; the top tier (GCS) keeps the fighter and counts
+    // the belt (first win or defense). See applyTitleShotWin.
     if (fight.offerType === "TitleShot" && isWin) {
-        const targetTier = fighter.pendingPromotion;
-        fighter.promotionTier = targetTier;
-        fighter.pendingPromotion = null;
-        fighter.winsInCurrentTier = 0;
-        fighter.topFiveWinsInTier = 0;
-        fighter.titleShotCooldown = 0;
-        // Ranking System v1.0 — wipe rank, fights/wins-in-tier counters for the new tier.
-        rankingService.resetRankingForNewTier(fighter);
+        titleWin = applyTitleShotWin(fighter, { fightId: fight._id });
         beltWon = true;
-        promoted = { from: oldTier, to: targetTier, viaTitleShot: true };
-        // Per-tier belt rewards, keyed to the tier where the belt was held (oldTier).
-        const beltConfig = getTitleShotConfig(oldTier);
-        // Fame spike for winning the belt
-        notorietyService.applyNotorietyDelta(fighter, beltConfig.beltFame, {
-            skipFreezeBlock: true,
-            code: "BELT_WON",
-            reason: `Won the ${oldTier} belt`,
-            meta: { fightId: fight._id, tier: targetTier },
-        });
-        // Champion badge
-        fighter.badges = fighter.badges || [];
-        if (!fighter.badges.includes(beltConfig.beltBadge)) {
-            fighter.badges.push(beltConfig.beltBadge);
-        }
+        promoted = titleWin.promoted;
+        beltTier = titleWin.beltTier;
+        titleDefense = titleWin.titleDefense;
     } else {
         // Normal promotion check (non-gated auto-promote)
         const newTier = checkPromotion(fighter);
@@ -1284,8 +1411,9 @@ async function resolveFightAndApply(fighterId, userId) {
     // ── Energy Drink free-earn: promotion grant (title-shot OR non-title promotion) ──
     // Guarded once on the unified `promoted` flag, BEFORE the resolve-persisting save below
     // so the inventory mutation flushes. Clamps against the running inventory value.
+    // A first GCS title win pays the same 3 drinks (no promotion there); a defense pays none.
     let promotionDrinksGranted = 0;
-    if (promoted) {
+    if (promoted || (beltWon && !titleDefense)) {
         const { grantEnergyDrinks } = require("./shopService");
         promotionDrinksGranted = grantEnergyDrinks(fighter, 3);
     }
@@ -1406,9 +1534,9 @@ async function resolveFightAndApply(fighterId, userId) {
             beefMatched: !!beefMatch,
             nemesisCleared,
             campGrade: fightCamp ? (fightCamp.campRating || null) : null,
-            // beltWonForTier: the tier whose belt was won (oldTier = promoted.from),
-            // null when no belt was won this fight.
-            beltWonForTier: beltWon && promoted ? promoted.from : null,
+            // beltWonForTier: the tier whose belt was won, null when no belt was won this
+            // fight. beltTier, not promoted.from: promoted is null on a GCS win.
+            beltWonForTier: beltWon ? beltTier : null,
         });
         newlyEarnedBadges = r.newlyEarned;
     } catch (e) {
@@ -1561,23 +1689,31 @@ async function resolveFightAndApply(fighterId, userId) {
     if (promoted && !beltWon) activityLogService.log(fighterId, "TIER_PROMOTION",
         `Promoted to ${promoted.to}`,
         { from: promoted.from, to: promoted.to, tier: promoted.from, drinksGranted: promotionDrinksGranted });
-    if (beltWon) activityLogService.log(fighterId, "TITLE_WON",
-        `Won ${promoted.from} ${fighter.weightClass} Title \u2014 promoted to ${promoted.to}`,
-        { from: promoted.from, to: promoted.to, weightClass: fighter.weightClass, tier: promoted.from, drinksGranted: promotionDrinksGranted });
+    // Built once from the title-win result; never reads promoted.* (null on a GCS win).
+    const titleWinDesc = beltWon
+        ? describeTitleWin({
+            win: titleWin,
+            weightClass: fighter.weightClass,
+            gcsTitleWins: fighter.gcsTitleWins ?? 0,
+            drinksGranted: promotionDrinksGranted,
+            fightId: String(fight._id),
+        })
+        : null;
+    if (titleWinDesc) activityLogService.log(fighterId, titleWinDesc.log.type, titleWinDesc.log.text, titleWinDesc.log.meta);
     // Title shot eligible: fires when the top-5 wins threshold is first met (and
     // the fighter is actually top-5, since that's now what the wins are gated on).
-    if (isWin && fighter.pendingPromotion
+    if (isWin && isTitleContender(fighter)
         && rankingService.isTopFive(fighter)
         && (fighter.topFiveWinsInTier ?? 0) === getTitleShotConfig(fighter.promotionTier).titleWins
         && (fighter.titleShotCooldown ?? 0) <= 0) {
         activityLogService.log(fighterId, "TITLE_SHOT_ELIGIBLE",
             `Title shot available \u2014 fight for the ${fighter.promotionTier} belt`,
-            { tier: fighter.promotionTier, targetTier: fighter.pendingPromotion });
+            { tier: fighter.promotionTier, targetTier: fighter.pendingPromotion ?? null });
     }
     const newBadges = (isWin && isComeback) ? ["Resilience"] : [];
-    if (beltWon) {
-        const wonBadge = getTitleShotConfig(promoted.from).beltBadge;
-        if (!newBadges.includes(wonBadge)) newBadges.push(wonBadge);
+    // A title defense earns no new badge (titleWinDesc.badge is null then).
+    if (titleWinDesc && titleWinDesc.badge && !newBadges.includes(titleWinDesc.badge)) {
+        newBadges.push(titleWinDesc.badge);
     }
     for (const badge of newBadges)
         activityLogService.log(fighterId, "BADGE_EARNED",
@@ -1652,8 +1788,14 @@ async function resolveFightAndApply(fighterId, userId) {
         // Banner: badge/tier-gated pieces first unlocked by this fight (display-only).
         newlyUnlockedBannerPieces,
         completedQuests: completedQuests.map((q) => q.title),
-        promoted,
+        promoted, // null on a GCS title win (no promotion there); beltWon is still true
         beltWon,
+        // GCS title shot: true when this win was a repeat GCS title win (a defense).
+        titleDefense,
+        // Tier whose belt was fought for and won; null when this was not a title win.
+        beltTier,
+        // Career GCS belt wins after this fight (first win plus defenses); 0 outside GCS.
+        gcsTitleWins: fighter.gcsTitleWins ?? 0,
         // Post-loss title-shot signalling. After a title LOSS pendingPromotion is NOT
         // cleared, so titleTargetTier is the tier the player is still contending for
         // (drives Amateur "turn pro" framing in the post-fight notice).
@@ -1844,4 +1986,14 @@ module.exports = {
     getOffers,
     getTitleShotConfig,
     getFightBreakdown,
+    isTitleContender,
+    applyTitleShotWin,
+    describeTitleWin,
+    checkPromotion,
+    TOP_TIER,
+    // Read-only promotion ladder config (the dashboard title-shot strip derives its mode
+    // from these). Do not mutate.
+    TIER_ORDER,
+    TIER_LADDER,
+    NO_CHAMPION_TIERS,
 };

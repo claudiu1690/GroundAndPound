@@ -156,6 +156,48 @@
  *    ONE ActivityLog.findOne on the {fighterId, createdAt:-1} index, filtered to
  *    FIGHT_WIN / FIGHT_LOSS / FIGHT_DRAW.
  *
+ * 6. ranking.titleShot: the Home title-shot strip. Pre-existing fields keep their meaning;
+ *    the progress fields after titleWins are ADDITIVE so the client can name the FIRST
+ *    unmet step instead of always quoting top-5 wins.
+ *
+ *    ranking: {
+ *      rank, rosterSize, isTopFive, delta, division,   // unchanged
+ *      titleShot: {
+ *        ovrMet: boolean,                 // fightService.isTitleContender: pendingPromotion
+ *                                         //   is set, or the fighter is in GCS (no OVR gate)
+ *        topFive: boolean,                // rankingService.isTopFive on the raw doc; false
+ *                                         //   when the raw read failed (never fed a display rank)
+ *        winsMet: boolean,                // topFiveWinsInTier >= titleWins
+ *        winsInTier: number,              // topFiveWinsInTier, capped at titleWins
+ *        titleWins: number,               // fightService.getTitleShotConfig(tier).titleWins
+ *        mode: "title"|"autoPromote"|"none",
+ *                                         // "title": tier has a belt fight (Amateur,
+ *                                         //   Regional Pro, National, and GCS, where the
+ *                                         //   belt is won then defended; ovrTarget null);
+ *                                         // "autoPromote": tier in fightService
+ *                                         //   NO_CHAMPION_TIERS (GCS Contender), promotes
+ *                                         //   on reaching ovrTarget;
+ *                                         // "none": unknown tier only
+ *        ranked: boolean,                 // internal ranking.rank is a number
+ *        fightsInTier: number,            // ranking.fightsInTier ?? 0
+ *        rankedAfter: number,             // rankingService.RANKED_AFTER_FIGHTS (3): fights
+ *                                         //   in a tier before a rank is assigned
+ *        displayRank: number|null,        // same value as ranking.rank
+ *        cooldownRemaining: number,       // titleShotCooldown ?? 0 (post-loss cooldown)
+ *        ovr: number|null,                // fighter.overallRating
+ *        ovrTarget: number|null,          // PROMOTION_TIERS[nextTier].minOverall (the
+ *                                         //   checkPromotion threshold); null on the top tier
+ *        topFiveCutoff: number            // DISPLAY rank to reach to count as top 5:
+ *                                         //   rankingService.toDisplayRank(
+ *                                         //   rankingService.TOP_FIVE_INTERNAL_RANK), i.e. 4
+ *                                         //   today (internal 5). Compare to displayRank.
+ *        gcsTitleWins: number             // fighter.gcsTitleWins ?? 0: career GCS belt
+ *                                         //   wins (first win plus defenses)
+ *      }
+ *    }
+ *
+ *    No extra reads: built from the already-loaded fighter plus the ladder constants.
+ *
  * ─────────────────────────────────────────────────────────────────────────────
  * DEAD FIELDS: still shipped, deliberately unread.
  *   identity.photoIndex (and the fighterPhotoIndex helper that produces it) is NOT READ BY
@@ -237,7 +279,8 @@ function signingFeeFor(tier) {
  * @param {Array<{cannotFight:boolean,label?:string}>} input.injuries
  * @param {string|null} input.acceptedFightId
  * @param {{slotsRemaining:number,finalised:boolean,isTitleFight:boolean}|null} input.camp
- * @param {Array<{type:string,locked?:boolean}>} input.offers
+ * @param {Array<{type:string,locked?:boolean,titleShotMeta?:{titleDefense?:boolean}}>} input.offers
+ *        raw board offers (offerBoardService.getBoard), so a TitleShot carries titleShotMeta
  * @param {number} input.energyCurrent
  * @param {number} input.fightEnergyCost
  * @param {boolean} input.comebackActive
@@ -298,8 +341,20 @@ function computeHeroAction(input) {
         };
     }
 
-    // 5. Unlocked title shot on the table
-    if (Array.isArray(offers) && offers.some((o) => o && o.type === "TitleShot" && !o.locked)) {
+    // 5. Unlocked title shot on the table. `offers` are the raw board offers, so the
+    //    TitleShot carries titleShotMeta (titleDefense: the player already holds GCS).
+    const openTitle = Array.isArray(offers)
+        ? offers.find((o) => o && o.type === "TitleShot" && !o.locked)
+        : null;
+    if (openTitle && openTitle.titleShotMeta?.titleDefense) {
+        return {
+            key: "title_shot",
+            label: "Defend the Belt",
+            sublabel: "Your GCS title defense is on the table. Take it.",
+            linkTarget: "fights",
+        };
+    }
+    if (openTitle) {
         return {
             key: "title_shot",
             label: "Fight for the Belt",
@@ -705,9 +760,11 @@ async function buildRanking(fighter, rawFighter, id) {
         ? fighter.ranking.rank
         : null;
 
+    // isTopFive compares INTERNAL ranks. The public fighter's rank is display-shifted
+    // (internal - 1), so it must never be fed in: without the raw doc we report false.
     let isTopFive = false;
     try {
-        isTopFive = !!rankingService.isTopFive(rawFighter || fighter);
+        isTopFive = rawFighter ? !!rankingService.isTopFive(rawFighter) : false;
     } catch (err) {
         console.error("[dashboard] isTopFive failed:", err.message);
     }
@@ -728,21 +785,76 @@ async function buildRanking(fighter, rawFighter, id) {
     }
 
     // Title-shot conditions (surfaced as a checklist on the Rankings tile). All from
-    // the already-loaded fighter — no extra reads. OVR is "met" once pendingPromotion
-    // is set (it's set exactly when OVR reaches the next tier's floor).
+    // the already-loaded fighter, no extra reads. OVR is "met" once the fighter is a
+    // title contender: pendingPromotion is set (exactly when OVR reaches the next tier's
+    // floor), or the fighter is in GCS (no OVR gate there).
     const titleWins = fightService.getTitleShotConfig(tier).titleWins;
     // Title shot is gated on wins earned WHILE ranked top-5 (not raw tier wins).
     const winsInTier = fighter.topFiveWinsInTier ?? 0;
     const titleShot = {
-        ovrMet: !!fighter.pendingPromotion,
+        ovrMet: fightService.isTitleContender(fighter),
         topFive: isTopFive,
         winsMet: winsInTier >= titleWins,
         // Display the count capped at the requirement so it reads "2/2", never "4/2".
         winsInTier: Math.min(winsInTier, titleWins),
         titleWins,
+        ...buildTitleShotProgress(fighter, rawFighter, rank),
     };
 
     return { rank, rosterSize, isTopFive, delta, division: tier, titleShot };
+}
+
+/**
+ * Additive title-shot progress fields, so the client can name the FIRST unmet step
+ * (get ranked, reach the OVR floor, climb to top 5, win, sit out a cooldown). Pure:
+ * reads only the already-loaded fighter docs and the promotion ladder constants.
+ *
+ * mode is derived from fightService's ladder rather than hardcoded tier names:
+ *   the top tier (fightService.TOP_TIER, GCS) -> "title" (belt fight, defended forever)
+ *   ladder entry in NO_CHAMPION_TIERS         -> "autoPromote"
+ *   any other ladder entry                    -> "title"
+ *   no ladder entry and not the top tier      -> "none" (unknown tier only)
+ * ovrTarget is the ladder entry's minOverall, i.e. PROMOTION_TIERS[nextTier].minOverall,
+ * the same threshold checkPromotion compares against; null at GCS (no OVR gate).
+ *
+ * @param {Object} fighter       public fighter (ranking.rank already display-shifted)
+ * @param {Object|null} rawFighter raw {ranking, gazette} lean doc, null if that read failed
+ * @param {number|null} displayRank the ranking.rank value already exposed by the payload
+ */
+function buildTitleShotProgress(fighter, rawFighter, displayRank) {
+    const tier = fighter.promotionTier;
+    const entry = fightService.TIER_LADDER.find((t) => t.from === tier) || null;
+    let mode = "none";
+    if (tier === fightService.TOP_TIER) {
+        mode = "title";
+    } else if (entry) {
+        mode = fightService.NO_CHAMPION_TIERS.includes(tier) ? "autoPromote" : "title";
+    }
+    const ovrTarget = entry && Number.isFinite(entry.minOverall) ? entry.minOverall : null;
+
+    // Prefer the raw doc for "internal rank is a number"; the public fighter's display
+    // shift keeps a number a number for any player rank (2..N), so it is a safe fallback.
+    const internalRank = rawFighter ? rawFighter.ranking?.rank : fighter.ranking?.rank;
+    const fightsInTier = fighter.ranking?.fightsInTier ?? rawFighter?.ranking?.fightsInTier ?? 0;
+    const ovr = fighter.overallRating;
+
+    return {
+        mode,
+        ranked: typeof internalRank === "number",
+        fightsInTier: Number.isFinite(fightsInTier) ? fightsInTier : 0,
+        rankedAfter: rankingService.RANKED_AFTER_FIGHTS,
+        displayRank: displayRank ?? null,
+        cooldownRemaining: fighter.titleShotCooldown ?? 0,
+        ovr: Number.isFinite(ovr) ? ovr : null,
+        ovrTarget,
+        topFiveCutoff: topFiveCutoff(),
+        gcsTitleWins: fighter.gcsTitleWins ?? 0,
+    };
+}
+
+/** Display rank a fighter must reach to count as top 5 (internal boundary, display-shifted). */
+function topFiveCutoff() {
+    return rankingService.toDisplayRank(rankingService.TOP_FIVE_INTERNAL_RANK);
 }
 
 /**
@@ -886,44 +998,60 @@ function buildNudge(fighter, ranking) {
     const titleWins = fightService.getTitleShotConfig(fighter.promotionTier).titleWins;
     const wins = fighter.topFiveWinsInTier ?? 0; // title shot now gated on wins earned while top-5
     const cooldown = fighter.titleShotCooldown ?? 0;
-    const pending = fighter.pendingPromotion;
+    // Contender: a pending promotion, or any GCS fighter (the GCS belt is defended forever).
+    const contender = fightService.isTitleContender(fighter);
+    const isGcs = fighter.promotionTier === fightService.TOP_TIER;
+    const isPro = fighter.pendingPromotion === "Regional Pro";
 
     // a. Post-loss rematch cooldown blocks everything else.
     if (cooldown > 0) {
         return {
-            text: `Title shot locked — win ${cooldown} more ${cooldown === 1 ? "fight" : "fights"} to earn a rematch (${2 - cooldown}/2).`,
+            text: `Title shot locked. Win ${cooldown} more ${cooldown === 1 ? "fight" : "fights"} to earn a rematch (${2 - cooldown}/2).`,
             linkTarget: "fights",
         };
     }
     // b. Contender, top-5, wins met → title shot ready (Amateur = turn pro).
-    if (pending && isTopFive && wins >= titleWins) {
-        return {
-            text: pending === "Regional Pro"
-                ? "You're ready to turn pro — go take the fight."
-                : "Your title shot is ready — go fight for the belt.",
-            linkTarget: "fights",
-        };
+    if (contender && isTopFive && wins >= titleWins) {
+        let text = "Your title shot is ready. Go fight for the belt.";
+        if (isGcs) text = "Your GCS title shot is ready. Go take the belt.";
+        else if (isPro) text = "You're ready to turn pro. Go take the fight.";
+        return { text, linkTarget: "fights" };
     }
     // c. Contender, top-5, still grinding wins-in-tier.
-    if (pending && isTopFive && wins < titleWins) {
+    if (contender && isTopFive && wins < titleWins) {
         const need = titleWins - wins;
+        let text;
+        if (isGcs && (fighter.gcsTitleWins ?? 0) > 0) {
+            text = `GCS Champion. Bank ${need} more top-5 ${need === 1 ? "win" : "wins"} for your next title fight.`;
+        } else if (isGcs) {
+            text = `Win ${need} more ${need === 1 ? "fight" : "fights"} to earn your GCS title shot.`;
+        } else {
+            text = `Win ${need} more ${need === 1 ? "fight" : "fights"} to earn your ${isPro ? "shot at turning pro" : "title shot"}.`;
+        }
+        return { text, linkTarget: "fights" };
+    }
+    // d. Unranked in this division (internal rank null): name the fights left to placement.
+    //    Read titleShot.ranked (internal), not ranking.rank (display, null for a champion too).
+    if (ranking?.titleShot?.ranked === false) {
+        const fightsInTier = ranking.titleShot.fightsInTier ?? 0;
+        const n = Math.max(1, rankingService.RANKED_AFTER_FIGHTS - fightsInTier);
         return {
-            text: `Win ${need} more ${need === 1 ? "fight" : "fights"} to earn your ${pending === "Regional Pro" ? "shot at turning pro" : "title shot"}.`,
+            text: `Play ${n} more ${n === 1 ? "fight" : "fights"} to get ranked in your division.`,
             linkTarget: "fights",
         };
     }
-    // d. Ranked but not yet top-5.
+    // e. Ranked but not yet top-5.
     if (!isTopFive && rank != null) {
-        return { text: "Break into the top 5 to unlock a title shot.", linkTarget: "rankings" };
+        return { text: `Climb to #${topFiveCutoff()} to enter the title zone.`, linkTarget: "rankings" };
     }
-    // e. Comeback bonuses live — low-priority fallback.
+    // f. Comeback bonuses live, low-priority fallback.
     if (fighter.comebackMode) {
         return {
-            text: "Comeback bonuses are live — +30% cash and ×1.5 XP on your next win.",
+            text: "Comeback bonuses are live. +30% cash and ×1.5 XP on your next win.",
             linkTarget: "fights",
         };
     }
-    // f. Default.
+    // g. Default.
     return { text: "Keep training to raise your OVR.", linkTarget: "gym" };
 }
 
@@ -1036,4 +1164,6 @@ module.exports = {
     pickBestOffer,
     buildLadderStanding,
     buildPvp,
+    buildRanking,
+    buildNudge,
 };

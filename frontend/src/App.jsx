@@ -49,7 +49,7 @@ import { ReportBugModal } from "./components/shared/ReportBugModal";
 import { ChangelogModal } from "./components/changelog/ChangelogModal";
 import { CHANGELOG_ENTRIES, CURRENT_VERSION } from "./components/changelog/changelogContent";
 import { tutorialBus } from "./utils/tutorialBus";
-import { TITLE_WINS } from "./constants/gameConstants";
+import { TITLE_WINS, TOP_TIER, isTitleContender, isTopFiveDisplayRank } from "./constants/gameConstants";
 import { useToasts } from "./hooks/useToasts";
 import { PvpHub } from "./components/pvp/PvpHub";
 import {
@@ -244,12 +244,14 @@ const TierProgress = memo(function TierProgress({ fighter, champions }) {
     ? Math.min(100, Math.round(((ovr - current.minOvr) / (next.minOvr - current.minOvr)) * 100))
     : 100;
 
-  const pending = fighter.pendingPromotion;
-  const wins = fighter.winsInCurrentTier ?? 0;
+  const pending = isTitleContender(fighter);
+  const isGcs = currentTier === TOP_TIER;
+  // Wins earned WHILE ranked top 5 gate the title shot, not total wins in tier.
+  const wins = fighter.topFiveWinsInTier ?? 0;
   const cooldown = fighter.titleShotCooldown ?? 0;
   const titleWins = TITLE_WINS[currentTier] ?? 3;
-  const rank = fighter.ranking?.rank ?? null;
-  const top5 = rank != null && rank <= 5;
+  const top5 = isTopFiveDisplayRank(fighter.ranking?.rank ?? null);
+  const gcsBeltWins = fighter.gcsTitleWins ?? 0;
   const titleReady = pending && top5 && wins >= titleWins && cooldown <= 0;
   const titleCooldown = pending && cooldown > 0;
   const titleWinsNeeded = pending && cooldown <= 0 && top5 && wins < titleWins;
@@ -293,7 +295,7 @@ const TierProgress = memo(function TierProgress({ fighter, champions }) {
         )}
         {titleWinsNeeded && (
           <div className="tier-title-status tier-title-wins">
-            {t("layout.tierProgress.titleWinsNeeded", { count: titleWins - wins, suffix: titleWins - wins !== 1 ? "s" : "" })}
+            {t(isGcs ? "layout.tierProgress.titleWinsNeededGcs" : "layout.tierProgress.titleWinsNeeded", { count: titleWins - wins, suffix: titleWins - wins !== 1 ? "s" : "" })}
           </div>
         )}
 
@@ -308,9 +310,9 @@ const TierProgress = memo(function TierProgress({ fighter, champions }) {
               <div className="tier-progress-fill" style={{ width: `${pct}%` }} />
             </div>
           </div>
-        ) : !pending && !next ? (
+        ) : !next && gcsBeltWins > 0 ? (
           <div style={{ fontSize: "12px", color: "var(--gold-bright)", fontWeight: 700, marginTop: "0.5rem" }}>
-            {t("layout.tierProgress.gcsChampion")}
+            {t("layout.tierProgress.gcsBeltHolder", { n: gcsBeltWins })}
           </div>
         ) : null}
       </div>
@@ -725,7 +727,8 @@ function App() {
     // Don't pop the announcement over the onboarding tutorial.
     if (fighter.tutorial && !fighter.tutorial.completed) return;
 
-    const target = fighter.pendingPromotion ?? null;
+    // GCS fighters are contenders with no pendingPromotion, so key off the tier itself.
+    const target = isTitleContender(fighter) ? (fighter.pendingPromotion ?? fighter.promotionTier ?? null) : null;
     const prev = prevPendingPromotionRef.current;
     prevPendingPromotionRef.current = target;
 
@@ -753,6 +756,7 @@ function App() {
   }, [
     fighter?._id,
     fighter?.pendingPromotion,
+    fighter?.titleContender,
     fighter?.promotionTier,
     fighter?.tutorial?.completed,
     champions,
@@ -1225,11 +1229,15 @@ function App() {
       // REPLACE (never append) — a fresh fight always overwrites any leftover
       // queue from a previous resolve.
       const queue = [];
-      if (result.summary?.beltWon && result.summary?.promoted) {
+      // A GCS belt win has promoted === null (never a tier-up); beltTier names the belt.
+      // Older payloads have no beltTier, and always carry promoted on a belt win.
+      if (result.summary?.beltWon && (result.summary.promoted || result.summary.beltTier)) {
         queue.push({
           type: "belt",
-          from: result.summary.promoted.from,
-          to: result.summary.promoted.to,
+          from: result.summary.beltTier ?? result.summary.promoted?.from ?? null,
+          to: result.summary.promoted?.to ?? null,
+          titleDefense: !!result.summary.titleDefense,
+          gcsTitleWins: result.summary.gcsTitleWins ?? 0,
           weightClass: result.fighter?.weightClass,
         });
       }
@@ -1398,6 +1406,8 @@ function App() {
         open={currentOverlay?.type === "belt"}
         fromTier={currentOverlay?.from}
         toTier={currentOverlay?.to}
+        titleDefense={currentOverlay?.titleDefense}
+        gcsTitleWins={currentOverlay?.gcsTitleWins}
         weightClass={currentOverlay?.weightClass}
         onClose={advanceOverlay}
       />

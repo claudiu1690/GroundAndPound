@@ -65,15 +65,65 @@ export function formatTimeLeft(iso, now = Date.now()) {
 /**
  * Title-shot condition progress, from ranking.titleShot
  * {ovrMet, topFive, winsMet, winsInTier, titleWins}.
- * `nextLabel` is the number of wins still needed (the wins condition is the
- * last-mile gate); null once all three conditions are met.
+ * Returns the done/total counts for the pips.
  */
 export function titleShotProgress(ranking) {
   const ts = ranking?.titleShot;
-  if (!ts) return { done: 0, total: 3, nextLabel: null };
+  if (!ts) return { done: 0, total: 3 };
   const done = [ts.ovrMet, ts.topFive, ts.winsMet].filter(Boolean).length;
-  const nextLabel = ts.winsMet ? null : Math.max(1, (ts.titleWins ?? 0) - (ts.winsInTier ?? 0));
-  return { done, total: 3, nextLabel };
+  return { done, total: 3 };
+}
+
+/**
+ * The FIRST unmet step toward a title shot, as {key, n} (no strings, the
+ * component maps key to copy). First match wins:
+ * hidden, autoPromote / autoPromoteNextFight, rematch (cooldown), getRanked,
+ * reachTop5 (n = topFiveCutoff, default 4; rank = display rank), winTop5,
+ * reachOvr / lockInOvr, ready. Payloads from before `mode` existed fall back to the old
+ * behaviour: winsMet false -> winTop5, else ready.
+ * At GCS (ranking.division) the result also carries `gcs: true`, and `champion: true`
+ * once ranking.titleShot.gcsTitleWins > 0, so copy can talk about the GCS belt. Both
+ * flags are absent otherwise.
+ */
+export function titleShotStep(ranking) {
+  const step = firstUnmetStep(ranking);
+  if (step.key === "hidden") return step;
+  // GCS flags are added only when true so lower-tier results keep their exact shape.
+  // `gcs`: top-tier fighter (copy says GCS belt). `champion`: has already won the belt.
+  const gcs = ranking?.division === "GCS";
+  const champion = (ranking?.titleShot?.gcsTitleWins ?? 0) > 0;
+  return { ...step, ...(gcs ? { gcs: true } : null), ...(champion ? { champion: true } : null) };
+}
+
+function firstUnmetStep(ranking) {
+  const ts = ranking?.titleShot;
+  if (!ts) return { key: "hidden" };
+  const winsLeft = Math.max(1, (ts.titleWins ?? 0) - (ts.winsInTier ?? 0));
+
+  // Old payload: none of the newer fields are present.
+  if (ts.mode == null) {
+    return ts.winsMet ? { key: "ready" } : { key: "winTop5", n: winsLeft };
+  }
+
+  if (ts.mode === "none") return { key: "hidden" };
+  const hasTarget = ts.ovrTarget != null;
+  const atTarget = hasTarget && ts.ovr >= ts.ovrTarget;
+  if (ts.mode === "autoPromote") {
+    return atTarget ? { key: "autoPromoteNextFight" } : { key: "autoPromote", n: ts.ovrTarget ?? null };
+  }
+  if ((ts.cooldownRemaining ?? 0) > 0) return { key: "rematch", n: ts.cooldownRemaining };
+  if (ts.ranked === false) {
+    return { key: "getRanked", n: Math.max(1, (ts.rankedAfter ?? 3) - (ts.fightsInTier ?? 0)) };
+  }
+  if (!ts.topFive) {
+    return { key: "reachTop5", n: ts.topFiveCutoff ?? 4, rank: ts.displayRank ?? null };
+  }
+  if (!ts.winsMet) return { key: "winTop5", n: winsLeft };
+  // Promotion is only checked after a fight, so ovrMet can lag a raised OVR.
+  if (!ts.ovrMet) return atTarget ? { key: "lockInOvr" } : { key: "reachOvr", n: ts.ovrTarget ?? null };
+  // ovrMet is stale-true when OVR fell below the target (server clears it on its next board read).
+  if (hasTarget && !atTarget) return { key: "reachOvr", n: ts.ovrTarget };
+  return { key: "ready" };
 }
 
 /** "$3,200" style formatting for purses, no currency lib in the frontend. */

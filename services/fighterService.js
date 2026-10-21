@@ -270,6 +270,10 @@ function toPublicFighter(fighter) {
         }));
     }
     out.hospitalPersona = personaService.priceAdjust(fighter, "hospitalBillFrac");
+    // Owner-only: "has a belt fight to work toward" (pending promotion, or any GCS fighter).
+    // gcsTitleWins ships via toObject. Neither belongs in toPublicProjection.
+    // Lazy require: fightService requires this module at load time.
+    out.titleContender = require("./fightService").isTitleContender(fighter);
     // Shift player's rank to display rank for the UI. DB stores 2-N (1 = champion slot,
     // never the player). UI shows champion separately and contenders as #1-#(N-1).
     if (out.ranking && typeof out.ranking.rank === "number") {

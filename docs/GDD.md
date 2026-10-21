@@ -141,10 +141,11 @@ energy (each fight costs the tier's energy amount above; energy regenerates 1/mi
 - **Regional Pro → National:** beat the Regional Pro champion (title shot — OVR threshold + top 5 + **3 wins earned while top 5**).
 - **National → GCS Contender:** beat the National champion (title shot — OVR threshold + top 5 + **3 wins earned while top 5**).
 - **GCS Contender → GCS:** auto-promotes at OVR 62. **The GCS Contender belt is not a winnable title** (no champion at this tier).
-- **GCS:** final tier — defend the belt indefinitely. Pro title wins (Regional Pro, National, GCS) grant **+200 fame** + a permanent championship badge.
+- **GCS:** final tier, defend the belt indefinitely. Pro title wins (Regional Pro, National, GCS) grant **+200 fame** + a permanent championship badge. At GCS there is no OVR gate (there is no tier above): every GCS fighter is a title contender, and the shot unlocks at **top 5 + 3 wins while top 5 + no rematch cooldown**. Winning does not promote; see §8 "The GCS belt".
 
-> Championship badges (Amateur / Regional Pro / National / GCS) are derived from
+> Championship badges for Amateur / Regional Pro / National are derived from
 > promotion tier: reaching a tier proves you won every winnable title below it.
+> **GCS Champion is not derived:** it is awarded only by winning the GCS title.
 
 ---
 
@@ -939,6 +940,18 @@ Each pro tier (Regional Pro, National, GCS) has a persistent NPC champion per we
 - **Winning:** dethrone the champion, promote, +200 fame (Amateur +75) + permanent Champion badge; a new NPC champion is seeded from the old tier.
 - **Losing a title shot:** 2-win cooldown (card greyed until 2 more wins). Two straight title losses → the champion becomes your **Nemesis**. Pending promotion stays set — you can always retry.
 
+### 8.1 The GCS belt (added 2026-10-20)
+
+GCS has no tier above it, so the GCS title is a belt you win and then keep winning. Code: `fightService.isTitleContender` (contender = in GCS, or has a pending promotion) and `fightService.applyTitleShotWin`; contract `docs/gcs-title-contract.md`.
+
+- **Eligibility:** every GCS fighter is a contender (no OVR gate). The title card appears once you are **top 5** with **3 wins banked while top 5** and no rematch cooldown. The champion is the NPC GCS champion of your weight class.
+- **First GCS title win:** **+200 fame**, the **GCS Champion** badge, **3 Energy Drinks**, and the title purse (**1.75x** the GCS signing fee, $21,000). No promotion, no rank reset. Feed: "Won the GCS {weight class} Title".
+- **Title defenses (every later GCS title win):** **+100 fame** and the 1.75x purse; no new badge, no drinks. Feed: "Defended the GCS {weight class} Title (xN)". Why 100: the first belt is the milestone; defenses must stay worth fighting without out-earning the fame from regular wins and turning the belt into a fame farm.
+- **After any GCS title win:** top-5 wins and the rematch cooldown reset to 0; rank, tier wins and contender status are kept, so the next shot needs 3 fresh top-5 wins (minimum 4 fights between title fights).
+- **Losing:** the same 2-win cooldown and Nemesis rule as every tier.
+- **Rankings:** the NPC champion keeps rank 1 (NPC ranks never move). The player's belt is a career record (`fighter.gcsTitleWins`) shown as a trophy on the player's own Rankings row.
+- **Overlays:** a GCS win shows the Belt Won overlay ("TITLE DEFENDED" on a defense), never a Tier Up.
+
 ---
 
 ## 9. Fight Camp
@@ -1309,7 +1322,7 @@ The dashboard player-identity card is clickable and deep-links to the Profile su
 ### 20.2 Badges (PvE catalog + synthesized Proving Ground category)
 Permanent profile markers. PvE categories: **Career**, **Championships**, **Style**, **Gym**, **Media**, plus a synthesized **Proving Ground** category for PvP badges (§22.12). Locked badges show progress bars where applicable; newly-unlocked badges show a **NEW** corner flag (acknowledged by viewing the Profile — no modal). Examples:
 - **Career:** First Blood, 10/25/50 Wins, win streaks, Division Dominator, The Long Game, Veteran.
-- **Championships:** Amateur / Regional Pro / National / GCS Contender (non-winnable) / GCS Champion — **derived from promotion tier**; the belts on the Profile mirror these.
+- **Championships:** Amateur / Regional Pro / National are **derived from promotion tier**; GCS Contender is non-winnable; **GCS Champion is earned only by winning the GCS title** (§8.1). The belts on the Profile mirror these.
 - **Style:** Finisher, KO Artist, Sub Hunter, Decision Machine, Iron Chin, Iron Will, Giant Killer, Comeback Kid, Fight of the Night, Perfect Camp, Called It, Nemesis Slayer, beef/respect badges.
 - **Gym:** Rank-4 mastery badges (one per gym) **plus training-session milestones — Gym Regular (50), Gym Rat (100), Tireless (250)**, driven by lifetime `careerTrainingSessions`.
 - **Media:** On the Mic, Media Star, The Documentary, Controversy, People's Champion, Star Power.

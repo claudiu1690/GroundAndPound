@@ -378,8 +378,24 @@
   "home": {
     "strip": {
       "label": "Title shot",
+      "labelGcs": "GCS title shot",
       "progress": "{done} of {total}",
-      "locked": "Win {n} more to unlock a shot"
+      "getRanked": "Play {n} more fights to get ranked",
+      "getRankedOne": "Play 1 more fight to get ranked",
+      "reachTop5": "Climb to #{n}. You're #{rank}",
+      "reachTop5NoRank": "Climb to #{n} in your division",
+      "winTop5": "Win {n} more while in the top 5",
+      "winTop5One": "Win 1 more while in the top 5",
+      "winTop5Champion": "GCS Champion. Bank {n} top-5 wins for your next title fight",
+      "winTop5ChampionOne": "GCS Champion. Bank 1 top-5 win for your next title fight",
+      "reachOvr": "Reach OVR {n} to qualify",
+      "rematch": "Win {n} more to earn a rematch",
+      "rematchOne": "Win 1 more to earn a rematch",
+      "ready": "Title shot ready. It's on your fight board",
+      "readyGcs": "Your GCS title shot is ready. Go take the belt",
+      "autoPromote": "Reach OVR {n} to move up a tier",
+      "autoPromoteNextFight": "Your next fight moves you up a tier",
+      "lockInOvr": "Your next fight locks in your rating"
     },
     "rankings": {
       "eyebrow": "Rankings",
@@ -391,6 +407,7 @@
       "titleShotConditions": "Title shot conditions:",
       "unranked": "Unranked",
       "conditionOvr": "OVR threshold reached",
+      "conditionOvrGcs": "GCS fighter",
       "conditionTopFive": "Top 5 in division",
       "conditionWins": "Contender wins while top 5",
       "winsHint": "{won} of {need}"
@@ -1278,7 +1295,11 @@
       "diffCallout": "📣 Called Out",
       "diffNemesis": "☠ Nemesis",
       "specialTitleBout": "{tier} Championship",
-      "specialTitleSub": "Win to promote to {targetTier} · Full 5-slot camp · +200 fame on win",
+      "specialTitleSub": "Win to promote to {targetTier} · Full 5-slot camp · +{fame} fame on win",
+      "specialTitleSubNoTarget": "Full 5-slot camp · +{fame} fame on win",
+      "specialTitleBoutGcs": "GCS Title Fight",
+      "specialTitleSubGcs": "Win: +{fame} fame, GCS Champion badge, 1.75x purse",
+      "specialTitleSubGcsDefense": "Title defense: +{fame} fame, 1.75x purse",
       "specialCalloutTitle": "Your Callout",
       "specialCalloutSub": "You called this fight out. Full intel unlocked · +25% cash · +30% fame on win",
       "specialNemesisTitle": "Nemesis Match",
@@ -1304,6 +1325,8 @@
       "stakesIfYouWin": "If you win",
       "stakesTitleChampion": "{tier} Champion",
       "stakesTitlePromote": "Promote to {targetTier}",
+      "stakesTitleDefend": "Defend the GCS belt",
+      "stakesFame": "+{n} fame",
       "stakesCalloutBonuses": "Callout bonuses on win",
       "stakesCalloutBadge": "📣 Called It badge",
       "stakesCalloutCash": "+25% cash purse",
@@ -1346,28 +1369,36 @@
     "contenderChecklist": {
       "pathToBelt": "Path to the {tier} Belt",
       "pathToPro": "Path to Turning Pro",
+      "pathToGcsBelt": "Path to the GCS belt",
       "subLineBelt": "Beat {champ} to claim the {tier} belt.",
       "subLinePro": "Beat the Amateur champion to turn pro.",
       "rowRating": "Rating — championship level reached",
+      "rowRatingGcs": "GCS fighter",
       "rowTop5Met": "Ranked top 5 (currently #{rank})",
       "rowTop5Unmet": "Ranked top 5 — currently #{rank}",
       "rowTop5Unranked": "Ranked top 5 — get ranked first (keep fighting in this tier)",
-      "rowWins": "Win {n} fights in tier ({current}/{total})",
+      "rowWins": "Win {n} fights while in the top 5 ({current}/{total})",
       "rowCooldown": "Recover from your title loss — win {n} more ({done}/2)",
-      "footerCooldown": "Title shot locked — win {n} fight{plural} to earn a rematch ({done}/2).",
-      "footerTop5Pro": "Break into the top 5 to unlock your Turn Pro fight.",
-      "footerTop5Belt": "Break into the top 5 to unlock your title shot.",
-      "footerWinsPro": "Win {n} fight{plural} in this tier to unlock your Turn Pro fight.",
-      "footerWinsBelt": "Win {n} fight{plural} in this tier to unlock your title shot.",
+      "footerCooldown": "Title shot locked. Win {n} fight{plural} to earn a rematch ({done}/2).",
+      "footerGetRanked": "Play {n} more fights to get ranked, then climb to #{cutoff} to unlock your shot.",
+      "footerGetRankedOne": "Play 1 more fight to get ranked, then climb to #{cutoff} to unlock your shot.",
+      "footerTop5Pro": "Climb to #{n} to unlock your Turn Pro fight.",
+      "footerTop5Belt": "Climb to #{n} to unlock your title shot.",
+      "footerWinsPro": "Win {n} more fight{plural} while in the top 5 to unlock your Turn Pro fight.",
+      "footerWinsBelt": "Win {n} more fight{plural} while in the top 5 to unlock your title shot.",
+      "footerWinsGcs": "Win {n} more in the top 5 to unlock your GCS title fight.",
       "footerReadyPro": "Your shot is ready — request offers and turn pro.",
-      "footerReadyBelt": "Your shot is ready — request offers and take the title shot."
+      "footerReadyBelt": "Your shot is ready — request offers and take the title shot.",
+      "footerReadyGcs": "Your GCS title shot is ready. It's on your fight board."
     },
     "contenderModal": {
       "eyebrow": "CONTENDER",
       "headingPro": "You're ready to turn pro",
       "headingBelt": "You're a {tier} title contender",
+      "headingGcs": "You are a GCS title contender.",
       "bodyPro": "Your rating has reached pro level. Beat the Amateur champion to turn pro and promote to Regional Pro.",
       "bodyBelt": "Your rating has reached championship level. {champ} holds the {tier} belt — beat them and it's yours.",
+      "bodyGcs": "{champ} holds the GCS belt. Beat them and it is yours. Win it again to defend it.",
       "stepsLabel": "To earn your shot:",
       "step1Pro": "Be ranked top 5 as an Amateur",
       "step1Belt": "Be ranked top 5 in the {tier} division",
@@ -1375,6 +1406,7 @@
       "step2Belt": "Win {n} fights in this tier",
       "closerPro": "When both are met, a Turn Pro card appears in your Fight Offers.",
       "closerBelt": "When both are met, a Title Shot card appears in your Fight Offers.",
+      "closerGcs": "When both are met, a GCS Title Fight card appears on your fight board.",
       "gotIt": "Got it — show my path"
     },
     "report": {
@@ -1398,6 +1430,7 @@
       "panelTitle": "Last Fight Summary",
       "panelTitleBelt": "Championship Result",
       "newChampion": "NEW CHAMPION",
+      "titleDefended": "TITLE DEFENDED",
       "cashEarned": "Cash Earned",
       "fameLabel": "Fame",
       "xpMultLabel": "XP Mult",
@@ -1415,6 +1448,9 @@
       "noticePromoted": "PROMOTED: {from} → {to}! New competition level unlocked.",
       "noticeStreakDrinks": "Win-streak reward: +{label}",
       "noticePromoDrinks": "Promotion reward: +{label}",
+      "noticeChampionDrinks": "Championship reward: +{label}",
+      "noticeGcsChampion": "GCS Champion. +{fame} fame, GCS Champion badge.",
+      "noticeGcsDefended": "Title defended (x{n}). +{fame} fame.",
       "noticeSponsorDrinks": "Sponsor bonus: +{label}",
       "noticeInjuries": "Injuries sustained: {list} — check your fighter profile.",
       "noticeQuestCompleted": "Quest completed: {list}!",
@@ -1535,9 +1571,12 @@
       "continue": "Continue",
       "beltKicker": "Championship victory",
       "beltTitle": "NEW CHAMPION",
+      "beltTitleDefended": "TITLE DEFENDED",
       "beltWonLine": "Won the {tier}",
+      "beltDefendedLine": "Defended the {tier} (x{n})",
       "beltWeightClass": "{weightClass} Title",
-      "beltHint": "You proved yourself against the champion. New competition awaits."
+      "beltHint": "You proved yourself against the champion. New competition awaits.",
+      "beltHintGcs": "You hold the GCS belt. Bank {n} top-5 wins for your next title fight."
     }
   },
   "layout": {
@@ -1604,11 +1643,12 @@
       "title": "Tier Competition",
       "ovrLabel": "OVR {ovr} / {nextOvr}",
       "nextTier": "→ {tierLabel}",
-      "gcsChampion": "GCS Champion — top tier reached.",
+      "gcsBeltHolder": "GCS Champion (x{n})",
       "champLabel": "Champ: {name} ({ovr})",
       "titleShotAvailable": "Title shot available — fight for the belt!",
       "titleShotCooldown": "Title shot lost — {count} more win{suffix} to retry",
-      "titleWinsNeeded": "OVR reached — {count} more win{suffix} to earn title shot"
+      "titleWinsNeeded": "OVR reached — {count} more win{suffix} to earn title shot",
+      "titleWinsNeededGcs": "{count} more top-5 win{suffix} to earn your GCS title fight"
     },
     "rightPanels": {
       "latestFight": {
@@ -2517,6 +2557,7 @@
       "ranked": "Ranked"
     },
     "titleShotBanner": "Title Shot Zone — you're in the top 5",
+    "gcsChampionTitle": "GCS Champion (x{n})",
     "champion": "Champion",
     "you": "You",
     "foreignNote": "Viewing another tier — your row only appears in your current tier ({tier}).",

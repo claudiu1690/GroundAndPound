@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Check, X, Trophy } from "lucide-react";
-import { TITLE_WINS } from "../../constants/gameConstants";
+import { TITLE_WINS, TOP_TIER, TOP_FIVE_DISPLAY_CUTOFF, RANKED_AFTER_FIGHTS, isTitleContender, isTopFiveDisplayRank } from "../../constants/gameConstants";
 import { t } from "@/lib/i18n";
 
 /**
@@ -11,7 +11,8 @@ import { t } from "@/lib/i18n";
  * one is present, otherwise a sensible fallback is used.
  *
  * Render gating (handled by the caller, but also guarded here): only when
- *   fighter.pendingPromotion is set AND the shot is not ready
+ *   fighter is a title contender (fighter.titleContender: a pending promotion, or
+ *   any GCS fighter, who defends the belt forever) AND the shot is not ready
  *   (cooldown > 0 OR not top-5 OR topFiveWinsInTier < titleWins).
  */
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -31,13 +32,15 @@ function ChecklistRow({ state, children }) {
 }
 
 export const ContenderChecklist = memo(function ContenderChecklist({ fighter, offers }) {
-  if (!fighter?.pendingPromotion) return null;
+  if (!isTitleContender(fighter)) return null;
 
-  const targetTier = fighter.pendingPromotion;
+  const targetTier = fighter.pendingPromotion ?? null;
   const isProDebut = targetTier === "Regional Pro";
   const currentTier = fighter.promotionTier ?? "Amateur";
+  const isGcs = currentTier === TOP_TIER;
+  // fighter.ranking.rank is a DISPLAY rank, where the top-5 cutoff is #4 (not #5).
   const rank = fighter.ranking?.rank ?? null;
-  const top5 = rank != null && rank <= 5;
+  const top5 = isTopFiveDisplayRank(rank);
   // The title-shot gate is wins earned WHILE ranked top-5 (topFiveWinsInTier) —
   // NOT total wins in tier (winsInCurrentTier). Using the latter showed "8/2"
   // when the player has 8 tier wins but 0 of them while top-5.
@@ -55,7 +58,11 @@ export const ContenderChecklist = memo(function ContenderChecklist({ fighter, of
     titleOffer?.opponent?.name
     ?? (isProDebut ? "the Amateur champion" : "the champion");
 
-  const header = isProDebut ? t("fights.contenderChecklist.pathToPro") : t("fights.contenderChecklist.pathToBelt", { tier: currentTier });
+  const header = isProDebut
+    ? t("fights.contenderChecklist.pathToPro")
+    : isGcs
+      ? t("fights.contenderChecklist.pathToGcsBelt")
+      : t("fights.contenderChecklist.pathToBelt", { tier: currentTier });
   const subLine = isProDebut
     ? t("fights.contenderChecklist.subLinePro")
     : t("fights.contenderChecklist.subLineBelt", { champ: champName, tier: currentTier });
@@ -80,16 +87,28 @@ export const ContenderChecklist = memo(function ContenderChecklist({ fighter, of
   let footer;
   if (cooldown > 0) {
     footer = t("fights.contenderChecklist.footerCooldown", { n: cooldown, plural: cooldown === 1 ? "" : "s", done: 2 - cooldown });
+  } else if (rank == null) {
+    // Not ranked yet: the rows say "get ranked first", so the footer must too.
+    const toRank = Math.max(1, RANKED_AFTER_FIGHTS - (fighter.ranking?.fightsInTier ?? 0));
+    footer = t(toRank === 1 ? "fights.contenderChecklist.footerGetRankedOne" : "fights.contenderChecklist.footerGetRanked", { n: toRank, cutoff: TOP_FIVE_DISPLAY_CUTOFF });
   } else if (!top5) {
+    const cutoff = { n: TOP_FIVE_DISPLAY_CUTOFF };
     footer = isProDebut
-      ? t("fights.contenderChecklist.footerTop5Pro")
-      : t("fights.contenderChecklist.footerTop5Belt");
+      ? t("fights.contenderChecklist.footerTop5Pro", cutoff)
+      : t("fights.contenderChecklist.footerTop5Belt", cutoff);
   } else if (wins < titleWins) {
+    const left = { n: titleWins - wins, plural: (titleWins - wins) === 1 ? "" : "s" };
     footer = isProDebut
-      ? t("fights.contenderChecklist.footerWinsPro", { n: titleWins - wins, plural: (titleWins - wins) === 1 ? "" : "s" })
-      : t("fights.contenderChecklist.footerWinsBelt", { n: titleWins - wins, plural: (titleWins - wins) === 1 ? "" : "s" });
+      ? t("fights.contenderChecklist.footerWinsPro", left)
+      : isGcs
+        ? t("fights.contenderChecklist.footerWinsGcs", left)
+        : t("fights.contenderChecklist.footerWinsBelt", left);
   } else {
-    footer = isProDebut ? t("fights.contenderChecklist.footerReadyPro") : t("fights.contenderChecklist.footerReadyBelt");
+    footer = isProDebut
+      ? t("fights.contenderChecklist.footerReadyPro")
+      : isGcs
+        ? t("fights.contenderChecklist.footerReadyGcs")
+        : t("fights.contenderChecklist.footerReadyBelt");
   }
 
   return (
@@ -103,7 +122,7 @@ export const ContenderChecklist = memo(function ContenderChecklist({ fighter, of
       </div>
 
       <ul className="cc-list">
-        <ChecklistRow state="met">{t("fights.contenderChecklist.rowRating")}</ChecklistRow>
+        <ChecklistRow state="met">{isGcs ? t("fights.contenderChecklist.rowRatingGcs") : t("fights.contenderChecklist.rowRating")}</ChecklistRow>
         <ChecklistRow state={top5State}>{top5Text}</ChecklistRow>
         <ChecklistRow state={winsMet ? "met" : "pending"}>
           {t("fights.contenderChecklist.rowWins", { n: titleWins, current: Math.min(wins, titleWins), total: titleWins })}

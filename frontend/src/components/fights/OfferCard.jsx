@@ -12,7 +12,7 @@ import {
   buildThreatTags,
   describeOffer,
 } from "./offerIntel";
-import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
+import { FIGHT_ENERGY_COST, BELT_FAME, GCS_DEFENSE_FAME } from "../../constants/gameConstants";
 import { t } from "@/lib/i18n";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -150,17 +150,47 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
   };
   const badge = diffBadgeMap[variant] ?? diffBadgeMap.even;
 
+  // Title shots at the top tier fight for the GCS belt itself (no promotion).
+  // A missing titleShotMeta (older payload) keeps the lower-tier layout.
+  const titleMeta = offer.titleShotMeta ?? null;
+  const isGcsTitle = titleMeta?.tier === "GCS";
+  const isGcsDefense = isGcsTitle && !!titleMeta?.titleDefense;
+  // No hard-coded fallback tier: if neither the offer nor the fighter names one, the promote copy is dropped.
+  const titleTargetTier = titleMeta?.targetTier ?? fighter?.pendingPromotion ?? null;
+  // Fame for the belt win: the Amateur belt (target Regional Pro, or an Amateur fighter) pays
+  // less than the pro belts. GCS defenses have their own value.
+  const beltTier = isGcsTitle
+    ? "GCS"
+    : titleTargetTier === "Regional Pro"
+      ? "Amateur"
+      : (titleMeta?.tier ?? fighter?.promotionTier ?? "Amateur");
+  const titleFame = isGcsDefense ? GCS_DEFENSE_FAME : (BELT_FAME[beltTier] ?? BELT_FAME.GCS);
+
   // ── Special banner ──
   function SpecialBanner() {
     if (isTitle) {
       const tier = fighter?.promotionTier ?? "Amateur";
-      const targetTier = offer.titleShotMeta?.targetTier ?? "National";
+      if (isGcsTitle) {
+        return (
+          <div className="special-banner title">
+            <span className="sb-icon">🏆</span>
+            <div className="sb-text">
+              <div className="sb-title title">{t("fights.offerCard.specialTitleBoutGcs")}</div>
+              <div className="sb-sub">{isGcsDefense ? t("fights.offerCard.specialTitleSubGcsDefense", { fame: titleFame }) : t("fights.offerCard.specialTitleSubGcs", { fame: titleFame })}</div>
+            </div>
+          </div>
+        );
+      }
       return (
         <div className="special-banner title">
           <span className="sb-icon">🏆</span>
           <div className="sb-text">
             <div className="sb-title title">{t("fights.offerCard.specialTitleBout", { tier })}</div>
-            <div className="sb-sub">{t("fights.offerCard.specialTitleSub", { targetTier })}</div>
+            <div className="sb-sub">
+              {titleTargetTier
+                ? t("fights.offerCard.specialTitleSub", { targetTier: titleTargetTier, fame: titleFame })
+                : t("fights.offerCard.specialTitleSubNoTarget", { fame: titleFame })}
+            </div>
           </div>
         </div>
       );
@@ -293,14 +323,18 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
   function StakesSection() {
     if (isTitle) {
       const tier = fighter?.promotionTier ?? "Amateur";
-      const targetTier = offer.titleShotMeta?.targetTier ?? "National";
+      const stakeFame = titleFame;
       return (
         <div className="stakes-section">
           <div className="stakes-lbl">{t("fights.offerCard.stakesIfYouWin")}</div>
           <div className="stakes-row">
-            <span className="stake gold">🏆 {t("fights.offerCard.stakesTitleChampion", { tier })}</span>
-            <span className="stake grn">{t("fights.offerCard.stakesTitlePromote", { targetTier })}</span>
-            <span className="stake gold">+200 fame</span>
+            <span className="stake gold">
+              🏆 {isGcsDefense ? t("fights.offerCard.stakesTitleDefend") : t("fights.offerCard.stakesTitleChampion", { tier })}
+            </span>
+            {!isGcsTitle && titleTargetTier && (
+              <span className="stake grn">{t("fights.offerCard.stakesTitlePromote", { targetTier: titleTargetTier })}</span>
+            )}
+            <span className="stake gold">{t("fights.offerCard.stakesFame", { n: stakeFame })}</span>
           </div>
         </div>
       );

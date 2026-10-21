@@ -4,7 +4,7 @@ import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Lock, Mega
 import { t } from "@/lib/i18n";
 import { CalloutModal } from "./CalloutModal";
 import { ContenderChecklist } from "./ContenderChecklist";
-import { TITLE_WINS } from "../../constants/gameConstants";
+import { TITLE_WINS, isTitleContender, isTopFiveDisplayRank } from "../../constants/gameConstants";
 import { OfferCard } from "./OfferCard";
 import { InjuryWarnModal } from "./InjuryWarnModal";
 import { buildCardModel } from "./offerIntel";
@@ -296,10 +296,10 @@ export const FightOffers = memo(function FightOffers({ fighter, onAcceptOffer, o
   // Show the contender checklist while the player is a title CONTENDER but the
   // shot is not yet ready (cooldown, not top-5, or wins short of the gate).
   const showChecklist = (() => {
-    if (!fighter.pendingPromotion) return false;
-    const rank = fighter.ranking?.rank ?? null;
-    const top5 = rank != null && rank <= 5;
-    const wins = fighter.winsInCurrentTier ?? 0;
+    if (!isTitleContender(fighter)) return false;
+    const top5 = isTopFiveDisplayRank(fighter.ranking?.rank ?? null);
+    // Wins earned WHILE ranked top 5 gate the shot, not total wins in tier.
+    const wins = fighter.topFiveWinsInTier ?? 0;
     const titleWins = TITLE_WINS[fighter.promotionTier] ?? 3;
     const cooldown = fighter.titleShotCooldown ?? 0;
     return cooldown > 0 || !top5 || wins < titleWins;

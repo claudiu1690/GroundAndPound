@@ -30,7 +30,10 @@
  * @property {?{lossCount:number,setAt:?Date}} [nemesisMeta]
  * @property {boolean} [isCallout]   the active callout overlay (Hard slot)
  * @property {{cost:number,isStretch:boolean,calledAt:?Date}} [calloutMeta]
- * @property {{targetTier:?string}} [titleShotMeta]
+ * @property {{targetTier:?string, tier:string, titleDefense:boolean, gcsTitleWins:number}} [titleShotMeta]
+ *           TitleShot only. targetTier: the promotion on a win (null at GCS); tier: the
+ *           fighter's tier (whose belt is on the line); titleDefense: GCS and the player
+ *           already holds the belt (gcsTitleWins > 0); gcsTitleWins: career GCS belt wins.
  * @property {boolean} [locked]      TitleShot only
  * @property {number} [cooldownRemaining]  TitleShot only
  * @property {number} [winsNeeded]   TitleShot only
@@ -101,13 +104,15 @@ const toIso = (d) => {
 
 /**
  * Plain joined string of every field that decides which opponents are on the board.
- * activeCallout, titleShotCooldown and topFiveWinsInTier are deliberately NOT in it.
+ * activeCallout, titleShotCooldown, topFiveWinsInTier and gcsTitleWins are deliberately
+ * NOT in it. The fourth segment is the contender token: the pending destination tier,
+ * the top tier for a GCS fighter (always a contender), "-" otherwise.
  * @returns {string}
  */
 function boardFingerprint(fighter) {
     const f = fighter || {};
     const nemesisId = f.nemesis?.opponentId ?? "-";
-    const pending = f.pendingPromotion ?? "-";
+    const pending = fightService.isTitleContender(f) ? (f.pendingPromotion ?? fightService.TOP_TIER) : "-";
     const last = f.lastFightDate ? new Date(f.lastFightDate).getTime() : 0;
     return `${f.promotionTier}|${f.weightClass}|${nemesisId}|${pending}|${Number.isFinite(last) ? last : 0}`;
 }

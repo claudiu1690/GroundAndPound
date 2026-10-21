@@ -205,6 +205,7 @@ const fighterSchema = new mongoose.Schema({
     winsInCurrentTier: { type: Number, default: 0 },      // reset on promotion; feeds rankings + cooldown
     topFiveWinsInTier: { type: Number, default: 0 },      // wins earned WHILE ranked top-5; title-shot gate; reset on promotion
     titleShotCooldown: { type: Number, default: 0 },      // set to 2 on title loss, decremented on wins
+    gcsTitleWins:      { type: Number, default: 0 },      // GCS belt wins (first win plus defenses); never reset
     // Ranking System v1.0 — player's position inside the current tier's roster.
     // rank=null → Unranked (first 2 fights in tier). After fight 3, player enters the rankings.
     // Reset to defaults on tier promotion via rankingService.resetRankingForNewTier().

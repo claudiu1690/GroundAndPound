@@ -18,6 +18,41 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.3",
+    date: "2026-10-20",
+    major: false,
+    highlights: [
+      "The GCS belt is finally up for grabs. Every GCS fighter is now a title contender: get into the title zone, bank 3 wins there, and the GCS Title Fight appears on your board.",
+      "Win it and you're the GCS Champion: 200 fame, the GCS Champion badge, 3 Energy Drinks and a title purse.",
+      "There's no tier above GCS, so the belt never stops. Every GCS title win after your first is a title defense, and your Rankings row carries a trophy while you hold it.",
+    ],
+    sections: {
+      changed: [
+        "Title shot screens count the right wins. The Path to the Belt checklist and the sidebar progress now count wins earned in the title zone, the same as the game does.",
+        "The title zone is #4 or better, because the champion holds the first of the top five places. Screens that called #5 \"top 5\" now agree with the game.",
+      ],
+      fixed: [
+        "Fighters in GCS could never get a title shot, so the GCS belt and its badge were out of reach.",
+      ],
+      balance: [
+        "A GCS title defense pays 100 fame instead of 200. The first belt is the milestone; defenses stay worth fighting without turning the belt into a fame farm.",
+      ],
+    },
+  },
+  {
+    version: "2.2.2",
+    date: "2026-10-20",
+    major: false,
+    highlights: [],
+    sections: {
+      changed: [],
+      fixed: [
+        "The title shot bar on Home now tells you the next real step. An unranked fighter used to be told to win 3 more fights, even though wins only count once you are in the top 5.",
+      ],
+      balance: [],
+    },
+  },
+  {
     version: "2.2.1",
     date: "2026-10-20",
     major: false,

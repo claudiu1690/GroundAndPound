@@ -3,6 +3,7 @@ import { Trophy } from "lucide-react";
 import { api } from "../../api";
 import { bannerRowBackground, bannerAccentColor } from "../banner/bannerCatalog";
 import { t } from "@/lib/i18n";
+import { TOP_FIVE_DISPLAY_CUTOFF, isTopFiveDisplayRank } from "../../constants/gameConstants";
 
 const TIER_ORDER = ["Amateur", "Regional Pro", "National", "GCS Contender", "GCS"];
 
@@ -77,7 +78,7 @@ export function RankingsTab({ fighter, onMessage }) {
     // Title-shot zone = champion + top 4 contenders. Player can never be champion in
     // their current tier's roster (becoming champion = promoting), so we just check
     // display rank 1-4 (4 contenders directly below the champion).
-    const titleShotAvailable = playerRow && playerRow.rank != null && playerRow.rank >= 1 && playerRow.rank <= 4;
+    const titleShotAvailable = playerRow && playerRow.rank != null && playerRow.rank >= 1 && isTopFiveDisplayRank(playerRow.rank);
 
     return (
         <div className="rankings-tab" data-tut="rankings-tab">
@@ -107,11 +108,11 @@ export function RankingsTab({ fighter, onMessage }) {
             {!loading && data && (() => {
                 // Partition the display list into the ladder's sections.
                 const champion = displayList.find((r) => r.isChampion) || null;
-                const zoneRows = displayList.filter((r) => !r.isChampion && r.rank != null && r.rank <= 4);
-                const lowerRows = displayList.filter((r) => !r.isChampion && r.rank != null && r.rank > 4);
+                const zoneRows = displayList.filter((r) => !r.isChampion && r.rank != null && isTopFiveDisplayRank(r.rank));
+                const lowerRows = displayList.filter((r) => !r.isChampion && r.rank != null && r.rank > TOP_FIVE_DISPLAY_CUTOFF);
                 const unrankedRows = displayList.filter((r) => !r.isChampion && r.rank == null);
                 const isOwnTier = tier === playerTier;
-                const spotsToZone = playerRow?.rank != null && playerRow.rank > 4 ? playerRow.rank - 4 : 0;
+                const spotsToZone = playerRow?.rank != null && playerRow.rank > TOP_FIVE_DISPLAY_CUTOFF ? playerRow.rank - TOP_FIVE_DISPLAY_CUTOFF : 0;
 
                 const rung = (row) => {
                     const isPlayer = row.isPlayer;
@@ -133,6 +134,15 @@ export function RankingsTab({ fighter, onMessage }) {
                             <span className="rl-name">
                                 {row.nickname ? `${row.name} "${row.nickname}"` : row.name}
                                 {isPlayer && <span className="rank-you-badge">{t("rankings.you")}</span>}
+                                {isPlayer && row.titleWins > 0 && (
+                                    <span
+                                        className="rank-belt-icon"
+                                        title={t("rankings.gcsChampionTitle", { n: row.titleWins })}
+                                        aria-label={t("rankings.gcsChampionTitle", { n: row.titleWins })}
+                                    >
+                                        <Trophy size={12} strokeWidth={2.5} aria-hidden="true" />
+                                    </span>
+                                )}
                             </span>
                             <span className="rl-style">{row.style}</span>
                             <span className="rl-ovr">{row.ovr}</span>

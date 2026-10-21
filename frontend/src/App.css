@@ -1943,6 +1943,7 @@ code {
 .rankings-tab .rl-rung--me .rl-name { color: var(--rung-accent, #4ADE80); }
 .rankings-tab .rl-rung--me .rl-port { border: 1px solid var(--rung-accent, var(--green-bright)); color: var(--rung-accent, #4ADE80); }
 .rankings-tab .rl-rung--me .rank-you-badge { background: var(--rung-accent, var(--green-bright)); color: #0c130e; }
+.rankings-tab .rl-rung--me .rank-belt-icon { display: inline-flex; vertical-align: middle; margin-left: 6px; color: var(--gold-bright, #fbbf24); }
 .rankings-tab .rl-rung--unranked { opacity: 0.75; }
 
 .rankings-tab .rl-path { display: flex; padding: 2px 0 10px 10px; }

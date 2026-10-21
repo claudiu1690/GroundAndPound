@@ -15,6 +15,11 @@
  *   - isTopFive(fighter): boolean for title shot gating
  */
 
+// Fights a player must complete in a tier before they are placed in its rankings.
+// updatePlayerRank assigns the entry rank on exactly this fight; the dashboard reads it
+// so the "Unranked" step on the title-shot strip can say how many fights remain.
+const RANKED_AFTER_FIGHTS = 3;
+
 // Roster sizes per tier — excludes the champion (rank 1). Total slots = rosterSize + 1.
 const ROSTER_SIZE = {
     Amateur:         30,
@@ -121,7 +126,7 @@ function updatePlayerRank(fighter, fightResult) {
     r.fightsInTier = (r.fightsInTier || 0) + 1;
 
     // Phase 2: entry on fight 3
-    if (r.rank == null && r.fightsInTier === 3) {
+    if (r.rank == null && r.fightsInTier === RANKED_AFTER_FIGHTS) {
         const winsAtFight3 = fighter.winsInCurrentTier || 0;
         r.rank = getEntryRank(tier, winsAtFight3);
         r.entryRecordAtFight3 = buildEntryRecord(fighter);
@@ -130,7 +135,7 @@ function updatePlayerRank(fighter, fightResult) {
     }
 
     // Phase 3: already ranked — apply movement
-    if (r.rank != null && r.fightsInTier > 3) {
+    if (r.rank != null && r.fightsInTier > RANKED_AFTER_FIGHTS) {
         const delta = calcDelta(fightResult, r.rank, fightResult.opponentRank);
         // Positive delta = move toward #1 (lower rank number). Subtract from current rank.
         r.rank = clampRank(r.rank - delta, tier);
@@ -152,12 +157,20 @@ function resetRankingForNewTier(fighter) {
 }
 
 /**
+ * Worst INTERNAL rank that still counts as top 5 (internal 1 is the champion, so the
+ * contender slots 2..5 are the title zone). Shown to players via toDisplayRank, which
+ * makes it display #4 today. Read this, never hardcode either number.
+ */
+const TOP_FIVE_INTERNAL_RANK = 5;
+
+/**
  * Title-shot gate. Player must be ranked top 5 (ranks 2-5) in addition to existing checks.
- * Returns true if rank exists AND is <= 5.
+ * Returns true if the INTERNAL rank exists AND is <= TOP_FIVE_INTERNAL_RANK. Never pass a
+ * display-shifted fighter here: display rank = internal - 1 would over-report by one slot.
  */
 function isTopFive(fighter) {
     const rank = fighter.ranking?.rank;
-    return rank != null && rank <= 5;
+    return rank != null && rank <= TOP_FIVE_INTERNAL_RANK;
 }
 
 /**
@@ -222,6 +235,7 @@ function buildFightResultFromOutcome(outcome) {
 }
 
 module.exports = {
+    RANKED_AFTER_FIGHTS,
     ROSTER_SIZE,
     tierSize,
     getEntryRank,
@@ -229,6 +243,7 @@ module.exports = {
     clampRank,
     updatePlayerRank,
     resetRankingForNewTier,
+    TOP_FIVE_INTERNAL_RANK,
     isTopFive,
     isCalloutEligible,
     CALLOUT_RANK_THRESHOLD,

@@ -268,7 +268,7 @@ test("hydrateOffers: title slot has OVR x1.05 and LIVE lock fields", async () =>
         assert.equal(a.winsNeeded, fightService.getTitleShotConfig(TIER).titleWins - 1);
         assert.equal(a.rankNeeded, true);
         assert.equal(a.currentRank, 8);
-        assert.deepEqual(a.titleShotMeta, { targetTier: "National" });
+        assert.deepEqual(a.titleShotMeta, { targetTier: "National", tier: TIER, titleDefense: false, gcsTitleWins: 0 });
 
         // Same stored slots, fighter state moved on: lock state follows without a regenerate.
         const ready = fighter({ pendingPromotion: "National", titleShotCooldown: 0, topFiveWinsInTier: 3, ranking: { rank: 4 } });
@@ -294,5 +294,59 @@ test("hydrateOffers: a stored title opponent that is no longer champion counts a
         const { missing } = await hydrateOffers(fighter({ pendingPromotion: "National" }),
             [...SLOTS, { offerType: "TitleShot", opponentId: "champ" }]);
         assert.equal(missing, true);
+    });
+});
+
+// ── GCS title shot (docs/gcs-title-contract.md B3, B4) ─────────────────────
+
+test("pickOfferSlots: a GCS fighter with pendingPromotion null gets the TitleShot slot", async () => {
+    const f = fighter({ promotionTier: "GCS", overallRating: 80, pendingPromotion: null });
+    const champ = opp("gchamp", 90, { isChampion: true, fixedRank: 1, promotionTier: "GCS" });
+    const tiers = [];
+    await withPick({ windows: [opp("e", 76), opp("v", 80), opp("h", 84)], champion: champ }, async () => {
+        const orig = championService.getChampion;
+        championService.getChampion = async (tier, wc) => { tiers.push([tier, wc]); return champ; };
+        try {
+            const slots = await pickOfferSlots(f);
+            assert.equal(slots.length, 4);
+            assert.deepEqual(slots[3], { offerType: "TitleShot", opponentId: "gchamp" });
+        } finally {
+            championService.getChampion = orig;
+        }
+    });
+    assert.deepEqual(tiers, [["GCS", "Lightweight"]]);
+    assert.equal(f.pendingPromotion, null, "never set to GCS");
+    assert.equal(f.saves, 0, "the OVR-drop guard never fires at GCS");
+});
+
+test("pickOfferSlots: National with no pending promotion still gets no title slot", async () => {
+    const f = fighter({ promotionTier: "National", overallRating: 50, pendingPromotion: null });
+    await withPick({ windows: [opp("e", 46), opp("v", 50), opp("h", 54)], champion: opp("champ", 60, { isChampion: true }) }, async () => {
+        const slots = await pickOfferSlots(f);
+        assert.equal(slots.length, 3);
+    });
+});
+
+test("hydrateOffers: GCS titleShotMeta, titleDefense false at 0 wins and true at gcsTitleWins 2", async () => {
+    const roster = { e: opp("e", 76), v: opp("v", 80), h: opp("h", 84), gchamp: opp("gchamp", 90, { isChampion: true, fixedRank: 1 }) };
+    const slots = [...SLOTS, { offerType: "TitleShot", opponentId: "gchamp" }];
+    await withRoster(roster, async () => {
+        const first = fighter({ promotionTier: "GCS", overallRating: 80, pendingPromotion: null });
+        const a = (await hydrateOffers(first, slots)).offers[3];
+        assert.equal(a.type, "TitleShot");
+        assert.deepEqual(a.titleShotMeta, { targetTier: null, tier: "GCS", titleDefense: false, gcsTitleWins: 0 });
+
+        const holder = fighter({ promotionTier: "GCS", overallRating: 80, pendingPromotion: null, gcsTitleWins: 2 });
+        const b = (await hydrateOffers(holder, slots)).offers[3];
+        assert.deepEqual(b.titleShotMeta, { targetTier: null, tier: "GCS", titleDefense: true, gcsTitleWins: 2 });
+    });
+});
+
+test("hydrateOffers: lower-tier titleShotMeta is unchanged apart from the additive fields", async () => {
+    const roster = { e: opp("e", 31), v: opp("v", 35), h: opp("h", 39), champ: opp("champ", 60, { isChampion: true, fixedRank: 1 }) };
+    await withRoster(roster, async () => {
+        const f = fighter({ promotionTier: "Amateur", pendingPromotion: "Regional Pro", gcsTitleWins: 0 });
+        const t = (await hydrateOffers(f, [...SLOTS, { offerType: "TitleShot", opponentId: "champ" }])).offers[3];
+        assert.deepEqual(t.titleShotMeta, { targetTier: "Regional Pro", tier: "Amateur", titleDefense: false, gcsTitleWins: 0 });
     });
 });
