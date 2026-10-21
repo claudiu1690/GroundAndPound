@@ -662,6 +662,13 @@ test("buildDashboard: every new key is PRESENT even when every module degrades",
                                     assert.ok(Object.prototype.hasOwnProperty.call(d, "lastFight"));
                                     assert.equal(d.lastFight, null);
 
+                                    // The title-shot step and fightsToRank still ship: the
+                                    // failed board read falls back to the fighter's own gates.
+                                    assert.equal(typeof d.ranking.titleShot.fightsToRank, "number");
+                                    assert.equal(d.ranking.titleShot.fightsToRank, 3);
+                                    assert.deepEqual(d.ranking.titleShot.step, { key: "getRanked", n: 3 });
+                                    assert.equal(typeof d.nudge.text, "string");
+
                                     // The synchronous spine still renders.
                                     assert.equal(d.identity.firstName, "Rico");
                                     assert.equal(d.vitals.energy.current, 50);
@@ -720,16 +727,20 @@ test("offerListItem: callout, nemesis loss count, display rank and title lock", 
         offer("Hard", { isCallout: true, opponent: { _id: "c", displayRank: 1 } }),
         offer("TitleShot", {
             locked: true, cooldownRemaining: 1, winsNeeded: 2, rankNeeded: true,
-            opponent: { _id: "champ", displayRank: 1 },
+            opponent: { _id: "champ", displayRank: null },
         }),
         offer("TitleShot", { locked: false, opponent: { _id: "champ2" } }),
     ];
     const { list } = summariseOffers(offers, TIER);
     assert.equal(list[0].nemesisLossCount, 2);
-    assert.equal(list[0].opponentRank, 5, "display rank goes through toDisplayRank");
+    // opponent.displayRank is display-ready (rankingService.npcDisplayRank): rendered
+    // as-is, never shifted a second time.
+    assert.equal(list[0].opponentRank, 6, "display-ready rank passes through unchanged");
     assert.equal(list[0].isCallout, false);
     assert.equal(list[1].isCallout, true);
-    assert.equal(list[1].opponentRank, null, "rank 1 (champion slot) displays as null");
+    assert.equal(list[1].opponentRank, 1, "display #1 is the top contender, not shifted to null");
+    assert.equal(list[2].opponentRank, null, "the champion's null displayRank stays null");
+    assert.equal(list[3].opponentRank, null, "a missing displayRank is null");
     assert.deepEqual(list[2].titleLock, { cooldownRemaining: 1, winsNeeded: 2, rankNeeded: true });
     assert.equal(list[2].acceptable, false);
     assert.equal(list[3].titleLock, null, "an unlocked title shot carries no lock");
@@ -747,7 +758,7 @@ test("heroBout offer branch carries the new fields", async () => {
     assert.equal(hero.isCallout, true);
     assert.equal(hero.nemesisLossCount, 3);
     assert.equal(hero.opponentStyle, "Muay Thai");
-    assert.equal(hero.opponentRank, 3);
+    assert.equal(hero.opponentRank, 4, "display-ready rank, not shifted again");
     assert.deepEqual(hero.streak, { result: "win", count: 3 });
 });
 
@@ -891,11 +902,14 @@ test("buildDashboard: computeHeroAction sees ACCEPTABLE offers only", async () =
         assert.equal(d.offers.count, 0);
         assert.equal(d.offers.best, null);
         assert.equal(d.offers.list.length, 2, "frozen slots still render");
+        assert.notEqual(d.ranking.titleShot.step.key, "ready", "a frozen title card is not an open offer");
+        assert.equal(d.ranking.titleShot.ovrMet, true, "the board carries a title slot");
     });
 
     const live = { offers: [offer("TitleShot", { locked: false })], meta: BOARD_META };
     await dashboardWith({ fighter: DASH_FIGHTER, board: live }, async (d) => {
         assert.equal(d.heroAction.key, "title_shot");
+        assert.deepEqual(d.ranking.titleShot.step, { key: "ready" }, "the strip agrees with the hero");
     });
 });
 

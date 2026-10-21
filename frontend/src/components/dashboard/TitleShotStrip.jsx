@@ -39,11 +39,14 @@ export function TitleShotStrip({ ranking, onNavigate }) {
   if (!ranking) return null;
   const step = titleShotStep(ranking);
   if (step.key === "hidden") return null;
+  const text = stepText(step);
+  // An unknown key (newer API than this client) has no copy: hide rather than show an empty bar.
+  if (!text) return null;
 
   return (
     <button type="button" className="ap-strip ap-anim" onClick={() => onNavigate?.("rankings")}>
       <span className="ap-strip-label">{step.gcs ? t("home.strip.labelGcs") : t("home.strip.label")}</span>
-      <span>{stepText(step)}</span>
+      <span>{text}</span>
     </button>
   );
 }

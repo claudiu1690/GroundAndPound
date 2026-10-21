@@ -41,7 +41,12 @@ export function RankingsTile({ ranking, weightClass, loading, onNavigate, index 
           )}
         </>
       ) : (
-        <h3>{t("home.rankings.unranked")}</h3>
+        <>
+          <h3>{t("home.rankings.unranked")}</h3>
+          {ts?.ranked === false && ts.fightsToRank > 0 ? (
+            <p>{t(ts.fightsToRank === 1 ? "home.rankings.getRankedFirstOne" : "home.rankings.getRankedFirst", { n: ts.fightsToRank })}</p>
+          ) : null}
+        </>
       )}
 
       {ts ? (

@@ -3,7 +3,7 @@
  */
 const Opponent = require("../models/opponentModel");
 const Fighter = require("../models/fighterModel");
-const { ROSTER_SIZE, displayRankForNpc, toDisplayRank } = require("../services/rankingService");
+const { ROSTER_SIZE, npcDisplayRank, toDisplayRank } = require("../services/rankingService");
 
 const PUBLIC_OPPONENT_FIELDS = "name nickname style overallRating record fixedRank isChampion weightClass promotionTier";
 
@@ -71,7 +71,9 @@ async function getRankings(req, res) {
 
         const roster = npcs.map((npc) => ({
             id: String(npc._id),
-            rank: toDisplayRank(displayRankForNpc(npc.fixedRank, playerRankInTier)),
+            // Every NPC here is in `tier`; the shift applies only when the player is too
+            // (playerRankInTier stays null otherwise), exactly as before.
+            rank: npcDisplayRank(npc.fixedRank, tier, tier, playerRankInTier),
             fixedRank: npc.fixedRank,
             name: npc.name,
             nickname: npc.nickname || null,

@@ -43,6 +43,8 @@ export const CHANGELOG_ENTRIES = [
         "Other players can no longer see your cash, inventory, booked fight, Proving Ground defense plan or equipped Special Moves when they open your profile. They see your record, stats, rank, banner and badges, like before.",
         "Another player could change things on your fighter, such as your banner, pinned badges or a callout, by sending requests with your fighter's id. Every change to a fighter now has to come from that fighter's own account.",
         "Signing up with a nickname the game refuses now tells you why and keeps you on the fighter step, instead of sending you back to the account step or failing with a generic error.",
+        "An opponent's rank now reads the same on Home, on his Fight Hub card and in the Rankings tab. The Fight Hub card counted one place too many, and the champion wore a #1 he does not have.",
+        "The title shot bar, the hero button and the Rankings tile on Home now agree on your next step, because all three read it from one place: your fight board. If you are unranked, the Rankings tile now says how many fights are left before you get a rank.",
       ],
       balance: [
         "Second Gear and Deep Waters ship at about half strength. They stack with Heavy Hands on the same punch, and the three together swung fights past the limit we hold every loadout to.",

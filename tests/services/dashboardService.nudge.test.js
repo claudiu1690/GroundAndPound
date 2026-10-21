@@ -205,12 +205,76 @@ test("lower-tier ready copy keeps its wording, without an em dash", async () => 
 test("National without a pending promotion is not a contender (no title copy)", async () => {
     const n = await gcsNudge({ tier: "National", pending: null, topFiveWins: 3 });
     assert.ok(!/title shot is ready/.test(n.text), n.text);
+    // OVR 80 is above the National target (60): promotion is only checked after a fight.
+    assert.equal(n.text, "Your next fight locks in your rating.");
+    assert.equal(n.linkTarget, "fights");
+});
+
+// ── The nudge is words for ranking.titleShot.step, nothing more ────────────
+
+test("reachOvr: OVR below the target with every other gate met", async () => {
+    const { fighter, rawFighter } = gcsDocs({ tier: "National", pending: null, topFiveWins: 3 });
+    fighter.overallRating = 55;
+    const ranking = await buildRanking(fighter, rawFighter, "f1");
+    assert.deepEqual(ranking.titleShot.step, { key: "reachOvr", n: 60 });
+    const n = buildNudge(fighter, ranking);
+    assert.equal(n.text, "Reach OVR 60 to qualify for your title shot.");
+    assert.equal(n.linkTarget, "gym");
+});
+
+test("autoPromote and autoPromoteNextFight (GCS Contender)", async () => {
+    const below = gcsDocs({ tier: "GCS Contender" });
+    below.fighter.overallRating = 61;
+    const a = buildNudge(below.fighter, await buildRanking(below.fighter, below.rawFighter, "f1"));
+    assert.equal(a.text, "Reach OVR 62 to move up a tier.");
+    assert.equal(a.linkTarget, "gym");
+
+    const at = gcsDocs({ tier: "GCS Contender" });
+    at.fighter.overallRating = 62;
+    const b = buildNudge(at.fighter, await buildRanking(at.fighter, at.rawFighter, "f1"));
+    assert.equal(b.text, "Your next fight moves you up a tier.");
+    assert.equal(b.linkTarget, "fights");
+});
+
+test("non-contender in the top 5 with 1 of 3 wins and OVR below target: wins come first", async () => {
+    const { fighter, rawFighter } = docs({ rawRank: 3, fightsInTier: 6 });
+    fighter.topFiveWinsInTier = 1;
+    fighter.overallRating = 40; // Regional Pro target is 45
+    const ranking = await buildRanking(fighter, rawFighter, "f1");
+    assert.equal(ranking.titleShot.ovrMet, false);
+    assert.deepEqual(ranking.titleShot.step, { key: "winTop5", n: 2 });
+    assert.equal(buildNudge(fighter, ranking).text, "Win 2 more fights to earn your title shot.");
+});
+
+test("buildNudge with no step reads as hidden", () => {
+    const keep = buildNudge({ promotionTier: "Regional Pro", comebackMode: false }, { titleShot: {} });
+    assert.deepEqual(keep, { text: "Keep training to raise your OVR.", linkTarget: "gym" });
+    assert.equal(buildNudge({ promotionTier: "Regional Pro" }, null).linkTarget, "gym");
+});
+
+test("no nudge text carries an em dash, for any step", () => {
+    const steps = [
+        { key: "hidden" }, { key: "autoPromote", n: 62 }, { key: "autoPromoteNextFight" },
+        { key: "rematch", n: 1 }, { key: "rematch", n: 2 }, { key: "getRanked", n: 1 },
+        { key: "getRanked", n: 3 }, { key: "reachTop5", n: 4, rank: 9 }, { key: "winTop5", n: 1 },
+        { key: "winTop5", n: 2, gcs: true }, { key: "winTop5", n: 2, gcs: true, champion: true },
+        { key: "reachOvr", n: 60 }, { key: "lockInOvr" }, { key: "ready" }, { key: "ready", gcs: true },
+    ];
+    for (const tier of ["Amateur", "National", "GCS"]) {
+        for (const comebackMode of [false, true]) {
+            for (const step of steps) {
+                const n = buildNudge({ promotionTier: tier, comebackMode }, { titleShot: { step } });
+                assert.equal(typeof n.text, "string");
+                assert.ok(!n.text.includes(String.fromCharCode(0x2014)), n.text);
+            }
+        }
+    }
 });
 
 test("comeback fallback has no em dash", () => {
     const n = buildNudge(
         { promotionTier: "Regional Pro", pendingPromotion: null, topFiveWinsInTier: 0, titleShotCooldown: 0, comebackMode: true },
-        { rank: null, isTopFive: false, titleShot: { ranked: true } },
+        { rank: null, isTopFive: false, titleShot: { ranked: true, step: { key: "hidden" } } },
     );
     assert.match(n.text, /^Comeback bonuses are live\. \+30% cash/);
     assert.ok(!n.text.includes(String.fromCharCode(0x2014)));

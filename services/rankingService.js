@@ -221,6 +221,29 @@ function toDisplayRank(internalRank) {
 }
 
 /**
+ * The number the Rankings tab prints for an NPC; null for the champion. THE one rule for
+ * an NPC's display rank: every consumer (Rankings tab, offer board, dashboard, callout
+ * roster) calls this and never re-derives it.
+ *
+ * Same-tier NPCs shift around the player's INTERNAL rank (displayRankForNpc); a
+ * cross-tier (stretch) NPC keeps its own fixedRank. Then toDisplayRank (champion null).
+ * The result is display-ready: never pass it through toDisplayRank again.
+ *
+ * @param {*} npcFixedRank              the NPC's permanent fixedRank (non-number -> null)
+ * @param {?string} npcTier             the NPC's promotionTier
+ * @param {?string} playerTier          the player's promotionTier
+ * @param {?number} playerInternalRank  the player's RAW ranking.rank, null when unranked
+ * @returns {number|null}
+ */
+function npcDisplayRank(npcFixedRank, npcTier, playerTier, playerInternalRank) {
+    if (typeof npcFixedRank !== "number") return null;
+    const internal = npcTier === playerTier
+        ? displayRankForNpc(npcFixedRank, playerInternalRank ?? null)
+        : npcFixedRank;
+    return toDisplayRank(internal);
+}
+
+/**
  * Map an outcome string from FIGHT_OUTCOMES into the result shape used by calcDelta().
  * Used by fightService to translate its outcome strings into the ranking input.
  */
@@ -249,5 +272,6 @@ module.exports = {
     CALLOUT_RANK_THRESHOLD,
     displayRankForNpc,
     toDisplayRank,
+    npcDisplayRank,
     buildFightResultFromOutcome,
 };

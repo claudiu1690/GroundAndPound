@@ -1,7 +1,7 @@
 /**
  * Unit tests for the additive ranking.titleShot progress fields on the dashboard
  * (mode, ranked, fightsInTier, rankedAfter, displayRank, cooldownRemaining, ovr,
- * ovrTarget). The Home title-shot strip names the FIRST unmet step from these, so an
+ * ovrTarget, fightsToRank, step). The Home title-shot strip names the FIRST unmet step from these, so an
  * unranked fighter must read "get ranked", not "win 3 more".
  *
  * No DB: buildRanking only touches the already-loaded fighter docs and constants.
@@ -143,10 +143,34 @@ test("existing titleShot fields keep their meaning", async () => {
 test("titleShot carries exactly the contract keys", async () => {
     const { titleShot } = await titleShotFor({});
     assert.deepEqual(Object.keys(titleShot).sort(), [
-        "cooldownRemaining", "displayRank", "fightsInTier", "gcsTitleWins", "mode", "ovr",
-        "ovrMet", "ovrTarget", "ranked", "rankedAfter", "titleWins", "topFive",
-        "topFiveCutoff", "winsInTier", "winsMet",
+        "cooldownRemaining", "displayRank", "fightsInTier", "fightsToRank", "gcsTitleWins",
+        "mode", "ovr", "ovrMet", "ovrTarget", "ranked", "rankedAfter", "step", "titleWins",
+        "topFive", "topFiveCutoff", "winsInTier", "winsMet",
     ]);
+});
+
+test("fightsToRank: 0 when ranked, else max(1, rankedAfter - fightsInTier)", async () => {
+    assert.equal((await titleShotFor({ rawRank: 4 })).titleShot.fightsToRank, 0);
+    for (const [fights, left] of [[0, 3], [1, 2], [2, 1], [7, 1]]) {
+        const { titleShot } = await titleShotFor({ rawRank: null, fightsInTier: fights });
+        assert.equal(titleShot.fightsToRank, left, `fights ${fights}`);
+        assert.deepEqual(titleShot.step, { key: "getRanked", n: left });
+    }
+});
+
+test("ovrMet without a board equals fightService.isTitleContender", async () => {
+    const cases = [
+        { tier: "Amateur", pendingPromotion: null },
+        { tier: "Amateur", pendingPromotion: "Regional Pro" },
+        { tier: "National", pendingPromotion: null },
+        { tier: "National", pendingPromotion: "GCS Contender" },
+        { tier: "GCS", pendingPromotion: null },
+    ];
+    for (const c of cases) {
+        const { fighter, rawFighter } = fixture(c);
+        const { titleShot } = await buildRanking(fighter, rawFighter, "f1");
+        assert.equal(titleShot.ovrMet, fightService.isTitleContender(fighter), JSON.stringify(c));
+    }
 });
 
 // ── GCS title shot (docs/gcs-title-contract.md B17, B18) ────────────────────

@@ -31,9 +31,9 @@ function formatOvrGap(gap) {
 }
 
 function RankDisplay({ opp }) {
-  const rank = typeof opp.displayRank === "number" ? opp.displayRank
-             : typeof opp.fixedRank   === "number" ? opp.fixedRank
-             : null;
+  // displayRank is display-ready (the number the Rankings tab prints); null for
+  // the champion and for unranked opponents. Never shift it or fall back to fixedRank.
+  const rank = typeof opp.displayRank === "number" ? opp.displayRank : null;
   if (rank == null) return null;
   return <span className="op rank">#{rank}</span>;
 }

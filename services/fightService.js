@@ -575,9 +575,9 @@ async function hydrateOffers(fighter, slots) {
         o.purse = boutPurse(fighter.promotionTier, o.type, o.opponent?.overallRating, fighter.overallRating);
     }
 
-    // Ranking System v1.0: displayed rank for each opponent so the offer card pill never
-    // duplicates the player's rank. Only same-tier opponents shift; stretch-tier
-    // (cross-tier) opponents keep their fixedRank.
+    // opponent.displayRank is DISPLAY-READY: the exact number the Rankings tab prints for
+    // this NPC (rankingService.npcDisplayRank), null for the champion and for an unranked
+    // opponent. Clients and the dashboard render it as-is; never shift it again.
     const playerRankInTier = fighter.ranking?.rank ?? null;
 
     // Phase 6: badge active beef/respect flag matches.
@@ -587,11 +587,10 @@ async function hydrateOffers(fighter, slots) {
         const oppId = o.opponent?._id ? String(o.opponent._id) : null;
         if (!oppId) continue;
 
-        if (o.opponent && typeof o.opponent.fixedRank === "number") {
-            const sameTier = o.opponent.promotionTier === fighter.promotionTier;
-            o.opponent.displayRank = sameTier
-                ? rankingService.displayRankForNpc(o.opponent.fixedRank, playerRankInTier)
-                : o.opponent.fixedRank;
+        if (o.opponent) {
+            o.opponent.displayRank = rankingService.npcDisplayRank(
+                o.opponent.fixedRank, o.opponent.promotionTier, fighter.promotionTier, playerRankInTier,
+            );
         }
 
         if (beefIds.has(oppId)) {

@@ -405,6 +405,8 @@
       "downThisSession": "Down {n} this session.",
       "titleShotConditions": "Title shot conditions:",
       "unranked": "Unranked",
+      "getRankedFirst": "Play {n} more fights to get ranked, then:",
+      "getRankedFirstOne": "Play 1 more fight to get ranked, then:",
       "conditionOvr": "OVR threshold reached",
       "conditionOvrGcs": "GCS fighter",
       "conditionTopFive": "Top 5 in division",

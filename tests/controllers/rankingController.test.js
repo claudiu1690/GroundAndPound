@@ -105,3 +105,40 @@ test("getFighterRank: isTopFive agrees with rankingService.isTopFive at every ra
         assert.equal(body.isTopFive, rankingService.isTopFive({ ranking: { rank } }), String(rank));
     }
 });
+
+// ── NPC roster rank is rankingService.npcDisplayRank, row by row ───────────
+
+const BIG_ROSTER = [1, 2, 3, 4, 5, 6, 8, 12].map((r) => ({
+    _id: `n${r}`, name: `NPC ${r}`, fixedRank: r, isChampion: r === 1, overallRating: 90 - r,
+    promotionTier: "GCS", record: { wins: 10, losses: 1 },
+}));
+
+async function rosterFor(fighterDoc) {
+    const res = mockRes();
+    await withStub(Opponent, "find", () => query(BIG_ROSTER), () =>
+        withStub(Fighter, "findById", () => query(fighterDoc), () =>
+            getRankings({ params: { tier: "GCS" }, query: { weightClass: "Lightweight", fighterId: "f1" } }, res)));
+    return res.body;
+}
+
+test("getRankings: every NPC row's rank equals npcDisplayRank (same tier, ranked player)", async () => {
+    for (const playerRank of [2, 4, 5, 9]) {
+        // eslint-disable-next-line no-await-in-loop
+        const body = await rosterFor(player({ ranking: { rank: playerRank } }));
+        for (const row of body.roster) {
+            assert.equal(row.rank, rankingService.npcDisplayRank(row.fixedRank, "GCS", "GCS", playerRank),
+                `player ${playerRank}, NPC fixedRank ${row.fixedRank}`);
+        }
+        assert.equal(body.roster[0].rank, null, "the champion has no number");
+    }
+});
+
+test("getRankings: unranked player and a player from another tier leave NPC ranks unshifted", async () => {
+    const unranked = await rosterFor(player({ ranking: { rank: null } }));
+    const otherTier = await rosterFor(player({ promotionTier: "National", ranking: { rank: 3 } }));
+    for (const body of [unranked, otherTier]) {
+        for (const row of body.roster) {
+            assert.equal(row.rank, rankingService.npcDisplayRank(row.fixedRank, "GCS", "GCS", null));
+        }
+    }
+});

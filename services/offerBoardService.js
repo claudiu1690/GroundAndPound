@@ -23,7 +23,10 @@
  * @typedef {Object} BoardOffer
  * The element shape the old generateOffers returned, plus `acceptable`:
  * @property {"Easy"|"Even"|"Hard"|"TitleShot"} type
- * @property {Object} opponent       full lean Opponent + displayRank (TitleShot OVR is x1.05)
+ * @property {Object} opponent       full lean Opponent + displayRank (TitleShot OVR is x1.05).
+ *           opponent.displayRank is DISPLAY-READY: the number the Rankings tab prints
+ *           (rankingService.npcDisplayRank), null for the champion and for an unranked
+ *           opponent. Render it as-is; never apply toDisplayRank to it.
  * @property {{record:{wins:number,losses:number,draws:number},
  *            streak:?{result:string,count:number}, lastThree:Array}} context
  *           recomputed from the opponent's current fightHistory at every read

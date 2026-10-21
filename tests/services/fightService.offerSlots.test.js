@@ -203,7 +203,8 @@ test("hydrateOffers: one $in read, slot order kept, context from the CURRENT fig
         assert.deepEqual(offers.map((o) => [o.type, o.opponent._id]), [["Easy", "e"], ["Even", "v"], ["Hard", "h"]]);
         assert.deepEqual(offers[0].context.record, { wins: 2, losses: 1, draws: 0 });
         assert.deepEqual(offers[1].context.streak, { result: "loss", count: 2 });
-        assert.equal(offers[0].opponent.displayRank, 8);
+        // fixedRank 8 above the player's raw 9 keeps internal 8: the Rankings tab prints #7.
+        assert.equal(offers[0].opponent.displayRank, 7);
 
         // A fight resolved since the board was stored: the next read sees it.
         roster.v.fightHistory.push({ result: "win" });
@@ -348,5 +349,47 @@ test("hydrateOffers: lower-tier titleShotMeta is unchanged apart from the additi
         const f = fighter({ promotionTier: "Amateur", pendingPromotion: "Regional Pro", gcsTitleWins: 0 });
         const t = (await hydrateOffers(f, [...SLOTS, { offerType: "TitleShot", opponentId: "champ" }])).offers[3];
         assert.deepEqual(t.titleShotMeta, { targetTier: "Regional Pro", tier: "Amateur", titleDefense: false, gcsTitleWins: 0 });
+    });
+});
+
+// ── opponent.displayRank is the Rankings-tab number (rankingService.npcDisplayRank) ──
+
+test("hydrateOffers: displayRank is display-ready; champion null; cross-tier unshifted", async () => {
+    const rankingService = require("../../services/rankingService");
+    const roster = {
+        e: opp("e", 31, { fixedRank: 8 }),
+        v: opp("v", 35, { fixedRank: 12 }),
+        // A stretch-tier (cross-tier) opponent keeps its own fixedRank: no shift.
+        h: opp("h", 39, { fixedRank: 12, promotionTier: "National" }),
+        champ: opp("champ", 60, { isChampion: true, fixedRank: 1 }),
+    };
+    const slots = [...SLOTS, { offerType: "TitleShot", opponentId: "champ" }];
+    await withRoster(roster, async () => {
+        const f = fighter({ pendingPromotion: "National", ranking: { rank: 9 } });
+        const { offers } = await hydrateOffers(f, slots);
+        const byId = Object.fromEntries(offers.map((o) => [o.opponent._id, o.opponent.displayRank]));
+        assert.equal(byId.e, 7, "fixedRank 8 above raw 9: internal 8, display 7");
+        assert.equal(byId.v, 12, "fixedRank 12 at/below raw 9 shifts to internal 13, display 12");
+        assert.equal(byId.h, 11, "cross-tier fixedRank 12: unshifted internal 12, display 11");
+        assert.equal(byId.champ, null, "the champion has no number");
+
+        // Every value is exactly npcDisplayRank, the Rankings tab rule.
+        for (const o of offers) {
+            const src = roster[o.opponent._id];
+            assert.equal(o.opponent.displayRank,
+                rankingService.npcDisplayRank(src.fixedRank, src.promotionTier, f.promotionTier, 9));
+        }
+    });
+});
+
+test("hydrateOffers: unranked player sees unshifted ranks; an unranked opponent is null", async () => {
+    const roster = {
+        e: opp("e", 31, { fixedRank: 8 }),
+        v: opp("v", 35, { fixedRank: null }),
+        h: opp("h", 39, { fixedRank: 2 }),
+    };
+    await withRoster(roster, async () => {
+        const { offers } = await hydrateOffers(fighter({ ranking: { rank: null } }), SLOTS);
+        assert.deepEqual(offers.map((o) => o.opponent.displayRank), [7, null, 1]);
     });
 });
