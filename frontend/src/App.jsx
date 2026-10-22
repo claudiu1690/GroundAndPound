@@ -492,6 +492,8 @@ function App() {
   const [message,  setMessage]                  = useState("");
   const [loading,  setLoading]                  = useState(true);
   const [resolving, setResolving]               = useState(false);
+  // Synchronous in-flight guard: state updates are async, so two clicks in the same tick both pass `resolving`.
+  const resolveInFlightRef = useRef(false);
   const [lastFightCommentary, setLastFightCommentary] = useState([]);
   const [lastFightBreakdown, setLastFightBreakdown]   = useState(null);
   const [lastFightSummary, setLastFightSummary] = useState(null);
@@ -1279,23 +1281,35 @@ function App() {
       setSelectedBuffLabel(null);
       tutorialBus.emit("fight_resolved");
     } catch (e) {
+      if (e.code === "FIGHT_ALREADY_RESOLVED") {
+        // Another request already settled this fight; just resync, no error popup.
+        loadFighter(fighter._id);
+        setFeedRefreshKey((k) => k + 1);
+        setMessage(t("app.fightAlreadyResolved"));
+        return;
+      }
       const errMsg = e.message || "Resolve failed";
       maybeShowBlockPopup(errMsg, e.code);
       setMessage(errMsg);
+    } finally {
+      resolveInFlightRef.current = false;
+      setResolving(false);
     }
-    setResolving(false);
   }, [fighter?._id, loadFighter, loadGyms, maybeShowBlockPopup, addToast]);
 
   const handleBeginFight = useCallback(async () => {
     if (!weightCut || !fighter?._id || !fighter?.acceptedFightId) return;
+    if (resolveInFlightRef.current) return;
+    resolveInFlightRef.current = true;
     try {
       await api.setWeightCut(fighter._id, fighter.acceptedFightId, weightCut);
     } catch (e) {
+      resolveInFlightRef.current = false;
       setMessage(e.message || t("app.weightCutFailed"));
       return;
     }
     setShowCampSummary(false);
-    handleResolve();
+    await handleResolve();
   }, [weightCut, fighter?._id, fighter?.acceptedFightId, handleResolve]);
 
   // Tutorial completion — reload the fighter so the overlay unmounts (the

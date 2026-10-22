@@ -45,6 +45,8 @@ export const CHANGELOG_ENTRIES = [
         "Signing up with a nickname the game refuses now tells you why and keeps you on the fighter step, instead of sending you back to the account step or failing with a generic error.",
         "An opponent's rank now reads the same on Home, on his Fight Hub card and in the Rankings tab. The Fight Hub card counted one place too many, and the champion wore a #1 he does not have.",
         "The title shot bar, the hero button and the Rankings tile on Home now agree on your next step, because all three read it from one place: your fight board. If you are unranked, the Rankings tile now says how many fights are left before you get a rank.",
+        "Pressing Begin Fight twice, or firing two fight requests at once, could pay the purse, fame and XP for the same fight twice. A fight now resolves exactly once.",
+        "Persona milestones (being crowned, reaching your signature, breaking character) now show up in your career feed and in the Gazette. They were being dropped.",
       ],
       balance: [
         "Second Gear and Deep Waters ship at about half strength. They stack with Heavy Hands on the same punch, and the three together swung fights past the limit we hold every loadout to.",

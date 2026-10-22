@@ -759,6 +759,17 @@ function applyLegacyTcaPenalty(fightPlayer, fighter, tierConfig) {
     fightPlayer.maxStamina = Math.round(maxSt * staminaMult);
 }
 
+/** Lease length for a resolve claim; an older "resolving" claim is stale and reclaimable. */
+const RESOLVE_CLAIM_TTL_MS = 60 * 1000;
+
+/** Coded service error ({code, status}), same shape as offerBoardService.boardError. */
+function fightError(code, message, status) {
+    const err = new Error(message);
+    err.code = code;
+    err.status = status;
+    return err;
+}
+
 /**
  * Resolve the accepted fight: run simulation, apply outcome, update fighter and fight.
  */
@@ -794,1081 +805,1168 @@ async function resolveFightAndApply(fighterId, userId) {
     notorietyService.ensureNotorietyShape(fighter);
     if (!fighter.acceptedFightId) throw new Error("No accepted fight");
 
-    const fight = await Fight.findById(fighter.acceptedFightId).populate("opponentId");
-    if (!fight || fight.status !== "accepted") throw new Error("Fight not found or not accepted");
-
-    const opponent = fight.opponentId;
-    if (!opponent) throw new Error("Opponent not found");
-
-    // GDD 8.9: Block fight if injury requires doctor visit first
-    const blockingInjury = isFightBlocked(fighter);
-    if (blockingInjury) {
-        throw new Error(fightBlockedMessage(blockingInjury));
-    }
-
-    const tierConfig = PROMOTION_TIERS[fight.promotionTier];
-    const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
-
-    // Build a mutable copy of the fighter's stats for the fight simulation.
-    // All modifiers are applied to this copy — the real fighter document is never mutated.
-    const fightPlayer = { ...fighter.toObject() };
-    // Stamina is fight-time only — always start at maxStamina. Persistent stamina has been removed.
-    fightPlayer.stamina = fightPlayer.maxStamina ?? 100;
-
-    // Load the FightCamp for this fight (created on accept; may be absent for old fights)
-    const fightCamp = await FightCamp.findOne({ fightId: fight._id });
-
-    // ── Shop v1.0: pre-fight supplement (buff) ──
-    // Authoritative ownership check here at resolve — selection-time guard is UX only.
-    const { BUFFS } = require("../consts/shopConfig");
-    const buffId = fightCamp?.selectedBuffId || null;
-    const buffCfg = buffId ? BUFFS[buffId] : null;
-    const ownsBuff = !!buffCfg
-        && ((fighter.inventory && fighter.inventory.prefightBuffs
-            && fighter.inventory.prefightBuffs[buffId]) || 0) > 0;
-
-    if (fightCamp?.finalisedAt) {
-        // ── Camp v2: NO flat stat modifier ───────────────────────────────────
-        // Session bonuses are conditional and applied during fight resolution.
-        // Only injury penalties still modify stats pre-fight.
-
-        // Camp injury penalty (only if fighter pushed through sparring injury)
-        if (fightCamp.injuryChoice === "PUSH_THROUGH" && fightCamp.injuryPenalty) {
-            const pen = fightCamp.injuryPenalty;
-            STAT_KEYS.forEach((k) => {
-                if (pen[k] && typeof fightPlayer[k] === "number")
-                    fightPlayer[k] = Math.max(1, Math.round(fightPlayer[k] * (1 + pen[k])));
-            });
-            if (pen.maxStamina) {
-                const maxSt = fightPlayer.maxStamina ?? 100;
-                fightPlayer.maxStamina = Math.round(maxSt * (1 + pen.maxStamina));
-                fightPlayer.stamina = Math.min(fightPlayer.stamina ?? maxSt, fightPlayer.maxStamina);
-            }
-        }
-    } else {
-        // ── Legacy TCA fallback (for fights accepted before this deploy) ─────
-        applyLegacyTcaPenalty(fightPlayer, fighter, tierConfig);
-    }
-
-    // ── Shop v1.0: apply pre-fight buff stat additions to the THROWAWAY copy only.
-    // The real fighter document is never mutated here. Each buffed stat is capped at 100.
-    if (ownsBuff && buffCfg.stats) {
-        for (const [k, v] of Object.entries(buffCfg.stats)) {
-            if (typeof fightPlayer[k] === "number") {
-                fightPlayer[k] = Math.min(100, fightPlayer[k] + v);
-            }
-        }
-    }
-
-    // GDD 8.8 (revised): Weight cut — a stamina gamble with miss risk.
-    // Miss weight is the BAD TAIL of the same gamble: a missed cut always drains you
-    // (a negative stamina roll) and never grants a boost. A positive roll therefore
-    // guarantees you made weight — you can't gain stamina AND miss weight on one cut.
-    const weightCut = fight.weightCut || "easy";
-    const WEIGHT_CUT_CONFIG = {
-        easy:       { min: 0,  max: 0,  missPct: 0    },
-        moderate:   { min: -5, max: 10, missPct: 0.05 },
-        aggressive: { min: -12, max: 18, missPct: 0.20 },
-    };
-    const wcConfig = WEIGHT_CUT_CONFIG[weightCut] || WEIGHT_CUT_CONFIG.easy;
-    // Strength Reserve (Titan Performance rank-4 perk): raise the bad-roll floor by 3.
-    const hasStrengthReserve = (fighter.gymPerks || []).includes("strength_reserve");
-    const rollFloor = Math.min(wcConfig.max, wcConfig.min + (hasStrengthReserve ? 3 : 0));
-    const weightMissed = wcConfig.missPct > 0 && Math.random() < wcConfig.missPct;
-    let weightCutRoll;
-    if (wcConfig.min === 0 && wcConfig.max === 0) {
-        weightCutRoll = 0;                                   // easy cut — no swing, no miss risk
-    } else if (weightMissed) {
-        // A missed cut only ever drains stamina — roll the negative band [rollFloor, -1].
-        const lo = Math.min(rollFloor, -1);
-        weightCutRoll = lo + Math.floor(Math.random() * (-1 - lo + 1));
-    } else {
-        // Made weight — full swing from the (perk-adjusted) floor up to the max upside.
-        weightCutRoll = rollFloor + Math.floor(Math.random() * (wcConfig.max - rollFloor + 1));
-    }
-    fightPlayer.stamina = Math.max(1, (fightPlayer.stamina ?? 100) + weightCutRoll);
-    fight.weightCutRoll = weightCutRoll;
-
-    const playerName = fighter.nickname
-        ? `${fighter.firstName} "${fighter.nickname}" ${fighter.lastName}`
-        : `${fighter.firstName} ${fighter.lastName}`;
-    const opponentName = opponent.nickname
-        ? `${opponent.name} "${opponent.nickname}"`
-        : opponent.name;
-
-    // Champion boost: +5% all stats for title shot opponents
-    const fightOpponent = fight.offerType === "TitleShot"
-        ? (() => {
-            const boosted = { ...opponent.toObject ? opponent.toObject() : opponent };
-            const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
-            STAT_KEYS.forEach((k) => {
-                if (typeof boosted[k] === "number") boosted[k] = Math.round(boosted[k] * 1.05);
-            });
-            return boosted;
-        })()
-        : opponent;
-
-    // Iron Will perk (legacy — kept for fight resolution compatibility, no longer granted by quests)
-    const ironWillPerk = false;
-    // v2: pass conditional session bonuses and wildcard instead of flat campBonuses
-    const sessionBonuses = fightCamp?.sessionBonuses ? [...fightCamp.sessionBonuses.map(b => ({ ...b }))] : [];
-    const wildcard = fightCamp?.wildcard ?? null;
-    // Special Moves (PvE): read the FROZEN loadout snapshot taken at camp finalise — NOT a
-    // live rebuild — so a mid-camp UPGRADE drop can't change this booked fight's power.
-    // Fresh copies each resolve (the array is mutated during resolution). Empty for legacy or
-    // un-finalised camps → no move effects, consistent with sessionBonuses.
-    const moveBonuses = fightCamp?.moveBonuses ? [...fightCamp.moveBonuses.map(b => ({ ...b }))] : [];
-
-    // ── Persona (PvE) resolve-site modifiers ─────────────────────────────────────
-    // Applied to the FRESH sessionBonuses/moveBonuses copies with LIVE getFightModifiers —
-    // NEVER baked into the frozen camp snapshot. Damage-reduction/AMBUSH/comeback do not
-    // depend on the (not-yet-known) outcome, so a minimal ctx is enough here.
-    {
-        const personaFightMods = personaService.getFightModifiers(fighter, {
-            comebackMode: !!fighter.comebackMode,
-        });
-        // People's Champ comeback: scale camp session + move bonus VALUES first.
-        if (fighter.comebackMode && personaFightMods.comebackBonusMult !== 1) {
-            const m = personaFightMods.comebackBonusMult;
-            for (const b of sessionBonuses) if (typeof b.value === "number") b.value *= m;
-            for (const b of moveBonuses) if (typeof b.effectiveValue === "number") b.effectiveValue *= m;
-        }
-        // Boogeyman: MERGE (sum) damage reduction into the OPPONENT_DAMAGE_REDUCTION lane so
-        // the engine's first-match .find() reads the combined value (never appended).
-        specialMovesService.mergePersonaBonus(moveBonuses, "OPPONENT_DAMAGE_REDUCTION", personaFightMods.damageReductionFrac);
-        // Boogeyman AMBUSH: scale equipped PROC move values.
-        specialMovesService.scaleProcs(moveBonuses, personaFightMods.ambushProcMult);
-    }
-
-    // Commentary context — drives personalised, fighter-tailored fight commentary.
-    const commentaryCtx = {
-        playerStyle: fighter.style,
-        opponentStyle: opponent.style,
-        tier: fight.promotionTier,
-        isTitle: fight.offerType === "TitleShot",
-        isCallout: !!fight.isCallout,
-        isGrudge:
-            String(fighter.nemesis?.opponentId || "") === String(opponent._id) ||
-            (fighter.beefFlags || []).some(f => String(f.opponentId) === String(opponent._id)),
-        playerIsChampion: (fighter.badges || []).includes("Champion"),
-        comeback: !!fighter.comebackMode,
-        winStreak: fighter.winStreak || 0,
-        playerOvr: fighter.overallRating || 0,
-        opponentOvr: opponent.overallRating || 0,
-    };
-
-    const result = resolveFight(fightPlayer, fightOpponent, {
-        playerStrategy: fight.playerStrategy || undefined,
-        playerName,
-        opponentName,
-        ironWillPerk,
-        sessionBonuses,
-        moveBonuses,
-        wildcard,
-        ctx: commentaryCtx,
-    });
-
-    // v2: save triggered session bonuses back to FightCamp for post-fight display
-    if (fightCamp && result.sessionBonuses) {
-        fightCamp.sessionBonuses = result.sessionBonuses;
-        // Special Moves: persist the triggered move-bonus snapshot too (which moves fired),
-        // mirroring sessionBonuses. Overwriting the frozen snapshot is safe post-resolve.
-        if (result.moveBonuses) fightCamp.moveBonuses = result.moveBonuses;
-        await fightCamp.save();
-    }
-
-    logFightResolve({
-        fighter,
-        fight,
-        fightPlayer,
-        opponent,
-        result,
-        campRating: fightCamp?.campRating ?? null,
-        sessionBonuses: result.sessionBonuses ?? [],
-        wildcard: result.wildcard ?? null,
-        weightCut,
-        weightCutRoll,
-        weightMissed,
-        ironWillPerk,
-    });
-
-    const isWin = [OUT_KO_TKO, OUT_SUB, OUT_DEC_UNAN, OUT_DEC_SPLIT].includes(result.outcome);
-    const isDraw = result.outcome === OUT_DRAW;
-    const isLoss = !isWin && !isDraw;
-    const isKoLoss = result.outcome === OUT_LOSS_KO || result.outcome === OUT_LOSS_SUB;
-
-    // ── Persona (PvE) post-resolve fight modifiers ───────────────────────────────
-    // Full outcome-aware ctx (folds BAD BLOOD, HOMETOWN HERO, upset-loss, LEGACY milestone).
-    const isNemesisFight = String(fighter.nemesis?.opponentId || "") === String(opponent._id);
-    const isBeefFight = (fighter.beefFlags || []).some((f) => String(f.opponentId) === String(opponent._id));
-    const personaMods = personaService.getFightModifiers(fighter, {
-        isWin,
-        isLoss,
-        comebackMode: !!fighter.comebackMode,
-        isNemesis: isNemesisFight,
-        isBeef: isBeefFight,
-        fighterOvr: fighter.overallRating ?? 14,
-        oppOvr: opponent.overallRating ?? 14,
-    });
-
-    // GDD 8.5 XP multipliers (corrected)
-    let xpMult;
-    if (result.outcome === OUT_KO_TKO)      xpMult = 1.3;
-    else if (result.outcome === OUT_SUB)      xpMult = 1.25;
-    else if (result.outcome === OUT_DEC_UNAN) xpMult = 1.1;
-    else if (result.outcome === OUT_DEC_SPLIT) xpMult = 1.05;
-    else if (result.outcome === OUT_DRAW)     xpMult = 1.0;
-    else if (result.outcome === OUT_LOSS_DEC) xpMult = 0.8;
-    else                                      xpMult = 0.7; // Loss by KO/TKO or submission
-
-    // GDD 8.6: Comeback Mode → 1.5× XP multiplier on comeback fight
-    const isComeback = !!fighter.comebackMode;
-    if (isComeback) xpMult = +(xpMult * 1.5).toFixed(2);
-
-    // GDD 8.8: Weight miss → -20% iron purse + notoriety penalty
-    // Base purse is the per-bout purse stamped on the Fight at offer time (GDD 7: slot
-    // multiplier plus OVR-gap bonus on the tier signingFee). Older Fight docs without one
-    // fall back to the flat tier signingFee.
-    const basePurse = Number.isFinite(fight.purse)
-        ? Math.max(0, fight.purse)
-        : (tierConfig ? Math.max(0, tierConfig.signingFee || 0) : 0);
-    const outcomeIronMult = isWin ? 1 : (isDraw ? 0.5 : 0.7);
-    // Championship Pedigree perk: +10% fame from fights (handled in notoriety section below)
-    const notorietyPurseFrac = notorietyService.getNotorietyPurseFraction(fighter.notoriety.peakTier);
-    const comebackPurseFrac = isComeback ? 0.3 : 0;
-    // Persona purse fraction (PvE) folds in additively alongside the other purse mods.
-    const personaPurseFrac = personaMods.purseFrac || 0;
-    let ironEarned = Math.round(
-        basePurse * outcomeIronMult * (1 + notorietyPurseFrac + comebackPurseFrac + personaPurseFrac)
+    // ── Resolve claim (one resolve per accepted fight) ──────────────────────────
+    // Nothing above writes. Before any read-modify-write we atomically move the Fight
+    // from "accepted" to "resolving" (with a resolvingAt lease). A second concurrent
+    // resolve loses the claim and gets FIGHT_ALREADY_RESOLVED (409), so rewards are
+    // applied exactly once. A claim older than RESOLVE_CLAIM_TTL_MS (60 s) is treated
+    // as stale (a crashed resolve) and may be reclaimed.
+    // Commit boundary: the fight.save() that persists status "completed". A throw
+    // before it releases the claim back to "accepted" so the player can retry; a throw
+    // after it never releases (rewards may already be partly applied).
+    // Self-heal: if the claim is lost because the fight is already "completed" (a crash
+    // after the commit left fighter.acceptedFightId dangling), clear the pointer
+    // conditionally. Never clear it for a fight that is still "resolving". A pointer to a
+    // Fight document that no longer exists is cleared the same way and answers 404.
+    // No irreversible write precedes the commit (the FightCamp snapshot is saved after it).
+    const claimedFightId = fighter.acceptedFightId;
+    const now = new Date();
+    const claim = await Fight.updateOne(
+        {
+            _id: claimedFightId,
+            fighterId: fighter._id,
+            $or: [
+                { status: "accepted" },
+                { status: "resolving", resolvingAt: { $lt: new Date(now.getTime() - RESOLVE_CLAIM_TTL_MS) } },
+            ],
+        },
+        { $set: { status: "resolving", resolvingAt: now } }
     );
-    // Phase 4: callout purse bump (+25%) only on a WIN. Losing a callout just loses the fame spend.
-    const isCalloutFight = !!fight.isCallout;
-    if (isCalloutFight && isWin) {
-        const { CALLOUT_PURSE_MULT } = require("../consts/calloutConfig");
-        ironEarned = Math.round(ironEarned * CALLOUT_PURSE_MULT);
+    if (!claim || claim.modifiedCount === 0) {
+        // A missing Fight document also clears the pointer (conditionally) and answers 404
+        // ("Fight not found", mapped by the controller) instead of 409.
+        let fightMissing = false;
+        try {
+            const current = await Fight.findById(claimedFightId).select("status").lean();
+            fightMissing = !current;
+            if (!current || current.status === "completed") {
+                if (current) {
+                    console.error(
+                        `[fight] resolve healed a dangling acceptedFightId: fighterId=${fighter._id} fightId=${claimedFightId}` +
+                        " is completed but the fighter still pointed at it; rewards for this fight were likely never applied" +
+                        " (crash between the fight commit and fighter.save)"
+                    );
+                }
+                await Fighter.updateOne(
+                    { _id: fighter._id, acceptedFightId: claimedFightId },
+                    { $set: { acceptedFightId: null } }
+                );
+            }
+        } catch (healErr) {
+            console.error("[fight] resolve dangling-pointer heal failed:", healErr.message);
+        }
+        if (fightMissing) throw new Error("Fight not found");
+        throw fightError("FIGHT_ALREADY_RESOLVED", "This fight has already been resolved.", 409);
     }
 
-    // Phase 6: Beef/respect flag matchup. Check BEFORE decrementing other flags.
-    const beefMatch    = (fighter.beefFlags    || []).find((f) => String(f.opponentId) === String(opponent._id));
-    const respectMatch = (fighter.respectFlags || []).find((f) => String(f.opponentId) === String(opponent._id));
-    if (isWin && respectMatch) {
-        const { RESPECT_WIN_IRON_MULT } = require("../consts/mediaConfig");
-        ironEarned = Math.round(ironEarned * RESPECT_WIN_IRON_MULT);
-    }
-
-    // Weight miss penalty applies LAST — after every purse bonus — so missing weight
-    // always costs 20% of the FINAL purse (a callout/respect bump can't cancel it out).
-    if (weightMissed) ironEarned = Math.round(ironEarned * 0.8);
-
-    const wasFrozenBeforeFight = !!fighter.notoriety.isFrozen;
-    const prevConsecutiveLosses = fighter.consecutiveLosses || 0;
-    const prevWinStreak = fighter.winStreak || 0;
-    const peakTierBefore = fighter.notoriety.peakTier;
-    const opponentOvr = opponent.overallRating ?? 14;
-    const fighterOvr = fighter.overallRating ?? 14;
-    const healthEnd = result.playerHealthAfter ?? 100;
-    const isFinishWin = isWin && (result.outcome === OUT_KO_TKO || result.outcome === OUT_SUB);
-    const promoTier = fight.promotionTier;
-    const firstFinishInThisPromotion =
-        isFinishWin &&
-        !(fighter.notoriety.firstFinishPromoTiers || []).includes(promoTier);
-    const fightOfTheNight =
-        isWin &&
-        (result.outcome === OUT_DEC_UNAN || result.outcome === OUT_DEC_SPLIT) &&
-        healthEnd < 50;
-    const giantKiller = isWin && opponentOvr >= fighterOvr + 10;
-
-    fight.status = "completed";
-    fight.outcome = result.outcome;
-    fight.ironEarned = ironEarned;
-    fight.xpMultiplier = xpMult;
-    fight.rounds = (result.rounds || []).map(r => `${r.round}: ${r.event} (P ${r.playerHealth} / O ${r.opponentHealth})`);
-    fight.commentary = result.commentary || [];
-    fight.completedAt = new Date();
-
-    // Fight Description System — derive the round-by-round breakdown from the engine
-    // output. A derive failure must NOT fail the resolve: degrade to legacy (null).
+    let committed = false;
     try {
-        const bd = deriveFightDetails(
-            result,
-            {
-                ...commentaryCtx,
-                playerName,
-                opponentName,
-                maxRounds: FIGHT_CFG.defaults.maxRounds,
-            },
-            String(fight._id)
-        );
-        fight.breakdown = {
-            version: 1,
-            roundStats: bd.roundStats,
-            eventLog: bd.eventLog,
-            introTemplateKey: bd.introTemplateKey,
-            resultContextKey: bd.resultContextKey,
+        const fight = await Fight.findById(fighter.acceptedFightId).populate("opponentId");
+        if (!fight) throw new Error("Fight not found");
+
+        const opponent = fight.opponentId;
+        if (!opponent) throw new Error("Opponent not found");
+
+        // GDD 8.9: Block fight if injury requires doctor visit first
+        const blockingInjury = isFightBlocked(fighter);
+        if (blockingInjury) {
+            throw new Error(fightBlockedMessage(blockingInjury));
+        }
+
+        const tierConfig = PROMOTION_TIERS[fight.promotionTier];
+        const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
+
+        // Build a mutable copy of the fighter's stats for the fight simulation.
+        // All modifiers are applied to this copy — the real fighter document is never mutated.
+        const fightPlayer = { ...fighter.toObject() };
+        // Stamina is fight-time only — always start at maxStamina. Persistent stamina has been removed.
+        fightPlayer.stamina = fightPlayer.maxStamina ?? 100;
+
+        // Load the FightCamp for this fight (created on accept; may be absent for old fights)
+        const fightCamp = await FightCamp.findOne({ fightId: fight._id });
+
+        // ── Shop v1.0: pre-fight supplement (buff) ──
+        // Authoritative ownership check here at resolve — selection-time guard is UX only.
+        const { BUFFS } = require("../consts/shopConfig");
+        const buffId = fightCamp?.selectedBuffId || null;
+        const buffCfg = buffId ? BUFFS[buffId] : null;
+        const ownsBuff = !!buffCfg
+            && ((fighter.inventory && fighter.inventory.prefightBuffs
+                && fighter.inventory.prefightBuffs[buffId]) || 0) > 0;
+
+        if (fightCamp?.finalisedAt) {
+            // ── Camp v2: NO flat stat modifier ───────────────────────────────────
+            // Session bonuses are conditional and applied during fight resolution.
+            // Only injury penalties still modify stats pre-fight.
+
+            // Camp injury penalty (only if fighter pushed through sparring injury)
+            if (fightCamp.injuryChoice === "PUSH_THROUGH" && fightCamp.injuryPenalty) {
+                const pen = fightCamp.injuryPenalty;
+                STAT_KEYS.forEach((k) => {
+                    if (pen[k] && typeof fightPlayer[k] === "number")
+                        fightPlayer[k] = Math.max(1, Math.round(fightPlayer[k] * (1 + pen[k])));
+                });
+                if (pen.maxStamina) {
+                    const maxSt = fightPlayer.maxStamina ?? 100;
+                    fightPlayer.maxStamina = Math.round(maxSt * (1 + pen.maxStamina));
+                    fightPlayer.stamina = Math.min(fightPlayer.stamina ?? maxSt, fightPlayer.maxStamina);
+                }
+            }
+        } else {
+            // ── Legacy TCA fallback (for fights accepted before this deploy) ─────
+            applyLegacyTcaPenalty(fightPlayer, fighter, tierConfig);
+        }
+
+        // ── Shop v1.0: apply pre-fight buff stat additions to the THROWAWAY copy only.
+        // The real fighter document is never mutated here. Each buffed stat is capped at 100.
+        if (ownsBuff && buffCfg.stats) {
+            for (const [k, v] of Object.entries(buffCfg.stats)) {
+                if (typeof fightPlayer[k] === "number") {
+                    fightPlayer[k] = Math.min(100, fightPlayer[k] + v);
+                }
+            }
+        }
+
+        // GDD 8.8 (revised): Weight cut — a stamina gamble with miss risk.
+        // Miss weight is the BAD TAIL of the same gamble: a missed cut always drains you
+        // (a negative stamina roll) and never grants a boost. A positive roll therefore
+        // guarantees you made weight — you can't gain stamina AND miss weight on one cut.
+        const weightCut = fight.weightCut || "easy";
+        const WEIGHT_CUT_CONFIG = {
+            easy:       { min: 0,  max: 0,  missPct: 0    },
+            moderate:   { min: -5, max: 10, missPct: 0.05 },
+            aggressive: { min: -12, max: 18, missPct: 0.20 },
         };
-    } catch (e) {
-        console.error("[fight] breakdown derive failed:", e.message);
-    }
+        const wcConfig = WEIGHT_CUT_CONFIG[weightCut] || WEIGHT_CUT_CONFIG.easy;
+        // Strength Reserve (Titan Performance rank-4 perk): raise the bad-roll floor by 3.
+        const hasStrengthReserve = (fighter.gymPerks || []).includes("strength_reserve");
+        const rollFloor = Math.min(wcConfig.max, wcConfig.min + (hasStrengthReserve ? 3 : 0));
+        const weightMissed = wcConfig.missPct > 0 && Math.random() < wcConfig.missPct;
+        let weightCutRoll;
+        if (wcConfig.min === 0 && wcConfig.max === 0) {
+            weightCutRoll = 0;                                   // easy cut — no swing, no miss risk
+        } else if (weightMissed) {
+            // A missed cut only ever drains stamina — roll the negative band [rollFloor, -1].
+            const lo = Math.min(rollFloor, -1);
+            weightCutRoll = lo + Math.floor(Math.random() * (-1 - lo + 1));
+        } else {
+            // Made weight — full swing from the (perk-adjusted) floor up to the max upside.
+            weightCutRoll = rollFloor + Math.floor(Math.random() * (wcConfig.max - rollFloor + 1));
+        }
+        fightPlayer.stamina = Math.max(1, (fightPlayer.stamina ?? 100) + weightCutRoll);
+        fight.weightCutRoll = weightCutRoll;
 
-    await fight.save();
+        const playerName = fighter.nickname
+            ? `${fighter.firstName} "${fighter.nickname}" ${fighter.lastName}`
+            : `${fighter.firstName} ${fighter.lastName}`;
+        const opponentName = opponent.nickname
+            ? `${opponent.name} "${opponent.nickname}"`
+            : opponent.name;
 
-    // Post-fight: only health is persisted — stamina is fight-time only and resets next fight.
-    // Reset the fight-binding state; physical/progression consequences are owned by the
-    // shared fightConsequenceService (HP + regen anchor, injury roll, stat-XP, OVR).
-    fighter.acceptedFightId = null;
-    fighter.trainingCampActions = 0;
-    fighter.weightCut = "easy"; // reset for next fight
+        // Champion boost: +5% all stats for title shot opponents
+        const fightOpponent = fight.offerType === "TitleShot"
+            ? (() => {
+                const boosted = { ...opponent.toObject ? opponent.toObject() : opponent };
+                const STAT_KEYS = ["str", "spd", "leg", "wre", "gnd", "sub", "chn", "fiq"];
+                STAT_KEYS.forEach((k) => {
+                    if (typeof boosted[k] === "number") boosted[k] = Math.round(boosted[k] * 1.05);
+                });
+                return boosted;
+            })()
+            : opponent;
 
-    // GDD 8.9: physical + progression consequences. The injury roll inside this call is
-    // the ONLY Math.random() here and sits at the exact RNG-stream position the old inline
-    // block occupied (right after HP is known, before record mutation). xpMultiplier:1 →
-    // stat XP === old Math.round(baseXp) (the outcome/comeback multiplier was never applied
-    // to stat XP). Evaluated before the record is updated below.
-    const cons = fightConsequenceService.applyFightConsequences(fighter, {
-        outcomePerspective: result.outcome,
-        endingHealth: result.playerHealthAfter ?? 100,
-        injuryRiskMult: (tierConfig && tierConfig.injuryRiskMult) || 1,
-        xpMultiplier: 1,
-        collagenBuff: (ownsBuff && buffCfg.injuryMult) ? { injuryMult: buffCfg.injuryMult } : null,
-    });
-    const injuriesSustained = cons.injuriesSustained;
+        // Iron Will perk (legacy — kept for fight resolution compatibility, no longer granted by quests)
+        const ironWillPerk = false;
+        // v2: pass conditional session bonuses and wildcard instead of flat campBonuses
+        const sessionBonuses = fightCamp?.sessionBonuses ? [...fightCamp.sessionBonuses.map(b => ({ ...b }))] : [];
+        const wildcard = fightCamp?.wildcard ?? null;
+        // Special Moves (PvE): read the FROZEN loadout snapshot taken at camp finalise — NOT a
+        // live rebuild — so a mid-camp UPGRADE drop can't change this booked fight's power.
+        // Fresh copies each resolve (the array is mutated during resolution). Empty for legacy or
+        // un-finalised camps → no move effects, consistent with sessionBonuses.
+        const moveBonuses = fightCamp?.moveBonuses ? [...fightCamp.moveBonuses.map(b => ({ ...b }))] : [];
 
-    let nemesisCleared = false;
-    let nemesisSet     = false;
-    let nemesisName    = null;
-
-    if (isWin) {
-        fighter.record.wins += 1;
-        if (result.outcome === OUT_KO_TKO) fighter.record.koWins += 1;
-        else if (result.outcome === OUT_SUB) fighter.record.subWins += 1;
-        else fighter.record.decisionWins += 1;
-        fighter.consecutiveLosses = 0;
-        fighter.winStreak = (fighter.winStreak || 0) + 1;
-        fighter.notoriety.isFrozen = false;
-
-        // GDD 8.6: Win on a comeback → earn Resilience badge
-        if (isComeback) {
-            fighter.badges = fighter.badges || [];
-            if (!fighter.badges.includes("Resilience")) {
-                fighter.badges.push("Resilience");
+        // ── Persona (PvE) resolve-site modifiers ─────────────────────────────────────
+        // Applied to the FRESH sessionBonuses/moveBonuses copies with LIVE getFightModifiers —
+        // NEVER baked into the frozen camp snapshot. Damage-reduction/AMBUSH/comeback do not
+        // depend on the (not-yet-known) outcome, so a minimal ctx is enough here.
+        {
+            const personaFightMods = personaService.getFightModifiers(fighter, {
+                comebackMode: !!fighter.comebackMode,
+            });
+            // People's Champ comeback: scale camp session + move bonus VALUES first.
+            if (fighter.comebackMode && personaFightMods.comebackBonusMult !== 1) {
+                const m = personaFightMods.comebackBonusMult;
+                for (const b of sessionBonuses) if (typeof b.value === "number") b.value *= m;
+                for (const b of moveBonuses) if (typeof b.effectiveValue === "number") b.effectiveValue *= m;
             }
-        }
-        fighter.comebackMode = false;
-
-        // Title shot cooldown: decrement on any win
-        if ((fighter.titleShotCooldown ?? 0) > 0) {
-            fighter.titleShotCooldown -= 1;
-        }
-        // Track wins in current tier
-        fighter.winsInCurrentTier = (fighter.winsInCurrentTier || 0) + 1;
-
-        // Nemesis: defeat your nemesis → clear + record their name for summary
-        const prevNemesisName = fighter.nemesis?.opponentName ?? null;
-        nemesisCleared = resolveNemesisOnWin(fighter, opponent._id);
-        if (nemesisCleared) nemesisName = prevNemesisName;
-    } else if (isLoss) {
-        fighter.record.losses += 1;
-        const newConsecLosses = (fighter.consecutiveLosses || 0) + 1;
-        fighter.consecutiveLosses = newConsecLosses;
-        fighter.comebackMode = true;
-        fighter.winStreak = 0;
-
-        if (newConsecLosses >= 3) {
-            fighter.notoriety.isFrozen = true;
+            // Boogeyman: MERGE (sum) damage reduction into the OPPONENT_DAMAGE_REDUCTION lane so
+            // the engine's first-match .find() reads the combined value (never appended).
+            specialMovesService.mergePersonaBonus(moveBonuses, "OPPONENT_DAMAGE_REDUCTION", personaFightMods.damageReductionFrac);
+            // Boogeyman AMBUSH: scale equipped PROC move values.
+            specialMovesService.scaleProcs(moveBonuses, personaFightMods.ambushProcMult);
         }
 
-        // Title shot loss: set cooldown
-        if (fight.offerType === "TitleShot") {
-            fighter.titleShotCooldown = 2;
-        }
+        // Commentary context — drives personalised, fighter-tailored fight commentary.
+        const commentaryCtx = {
+            playerStyle: fighter.style,
+            opponentStyle: opponent.style,
+            tier: fight.promotionTier,
+            isTitle: fight.offerType === "TitleShot",
+            isCallout: !!fight.isCallout,
+            isGrudge:
+                String(fighter.nemesis?.opponentId || "") === String(opponent._id) ||
+                (fighter.beefFlags || []).some(f => String(f.opponentId) === String(opponent._id)),
+            playerIsChampion: (fighter.badges || []).includes("Champion"),
+            comeback: !!fighter.comebackMode,
+            winStreak: fighter.winStreak || 0,
+            playerOvr: fighter.overallRating || 0,
+            opponentOvr: opponent.overallRating || 0,
+        };
 
-        // Nemesis: the NPC that just beat us becomes (or stays) the nemesis
-        const nemesisResult = resolveNemesisOnLoss(fighter, opponent._id, opponent.name);
-        if (nemesisResult.wasNew) { nemesisSet = true; nemesisName = opponent.name; }
-    } else {
-        fighter.record.draws += 1;
-        fighter.winStreak = 0;
-    }
+        const result = resolveFight(fightPlayer, fightOpponent, {
+            playerStrategy: fight.playerStrategy || undefined,
+            playerName,
+            opponentName,
+            ironWillPerk,
+            sessionBonuses,
+            moveBonuses,
+            wildcard,
+            ctx: commentaryCtx,
+        });
 
-    fighter.iron += ironEarned;
+        // NOTE: the triggered camp snapshot (result.sessionBonuses / result.moveBonuses) is
+        // written back to the FightCamp only AFTER the commit below. Persisting it here would
+        // let a pre-commit throw plus a retry re-read the already persona-scaled snapshot and
+        // apply the persona merges / comeback multiplier twice.
 
-    // ── Update opponent fightHistory only (record stays seeded — avoids inflation) ──
-    const oppResult = isWin ? "loss" : isDraw ? "draw" : "win";
-    const oppMethod = (() => {
-        if (result.outcome === OUT_KO_TKO || result.outcome === OUT_LOSS_KO)  return OUT_KO_TKO;
-        if (result.outcome === OUT_SUB     || result.outcome === OUT_LOSS_SUB) return OUT_SUB;
-        return "Decision";
-    })();
-    const oppRound = result.rounds?.length ?? 1;
+        logFightResolve({
+            fighter,
+            fight,
+            fightPlayer,
+            opponent,
+            result,
+            campRating: fightCamp?.campRating ?? null,
+            sessionBonuses: result.sessionBonuses ?? [],
+            wildcard: result.wildcard ?? null,
+            weightCut,
+            weightCutRoll,
+            weightMissed,
+            ironWillPerk,
+        });
 
-    opponent.fightHistory = opponent.fightHistory || [];
-    opponent.fightHistory.push({ result: oppResult, method: oppMethod, round: oppRound });
-    if (opponent.fightHistory.length > MAX_FIGHT_HISTORY) {
-        opponent.fightHistory.splice(0, opponent.fightHistory.length - MAX_FIGHT_HISTORY);
-    }
-    await opponent.save();
-    // ─────────────────────────────────────────────────────────────────────
+        const isWin = [OUT_KO_TKO, OUT_SUB, OUT_DEC_UNAN, OUT_DEC_SPLIT].includes(result.outcome);
+        const isDraw = result.outcome === OUT_DRAW;
+        const isLoss = !isWin && !isDraw;
+        const isKoLoss = result.outcome === OUT_LOSS_KO || result.outcome === OUT_LOSS_SUB;
 
-    const winStreakAfterWin = isWin ? (fighter.winStreak || 0) : 0;
+        // ── Persona (PvE) post-resolve fight modifiers ───────────────────────────────
+        // Full outcome-aware ctx (folds BAD BLOOD, HOMETOWN HERO, upset-loss, LEGACY milestone).
+        const isNemesisFight = String(fighter.nemesis?.opponentId || "") === String(opponent._id);
+        const isBeefFight = (fighter.beefFlags || []).some((f) => String(f.opponentId) === String(opponent._id));
+        const personaMods = personaService.getFightModifiers(fighter, {
+            isWin,
+            isLoss,
+            comebackMode: !!fighter.comebackMode,
+            isNemesis: isNemesisFight,
+            isBeef: isBeefFight,
+            fighterOvr: fighter.overallRating ?? 14,
+            oppOvr: opponent.overallRating ?? 14,
+        });
 
-    // ── Energy Drink free-earn: win-streak milestones (5/10/15/20) ──────
-    // Grants clamp against the running inventory value via the shared helper.
-    let streakDrinksGranted = 0;
-    if (isWin) {
-        const { grantEnergyDrinks } = require("./shopService");
-        const tbl = { 5: 1, 10: 2, 15: 2, 20: 3 };
-        if (tbl[winStreakAfterWin]) streakDrinksGranted = grantEnergyDrinks(fighter, tbl[winStreakAfterWin]);
-    }
+        // GDD 8.5 XP multipliers (corrected)
+        let xpMult;
+        if (result.outcome === OUT_KO_TKO)      xpMult = 1.3;
+        else if (result.outcome === OUT_SUB)      xpMult = 1.25;
+        else if (result.outcome === OUT_DEC_UNAN) xpMult = 1.1;
+        else if (result.outcome === OUT_DEC_SPLIT) xpMult = 1.05;
+        else if (result.outcome === OUT_DRAW)     xpMult = 1.0;
+        else if (result.outcome === OUT_LOSS_DEC) xpMult = 0.8;
+        else                                      xpMult = 0.7; // Loss by KO/TKO or submission
 
-    const awardCtx = {
-        promotionTier: promoTier,
-        outcome: result.outcome,
-        weightMissed,
-        wasFrozenBeforeFight,
-        isWin,
-        opponentOverall: opponentOvr,
-        fighterOverall: fighterOvr,
-        prevConsecutiveLosses,
-        winStreakAfterWin,
-        firstFinishInThisPromotion,
-        fightOfTheNight,
-        giantKiller,
-        grudgeMatchWin: isWin && (isCalloutFight || !!beefMatch), // Phase 4/6: callout or beef win grants grudge +30%
-        // Both stay false for PvE. Belt fame is paid separately by applyTitleShotWin
-        // (beltFame / defenseFame). Setting titleDefenceWin here would make
-        // notorietyService add its flat +300 TITLE_DEF on top of the +100 defense fame.
-        titleFightWin: false,
-        titleDefenceWin: false,
-        finishedHigherRanked: false,
-    };
-    const fightNotoriety = notorietyService.computeFightNotorietyAward(awardCtx);
-    let notorietyGain = fightNotoriety.total;
-    const notorietyBreakdown = fightNotoriety.breakdown;
+        // GDD 8.6: Comeback Mode → 1.5× XP multiplier on comeback fight
+        const isComeback = !!fighter.comebackMode;
+        if (isComeback) xpMult = +(xpMult * 1.5).toFixed(2);
 
-    // ── Persona fame folds (PvE) — computeFightNotorietyAward stays PvP-generic. ──
-    // Weight-miss softening (Role Model ×0.5 on the WEIGHT_MISS penalty already inside the award).
-    if (weightMissed) {
-        const { WEIGHT_MISS_NOTORIETY } = require("../consts/notorietyConfig");
-        const scaled = personaService.applyFameMultiplier(
-            fighter, WEIGHT_MISS_NOTORIETY, personaService.FAME_CATEGORY.WEIGHT_MISS
+        // GDD 8.8: Weight miss → -20% iron purse + notoriety penalty
+        // Base purse is the per-bout purse stamped on the Fight at offer time (GDD 7: slot
+        // multiplier plus OVR-gap bonus on the tier signingFee). Older Fight docs without one
+        // fall back to the flat tier signingFee.
+        const basePurse = Number.isFinite(fight.purse)
+            ? Math.max(0, fight.purse)
+            : (tierConfig ? Math.max(0, tierConfig.signingFee || 0) : 0);
+        const outcomeIronMult = isWin ? 1 : (isDraw ? 0.5 : 0.7);
+        // Championship Pedigree perk: +10% fame from fights (handled in notoriety section below)
+        const notorietyPurseFrac = notorietyService.getNotorietyPurseFraction(fighter.notoriety.peakTier);
+        const comebackPurseFrac = isComeback ? 0.3 : 0;
+        // Persona purse fraction (PvE) folds in additively alongside the other purse mods.
+        const personaPurseFrac = personaMods.purseFrac || 0;
+        let ironEarned = Math.round(
+            basePurse * outcomeIronMult * (1 + notorietyPurseFrac + comebackPurseFrac + personaPurseFrac)
         );
-        const corrective = scaled - WEIGHT_MISS_NOTORIETY; // 0 unless Role Model softens it
-        if (corrective !== 0) {
-            notorietyBreakdown.push({ code: "PERSONA_WEIGHT_MISS", amount: corrective, note: "Role Model softens the weight-miss hit" });
-            notorietyGain += corrective;
+        // Phase 4: callout purse bump (+25%) only on a WIN. Losing a callout just loses the fame spend.
+        const isCalloutFight = !!fight.isCallout;
+        if (isCalloutFight && isWin) {
+            const { CALLOUT_PURSE_MULT } = require("../consts/calloutConfig");
+            ironEarned = Math.round(ironEarned * CALLOUT_PURSE_MULT);
         }
-    }
-    // Fight-win fame multiplier (BAD BLOOD / HOMETOWN HERO signatures).
-    if (personaMods.fightWinFameMult !== 1) {
-        const bonus = Math.round(notorietyGain * (personaMods.fightWinFameMult - 1));
-        if (bonus !== 0) {
-            notorietyBreakdown.push({ code: "PERSONA_SIGNATURE", amount: bonus, note: "Persona signature fame" });
-            notorietyGain += bonus;
+
+        // Phase 6: Beef/respect flag matchup. Check BEFORE decrementing other flags.
+        const beefMatch    = (fighter.beefFlags    || []).find((f) => String(f.opponentId) === String(opponent._id));
+        const respectMatch = (fighter.respectFlags || []).find((f) => String(f.opponentId) === String(opponent._id));
+        if (isWin && respectMatch) {
+            const { RESPECT_WIN_IRON_MULT } = require("../consts/mediaConfig");
+            ironEarned = Math.round(ironEarned * RESPECT_WIN_IRON_MULT);
         }
-    }
 
-    if (notorietyGain !== 0) {
-        const fameCode = isWin ? "FIGHT_WIN" : (isDraw ? "FIGHT_DRAW" : "FIGHT_LOSS");
-        const fameReason = `${result.outcome} vs ${opponent.name}`;
-        notorietyService.applyNotorietyDelta(fighter, notorietyGain, {
-            code: fameCode,
-            reason: fameReason,
-            meta: { fightId: fight._id, opponentId: opponent._id },
-        });
-    }
+        // Weight miss penalty applies LAST — after every purse bonus — so missing weight
+        // always costs 20% of the FINAL purse (a callout/respect bump can't cancel it out).
+        if (weightMissed) ironEarned = Math.round(ironEarned * 0.8);
 
-    // Persona flat fame delta — a separate post-award delta. People's Champ carries both the
-    // upset-loss penalty (−150 on a loss) and the HOMETOWN HERO comeback-win bonus (+250);
-    // they are mutually exclusive (win vs loss), so the sign picks the label.
-    if (personaMods.flatFameDelta !== 0) {
-        const isBonus = personaMods.flatFameDelta > 0;
-        const code = isBonus ? "PERSONA_SIGNATURE" : "PERSONA_UPSET_LOSS";
-        const reason = isBonus
-            ? "Hometown hero — comeback wins over the crowd"
-            : "Upset loss — the crowd expected more";
-        const note = isBonus ? "Hometown hero comeback (People's Champ)" : "Upset loss (People's Champ)";
-        notorietyService.applyNotorietyDelta(fighter, personaMods.flatFameDelta, {
-            code,
-            reason,
-            meta: { fightId: fight._id, opponentId: opponent._id },
-        });
-        notorietyBreakdown.push({ code, amount: personaMods.flatFameDelta, note });
-        notorietyGain += personaMods.flatFameDelta;
-    }
+        const wasFrozenBeforeFight = !!fighter.notoriety.isFrozen;
+        const prevConsecutiveLosses = fighter.consecutiveLosses || 0;
+        const prevWinStreak = fighter.winStreak || 0;
+        const peakTierBefore = fighter.notoriety.peakTier;
+        const opponentOvr = opponent.overallRating ?? 14;
+        const fighterOvr = fighter.overallRating ?? 14;
+        const healthEnd = result.playerHealthAfter ?? 100;
+        const isFinishWin = isWin && (result.outcome === OUT_KO_TKO || result.outcome === OUT_SUB);
+        const promoTier = fight.promotionTier;
+        const firstFinishInThisPromotion =
+            isFinishWin &&
+            !(fighter.notoriety.firstFinishPromoTiers || []).includes(promoTier);
+        const fightOfTheNight =
+            isWin &&
+            (result.outcome === OUT_DEC_UNAN || result.outcome === OUT_DEC_SPLIT) &&
+            healthEnd < 50;
+        const giantKiller = isWin && opponentOvr >= fighterOvr + 10;
 
-    // Nemesis win bonus — awarded even if notoriety is frozen (skip freeze block)
-    if (nemesisCleared) {
-        notorietyBreakdown.push({ code: "NEMESIS_WIN", amount: NEMESIS_WIN_BONUS, note: "Nemesis defeated" });
-        notorietyGain += NEMESIS_WIN_BONUS;
-        notorietyService.applyNotorietyDelta(fighter, NEMESIS_WIN_BONUS, {
-            skipFreezeBlock: true,
-            code: "NEMESIS_WIN",
-            reason: `Nemesis defeated: ${opponent.name}`,
-            meta: { fightId: fight._id, opponentId: opponent._id },
-        });
-    }
+        fight.status = "completed";
+        fight.outcome = result.outcome;
+        fight.ironEarned = ironEarned;
+        fight.xpMultiplier = xpMult;
+        fight.rounds = (result.rounds || []).map(r => `${r.round}: ${r.event} (P ${r.playerHealth} / O ${r.opponentHealth})`);
+        fight.commentary = result.commentary || [];
+        fight.completedAt = new Date();
 
-    if (firstFinishInThisPromotion && isFinishWin) {
-        notorietyService.registerFirstFinishInPromotion(fighter, promoTier);
-    }
-    // Persona LEGACY signature scales win-milestone fame ×1.5 (default 1 for everyone else).
-    const milestoneResult = isWin
-        ? notorietyService.applyWinMilestoneBonuses(fighter, personaMods.milestoneFameMult)
-        : { bonus: 0, notes: [] };
-    notorietyService.touchLastEvent(fighter);
-
-    let notorietyTierUp = null;
-    if (tierRank(fighter.notoriety.peakTier) > tierRank(peakTierBefore)) {
-        notorietyTierUp = { from: peakTierBefore, to: fighter.notoriety.peakTier };
-    }
-
-    // The offer-board fingerprint (offerBoardService.boardFingerprint) depends on this stamp.
-    fighter.lastFightDate = new Date();
-
-    // Gazette v1.0 — snapshot pre-fight state so tomorrow's newspaper has accurate deltas.
-    // Capture rank + tier BEFORE updatePlayerRank mutates them.
-    if (!fighter.gazette) {
-        fighter.gazette = { lastShownDate: null, lastNotorietyLogged: 0, rankBeforeLastFight: null, tierBeforeLastFight: null, fameTierBeforeLastLogin: null };
-    }
-    fighter.gazette.rankBeforeLastFight = fighter.ranking?.rank ?? null;
-    fighter.gazette.tierBeforeLastFight = fighter.promotionTier;
-    fighter.markModified("gazette");
-
-    // Snapshot opponent rank + finish round to the Fight doc — used by Gazette template variables.
-    fight.opponentRankAtFight = (typeof opponent.fixedRank === "number") ? opponent.fixedRank : null;
-    fight.finishRound = (result.outcome === OUT_KO_TKO || result.outcome === OUT_SUB
-                          || result.outcome === OUT_LOSS_KO || result.outcome === OUT_LOSS_SUB)
-        ? (result.rounds?.length ?? null)
-        : null;
-
-    // Ranking System v1.0 — entry or movement based on this fight's result.
-    // Champion fights pass opponentRank=1; regular ranked NPCs use their fixedRank.
-    // PvP (future) will pass opponentRank=null which suppresses upset bonus/penalty.
-    {
-        const fightResult = rankingService.buildFightResultFromOutcome(result.outcome);
-        fightResult.opponentRank = (typeof opponent.fixedRank === "number") ? opponent.fixedRank : null;
-        rankingService.updatePlayerRank(fighter, fightResult);
-    }
-
-    // Title-shot gate: count this win only if it leaves the fighter ranked top-5
-    // (post-fight rank — the win that carries you INTO the zone counts). Does NOT
-    // reset on dropping out of top-5; only resets on promotion (below).
-    if (isWin && rankingService.isTopFive(fighter)) {
-        fighter.topFiveWinsInTier = (fighter.topFiveWinsInTier || 0) + 1;
-    }
-
-    // Stat-XP banking + OVR recompute were applied by fightConsequenceService above.
-    const statLevelUps = cons.statLevelUps;
-    const fightXpApplied = cons.xpGained;
-
-    // ── Shop v1.0: consume the pre-fight buff EXACTLY ONCE, only here at resolve, only
-    // if still owned (>0). Owning 0 is a silent no-op — never go negative.
-    if (ownsBuff) {
-        const buffs = fighter.inventory.prefightBuffs;
-        const used = fighter.inventory.usedBuffs;
-        const remaining = (buffs[buffId] || 0) - 1;
-        if (remaining <= 0) delete buffs[buffId];
-        else buffs[buffId] = remaining;
-        used[buffId] = (used[buffId] || 0) + 1;
-        fighter.markModified("inventory");
-    }
-
-    await fighter.save();
-    // OVR was recomputed by fightConsequenceService above (after stat-XP banking).
-
-    // Tier promotion check — happens after overall is updated
-    const oldTier = fighter.promotionTier;
-    let promoted = null;
-    let beltWon = false;
-    // Title-win shape. On a GCS win promoted stays null and beltWon is true, so nothing
-    // below may read promoted.* inside a beltWon path: use beltTier / titleWin instead.
-    let beltTier = null;
-    let titleDefense = false;
-    let titleWin = null;
-
-    // Title shot WIN: lower tiers promote; the top tier (GCS) keeps the fighter and counts
-    // the belt (first win or defense). See applyTitleShotWin.
-    if (fight.offerType === "TitleShot" && isWin) {
-        titleWin = applyTitleShotWin(fighter, { fightId: fight._id });
-        beltWon = true;
-        promoted = titleWin.promoted;
-        beltTier = titleWin.beltTier;
-        titleDefense = titleWin.titleDefense;
-    } else {
-        // Normal promotion check (non-gated auto-promote)
-        const newTier = checkPromotion(fighter);
-        if (newTier) {
-            fighter.promotionTier = newTier;
-            fighter.winsInCurrentTier = 0;
-            fighter.topFiveWinsInTier = 0;
-            // Ranking System v1.0 — wipe rank for the new tier so the player starts Unranked.
-            rankingService.resetRankingForNewTier(fighter);
-            promoted = { from: oldTier, to: newTier };
-        }
-    }
-
-    // ── Energy Drink free-earn: promotion grant (title-shot OR non-title promotion) ──
-    // Guarded once on the unified `promoted` flag, BEFORE the resolve-persisting save below
-    // so the inventory mutation flushes. Clamps against the running inventory value.
-    // A first GCS title win pays the same 3 drinks (no promotion there); a defense pays none.
-    let promotionDrinksGranted = 0;
-    if (promoted || (beltWon && !titleDefense)) {
-        const { grantEnergyDrinks } = require("./shopService");
-        promotionDrinksGranted = grantEnergyDrinks(fighter, 3);
-    }
-
-    // Phase 6: Beef/respect flag lifecycle.
-    //   - Matched opponent (fight) consumes the flag: remove from array, no penalty.
-    //   - Unmatched flags decrement expiresAfterFights by 1 per completed fight.
-    //   - When a beef flag hits 0, apply -150 fame (BEEF_LAPSE_PENALTY_FAME) and remove.
-    //   - Respect flags expire silently at 0.
-    const lapsedBeefOpponents = [];
-    try {
-        const { BEEF_LAPSE_PENALTY_FAME } = require("../consts/mediaConfig");
-        const oppIdStr = String(opponent._id);
-        // Beef
-        fighter.beefFlags = (fighter.beefFlags || []).map((f) => {
-            const match = String(f.opponentId) === oppIdStr;
-            if (match) return { ...f.toObject ? f.toObject() : f, _consume: true };
-            const next = (f.expiresAfterFights || 0) - 1;
-            return { ...(f.toObject ? f.toObject() : f), expiresAfterFights: next };
-        }).filter((f) => {
-            if (f._consume) return false;
-            if ((f.expiresAfterFights || 0) <= 0) {
-                lapsedBeefOpponents.push(f.opponentName || "a rival");
-                return false;
-            }
-            return true;
-        });
-        // Respect
-        fighter.respectFlags = (fighter.respectFlags || []).map((f) => {
-            const match = String(f.opponentId) === oppIdStr;
-            if (match) return { ...(f.toObject ? f.toObject() : f), _consume: true };
-            const next = (f.expiresAfterFights || 0) - 1;
-            return { ...(f.toObject ? f.toObject() : f), expiresAfterFights: next };
-        }).filter((f) => {
-            if (f._consume) return false;
-            if ((f.expiresAfterFights || 0) <= 0) return false;
-            return true;
-        });
-        // Apply lapse penalties (one per lapsed beef flag). Persona (PvE) scales the penalty:
-        // Villain ×2 (BEEF_LAPSE), Role Model ×0.5 — magnitude scaled here, sign applied below.
-        for (const name of lapsedBeefOpponents) {
-            const penalty = personaService.applyFameMultiplier(
-                fighter, BEEF_LAPSE_PENALTY_FAME, personaService.FAME_CATEGORY.BEEF_LAPSE
+        // Fight Description System — derive the round-by-round breakdown from the engine
+        // output. A derive failure must NOT fail the resolve: degrade to legacy (null).
+        try {
+            const bd = deriveFightDetails(
+                result,
+                {
+                    ...commentaryCtx,
+                    playerName,
+                    opponentName,
+                    maxRounds: FIGHT_CFG.defaults.maxRounds,
+                },
+                String(fight._id)
             );
-            notorietyService.applyNotorietyDelta(fighter, -penalty, {
-                code: "BEEF_LAPSED",
-                reason: `Couldn't back it up — ${name}`,
+            fight.breakdown = {
+                version: 1,
+                roundStats: bd.roundStats,
+                eventLog: bd.eventLog,
+                introTemplateKey: bd.introTemplateKey,
+                resultContextKey: bd.resultContextKey,
+            };
+        } catch (e) {
+            console.error("[fight] breakdown derive failed:", e.message);
+        }
+
+        await fight.save();
+        committed = true;
+
+        // v2: save triggered session bonuses back to FightCamp for post-fight display.
+        // Post-commit and non-fatal: a failure only leaves the pre-fight snapshot in the camp
+        // (the summary below reads result.sessionBonuses, not the camp).
+        if (fightCamp && result.sessionBonuses) {
+            try {
+                fightCamp.sessionBonuses = result.sessionBonuses;
+                // Special Moves: persist the triggered move-bonus snapshot too (which moves fired),
+                // mirroring sessionBonuses. Overwriting the frozen snapshot is safe post-resolve.
+                if (result.moveBonuses) fightCamp.moveBonuses = result.moveBonuses;
+                await fightCamp.save();
+            } catch (campErr) {
+                console.error(
+                    `[fight] post-fight camp snapshot save failed: fighterId=${fighter._id} fightId=${fight._id}:`,
+                    campErr.message
+                );
+            }
+        }
+
+        // Post-fight: only health is persisted — stamina is fight-time only and resets next fight.
+        // Reset the fight-binding state; physical/progression consequences are owned by the
+        // shared fightConsequenceService (HP + regen anchor, injury roll, stat-XP, OVR).
+        fighter.acceptedFightId = null;
+        fighter.trainingCampActions = 0;
+        fighter.weightCut = "easy"; // reset for next fight
+
+        // GDD 8.9: physical + progression consequences. The injury roll inside this call is
+        // the ONLY Math.random() here and sits at the exact RNG-stream position the old inline
+        // block occupied (right after HP is known, before record mutation). xpMultiplier:1 →
+        // stat XP === old Math.round(baseXp) (the outcome/comeback multiplier was never applied
+        // to stat XP). Evaluated before the record is updated below.
+        const cons = fightConsequenceService.applyFightConsequences(fighter, {
+            outcomePerspective: result.outcome,
+            endingHealth: result.playerHealthAfter ?? 100,
+            injuryRiskMult: (tierConfig && tierConfig.injuryRiskMult) || 1,
+            xpMultiplier: 1,
+            collagenBuff: (ownsBuff && buffCfg.injuryMult) ? { injuryMult: buffCfg.injuryMult } : null,
+        });
+        const injuriesSustained = cons.injuriesSustained;
+
+        let nemesisCleared = false;
+        let nemesisSet     = false;
+        let nemesisName    = null;
+
+        if (isWin) {
+            fighter.record.wins += 1;
+            if (result.outcome === OUT_KO_TKO) fighter.record.koWins += 1;
+            else if (result.outcome === OUT_SUB) fighter.record.subWins += 1;
+            else fighter.record.decisionWins += 1;
+            fighter.consecutiveLosses = 0;
+            fighter.winStreak = (fighter.winStreak || 0) + 1;
+            fighter.notoriety.isFrozen = false;
+
+            // GDD 8.6: Win on a comeback → earn Resilience badge
+            if (isComeback) {
+                fighter.badges = fighter.badges || [];
+                if (!fighter.badges.includes("Resilience")) {
+                    fighter.badges.push("Resilience");
+                }
+            }
+            fighter.comebackMode = false;
+
+            // Title shot cooldown: decrement on any win
+            if ((fighter.titleShotCooldown ?? 0) > 0) {
+                fighter.titleShotCooldown -= 1;
+            }
+            // Track wins in current tier
+            fighter.winsInCurrentTier = (fighter.winsInCurrentTier || 0) + 1;
+
+            // Nemesis: defeat your nemesis → clear + record their name for summary
+            const prevNemesisName = fighter.nemesis?.opponentName ?? null;
+            nemesisCleared = resolveNemesisOnWin(fighter, opponent._id);
+            if (nemesisCleared) nemesisName = prevNemesisName;
+        } else if (isLoss) {
+            fighter.record.losses += 1;
+            const newConsecLosses = (fighter.consecutiveLosses || 0) + 1;
+            fighter.consecutiveLosses = newConsecLosses;
+            fighter.comebackMode = true;
+            fighter.winStreak = 0;
+
+            if (newConsecLosses >= 3) {
+                fighter.notoriety.isFrozen = true;
+            }
+
+            // Title shot loss: set cooldown
+            if (fight.offerType === "TitleShot") {
+                fighter.titleShotCooldown = 2;
+            }
+
+            // Nemesis: the NPC that just beat us becomes (or stays) the nemesis
+            const nemesisResult = resolveNemesisOnLoss(fighter, opponent._id, opponent.name);
+            if (nemesisResult.wasNew) { nemesisSet = true; nemesisName = opponent.name; }
+        } else {
+            fighter.record.draws += 1;
+            fighter.winStreak = 0;
+        }
+
+        fighter.iron += ironEarned;
+
+        // ── Update opponent fightHistory only (record stays seeded — avoids inflation) ──
+        const oppResult = isWin ? "loss" : isDraw ? "draw" : "win";
+        const oppMethod = (() => {
+            if (result.outcome === OUT_KO_TKO || result.outcome === OUT_LOSS_KO)  return OUT_KO_TKO;
+            if (result.outcome === OUT_SUB     || result.outcome === OUT_LOSS_SUB) return OUT_SUB;
+            return "Decision";
+        })();
+        const oppRound = result.rounds?.length ?? 1;
+
+        opponent.fightHistory = opponent.fightHistory || [];
+        opponent.fightHistory.push({ result: oppResult, method: oppMethod, round: oppRound });
+        if (opponent.fightHistory.length > MAX_FIGHT_HISTORY) {
+            opponent.fightHistory.splice(0, opponent.fightHistory.length - MAX_FIGHT_HISTORY);
+        }
+        await opponent.save();
+        // ─────────────────────────────────────────────────────────────────────
+
+        const winStreakAfterWin = isWin ? (fighter.winStreak || 0) : 0;
+
+        // ── Energy Drink free-earn: win-streak milestones (5/10/15/20) ──────
+        // Grants clamp against the running inventory value via the shared helper.
+        let streakDrinksGranted = 0;
+        if (isWin) {
+            const { grantEnergyDrinks } = require("./shopService");
+            const tbl = { 5: 1, 10: 2, 15: 2, 20: 3 };
+            if (tbl[winStreakAfterWin]) streakDrinksGranted = grantEnergyDrinks(fighter, tbl[winStreakAfterWin]);
+        }
+
+        const awardCtx = {
+            promotionTier: promoTier,
+            outcome: result.outcome,
+            weightMissed,
+            wasFrozenBeforeFight,
+            isWin,
+            opponentOverall: opponentOvr,
+            fighterOverall: fighterOvr,
+            prevConsecutiveLosses,
+            winStreakAfterWin,
+            firstFinishInThisPromotion,
+            fightOfTheNight,
+            giantKiller,
+            grudgeMatchWin: isWin && (isCalloutFight || !!beefMatch), // Phase 4/6: callout or beef win grants grudge +30%
+            // Both stay false for PvE. Belt fame is paid separately by applyTitleShotWin
+            // (beltFame / defenseFame). Setting titleDefenceWin here would make
+            // notorietyService add its flat +300 TITLE_DEF on top of the +100 defense fame.
+            titleFightWin: false,
+            titleDefenceWin: false,
+            finishedHigherRanked: false,
+        };
+        const fightNotoriety = notorietyService.computeFightNotorietyAward(awardCtx);
+        let notorietyGain = fightNotoriety.total;
+        const notorietyBreakdown = fightNotoriety.breakdown;
+
+        // ── Persona fame folds (PvE) — computeFightNotorietyAward stays PvP-generic. ──
+        // Weight-miss softening (Role Model ×0.5 on the WEIGHT_MISS penalty already inside the award).
+        if (weightMissed) {
+            const { WEIGHT_MISS_NOTORIETY } = require("../consts/notorietyConfig");
+            const scaled = personaService.applyFameMultiplier(
+                fighter, WEIGHT_MISS_NOTORIETY, personaService.FAME_CATEGORY.WEIGHT_MISS
+            );
+            const corrective = scaled - WEIGHT_MISS_NOTORIETY; // 0 unless Role Model softens it
+            if (corrective !== 0) {
+                notorietyBreakdown.push({ code: "PERSONA_WEIGHT_MISS", amount: corrective, note: "Role Model softens the weight-miss hit" });
+                notorietyGain += corrective;
+            }
+        }
+        // Fight-win fame multiplier (BAD BLOOD / HOMETOWN HERO signatures).
+        if (personaMods.fightWinFameMult !== 1) {
+            const bonus = Math.round(notorietyGain * (personaMods.fightWinFameMult - 1));
+            if (bonus !== 0) {
+                notorietyBreakdown.push({ code: "PERSONA_SIGNATURE", amount: bonus, note: "Persona signature fame" });
+                notorietyGain += bonus;
+            }
+        }
+
+        if (notorietyGain !== 0) {
+            const fameCode = isWin ? "FIGHT_WIN" : (isDraw ? "FIGHT_DRAW" : "FIGHT_LOSS");
+            const fameReason = `${result.outcome} vs ${opponent.name}`;
+            notorietyService.applyNotorietyDelta(fighter, notorietyGain, {
+                code: fameCode,
+                reason: fameReason,
+                meta: { fightId: fight._id, opponentId: opponent._id },
             });
         }
-    } catch (e) {
-        console.error("[media] flag lifecycle error:", e.message);
-    }
 
-    // Phase 6: Media Hub post-fight hooks — resolve deferred documentary payout and
-    // arm/resolve undercard-feature appearances. Additive + must never reject the
-    // fight save (mirrors the flag-lifecycle error pattern above).
-    try {
-        const mediaHubService = require("./mediaHubService");
-        await mediaHubService.resolveDocumentaryOnFight(fighter, fight);
-        await mediaHubService.armUndercardOnFight(fighter, fight);
-    } catch (e) {
-        console.error("[media] media hub post-fight error:", e.message);
-    }
-    // NOTE: persona decay (blackout tick + heat decay) is DELIBERATELY deferred to AFTER
-    // sponsorshipService.resolveAfterFight below, so every in-fight reward lane sees the
-    // correct blackout=1 state for this fight (see the persona post-fight block).
+        // Persona flat fame delta — a separate post-award delta. People's Champ carries both the
+        // upset-loss penalty (−150 on a loss) and the HOMETOWN HERO comeback-win bonus (+250);
+        // they are mutually exclusive (win vs loss), so the sign picks the label.
+        if (personaMods.flatFameDelta !== 0) {
+            const isBonus = personaMods.flatFameDelta > 0;
+            const code = isBonus ? "PERSONA_SIGNATURE" : "PERSONA_UPSET_LOSS";
+            const reason = isBonus
+                ? "Hometown hero — comeback wins over the crowd"
+                : "Upset loss — the crowd expected more";
+            const note = isBonus ? "Hometown hero comeback (People's Champ)" : "Upset loss (People's Champ)";
+            notorietyService.applyNotorietyDelta(fighter, personaMods.flatFameDelta, {
+                code,
+                reason,
+                meta: { fightId: fight._id, opponentId: opponent._id },
+            });
+            notorietyBreakdown.push({ code, amount: personaMods.flatFameDelta, note });
+            notorietyGain += personaMods.flatFameDelta;
+        }
 
-    // Phase 4: Resolve active callout when the fight was flagged as a callout.
-    // Award "Callout Win" badge on a win (unlocks BADGE_CALLOUT banner piece).
-    let calloutBadgeAwarded = false;
-    if (isCalloutFight) {
-        if (isWin) {
-            const { CALLOUT_BADGE } = require("../consts/calloutConfig");
-            fighter.badges = fighter.badges || [];
-            if (!fighter.badges.includes(CALLOUT_BADGE)) {
-                fighter.badges.push(CALLOUT_BADGE);
-                calloutBadgeAwarded = true;
+        // Nemesis win bonus — awarded even if notoriety is frozen (skip freeze block)
+        if (nemesisCleared) {
+            notorietyBreakdown.push({ code: "NEMESIS_WIN", amount: NEMESIS_WIN_BONUS, note: "Nemesis defeated" });
+            notorietyGain += NEMESIS_WIN_BONUS;
+            notorietyService.applyNotorietyDelta(fighter, NEMESIS_WIN_BONUS, {
+                skipFreezeBlock: true,
+                code: "NEMESIS_WIN",
+                reason: `Nemesis defeated: ${opponent.name}`,
+                meta: { fightId: fight._id, opponentId: opponent._id },
+            });
+        }
+
+        if (firstFinishInThisPromotion && isFinishWin) {
+            notorietyService.registerFirstFinishInPromotion(fighter, promoTier);
+        }
+        // Persona LEGACY signature scales win-milestone fame ×1.5 (default 1 for everyone else).
+        const milestoneResult = isWin
+            ? notorietyService.applyWinMilestoneBonuses(fighter, personaMods.milestoneFameMult)
+            : { bonus: 0, notes: [] };
+        notorietyService.touchLastEvent(fighter);
+
+        let notorietyTierUp = null;
+        if (tierRank(fighter.notoriety.peakTier) > tierRank(peakTierBefore)) {
+            notorietyTierUp = { from: peakTierBefore, to: fighter.notoriety.peakTier };
+        }
+
+        // The offer-board fingerprint (offerBoardService.boardFingerprint) depends on this stamp.
+        fighter.lastFightDate = new Date();
+
+        // Gazette v1.0 — snapshot pre-fight state so tomorrow's newspaper has accurate deltas.
+        // Capture rank + tier BEFORE updatePlayerRank mutates them.
+        if (!fighter.gazette) {
+            fighter.gazette = { lastShownDate: null, lastNotorietyLogged: 0, rankBeforeLastFight: null, tierBeforeLastFight: null, fameTierBeforeLastLogin: null };
+        }
+        fighter.gazette.rankBeforeLastFight = fighter.ranking?.rank ?? null;
+        fighter.gazette.tierBeforeLastFight = fighter.promotionTier;
+        fighter.markModified("gazette");
+
+        // Snapshot opponent rank + finish round to the Fight doc — used by Gazette template variables.
+        fight.opponentRankAtFight = (typeof opponent.fixedRank === "number") ? opponent.fixedRank : null;
+        fight.finishRound = (result.outcome === OUT_KO_TKO || result.outcome === OUT_SUB
+                              || result.outcome === OUT_LOSS_KO || result.outcome === OUT_LOSS_SUB)
+            ? (result.rounds?.length ?? null)
+            : null;
+
+        // Ranking System v1.0 — entry or movement based on this fight's result.
+        // Champion fights pass opponentRank=1; regular ranked NPCs use their fixedRank.
+        // PvP (future) will pass opponentRank=null which suppresses upset bonus/penalty.
+        {
+            const fightResult = rankingService.buildFightResultFromOutcome(result.outcome);
+            fightResult.opponentRank = (typeof opponent.fixedRank === "number") ? opponent.fixedRank : null;
+            rankingService.updatePlayerRank(fighter, fightResult);
+        }
+
+        // Title-shot gate: count this win only if it leaves the fighter ranked top-5
+        // (post-fight rank — the win that carries you INTO the zone counts). Does NOT
+        // reset on dropping out of top-5; only resets on promotion (below).
+        if (isWin && rankingService.isTopFive(fighter)) {
+            fighter.topFiveWinsInTier = (fighter.topFiveWinsInTier || 0) + 1;
+        }
+
+        // Stat-XP banking + OVR recompute were applied by fightConsequenceService above.
+        const statLevelUps = cons.statLevelUps;
+        const fightXpApplied = cons.xpGained;
+
+        // ── Shop v1.0: consume the pre-fight buff EXACTLY ONCE, only here at resolve, only
+        // if still owned (>0). Owning 0 is a silent no-op — never go negative.
+        if (ownsBuff) {
+            const buffs = fighter.inventory.prefightBuffs;
+            const used = fighter.inventory.usedBuffs;
+            const remaining = (buffs[buffId] || 0) - 1;
+            if (remaining <= 0) delete buffs[buffId];
+            else buffs[buffId] = remaining;
+            used[buffId] = (used[buffId] || 0) + 1;
+            fighter.markModified("inventory");
+        }
+
+        await fighter.save();
+        // OVR was recomputed by fightConsequenceService above (after stat-XP banking).
+
+        // Tier promotion check — happens after overall is updated
+        const oldTier = fighter.promotionTier;
+        let promoted = null;
+        let beltWon = false;
+        // Title-win shape. On a GCS win promoted stays null and beltWon is true, so nothing
+        // below may read promoted.* inside a beltWon path: use beltTier / titleWin instead.
+        let beltTier = null;
+        let titleDefense = false;
+        let titleWin = null;
+
+        // Title shot WIN: lower tiers promote; the top tier (GCS) keeps the fighter and counts
+        // the belt (first win or defense). See applyTitleShotWin.
+        if (fight.offerType === "TitleShot" && isWin) {
+            titleWin = applyTitleShotWin(fighter, { fightId: fight._id });
+            beltWon = true;
+            promoted = titleWin.promoted;
+            beltTier = titleWin.beltTier;
+            titleDefense = titleWin.titleDefense;
+        } else {
+            // Normal promotion check (non-gated auto-promote)
+            const newTier = checkPromotion(fighter);
+            if (newTier) {
+                fighter.promotionTier = newTier;
+                fighter.winsInCurrentTier = 0;
+                fighter.topFiveWinsInTier = 0;
+                // Ranking System v1.0 — wipe rank for the new tier so the player starts Unranked.
+                rankingService.resetRankingForNewTier(fighter);
+                promoted = { from: oldTier, to: newTier };
             }
         }
-        try {
-            const calloutService = require("./calloutService");
-            await calloutService.clearActiveCallout(fighter);
-        } catch (_) {
-            fighter.activeCallout = {
-                opponentId: null, opponentName: null, cost: 0, isStretch: false, calledAt: null,
-            };
+
+        // ── Energy Drink free-earn: promotion grant (title-shot OR non-title promotion) ──
+        // Guarded once on the unified `promoted` flag, BEFORE the resolve-persisting save below
+        // so the inventory mutation flushes. Clamps against the running inventory value.
+        // A first GCS title win pays the same 3 drinks (no promotion there); a defense pays none.
+        let promotionDrinksGranted = 0;
+        if (promoted || (beltWon && !titleDefense)) {
+            const { grantEnergyDrinks } = require("./shopService");
+            promotionDrinksGranted = grantEnergyDrinks(fighter, 3);
         }
-    }
 
-    // ── Career Page badges: evaluate against this fight's facts. Additive +
-    //    never breaks the resolve flow. Mutates fighter.badgesEarned; the
-    //    fighter.save() below persists it. `newlyEarnedBadges` bubbles into the
-    //    response so the UI can surface fresh awards.
-    let newlyEarnedBadges = [];
-    try {
-        const badgeService = require("./badgeService");
-        // wasKnockedDown: no explicit knockdown flag exists in the resolution engine,
-        // so we use the "player was hurt" proxy — any round where the player's health
-        // dropped below the hurt threshold (35). Documented deviation.
-        const wasKnockedDown = Array.isArray(result.rounds)
-            && result.rounds.some((r) => (r && typeof r.playerHealth === "number") && r.playerHealth < 35);
-        // Opponent end health: final round's opponentHealth from the engine rounds.
-        const lastRound = Array.isArray(result.rounds) && result.rounds.length
-            ? result.rounds[result.rounds.length - 1]
-            : null;
-        const oppEndHealthPct = lastRound && typeof lastRound.opponentHealth === "number"
-            ? lastRound.opponentHealth
-            : (isWin ? 0 : 100);
-        const r = badgeService.evaluateBadges(fighter, {
-            isWin,
-            outcome: result.outcome,
-            wasKnockedDown,
-            endedHealthPct: healthEnd,
-            oppEndHealthPct,
-            oppOvr: opponentOvr,
-            wasComeback: isComeback,
-            isCalloutWin: isCalloutFight && isWin,
-            beefMatched: !!beefMatch,
-            nemesisCleared,
-            campGrade: fightCamp ? (fightCamp.campRating || null) : null,
-            // beltWonForTier: the tier whose belt was won, null when no belt was won this
-            // fight. beltTier, not promoted.from: promoted is null on a GCS win.
-            beltWonForTier: beltWon ? beltTier : null,
-        });
-        newlyEarnedBadges = r.newlyEarned;
-    } catch (e) {
-        console.error("[badges] evaluate on fight resolve failed:", e.message);
-    }
-
-    await fighter.save();
-
-    // GDD 7.4: update quest progress after fight
-    const completedQuests = await questService.onFight(fighterId, fighter, fight);
-
-    const maxStaminaVal = fighter.maxStamina ?? 100;
-    const staminaEnd = result.playerStaminaAfter ?? maxStaminaVal;
-
-    // ── Gym rank: increment relevant wins on fight win ──────────────────
-    if (isWin) {
+        // Phase 6: Beef/respect flag lifecycle.
+        //   - Matched opponent (fight) consumes the flag: remove from array, no penalty.
+        //   - Unmatched flags decrement expiresAfterFights by 1 per completed fight.
+        //   - When a beef flag hits 0, apply -150 fame (BEEF_LAPSE_PENALTY_FAME) and remove.
+        //   - Respect flags expire silently at 0.
+        const lapsedBeefOpponents = [];
         try {
-            const gymRankService = require("./gymRankService");
-            const gymRankUps = await gymRankService.onFightWin(fighter, result.outcome);
-            // Always save — onFightWin mutates fighter.gymRanks whether or not a rank-up occurred
-            await fighter.save();
-            if (gymRankUps.length > 0) {
-                console.log(`[gymRank] Rank-ups: ${gymRankUps.map(u => u.gym + " → " + u.rankName).join(", ")}`);
+            const { BEEF_LAPSE_PENALTY_FAME } = require("../consts/mediaConfig");
+            const oppIdStr = String(opponent._id);
+            // Beef
+            fighter.beefFlags = (fighter.beefFlags || []).map((f) => {
+                const match = String(f.opponentId) === oppIdStr;
+                if (match) return { ...f.toObject ? f.toObject() : f, _consume: true };
+                const next = (f.expiresAfterFights || 0) - 1;
+                return { ...(f.toObject ? f.toObject() : f), expiresAfterFights: next };
+            }).filter((f) => {
+                if (f._consume) return false;
+                if ((f.expiresAfterFights || 0) <= 0) {
+                    lapsedBeefOpponents.push(f.opponentName || "a rival");
+                    return false;
+                }
+                return true;
+            });
+            // Respect
+            fighter.respectFlags = (fighter.respectFlags || []).map((f) => {
+                const match = String(f.opponentId) === oppIdStr;
+                if (match) return { ...(f.toObject ? f.toObject() : f), _consume: true };
+                const next = (f.expiresAfterFights || 0) - 1;
+                return { ...(f.toObject ? f.toObject() : f), expiresAfterFights: next };
+            }).filter((f) => {
+                if (f._consume) return false;
+                if ((f.expiresAfterFights || 0) <= 0) return false;
+                return true;
+            });
+            // Apply lapse penalties (one per lapsed beef flag). Persona (PvE) scales the penalty:
+            // Villain ×2 (BEEF_LAPSE), Role Model ×0.5 — magnitude scaled here, sign applied below.
+            for (const name of lapsedBeefOpponents) {
+                const penalty = personaService.applyFameMultiplier(
+                    fighter, BEEF_LAPSE_PENALTY_FAME, personaService.FAME_CATEGORY.BEEF_LAPSE
+                );
+                notorietyService.applyNotorietyDelta(fighter, -penalty, {
+                    code: "BEEF_LAPSED",
+                    reason: `Couldn't back it up — ${name}`,
+                });
             }
         } catch (e) {
-            console.error("[gymRank] Failed to update fight wins:", e.message);
+            console.error("[media] flag lifecycle error:", e.message);
         }
-    }
 
-    // ── Home camp: fight-resolved hook. Credits relevant wins to coaches whose archetype
-    // counts this outcome (WINS ONLY — `isWin` is passed through, not inferred), and applies
-    // the Cornerman trait's post-fight camp bonus, which fires after EVERY fight. That second
-    // effect is why this block sits OUTSIDE the `if (isWin)` above: a cornerman patches the
-    // room up on the nights you lose too.
-    //
-    // ADDITIVE and strictly non-fatal — it writes only the HomeCamp document (never the
-    // fighter), no-ops when the player has no camp yet, and every failure is swallowed +
-    // logged. This must NEVER throw into the fight path. PvE only: PvP deliberately does not
-    // call it (coach ranks and camp condition are PvE-only).
-    try {
-        const homeCampCoachService = require("./homeCampCoachService");
-        const { credited, conditionGained } = await homeCampCoachService.onFightResolved(
-            fighter,
-            result.outcome,
-            { isWin }
-        );
-        if (credited > 0) console.log(`[homeCamp] Credited a ${result.outcome} win to ${credited} coach(es).`);
-        if (conditionGained > 0) console.log(`[homeCamp] Cornerman restored ${conditionGained} camp condition.`);
-    } catch (e) {
-        console.error("[homeCamp] Failed to run the fight-resolved hook:", e.message);
-    }
-
-    // ── Newly-earned badge diff (celebration payload) ────────────────────
-    // Every badge-awarding eval for this fight has now run: notoriety fame-tier
-    // (before the fight eval), the fight-resolve eval, and the gym rank-up eval
-    // (above). The fight eval's own return (`r.newlyEarned`) only covers the
-    // middle one, so recompute against the pre-resolve snapshot to surface ALL
-    // of them. This is what fixes fame-tier / gym-rank-4 badges silently showing
-    // up as earned later instead of celebrating at unlock. Non-fatal.
-    try {
-        newlyEarnedBadges = (fighter.badgesEarned || [])
-            .filter((e) => e && e.badgeId && !beforeBadgeIds.has(e.badgeId))
-            .map((e) => ({ badgeId: e.badgeId, context: e.context ?? null }));
-    } catch (e) {
-        console.error("[badges] newly-earned diff failed:", e.message);
-    }
-
-    // ── Phase 3: Sponsorship clauses resolve after every fight ──────────
-    let sponsorshipEvents = [];
-    let sponsorshipIronDelta = 0;
-    try {
-        const sponsorshipService = require("./sponsorshipService");
-        // Attach weightMissed so sponsorshipService.resolveAfterFight can read it without
-        // a schema change — the fight record itself does not persist weightMissed today.
-        fight.weightMissed = weightMissed;
-        const result = await sponsorshipService.resolveAfterFight(fighter, fight);
-        sponsorshipEvents = result.events || [];
-        sponsorshipIronDelta = result.ironDelta || 0;
-        if (sponsorshipEvents.length > 0 || sponsorshipIronDelta !== 0) {
-            await fighter.save();
+        // Phase 6: Media Hub post-fight hooks — resolve deferred documentary payout and
+        // arm/resolve undercard-feature appearances. Additive + must never reject the
+        // fight save (mirrors the flag-lifecycle error pattern above).
+        try {
+            const mediaHubService = require("./mediaHubService");
+            await mediaHubService.resolveDocumentaryOnFight(fighter, fight);
+            await mediaHubService.armUndercardOnFight(fighter, fight);
+        } catch (e) {
+            console.error("[media] media hub post-fight error:", e.message);
         }
-    } catch (e) {
-        console.error("[sponsorship] resolveAfterFight failed:", e.message);
-    }
+        // NOTE: persona decay (blackout tick + heat decay) is DELIBERATELY deferred to AFTER
+        // sponsorshipService.resolveAfterFight below, so every in-fight reward lane sees the
+        // correct blackout=1 state for this fight (see the persona post-fight block).
 
-    // ── Persona post-fight cost + decay (PvE only) ───────────────────────────────
-    // MUST run AFTER every in-fight reward lane (purse/fame computed at resolve + the
-    // sponsorship payout above) so the blackout=1 state stays in force for this whole
-    // fight — the blackout tick + heat decay only take effect for the NEXT fight.
-    //   1. Beef-loss cost: losing to an active-Beef opponent drains 15 off each axis.
-    //   2. Decay: blackout-- then x/y *= 0.95.
-    // Non-fatal — a persona error here must never reject the fight (own try/catch + save).
-    try {
-        if (isLoss && beefMatch) personaService.applyBeefLossDrain(fighter);
-        personaService.decayAfterFight(fighter);
+        // Phase 4: Resolve active callout when the fight was flagged as a callout.
+        // Award "Callout Win" badge on a win (unlocks BADGE_CALLOUT banner piece).
+        let calloutBadgeAwarded = false;
+        if (isCalloutFight) {
+            if (isWin) {
+                const { CALLOUT_BADGE } = require("../consts/calloutConfig");
+                fighter.badges = fighter.badges || [];
+                if (!fighter.badges.includes(CALLOUT_BADGE)) {
+                    fighter.badges.push(CALLOUT_BADGE);
+                    calloutBadgeAwarded = true;
+                }
+            }
+            try {
+                const calloutService = require("./calloutService");
+                await calloutService.clearActiveCallout(fighter);
+            } catch (_) {
+                fighter.activeCallout = {
+                    opponentId: null, opponentName: null, cost: 0, isStretch: false, calledAt: null,
+                };
+            }
+        }
+
+        // ── Career Page badges: evaluate against this fight's facts. Additive +
+        //    never breaks the resolve flow. Mutates fighter.badgesEarned; the
+        //    fighter.save() below persists it. `newlyEarnedBadges` bubbles into the
+        //    response so the UI can surface fresh awards.
+        let newlyEarnedBadges = [];
+        try {
+            const badgeService = require("./badgeService");
+            // wasKnockedDown: no explicit knockdown flag exists in the resolution engine,
+            // so we use the "player was hurt" proxy — any round where the player's health
+            // dropped below the hurt threshold (35). Documented deviation.
+            const wasKnockedDown = Array.isArray(result.rounds)
+                && result.rounds.some((r) => (r && typeof r.playerHealth === "number") && r.playerHealth < 35);
+            // Opponent end health: final round's opponentHealth from the engine rounds.
+            const lastRound = Array.isArray(result.rounds) && result.rounds.length
+                ? result.rounds[result.rounds.length - 1]
+                : null;
+            const oppEndHealthPct = lastRound && typeof lastRound.opponentHealth === "number"
+                ? lastRound.opponentHealth
+                : (isWin ? 0 : 100);
+            const r = badgeService.evaluateBadges(fighter, {
+                isWin,
+                outcome: result.outcome,
+                wasKnockedDown,
+                endedHealthPct: healthEnd,
+                oppEndHealthPct,
+                oppOvr: opponentOvr,
+                wasComeback: isComeback,
+                isCalloutWin: isCalloutFight && isWin,
+                beefMatched: !!beefMatch,
+                nemesisCleared,
+                campGrade: fightCamp ? (fightCamp.campRating || null) : null,
+                // beltWonForTier: the tier whose belt was won, null when no belt was won this
+                // fight. beltTier, not promoted.from: promoted is null on a GCS win.
+                beltWonForTier: beltWon ? beltTier : null,
+            });
+            newlyEarnedBadges = r.newlyEarned;
+        } catch (e) {
+            console.error("[badges] evaluate on fight resolve failed:", e.message);
+        }
+
         await fighter.save();
-    } catch (e) {
-        console.error("[persona] post-fight decay/drain error:", e.message);
-    }
 
-    // ── Activity log entries (fire-and-forget, never throw) ──────────────
-    const _tier = fighter.promotionTier;
-    const _isTitleFight = fight.offerType === "TitleShot";
+        // GDD 7.4: update quest progress after fight
+        const completedQuests = await questService.onFight(fighterId, fighter, fight);
 
-    // Fire-and-forget analytics — one resolved event per fight. userId is threaded
-    // from the controller (req.user.id).
-    analyticsService.track(
-        userId,
-        "fight_resolved",
-        { fightId: String(fight._id), tier: _tier, outcome: result.outcome, isWin },
-        { fighterId: fighter._id }
-    );
-    if (isWin)  activityLogService.log(fighterId, "FIGHT_WIN",
-        `Beat ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
-        { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight,
-          winStreak: winStreakAfterWin,
-          streakDrinks: (winStreakAfterWin >= 10 ? streakDrinksGranted : 0),
-          fightId: String(fight._id), kind: "pve" });
-    if (isLoss) activityLogService.log(fighterId, "FIGHT_LOSS",
-        `Lost to ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
-        { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight,
-          fightId: String(fight._id), kind: "pve" });
-    // \u2500\u2500 PVP unlock: 3rd CAREER win opens "The Proving Ground". Fighter-flag flip +
-    // feed only \u2014 NO pvp service import (one-way dependency). Guarded save persists it. \u2500\u2500
-    if (isWin && fighter.pvpOnboarding && !fighter.pvpOnboarding.unlocked && (fighter.record.wins || 0) >= 3) {
-        fighter.pvpOnboarding.unlocked = true;
-        fighter.markModified("pvpOnboarding");
-        activityLogService.log(fighterId, "pvp_unlocked",
-            "The Proving Ground is now open to you",
-            { careerWins: fighter.record.wins });
-        // Fire-and-forget analytics — userId threaded from the controller.
+        const maxStaminaVal = fighter.maxStamina ?? 100;
+        const staminaEnd = result.playerStaminaAfter ?? maxStaminaVal;
+
+        // ── Gym rank: increment relevant wins on fight win ──────────────────
+        if (isWin) {
+            try {
+                const gymRankService = require("./gymRankService");
+                const gymRankUps = await gymRankService.onFightWin(fighter, result.outcome);
+                // Always save — onFightWin mutates fighter.gymRanks whether or not a rank-up occurred
+                await fighter.save();
+                if (gymRankUps.length > 0) {
+                    console.log(`[gymRank] Rank-ups: ${gymRankUps.map(u => u.gym + " → " + u.rankName).join(", ")}`);
+                }
+            } catch (e) {
+                console.error("[gymRank] Failed to update fight wins:", e.message);
+            }
+        }
+
+        // ── Home camp: fight-resolved hook. Credits relevant wins to coaches whose archetype
+        // counts this outcome (WINS ONLY — `isWin` is passed through, not inferred), and applies
+        // the Cornerman trait's post-fight camp bonus, which fires after EVERY fight. That second
+        // effect is why this block sits OUTSIDE the `if (isWin)` above: a cornerman patches the
+        // room up on the nights you lose too.
+        //
+        // ADDITIVE and strictly non-fatal — it writes only the HomeCamp document (never the
+        // fighter), no-ops when the player has no camp yet, and every failure is swallowed +
+        // logged. This must NEVER throw into the fight path. PvE only: PvP deliberately does not
+        // call it (coach ranks and camp condition are PvE-only).
+        try {
+            const homeCampCoachService = require("./homeCampCoachService");
+            const { credited, conditionGained } = await homeCampCoachService.onFightResolved(
+                fighter,
+                result.outcome,
+                { isWin }
+            );
+            if (credited > 0) console.log(`[homeCamp] Credited a ${result.outcome} win to ${credited} coach(es).`);
+            if (conditionGained > 0) console.log(`[homeCamp] Cornerman restored ${conditionGained} camp condition.`);
+        } catch (e) {
+            console.error("[homeCamp] Failed to run the fight-resolved hook:", e.message);
+        }
+
+        // ── Newly-earned badge diff (celebration payload) ────────────────────
+        // Every badge-awarding eval for this fight has now run: notoriety fame-tier
+        // (before the fight eval), the fight-resolve eval, and the gym rank-up eval
+        // (above). The fight eval's own return (`r.newlyEarned`) only covers the
+        // middle one, so recompute against the pre-resolve snapshot to surface ALL
+        // of them. This is what fixes fame-tier / gym-rank-4 badges silently showing
+        // up as earned later instead of celebrating at unlock. Non-fatal.
+        try {
+            newlyEarnedBadges = (fighter.badgesEarned || [])
+                .filter((e) => e && e.badgeId && !beforeBadgeIds.has(e.badgeId))
+                .map((e) => ({ badgeId: e.badgeId, context: e.context ?? null }));
+        } catch (e) {
+            console.error("[badges] newly-earned diff failed:", e.message);
+        }
+
+        // ── Phase 3: Sponsorship clauses resolve after every fight ──────────
+        let sponsorshipEvents = [];
+        let sponsorshipIronDelta = 0;
+        try {
+            const sponsorshipService = require("./sponsorshipService");
+            // Attach weightMissed so sponsorshipService.resolveAfterFight can read it without
+            // a schema change — the fight record itself does not persist weightMissed today.
+            fight.weightMissed = weightMissed;
+            const result = await sponsorshipService.resolveAfterFight(fighter, fight);
+            sponsorshipEvents = result.events || [];
+            sponsorshipIronDelta = result.ironDelta || 0;
+            if (sponsorshipEvents.length > 0 || sponsorshipIronDelta !== 0) {
+                await fighter.save();
+            }
+        } catch (e) {
+            console.error("[sponsorship] resolveAfterFight failed:", e.message);
+        }
+
+        // ── Persona post-fight cost + decay (PvE only) ───────────────────────────────
+        // MUST run AFTER every in-fight reward lane (purse/fame computed at resolve + the
+        // sponsorship payout above) so the blackout=1 state stays in force for this whole
+        // fight — the blackout tick + heat decay only take effect for the NEXT fight.
+        //   1. Beef-loss cost: losing to an active-Beef opponent drains 15 off each axis.
+        //   2. Decay: blackout-- then x/y *= 0.95.
+        // Non-fatal — a persona error here must never reject the fight (own try/catch + save).
+        try {
+            if (isLoss && beefMatch) personaService.applyBeefLossDrain(fighter);
+            personaService.decayAfterFight(fighter);
+            await fighter.save();
+        } catch (e) {
+            console.error("[persona] post-fight decay/drain error:", e.message);
+        }
+
+        // ── Activity log entries (fire-and-forget, never throw) ──────────────
+        const _tier = fighter.promotionTier;
+        const _isTitleFight = fight.offerType === "TitleShot";
+
+        // Fire-and-forget analytics — one resolved event per fight. userId is threaded
+        // from the controller (req.user.id).
         analyticsService.track(
             userId,
-            "pvp_unlocked",
-            { careerWins: fighter.record.wins },
-            { fighterId }
+            "fight_resolved",
+            { fightId: String(fight._id), tier: _tier, outcome: result.outcome, isWin },
+            { fighterId: fighter._id }
         );
-        try { await fighter.save(); } catch (e) { console.error("[pvp unlock] save failed:", e.message); }
-    }
-    if (isDraw) activityLogService.log(fighterId, "FIGHT_DRAW",
-        `Drew with ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
-        { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight,
-          fightId: String(fight._id), kind: "pve" });
-    if (nemesisSet) activityLogService.log(fighterId, "NEMESIS_SET",
-        `${nemesisName} is now your nemesis`,
-        { opponentName: nemesisName, tier: _tier });
-    if (nemesisCleared) activityLogService.log(fighterId, "NEMESIS_CLEARED",
-        `Settled the score with ${nemesisName}`,
-        { opponentName: nemesisName, tier: _tier });
-    if (promoted && !beltWon) activityLogService.log(fighterId, "TIER_PROMOTION",
-        `Promoted to ${promoted.to}`,
-        { from: promoted.from, to: promoted.to, tier: promoted.from, drinksGranted: promotionDrinksGranted });
-    // Built once from the title-win result; never reads promoted.* (null on a GCS win).
-    const titleWinDesc = beltWon
-        ? describeTitleWin({
-            win: titleWin,
-            weightClass: fighter.weightClass,
+        if (isWin)  activityLogService.log(fighterId, "FIGHT_WIN",
+            `Beat ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
+            { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight,
+              winStreak: winStreakAfterWin,
+              streakDrinks: (winStreakAfterWin >= 10 ? streakDrinksGranted : 0),
+              fightId: String(fight._id), kind: "pve" });
+        if (isLoss) activityLogService.log(fighterId, "FIGHT_LOSS",
+            `Lost to ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
+            { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight,
+              fightId: String(fight._id), kind: "pve" });
+        // \u2500\u2500 PVP unlock: 3rd CAREER win opens "The Proving Ground". Fighter-flag flip +
+        // feed only \u2014 NO pvp service import (one-way dependency). Guarded save persists it. \u2500\u2500
+        if (isWin && fighter.pvpOnboarding && !fighter.pvpOnboarding.unlocked && (fighter.record.wins || 0) >= 3) {
+            fighter.pvpOnboarding.unlocked = true;
+            fighter.markModified("pvpOnboarding");
+            activityLogService.log(fighterId, "pvp_unlocked",
+                "The Proving Ground is now open to you",
+                { careerWins: fighter.record.wins });
+            // Fire-and-forget analytics — userId threaded from the controller.
+            analyticsService.track(
+                userId,
+                "pvp_unlocked",
+                { careerWins: fighter.record.wins },
+                { fighterId }
+            );
+            try { await fighter.save(); } catch (e) { console.error("[pvp unlock] save failed:", e.message); }
+        }
+        if (isDraw) activityLogService.log(fighterId, "FIGHT_DRAW",
+            `Drew with ${opponent.name} \u00B7 ${result.outcome} \u00B7 ${_tier}`,
+            { opponentName: opponent.name, outcome: result.outcome, tier: _tier, isTitleFight: _isTitleFight,
+              fightId: String(fight._id), kind: "pve" });
+        if (nemesisSet) activityLogService.log(fighterId, "NEMESIS_SET",
+            `${nemesisName} is now your nemesis`,
+            { opponentName: nemesisName, tier: _tier });
+        if (nemesisCleared) activityLogService.log(fighterId, "NEMESIS_CLEARED",
+            `Settled the score with ${nemesisName}`,
+            { opponentName: nemesisName, tier: _tier });
+        if (promoted && !beltWon) activityLogService.log(fighterId, "TIER_PROMOTION",
+            `Promoted to ${promoted.to}`,
+            { from: promoted.from, to: promoted.to, tier: promoted.from, drinksGranted: promotionDrinksGranted });
+        // Built once from the title-win result; never reads promoted.* (null on a GCS win).
+        const titleWinDesc = beltWon
+            ? describeTitleWin({
+                win: titleWin,
+                weightClass: fighter.weightClass,
+                gcsTitleWins: fighter.gcsTitleWins ?? 0,
+                drinksGranted: promotionDrinksGranted,
+                fightId: String(fight._id),
+            })
+            : null;
+        if (titleWinDesc) activityLogService.log(fighterId, titleWinDesc.log.type, titleWinDesc.log.text, titleWinDesc.log.meta);
+        // Title shot eligible: fires when the top-5 wins threshold is first met (and
+        // the fighter is actually top-5, since that's now what the wins are gated on).
+        if (isWin && isTitleContender(fighter)
+            && rankingService.isTopFive(fighter)
+            && (fighter.topFiveWinsInTier ?? 0) === getTitleShotConfig(fighter.promotionTier).titleWins
+            && (fighter.titleShotCooldown ?? 0) <= 0) {
+            activityLogService.log(fighterId, "TITLE_SHOT_ELIGIBLE",
+                `Title shot available \u2014 fight for the ${fighter.promotionTier} belt`,
+                { tier: fighter.promotionTier, targetTier: fighter.pendingPromotion ?? null });
+        }
+        const newBadges = (isWin && isComeback) ? ["Resilience"] : [];
+        // A title defense earns no new badge (titleWinDesc.badge is null then).
+        if (titleWinDesc && titleWinDesc.badge && !newBadges.includes(titleWinDesc.badge)) {
+            newBadges.push(titleWinDesc.badge);
+        }
+        for (const badge of newBadges)
+            activityLogService.log(fighterId, "BADGE_EARNED",
+                `Earned badge: ${badge}`, { badge, tier: _tier });
+
+        // ── Banner-piece unlock diff (display-only; drives no persistence) ────
+        // Recompute the unlocked set AFTER all resolve mutations (badges + gym-rank
+        // block above, so e.g. titan_rank4 → BG_TITANIUM is caught same-fight) and
+        // diff against the pre-resolve snapshot. Non-fatal: defaults to [] on error.
+        let newlyUnlockedBannerPieces = [];
+        try {
+            // Resolve a badge id → display name/description across BOTH badge
+            // namespaces (career catalog incl. gym-rank badges, and PvP season
+            // badges) so the unlock modal can show real copy instead of a
+            // prettified raw id. Nulls when the piece isn't badge-gated.
+            const { getBadge } = require("../consts/badgeCatalog");
+            const { resolvePvpBadge } = require("../consts/pvpBadges");
+            const badgeMeta = (id) => {
+                if (!id) return { name: null, description: null };
+                const def = getBadge(id) || resolvePvpBadge(id) || null;
+                return { name: def?.name ?? null, description: def?.description ?? null };
+            };
+            const afterBanner = new Set(
+                BANNER_PIECES.filter((p) => bannerService.isUnlocked(fighter, p)).map((p) => p.id)
+            );
+            newlyUnlockedBannerPieces = BANNER_PIECES
+                .filter((p) => afterBanner.has(p.id) && !beforeBanner.has(p.id))
+                .map((p) => {
+                    const badgeId = p.unlockAt?.badge ?? null;
+                    const meta = badgeMeta(badgeId);
+                    return {
+                        id: p.id,
+                        kind: p.kind,
+                        label: p.label,
+                        unlockBadgeId: badgeId,
+                        badgeName: meta.name,
+                        badgeDescription: meta.description,
+                    };
+                });
+        } catch (e) {
+            console.error("[banner] unlock-diff failed:", e.message);
+            newlyUnlockedBannerPieces = [];
+        }
+
+        const summary = {
+            outcome: result.outcome,
+            recordChange: isWin ? "W" : isLoss ? "L" : "D",
+            recordAfter: `${fighter.record.wins}-${fighter.record.losses}-${fighter.record.draws}`,
+            healthStart: cons.healthBefore,
+            healthEnd,
+            healthLost: Math.max(0, cons.healthBefore - cons.healthAfter),
+            staminaStart: maxStaminaVal,
+            staminaEnd,
+            staminaLost: Math.max(0, maxStaminaVal - staminaEnd),
+            ironEarned,
+            notorietyGained: notorietyGain,
+            notorietyBreakdown,
+            notorietyTierUp,
+            notorietyFrozen: !!fighter.notoriety.isFrozen,
+            milestoneNotoriety: milestoneResult,
+            xpGained: fightXpApplied,
+            statLevelUps,
+            xpMultiplier: xpMult,
+            isComeback,
+            weightCut,
+            weightCutRoll,
+            weightMissed,
+            injuriesSustained,
+            newBadges,
+            // Career Page: badges newly earned by this fight (catalog ids + context).
+            newlyEarnedBadges,
+            // Banner: badge/tier-gated pieces first unlocked by this fight (display-only).
+            newlyUnlockedBannerPieces,
+            completedQuests: completedQuests.map((q) => q.title),
+            promoted, // null on a GCS title win (no promotion there); beltWon is still true
+            beltWon,
+            // GCS title shot: true when this win was a repeat GCS title win (a defense).
+            titleDefense,
+            // Tier whose belt was fought for and won; null when this was not a title win.
+            beltTier,
+            // Career GCS belt wins after this fight (first win plus defenses); 0 outside GCS.
             gcsTitleWins: fighter.gcsTitleWins ?? 0,
-            drinksGranted: promotionDrinksGranted,
+            // Post-loss title-shot signalling. After a title LOSS pendingPromotion is NOT
+            // cleared, so titleTargetTier is the tier the player is still contending for
+            // (drives Amateur "turn pro" framing in the post-fight notice).
+            titleShotLost: fight.offerType === "TitleShot" && isLoss,
+            titleTargetTier: fighter.pendingPromotion ?? null,
+            nemesisCleared,
+            nemesisSet,
+            nemesisName,
+            // Phase 1: fightId + opponent info for the post-fight interview UI.
             fightId: String(fight._id),
-        })
-        : null;
-    if (titleWinDesc) activityLogService.log(fighterId, titleWinDesc.log.type, titleWinDesc.log.text, titleWinDesc.log.meta);
-    // Title shot eligible: fires when the top-5 wins threshold is first met (and
-    // the fighter is actually top-5, since that's now what the wins are gated on).
-    if (isWin && isTitleContender(fighter)
-        && rankingService.isTopFive(fighter)
-        && (fighter.topFiveWinsInTier ?? 0) === getTitleShotConfig(fighter.promotionTier).titleWins
-        && (fighter.titleShotCooldown ?? 0) <= 0) {
-        activityLogService.log(fighterId, "TITLE_SHOT_ELIGIBLE",
-            `Title shot available \u2014 fight for the ${fighter.promotionTier} belt`,
-            { tier: fighter.promotionTier, targetTier: fighter.pendingPromotion ?? null });
-    }
-    const newBadges = (isWin && isComeback) ? ["Resilience"] : [];
-    // A title defense earns no new badge (titleWinDesc.badge is null then).
-    if (titleWinDesc && titleWinDesc.badge && !newBadges.includes(titleWinDesc.badge)) {
-        newBadges.push(titleWinDesc.badge);
-    }
-    for (const badge of newBadges)
-        activityLogService.log(fighterId, "BADGE_EARNED",
-            `Earned badge: ${badge}`, { badge, tier: _tier });
-
-    // ── Banner-piece unlock diff (display-only; drives no persistence) ────
-    // Recompute the unlocked set AFTER all resolve mutations (badges + gym-rank
-    // block above, so e.g. titan_rank4 → BG_TITANIUM is caught same-fight) and
-    // diff against the pre-resolve snapshot. Non-fatal: defaults to [] on error.
-    let newlyUnlockedBannerPieces = [];
-    try {
-        // Resolve a badge id → display name/description across BOTH badge
-        // namespaces (career catalog incl. gym-rank badges, and PvP season
-        // badges) so the unlock modal can show real copy instead of a
-        // prettified raw id. Nulls when the piece isn't badge-gated.
-        const { getBadge } = require("../consts/badgeCatalog");
-        const { resolvePvpBadge } = require("../consts/pvpBadges");
-        const badgeMeta = (id) => {
-            if (!id) return { name: null, description: null };
-            const def = getBadge(id) || resolvePvpBadge(id) || null;
-            return { name: def?.name ?? null, description: def?.description ?? null };
-        };
-        const afterBanner = new Set(
-            BANNER_PIECES.filter((p) => bannerService.isUnlocked(fighter, p)).map((p) => p.id)
-        );
-        newlyUnlockedBannerPieces = BANNER_PIECES
-            .filter((p) => afterBanner.has(p.id) && !beforeBanner.has(p.id))
-            .map((p) => {
-                const badgeId = p.unlockAt?.badge ?? null;
-                const meta = badgeMeta(badgeId);
-                return {
-                    id: p.id,
-                    kind: p.kind,
-                    label: p.label,
-                    unlockBadgeId: badgeId,
-                    badgeName: meta.name,
-                    badgeDescription: meta.description,
-                };
-            });
-    } catch (e) {
-        console.error("[banner] unlock-diff failed:", e.message);
-        newlyUnlockedBannerPieces = [];
-    }
-
-    const summary = {
-        outcome: result.outcome,
-        recordChange: isWin ? "W" : isLoss ? "L" : "D",
-        recordAfter: `${fighter.record.wins}-${fighter.record.losses}-${fighter.record.draws}`,
-        healthStart: cons.healthBefore,
-        healthEnd,
-        healthLost: Math.max(0, cons.healthBefore - cons.healthAfter),
-        staminaStart: maxStaminaVal,
-        staminaEnd,
-        staminaLost: Math.max(0, maxStaminaVal - staminaEnd),
-        ironEarned,
-        notorietyGained: notorietyGain,
-        notorietyBreakdown,
-        notorietyTierUp,
-        notorietyFrozen: !!fighter.notoriety.isFrozen,
-        milestoneNotoriety: milestoneResult,
-        xpGained: fightXpApplied,
-        statLevelUps,
-        xpMultiplier: xpMult,
-        isComeback,
-        weightCut,
-        weightCutRoll,
-        weightMissed,
-        injuriesSustained,
-        newBadges,
-        // Career Page: badges newly earned by this fight (catalog ids + context).
-        newlyEarnedBadges,
-        // Banner: badge/tier-gated pieces first unlocked by this fight (display-only).
-        newlyUnlockedBannerPieces,
-        completedQuests: completedQuests.map((q) => q.title),
-        promoted, // null on a GCS title win (no promotion there); beltWon is still true
-        beltWon,
-        // GCS title shot: true when this win was a repeat GCS title win (a defense).
-        titleDefense,
-        // Tier whose belt was fought for and won; null when this was not a title win.
-        beltTier,
-        // Career GCS belt wins after this fight (first win plus defenses); 0 outside GCS.
-        gcsTitleWins: fighter.gcsTitleWins ?? 0,
-        // Post-loss title-shot signalling. After a title LOSS pendingPromotion is NOT
-        // cleared, so titleTargetTier is the tier the player is still contending for
-        // (drives Amateur "turn pro" framing in the post-fight notice).
-        titleShotLost: fight.offerType === "TitleShot" && isLoss,
-        titleTargetTier: fighter.pendingPromotion ?? null,
-        nemesisCleared,
-        nemesisSet,
-        nemesisName,
-        // Phase 1: fightId + opponent info for the post-fight interview UI.
-        fightId: String(fight._id),
-        opponentId: opponent?._id ? String(opponent._id) : null,
-        opponentName: opponent?.name || null,
-        interviewDone: !!fight.interview?.done,
-        // Phase 3: sponsorship payouts/events from this fight.
-        // Sponsor energy drinks ride on sponsorship.events[].rewardDrinks (set in
-        // sponsorshipService.resolveAfterFight) — sponsorshipEvents IS that array.
-        sponsorship: {
-            events: sponsorshipEvents,
-            ironDelta: sponsorshipIronDelta,
-        },
-        // Energy Drink free-earn: streak + promotion grants from this resolve.
-        drinksGranted: {
-            streak: streakDrinksGranted || 0,
-            promotion: promotionDrinksGranted || 0,
-        },
-        // Phase 4: callout flag + whether the new banner-unlock badge was just earned.
-        isCallout: isCalloutFight,
-        calloutBadgeAwarded,
-        // Phase 6: beef/respect matchup info + flags that lapsed this fight.
-        beefMatched:    !!beefMatch,
-        respectMatched: !!respectMatch,
-        lapsedBeef:     lapsedBeefOpponents,
-        // v2: post-fight camp breakdown
-        campBreakdown: fightCamp ? {
-            rating: fightCamp.campRating,
-            sessions: (result.sessionBonuses || []).map(b => ({
-                label: b.label,
-                sessionType: b.sessionType,
-                matchStatus: b.matchStatus,
-                triggered: b.triggered,
-                triggerCount: b.triggerCount || 0,
-                description: b.description,
-            })),
-            wildcard: result.wildcard ? {
-                description: result.wildcard.description,
-                wasCountered: result.wildcard.countered ?? false,
+            opponentId: opponent?._id ? String(opponent._id) : null,
+            opponentName: opponent?.name || null,
+            interviewDone: !!fight.interview?.done,
+            // Phase 3: sponsorship payouts/events from this fight.
+            // Sponsor energy drinks ride on sponsorship.events[].rewardDrinks (set in
+            // sponsorshipService.resolveAfterFight) — sponsorshipEvents IS that array.
+            sponsorship: {
+                events: sponsorshipEvents,
+                ironDelta: sponsorshipIronDelta,
+            },
+            // Energy Drink free-earn: streak + promotion grants from this resolve.
+            drinksGranted: {
+                streak: streakDrinksGranted || 0,
+                promotion: promotionDrinksGranted || 0,
+            },
+            // Phase 4: callout flag + whether the new banner-unlock badge was just earned.
+            isCallout: isCalloutFight,
+            calloutBadgeAwarded,
+            // Phase 6: beef/respect matchup info + flags that lapsed this fight.
+            beefMatched:    !!beefMatch,
+            respectMatched: !!respectMatch,
+            lapsedBeef:     lapsedBeefOpponents,
+            // v2: post-fight camp breakdown
+            campBreakdown: fightCamp ? {
+                rating: fightCamp.campRating,
+                sessions: (result.sessionBonuses || []).map(b => ({
+                    label: b.label,
+                    sessionType: b.sessionType,
+                    matchStatus: b.matchStatus,
+                    triggered: b.triggered,
+                    triggerCount: b.triggerCount || 0,
+                    description: b.description,
+                })),
+                wildcard: result.wildcard ? {
+                    description: result.wildcard.description,
+                    wasCountered: result.wildcard.countered ?? false,
+                } : null,
             } : null,
-        } : null,
-        // Shop v1.0: pre-fight buff applied this fight (null if none selected).
-        buff: buffCfg ? {
-            id: buffId,
-            label: buffCfg.name,
-            applied: ownsBuff,
-            stats: buffCfg.stats || null,
-            injuryMult: buffCfg.injuryMult || null,
-            usedTotal: (fighter.inventory.usedBuffs && fighter.inventory.usedBuffs[buffId]) || 0,
-        } : null,
-    };
+            // Shop v1.0: pre-fight buff applied this fight (null if none selected).
+            buff: buffCfg ? {
+                id: buffId,
+                label: buffCfg.name,
+                applied: ownsBuff,
+                stats: buffCfg.stats || null,
+                injuryMult: buffCfg.injuryMult || null,
+                usedTotal: (fighter.inventory.usedBuffs && fighter.inventory.usedBuffs[buffId]) || 0,
+            } : null,
+        };
 
-    // Fight Description System — attach the SHAPED breakdown view (same builder the GET
-    // /breakdown endpoint uses) so the post-fight summary renders the exact same story as
-    // the activity-feed drawer. Viewer = this fight's fighter, perspective "player".
-    // Non-fatal: a failure here just omits breakdownView (frontend falls back to legacy).
-    // NOTE: returned at the TOP LEVEL of the response (alongside fight/fighter/result/summary)
-    // because the frontend reads `response.breakdownView`. Do NOT nest it under `result`.
-    let breakdownView = null;
-    try {
-        breakdownView = await getFightBreakdown(String(fight._id), String(fighter._id));
-    } catch (e) {
-        console.error("[fight] breakdownView build failed:", e.message);
-        breakdownView = null;
+        // Fight Description System — attach the SHAPED breakdown view (same builder the GET
+        // /breakdown endpoint uses) so the post-fight summary renders the exact same story as
+        // the activity-feed drawer. Viewer = this fight's fighter, perspective "player".
+        // Non-fatal: a failure here just omits breakdownView (frontend falls back to legacy).
+        // NOTE: returned at the TOP LEVEL of the response (alongside fight/fighter/result/summary)
+        // because the frontend reads `response.breakdownView`. Do NOT nest it under `result`.
+        let breakdownView = null;
+        try {
+            breakdownView = await getFightBreakdown(String(fight._id), String(fighter._id));
+        } catch (e) {
+            console.error("[fight] breakdownView build failed:", e.message);
+            breakdownView = null;
+        }
+
+        return { fight, fighter: fighterService.toPublicFighter(fighter), result, summary, breakdownView };
+    } catch (err) {
+        if (!committed) {
+            // Release the claim so the player can retry the resolve. Only OUR claim: the
+            // resolvingAt stamp must match, so a slow request whose lease expired and was
+            // reclaimed cannot free the new owner's claim.
+            try {
+                await Fight.updateOne(
+                    { _id: claimedFightId, status: "resolving", resolvingAt: now },
+                    { $set: { status: "accepted", resolvingAt: null } }
+                );
+            } catch (releaseErr) {
+                console.error("[fight] resolve claim release failed:", releaseErr.message);
+            }
+        }
+        throw err;
     }
-
-    return { fight, fighter: fighterService.toPublicFighter(fighter), result, summary, breakdownView };
 }
 
 /**
@@ -1990,6 +2088,7 @@ module.exports = {
     describeTitleWin,
     checkPromotion,
     TOP_TIER,
+    RESOLVE_CLAIM_TTL_MS,
     // Read-only promotion ladder config (the dashboard title-shot strip derives its mode
     // from these). Do not mutate.
     TIER_ORDER,

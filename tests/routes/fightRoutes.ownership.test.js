@@ -1,5 +1,6 @@
 /**
- * The four offer-board routes must run ownFighterParam("fighterId") before the handler.
+ * The four offer-board routes and the resolve route must run ownFighterParam("fighterId")
+ * before the handler.
  * Reads the Express router stack directly: no server, no DB.
  */
 const { test } = require("node:test");
@@ -25,6 +26,7 @@ const GUARDED = [
     ["post", "/offers/:fighterId", fightController.createOffer],
     ["post", "/offers/:fighterId/reroll", fightController.rerollOffers],
     ["post", "/accept/:fighterId/:fightId", fightController.acceptOffer],
+    ["post", "/resolve/:fighterId", fightController.resolveFight],
 ];
 
 for (const [method, path, handler] of GUARDED) {

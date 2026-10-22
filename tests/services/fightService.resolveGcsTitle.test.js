@@ -57,6 +57,8 @@ before(() => {
         select() { return this; },
         lean: async () => null,
     }));
+    // Resolve claim (accepted -> resolving): always won here, so nothing touches Mongo.
+    stub(Fight, "updateOne", async () => ({ modifiedCount: 1, matchedCount: 1 }));
     stub(FightCamp, "findOne", async () => null);
     stub(FameEvent, "create", async (row) => { fameRows.push(row); return row; });
     stub(questService, "onFight", async () => []);

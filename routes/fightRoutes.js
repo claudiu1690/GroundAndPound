@@ -158,9 +158,12 @@ router.put("/camp/:fightId/buff",          campController.selectBuff);
  *         description: Strategy set
  *       400:
  *         description: Invalid strategy
+ *       403:
+ *         description: Body fighterId is not your fighter (same guard on PUT /fights/weight-cut)
  *       404:
  *         description: Fight not found
  */
+// Body-keyed ownership (fighterId in the body) is checked in the controller.
 router.put("/weight-cut", fightController.setWeightCut);
 router.put("/strategy", fightController.setStrategy);
 
@@ -184,12 +187,18 @@ router.put("/strategy", fightController.setStrategy);
  *             schema: { $ref: '#/components/schemas/ResolveFightResult' }
  *       400:
  *         description: No accepted fight / Not enough energy
+ *       403:
+ *         description: Not your fighter
  *       404:
  *         description: Fighter not found / Fight not found / Opponent not found
+ *       409:
+ *         description: >
+ *           FIGHT_ALREADY_RESOLVED. Another resolve of this fight holds the claim or already
+ *           completed it; body is { message, code }. Reload the fighter instead of retrying.
  *       500:
  *         description: Internal server error
  */
-router.post("/resolve/:fighterId", fightController.resolveFight);
+router.post("/resolve/:fighterId", ownFighterParam("fighterId"), fightController.resolveFight);
 
 // ── Post-fight interview (Phase 1) ─────────────────────────────────────────
 router.get("/interview/candidates", fightController.getInterviewCandidates);

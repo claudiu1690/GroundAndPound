@@ -1774,6 +1774,7 @@
     "pushingThrough": "Pushing through — injury penalty will apply at fight time.",
     "campStopped": "Camp stopped — entering fight healthy.",
     "weightCutFailed": "Failed to set weight cut",
+    "fightAlreadyResolved": "That fight has already been resolved. Reloading.",
     "firstWinHint": " | Build your record and raise your OVR to earn a title shot. Win the belt to move up.",
     "fighterPageHint": "Fighter details are in the left panel.",
     "continueBtn": "Continue",

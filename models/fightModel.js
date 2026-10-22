@@ -12,9 +12,13 @@ const fightSchema = new mongoose.Schema({
     weightCutRoll: { type: Number, default: null }, // stamina bonus/penalty from the cut
     status: {
         type: String,
-        enum: ["offered", "accepted", "completed", "cancelled"],
+        enum: ["offered", "accepted", "resolving", "completed", "cancelled"],
         default: "offered"
     },
+    // Resolve lease: set when POST /fights/resolve claims an accepted fight (status
+    // "resolving"). A claim older than fightService.RESOLVE_CLAIM_TTL_MS is stale and
+    // may be reclaimed. Null outside a resolve.
+    resolvingAt: { type: Date, default: null },
     outcome: { type: String, enum: FIGHT_OUTCOMES, default: null },
     ironEarned: { type: Number, default: 0 },
     xpMultiplier: { type: Number, default: 1 },
