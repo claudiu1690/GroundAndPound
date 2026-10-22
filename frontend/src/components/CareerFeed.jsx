@@ -4,6 +4,7 @@ import { api } from "../api";
 import {
     Trophy, X, Minus, ArrowUp, Crown, Flame, Swords, ShieldCheck, Target,
     AlertTriangle, Mic, Megaphone, Star, FileText, Cross, HeartPulse, Shield, Gift,
+    VenetianMask, Sparkles, Drama,
 } from "lucide-react";
 
 // Event type → timeline dot colour + icon + type-pill label.
@@ -53,6 +54,10 @@ const EVENT_CONFIG = {
     pvp_placement_done:  { color: PURPLE, Icon: ShieldCheck,   label: "Placement Done" },
     pvp_shield_cleared:  { color: GREY,   Icon: Shield,        label: "Shield Lifted" },
     pvp_season_first:    { color: GOLD,   Icon: Star,          label: "First Season" },
+    // Persona (media-driven public character)
+    PERSONA_CROWNED:         { color: PURPLE, Icon: VenetianMask, label: "Persona" },
+    PERSONA_SIGNATURE:       { color: GOLD,   Icon: Sparkles,     label: "Signature" },
+    PERSONA_BREAK_CHARACTER: { color: AMBER,  Icon: Drama,        label: "Broke Character" },
 };
 
 const FALLBACK = { color: GREY, Icon: Minus, label: "Event" };

@@ -24,6 +24,9 @@ const activityLogSchema = new mongoose.Schema({
             // PVP New Player Experience.
             "pvp_unlocked", "pvp_placement_start", "pvp_placement_done",
             "pvp_shield_cleared", "pvp_season_first",
+            // Persona milestones (services/personaService.js personaFeedEvents, emitted by
+            // mediaHubService and interviewService). Missing entries dropped these silently.
+            "PERSONA_CROWNED", "PERSONA_SIGNATURE", "PERSONA_BREAK_CHARACTER",
         ],
         required: true,
     },
