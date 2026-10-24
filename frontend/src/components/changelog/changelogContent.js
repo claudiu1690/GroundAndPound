@@ -47,6 +47,7 @@ export const CHANGELOG_ENTRIES = [
         "The title shot bar, the hero button and the Rankings tile on Home now agree on your next step, because all three read it from one place: your fight board. If you are unranked, the Rankings tile now says how many fights are left before you get a rank.",
         "Pressing Begin Fight twice, or firing two fight requests at once, could pay the purse, fame and XP for the same fight twice. A fight now resolves exactly once.",
         "Persona milestones (being crowned, reaching your signature, breaking character) now show up in your career feed and in the Gazette. They were being dropped.",
+        "Another player who knew your fight's id could read your opponent's Fighter Report, add or remove your camp sessions, pick your injury response or finalise your camp for you. Camp actions now only work from the account that booked the fight, and camp changes are refused once the fight has started.",
       ],
       balance: [
         "Second Gear and Deep Waters ship at about half strength. They stack with Heavy Hands on the same punch, and the three together swung fights past the limit we hold every loadout to.",

@@ -3,6 +3,7 @@ const router = express.Router();
 const fightController = require("../controllers/fightController");
 const campController = require("../controllers/campController");
 const { ownFighterParam } = require("../middleware/ownFighterMiddleware");
+const { ownFightParam } = require("../middleware/ownFightMiddleware");
 
 /**
  * @swagger
@@ -133,15 +134,214 @@ router.post("/offers/:fighterId/reroll", ownFighterParam("fighterId"), fightCont
 router.post("/accept/:fighterId/:fightId", ownFighterParam("fighterId"), fightController.acceptOffer);
 
 // ── Fight Camp v1.1 routes ─────────────────────────────────────────────────
-// :fightId = Fight document _id (not the fighter's id)
-router.get("/camp/:fightId/report",        campController.getReport);
-router.get("/camp/:fightId",               campController.getCampState);
-router.post("/camp/:fightId/session",      campController.addSession);
-router.post("/camp/:fightId/remove-session", campController.removeSession);
-router.post("/camp/:fightId/injury-choice",campController.resolveInjury);
-router.post("/camp/:fightId/finalise",     campController.finaliseCamp);
-// Shop v1.0 — select/clear the pre-fight supplement for this fight's camp.
-router.put("/camp/:fightId/buff",          campController.selectBuff);
+// :fightId = Fight document _id (not the fighter's id). Every camp route runs
+// ownFightParam("fightId") first: the fight must belong to req.user.fighterId. Any
+// fighterId in the query or body is ignored; the controller uses req.user.fighterId.
+// /camp/:fightId/report stays registered before /camp/:fightId.
+
+/**
+ * @swagger
+ * /fights/camp/{fightId}/report:
+ *   get:
+ *     summary: Read the Fighter Report on this fight's opponent
+ *     tags: [Fights]
+ *     parameters:
+ *       - in: path
+ *         name: fightId
+ *         required: true
+ *         schema: { type: string, format: objectId }
+ *     responses:
+ *       200:
+ *         description: Fighter Report
+ *       403:
+ *         description: No fighter on this account / the fight belongs to another fighter
+ *       404:
+ *         description: Fight not found (also for a malformed fightId) / Opponent not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/camp/:fightId/report", ownFightParam("fightId"), campController.getReport);
+
+/**
+ * @swagger
+ * /fights/camp/{fightId}:
+ *   get:
+ *     summary: Read the camp state for this fight (a query fighterId is ignored)
+ *     tags: [Fights]
+ *     parameters:
+ *       - in: path
+ *         name: fightId
+ *         required: true
+ *         schema: { type: string, format: objectId }
+ *     responses:
+ *       200:
+ *         description: Camp state plus slotsUsed, slotsRemaining, previewRating, isTitleFight
+ *       403:
+ *         description: No fighter on this account / the fight belongs to another fighter
+ *       404:
+ *         description: Fight not found (also for a malformed fightId) / CAMP_FIGHT_NOT_FOUND
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/camp/:fightId", ownFightParam("fightId"), campController.getCampState);
+
+/**
+ * @swagger
+ * /fights/camp/{fightId}/session:
+ *   post:
+ *     summary: Add a camp session (spends energy). A body fighterId is ignored.
+ *     tags: [Fights]
+ *     parameters:
+ *       - in: path
+ *         name: fightId
+ *         required: true
+ *         schema: { type: string, format: objectId }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, properties: { sessionType: { type: string } }, required: ['sessionType'] }
+ *     responses:
+ *       200:
+ *         description: "{ camp, slotsUsed, slotsRemaining, previewRating, injuryTriggered }"
+ *       400:
+ *         description: sessionType is required / CAMP_FINALISED / CAMP_INJURED / CAMP_NO_SLOTS / CAMP_INVALID_SESSION / CAMP_NOT_ENOUGH_ENERGY
+ *       403:
+ *         description: No fighter on this account / the fight belongs to another fighter
+ *       404:
+ *         description: Fight not found (also for a malformed fightId) / CAMP_FIGHT_NOT_FOUND
+ *       409:
+ *         description: CAMP_FIGHT_LOCKED (the fight is resolving or already resolved)
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/camp/:fightId/session", ownFightParam("fightId"), campController.addSession);
+
+/**
+ * @swagger
+ * /fights/camp/{fightId}/remove-session:
+ *   post:
+ *     summary: Remove a camp session and refund its energy. A body fighterId is ignored.
+ *     tags: [Fights]
+ *     parameters:
+ *       - in: path
+ *         name: fightId
+ *         required: true
+ *         schema: { type: string, format: objectId }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, properties: { slotIndex: { type: integer } }, required: ['slotIndex'] }
+ *     responses:
+ *       200:
+ *         description: "{ camp, slotsUsed, slotsRemaining, previewRating }"
+ *       400:
+ *         description: slotIndex is required / CAMP_FINALISED / CAMP_INJURED / CAMP_INVALID_SLOT
+ *       403:
+ *         description: No fighter on this account / the fight belongs to another fighter
+ *       404:
+ *         description: Fight not found (also for a malformed fightId) / CAMP_FIGHT_NOT_FOUND
+ *       409:
+ *         description: CAMP_FIGHT_LOCKED (the fight is resolving or already resolved)
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/camp/:fightId/remove-session", ownFightParam("fightId"), campController.removeSession);
+
+/**
+ * @swagger
+ * /fights/camp/{fightId}/injury-choice:
+ *   post:
+ *     summary: Choose the camp injury response (STOP or PUSH_THROUGH). A body fighterId is ignored.
+ *     tags: [Fights]
+ *     parameters:
+ *       - in: path
+ *         name: fightId
+ *         required: true
+ *         schema: { type: string, format: objectId }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, properties: { choice: { type: string, enum: ['STOP', 'PUSH_THROUGH'] } }, required: ['choice'] }
+ *     responses:
+ *       200:
+ *         description: Updated camp
+ *       400:
+ *         description: choice is required / CAMP_INVALID_CHOICE
+ *       403:
+ *         description: No fighter on this account / the fight belongs to another fighter
+ *       404:
+ *         description: Fight not found (also for a malformed fightId) / CAMP_FIGHT_NOT_FOUND
+ *       409:
+ *         description: CAMP_FIGHT_LOCKED (the fight is resolving or already resolved)
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/camp/:fightId/injury-choice", ownFightParam("fightId"), campController.resolveInjury);
+
+/**
+ * @swagger
+ * /fights/camp/{fightId}/finalise:
+ *   post:
+ *     summary: Finalise the camp (skip is optional). A body fighterId is ignored.
+ *     tags: [Fights]
+ *     parameters:
+ *       - in: path
+ *         name: fightId
+ *         required: true
+ *         schema: { type: string, format: objectId }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema: { type: object, properties: { skip: { type: boolean } } }
+ *     responses:
+ *       200:
+ *         description: "{ campRating, campBreakdown, sessionBonuses, wasSkipped, injuryPenalty, injuryChoice, sessions }"
+ *       400:
+ *         description: CAMP_FINALISED / CAMP_INJURED
+ *       403:
+ *         description: No fighter on this account / the fight belongs to another fighter
+ *       404:
+ *         description: Fight not found (also for a malformed fightId) / CAMP_FIGHT_NOT_FOUND
+ *       409:
+ *         description: CAMP_FIGHT_LOCKED (the fight is resolving or already resolved)
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/camp/:fightId/finalise", ownFightParam("fightId"), campController.finaliseCamp);
+
+/**
+ * @swagger
+ * /fights/camp/{fightId}/buff:
+ *   put:
+ *     summary: Select, or clear with buffId null, the pre-fight supplement for this fight's camp (Shop v1.0)
+ *     tags: [Fights]
+ *     parameters:
+ *       - in: path
+ *         name: fightId
+ *         required: true
+ *         schema: { type: string, format: objectId }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema: { type: object, properties: { buffId: { type: string, nullable: true } } }
+ *     responses:
+ *       200:
+ *         description: "{ selectedBuffId, message }"
+ *       400:
+ *         description: Unknown supplement / You don't own that supplement
+ *       403:
+ *         description: No fighter on this account / the fight belongs to another fighter
+ *       404:
+ *         description: Fight not found (also for a malformed fightId) / CAMP_FIGHT_NOT_FOUND
+ *       409:
+ *         description: CAMP_FIGHT_LOCKED (the fight is resolving or already resolved)
+ *       500:
+ *         description: Internal server error
+ */
+router.put("/camp/:fightId/buff", ownFightParam("fightId"), campController.selectBuff);
 
 /**
  * @swagger

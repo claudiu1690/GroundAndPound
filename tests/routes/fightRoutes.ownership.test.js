@@ -50,3 +50,40 @@ for (const [method, path, handler] of GUARDED) {
         assert.equal(ok, true);
     });
 }
+
+// Fight Camp routes are keyed on :fightId and run ownFightParam("fightId") before the handler.
+const campController = require("../../controllers/campController");
+
+const CAMP_GUARDED = [
+    ["get", "/camp/:fightId/report", campController.getReport],
+    ["get", "/camp/:fightId", campController.getCampState],
+    ["post", "/camp/:fightId/session", campController.addSession],
+    ["post", "/camp/:fightId/remove-session", campController.removeSession],
+    ["post", "/camp/:fightId/injury-choice", campController.resolveInjury],
+    ["post", "/camp/:fightId/finalise", campController.finaliseCamp],
+    ["put", "/camp/:fightId/buff", campController.selectBuff],
+];
+
+for (const [method, path, handler] of CAMP_GUARDED) {
+    test(`${method.toUpperCase()} ${path} is exactly [ownFightParamGuard, handler]`, async () => {
+        const route = findRoute(method, path);
+        assert.ok(route, "route is registered");
+        const handles = route.stack.map((l) => l.handle);
+        assert.equal(handles.length, 2);
+        assert.equal(handles[0].name, "ownFightParamGuard");
+        assert.equal(handles[1], handler);
+
+        // Keyed on :fightId: a malformed id is a 404 before any DB call and never reaches next().
+        const res = mockRes();
+        let nextCalled = false;
+        await handles[0]({ user: { fighterId: "mine" }, params: { fightId: "not-an-id", fighterId: "mine" } }, res, () => { nextCalled = true; });
+        assert.equal(nextCalled, false);
+        assert.equal(res.statusCode, 404);
+    });
+}
+
+test("GET /camp/:fightId/report is registered before GET /camp/:fightId", () => {
+    const idx = (p) => router.stack.findIndex((l) => l.route && l.route.path === p && l.route.methods.get);
+    assert.ok(idx("/camp/:fightId/report") >= 0);
+    assert.ok(idx("/camp/:fightId/report") < idx("/camp/:fightId"));
+});
