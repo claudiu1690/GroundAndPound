@@ -10,7 +10,7 @@ import { InjuryWarnModal } from "./InjuryWarnModal";
 import { buildCardModel } from "./offerIntel";
 import { useOfferBoard } from "../../hooks/useOfferBoard";
 import { useAcceptOffer } from "../../hooks/useAcceptOffer";
-import { rerollButtonState, formatTimeLeft } from "../dashboard/homeModel";
+import { rerollButtonState, formatTimeLeft, formatPurse } from "../dashboard/homeModel";
 
 function rankTileProps(rank) {
   if (rank == null) return { value: "—", label: t("fights.hub.unranked"), tone: "unranked" };
@@ -230,6 +230,8 @@ function RerollFooter({ board, fighter, rerolling, rerollError, onReroll, onOpen
   }, [confirming]);
 
   const time = formatTimeLeft(board?.expiresAt);
+  // Same "$440" format as the Home bookings button, so the two screens match.
+  const cost = state.cost != null ? formatPurse(state.cost) : "";
 
   return (
     <div className="bottom-row fight-offers-footer">
@@ -240,12 +242,12 @@ function RerollFooter({ board, fighter, rerolling, rerollError, onReroll, onOpen
         <div ref={ref} className="fight-offers-reroll">
           <button
             type="button"
-            className="refresh-btn"
+            className="btn btn-secondary btn-sm fight-offers-reroll-btn"
             disabled={state.disabled || rerolling}
             title={
               state.reasonKey === "used" ? t("fights.board.rerollUsed")
-                : state.reasonKey === "cash" ? t("fights.board.rerollCash", { cost: state.cost })
-                : undefined
+                : state.reasonKey === "cash" ? t("fights.board.rerollCash", { cost })
+                : t("fights.board.rerollHint")
             }
             onClick={() => {
               if (state.disabled) return;
@@ -258,8 +260,8 @@ function RerollFooter({ board, fighter, rerolling, rerollError, onReroll, onOpen
             {rerolling
               ? t("fights.board.rerolling")
               : confirming
-                ? t("fights.board.rerollConfirm", { cost: state.cost })
-                : t("fights.board.reroll", { cost: state.cost })}
+                ? t("fights.board.rerollConfirm", { cost })
+                : t("fights.board.reroll", { cost })}
           </button>
           {rerollError && <span className="fight-offers-reroll-error">{rerollError}</span>}
         </div>

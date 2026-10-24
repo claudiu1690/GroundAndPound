@@ -2721,20 +2721,13 @@ code {
   justify-content: flex-start;
   margin-top: 4px;
 }
-.refresh-btn {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  background: transparent;
-  border: 1px solid var(--c-border, #2A2A2A);
-  color: var(--c-text-3, #666);
-  padding: 6px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.refresh-btn:hover { border-color: #3A3A3A; color: var(--c-text-2, #AAAAAA); }
+/* Fight Hub board footer: countdown on the left, reroll and Call Out on the right. */
+.fight-offers-footer { gap: 10px; flex-wrap: wrap; }
+.fight-offers-footer .fight-offers-expires { margin-right: auto; font-size: 11px; color: var(--c-text-3, #888); }
+.fight-offers-footer .fight-offers-reroll { display: inline-flex; align-items: center; gap: 8px; }
+.fight-offers-footer .fight-offers-reroll-btn,
+.fight-offers-footer .fight-offers-callout { gap: 6px; padding: 6px 12px; font-size: 10px; letter-spacing: 1px; }
+.fight-offers-footer .fight-offers-reroll-error { font-size: 11px; color: var(--red-bright, #E8102E); }
 
 /* ── Offer card base ── */
 .offer-card {
