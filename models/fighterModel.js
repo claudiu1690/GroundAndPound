@@ -399,7 +399,6 @@ const fighterSchema = new mongoose.Schema({
             },
             generatedAt:   { type: Date, required: true },
             expiresAt:     { type: Date, required: true },   // generatedAt + OFFER_BOARD_TTL_HOURS
-            rerollUsed:    { type: Boolean, default: false },
             promotionTier: { type: String, required: true }, // informational; liveness uses fingerprint
             weightClass:   { type: String, required: true }, // informational
             fingerprint:   { type: String, required: true },

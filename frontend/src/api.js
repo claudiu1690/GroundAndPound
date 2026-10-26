@@ -88,9 +88,6 @@ export const api = {
     request(`/fights/offers/${fighterId}`, { method: "POST", body: JSON.stringify(body) }),
   acceptOffer: (fighterId, fightId) =>
     request(`/fights/accept/${fighterId}/${fightId}`, { method: "POST" }),
-  // 200 { offers, board, cashAfter }
-  rerollOffers: (fighterId) =>
-    request(`/fights/offers/${fighterId}/reroll`, { method: "POST" }),
   setStrategy: (fighterId, fightId, strategy) =>
     request("/fights/strategy", {
       method: "PUT",

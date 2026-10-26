@@ -16,11 +16,6 @@ const FIGHT_ERROR_CODES = {
     FIGHT_ALREADY_BOOKED: "FIGHT_ALREADY_BOOKED",
     TITLE_SHOT_LOCKED: "TITLE_SHOT_LOCKED",
     FIGHT_BLOCKED_INJURY: "FIGHT_BLOCKED_INJURY",
-    OFFER_BOARD_FROZEN: "OFFER_BOARD_FROZEN",
-    REROLL_USED: "REROLL_USED",
-    OFFER_BOARD_STALE: "OFFER_BOARD_STALE",
-    NOT_ENOUGH_CASH: "NOT_ENOUGH_CASH",
-    OFFER_POOL_EMPTY: "OFFER_POOL_EMPTY",
     // Resolve claim lost (services/fightService.js resolveFightAndApply, 409).
     FIGHT_ALREADY_RESOLVED: "FIGHT_ALREADY_RESOLVED",
 };
@@ -106,17 +101,6 @@ async function acceptOffer(req, res) {
         if (err.message === "Not enough energy") {
             return res.status(400).json({ message: err.message, code: FIGHT_ERROR_CODES.NOT_ENOUGH_ENERGY });
         }
-        sendInternalError(res, err);
-    }
-}
-
-async function rerollOffers(req, res) {
-    try {
-        const { offers, meta, cashAfter } = await offerBoardService.rerollBoard(req.params.fighterId, req.user.id);
-        res.json({ offers, board: meta, cashAfter });
-    } catch (err) {
-        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
-        if (sendCodedError(res, err)) return;
         sendInternalError(res, err);
     }
 }
@@ -261,7 +245,6 @@ module.exports = {
     getOffers,
     createOffer,
     acceptOffer,
-    rerollOffers,
     setWeightCut,
     setStrategy,
     resolveFight,

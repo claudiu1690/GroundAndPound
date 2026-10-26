@@ -36,13 +36,12 @@
  *      best: {offerType,opponentName,opponentOvr,isTitleShot,purse}|null,   // among acceptable only
  *      list: Array<OfferCard>,            // every board slot incl. a locked TitleShot and
  *                                         // frozen slots; max 4; board order; [] when none
- *      ...OfferBoardMeta                  // generatedAt, expiresAt, rerollUsed, rerollCost,
- *                                         // canReroll, rerollBlockedBy, frozen,
+ *      ...OfferBoardMeta                  // generatedAt, expiresAt, frozen,
  *                                         // blockedReason, blockedCode
  *    }
  *
  *    When the board read fails the block degrades through
- *    summariseOffers([], tier, offerBoardService.emptyBoardMeta(tier)), never a literal.
+ *    summariseOffers([], tier, offerBoardService.emptyBoardMeta()), never a literal.
  *
  *    @typedef {Object} OfferCard
  *    @property {?string} opponentId       the ACCEPT HANDLE (see the rule below)
@@ -69,7 +68,7 @@
  *                                         only on a locked TitleShot, else null
  *
  *    ACCEPT-HANDLE RULE: the board is persisted, so opponentId is stable for the lifetime
- *    of the board (until offers.expiresAt, a reroll, or a fight resolves). The client may
+ *    of the board (until offers.expiresAt or a fight resolves). The client may
  *    POST it to /fights/offers/:fighterId ({opponentId}) and then accept the returned
  *    Fight. The server re-validates against the live board and answers 409
  *    OFFER_NOT_ON_BOARD when the slot has gone; the client then reloads.
@@ -531,7 +530,7 @@ async function buildOffers(id, tier) {
         console.error("[dashboard] offers module failed:", err.message);
         // Degrade through summariseOffers, never with a hand-written literal: that is how
         // the shape drifts (this path once shipped without `list` until a test caught it).
-        const meta = offerBoardService.emptyBoardMeta(tier);
+        const meta = offerBoardService.emptyBoardMeta();
         return { offers: [], meta, summary: summariseOffers([], tier, meta) };
     }
 }

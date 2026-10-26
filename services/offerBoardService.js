@@ -1,21 +1,16 @@
 /**
- * Persisted fight offer board: lifecycle, liveness, reroll and slot resolution.
+ * Persisted fight offer board: lifecycle, liveness and slot resolution.
  *
  * fightService keeps the matchmaking rules (pickOfferSlots / hydrateOffers); this file
  * owns everything about the stored board on the fighter document (fighter.offerBoard).
  *
  * THIS JSDoc BLOCK IS THE SINGLE SOURCE OF TRUTH FOR THE SHARED BOARD TYPES.
- * GET /fights/offers/:fighterId, POST /fights/offers/:fighterId/reroll and the dashboard
- * `offers` block all reference these; do not re-describe them elsewhere.
+ * GET /fights/offers/:fighterId and the dashboard `offers` block both reference these;
+ * do not re-describe them elsewhere.
  *
  * @typedef {Object} OfferBoardMeta
  * @property {?string} generatedAt   ISO, null when there is no board
  * @property {?string} expiresAt     ISO, null when there is no board
- * @property {boolean} rerollUsed
- * @property {?number} rerollCost    round(PROMOTION_TIERS[tier].signingFee * 0.2), null for an unknown tier
- * @property {boolean} canReroll     === (rerollBlockedBy === null)
- * @property {?("frozen"|"blocked"|"no_board"|"used"|"cash")} rerollBlockedBy
- *           first match in this order; the cash check uses fighter.iron at read time
  * @property {boolean} frozen        a fight is booked (fighter.acceptedFightId)
  * @property {?string} blockedReason player-facing text, set with blockedCode
  * @property {?("INJURY"|"POOL_EMPTY")} blockedCode
@@ -49,7 +44,7 @@
  * Rules:
  *   - Slots store only {offerType, opponentId}; everything else is hydrated live.
  *   - The active callout is a read-time overlay, never stored and never in the
- *     fingerprint (otherwise create/cancel callout would be a free reroll).
+ *     fingerprint (otherwise create/cancel callout would turn the board over).
  *   - Every write to fighter.offerBoard is a conditional Fighter.updateOne with
  *     runValidators. Never fighter.save() with a modified offerBoard.
  *   - Expiry is checked lazily on read. No Redis, no BullMQ.
@@ -57,26 +52,18 @@
 
 const Fighter = require("../models/fighterModel");
 const fightService = require("./fightService");
-const analyticsService = require("./analyticsService");
-const { OFFER_BOARD_TTL_HOURS, OFFER_REROLL_COST_FRAC } = require("../consts/offerBoardConfig");
-const { PROMOTION_TIERS } = require("../consts/gameConstants");
+const { OFFER_BOARD_TTL_HOURS } = require("../consts/offerBoardConfig");
 const { isFightBlocked } = require("../utils/injuryUtils");
 
 const TTL_MS = OFFER_BOARD_TTL_HOURS * 60 * 60 * 1000;
-const DIFFICULTY_TYPES = ["Easy", "Even", "Hard"];
 const POOL_EMPTY_MESSAGE = "No opponents are available in your division right now. Check back soon.";
 
-/** code -> [status, message]. FIGHT_BLOCKED_INJURY and NOT_ENOUGH_CASH take a runtime message. */
+/** code -> [status, message]. FIGHT_BLOCKED_INJURY takes a runtime message. */
 const BOARD_ERRORS = {
     OFFER_NOT_ON_BOARD:   [409, "That bout is no longer on your board."],
     FIGHT_ALREADY_BOOKED: [409, "You already have a fight booked."],
     TITLE_SHOT_LOCKED:    [400, "Your title shot is still locked."],
     FIGHT_BLOCKED_INJURY: [400, null],
-    OFFER_BOARD_FROZEN:   [409, "You can't reroll while a fight is booked."],
-    REROLL_USED:          [409, "You've already rerolled this set."],
-    OFFER_BOARD_STALE:    [409, "Your offers changed. Load the new set first."],
-    NOT_ENOUGH_CASH:      [400, null],
-    OFFER_POOL_EMPTY:     [409, "No other opponents are available right now."],
 };
 
 /** Same shape as campError in homeCampCoachService: Error + code + status. */
@@ -92,11 +79,6 @@ function injuryError(injury) {
     return boardError("FIGHT_BLOCKED_INJURY", fightService.fightBlockedMessage(injury), 400);
 }
 
-function cashError(cost) {
-    return boardError("NOT_ENOUGH_CASH", `Not enough cash (a reroll costs $${cost})`, 400);
-}
-
-const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 const toIso = (d) => {
     if (!d) return null;
     const t = new Date(d).getTime();
@@ -128,22 +110,11 @@ function isBoardLive(board, fighter, now = new Date()) {
         && board.fingerprint === boardFingerprint(fighter);
 }
 
-/** @returns {number|null} */
-function rerollCostFor(tier) {
-    if (typeof tier !== "string" || !hasOwn(PROMOTION_TIERS, tier)) return null;
-    const fee = PROMOTION_TIERS[tier].signingFee;
-    return Number.isFinite(fee) ? Math.round(fee * OFFER_REROLL_COST_FRAC) : null;
-}
-
 /** @returns {OfferBoardMeta} */
-function emptyBoardMeta(tier) {
+function emptyBoardMeta() {
     return {
         generatedAt: null,
         expiresAt: null,
-        rerollUsed: false,
-        rerollCost: rerollCostFor(tier),
-        canReroll: false,
-        rerollBlockedBy: "no_board",
         frozen: false,
         blockedReason: null,
         blockedCode: null,
@@ -163,30 +134,16 @@ function hasBoard(board) {
 
 /**
  * @param {Object} p
- * @param {Object} p.fighter
  * @param {?Object} p.board     the board the offers came from (null when none)
- * @param {boolean} p.live      the board is persisted and live (reroll possible)
  * @param {boolean} [p.frozen]
  * @param {?string} [p.blockedCode]
  * @param {?string} [p.blockedReason]
  * @returns {OfferBoardMeta}
  */
-function buildMeta({ fighter, board, live, frozen = false, blockedCode = null, blockedReason = null }) {
-    const cost = rerollCostFor(fighter.promotionTier);
-    const rerollUsed = !!(board && board.rerollUsed);
-    let by = null;
-    if (frozen) by = "frozen";
-    else if (blockedCode) by = "blocked";
-    else if (!live || !hasBoard(board) || cost == null) by = "no_board";
-    else if (rerollUsed) by = "used";
-    else if ((Number(fighter.iron) || 0) < cost) by = "cash";
+function buildMeta({ board, frozen = false, blockedCode = null, blockedReason = null }) {
     return {
         generatedAt: toIso(board && board.generatedAt),
         expiresAt: toIso(board && board.expiresAt),
-        rerollUsed,
-        rerollCost: cost,
-        canReroll: by === null,
-        rerollBlockedBy: by,
         frozen: !!frozen,
         blockedReason: blockedReason ?? null,
         blockedCode: blockedCode ?? null,
@@ -200,12 +157,11 @@ function markAcceptable(offers, frozen) {
     return offers;
 }
 
-function newBoardDoc(fighter, slots, now, rerollUsed = false) {
+function newBoardDoc(fighter, slots, now) {
     return {
         slots,
         generatedAt: now,
         expiresAt: new Date(now.getTime() + TTL_MS),
-        rerollUsed,
         promotionTier: fighter.promotionTier,
         weightClass: fighter.weightClass,
         // AFTER pickOfferSlots: generation can clear a stale nemesis or pendingPromotion.
@@ -242,7 +198,7 @@ async function getBoard(fighterId) {
         return {
             offers: markAcceptable(offers, true),
             meta: buildMeta({
-                fighter, board, live: false, frozen: true,
+                board, frozen: true,
                 blockedCode: injury ? "INJURY" : null,
                 blockedReason: injuryReason,
             }),
@@ -265,7 +221,7 @@ async function getBoard(fighterId) {
         }
         return {
             offers: [],
-            meta: buildMeta({ fighter, board: null, live: false, blockedCode: "INJURY", blockedReason: injuryReason }),
+            meta: buildMeta({ board: null, blockedCode: "INJURY", blockedReason: injuryReason }),
         };
     }
 
@@ -273,7 +229,7 @@ async function getBoard(fighterId) {
     if (isBoardLive(board, fighter, now)) {
         const { offers, missing } = await fightService.hydrateOffers(fighter, slotsOf(board));
         if (!missing) {
-            return { offers: markAcceptable(offers, false), meta: buildMeta({ fighter, board, live: true }) };
+            return { offers: markAcceptable(offers, false), meta: buildMeta({ board }) };
         }
     }
 
@@ -285,7 +241,7 @@ async function generateAndStore(fighter, seenGeneratedAt, now) {
     if (!slots.length) {
         return {
             offers: [],
-            meta: buildMeta({ fighter, board: null, live: false, blockedCode: "POOL_EMPTY", blockedReason: POOL_EMPTY_MESSAGE }),
+            meta: buildMeta({ board: null, blockedCode: "POOL_EMPTY", blockedReason: POOL_EMPTY_MESSAGE }),
         };
     }
 
@@ -307,92 +263,23 @@ async function generateAndStore(fighter, seenGeneratedAt, now) {
                 if (!missing) {
                     return {
                         offers: markAcceptable(offers, frozen),
-                        meta: buildMeta({ fighter: fresh, board: freshBoard, live: !frozen, frozen }),
+                        meta: buildMeta({ board: freshBoard, frozen }),
                     };
                 }
             }
-            // Fall back to the local board, unpersisted (no reroll against it).
+            // Fall back to the local board, unpersisted.
             const { offers } = await fightService.hydrateOffers(fresh, slots);
             return {
                 offers: markAcceptable(offers, frozen),
-                meta: buildMeta({ fighter: fresh, board, live: false, frozen }),
+                meta: buildMeta({ board, frozen }),
             };
         }
         const { offers } = await fightService.hydrateOffers(fighter, slots);
-        return { offers: markAcceptable(offers, false), meta: buildMeta({ fighter, board, live: false }) };
+        return { offers: markAcceptable(offers, false), meta: buildMeta({ board }) };
     }
 
     const { offers } = await fightService.hydrateOffers(fighter, slots);
-    return { offers: markAcceptable(offers, false), meta: buildMeta({ fighter, board, live: true }) };
-}
-
-// ── rerollBoard ──────────────────────────────────────────────────────────────
-
-/**
- * Pay to replace the current board once. Money moves only in the single conditional
- * write below, after generation has succeeded.
- * @param {string} fighterId
- * @param {string} userId analytics only
- * @returns {Promise<{offers: BoardOffer[], meta: OfferBoardMeta, cashAfter: number}>}
- */
-async function rerollBoard(fighterId, userId) {
-    const fighter = await loadFighter(fighterId);
-    const now = new Date();
-    const tier = fighter.promotionTier;
-    const cost = rerollCostFor(tier);
-    const prev = hasBoard(fighter.offerBoard) ? fighter.offerBoard : null;
-
-    if (fighter.acceptedFightId) throw boardError("OFFER_BOARD_FROZEN");
-    const injury = isFightBlocked(fighter);
-    if (injury) throw injuryError(injury);
-    if (cost == null || !isBoardLive(prev, fighter, now)) throw boardError("OFFER_BOARD_STALE");
-    if (prev.rerollUsed) throw boardError("REROLL_USED");
-    if ((Number(fighter.iron) || 0) < cost) throw cashError(cost);
-
-    // Soft-avoid the previous difficulty picks so the player does not pay for the same three.
-    const nemesisId = fighter.nemesis?.opponentId ? String(fighter.nemesis.opponentId) : null;
-    const avoidOpponentIds = slotsOf(prev)
-        .filter((s) => DIFFICULTY_TYPES.includes(s.offerType) && String(s.opponentId) !== nemesisId)
-        .map((s) => s.opponentId);
-
-    const slots = await fightService.pickOfferSlots(fighter, { avoidOpponentIds });
-    if (!slots.length) throw boardError("OFFER_POOL_EMPTY");
-
-    const board = newBoardDoc(fighter, slots, now, true);
-    const res = await Fighter.updateOne(
-        {
-            _id: fighter._id,
-            acceptedFightId: null,
-            iron: { $gte: cost },
-            "offerBoard.generatedAt": prev.generatedAt,
-            "offerBoard.rerollUsed": false,
-        },
-        { $inc: { iron: -cost }, $set: { offerBoard: board } },
-        { runValidators: true }
-    );
-
-    if (!res || res.modifiedCount === 0) {
-        const fresh = await Fighter.findById(fighter._id).lean();
-        if (!fresh) throw new Error("Fighter not found");
-        if (fresh.offerBoard && fresh.offerBoard.rerollUsed) throw boardError("REROLL_USED");
-        if ((Number(fresh.iron) || 0) < cost) throw cashError(cost);
-        if (fresh.acceptedFightId) throw boardError("OFFER_BOARD_FROZEN");
-        throw boardError("OFFER_BOARD_STALE");
-    }
-
-    // Fire-and-forget: track() never rejects, but guard anyway so a bug there cannot surface.
-    Promise.resolve()
-        .then(() => analyticsService.track(userId, "offers_rerolled", { tier, cost }, { fighterId: fighter._id }))
-        .catch((err) => console.error("[offerBoard] reroll analytics failed:", err && err.message));
-
-    const cashAfter = (Number(fighter.iron) || 0) - cost;
-    const { offers } = await fightService.hydrateOffers(fighter, slots);
-    const metaFighter = { promotionTier: tier, iron: cashAfter };
-    return {
-        offers: markAcceptable(offers, false),
-        meta: buildMeta({ fighter: metaFighter, board, live: true }),
-        cashAfter,
-    };
+    return { offers: markAcceptable(offers, false), meta: buildMeta({ board }) };
 }
 
 // ── resolveBoardOffer ────────────────────────────────────────────────────────
@@ -426,11 +313,9 @@ async function resolveBoardOffer(fighterDoc, opponentId) {
 
 module.exports = {
     getBoard,
-    rerollBoard,
     resolveBoardOffer,
     boardFingerprint,
     isBoardLive,
-    rerollCostFor,
     emptyBoardMeta,
     boardError,
 };

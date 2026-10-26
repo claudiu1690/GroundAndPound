@@ -74,33 +74,6 @@ router.post("/offers/:fighterId", ownFighterParam("fighterId"), fightController.
 
 /**
  * @swagger
- * /fights/offers/{fighterId}/reroll:
- *   post:
- *     summary: Replace the live offer board once, for 20% of the tier signing fee
- *     tags: [Fights]
- *     parameters:
- *       - in: path
- *         name: fighterId
- *         required: true
- *         schema: { type: string, format: objectId }
- *     responses:
- *       200:
- *         description: "{ offers: BoardOffer[], board: OfferBoardMeta, cashAfter: number }"
- *       400:
- *         description: NOT_ENOUGH_CASH / FIGHT_BLOCKED_INJURY
- *       403:
- *         description: Not your fighter
- *       404:
- *         description: Fighter not found
- *       409:
- *         description: OFFER_BOARD_FROZEN / REROLL_USED / OFFER_BOARD_STALE / OFFER_POOL_EMPTY
- *       500:
- *         description: Internal server error
- */
-router.post("/offers/:fighterId/reroll", ownFighterParam("fighterId"), fightController.rerollOffers);
-
-/**
- * @swagger
  * /fights/accept/{fighterId}/{fightId}:
  *   post:
  *     summary: Accept a fight offer (re-validated against the live board; deducts energy; links fight to fighter)

@@ -50,6 +50,9 @@
 .ap-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),#f2c94c);transition:width .55s cubic-bezier(.2,.8,.2,1) .3s}
 .ap-bar.is-red i{background:linear-gradient(90deg,var(--red),var(--red-hi))}
 .ap-bar.is-green i{background:linear-gradient(90deg,var(--green),#4ade80)}
+/* Flat sidebar colours (App.css .sidebar .resource-bar-energy / -health / .stat-bar), so Home and the sidebar match. */
+.ap-bar.is-energy i{background:#3B82F6}
+.ap-bar.is-accent i{background:#C8102E}
 .home.is-in .ap-bar i{width:var(--w)}
 .ap-bar-btn{width:100%;cursor:pointer;padding:0}
 
@@ -141,9 +144,6 @@
 .ap-book-head h2 > span:first-of-type{font:600 12px 'Barlow',sans-serif;letter-spacing:0;text-transform:none;color:var(--t3)}
 .ap-book-rr{margin-left:auto;font:700 11px var(--disp);letter-spacing:2px;color:var(--t3);display:flex;align-items:center;gap:8px}
 .ap-book-rr b{color:var(--gold)}
-.ap-book-reroll{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-.ap-book-reroll-reason{font-size:12px;color:var(--t3)}
-.ap-book-reroll-error{font-size:12px;color:#f87171}
 .ap-book-note{margin:0 0 10px;font-size:13px;color:var(--gold)}
 .ap-book-list{display:flex;flex-direction:column;gap:6px}
 .ap-brow{display:grid;grid-template-columns:44px 1fr auto auto auto;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 12px}

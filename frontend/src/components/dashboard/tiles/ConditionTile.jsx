@@ -39,7 +39,8 @@ export function ConditionTile({ fighter, injuries, camp, homeCamp, loading, onNa
           {vitals.energy.eta ? ` · ${t("home.condition.fullIn", { eta: vitals.energy.eta })}` : ""}
         </b>
       </div>
-      <span className={`ap-bar${vitals.energy.low ? " is-red" : " is-green"}`} style={{ "--w": `${vitals.energy.pct}%` }}><i /></span>
+      {/* Blue and red, the same colours as the sidebar's energy and health bars. */}
+      <span className="ap-bar is-energy" style={{ "--w": `${vitals.energy.pct}%` }}><i /></span>
 
       <div className="ap-kv">
         <span>{t("home.condition.health")}</span>
@@ -47,7 +48,7 @@ export function ConditionTile({ fighter, injuries, camp, homeCamp, loading, onNa
       </div>
       <button
         type="button"
-        className={`ap-bar ap-bar-btn${vitals.health.state === "ok" ? " is-green" : " is-red"}`}
+        className="ap-bar ap-bar-btn is-accent"
         style={{ "--w": `${vitals.health.pct}%` }}
         onClick={() => onNavigate?.("hospital")}
         aria-label={t("home.condition.injury")}

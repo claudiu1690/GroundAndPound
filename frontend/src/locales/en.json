@@ -482,13 +482,7 @@
       "lockedCooldown": "Win {n} more to earn a rematch",
       "lockedRank": "Reach the top 5 to unlock",
       "lockedWins": "Win {n} more in the top 5",
-      "lockedDefault": "Title shot locked",
-      "reroll": "Reroll set · {cost}",
-      "rerollConfirm": "Spend {cost} to reroll?",
-      "rerollUsed": "Rerolled already",
-      "rerollCash": "Need {cost} to reroll",
-      "rerolling": "Rerolling...",
-      "rerollFailed": "Reroll failed. Try again."
+      "lockedDefault": "Title shot locked"
     },
     "statsTile": {
       "title": "Fighter stats",
@@ -1279,14 +1273,7 @@
       "loadFailed": "Couldn't load your bookings.",
       "retry": "Retry",
       "expiresIn": "New set in {time}",
-      "expiresReady": "New set ready",
-      "reroll": "Reroll set · {cost}",
-      "rerollHint": "Swap these three bouts for new ones. Once per set.",
-      "rerollConfirm": "Spend {cost} to reroll?",
-      "rerollUsed": "Rerolled already",
-      "rerollCash": "Need {cost} to reroll",
-      "rerolling": "Rerolling...",
-      "rerollFailed": "Reroll failed. Try again."
+      "expiresReady": "New set ready"
     },
     "offerCard": {
       "purse": "Purse ${n} · ",

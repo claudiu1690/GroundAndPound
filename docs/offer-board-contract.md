@@ -5,6 +5,8 @@ Source of truth for the offer-board backend and the Home tab rebuild (variant C 
 controllers/, models/, consts/, tests/). Frontend is the Vite React SPA in `frontend/src`.
 The codebase is JavaScript. No em dashes in any code, comment or string.
 
+> **Removed 2026-10-26: the reroll was dropped; the board turns over after every fight and every 24 hours.** Every reroll item below (POST `/fights/offers/:fighterId/reroll`, `rerollBoard`, `rerollCostFor`, `OFFER_REROLL_COST_FRAC`, `offerBoard.rerollUsed`, the reroll-only error codes, the reroll keys of `OfferBoardMeta`, the `avoidOpponentIds` option of `pickOfferSlots` and the `offers_rerolled` analytics event) is kept as history and marked in place.
+
 ## Assumptions and decisions
 
 1. **Invalidation uses a fingerprint, not an invalidate helper.** The fields that drive offers are only written in three places: `fightService.resolveFightAndApply`, `calloutService.createCallout/cancelCallout`, and generation itself (stale-nemesis and `pendingPromotion` cleanup). `fighter.lastFightDate` is stamped in exactly one place (`fightService.js` ~line 1077, PvE resolve only), so it is the "fight resolved" signal. With the fingerprint, no mutating service needs a code change.
@@ -12,7 +14,7 @@ The codebase is JavaScript. No em dashes in any code, comment or string.
 3. **Title-shot lock state is derived live at read time.** `titleShotCooldown` and `topFiveWinsInTier` are therefore not in the fingerprint. They only change inside resolve anyway, which bumps `lastFightDate`. The contender token (`pendingPromotion`, or the top tier for a GCS fighter) is in the fingerprint because it decides whether a TitleShot slot exists.
 4. **Blocking injury.** A read that finds a blocking injury (and no accepted fight) returns an empty list and clears any stored board with a compare-and-set. Once the injury clears, the next read generates a fresh board. Nothing is persisted while blocked.
 5. **Client `offerType` is accepted and ignored.** It is not validated against the board. This keeps old clients and the e2e helper working during deploy skew. The type always comes from the board.
-6. **Reroll avoids the previous picks.** It passes the old Easy/Even/Hard ids as a soft exclusion so the player does not pay 20% of a purse to get the same three back. Thin divisions can still backfill with them.
+6. *(Removed 2026-10-26: the reroll was dropped; the board turns over after every fight and every 24 hours.)* **Reroll avoids the previous picks.** It passes the old Easy/Even/Hard ids as a soft exclusion so the player does not pay 20% of a purse to get the same three back. Thin divisions can still backfill with them.
 7. **Stored slots hold only `{offerType, opponentId}`.** Everything else (context, nemesis meta, champion boost, display rank, beef/respect, title lock) is hydrated live. The slot key is `offerType`, not `type`, to avoid the Mongoose `type` key gotcha.
 8. **Home portrait: initials monogram, no BannerPreview.** The monogram sits on the fighter's banner background (`PIECES_BY_ID[fighter.banner.backgroundId].css`). Opponents use the mockup's CSS silhouette (`.ap-sil`).
 9. **Stats tile shows all 8 stats.** Bar width is the stat value (0 to 100). The XP line goes in the tooltip.
@@ -49,6 +51,7 @@ offerBoard: {
 },
 ```
 
+- Removed 2026-10-26: the reroll was dropped; the board turns over after every fight and every 24 hours. `rerollUsed` is no longer in the schema (legacy documents that still carry it are harmless) and `OFFER_REROLL_COST_FRAC` is gone from `consts/offerBoardConfig.js`.
 - Slot order: Easy, Even, Hard (ascending OVR, as generated), then TitleShot when present. The callout is never stored.
 - Indexes: none. Migration: none (legacy docs read `null`, first read generates).
 - New file `consts/offerBoardConfig.js`: `module.exports = { OFFER_BOARD_TTL_HOURS: 24, OFFER_REROLL_COST_FRAC: 0.2 };`
@@ -82,6 +85,8 @@ function isBoardLive(board, fighter, now = new Date()) // -> boolean
 
 ### Exports
 
+Removed 2026-10-26: the reroll was dropped; the board turns over after every fight and every 24 hours. `rerollBoard` and `rerollCostFor` no longer exist, `analyticsService` and `PROMOTION_TIERS` are no longer required, and `emptyBoardMeta` now takes no argument and returns `{generatedAt:null, expiresAt:null, frozen:false, blockedReason:null, blockedCode:null}`.
+
 | Function | Signature | Behaviour |
 |---|---|---|
 | `getBoard` | `(fighterId) => Promise<{ offers: BoardOffer[], meta: OfferBoardMeta }>` | Algorithm below. Throws `"Fighter not found"`. |
@@ -101,6 +106,8 @@ function isBoardLive(board, fighter, now = new Date()) // -> boolean
 6. `acceptable = !frozen && !(type === "TitleShot" && locked)` on each offer.
 
 ### `rerollBoard` algorithm
+
+Removed 2026-10-26: the reroll was dropped; the board turns over after every fight and every 24 hours.
 
 1. Load the fighter.
 2. Guards in order: `acceptedFightId` -> `OFFER_BOARD_FROZEN`; blocked -> `FIGHT_BLOCKED_INJURY`; board not live -> `OFFER_BOARD_STALE`; `rerollUsed` -> `REROLL_USED`; `iron < cost` -> `NOT_ENOUGH_CASH`.
@@ -123,6 +130,8 @@ Money is only moved by the single conditional write, after generation has succee
 
 ### Errors
 
+Removed 2026-10-26: the reroll was dropped; the board turns over after every fight and every 24 hours. `OFFER_BOARD_FROZEN`, `REROLL_USED`, `OFFER_BOARD_STALE`, `NOT_ENOUGH_CASH` and `OFFER_POOL_EMPTY` were reroll-only and are gone from the service and from `FIGHT_ERROR_CODES`.
+
 Built with `boardError(code, message, status)`, same shape as `campError` in `homeCampCoachService.js`.
 
 | code | status | message (exact) |
@@ -138,6 +147,8 @@ Built with `boardError(code, message, status)`, same shape as `campError` in `ho
 | `OFFER_POOL_EMPTY` | 409 | `No other opponents are available right now.` |
 
 ### Typedefs (single source of truth: JSDoc at the top of `offerBoardService.js`)
+
+Removed 2026-10-26: the reroll was dropped; the board turns over after every fight and every 24 hours. `OfferBoardMeta` lost `rerollUsed`, `rerollCost`, `canReroll` and `rerollBlockedBy`; it is now `{ generatedAt, expiresAt, frozen, blockedReason, blockedCode }`.
 
 - `OfferBoardMeta`:
   ```
@@ -181,10 +192,15 @@ Error body everywhere: `{ message: string, code?: string }`. 500 always `{ messa
 - 409 `OFFER_NOT_ON_BOARD` (slot left the board, or slot type differs from `fight.offerType`), `FIGHT_ALREADY_BOOKED`.
 
 ### POST `/fights/offers/:fighterId/reroll` (new)
+
+Removed 2026-10-26: the reroll was dropped; the board turns over after every fight and every 24 hours. The route is no longer registered.
+
 - 200 `{ offers, board, cashAfter }`
 - 400 `NOT_ENOUGH_CASH`, `FIGHT_BLOCKED_INJURY`. 404 `Fighter not found`. 409 `OFFER_BOARD_FROZEN`, `REROLL_USED`, `OFFER_BOARD_STALE`, `OFFER_POOL_EMPTY`.
 
 ### GET `/fighters/:id/dashboard`: changed blocks only (every existing field keeps its shape)
+
+Removed 2026-10-26: the reroll was dropped; the board turns over after every fight and every 24 hours. `offers` no longer carries `rerollUsed`, `rerollCost`, `canReroll` or `rerollBlockedBy`.
 
 ```
 offers: {
@@ -225,6 +241,8 @@ Degrade: if `getBoard` throws, the offers block is `summariseOffers([], tier, em
 
 ## 4. Backend files
 
+Removed 2026-10-26: the reroll was dropped; the board turns over after every fight and every 24 hours. The reroll rows below (`rerollOffers`, the reroll route, the reroll error codes) are history.
+
 | File | Change |
 |---|---|
 | `models/fighterModel.js` | Add `offerBoard` (section 1). |
@@ -240,6 +258,8 @@ Degrade: if `getBoard` throws, the offers block is `summariseOffers([], tier, em
 ---
 
 ## 5. Frontend
+
+Removed 2026-10-26: the reroll was dropped; the board turns over after every fight and every 24 hours. The reroll UI below (`rerollButtonState`, `useOfferReroll`, the reroll button and confirm, `api.rerollOffers`, the reroll i18n keys) has no backend any more.
 
 ### Files
 
@@ -384,6 +404,8 @@ Deploy: backend and frontend ship together (GET offers response changes from arr
 ---
 
 ## 7. Tests (node:test, stubbed statics, no DB, following `tests/services/dashboardService.homeTab.test.js`)
+
+Removed 2026-10-26: the reroll was dropped; the board turns over after every fight and every 24 hours. The reroll tests are gone; `tests/routes/fightRoutes.ownership.test.js` now asserts the reroll route is NOT registered.
 
 `tests/services/offerBoardService.test.js`: fingerprint changes on tier, weightClass, nemesis id, pendingPromotion, lastFightDate; NOT on activeCallout, titleShotCooldown, topFiveWinsInTier. isBoardLive false on null, expired, mismatch, empty slots. getBoard generates once and reuses (pick call count 1). Expired regenerates. Each fingerprint field change regenerates. Callout change does not regenerate but swaps the Hard slot. Frozen: no pick call, all acceptable:false, frozen:true; frozen with no board returns []. Blocked: offers [], blockedCode INJURY, no persist, stored board cleared via generatedAt compare-and-set. Pool empty: no persist, POOL_EMPTY. Lost compare-and-set returns the stored board. Missing opponent regenerates. resolveBoardOffer: off-board -> OFFER_NOT_ON_BOARD; expired -> OFFER_NOT_ON_BOARD and no pick call; locked title -> TITLE_SHOT_LOCKED; callout opponent allowed; frozen -> FIGHT_ALREADY_BOOKED; injured -> FIGHT_BLOCKED_INJURY. Reroll: cost table for 5 tiers; updateOne filter has iron $gte, rerollUsed:false, generatedAt, acceptedFightId:null; $inc is -cost, new board rerollUsed:true and reset expiresAt; second reroll REROLL_USED; NOT_ENOUGH_CASH makes no pick call; frozen/injured/stale each return their code; pool empty no charge; avoidOpponentIds equals previous difficulty picks minus nemesis.
 

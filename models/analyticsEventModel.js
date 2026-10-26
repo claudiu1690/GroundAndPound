@@ -32,7 +32,7 @@ const analyticsEventSchema = new mongoose.Schema({
             "guest_signup",
             "session",
             "fight_accepted",
-            "offers_rerolled",
+            "offers_rerolled", // no longer emitted (offer-board reroll removed 2026-10-26); kept for historic events
             "fight_resolved",
             "gym_purchase",
             "pvp_unlocked",

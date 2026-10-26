@@ -48,7 +48,6 @@ function makeFighter(over = {}) {
         ],
         generatedAt: new Date(Date.now() - HOUR),
         expiresAt: new Date(Date.now() + HOUR),
-        rerollUsed: false,
         promotionTier: TIER,
         weightClass: "Lightweight",
         fingerprint: boardFingerprint(f),

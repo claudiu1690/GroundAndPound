@@ -137,27 +137,6 @@ export function vitalsModel(fighter) {
 }
 
 /**
- * Reroll button visibility/state from the offers block's OfferBoardMeta
- * fields. `rerollBlockedBy` is the single source of truth for why the button
- * is hidden or disabled, see offerBoardService's OfferBoardMeta JSDoc.
- */
-export function rerollButtonState(offers) {
-  const cost = offers?.rerollCost ?? null;
-  const blockedBy = offers?.rerollBlockedBy ?? null;
-
-  if (blockedBy === "frozen" || blockedBy === "blocked" || blockedBy === "no_board") {
-    return { visible: false, disabled: true, reasonKey: null, cost };
-  }
-  if (blockedBy === "used") {
-    return { visible: true, disabled: true, reasonKey: "used", cost };
-  }
-  if (blockedBy === "cash") {
-    return { visible: true, disabled: true, reasonKey: "cash", cost };
-  }
-  return { visible: true, disabled: false, reasonKey: null, cost };
-}
-
-/**
  * Locked-TitleShot copy key, precedence: clear a rematch cooldown, then get
  * ranked top-5, then bank the qualifying wins, mirrors OfferCard's
  * LockedOverlay so Home and the Fight Hub never disagree about why a title

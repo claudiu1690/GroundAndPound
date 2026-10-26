@@ -97,7 +97,7 @@ The thin strip above it tracks your title shot. There are three conditions to me
 
 Below the hero are your Fighter stats, all eight bars, with a button to go train, and your Condition: energy and when it refills, health, any injury, the fight camp you are in and the state of your home camp.
 
-Bookings lists every bout on your board with an Accept on each, a greyed row for a title shot you have not unlocked yet, and a Call out row to name an opponent yourself. The header tells you when the next set arrives and lets you reroll the board for cash. Read the Fight Offers article for how the board works.
+Bookings lists every bout on your board with an Accept on each, a greyed row for a title shot you have not unlocked yet, and a Call out row to name an opponent yourself. The header tells you when the next set arrives. Read the Fight Offers article for how the board works.
 
 The bottom row is context: your division rankings, your last fight with the latest Gazette and Proving Ground notes, and your purse: cash, fame, sponsor and camp wages. Anything red wants an answer today. If you only have a minute, deal with the red things and take the fight.
 
@@ -226,7 +226,7 @@ You do not ask for offers any more. The matchmaker books you a board of three bo
 
 A board lasts 24 hours, and you will see "New set in 18h" counting down. It is also replaced the moment something real changes: you fight, you move up a tier, your nemesis changes or you become a contender. While a fight is signed the board is frozen and you cannot take a second bout. A blocking injury clears it until you heal.
 
-Do not like the set? Once per board you can ask the matchmaker for a new one for cash, 20% of your tier's signing fee (100 dollars at Amateur, 150 at Regional Pro, 440 at National, 1,200 at GCS Contender, 2,400 at GCS). It avoids the three fighters you just saw where the division allows, and it resets the 24 hour clock. There is no free reroll: if ducking a Hard opponent is worth a chunk of your purse, pay it, otherwise take the fight in front of you. Calling someone out is not a reroll either. It swaps your callout into the Hard slot and puts the original opponent back if you cancel.
+Do not like the set? Pick the bout that suits you best: every board has an Easy, an Even and a Hard option. The board is replaced after your next fight, so a set you dislike only lasts until you fight. There is no way to swap it early. Calling someone out puts that fighter into your Hard slot and puts the original opponent back if you cancel.
 
 Every bout carries its own purse, and it is printed on the card. Easy opponents are 3 to 5 Overall below you and pay 70% of your tier's signing fee. Even opponents are within 3 OVR and pay the full fee. Hard opponents are 2 to 5 OVR above you and pay 140%. A title shot pays 175%. Inside a slot, the tougher the opponent the better the purse, up to 5% more. The number you see is what a clean win pays before your fame, comeback and persona bonuses are added; a loss still pays 70% of it and a draw 50%.
 
@@ -656,7 +656,7 @@ Your career moves through five promotion tiers: Amateur, Regional Pro, National,
 
 Amateur is where everyone starts. Modest payouts, cheap fights at 10 energy each, OVR range of 0–30. It's the proving ground — the place where you find your style and start building the record that will define your reputation. It ends with your first belt: beat the Amateur champion to turn pro.
 
-Every tier from Amateur upward makes you beat the tier's champion to advance — the one exception is GCS Contender, which promotes automatically at OVR 62. You don't get promoted just by reaching the OVR threshold; you have to earn it in the most important fight of that chapter of your career. GCS is the final tier. There's no tier above it. Winning the GCS Championship is the peak of the mountain.
+Every tier from Amateur upward makes you beat the tier's champion to advance. The one exception is GCS Contender, which promotes automatically at OVR 62. You don't get promoted just by reaching the OVR threshold; you have to earn it in the most important fight of that chapter of your career. GCS is the final tier. There's no tier above it. Winning the GCS Championship is the peak of the mountain, and it is a belt you keep fighting for: every GCS fighter is a title contender, and every time you win the GCS title again you defend it.
 
 As you climb, the pace of the game changes. There's no daily fight limit — how often you fight is bounded only by your energy — but fights get more expensive: 10 energy each in Amateur, up to 20 in GCS. The game slows down and every fight carries more weight. The signing fees at higher tiers aren't just flavour — they're a signal that this tier costs more to compete in, and the rewards need to justify the investment.
 
@@ -676,6 +676,8 @@ Champion fights are harder than regular fights. The champion receives a +5% boos
 
 Win the title and you promote to the next tier, earn a notoriety boost on top of the fight reward, and receive a permanent belt badge — the distinct Amateur Champion badge for the Amateur belt, or the generic Champion badge for every pro title from Regional Pro up. A new NPC champion is seeded from the strongest remaining fighter in the old tier.
 
+GCS works differently because there is nowhere left to promote to. Every GCS fighter is a contender from day one, with no rating to reach: climb into the title zone and bank 3 wins there, and the GCS Title Fight card appears. Your first GCS title win earns the GCS Champion badge, 200 fame, 3 Energy Drinks and a title purse. After that, every GCS title win is a title defense worth 100 fame and the same purse. Each belt fight resets your title-zone wins, so you need 3 fresh ones before the next.
+
 Lose a title shot and you can't immediately re-challenge — you enter a 2-win cooldown. The Title Shot card stays locked until you win 2 more fights; the checklist shows your recovery progress (for example 1/2) so you always know how close you are to a rematch. Each win ticks the cooldown down by one. If the same champion beats you twice, they also become your Nemesis, and beating them clears both the Nemesis flag and reopens the title shot.
 
 > **Key takeaway:** Champions get +5% to all stats and show less tape. Treat every title fight like the hardest fight of your career — because it is.
@@ -690,7 +692,7 @@ You don't enter the rankings on day one. The first 3 fights at any tier are your
 
 Wins by KO or submission climb faster than decision wins. Upset wins (beating a higher-ranked opponent) climb the most — you can move multiple ranks at once. Decision losses drop you one rank; losses to lower-ranked fighters drop you two. The rank movement formula favours fighters who go after the toughest matchups.
 
-Top 5 of your division is the title shot zone. Hitting it is one of three requirements to challenge the champion — alongside reaching the OVR threshold and banking a minimum number of wins WHILE you're in that top 5 (2 at Amateur, 3 from Regional Pro up). The other ranks gate other features: top 15 unlocks callouts, top 1 means you're the champion of your tier (you're not, unless you've won the belt — the champion always sits above the ranked roster).
+The top 5 of your division is the title shot zone, and the champion holds the first of those five places, so you need to reach #4 or better. Hitting it is one of three requirements to challenge the champion, alongside reaching the OVR threshold and banking a minimum number of wins while you're there (2 at Amateur, 3 from Regional Pro up). The other ranks gate other features: top 15 unlocks callouts. The champion always sits above the ranked roster, even after you win the belt. In GCS, a trophy on your row shows you hold the GCS title.
 
 NPC ranks are fixed and never change. When you climb past them, they don't move down — you just visually slot in above them. This keeps the division stable and meaningful: the #5 NPC has been the #5 NPC since you started.
 

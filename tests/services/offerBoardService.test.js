@@ -13,14 +13,14 @@ const assert = require("node:assert/strict");
 const Fighter = require("../../models/fighterModel");
 const Opponent = require("../../models/opponentModel");
 const fightService = require("../../services/fightService");
-const analyticsService = require("../../services/analyticsService");
 const offerBoardService = require("../../services/offerBoardService");
-const { PROMOTION_TIERS } = require("../../consts/gameConstants");
 
 const {
-    boardFingerprint, isBoardLive, getBoard, rerollBoard, resolveBoardOffer,
-    rerollCostFor, emptyBoardMeta,
+    boardFingerprint, isBoardLive, getBoard, resolveBoardOffer, emptyBoardMeta,
 } = offerBoardService;
+
+/** OfferBoardMeta keys (JSDoc at the top of services/offerBoardService.js). */
+const META_KEYS = ["blockedCode", "blockedReason", "expiresAt", "frozen", "generatedAt"];
 
 const TIER = "Regional Pro";
 const HOUR = 60 * 60 * 1000;
@@ -79,7 +79,6 @@ function liveBoard(fighter, slots = SET_A, over = {}) {
         slots: slots.map((s) => ({ ...s })),
         generatedAt: new Date(now - HOUR),
         expiresAt: new Date(now + 23 * HOUR),
-        rerollUsed: false,
         promotionTier: fighter.promotionTier,
         weightClass: fighter.weightClass,
         fingerprint: boardFingerprint(fighter),
@@ -131,7 +130,6 @@ function makeDb(fighter, { picks = [SET_A], beforeUpdate = null } = {}) {
         fighter,
         pickCalls: [],
         updates: [],
-        tracked: [],
         roster: { ...ROSTER },
     };
     const clone = () => (db.fighter ? structuredClone(db.fighter) : null);
@@ -171,8 +169,7 @@ async function withDb(db, body) {
         withStub(Fighter, "updateOne", db.updateOne, () =>
             withStub(fightService, "pickOfferSlots", db.pick, () =>
                 withStub(Opponent, "find", db.oppFind, () =>
-                    withStub(Opponent, "findById", db.oppFindById, () =>
-                        withStub(analyticsService, "track", async (...args) => { db.tracked.push(args); }, body))))));
+                    withStub(Opponent, "findById", db.oppFindById, body)))));
 }
 
 async function rejectsWith(promise, code) {
@@ -227,25 +224,15 @@ test("isBoardLive: false on null, expired, fingerprint mismatch, empty slots; tr
     assert.equal(isBoardLive(board, { ...f, promotionTier: "National" }), false);
 });
 
-test("rerollCostFor: 20% of the signing fee for all 5 tiers; null for unknown", () => {
-    assert.equal(rerollCostFor("Amateur"), 100);
-    assert.equal(rerollCostFor("Regional Pro"), 150);
-    assert.equal(rerollCostFor("National"), 440);
-    assert.equal(rerollCostFor("GCS Contender"), 1200);
-    assert.equal(rerollCostFor("GCS"), 2400);
-    for (const t of Object.keys(PROMOTION_TIERS)) {
-        assert.equal(rerollCostFor(t), Math.round(PROMOTION_TIERS[t].signingFee * 0.2));
-    }
-    assert.equal(rerollCostFor("Nope"), null);
-    assert.equal(rerollCostFor("constructor"), null);
-    assert.equal(rerollCostFor(undefined), null);
+test("emptyBoardMeta has the documented shape (no reroll keys)", () => {
+    assert.deepEqual(emptyBoardMeta(), {
+        generatedAt: null, expiresAt: null, frozen: false, blockedReason: null, blockedCode: null,
+    });
 });
 
-test("emptyBoardMeta has the documented shape", () => {
-    assert.deepEqual(emptyBoardMeta("Amateur"), {
-        generatedAt: null, expiresAt: null, rerollUsed: false, rerollCost: 100, canReroll: false,
-        rerollBlockedBy: "no_board", frozen: false, blockedReason: null, blockedCode: null,
-    });
+test("the reroll is gone from the service exports", () => {
+    assert.equal(offerBoardService.rerollBoard, undefined);
+    assert.equal(offerBoardService.rerollCostFor, undefined);
 });
 
 // ── getBoard ────────────────────────────────────────────────────────────────
@@ -256,17 +243,16 @@ test("getBoard generates once, persists with a compare-and-set, and reuses (pick
         const first = await getBoard("f1");
         assert.deepEqual(first.offers.map((o) => [o.type, o.opponent._id]), [["Easy", "e1"], ["Even", "v1"], ["Hard", "h1"]]);
         assert.ok(first.offers.every((o) => o.acceptable === true));
-        assert.equal(first.meta.canReroll, true);
-        assert.equal(first.meta.rerollBlockedBy, null);
-        assert.equal(first.meta.rerollCost, 150);
+        assert.deepEqual(Object.keys(first.meta).sort(), META_KEYS);
         assert.equal(first.meta.frozen, false);
+        assert.equal(db.pickCalls[0].opts, undefined, "generation passes no options");
 
         const write = db.updates[0];
         assert.equal(write.filter.acceptedFightId, null);
         assert.equal(write.filter["offerBoard.generatedAt"], null);
         assert.deepEqual(write.opts, { runValidators: true });
         const stored = db.fighter.offerBoard;
-        assert.equal(stored.rerollUsed, false);
+        assert.ok(!("rerollUsed" in stored));
         assert.equal(stored.expiresAt.getTime() - stored.generatedAt.getTime(), 24 * HOUR);
         assert.equal(stored.fingerprint, boardFingerprint(db.fighter));
         assert.equal(first.meta.generatedAt, stored.generatedAt.toISOString());
@@ -344,8 +330,7 @@ test("getBoard: frozen (fight booked) never generates; stored slots come back ac
         assert.equal(res.offers.length, 3);
         assert.ok(res.offers.every((o) => o.acceptable === false));
         assert.equal(res.meta.frozen, true);
-        assert.equal(res.meta.rerollBlockedBy, "frozen");
-        assert.equal(res.meta.canReroll, false);
+        assert.deepEqual(Object.keys(res.meta).sort(), META_KEYS);
     });
 });
 
@@ -368,7 +353,7 @@ test("getBoard: blocking injury returns [], INJURY, does not persist, clears the
         assert.deepEqual(res.offers, []);
         assert.equal(res.meta.blockedCode, "INJURY");
         assert.equal(res.meta.blockedReason, fightService.fightBlockedMessage(INJURY));
-        assert.equal(res.meta.rerollBlockedBy, "blocked");
+        assert.equal(res.meta.frozen, false);
         assert.equal(db.pickCalls.length, 0);
 
         assert.equal(db.updates.length, 1);
@@ -414,7 +399,7 @@ test("getBoard: a lost compare-and-set returns the board the other writer stored
     await withDb(db, async () => {
         const res = await getBoard("f1");
         assert.deepEqual(res.offers.map((o) => o.opponent._id), ["e2", "v2", "h2"]);
-        assert.equal(res.meta.canReroll, true);
+        assert.equal(res.meta.generatedAt, db.fighter.offerBoard.generatedAt.toISOString());
         assert.deepEqual(db.fighter.offerBoard.slots.map((s) => s.opponentId), ["e2", "v2", "h2"], "the winner's board is untouched");
     });
 });
@@ -501,127 +486,6 @@ test("resolveBoardOffer: frozen is FIGHT_ALREADY_BOOKED, injured is FIGHT_BLOCKE
             return true;
         });
     });
-});
-
-// ── rerollBoard ─────────────────────────────────────────────────────────────
-
-test("rerollBoard: one conditional write charges the cost and swaps in a rerolled board", async () => {
-    const f = baseFighter();
-    const prev = liveBoard(f);
-    const db = makeDb(baseFighter({ offerBoard: prev }), { picks: [SET_B] });
-    await withDb(db, async () => {
-        const res = await rerollBoard("f1", "user-1");
-        assert.equal(db.updates.length, 1);
-        const { filter, update, opts } = db.updates[0];
-        assert.equal(filter._id, "f1");
-        assert.equal(filter.acceptedFightId, null);
-        assert.deepEqual(filter.iron, { $gte: 150 });
-        assert.equal(filter["offerBoard.generatedAt"].getTime(), prev.generatedAt.getTime());
-        assert.equal(filter["offerBoard.rerollUsed"], false);
-        assert.deepEqual(update.$inc, { iron: -150 });
-        assert.equal(update.$set.offerBoard.rerollUsed, true);
-        assert.ok(update.$set.offerBoard.generatedAt.getTime() > prev.generatedAt.getTime());
-        assert.equal(update.$set.offerBoard.expiresAt.getTime() - update.$set.offerBoard.generatedAt.getTime(), 24 * HOUR);
-        assert.deepEqual(opts, { runValidators: true });
-
-        assert.equal(db.fighter.iron, 850);
-        assert.equal(res.cashAfter, 850);
-        assert.deepEqual(res.offers.map((o) => o.opponent._id), ["e2", "v2", "h2"]);
-        assert.equal(res.meta.rerollUsed, true);
-        assert.equal(res.meta.rerollBlockedBy, "used");
-        assert.equal(res.meta.canReroll, false);
-        assert.equal(db.tracked.length, 1);
-        assert.equal(db.tracked[0][1], "offers_rerolled");
-        assert.deepEqual(db.tracked[0][2], { tier: TIER, cost: 150 });
-    });
-});
-
-test("rerollBoard: the second reroll on the same board is REROLL_USED", async () => {
-    const f = baseFighter();
-    const db = makeDb(baseFighter({ offerBoard: liveBoard(f) }), { picks: [SET_B, SET_A] });
-    await withDb(db, async () => {
-        await rerollBoard("f1", "u");
-        await rejectsWith(rerollBoard("f1", "u"), "REROLL_USED");
-        assert.equal(db.pickCalls.length, 1);
-        assert.equal(db.fighter.iron, 850, "charged once");
-    });
-});
-
-test("rerollBoard: NOT_ENOUGH_CASH makes no pick call and names the cost", async () => {
-    const f = baseFighter({ iron: 149 });
-    const db = makeDb({ ...f, offerBoard: liveBoard(f) });
-    await withDb(db, async () => {
-        await assert.rejects(rerollBoard("f1", "u"), (err) => {
-            assert.equal(err.code, "NOT_ENOUGH_CASH");
-            assert.equal(err.status, 400);
-            assert.equal(err.message, "Not enough cash (a reroll costs $150)");
-            return true;
-        });
-        assert.equal(db.pickCalls.length, 0);
-        assert.equal(db.updates.length, 0);
-    });
-});
-
-test("rerollBoard: frozen, injured and stale each return their code with no charge", async () => {
-    const f = baseFighter();
-    const cases = [
-        [{ acceptedFightId: "fight-1", offerBoard: liveBoard(f) }, "OFFER_BOARD_FROZEN"],
-        [{ injuries: [INJURY], offerBoard: liveBoard(f) }, "FIGHT_BLOCKED_INJURY"],
-        [{ offerBoard: liveBoard(f, SET_A, { expiresAt: new Date(Date.now() - 1000) }) }, "OFFER_BOARD_STALE"],
-        [{ offerBoard: liveBoard(f, SET_A, { fingerprint: "old" }) }, "OFFER_BOARD_STALE"],
-        [{ offerBoard: null }, "OFFER_BOARD_STALE"],
-    ];
-    for (const [over, code] of cases) {
-        const db = makeDb(baseFighter(over));
-        // eslint-disable-next-line no-await-in-loop
-        await withDb(db, async () => {
-            await rejectsWith(rerollBoard("f1", "u"), code);
-            assert.equal(db.pickCalls.length, 0, code);
-            assert.equal(db.updates.length, 0, code);
-            assert.equal(db.fighter.iron, 1000, code);
-        });
-    }
-});
-
-test("rerollBoard: empty pool is OFFER_POOL_EMPTY with no charge", async () => {
-    const f = baseFighter();
-    const db = makeDb(baseFighter({ offerBoard: liveBoard(f) }), { picks: [[]] });
-    await withDb(db, async () => {
-        await rejectsWith(rerollBoard("f1", "u"), "OFFER_POOL_EMPTY");
-        assert.equal(db.updates.length, 0);
-        assert.equal(db.fighter.iron, 1000);
-    });
-});
-
-test("rerollBoard: avoidOpponentIds is the previous difficulty picks minus the nemesis", async () => {
-    const f = baseFighter({
-        pendingPromotion: "National",
-        nemesis: { opponentId: "v1", opponentName: "Opp v1", lossCount: 2, setAt: null },
-    });
-    const slots = [...SET_A, { offerType: "TitleShot", opponentId: "champ" }];
-    const db = makeDb({ ...f, offerBoard: liveBoard(f, slots) }, { picks: [SET_B] });
-    await withDb(db, async () => {
-        await rerollBoard("f1", "u");
-        assert.deepEqual(db.pickCalls[0].opts.avoidOpponentIds.map(String), ["e1", "h1"]);
-    });
-});
-
-test("rerollBoard: a lost conditional write maps to the fresh state (REROLL_USED / cash / frozen / stale)", async () => {
-    const f = baseFighter();
-    const scenarios = [
-        [(d) => { d.fighter.offerBoard.rerollUsed = true; }, "REROLL_USED"],
-        [(d) => { d.fighter.iron = 10; }, "NOT_ENOUGH_CASH"],
-        [(d) => { d.fighter.acceptedFightId = "fight-9"; }, "OFFER_BOARD_FROZEN"],
-        [(d) => { d.fighter.offerBoard.generatedAt = new Date(); }, "OFFER_BOARD_STALE"],
-    ];
-    for (const [mutate, code] of scenarios) {
-        const db = makeDb(baseFighter({ offerBoard: liveBoard(f) }), { picks: [SET_B], beforeUpdate: (d) => mutate(d) });
-        // eslint-disable-next-line no-await-in-loop
-        await withDb(db, async () => {
-            await rejectsWith(rerollBoard("f1", "u"), code);
-            assert.equal(db.tracked.length, 0, code);
-        });
-    }
 });
 
 // ── GCS contender token (docs/gcs-title-contract.md B16) ────────────────────

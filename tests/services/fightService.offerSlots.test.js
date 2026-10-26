@@ -100,19 +100,32 @@ test("pickOfferSlots: backfilled slots are re-ordered so labels follow OVR", asy
     });
 });
 
-test("pickOfferSlots: avoidOpponentIds go into the window $nin but NOT the backfill", async () => {
+test("pickOfferSlots: windows and the backfill exclude only the running picks (no soft avoid list)", async () => {
     const f = fighter();
-    await withPick({ windows: [opp("e", 31), null, opp("h", 39)], fillers: [opp("fill", 35)] }, async (calls) => {
-        await pickOfferSlots(f, { avoidOpponentIds: ["old-e", "old-v"] });
-        assert.equal(calls.windows.length, 3);
-        for (const m of calls.windows) {
-            assert.ok(m._id.$nin.includes("old-e") && m._id.$nin.includes("old-v"), "window avoids old picks");
+    // Snapshot each $nin at call time: the service reuses one running exclude array.
+    const seen = { windows: [], backfill: [] };
+    const windows = [opp("e", 31), null, opp("h", 39)];
+    let i = 0;
+    const agg = async (pipeline) => {
+        const nin = [...pipeline[0].$match._id.$nin];
+        if (pipeline.some((st) => st.$sample)) {
+            seen.windows.push(nin);
+            const pick = windows[i];
+            i += 1;
+            return pick ? [pick] : [];
         }
-        assert.equal(calls.backfill.length, 1);
-        assert.ok(!calls.backfill[0]._id.$nin.includes("old-e"), "backfill ignores the soft avoid list");
-        assert.ok(!calls.backfill[0]._id.$nin.includes("old-v"));
-        assert.ok(calls.backfill[0]._id.$nin.includes("e"), "backfill keeps its running exclude list");
-    });
+        seen.backfill.push(nin);
+        return [opp("fill", 35)];
+    };
+    await withStub(Opponent, "aggregate", agg, () =>
+        withStub(Opponent, "findById", () => ({ lean: async () => null }), () =>
+            withStub(championService, "getChampion", async () => null, async () => {
+                // A stray second argument (the removed reroll option) changes nothing.
+                const slots = await pickOfferSlots(f, { avoidOpponentIds: ["old-e", "old-v"] });
+                assert.deepEqual(slots.map((s) => s.opponentId), ["e", "fill", "h"]);
+            })));
+    assert.deepEqual(seen.windows, [[], ["e"], ["e"]]);
+    assert.deepEqual(seen.backfill, [["e", "h"]]);
 });
 
 test("pickOfferSlots: the nemesis is forced into its OVR slot and excluded from the windows", async () => {

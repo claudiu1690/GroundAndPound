@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
 import { formatPurse, formatTimeLeft, oppStreak, bookingRowFlags, titleLockKey } from "./homeModel";
 
@@ -84,62 +83,12 @@ function BookingRow({ item, heroBout, acceptingId, onAccept }) {
   );
 }
 
-function RerollControl({ reroll }) {
-  const { state, rerolling, error, onReroll } = reroll;
-  const [confirming, setConfirming] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!confirming) return undefined;
-    const onDocClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setConfirming(false);
-    };
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, [confirming]);
-
-  if (!state.visible) return null;
-
-  const costLabel = state.cost != null ? formatPurse(state.cost) : "";
-  const label = rerolling
-    ? t("home.book.rerolling")
-    : confirming
-      ? t("home.book.rerollConfirm", { cost: costLabel })
-      : t("home.book.reroll", { cost: costLabel });
-
-  const reasonText = state.reasonKey === "used" ? t("home.book.rerollUsed")
-    : state.reasonKey === "cash" ? t("home.book.rerollCash", { cost: costLabel })
-    : null;
-
-  return (
-    <div className="ap-book-reroll" ref={ref}>
-      <button
-        type="button"
-        className="ap-btn is-ghost is-sm"
-        disabled={state.disabled || rerolling}
-        title={reasonText ?? undefined}
-        onClick={() => {
-          if (state.disabled) return;
-          if (!confirming) { setConfirming(true); return; }
-          setConfirming(false);
-          onReroll?.();
-        }}
-      >
-        {label}
-      </button>
-      {reasonText ? <span className="ap-book-reroll-reason">{reasonText}</span> : null}
-      {error ? <span className="ap-book-reroll-error">{error}</span> : null}
-    </div>
-  );
-}
-
 /**
  * Bookings panel, the c-book section. `offers` is the dashboard payload's
- * offers block (OfferBoardMeta spread + `list`/`count`/`best`), `reroll` is
- * {state, rerolling, error, onReroll} built by the caller from
- * rerollButtonState(offers) + useOfferReroll (offer-board-contract.md §5).
+ * offers block (OfferBoardMeta spread + `list`/`count`/`best`)
+ * (offer-board-contract.md §5).
  */
-export function BookingsList({ offers, heroBout, loading, acceptingId, onAccept, reroll, activeCallout, onCallout, onReload, sectionRef }) {
+export function BookingsList({ offers, heroBout, loading, acceptingId, onAccept, activeCallout, onCallout, onReload, sectionRef }) {
   if (loading) {
     return (
       <div className="ap-book" ref={sectionRef}>
@@ -157,15 +106,14 @@ export function BookingsList({ offers, heroBout, loading, acceptingId, onAccept,
   // board as-is, it can still carry blockedCode/blockedReason from before the
   // fight was booked). A frozen board is hydrated with every offer's
   // acceptable:false rather than cleared, so rows still render (already
-  // disabled below); only the reroll control and the callout CTA hide, since
-  // neither makes sense while a fight is locked in.
+  // disabled below); only the callout CTA hides, since
+  // it makes no sense while a fight is locked in.
   const frozen = !!offers?.frozen;
   const list = Array.isArray(offers?.list) ? offers.list : [];
 
   return (
     <div className="ap-book" ref={sectionRef}>
       <BookHeader offers={offers} onReload={onReload} />
-      {!frozen && reroll ? <RerollControl reroll={reroll} /> : null}
       {frozen ? (
         <p className="ap-book-note">{t("home.book.frozenNote")}</p>
       ) : offers?.blockedReason ? (

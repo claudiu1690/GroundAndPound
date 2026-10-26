@@ -1,6 +1,6 @@
 /**
  * Contract conformance for the offer-board endpoints in controllers/fightController.js:
- * status + body for every coded error, the GET / reroll response shapes, input validation.
+ * status + body for every coded error, the GET response shape, input validation.
  *
  * No Express, no DB: the service functions are stubbed and a minimal res double records
  * status and body. Every stub is restored.
@@ -46,10 +46,6 @@ const CODE_TABLE = {
     OFFER_NOT_ON_BOARD: [409, "That bout is no longer on your board."],
     FIGHT_ALREADY_BOOKED: [409, "You already have a fight booked."],
     TITLE_SHOT_LOCKED: [400, "Your title shot is still locked."],
-    OFFER_BOARD_FROZEN: [409, "You can't reroll while a fight is booked."],
-    REROLL_USED: [409, "You've already rerolled this set."],
-    OFFER_BOARD_STALE: [409, "Your offers changed. Load the new set first."],
-    OFFER_POOL_EMPTY: [409, "No other opponents are available right now."],
 };
 
 const VALID_OPP = "507f1f77bcf86cd799439012";
@@ -58,7 +54,6 @@ test("every board error code maps to its status and {message, code} on every off
     const errors = [
         ...Object.keys(CODE_TABLE).map((code) => offerBoardService.boardError(code)),
         offerBoardService.boardError("FIGHT_BLOCKED_INJURY", "Still recovering from a Concussion.", 400),
-        offerBoardService.boardError("NOT_ENOUGH_CASH", "Not enough cash (a reroll costs $150)", 400),
     ];
     for (const err of errors) {
         const expectedStatus = CODE_TABLE[err.code] ? CODE_TABLE[err.code][0] : 400;
@@ -67,7 +62,6 @@ test("every board error code maps to its status and {message, code} on every off
 
         const calls = [
             ["getOffers", offerBoardService, "getBoard", req()],
-            ["rerollOffers", offerBoardService, "rerollBoard", req()],
             ["createOffer", fightService, "createOffer", req({ body: { opponentId: VALID_OPP } })],
             ["acceptOffer", fightService, "acceptOffer", req()],
         ];
@@ -82,7 +76,7 @@ test("every board error code maps to its status and {message, code} on every off
 });
 
 test("GET offers: 200 {offers, board}", async () => {
-    const meta = offerBoardService.emptyBoardMeta("Amateur");
+    const meta = offerBoardService.emptyBoardMeta();
     const offers = [{ type: "Even", opponent: { _id: "o" }, acceptable: true }];
     const res = mockRes();
     let seen = null;
@@ -115,23 +109,17 @@ test("GET offers: 404 Fighter not found; 500 hides internals", async () => {
     assert.deepEqual(res.body, { message: "Internal server error" });
 });
 
-test("POST reroll: 200 {offers, board, cashAfter}", async () => {
-    const meta = { ...offerBoardService.emptyBoardMeta("Amateur"), rerollUsed: true, rerollBlockedBy: "used" };
-    const res = mockRes();
-    let args = null;
-    await withStub(offerBoardService, "rerollBoard", async (...a) => { args = a; return { offers: [], meta, cashAfter: 900 }; }, () =>
-        fightController.rerollOffers(req(), res));
-    assert.deepEqual(args, ["f1", "u1"]);
-    assert.equal(res.statusCode, 200);
-    assert.deepEqual(res.body, { offers: [], board: meta, cashAfter: 900 });
-});
-
-test("POST reroll: 404 Fighter not found", async () => {
-    const res = mockRes();
-    await withStub(offerBoardService, "rerollBoard", async () => { throw new Error("Fighter not found"); }, () =>
-        fightController.rerollOffers(req(), res));
-    assert.equal(res.statusCode, 404);
-    assert.deepEqual(res.body, { message: "Fighter not found" });
+test("the reroll is gone: no handler, and its retired codes are never echoed", async () => {
+    assert.equal(fightController.rerollOffers, undefined);
+    for (const code of ["OFFER_BOARD_FROZEN", "REROLL_USED", "OFFER_BOARD_STALE", "NOT_ENOUGH_CASH", "OFFER_POOL_EMPTY"]) {
+        const res = mockRes();
+        const err = Object.assign(new Error("internal detail"), { code, status: 409 });
+        // eslint-disable-next-line no-await-in-loop
+        await quiet(() => withStub(offerBoardService, "getBoard", async () => { throw err; }, () =>
+            fightController.getOffers(req(), res)));
+        assert.equal(res.statusCode, 500, code);
+        assert.deepEqual(res.body, { message: "Internal server error" }, code);
+    }
 });
 
 test("POST offers: OFFER_INVALID_INPUT for a missing / non-string / malformed opponentId", async () => {

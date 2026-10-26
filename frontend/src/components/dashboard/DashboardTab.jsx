@@ -1,7 +1,6 @@
 import { memo, useCallback, useLayoutEffect, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
 import { useDashboard } from "../../hooks/useDashboard";
-import { useOfferReroll } from "../../hooks/useOfferBoard";
 import { useAcceptOffer } from "../../hooks/useAcceptOffer";
 import { statMeterRows } from "../fighterProfile/profileModel";
 import { GazetteModal } from "../gazette/GazetteModal";
@@ -16,7 +15,6 @@ import { BookingsList } from "./BookingsList";
 import { RankingsTile } from "./tiles/RankingsTile";
 import { LastFightTile } from "./tiles/LastFightTile";
 import { PurseFameTile } from "./tiles/PurseFameTile";
-import { rerollButtonState } from "./homeModel";
 import "./home.css";
 
 // Set on the first Home mount of the page session; see the entrance effect below.
@@ -27,7 +25,7 @@ let hasPlayedEntrance = false;
 /**
  * The Athlete Page, the home screen (offer-board-contract.md §5).
  *
- * Container only: owns the dashboard fetch, the reroll mutation, the shared
+ * Container only: owns the dashboard fetch, the shared
  * accept-offer flow, the gazette/callout modal open state, and the one
  * entrance-animation effect. Everything else is derived data passed down to
  * presentational children, no business logic lives in this file beyond
@@ -46,8 +44,6 @@ export const DashboardTab = memo(function DashboardTab({
   const fighterId = fighter?._id;
   const { data, loading, error, reload } = useDashboard(fighterId, { refreshKey });
   const bootLoading = loading && !data;
-
-  const { reroll: rerollMutation, rerolling, rerollError } = useOfferReroll(fighterId);
 
   const handleStale = useCallback(() => { reload(); }, [reload]);
 
@@ -86,18 +82,6 @@ export const DashboardTab = memo(function DashboardTab({
   const scrollToBookings = useCallback(() => {
     bookingsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
-
-  const handleReroll = useCallback(async () => {
-    const res = await rerollMutation();
-    if (res.ok) {
-      reload();
-      if (fighterId) onRefreshFighter?.(fighterId);
-    } else if (res.code === "OFFER_BOARD_STALE") {
-      reload();
-    } else if (res.message) {
-      onMessage?.(res.message);
-    }
-  }, [rerollMutation, reload, onRefreshFighter, fighterId, onMessage]);
 
   const statRows = fighter?.statProgress ? statMeterRows(fighter.statProgress) : [];
 
@@ -149,12 +133,6 @@ export const DashboardTab = memo(function DashboardTab({
         loading={bootLoading}
         acceptingId={acceptingId}
         onAccept={requestAccept}
-        reroll={{
-          state: rerollButtonState(data?.offers ?? null),
-          rerolling,
-          error: rerollError,
-          onReroll: handleReroll,
-        }}
         activeCallout={fighter?.activeCallout ?? null}
         onCallout={() => setCalloutOpen(true)}
         onReload={reload}

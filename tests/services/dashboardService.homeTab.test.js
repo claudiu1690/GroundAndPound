@@ -656,8 +656,13 @@ test("buildDashboard: every new key is PRESENT even when every module degrades",
                                     assert.equal(d.sponsorship, null);
                                     assert.deepEqual(d.offers, {
                                         count: 0, best: null, list: [],
-                                        ...offerBoardService.emptyBoardMeta("Amateur"),
+                                        ...offerBoardService.emptyBoardMeta(),
                                     });
+                                    // No reroll keys since the reroll was removed (2026-10-26).
+                                    assert.deepEqual(Object.keys(d.offers).sort(), [
+                                        "best", "blockedCode", "blockedReason", "count",
+                                        "expiresAt", "frozen", "generatedAt", "list",
+                                    ]);
                                     assert.deepEqual(d.feed, []);
                                     assert.ok(Object.prototype.hasOwnProperty.call(d, "lastFight"));
                                     assert.equal(d.lastFight, null);
@@ -689,10 +694,6 @@ test("buildDashboard: every new key is PRESENT even when every module degrades",
 const BOARD_META = {
     generatedAt: "2026-09-25T10:00:00.000Z",
     expiresAt: "2026-09-26T10:00:00.000Z",
-    rerollUsed: false,
-    rerollCost: 150,
-    canReroll: true,
-    rerollBlockedBy: null,
     frozen: false,
     blockedReason: null,
     blockedCode: null,
@@ -706,6 +707,7 @@ test("summariseOffers spreads every OfferBoardMeta key onto the block", () => {
     }
     assert.equal(block.count, 1);
     assert.equal(block.list.length, 1);
+    assert.deepEqual(Object.keys(block).sort(), ["best", "count", "list", ...Object.keys(BOARD_META)].sort(), "no reroll keys");
 });
 
 test("count and best consider ACCEPTABLE offers only; list keeps every slot", () => {
@@ -894,7 +896,7 @@ test("buildDashboard: computeHeroAction sees ACCEPTABLE offers only", async () =
     // An unlocked title shot that is not acceptable (frozen board) must not drive the CTA.
     const board = {
         offers: [offer("TitleShot", { locked: false, acceptable: false }), offer("Even", { acceptable: false })],
-        meta: { ...BOARD_META, frozen: true, canReroll: false, rerollBlockedBy: "frozen" },
+        meta: { ...BOARD_META, frozen: true },
     };
     await dashboardWith({ fighter: DASH_FIGHTER, board }, async (d) => {
         assert.notEqual(d.heroAction.key, "title_shot");

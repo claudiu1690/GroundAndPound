@@ -1,7 +1,6 @@
 /**
  * Fight offer board config (see services/offerBoardService.js).
  *   OFFER_BOARD_TTL_HOURS   how long a generated board stays live before a read rolls a new set
- *   OFFER_REROLL_COST_FRAC  one reroll per board costs this fraction of the tier signingFee
  *
  * Per-bout purse (GDD 7, "Purse by slot"). The tier signingFee is the Even baseline;
  * each slot scales it, and a tougher opponent inside the slot's OVR window adds up to
@@ -11,7 +10,6 @@
  */
 module.exports = {
     OFFER_BOARD_TTL_HOURS: 24,
-    OFFER_REROLL_COST_FRAC: 0.2,
     OFFER_PURSE_MULT: { Easy: 0.7, Even: 1.0, Hard: 1.4, TitleShot: 1.75 },
     OFFER_PURSE_GAP_BONUS_MAX: 0.05,
     OFFER_PURSE_GAP_WINDOW: { Easy: [-6, -2], Even: [-1, 1], Hard: [2, 6] },

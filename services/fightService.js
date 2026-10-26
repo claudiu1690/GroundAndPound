@@ -381,20 +381,16 @@ function titleShotEligibility(fighter) {
  * fingerprint must therefore be computed AFTER this runs.
  *
  * @param {Object} fighter hydrated Fighter doc
- * @param {{avoidOpponentIds?:Array}} [opts] soft exclusion for the three OVR window
- *        samples only (reroll passes the previous picks); backfill ignores it so a thin
- *        division can still fill all three slots.
  * @returns {Promise<Array<{offerType:"Easy"|"Even"|"Hard"|"TitleShot", opponentId:*}>>}
  *          Easy, Even, Hard in ascending OVR, then TitleShot when present.
  */
-async function pickOfferSlots(fighter, { avoidOpponentIds = [] } = {}) {
+async function pickOfferSlots(fighter) {
     const tier = fighter.promotionTier;
     const tierConfig = PROMOTION_TIERS[tier];
     if (!tierConfig) throw new Error("Invalid promotion tier");
 
     const overall = fighter.overallRating || 14;
     const weightClass = fighter.weightClass;
-    const avoid = Array.isArray(avoidOpponentIds) ? avoidOpponentIds.filter(Boolean) : [];
 
     const randomOpp = (match) =>
         Opponent.aggregate([{ $match: match }, { $sample: { size: 1 } }]);
@@ -420,8 +416,6 @@ async function pickOfferSlots(fighter, { avoidOpponentIds = [] } = {}) {
     const base    = { weightClass, promotionTier: tier, isChampion: { $ne: true } };
     const exclude = [];
     if (nemesisOpp) exclude.push(nemesisOpp._id); // never double-pick the nemesis
-    // Window samples skip both the running exclude list and the soft avoid list.
-    const windowNin = () => [...exclude, ...avoid];
 
     // OVR windows are kept strictly disjoint and floor/ceiling-aware so the three
     // difficulty offers can never collide on the same OVR or invert at the edges.
@@ -429,18 +423,18 @@ async function pickOfferSlots(fighter, { avoidOpponentIds = [] } = {}) {
     // At the bottom (O=14) this yields Easy [12,12], Even [13,15], Hard [16,20].
     // Easy's top (O-2) < Even's bottom (O-1) < Hard's bottom (O+2) guarantees no
     // duplicate-OVR / contradictory-label pairs.
-    const easyOpp = await randomOpp({ ...base, overallRating: { $gte: Math.max(12, overall - 6), $lte: overall - 2 }, _id: { $nin: windowNin() } });
+    const easyOpp = await randomOpp({ ...base, overallRating: { $gte: Math.max(12, overall - 6), $lte: overall - 2 }, _id: { $nin: exclude } });
     if (easyOpp[0]) exclude.push(easyOpp[0]._id);
 
-    const evenOpp = await randomOpp({ ...base, overallRating: { $gte: overall - 1, $lte: overall + 1 }, _id: { $nin: windowNin() } });
+    const evenOpp = await randomOpp({ ...base, overallRating: { $gte: overall - 1, $lte: overall + 1 }, _id: { $nin: exclude } });
     if (evenOpp[0]) exclude.push(evenOpp[0]._id);
 
-    const hardOpp = await randomOpp({ ...base, overallRating: { $gte: overall + 2, $lte: Math.min(95, overall + 6) }, _id: { $nin: windowNin() } });
+    const hardOpp = await randomOpp({ ...base, overallRating: { $gte: overall + 2, $lte: Math.min(95, overall + 6) }, _id: { $nin: exclude } });
     if (hardOpp[0]) exclude.push(hardOpp[0]._id);
 
     // Backfill: guarantee 3 difficulty offers when a narrow window has no seeded
     // opponent in this weight class. Pull the nearest-OVR eligible opponents (same
-    // base filter + the running exclude list, NOT the soft avoid list) and slot them
+    // base filter + the running exclude list) and slot them
     // into the empty windows in OVR order. The nemesis is already in `exclude`, so
     // backfill can never re-pick or displace it.
     const windowResults = { [OFFER_TYPE.EASY]: easyOpp[0], [OFFER_TYPE.EVEN]: evenOpp[0], [OFFER_TYPE.HARD]: hardOpp[0] };

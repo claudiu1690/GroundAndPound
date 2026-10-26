@@ -48,43 +48,6 @@ test("formatTimeLeft: future timestamp an hour or more formats as hours", async 
     assert.equal(formatTimeLeft(future, now), "18h");
 });
 
-// ── rerollButtonState ────────────────────────────────────────────────────
-
-test("rerollButtonState: every rerollBlockedBy value", async () => {
-    const { rerollButtonState } = homeModel;
-
-    assert.deepEqual(
-        rerollButtonState({ rerollBlockedBy: "frozen", rerollCost: 150 }),
-        { visible: false, disabled: true, reasonKey: null, cost: 150 }
-    );
-    assert.deepEqual(
-        rerollButtonState({ rerollBlockedBy: "blocked", rerollCost: 150 }),
-        { visible: false, disabled: true, reasonKey: null, cost: 150 }
-    );
-    assert.deepEqual(
-        rerollButtonState({ rerollBlockedBy: "no_board", rerollCost: null }),
-        { visible: false, disabled: true, reasonKey: null, cost: null }
-    );
-    assert.deepEqual(
-        rerollButtonState({ rerollBlockedBy: "used", rerollCost: 150 }),
-        { visible: true, disabled: true, reasonKey: "used", cost: 150 }
-    );
-    assert.deepEqual(
-        rerollButtonState({ rerollBlockedBy: "cash", rerollCost: 2400 }),
-        { visible: true, disabled: true, reasonKey: "cash", cost: 2400 }
-    );
-    assert.deepEqual(
-        rerollButtonState({ rerollBlockedBy: null, rerollCost: 150 }),
-        { visible: true, disabled: false, reasonKey: null, cost: 150 }
-    );
-});
-
-test("rerollButtonState: null/missing offers block degrades safely", async () => {
-    const { rerollButtonState } = homeModel;
-    assert.deepEqual(rerollButtonState(null), { visible: true, disabled: false, reasonKey: null, cost: null });
-    assert.deepEqual(rerollButtonState(undefined), { visible: true, disabled: false, reasonKey: null, cost: null });
-});
-
 // ── titleLockKey ──────────────────────────────────────────────────────────
 
 test("titleLockKey: null titleLock returns null", async () => {

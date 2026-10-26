@@ -1,6 +1,6 @@
 /**
- * The four offer-board routes and the resolve route must run ownFighterParam("fighterId")
- * before the handler.
+ * The three offer-board routes and the resolve route must run ownFighterParam("fighterId")
+ * before the handler. The offer-board reroll route was removed (2026-10-26) and must stay gone.
  * Reads the Express router stack directly: no server, no DB.
  */
 const { test } = require("node:test");
@@ -24,7 +24,6 @@ function mockRes() {
 const GUARDED = [
     ["get", "/offers/:fighterId", fightController.getOffers],
     ["post", "/offers/:fighterId", fightController.createOffer],
-    ["post", "/offers/:fighterId/reroll", fightController.rerollOffers],
     ["post", "/accept/:fighterId/:fightId", fightController.acceptOffer],
     ["post", "/resolve/:fighterId", fightController.resolveFight],
 ];
@@ -50,6 +49,12 @@ for (const [method, path, handler] of GUARDED) {
         assert.equal(ok, true);
     });
 }
+
+test("the offer-board reroll route is NOT registered (any method)", () => {
+    const layer = router.stack.find((l) => l.route && l.route.path === "/offers/:fighterId/reroll");
+    assert.equal(layer, undefined);
+    assert.equal(fightController.rerollOffers, undefined);
+});
 
 // Fight Camp routes are keyed on :fightId and run ownFightParam("fightId") before the handler.
 const campController = require("../../controllers/campController");
