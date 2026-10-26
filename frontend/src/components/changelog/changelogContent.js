@@ -26,7 +26,6 @@ export const CHANGELOG_ENTRIES = [
       "Three new Signatures, each a one-shot moment per fight. Superman Punch is a first-round power surge. Blast Double makes your first takedown hit harder. Arm Triangle means the first time you get on top, you hunt the tap.",
       "Coaches hired from now on know more. A Legendary coach covers his whole expanded discipline, up to seven moves. Coaches already on your roster keep the list on their card, so what you read at hire is what you get.",
       "A new Catalog sits at the top of the Special Moves tab. All 24 moves in one place: what each one is worth at every rarity, which ones you own and at what rarity, and how to get the rest, down to which coach teaches it and at what rank.",
-      "The GCS belt is finally up for grabs. Every GCS fighter is a title contender: get into the title zone, bank 3 wins there, and the GCS Title Fight appears on your board. Win it for 200 fame, the GCS Champion badge, 3 Energy Drinks and a title purse. There is no tier above GCS, so every later GCS title win is a title defense, and your Rankings row carries a trophy while you hold the belt.",
     ],
     sections: {
       changed: [
@@ -37,23 +36,11 @@ export const CHANGELOG_ENTRIES = [
         "The title zone is #4 or better, because the champion holds the first of the top five places. Screens that called #5 \"top 5\" now agree with the game.",
         "Nicknames follow one rule everywhere you can set them: 2 to 20 characters, letters, numbers, spaces, hyphens and apostrophes. It used to be enforced only in Account settings, so a nickname picked at sign-up could be one you were then not allowed to save. A nickname you already have stays as it is.",
       ],
-      fixed: [
-        "Fighters in GCS could never get a title shot, so the GCS belt and its badge were out of reach.",
-        "The title shot bar on Home now tells you the next real step, like getting ranked or climbing to #4. An unranked fighter used to be told to win 3 more fights, even though wins only count once you are in the title zone. The bar also dropped its unexplained \"0 of 3\" counter.",
-        "Other players can no longer see your cash, inventory, booked fight, Proving Ground defense plan or equipped Special Moves when they open your profile. They see your record, stats, rank, banner and badges, like before.",
-        "Another player could change things on your fighter, such as your banner, pinned badges or a callout, by sending requests with your fighter's id. Every change to a fighter now has to come from that fighter's own account.",
-        "Signing up with a nickname the game refuses now tells you why and keeps you on the fighter step, instead of sending you back to the account step or failing with a generic error.",
-        "An opponent's rank now reads the same on Home, on his Fight Hub card and in the Rankings tab. The Fight Hub card counted one place too many, and the champion wore a #1 he does not have.",
-        "The title shot bar, the hero button and the Rankings tile on Home now agree on your next step, because all three read it from one place: your fight board. If you are unranked, the Rankings tile now says how many fights are left before you get a rank.",
-        "Pressing Begin Fight twice, or firing two fight requests at once, could pay the purse, fame and XP for the same fight twice. A fight now resolves exactly once.",
-        "Persona milestones (being crowned, reaching your signature, breaking character) now show up in your career feed and in the Gazette. They were being dropped.",
-        "Another player who knew your fight's id could read your opponent's Fighter Report, add or remove your camp sessions, pick your injury response or finalise your camp for you. Camp actions now only work from the account that booked the fight, and camp changes are refused once the fight has started.",
-      ],
+      fixed: [],
       balance: [
         "Second Gear and Deep Waters ship at about half strength. They stack with Heavy Hands on the same punch, and the three together swung fights past the limit we hold every loadout to.",
         "Pace Pusher was cut to under a third of its first draft after testing. A single Legendary copy swung mirror fights by more than any other passive in the game, so it now sits in line with the rest.",
         "Fighting Spirit starts deliberately small. Nothing else in the game touches knockdown odds this way, so it ships cautious and will be revisited with real fight data.",
-        "A GCS title defense pays 100 fame instead of 200. The first belt is the milestone; defenses stay worth fighting without turning the belt into a fame farm.",
       ],
     },
   },
@@ -72,10 +59,7 @@ export const CHANGELOG_ENTRIES = [
         "The Fight Hub shows your board on open, with the countdown to the next set in the footer next to Call out.",
         "Calling someone out no longer touches the rest of your board. Your callout takes the Hard slot while it is active and the original opponent comes back if you cancel.",
       ],
-      fixed: [
-        "The name on Home's main event never matched the offers in the Fight Hub, because every screen drew a fresh random set. Both now read the same booked board, so the fighter you see on Home is the fighter you can accept.",
-        "Accepting the same bout twice in quick succession could book it twice and charge energy twice. The booking is now claimed once.",
-      ],
+      fixed: [],
       balance: [
         "Purses now differ by difficulty. Every fight in a tier used to pay the same, so Easy, Even and Hard were only a stat check. Now Hard pays double what Easy does and the expected purse across the three stays about the same, so the board is a real risk-reward choice without more cash flooding in.",
         "There is no way to swap your board early any more. The old Get Offers button let you fish for a soft matchup until one appeared; now the board only changes after you fight or once a day, so the bouts in front of you are the ones to choose from.",
