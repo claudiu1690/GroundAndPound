@@ -333,13 +333,13 @@ const SPECIAL_MOVES = [
     },
     {
         id: "KILLER_INSTINCT",
-        name: "Crucifix",
+        name: "Crossface",
         effectType: EFFECT_TYPE.SIGNATURE,
         bonusType: "SIG_KILLER_INSTINCT",
-        triggerCondition: "OPPONENT_HEALTH_BELOW_25",
+        triggerCondition: "OPPONENT_HEALTH_BELOW_50",
         minRarity: RARITY.RARE,
-        values: { RARE: 0.015, LEGENDARY: 0.035 },
-        flavor: "The wounded animal makes one last mistake. This fighter is always ready for it.",
+        values: { RARE: 0.10, LEGENDARY: 0.18 },
+        flavor: "Forearm across the jaw, hips heavy. Every time they turn to get up, they go flat again.",
         art: "killer_instinct",
     },
     {

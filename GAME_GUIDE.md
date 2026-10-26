@@ -355,13 +355,13 @@ There are 24 moves in the catalogue, spread across the four coaching disciplines
 | Discipline | Passive | Proc | Signature |
 | --- | --- | --- | --- |
 | Striking | Heavy Hands, Body Snatcher, High Guard | Dirty Boxing, Second Gear | Overhand Right, Superman Punch |
-| Wrestling | Double-Leg Precision | Sprawl, Full Mount, Top Control | Crucifix, Blast Double |
+| Wrestling | Double-Leg Precision | Sprawl, Full Mount, Top Control | Crossface, Blast Double |
 | Brazilian Jiu-Jitsu | Veteran IQ, Frame & Base | Hip Escape, Guillotine Choke | Rubber Guard, Arm Triangle |
 | Conditioning | Granite Jaw, Pace Pusher | Second Wind, Deep Waters, Fighting Spirit | none |
 
 Want the full picture? Open the Catalog at the top of the Special Moves tab. It lists all 24 moves, what each one is worth at every rarity, which ones you own and at what rarity, and how to get the rest: which coach can teach it and at what rank, and which sessions can drop it. A coach's rarity decides whether he can ever teach a move, which is separate from the rarity a move can drop at. Overhand Right can drop at Rare from training even though only a Legendary Striking Coach can teach it. Tap any move for the details, including the ones you do not own yet.
 
-Seven moves were renamed in v2.2. Same moves, same numbers, same cards, only the name on the front changed: Sprawl Instinct is now Sprawl, Never Tap is Hip Escape, Clinch Killer is Dirty Boxing, Mount Reaper is Full Mount, The Finisher is Overhand Right, Iron Recovery is Rubber Guard, and Killer Instinct is Crucifix.
+Seven moves were renamed in v2.2: Sprawl Instinct is now Sprawl, Never Tap is Hip Escape, Clinch Killer is Dirty Boxing, Mount Reaper is Full Mount, The Finisher is Overhand Right, Iron Recovery is Rubber Guard, and Killer Instinct is Crossface. Six of them are the same moves with the same numbers. Crossface also changed what it does. Once your opponent drops below half health, every round you have them on their back they struggle to get out from under you, so you stay on top and keep landing ground-and-pound.
 
 Moves come in four rarities — Common, Uncommon, Rare, and Legendary — and rarity is the only thing that scales a move's power. There's no separate leveling system: if you pull a copy of a move you already own at a higher rarity, it upgrades the one you have. Pull an equal-or-lower rarity copy instead, and it's sold automatically for a small cash payout rather than sitting uselessly in your collection.
 

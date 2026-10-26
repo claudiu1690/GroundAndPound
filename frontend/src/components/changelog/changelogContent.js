@@ -29,7 +29,7 @@ export const CHANGELOG_ENTRIES = [
     ],
     sections: {
       changed: [
-        "Seven moves have new names. Same moves, same numbers, same cards: Sprawl Instinct is now Sprawl, Never Tap is Hip Escape, Clinch Killer is Dirty Boxing, Mount Reaper is Full Mount, The Finisher is Overhand Right, Iron Recovery is Rubber Guard, and Killer Instinct is Crucifix.",
+        "Seven moves have new names: Sprawl Instinct is now Sprawl, Never Tap is Hip Escape, Clinch Killer is Dirty Boxing, Mount Reaper is Full Mount, The Finisher is Overhand Right, Iron Recovery is Rubber Guard, and Killer Instinct is Crossface. Six of them keep their numbers. Crossface works differently now and has new card art.",
         "Drops can now land on any of 24 moves, so each one turns up about half as often as before. Coach teaching is how you aim at the move you actually want.",
         "The Boogeyman's Ambush now boosts the new proc moves too, under the same cap as before.",
         "Title shot screens count the right wins. The Path to the Belt checklist and the sidebar progress now count wins earned in the title zone, the same as the game does.",
@@ -41,6 +41,7 @@ export const CHANGELOG_ENTRIES = [
         "Second Gear and Deep Waters ship at about half strength. They stack with Heavy Hands on the same punch, and the three together swung fights past the limit we hold every loadout to.",
         "Pace Pusher was cut to under a third of its first draft after testing. A single Legendary copy swung mirror fights by more than any other passive in the game, so it now sits in line with the rest.",
         "Fighting Spirit starts deliberately small. Nothing else in the game touches knockdown odds this way, so it ships cautious and will be revisited with real fight data.",
+        "Crossface now pins your opponent instead of adding knockout odds. Once they drop below half health, every round you are on top they escape less often, by 10% at Rare and 18% at Legendary. The old version only worked standing, which made no sense for a move a wrestling coach teaches, and it barely changed a single fight.",
       ],
     },
   },

@@ -46,7 +46,7 @@ const RENAMES = {
     MOUNT_REAPER: "Full Mount",
     THE_FINISHER: "Overhand Right",
     IRON_RECOVERY: "Rubber Guard",
-    KILLER_INSTINCT: "Crucifix",
+    KILLER_INSTINCT: "Crossface",
 };
 
 // Same slug rule as the frontend's moveArtUrl.

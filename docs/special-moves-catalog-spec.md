@@ -88,7 +88,7 @@ Library's discipline table.
 | Striking | Superman Punch | Signature | Rare | 6 | Legendary | 4 |
 | Wrestling | Sprawl | Proc | Common | 0 | Common | 2 |
 | Wrestling | Full Mount | Proc | Common | 1 | Uncommon | 4 |
-| Wrestling | Crucifix | Signature | Rare | 2 | Rare | 4 |
+| Wrestling | Crossface | Signature | Rare | 2 | Rare | 4 |
 | Wrestling | Double-Leg Precision | Passive | Common | 3 | Legendary | 4 |
 | Wrestling | Top Control | Proc | Common | 4 | Legendary | 4 |
 | Wrestling | Blast Double | Signature | Rare | 5 | Legendary | 4 |

@@ -1775,6 +1775,19 @@ the camp baseline).
 High Guard (+1.9 pts) and Top Control (about 0) were verified on the real engine, and Full
 Mount + Top Control stacked also measured about 0.
 
+**Crossface rework (2026-10-26).** The v2 rename (briefly "Crucifix") put a wrestling name on the old Killer
+Instinct effect (+flash-KO chance once the opponent is under 25% HP), which only rolls in the
+standing exchange, so a Wrestling coach taught a move that did nothing on the ground. It also
+did almost nothing anywhere: paired seeded sims gave +0.06 pts of stoppage wins on a Wrestler
+and +0.15 on a Boxer at Legendary. A stoppage bonus at the same 25% gate is just as dead
+(+0.2 pts even at a guaranteed stoppage) because ground-and-pound damage already finishes a
+fighter that low. Crossface is now an **escape lock**: it arms the first time the opponent
+starts a round under 50% HP, and from then on, whenever the player holds top position, it is
+subtracted from the bottom fighter's escape chance (inside the clamp, so escapeMin 0.18 still
+holds). Measured on the OVR 50 Wrestler mirror at Legendary: +1.05 pts win rate and +2.4 pts
+stoppage wins (Blast Double: +0.5 / +3.3). It is 0 on the Boxer mirror, as a wrestling move
+should be. Id, bonusType and art slug are unchanged; the card unit is now Pin Rating.
+
 | Move | Type | bonusType | Trigger | C / U / R / L |
 |---|---|---|---|---|
 | Granite Jaw | Passive | OPPONENT_DAMAGE_REDUCTION | always | .0125/.022/.0375/.05 → **trimmed** .008/.014/.023/.03 |
@@ -1797,7 +1810,7 @@ Mount + Top Control stacked also measured about 0.
 | Fighting Spirit | Proc | FLASH_KO_RESISTANCE | own HP < 25% (flash KO only) | **.004/.008/.012/.018** (half of draft) |
 | Overhand Right *(was The Finisher)* | Signature | SIG_FINISHER_STRIKE | opp. HP < 25% | R .08 / L .15 |
 | Rubber Guard *(was Iron Recovery)* | Signature | SIG_IRON_RECOVERY | own HP < 25% | R .10 / L .18 |
-| Crucifix *(was Killer Instinct)* | Signature | SIG_KILLER_INSTINCT | opp. HP < 25% | R .015 / L .035 |
+| Crossface *(was Killer Instinct)* | Signature | SIG_KILLER_INSTINCT | opp. HP < 50%, then every round you are on top | **R .10 / L .18** (escape lock, reworked 2026-10-26) |
 | Superman Punch | Signature | SIG_FAST_START | round-1 striking exchange | R .10 / L .18 |
 | Blast Double | Signature | SIG_TAKEDOWN_BLITZ | first TD you land | R .10 / L .18 |
 | Arm Triangle | Signature | SIG_SUBMISSION_HUNT | first time on top (= first TD) | R .12 / L .20 |

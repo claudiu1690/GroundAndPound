@@ -3219,8 +3219,8 @@
       {
         "moveId": "KILLER_INSTINCT",
         "bonusType": "SIG_KILLER_INSTINCT",
-        "triggered": false,
-        "triggerCount": 0
+        "triggered": true,
+        "triggerCount": 1
       }
     ],
     "sessionBonuses": []
@@ -3483,13 +3483,13 @@
     "sessionBonuses": []
   },
   "dominant-sub-hunter-3r::offense_L": {
-    "outcome": "Decision (unanimous)",
+    "outcome": "KO/TKO",
     "winner": "player",
-    "finishCause": null,
-    "playerHealthAfter": 86,
-    "opponentHealthAfter": 38,
+    "finishCause": "tko",
+    "playerHealthAfter": 100,
+    "opponentHealthAfter": 0,
     "playerStaminaAfter": 75,
-    "rngDraws": 23,
+    "rngDraws": 21,
     "rounds": [
       {
         "round": 1,
@@ -3513,23 +3513,21 @@
       },
       {
         "round": 3,
-        "event": "Striking exchange.",
-        "grapplingControl": 0,
-        "playerDamage": 14,
-        "opponentDamage": 6,
-        "playerHealth": 86,
-        "opponentHealth": 38,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 24,
+        "playerHealth": 100,
+        "opponentHealth": 20,
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
       {
         "moveId": "HEAVY_HANDS",
         "bonusType": "STRIKE_DAMAGE",
-        "triggered": true,
-        "triggerCount": 1
+        "triggered": false,
+        "triggerCount": 0
       },
       {
         "moveId": "THE_FINISHER",
@@ -3540,8 +3538,8 @@
       {
         "moveId": "KILLER_INSTINCT",
         "bonusType": "SIG_KILLER_INSTINCT",
-        "triggered": false,
-        "triggerCount": 0
+        "triggered": true,
+        "triggerCount": 1
       }
     ],
     "sessionBonuses": []

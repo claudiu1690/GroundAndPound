@@ -100,7 +100,7 @@ const FAN_CARDS = [
   { id: "sprawl-instinct", name: "Sprawl",          rarity: "Uncommon",  rar: "#22c55e", glow: "rgba(34,197,94,.3)" },
   { id: "the-finisher",    name: "Overhand Right",  rarity: "Legendary", rar: "#D4A820", glow: "rgba(212,168,32,.45)" },
   { id: "heavy-hands",     name: "Heavy Hands",     rarity: "Rare",      rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
-  { id: "killer-instinct", name: "Crucifix",        rarity: "Rare",      rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
+  { id: "killer-instinct", name: "Crossface",        rarity: "Rare",      rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
 ];
 
 export function LandingPage({ onAuthenticated, initialResetToken }) {

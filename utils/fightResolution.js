@@ -285,8 +285,8 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
 
     // ── Special Moves: signature arming (PvE only; moveBonuses is [] in PvP) ─────
     // Each signature is armed at most ONCE, keyed by moveId in the request-local sigState
-    // (never module-level). THE_FINISHER and KILLER_INSTINCT both key off the opponent's
-    // sub-25% health but have distinct moveIds/bonusTypes, so they fire independently.
+    // (never module-level). THE_FINISHER keys off the opponent's sub-25% health and
+    // KILLER_INSTINCT (Crossface) off sub-50%; distinct moveIds/bonusTypes, so they fire independently.
     const finisherEntry = getSignatureEntry(moveBonuses, 'SIG_FINISHER_STRIKE');
     const ironRecEntry = getSignatureEntry(moveBonuses, 'SIG_IRON_RECOVERY');
     const killerEntry = getSignatureEntry(moveBonuses, 'SIG_KILLER_INSTINCT');
@@ -319,11 +319,12 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         ? (sigState[ironRecEntry.moveId].value || 0)
         : 0;
 
-    // SIG_KILLER_INSTINCT — arm once when opponent first drops below 25%; persistent flash-KO
-    // boost against the opponent (still bounded by CFG.flashKo.maxProb clamp).
+    // SIG_KILLER_INSTINCT (Crossface) — arm once when opponent first drops below 50%; from then on
+    // it cuts the opponent's escape chance whenever the player holds top position (ground
+    // continuation below). Never applies standing.
     if (killerEntry) {
         const st = sigState[killerEntry.moveId] || (sigState[killerEntry.moveId] = { fired: false });
-        if (!st.fired && opponentHealthNow < 25) {
+        if (!st.fired && opponentHealthNow < 50) {
             st.fired = true;
             st.value = killerEntry.effectiveValue;
             killerEntry.triggered = true;
@@ -405,7 +406,8 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         const escapeChance = clamp(
             CFG.groundHold.escapeBase
                 + (getStat(bottom, "wre") + getStat(bottom, "gnd")) / 2 / CFG.groundHold.escapeStatDivisor
-                - getStat(top, "gnd") / CFG.groundHold.escapeStatDivisor,
+                - getStat(top, "gnd") / CFG.groundHold.escapeStatDivisor
+                - (playerOnTop ? sigKillerInstinctBonus : 0), // Crossface: subtracted inside the clamp, escapeMin still holds
             CFG.groundHold.escapeMin,
             CFG.groundHold.escapeMax
         );
@@ -693,12 +695,10 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             opponent.stamina = Math.max(0, (opponent.stamina ?? oStamina) - extraDrain);
         }
 
-        // Flash KO checks. SIG_KILLER_INSTINCT (once armed, opponent below 25% health) adds a
-        // persistent boost to the player's flash-KO chance against the opponent — still bounded
-        // by CFG.flashKo.maxProb.
+        // Flash KO checks.
         if (!finished && opponentDamage >= CFG.flashKo.minDamage) {
             const flashKoChance = clamp(
-                CFG.flashKo.baseChance + strikingProfileMod(player) + (opponentDamage - CFG.flashKo.minDamage) / CFG.flashKo.extraDamageDivisor + sigKillerInstinctBonus,
+                CFG.flashKo.baseChance + strikingProfileMod(player) + (opponentDamage - CFG.flashKo.minDamage) / CFG.flashKo.extraDamageDivisor,
                 CFG.flashKo.minProb,
                 CFG.flashKo.maxProb
             );

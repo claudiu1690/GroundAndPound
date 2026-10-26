@@ -36,7 +36,7 @@ carry technique / event names (something that happens in the fight).
 | MOUNT_REAPER | mount_reaper | Mount Reaper | **Full Mount** |
 | THE_FINISHER | the_finisher | The Finisher | **Overhand Right** |
 | IRON_RECOVERY | iron_recovery | Iron Recovery | **Rubber Guard** |
-| KILLER_INSTINCT | killer_instinct | Killer Instinct | **Crucifix** |
+| KILLER_INSTINCT | killer_instinct | Killer Instinct | **Crossface** (named Crucifix until 2026-10-26) |
 
 Granite Jaw, Heavy Hands, Body Snatcher, Veteran IQ, Second Wind: unchanged.
 Flavor text of renamed moves may be lightly re-worded to fit the new name; no

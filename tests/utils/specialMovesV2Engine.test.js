@@ -338,6 +338,45 @@ test("SIG_SUBMISSION_HUNT: spent on arming even with no attempt; the second take
     assert.equal(find(sig, "SIG_SUBMISSION_HUNT").triggerCount, 1);
 });
 
+// ── SIG_KILLER_INSTINCT (Crossface): escape lock once the opponent is below 50% ──────────────
+// Mirror escape chance is 0.42; Legendary Crossface (0.18) cuts it to 0.24. A 0.30 escape roll
+// gets out bare and stays pinned with the move.
+
+test("SIG_KILLER_INSTINCT: armed (opponent below 50 at round start), the 0.30 escape roll fails and the player keeps top", () => {
+    const seq = [...PLAYER_TD, 0.0, 0.99, /* r2 */ 0.5, 0.30];
+    const without = fight(seq, { maxRounds: 2, o: { health: 40 } });
+    const withMove = fight(seq, { maxRounds: 2, o: { health: 40 }, moveBonuses: built(["KILLER_INSTINCT"]) });
+    assert.notEqual(without.rounds[1].event, "Holding top control; ground and pound.");
+    assert.equal(withMove.rounds[1].event, "Holding top control; ground and pound.");
+    assert.equal(find(withMove, "SIG_KILLER_INSTINCT").triggerCount, 1);
+});
+
+test("SIG_KILLER_INSTINCT: not armed while the opponent is at 50+ health, the escape is untouched", () => {
+    const seq = [...PLAYER_TD, 0.0, 0.99, /* r2 */ 0.5, 0.30];
+    const withMove = fight(seq, { maxRounds: 2, moveBonuses: built(["KILLER_INSTINCT"]) });
+    assert.notEqual(withMove.rounds[1].event, "Holding top control; ground and pound.");
+    assert.equal(find(withMove, "SIG_KILLER_INSTINCT").triggerCount, 0);
+});
+
+test("SIG_KILLER_INSTINCT: never helps when the PLAYER is on the bottom", () => {
+    const seq = [...OPP_TD, 0.0, 0.99, /* r2 */ 0.5, 0.30];
+    const without = fight(seq, { maxRounds: 2, o: { health: 40 } });
+    const withMove = fight(seq, { maxRounds: 2, o: { health: 40 }, moveBonuses: built(["KILLER_INSTINCT"]) });
+    assert.equal(withMove.rounds[1].event, without.rounds[1].event);
+});
+
+test("SIG_KILLER_INSTINCT: no longer touches the standing flash-KO roll", () => {
+    // Opponent at 20 health arms it (and would have armed the old v2.2 flash-KO version too).
+    // A 0.07 flash roll misses bare; the old +0.035 flash bonus turned it into a "ko". Now the
+    // fight must play out identically, ending on the later TKO check.
+    const opts = { p: { str: 70 }, o: { health: 20 }, fallback: 0.07 };
+    const without = fight(STRIKE_ONLY, opts);
+    const withMove = fight(STRIKE_ONLY, { ...opts, moveBonuses: built(["KILLER_INSTINCT"]) });
+    assert.equal(without.finishCause, "tko");
+    assert.equal(withMove.finishCause, without.finishCause);
+    assert.deepEqual(withMove.rounds, without.rounds);
+});
+
 test("signatures re-arm per fight: back-to-back fights with a fresh buildMoveBonuses leak nothing", () => {
     const ids = ["SUPERMAN_PUNCH", "BLAST_DOUBLE", "ARM_TRIANGLE"];
     const run = () => fight(TWO_TAKEDOWNS, { p: HITTER, o: SOFT, maxRounds: 3, moveBonuses: built(ids) });

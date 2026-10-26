@@ -54,7 +54,7 @@ test("no-moves fighter with moveBonuses empty array is numerically identical to 
     assert.strictEqual(withKey.outcome, withoutKey.outcome);
 });
 
-test("Signature independence: THE_FINISHER and KILLER_INSTINCT both trigger on opponent health below 25 percent, fire independently, keyed per moveId", () => {
+test("Signature independence: THE_FINISHER (opponent below 25 percent) and KILLER_INSTINCT (below 50 percent) fire independently, keyed per moveId", () => {
     const equippedFighter = ownedFighter(["THE_FINISHER", "KILLER_INSTINCT"], RARITY.LEGENDARY);
     const moveBonuses = specialMovesService.buildMoveBonuses(equippedFighter);
     assert.equal(moveBonuses.length, 2, "both signatures present as separate entries");

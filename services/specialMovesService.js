@@ -144,8 +144,8 @@ function describeMove(def, value) {
             return fmt("Signature — +{r} Recovery Rating for the rest of the fight after you first drop below 25% health, once per fight. ({p}% less stamina drain)",
                 "Signature — a once-per-fight Recovery Rating surge after you're badly hurt.");
         case "SIG_KILLER_INSTINCT":
-            return fmt("Signature — +{r} KO Rating once the opponent first drops below 25% health, for the rest of the fight. (+{p}% flash-KO chance)",
-                "Signature — a KO Rating surge once the opponent is badly hurt.");
+            return fmt("Signature: +{r} Pin Rating once the opponent first drops below 50% health, for the rest of the fight. Whenever you have them on their back, they escape less often. ({p}% lower escape chance)",
+                "Signature: once the opponent is hurt, they struggle to escape from under you.");
         default:
             return def.flavor || "";
     }
@@ -177,7 +177,7 @@ const RATING_UNIT_BY_BONUS_TYPE = Object.freeze({
     SIG_SUBMISSION_HUNT: "Hunter Rating",
     SIG_FINISHER_STRIKE: "Finisher Rating",
     SIG_IRON_RECOVERY: "Recovery Rating",
-    SIG_KILLER_INSTINCT: "KO Rating",
+    SIG_KILLER_INSTINCT: "Pin Rating",
 });
 
 /** Unit word for a move's Rating, or the generic "Rating" for an unmapped bonusType. */
