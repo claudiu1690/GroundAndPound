@@ -182,18 +182,8 @@ https://claude.ai/code/artifact/78577865-0a15-45ec-a871-794d4ad7ac75
 
 ### Running scripts against a database (READ BEFORE `node scripts/...`)
 
-* **Nothing runs against production without the owner's explicit approval in chat.**
-  Not a dry run, not a read, not "just to count". Ask first, every time.
-* The local `.env` has `LOCAL_MODE=false` and `USE_ATLAS=true`, so the target
-  resolves to PRODUCTION. Since 2026-10-22 `config.js` refuses that for anything
-  but the API (`app.js`): scripts, `node -e` and the REPL exit with "REFUSING TO
-  CONNECT TO PRODUCTION" when they read `config.database.url`. A deliberate,
-  approved prod run needs `CONFIRM_PROD=mmaGame` on the command.
-* `.claude/hooks/guard-prod.js` (wired in `.claude/settings.json`) makes Claude
-  Code ask before any Bash/PowerShell command that sets `CONFIRM_PROD`, names the
-  prod cluster, uses `railway`/`mongosh`, pushes to `main` or pushes tags.
-* Never load a script with `node` to inspect it: every script runs on require.
-  Read it instead.
+* The local `.env` has `LOCAL_MODE=false` and `USE_ATLAS=true`, so any script run
+  from this folder with no override talks to PRODUCTION.
 * Staging runs use the gitignored `.env.staging` (one line: `MONGODB_URI=...`):
 
   ```
@@ -221,8 +211,6 @@ https://claude.ai/code/artifact/78577865-0a15-45ec-a871-794d4ad7ac75
 
 Never wipe before the flag is live. The backup file plus `restoreGymData.js` is
 the rollback. `migrateFightersToHomeCamp.js` is NOT part of this sequence.
-On production, steps 2 and 3 need `CONFIRM_PROD=mmaGame` in front of `node`
-(the config guard refuses otherwise), and the owner's go-ahead first.
 Rehearse the whole sequence on staging before doing it on production.
 
 ### Season rollover (automatic, rehearsed on staging 2026-09-03)

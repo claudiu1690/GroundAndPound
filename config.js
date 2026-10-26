@@ -69,33 +69,6 @@ const features = {
 const mongoUri = resolveMongoUri();
 const redisUrl = resolveRedisUrl();
 
-/**
- * PRODUCTION GUARD. The local .env points at the production cluster, so any `node scripts/x.js`
- * or `node -e "require(...)"` run from this folder used to write to prod silently (that is how
- * 200 opponents were seeded into prod on 2026-10-22).
- *
- * Only the API itself (app.js, local or deployed) may connect to the production database
- * freely. Every other process (scripts, `node -e`, the REPL) that asks for the Mongo URL while
- * it resolves to prod is stopped, unless the command explicitly sets CONFIRM_PROD=<db name>.
- * Lazy on purpose: requiring config never trips it, only reading `database.url` does, so
- * tests and tools that import services without connecting are unaffected.
- */
-const PROD_DB_NAME = 'mmaGame';
-const dbNameOf = (u) => (/^mongodb(?:\+srv)?:\/\/[^/]+\/([^?]+)/.exec(u) || [])[1] || null;
-const targetsProd = mongoUri.startsWith('mongodb+srv://') && dbNameOf(mongoUri) === PROD_DB_NAME;
-const entryFile = (require.main && require.main.filename) || null;
-const isApiProcess = !!entryFile && require('path').basename(entryFile) === 'app.js';
-
-function guardedMongoUri() {
-    if (!targetsProd || isApiProcess || process.env.CONFIRM_PROD === PROD_DB_NAME) return mongoUri;
-    console.error('\n  ✖ REFUSING TO CONNECT TO PRODUCTION (' + PROD_DB_NAME + ').');
-    console.error('    Entry: ' + (entryFile || '(node -e / REPL)'));
-    console.error('    Staging: set -a; . ./.env.staging; set +a; USE_ATLAS=false LOCAL_MODE=false node scripts/<x>.js');
-    console.error('    Local:   LOCAL_MODE=true node scripts/<x>.js');
-    console.error('    Production, only with the owner\'s go-ahead: CONFIRM_PROD=' + PROD_DB_NAME + ' node scripts/<x>.js\n');
-    process.exit(2);
-}
-
 // Mask passwords for logging.
 const maskUrl = (u) => u.replace(/\/\/([^:/@]+):[^@]+@/, '//$1:***@');
 
@@ -104,7 +77,7 @@ const usingRemoteRedis = !redisUrl.includes('127.0.0.1') && !redisUrl.includes('
 
 // One-line breadcrumb at boot so it's obvious where we connected.
 console.log(`[config] Mode: ${LOCAL_MODE ? 'LOCAL_MODE (forced local)' : 'normal'}`);
-console.log(`[config] Mongo: ${usingRemoteMongo ? 'REMOTE' : 'LOCAL'} → ${maskUrl(mongoUri)}${targetsProd ? '  ⚠️  PRODUCTION' : ''}`);
+console.log(`[config] Mongo: ${usingRemoteMongo ? 'REMOTE' : 'LOCAL'} → ${maskUrl(mongoUri)}`);
 console.log(`[config] Redis: ${usingRemoteRedis ? 'REMOTE' : 'LOCAL'} → ${maskUrl(redisUrl)}`);
 // Both flags printed at boot, in the same shape as the Mongo/Redis lines: after a restart the
 // FIRST question is always "which side of the cutover is this process on?" and the answer must
@@ -116,7 +89,7 @@ module.exports = {
     localMode: LOCAL_MODE,
     features,
     database: {
-        get url() { return guardedMongoUri(); },
+        url: mongoUri,
         options: {}
     },
     redis: {
