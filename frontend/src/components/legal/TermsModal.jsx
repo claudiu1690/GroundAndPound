@@ -3,13 +3,11 @@ import { createPortal } from "react-dom";
 /**
  * Terms of Service modal.
  *
- * ⚠️ BASELINE TEMPLATE — sensible defaults for this game, but NOT lawyer-reviewed.
- * Before relying on it: have it reviewed (or run through a generator), set the
- * governing-law jurisdiction, and confirm the placeholders (entity, contact,
- * min age). Paid purchases (Stripe) will need an additional purchase/refund
- * section once that's wired. Mirrors CookiePolicyModal markup for styling.
+ * Owner-approved 2026-10-27 for the real-money shop launch: entity Digital Olive,
+ * governing law deliberately generic (section 12), 13+ to play and 18+ (or guardian
+ * permission) to buy (section 6). Not lawyer-reviewed. Mirrors CookiePolicyModal markup.
  */
-const ENTITY = "Digital Olive"; // legal operator — confirm
+const ENTITY = "Digital Olive"; // legal operator (owner-confirmed 2026-10-27)
 const CONTACT_EMAIL = "support@groundandpound.net"; // live inbox (Cloudflare Email Routing)
 const MIN_AGE = 13;
 
@@ -79,16 +77,14 @@ export function TermsModal({ open, onClose }) {
             </p>
           </section>
 
-          {/* DRAFT (2026-10-27): purchase and refund terms written for the real-money shop launch.
-              NOT legal advice. The owner must have this reviewed before live payments, together
-              with the entity, governing-law and MIN_AGE placeholders above. */}
           <section className="cookie-policy-section">
             <h4 className="cookie-policy-h">6. Purchases and refunds</h4>
             <p className="cookie-policy-text">
               Energy Drink bundles are digital content delivered to your account right after
               payment. Prices are shown in US dollars and include applicable taxes. Payments are
               processed by Stripe; we never receive your card details. Buying requires a
-              registered account with an email and password.
+              registered account with an email and password. You must be 18 or older to make a
+              purchase, or have permission from a parent or guardian.
             </p>
             <p className="cookie-policy-text">
               By confirming a purchase you ask for immediate delivery and acknowledge that, once
@@ -157,8 +153,6 @@ export function TermsModal({ open, onClose }) {
               These Terms are governed by the laws of the jurisdiction in which the operator
               is established, without regard to conflict-of-laws rules.
             </p>
-            {/* TODO: replace the above with your actual governing jurisdiction
-                (e.g. "the laws of England and Wales" / your country/state). */}
           </section>
 
           <section className="cookie-policy-section">

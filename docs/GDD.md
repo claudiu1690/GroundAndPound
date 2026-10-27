@@ -1374,10 +1374,11 @@ and verified in Stripe test mode until the live account exists; ships inside v2.
   not ship next to the real one.
 - **Analytics:** `checkout_started`, `checkout_blocked_guest`, `purchase_fulfilled`,
   `purchase_failed`, `purchase_refunded` (with `disputed`).
-- **Legal (drafts, owner review required before live payments):** Terms section 6 "Purchases and
-  refunds" and a Stripe paragraph in the Privacy Policy. Still open for the owner: the operating
-  entity, governing law (Terms section 12), the Terms minimum age (13) versus the 18-or-guardian
-  purchase line, and Stripe Tax registrations / product tax code.
+- **Legal (owner-approved 2026-10-27):** Terms section 6 "Purchases and refunds" and a Stripe
+  paragraph in the Privacy Policy. Operator: Digital Olive. Governing law stays generic
+  (section 12). Age: 13+ to play, 18+ or guardian permission to buy (stated in section 6 and in
+  the checkout consent line). Still open before live payments: Stripe Tax registrations /
+  product tax code and the live Stripe account.
 
 ---
 

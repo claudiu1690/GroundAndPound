@@ -3,13 +3,11 @@ import { createPortal } from "react-dom";
 /**
  * Privacy Policy modal.
  *
- * ⚠️ BASELINE TEMPLATE — accurate to the app's real data flows, but NOT a
- * lawyer-reviewed document. Before relying on it in production: have it reviewed
- * (or run through a generator like Termly/iubenda), and confirm the placeholders
- * below: company entity ("Digital Olive"), contact email, and the "Last updated"
- * date. Mirrors CookiePolicyModal markup so it inherits the same modal styling.
+ * Accurate to the app's real data flows; owner-approved 2026-10-27 for the real-money
+ * shop launch (Stripe paragraph). Not lawyer-reviewed. Bump "Last updated" whenever the
+ * content changes. Mirrors CookiePolicyModal markup so it inherits the same modal styling.
  */
-const ENTITY = "Digital Olive"; // legal operator (from site footer) — confirm
+const ENTITY = "Digital Olive"; // legal operator (owner-confirmed 2026-10-27)
 const CONTACT_EMAIL = "support@groundandpound.net"; // live inbox (Cloudflare Email Routing)
 const MIN_AGE = 13;
 
@@ -81,7 +79,6 @@ export function PrivacyPolicyModal({ open, onClose }) {
               Your data may be processed in countries outside your own, with appropriate
               safeguards in place.
             </p>
-            {/* DRAFT (2026-10-27) for the real-money shop: owner legal review required. */}
             <p className="cookie-policy-text">
               If you buy Energy Drinks, <strong>Stripe</strong> processes the payment. Stripe
               receives your email, payment details and billing country directly and handles them
