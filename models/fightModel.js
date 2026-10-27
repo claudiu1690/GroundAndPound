@@ -12,9 +12,13 @@ const fightSchema = new mongoose.Schema({
     weightCutRoll: { type: Number, default: null }, // stamina bonus/penalty from the cut
     status: {
         type: String,
-        enum: ["offered", "accepted", "completed", "cancelled"],
+        enum: ["offered", "accepted", "resolving", "completed", "cancelled"],
         default: "offered"
     },
+    // Resolve lease: set when POST /fights/resolve claims an accepted fight (status
+    // "resolving"). A claim older than fightService.RESOLVE_CLAIM_TTL_MS is stale and
+    // may be reclaimed. Null outside a resolve.
+    resolvingAt: { type: Date, default: null },
     outcome: { type: String, enum: FIGHT_OUTCOMES, default: null },
     ironEarned: { type: Number, default: 0 },
     xpMultiplier: { type: Number, default: 1 },
@@ -28,6 +32,9 @@ const fightSchema = new mongoose.Schema({
     finishRound:         { type: Number, default: null },
     /** Phase 4 — flagged true when this fight was created against the fighter's active callout. */
     isCallout: { type: Boolean, default: false },
+    // Per-bout purse fixed at offer time (consts/offerBoardConfig OFFER_PURSE_MULT). The
+    // payout at resolve uses this as its base so a win pays exactly what the card showed.
+    purse: { type: Number },
     // Post-fight interview (Phase 1). Written once after fight resolution.
     interview: {
         done: { type: Boolean, default: false },

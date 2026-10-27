@@ -73,6 +73,16 @@ test("B6: champ badges keyed by ctx.beltWonForTier", () => {
     assert.ok(!ids.has("champ_gcs"));
 });
 
+test("B6b: beltWonForTier GCS awards champ_gcs exactly once (first win and a defense)", () => {
+    const f = baseFighter();
+    badgeService.evaluateBadges(f, { beltWonForTier: "GCS", isWin: true });
+    // A GCS title defense passes the same tier; the badge must not duplicate.
+    badgeService.evaluateBadges(f, { beltWonForTier: "GCS", isWin: true });
+    const gcs = f.badgesEarned.filter((b) => b.badgeId === "champ_gcs");
+    assert.equal(gcs.length, 1);
+    assert.ok(!f.badgesEarned.some((b) => b.badgeId === "champ_national"));
+});
+
 test("B7: champ_gcs_contender is never awardable", () => {
     const f = baseFighter();
     // try every plausible ctx

@@ -166,24 +166,13 @@ export const TUTORIAL_STEPS = {
                 ],
             },
             {
-                focus: "request-offers",
-                advance: { type: "clickFocus" },
-                tooltips: [
-                    {
-                        anchor: "request-offers",
-                        title: "See Who Wants You",
-                        body: "Promoters are lining up to book you. Tap Request Offers to see the fights on the table.",
-                    },
-                ],
-            },
-            {
                 focus: "offer-card",
                 advance: { type: "event", name: "fight_accepted" },
                 tooltips: [
                     {
                         anchor: "offer-card",
                         title: "Reading a Fight Offer",
-                        body: "Each offer shows your opponent's OVR (overall rating), their fighting style, and their record. OVR is the most important number — it tells you how tough this fight will be relative to your own rating.",
+                        body: "Each offer shows your opponent's OVR (overall rating), their fighting style, their record, and the purse a win pays. OVR is the most important number: it tells you how tough this fight will be relative to your own rating. Tougher opponents pay more, so the purse is your risk-reward at a glance.",
                     },
                     {
                         anchor: "offer-accept",

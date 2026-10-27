@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const User = require("../models/userModel");
 const Fighter = require("../models/fighterModel");
+const { validateNickname } = require("../utils/nickname");
 const {
     sendEmail,
     sendAccountEmail,
@@ -20,9 +21,6 @@ const EMAIL_RESEND_COOLDOWN_MS = 60 * 1000;             // 60s between resends
 const HARD_DELETE_GRACE_MS     = 30 * 24 * 60 * 60 * 1000; // 30 days
 const GUEST_PURGE_INACTIVE_MS  = 30 * 24 * 60 * 60 * 1000; // 30 days of inactivity
 const RECOVERY_CODE_COOLDOWN_MS = 60 * 1000;               // 60s between reveals/regenerates
-const NICKNAME_MIN = 2;
-const NICKNAME_MAX = 20;
-const NICKNAME_RE  = /^[a-zA-Z0-9\-' ]+$/;
 const PASSWORD_MIN = 8;
 const PASSWORD_NUMBER_RE = /[0-9]/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -132,16 +130,24 @@ async function getAccountProfile(accountId) {
 // Nickname
 // ──────────────────────────────────────────────────────────────────
 
+/** Client-fixable nickname error: { statusCode: 400, validation: true } convention. */
+function nicknameValidationError(message) {
+    const err = new Error(message);
+    err.statusCode = 400;
+    err.validation = true;
+    return err;
+}
+
+/**
+ * Account tab nickname change. Runs the shared rules in utils/nickname.js (the
+ * same ones character creation and PUT /fighters/:id use). Unlike PUT
+ * /fighters/:id this path cannot clear a nickname: blank is rejected.
+ */
 async function changeNickname(accountId, nickname) {
-    if (typeof nickname !== "string") throw new Error("Nickname required");
-    const trimmed = nickname.trim();
-    if (trimmed.length < NICKNAME_MIN || trimmed.length > NICKNAME_MAX) {
-        throw new Error(`Nickname must be ${NICKNAME_MIN}–${NICKNAME_MAX} characters`);
-    }
-    if (!NICKNAME_RE.test(trimmed)) {
-        throw new Error("Nickname can only contain letters, numbers, spaces, hyphens and apostrophes");
-    }
-    require("../utils/profanity").assertCleanName(trimmed, "Nickname");
+    const checked = validateNickname(nickname);
+    if (!checked.ok) throw nicknameValidationError(checked.message);
+    if (checked.value === null) throw nicknameValidationError("Enter a nickname.");
+    const trimmed = checked.value;
     const user = await User.findById(accountId);
     if (!user || user.deleted) throw new Error("Account not found");
     if (!user.fighterId) throw new Error("No fighter linked to this account");

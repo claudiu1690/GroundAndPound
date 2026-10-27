@@ -1,19 +1,17 @@
 import { memo } from "react";
 import { t } from "@/lib/i18n";
 
-/** Nickname / gym editor. */
+/** Nickname editor. */
 export const ProfileActionsSection = memo(function ProfileActionsSection({
   fighter,
-  gyms,
   editing,
   setEditing,
   editNickname,
   setEditNickname,
-  editGymId,
-  setEditGymId,
   onRefreshFighter,
   onMessage,
   onSaveProfile,
+  saving = false,
 }) {
   if (editing) {
     return (
@@ -26,34 +24,11 @@ export const ProfileActionsSection = memo(function ProfileActionsSection({
             onChange={(e) => setEditNickname(e.target.value)}
             placeholder={t("fighterProfile.edit.nicknamePlaceholder")}
             className="form-input"
+            maxLength={20}
           />
         </div>
-        {/*
-          Only offered when there is something to pick. Once the gyms retire the list comes back
-          empty, and this used to render a "Home gym" dropdown whose only option was "None" —
-          a control for choosing between nothing. Keying off the list rather than the
-          GYMS_RETIRED flag keeps it self-correcting and avoids threading the flag down two
-          component levels to answer a question the data already answers.
-        */}
-        {(gyms || []).length > 0 && (
-          <div className="form-row">
-            <label>{t("fighterProfile.edit.homeGymLabel")}</label>
-            <select
-              value={editGymId}
-              onChange={(e) => setEditGymId(e.target.value)}
-              className="form-select"
-            >
-              <option value="">{t("fighterProfile.edit.homeGymNone")}</option>
-              {gyms.map((g) => (
-                <option key={g._id} value={g._id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
         <div className="edit-actions">
-          <button type="button" className="btn btn-primary btn-sm" onClick={onSaveProfile}>
+          <button type="button" className="btn btn-primary btn-sm" onClick={onSaveProfile} disabled={saving}>
             {t("common.save")}
           </button>
           <button

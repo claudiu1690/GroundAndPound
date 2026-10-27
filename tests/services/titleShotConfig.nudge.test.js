@@ -34,9 +34,18 @@ test("getTitleShotConfig National: titleWins=3", () => {
     assert.equal(cfg.titleWins, 3);
 });
 
-test("getTitleShotConfig GCS: titleWins=3", () => {
+test("getTitleShotConfig GCS: titleWins=3, beltFame=200, defenseFame=100", () => {
     const cfg = getTitleShotConfig("GCS");
     assert.equal(cfg.titleWins, 3);
+    assert.equal(cfg.beltFame, 200);
+    assert.equal(cfg.defenseFame, 100, "repeat GCS title win (defense) pays 100 fame");
+    assert.equal(cfg.beltBadge, "Champion");
+});
+
+test("defenseFame exists only at GCS (lower belts are won once, then left)", () => {
+    for (const tier of ["Amateur", "Regional Pro", "National"]) {
+        assert.equal(getTitleShotConfig(tier).defenseFame, undefined, tier);
+    }
 });
 
 test("getTitleShotConfig unknown tier: falls back to default titleWins=3", () => {
@@ -145,20 +154,10 @@ test("Post-loss notice: pro tiers use champion framing, not turn-pro", () => {
     }
 });
 
-// ── 6. buildNudge — not exported, testability gap ─────────────────────────────
-// dashboardService.js exports: buildDashboard, computeHeroAction, fighterPhotoIndex,
-// summariseOffers. buildNudge is NOT exported.
-// This test documents the gap — nudge branch logic is untestable without
-// either exporting it or using an integration test against a live DB.
+// ── 6. buildNudge: exported for testing ───────────────────────────────────────
+// The branch behaviour is covered in tests/services/dashboardService.nudge.test.js.
 
-test("TESTABILITY GAP: buildNudge is not exported from dashboardService", () => {
+test("buildNudge is exported from dashboardService for unit tests", () => {
     const dashboard = require("../../services/dashboardService");
-    assert.equal(typeof dashboard.buildNudge, "undefined",
-        "buildNudge is not exported — nudge branches cannot be unit-tested without source change");
-    // The four branches that need testing:
-    //   cooldown > 0  → "Title shot locked — win N more fights to earn a rematch"
-    //   ready         → Amateur: "You're ready to turn pro" / Pro: "title shot is ready"
-    //   grinding wins → Amateur: "shot at turning pro" / Pro: "title shot"
-    //   not-top5      → "Break into the top 5"
-    //   default       → "Keep training"
+    assert.equal(typeof dashboard.buildNudge, "function");
 });

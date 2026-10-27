@@ -45,11 +45,21 @@ const hasPerk = (perks, key) => Array.isArray(perks) && perks.includes(key);
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
-async function loadAcceptedFightWithOpponent(fightId) {
-    const fight = await Fight.findOne({ _id: fightId, status: "accepted" }).populate("opponentId");
-    if (!fight) throw new Error("Fight not found or not accepted");
-    if (!fight.opponentId) throw new Error("Opponent not found");
-    return fight;
+/**
+ * Camp writes are only allowed while the fight is "accepted". Once POST /fights/resolve
+ * claims it ("resolving") or it is "completed", the camp is locked so nothing can change
+ * (or refund energy for) a camp the fight engine is already reading. Pure: no DB access.
+ *
+ * @param {(object|null)} fight  a Fight doc or lean object carrying at least `status`
+ * @throws {Error} "Fight not found" | "Fight is resolving or already resolved" |
+ *                 "Fight not found or not accepted"
+ */
+function assertCampWritable(fight) {
+    if (!fight) throw new Error("Fight not found");
+    if (fight.status === "resolving" || fight.status === "completed") {
+        throw new Error("Fight is resolving or already resolved");
+    }
+    if (fight.status !== "accepted") throw new Error("Fight not found or not accepted");
 }
 
 function assertCampOwnership(camp, fighterId) {
@@ -500,10 +510,13 @@ async function getCampState(fightId, fighterId) {
 }
 
 async function addCampSession(fightId, fighterId, sessionType) {
-    const fight = await loadAcceptedFightWithOpponent(fightId);
     const camp = await FightCamp.findOne({ fightId });
     if (!camp) throw new Error("Camp not found");
     assertCampOwnership(camp, fighterId);
+
+    const fight = await Fight.findById(fightId).populate("opponentId");
+    assertCampWritable(fight);
+    if (!fight.opponentId) throw new Error("Opponent not found");
 
     if (camp.finalisedAt) throw new Error("Camp is already finalised");
     if (camp.isInjured && !camp.injuryChoice) throw new Error("Resolve camp injury before adding more sessions");
@@ -511,7 +524,10 @@ async function addCampSession(fightId, fighterId, sessionType) {
     const slotsUsed = camp.sessions.length;
     if (slotsUsed >= camp.maxSlots) throw new Error("No slots remaining");
 
-    const sessionCfg = CAMP_SESSIONS[sessionType];
+    // Own keys only: a hostile "constructor" or "__proto__" must not resolve to a config.
+    const sessionCfg = typeof sessionType === "string" && Object.prototype.hasOwnProperty.call(CAMP_SESSIONS, sessionType)
+        ? CAMP_SESSIONS[sessionType]
+        : null;
     if (!sessionCfg) throw new Error(`Invalid session type: ${sessionType}`);
 
     await energyService.deductEnergy(String(fighterId), sessionCfg.energy);
@@ -568,10 +584,12 @@ async function removeSession(fightId, fighterId, slotIndex) {
     const camp = await FightCamp.findOne({ fightId });
     if (!camp) throw new Error("Camp not found");
     assertCampOwnership(camp, fighterId);
+    assertCampWritable(await Fight.findById(fightId).select("status").lean());
 
     if (camp.finalisedAt) throw new Error("Camp is already finalised");
     if (camp.isInjured && !camp.injuryChoice) throw new Error("Resolve camp injury before removing sessions");
-    if (slotIndex < 0 || slotIndex >= camp.sessions.length) throw new Error("Invalid slot index");
+    // Integers only: a string or object index would coerce to 0 inside splice().
+    if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= camp.sessions.length) throw new Error("Invalid slot index");
 
     const removed = camp.sessions.splice(slotIndex, 1)[0];
 
@@ -599,6 +617,7 @@ async function resolveInjury(fightId, fighterId, choice) {
     const camp = await FightCamp.findOne({ fightId });
     if (!camp) throw new Error("Camp not found");
     assertCampOwnership(camp, fighterId);
+    assertCampWritable(await Fight.findById(fightId).select("status").lean());
 
     if (!camp.isInjured || !camp.injuryType) throw new Error("No active camp injury");
     if (camp.injuryChoice) throw new Error("Injury already resolved");
@@ -632,6 +651,7 @@ async function finaliseCamp(fightId, fighterId, skip = false) {
     const camp = await FightCamp.findOne({ fightId });
     if (!camp) throw new Error("Camp not found");
     assertCampOwnership(camp, fighterId);
+    assertCampWritable(await Fight.findById(fightId).select("status").lean());
 
     if (camp.finalisedAt) throw new Error("Camp is already finalised");
 
@@ -699,9 +719,8 @@ async function selectBuff(fightId, fighterId, buffId) {
     if (!camp) throw new Error("Camp not found");
     assertCampOwnership(camp, fighterId);
 
-    // Block selection once the fight has already been resolved/completed.
-    const fight = await Fight.findById(fightId).select("status");
-    if (fight && fight.status === "completed") throw new Error("Fight already resolved");
+    // Block selection once the fight is being resolved or has been resolved.
+    assertCampWritable(await Fight.findById(fightId).select("status").lean());
 
     if (buffId === null || buffId === undefined || buffId === "") {
         camp.selectedBuffId = null;
@@ -709,7 +728,10 @@ async function selectBuff(fightId, fighterId, buffId) {
         return { selectedBuffId: null, message: "Supplement cleared." };
     }
 
-    const buffCfg = BUFFS[buffId];
+    // Own keys only: a hostile "constructor" or "__proto__" must not resolve to a supplement.
+    const buffCfg = typeof buffId === "string" && Object.prototype.hasOwnProperty.call(BUFFS, buffId)
+        ? BUFFS[buffId]
+        : null;
     if (!buffCfg) throw new Error("Unknown supplement");
 
     // Ownership guard at selection time (re-checked authoritatively at resolve).
@@ -725,6 +747,7 @@ async function selectBuff(fightId, fighterId, buffId) {
 }
 
 module.exports = {
+    assertCampWritable,
     createCamp,
     selectBuff,
     getFighterReport,

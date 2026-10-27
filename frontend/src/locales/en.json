@@ -375,98 +375,174 @@
       "customize": "Customize Banner →"
     }
   },
-  "dashboard": {
+  "home": {
+    "strip": {
+      "label": "Title shot",
+      "labelGcs": "GCS title shot",
+      "getRanked": "Play {n} more fights to get ranked",
+      "getRankedOne": "Play 1 more fight to get ranked",
+      "reachTop5": "Climb to #{n}. You're #{rank}",
+      "reachTop5NoRank": "Climb to #{n} in your division",
+      "winTop5": "Win {n} more while in the top 5",
+      "winTop5One": "Win 1 more while in the top 5",
+      "winTop5Champion": "GCS Champion. Bank {n} top-5 wins for your next title fight",
+      "winTop5ChampionOne": "GCS Champion. Bank 1 top-5 win for your next title fight",
+      "reachOvr": "Reach OVR {n} to qualify",
+      "rematch": "Win {n} more to earn a rematch",
+      "rematchOne": "Win 1 more to earn a rematch",
+      "ready": "Title shot ready. It's on your fight board",
+      "readyGcs": "Your GCS title shot is ready. Go take the belt",
+      "autoPromote": "Reach OVR {n} to move up a tier",
+      "autoPromoteNextFight": "Your next fight moves you up a tier",
+      "lockInOvr": "Your next fight locks in your rating"
+    },
+    "rankings": {
+      "eyebrow": "Rankings",
+      "career": "Career",
+      "viewCta": "View rankings",
+      "rankOfDivision": "#{rank} {division} {weightClass}",
+      "upThisSession": "Up {n} this session.",
+      "downThisSession": "Down {n} this session.",
+      "titleShotConditions": "Title shot conditions:",
+      "unranked": "Unranked",
+      "getRankedFirst": "Play {n} more fights to get ranked, then:",
+      "getRankedFirstOne": "Play 1 more fight to get ranked, then:",
+      "conditionOvr": "OVR threshold reached",
+      "conditionOvrGcs": "GCS fighter",
+      "conditionTopFive": "Top 5 in division",
+      "conditionWins": "Contender wins while top 5",
+      "winsHint": "{won} of {need}"
+    },
+    "error": {
+      "title": "Could not load your home screen.",
+      "retry": "Retry"
+    },
     "gazette": {
       "openAriaLabel": "Open The Octagon Gazette",
       "mastheadName": "The Octagon Gazette",
       "empty": "Nothing to report yet. Fight your first match and check back.",
-      "footerCta": "Read Full Paper →",
+      "footerCta": "Read full paper",
       "footerUpdated": "Updated {time}"
     },
-    "rankings": {
-      "label": "Rankings",
-      "ofTotal": "of {n}",
-      "unranked": "Unranked",
-      "titleContender": "Title contender",
-      "viewCta": "View Rankings →",
-      "divisionSuffix": "Division",
-      "thisSession": "this session",
-      "titleShotConditions": "Title Shot Conditions",
-      "conditionOvr": "OVR threshold reached",
-      "conditionTopFive": "Top 5 in division",
-      "topFiveHint": "(currently #{rank})",
-      "conditionWins": "Contender wins (while top 5)",
-      "winsHint": "({won}/{need})"
+    "athlete": {
+      "record": "W-L-D",
+      "rank": "Division",
+      "unranked": "NR",
+      "ovr": "Overall",
+      "streak": "Streak",
+      "streakWin": "W{n}",
+      "streakLoss": "L{n}",
+      "streakNone": "-",
+      "division": "{weightClass} · {tier} · {style}",
+      "careerLink": "View career"
     },
-    "provingGround": {
-      "label": "Proving Ground",
-      "title": "The Proving Ground",
-      "big": "PVP",
-      "desc": "Challenge rivals. Earn badges.",
-      "cta": "Enter →",
-      "statWins": "Wins",
-      "statLosses": "Losses",
-      "statDp": "DP",
-      "openBadge": "Open · All Weight Classes",
-      "weeksRemaining": "weeks remaining this season",
-      "seasonNotActive": "Season not active"
+    "next": {
+      "eyebrow": "Next fight",
+      "eyebrowSigned": "Your next fight",
+      "booked": "Booked by the matchmaker · {time}",
+      "bookedExpired": "Booked by the matchmaker · new set ready",
+      "signed": "Signed. Camp is open.",
+      "frozen": "Your fight is booked. The board reopens after fight night.",
+      "none": "No bout on the table right now.",
+      "line": "{record} · OVR {ovr}",
+      "lineRank": "{record} · OVR {ovr} · #{rank} {weightClass}",
+      "chipEasy": "Easy",
+      "chipEven": "Even",
+      "chipHard": "Hard",
+      "chipTitle": "Title fight",
+      "chipCallout": "Callout",
+      "chipNemesisOne": "Nemesis · beat you once",
+      "chipNemesisMany": "Nemesis · beat you {n} times",
+      "purse": "Purse",
+      "rounds": "Rounds",
+      "streak": "Streak",
+      "accept": "Accept",
+      "accepting": "Signing...",
+      "otherBouts": "Other bouts"
     },
-    "hero": {
-      "defaultLabel": "Continue"
+    "book": {
+      "title": "Bookings",
+      "sub": "{n} bouts on the table",
+      "subOne": "1 bout on the table",
+      "subNone": "No bouts on the table",
+      "newSetIn": "New set in {time}",
+      "newSetReady": "New set ready",
+      "refresh": "Refresh",
+      "frozenNote": "Locked while your fight is booked",
+      "signed": "Signed",
+      "purse": "purse",
+      "accept": "Accept",
+      "nemesisTag": "Nemesis",
+      "calloutTag": "Callout",
+      "calloutTitle": "Call someone out",
+      "calloutSub": "Pick a ranked fighter and set the terms",
+      "calloutManageTitle": "Manage your callout",
+      "calloutManageSub": "{name} is in your Hard slot",
+      "calloutCta": "Call out",
+      "lockedCooldown": "Win {n} more to earn a rematch",
+      "lockedRank": "Reach the top 5 to unlock",
+      "lockedWins": "Win {n} more in the top 5",
+      "lockedDefault": "Title shot locked"
     },
-    "vitals": {
-      "energyLabel": "Energy",
-      "energyFullIn": "Full in {eta}",
-      "energyRested": "Rested",
-      "healthLabel": "Health",
-      "healthInjured": "Injured",
-      "healthBangedUp": "Banged up",
-      "healthHealthy": "Healthy",
-      "healthFullIn": "Full in {eta}",
-      "mentalResetChip": "Mental reset required",
-      "unavailable": "Vitals unavailable."
+    "statsTile": {
+      "title": "Fighter stats",
+      "trainCamp": "Train at camp",
+      "trainGym": "Train at the gym"
     },
-    "error": {
-      "retry": "Retry"
+    "condition": {
+      "title": "Condition",
+      "energy": "Energy",
+      "energyValue": "{cur} / {max}",
+      "fullIn": "full in {eta}",
+      "health": "Health",
+      "healthValue": "{value} / 100",
+      "injury": "Injury",
+      "injuryNone": "None",
+      "injuryValue": "{label} · {hours}h",
+      "cannotFight": "Can't fight",
+      "fightCamp": "Fight camp",
+      "fightCampNone": "No fight booked",
+      "fightCampValue": "Session {used} of {max}",
+      "fightCampFinalised": "Camp finalised",
+      "homeCamp": "Home camp",
+      "homeCampNone": "No camp yet",
+      "homeCampValue": "{tier} · {condition}% · {coach}",
+      "mentalReset": "Mental reset required"
     },
-    "camp": {
-      "title": "Fight Camp",
-      "titleFightBadge": "Title Fight",
-      "sessions": "Sessions: {used}/{max}",
-      "grade": "Grade {grade}",
-      "finalised": "Finalised",
-      "cta": "Go to Camp"
+    "last": {
+      "title": "Last fight",
+      "win": "W",
+      "loss": "L",
+      "draw": "D",
+      "vs": "vs {name}",
+      "meta": "{outcome} · {when}",
+      "none": "No fights yet. Your debut is on the board.",
+      "gazette": "Gazette",
+      "gazetteRead": "Read the latest issue",
+      "feed": "Feed",
+      "feedNone": "Nothing yet",
+      "pg": "Proving Ground",
+      "pgDefenseOne": "1 defense report",
+      "pgDefenseMany": "{n} defense reports",
+      "pgRank": "#{rank} of {total}",
+      "pgNotPlayed": "Not entered yet",
+      "pgUpcoming": "Opens in {days}d",
+      "pgNone": "No season running"
     },
-    "stats": {
-      "title": "Stats & XP",
-      "ovrLabel": "OVR {ovr}"
-    },
-    "injuries": {
-      "titleSingular": "Injury",
-      "titlePlural": "Injuries",
-      "cannotFightBadge": "Cannot fight",
-      "recoversIn": "recovers in {h}h",
-      "cta": "Visit Hospital"
-    },
-    "feed": {
-      "title": "Recent Career",
-      "noEvents": "No career events yet…",
-      "cta": "View Career"
-    },
-    "moneyFame": {
-      "title": "Money & Fame",
-      "cashLabel": "Cash",
+    "purse": {
+      "title": "Purse & fame",
+      "cash": "Cash",
+      "fame": "Fame",
+      "fameValue": "{score} · {tier}",
       "frozen": "Frozen",
-      "fameDecaying": "Fame decaying",
-      "topTierReached": "Top tier reached",
-      "keepFighting": "Keep fighting to build fame.",
-      "toNextTier": "{remaining} to {tier}",
-      "pursePct": "+{pct}% fight purses"
-    },
-    "sponsorship": {
-      "title": "Sponsorship",
-      "rewardPerFight": "{reward} / fight",
-      "cta": "View Contracts"
+      "decaying": "Decaying",
+      "purseBonus": "Purse bonus",
+      "purseBonusValue": "+{pct}%",
+      "sponsor": "Sponsor",
+      "sponsorNone": "None signed",
+      "wages": "Camp wages",
+      "wagesValue": "{amount} in {days}d",
+      "wagesNone": "No wages due"
     }
   },
   "career": {
@@ -916,9 +992,7 @@
     },
     "edit": {
       "nicknameLabel": "Nickname",
-      "nicknamePlaceholder": "The Destroyer",
-      "homeGymLabel": "Home gym",
-      "homeGymNone": "None"
+      "nicknamePlaceholder": "The Destroyer"
     }
   },
   "gym": {
@@ -1087,13 +1161,11 @@
       "alertBlockingInjury": "Doctor visit required: {label}",
       "alertLowHealth": "Low health — consider resting before your next fight",
       "alertComeback": "Comeback mode active — x1.5 XP on next win",
-      "requestOffers": "Request Offers",
       "callOut": "Call Out",
       "energyCost": "{cost} energy per fight",
       "calloutTooltipEligible": "Spend fame to force a specific opponent into your next Hard offer",
       "calloutTooltipUnranked": "Reach the rankings first (3 fights in this tier)",
       "calloutTooltipRank": "Reach top 14 to unlock callouts — currently #{rank}",
-      "refreshOffers": "Refresh Offers",
       "standingOvr": "OVR",
       "standingRecord": "RECORD",
       "unranked": "UNRANKED",
@@ -1193,10 +1265,18 @@
     },
     "offers": {
       "panelTitle": "Fight Offers",
-      "activeCalloutBanner": "Callout active: {name} will appear in your next Hard offer with full intel.",
+      "activeCalloutBanner": "Callout active: {name} takes your Hard slot with full intel.",
       "manage": "Manage"
     },
+    "board": {
+      "loading": "Loading your bookings...",
+      "loadFailed": "Couldn't load your bookings.",
+      "retry": "Retry",
+      "expiresIn": "New set in {time}",
+      "expiresReady": "New set ready"
+    },
     "offerCard": {
+      "purse": "Purse ${n} · ",
       "diffEasy": "Easy",
       "diffEven": "Even",
       "diffHard": "Hard",
@@ -1204,7 +1284,11 @@
       "diffCallout": "📣 Called Out",
       "diffNemesis": "☠ Nemesis",
       "specialTitleBout": "{tier} Championship",
-      "specialTitleSub": "Win to promote to {targetTier} · Full 5-slot camp · +200 fame on win",
+      "specialTitleSub": "Win to promote to {targetTier} · Full 5-slot camp · +{fame} fame on win",
+      "specialTitleSubNoTarget": "Full 5-slot camp · +{fame} fame on win",
+      "specialTitleBoutGcs": "GCS Title Fight",
+      "specialTitleSubGcs": "Win: +{fame} fame, GCS Champion badge, 1.75x purse",
+      "specialTitleSubGcsDefense": "Title defense: +{fame} fame, 1.75x purse",
       "specialCalloutTitle": "Your Callout",
       "specialCalloutSub": "You called this fight out. Full intel unlocked · +25% cash · +30% fame on win",
       "specialNemesisTitle": "Nemesis Match",
@@ -1230,6 +1314,8 @@
       "stakesIfYouWin": "If you win",
       "stakesTitleChampion": "{tier} Champion",
       "stakesTitlePromote": "Promote to {targetTier}",
+      "stakesTitleDefend": "Defend the GCS belt",
+      "stakesFame": "+{n} fame",
       "stakesCalloutBonuses": "Callout bonuses on win",
       "stakesCalloutBadge": "📣 Called It badge",
       "stakesCalloutCash": "+25% cash purse",
@@ -1272,28 +1358,36 @@
     "contenderChecklist": {
       "pathToBelt": "Path to the {tier} Belt",
       "pathToPro": "Path to Turning Pro",
+      "pathToGcsBelt": "Path to the GCS belt",
       "subLineBelt": "Beat {champ} to claim the {tier} belt.",
       "subLinePro": "Beat the Amateur champion to turn pro.",
       "rowRating": "Rating — championship level reached",
+      "rowRatingGcs": "GCS fighter",
       "rowTop5Met": "Ranked top 5 (currently #{rank})",
       "rowTop5Unmet": "Ranked top 5 — currently #{rank}",
       "rowTop5Unranked": "Ranked top 5 — get ranked first (keep fighting in this tier)",
-      "rowWins": "Win {n} fights in tier ({current}/{total})",
+      "rowWins": "Win {n} fights while in the top 5 ({current}/{total})",
       "rowCooldown": "Recover from your title loss — win {n} more ({done}/2)",
-      "footerCooldown": "Title shot locked — win {n} fight{plural} to earn a rematch ({done}/2).",
-      "footerTop5Pro": "Break into the top 5 to unlock your Turn Pro fight.",
-      "footerTop5Belt": "Break into the top 5 to unlock your title shot.",
-      "footerWinsPro": "Win {n} fight{plural} in this tier to unlock your Turn Pro fight.",
-      "footerWinsBelt": "Win {n} fight{plural} in this tier to unlock your title shot.",
+      "footerCooldown": "Title shot locked. Win {n} fight{plural} to earn a rematch ({done}/2).",
+      "footerGetRanked": "Play {n} more fights to get ranked, then climb to #{cutoff} to unlock your shot.",
+      "footerGetRankedOne": "Play 1 more fight to get ranked, then climb to #{cutoff} to unlock your shot.",
+      "footerTop5Pro": "Climb to #{n} to unlock your Turn Pro fight.",
+      "footerTop5Belt": "Climb to #{n} to unlock your title shot.",
+      "footerWinsPro": "Win {n} more fight{plural} while in the top 5 to unlock your Turn Pro fight.",
+      "footerWinsBelt": "Win {n} more fight{plural} while in the top 5 to unlock your title shot.",
+      "footerWinsGcs": "Win {n} more in the top 5 to unlock your GCS title fight.",
       "footerReadyPro": "Your shot is ready — request offers and turn pro.",
-      "footerReadyBelt": "Your shot is ready — request offers and take the title shot."
+      "footerReadyBelt": "Your shot is ready — request offers and take the title shot.",
+      "footerReadyGcs": "Your GCS title shot is ready. It's on your fight board."
     },
     "contenderModal": {
       "eyebrow": "CONTENDER",
       "headingPro": "You're ready to turn pro",
       "headingBelt": "You're a {tier} title contender",
+      "headingGcs": "You are a GCS title contender.",
       "bodyPro": "Your rating has reached pro level. Beat the Amateur champion to turn pro and promote to Regional Pro.",
       "bodyBelt": "Your rating has reached championship level. {champ} holds the {tier} belt — beat them and it's yours.",
+      "bodyGcs": "{champ} holds the GCS belt. Beat them and it is yours. Win it again to defend it.",
       "stepsLabel": "To earn your shot:",
       "step1Pro": "Be ranked top 5 as an Amateur",
       "step1Belt": "Be ranked top 5 in the {tier} division",
@@ -1301,6 +1395,7 @@
       "step2Belt": "Win {n} fights in this tier",
       "closerPro": "When both are met, a Turn Pro card appears in your Fight Offers.",
       "closerBelt": "When both are met, a Title Shot card appears in your Fight Offers.",
+      "closerGcs": "When both are met, a GCS Title Fight card appears on your fight board.",
       "gotIt": "Got it — show my path"
     },
     "report": {
@@ -1324,6 +1419,7 @@
       "panelTitle": "Last Fight Summary",
       "panelTitleBelt": "Championship Result",
       "newChampion": "NEW CHAMPION",
+      "titleDefended": "TITLE DEFENDED",
       "cashEarned": "Cash Earned",
       "fameLabel": "Fame",
       "xpMultLabel": "XP Mult",
@@ -1341,6 +1437,9 @@
       "noticePromoted": "PROMOTED: {from} → {to}! New competition level unlocked.",
       "noticeStreakDrinks": "Win-streak reward: +{label}",
       "noticePromoDrinks": "Promotion reward: +{label}",
+      "noticeChampionDrinks": "Championship reward: +{label}",
+      "noticeGcsChampion": "GCS Champion. +{fame} fame, GCS Champion badge.",
+      "noticeGcsDefended": "Title defended (x{n}). +{fame} fame.",
       "noticeSponsorDrinks": "Sponsor bonus: +{label}",
       "noticeInjuries": "Injuries sustained: {list} — check your fighter profile.",
       "noticeQuestCompleted": "Quest completed: {list}!",
@@ -1461,9 +1560,12 @@
       "continue": "Continue",
       "beltKicker": "Championship victory",
       "beltTitle": "NEW CHAMPION",
+      "beltTitleDefended": "TITLE DEFENDED",
       "beltWonLine": "Won the {tier}",
+      "beltDefendedLine": "Defended the {tier} (x{n})",
       "beltWeightClass": "{weightClass} Title",
-      "beltHint": "You proved yourself against the champion. New competition awaits."
+      "beltHint": "You proved yourself against the champion. New competition awaits.",
+      "beltHintGcs": "You hold the GCS belt. Bank {n} top-5 wins for your next title fight."
     }
   },
   "layout": {
@@ -1530,11 +1632,12 @@
       "title": "Tier Competition",
       "ovrLabel": "OVR {ovr} / {nextOvr}",
       "nextTier": "→ {tierLabel}",
-      "gcsChampion": "GCS Champion — top tier reached.",
+      "gcsBeltHolder": "GCS Champion (x{n})",
       "champLabel": "Champ: {name} ({ovr})",
       "titleShotAvailable": "Title shot available — fight for the belt!",
       "titleShotCooldown": "Title shot lost — {count} more win{suffix} to retry",
-      "titleWinsNeeded": "OVR reached — {count} more win{suffix} to earn title shot"
+      "titleWinsNeeded": "OVR reached — {count} more win{suffix} to earn title shot",
+      "titleWinsNeededGcs": "{count} more top-5 win{suffix} to earn your GCS title fight"
     },
     "rightPanels": {
       "latestFight": {
@@ -1642,9 +1745,6 @@
     "fightNight": "Fight night…",
     "fightAccepting": "Accepting fight…",
     "fightAccepted": "Fight accepted — review your opponent before camp.",
-    "loadingOffers": "Loading offers…",
-    "noOffers": "No offers. Seed opponents?",
-    "offersReady": "{count} offer(s) ready.",
     "emailUpdated": "Email address confirmed and updated.",
     "emailVerified": "Email verified — you're all set.",
     "emailError": {
@@ -1662,6 +1762,7 @@
     "pushingThrough": "Pushing through — injury penalty will apply at fight time.",
     "campStopped": "Camp stopped — entering fight healthy.",
     "weightCutFailed": "Failed to set weight cut",
+    "fightAlreadyResolved": "That fight has already been resolved. Reloading.",
     "firstWinHint": " | Build your record and raise your OVR to earn a title shot. Win the belt to move up.",
     "fighterPageHint": "Fighter details are in the left panel.",
     "continueBtn": "Continue",
@@ -2112,7 +2213,9 @@
       "energyDrinks": "Energy Drinks",
       "perDrinkSuffix": "per drink",
       "save": "save {pct}%",
-      "buy": "Buy"
+      "buy": "Buy",
+      "buyGuest": "Secure your account to buy",
+      "redirecting": "Opening secure checkout..."
     },
     "buy": {
       "label": "Buy",
@@ -2126,12 +2229,16 @@
     "premium": {
       "eye": "Premium",
       "title": "Energy Drinks",
-      "desc": "Restore 50 energy instantly. Never let a full energy bar go to waste. Earn them through gameplay or buy a bundle — buying is always optional.",
+      "desc": "Restore 50 energy instantly. Never let a full energy bar go to waste. Earn them through gameplay or buy a bundle. Buying is always optional.",
+      "guestNotice": "Buying needs an email and password on your account. A guest account lives on this device only, so a purchase could not be recovered. Secure it in Account, then come back.",
+      "disabled": "Purchases are not available right now. Nothing has changed in your inventory.",
+      "redirecting": "You are being sent to Stripe to pay. Your card details never pass through the game.",
+      "overCap": "You have {owned} drinks. Bought drinks always land, but free drinks from streaks, promotions and sponsors only land while you hold fewer than {cap}.",
       "drinksInInventory": "Drinks in inventory",
       "earnNote": "You can also earn Energy Drinks for free through contract completions, win streaks and tier promotions. Buying is always optional."
     },
     "inventory": {
-      "energyFull": "Energy is full — nothing to restore right now.",
+      "energyFull": "Energy is full. Nothing to restore right now.",
       "noBooster": "No active XP booster.",
       "browseStore": "Browse the Cash Store →",
       "noBuffs": "No pre-fight buffs owned.",
@@ -2140,6 +2247,13 @@
       "owned": "owned",
       "use": "Use",
       "sessionsLeft": "sessions left of {total}"
+    },
+    "return": {
+      "pending": "Payment received. Confirming your order and delivering your drinks...",
+      "delivered": "Done. {drinks} Energy Drinks have been added to your inventory.",
+      "cancelled": "Checkout cancelled. You have not been charged.",
+      "failed": "The payment did not go through. Nothing was charged and nothing changed.",
+      "stillConfirming": "Payment received, delivery is taking longer than usual. Your drinks will land as soon as the payment is confirmed. If they are not here in an hour, write to support@groundandpound.net with the time of purchase."
     },
     "sidebar": {
       "title": "Inventory",
@@ -2160,7 +2274,7 @@
     },
     "camp": {
       "supplementsTitle": "Supplements",
-      "supplementsSub": "Optional pre-fight buffs — consumed after the fight resolves",
+      "supplementsSub": "Optional pre-fight buffs, consumed after the fight resolves",
       "maxBadge": "Max 1 per fight",
       "loading": "Loading supplements…",
       "noSupplement": "No supplement",
@@ -2176,8 +2290,9 @@
     "messages": {
       "purchaseComplete": "Purchase complete.",
       "purchaseFailed": "Purchase failed.",
-      "premiumUnavailable": "Premium purchases are not available yet.",
-      "premiumPurchaseUnavailable": "Premium purchase unavailable.",
+      "premiumPurchaseUnavailable": "Could not start checkout. Nothing has been charged.",
+      "premiumBlocked": "Purchases are disabled on this account. Contact support@groundandpound.net.",
+      "premiumRateLimited": "Too many checkout attempts. Wait a few minutes and try again.",
       "restoredEnergy": "Restored {restored} energy.",
       "couldNotUse": "Could not use item."
     }
@@ -2247,6 +2362,35 @@
     "loading": "Loading special moves…",
     "retry": "Retry",
     "campLockedHint": "Locked during fight camp",
+    "mode": {
+      "aria": "Special Moves view",
+      "mine": "My Moves",
+      "catalog": "Catalog"
+    },
+    "catalog": {
+      "loading": "Loading the catalog…",
+      "collected": "{owned} / {total} collected",
+      "filters": {
+        "disciplineAria": "Filter by discipline",
+        "typeAria": "Filter by type",
+        "ownershipAria": "Filter by ownership",
+        "all": "All",
+        "owned": "Owned",
+        "notOwned": "Not owned"
+      },
+      "emptyFiltered": "No moves match these filters.",
+      "clearFilters": "Clear filters",
+      "notOwned": "Not owned",
+      "notOwnedAria": "{name}, not owned",
+      "ladder": {
+        "aria": "Rating at each rarity",
+        "yours": "Yours",
+        "notAvailable": "Not available at {rarity}"
+      },
+      "howToGet": {
+        "title": "How to get it"
+      }
+    },
     "header": {
       "eyebrow": "Fighter Identity",
       "title": "Special Moves",
@@ -2417,6 +2561,7 @@
       "ranked": "Ranked"
     },
     "titleShotBanner": "Title Shot Zone — you're in the top 5",
+    "gcsChampionTitle": "GCS Champion (x{n})",
     "champion": "Champion",
     "you": "You",
     "foreignNote": "Viewing another tier — your row only appears in your current tier ({tier}).",

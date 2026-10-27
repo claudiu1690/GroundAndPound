@@ -29,12 +29,20 @@ const analyticsEventSchema = new mongoose.Schema({
         index: true,
         enum: [
             "signup",
+            "guest_signup",
             "session",
             "fight_accepted",
+            "offers_rerolled", // no longer emitted (offer-board reroll removed 2026-10-26); kept for historic events
             "fight_resolved",
             "gym_purchase",
             "pvp_unlocked",
             "pvp_first_fight",
+            // Real-money shop (paymentService).
+            "checkout_started",
+            "checkout_blocked_guest",
+            "purchase_fulfilled",
+            "purchase_failed",
+            "purchase_refunded",
         ],
     },
     day: {

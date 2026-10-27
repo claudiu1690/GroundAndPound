@@ -51,8 +51,16 @@ async function patchNickname(req, res) {
         const result = await accountService.changeNickname(id, nickname);
         res.json({ success: true, ...result });
     } catch (err) {
+        // Shared nickname rules throw { statusCode: 400, validation: true }.
+        if (err && (err.statusCode === 400 || err.validation)) {
+            return res.status(400).json({ message: err.message });
+        }
         if (err.message === "Account not found") return res.status(404).json({ message: err.message });
-        return clientError(res, err);
+        if (err.message === "No fighter linked to this account" || err.message === "Fighter not found") {
+            return clientError(res, err);
+        }
+        console.error("patchNickname error:", err);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
 

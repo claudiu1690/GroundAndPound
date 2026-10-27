@@ -45,11 +45,12 @@ import { ShopTab } from "./components/shop/ShopTab";
 import { InventorySidebar } from "./components/shop/InventorySidebar";
 import { CookieConsent } from "./components/legal/CookieConsent";
 import { LegalModals } from "./components/legal/LegalModals";
+import { openLegalFromUrl } from "./lib/legalDeepLink";
 import { ReportBugModal } from "./components/shared/ReportBugModal";
 import { ChangelogModal } from "./components/changelog/ChangelogModal";
 import { CHANGELOG_ENTRIES, CURRENT_VERSION } from "./components/changelog/changelogContent";
 import { tutorialBus } from "./utils/tutorialBus";
-import { TITLE_WINS } from "./constants/gameConstants";
+import { TITLE_WINS, TOP_TIER, isTitleContender, isTopFiveDisplayRank } from "./constants/gameConstants";
 import { useToasts } from "./hooks/useToasts";
 import { PvpHub } from "./components/pvp/PvpHub";
 import {
@@ -244,12 +245,14 @@ const TierProgress = memo(function TierProgress({ fighter, champions }) {
     ? Math.min(100, Math.round(((ovr - current.minOvr) / (next.minOvr - current.minOvr)) * 100))
     : 100;
 
-  const pending = fighter.pendingPromotion;
-  const wins = fighter.winsInCurrentTier ?? 0;
+  const pending = isTitleContender(fighter);
+  const isGcs = currentTier === TOP_TIER;
+  // Wins earned WHILE ranked top 5 gate the title shot, not total wins in tier.
+  const wins = fighter.topFiveWinsInTier ?? 0;
   const cooldown = fighter.titleShotCooldown ?? 0;
   const titleWins = TITLE_WINS[currentTier] ?? 3;
-  const rank = fighter.ranking?.rank ?? null;
-  const top5 = rank != null && rank <= 5;
+  const top5 = isTopFiveDisplayRank(fighter.ranking?.rank ?? null);
+  const gcsBeltWins = fighter.gcsTitleWins ?? 0;
   const titleReady = pending && top5 && wins >= titleWins && cooldown <= 0;
   const titleCooldown = pending && cooldown > 0;
   const titleWinsNeeded = pending && cooldown <= 0 && top5 && wins < titleWins;
@@ -293,7 +296,7 @@ const TierProgress = memo(function TierProgress({ fighter, champions }) {
         )}
         {titleWinsNeeded && (
           <div className="tier-title-status tier-title-wins">
-            {t("layout.tierProgress.titleWinsNeeded", { count: titleWins - wins, suffix: titleWins - wins !== 1 ? "s" : "" })}
+            {t(isGcs ? "layout.tierProgress.titleWinsNeededGcs" : "layout.tierProgress.titleWinsNeeded", { count: titleWins - wins, suffix: titleWins - wins !== 1 ? "s" : "" })}
           </div>
         )}
 
@@ -308,9 +311,9 @@ const TierProgress = memo(function TierProgress({ fighter, champions }) {
               <div className="tier-progress-fill" style={{ width: `${pct}%` }} />
             </div>
           </div>
-        ) : !pending && !next ? (
+        ) : !next && gcsBeltWins > 0 ? (
           <div style={{ fontSize: "12px", color: "var(--gold-bright)", fontWeight: 700, marginTop: "0.5rem" }}>
-            {t("layout.tierProgress.gcsChampion")}
+            {t("layout.tierProgress.gcsBeltHolder", { n: gcsBeltWins })}
           </div>
         ) : null}
       </div>
@@ -487,16 +490,20 @@ function App() {
   const [accountStatus, setAccountStatus] = useState(null);
   const [fighter,  setFighter]                  = useState(null);
   const [gyms,     setGyms]                     = useState([]);
-  const [offers,   setOffers]                   = useState([]);
   const [message,  setMessage]                  = useState("");
   const [loading,  setLoading]                  = useState(true);
   const [resolving, setResolving]               = useState(false);
+  // Synchronous in-flight guard: state updates are async, so two clicks in the same tick both pass `resolving`.
+  const resolveInFlightRef = useRef(false);
   const [lastFightCommentary, setLastFightCommentary] = useState([]);
   const [lastFightBreakdown, setLastFightBreakdown]   = useState(null);
   const [lastFightSummary, setLastFightSummary] = useState(null);
   const [feedRefreshKey, setFeedRefreshKey]     = useState(0);
   const [champions, setChampions]               = useState([]);
   const [activeTab, setActiveTab]               = useState("home");
+  // Set when Stripe sends the player back to /?purchase=...; ShopTab renders the order banner.
+  // Shape: { outcome: "success" | "cancelled", sessionId: string | null } | null.
+  const [purchaseReturn, setPurchaseReturn]     = useState(null);
   // Your Camp (Phase 2) — learned from the 410 the boot-time `loadGyms` call
   // gets back once GYMS_RETIRED flips server-side (contract §6.3). Drives:
   // NAV_ITEMS (drops the gym tab), forcing activeTab "gym"→"camp", the
@@ -706,6 +713,52 @@ function App() {
     return () => clearInterval(t);
   }, [fighter?._id, loadFighter]);
 
+  /**
+   * Return leg of a Stripe Checkout: `/?purchase=success&session_id=cs_...` or
+   * `/?purchase=cancelled`.
+   *
+   * THE PARAMS ARE A HINT, NOT PROOF OF PAYMENT. Anyone can type this URL, and the goods are
+   * granted by the signature-verified webhook alone. So this only navigates to the Shop and
+   * hands `{ outcome, sessionId }` to ShopTab, which asks the server what happened to that
+   * session (usePurchaseStatus) and reports it. Nothing is credited from the URL.
+   *
+   * The params are stripped with replaceState so a page refresh does not replay the banner.
+   * `legal` and any other params are left alone.
+   */
+  const purchaseReturnHandled = useRef(false);
+  useEffect(() => {
+    if (purchaseReturnHandled.current || !fighter?._id) return;
+    const url = new URL(window.location.href);
+    const outcome = url.searchParams.get("purchase");
+    if (!outcome) return;
+    purchaseReturnHandled.current = true;
+
+    const rawSession = url.searchParams.get("session_id");
+    url.searchParams.delete("purchase");
+    url.searchParams.delete("session_id");
+    const qs = url.searchParams.toString();
+    window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : "") + url.hash);
+
+    if (outcome !== "success" && outcome !== "cancelled") return;
+    // Shape check only (the server re-validates); keeps junk out of the status URL.
+    const sessionId = rawSession && /^cs_[A-Za-z0-9_]{1,200}$/.test(rawSession) ? rawSession : null;
+    setPurchaseReturn({ outcome, sessionId });
+    setActiveTab("shop");
+  }, [fighter?._id]);
+
+  // The banner belongs to the Shop visit that followed the redirect: once the player moves to
+  // another tab, drop it so coming back later does not replay a stale "payment received".
+  useEffect(() => {
+    if (activeTab !== "shop") setPurchaseReturn((cur) => (cur ? null : cur));
+  }, [activeTab]);
+
+  // `/?legal=terms|privacy` deep link for authed players (Stripe Dashboard legal URLs). Waits
+  // for the real shell: LegalModals is not mounted behind the loading spinner. Logged-out
+  // visitors are handled by LandingPage.
+  useEffect(() => {
+    if (authed && !loading) openLegalFromUrl();
+  }, [authed, loading]);
+
   // Surface the transient `message` state as an auto-dismissing notice toast.
   // Many handlers (hospital, training, camp, account, etc.) call setMessage/onMessage
   // on both error and success paths, but the app had no global surface for it — so
@@ -726,7 +779,8 @@ function App() {
     // Don't pop the announcement over the onboarding tutorial.
     if (fighter.tutorial && !fighter.tutorial.completed) return;
 
-    const target = fighter.pendingPromotion ?? null;
+    // GCS fighters are contenders with no pendingPromotion, so key off the tier itself.
+    const target = isTitleContender(fighter) ? (fighter.pendingPromotion ?? fighter.promotionTier ?? null) : null;
     const prev = prevPendingPromotionRef.current;
     prevPendingPromotionRef.current = target;
 
@@ -741,21 +795,22 @@ function App() {
     try { alreadySeen = localStorage.getItem(storageKey) === "1"; } catch (_) {}
     if (alreadySeen) return;
 
-    // Resolve the champion name for the target tier: prefer a loaded title-shot
-    // offer, fall back to the champions roster for the current tier.
+    // Resolve the champion name for the target tier from the champions roster.
+    // (Used to also check a loaded title-shot offer, but Home no longer holds
+    // an offers list in App state, offer boards are fetched per-surface now,
+    // see offer-board-contract.md §5.)
     const currentTier = fighter.promotionTier ?? "Amateur";
-    const titleOffer = (offers ?? []).find((o) => o?.type === "TitleShot");
     const rosterChamp = (champions ?? []).find((c) => c.championTier === currentTier);
-    const champName = titleOffer?.opponent?.name ?? rosterChamp?.name ?? null;
+    const champName = rosterChamp?.name ?? null;
 
     try { localStorage.setItem(storageKey, "1"); } catch (_) {}
     setContenderModal({ currentTier, targetTier: target, champName });
   }, [
     fighter?._id,
     fighter?.pendingPromotion,
+    fighter?.titleContender,
     fighter?.promotionTier,
     fighter?.tutorial?.completed,
-    offers,
     champions,
   ]);
 
@@ -888,7 +943,6 @@ function App() {
     authStorage.clear();
     setAuthed(false);
     setFighter(null);
-    setOffers([]);
     setLastFightSummary(null);
     setLastFightCommentary([]);
     setActiveTab("home");
@@ -902,8 +956,11 @@ function App() {
         await api.updateFighter(id, body);
         await loadFighter(id);
         setMessage(t("app.profileUpdated"));
+        return { ok: true };
       } catch (e) {
-        setMessage(e.message || "Update failed");
+        const message = e.message || "Update failed";
+        setMessage(message);
+        return { ok: false, message };
       }
     },
     [loadFighter]
@@ -1057,29 +1114,18 @@ function App() {
     [fighter?._id, loadFighter, loadGyms]
   );
 
-const handleGetOffers = useCallback(async () => {
-    if (!fighter?._id) return;
-    setMessage(t("app.loadingOffers"));
-    try {
-      const list = await api.getOffers(fighter._id);
-      setOffers(Array.isArray(list) ? list : []);
-      setMessage(list?.length ? t("app.offersReady", { count: list.length }) : t("app.noOffers"));
-    } catch (e) {
-      const errMsg = e.message || "Failed to get offers";
-      maybeShowBlockPopup(errMsg, e.code);
-      setMessage(errMsg);
-      setOffers([]);
-    }
-  }, [fighter?._id, maybeShowBlockPopup]);
-
+  // Shared by the Fights tab (FightOffers) and Home (DashboardTab/NextFightCard/
+  // BookingsList) via useAcceptOffer, offer-board-contract.md §5 "Accept from
+  // Home: exact sequence". Returns {ok:true} or {ok:false, code, message}
+  // instead of throwing, so both callers can clear their own in-flight state
+  // (acceptingId) without a try/catch at every call site.
   const handleAcceptOffer = useCallback(
-    async (opponentId, offerType = "Even") => {
-      if (!fighter?._id) return;
+    async (opponentId) => {
+      if (!fighter?._id) return { ok: false, code: null, message: "No fighter loaded" };
       setMessage(t("app.fightAccepting"));
       try {
-        const fight = await api.createOffer(fighter._id, { opponentId, offerType });
+        const fight = await api.createOffer(fighter._id, { opponentId });
         await api.acceptOffer(fighter._id, fight._id);
-        setOffers([]);
 
         // Fetch Fighter Report and camp state immediately after accept
         const [report, state] = await Promise.all([
@@ -1118,10 +1164,12 @@ const handleGetOffers = useCallback(async () => {
         // NOTE: tutorialBus.emit("fight_accepted") fires from the FaceOff's
         // onDone (below in render) — not here — so the tutorial waits for the
         // face-off to finish before advancing to the Fighter Report tooltip.
+        return { ok: true };
       } catch (e) {
         const errMsg = e.message || "Accept failed";
         maybeShowBlockPopup(errMsg, e.code);
         setMessage(errMsg);
+        return { ok: false, code: e.code, message: errMsg };
       }
     },
     [fighter?._id, loadFighter, maybeShowBlockPopup]
@@ -1233,11 +1281,15 @@ const handleGetOffers = useCallback(async () => {
       // REPLACE (never append) — a fresh fight always overwrites any leftover
       // queue from a previous resolve.
       const queue = [];
-      if (result.summary?.beltWon && result.summary?.promoted) {
+      // A GCS belt win has promoted === null (never a tier-up); beltTier names the belt.
+      // Older payloads have no beltTier, and always carry promoted on a belt win.
+      if (result.summary?.beltWon && (result.summary.promoted || result.summary.beltTier)) {
         queue.push({
           type: "belt",
-          from: result.summary.promoted.from,
-          to: result.summary.promoted.to,
+          from: result.summary.beltTier ?? result.summary.promoted?.from ?? null,
+          to: result.summary.promoted?.to ?? null,
+          titleDefense: !!result.summary.titleDefense,
+          gcsTitleWins: result.summary.gcsTitleWins ?? 0,
           weightClass: result.fighter?.weightClass,
         });
       }
@@ -1279,23 +1331,35 @@ const handleGetOffers = useCallback(async () => {
       setSelectedBuffLabel(null);
       tutorialBus.emit("fight_resolved");
     } catch (e) {
+      if (e.code === "FIGHT_ALREADY_RESOLVED") {
+        // Another request already settled this fight; just resync, no error popup.
+        loadFighter(fighter._id);
+        setFeedRefreshKey((k) => k + 1);
+        setMessage(t("app.fightAlreadyResolved"));
+        return;
+      }
       const errMsg = e.message || "Resolve failed";
       maybeShowBlockPopup(errMsg, e.code);
       setMessage(errMsg);
+    } finally {
+      resolveInFlightRef.current = false;
+      setResolving(false);
     }
-    setResolving(false);
   }, [fighter?._id, loadFighter, loadGyms, maybeShowBlockPopup, addToast]);
 
   const handleBeginFight = useCallback(async () => {
     if (!weightCut || !fighter?._id || !fighter?.acceptedFightId) return;
+    if (resolveInFlightRef.current) return;
+    resolveInFlightRef.current = true;
     try {
       await api.setWeightCut(fighter._id, fighter.acceptedFightId, weightCut);
     } catch (e) {
+      resolveInFlightRef.current = false;
       setMessage(e.message || t("app.weightCutFailed"));
       return;
     }
     setShowCampSummary(false);
-    handleResolve();
+    await handleResolve();
   }, [weightCut, fighter?._id, fighter?.acceptedFightId, handleResolve]);
 
   // Tutorial completion — reload the fighter so the overlay unmounts (the
@@ -1406,6 +1470,8 @@ const handleGetOffers = useCallback(async () => {
         open={currentOverlay?.type === "belt"}
         fromTier={currentOverlay?.from}
         toTier={currentOverlay?.to}
+        titleDefense={currentOverlay?.titleDefense}
+        gcsTitleWins={currentOverlay?.gcsTitleWins}
         weightClass={currentOverlay?.weightClass}
         onClose={advanceOverlay}
       />
@@ -1589,7 +1655,6 @@ const handleGetOffers = useCallback(async () => {
         <aside className="sidebar">
           <FighterProfile
             fighter={fighter}
-            gyms={gyms}
             campSlotsUsed={campState?.slotsUsed}
             onUpdateFighter={handleUpdateFighter}
             onRefreshFighter={loadFighter}
@@ -1635,10 +1700,12 @@ const handleGetOffers = useCallback(async () => {
             <DashboardTab
               fighter={fighter}
               onNavigate={handleNavTab}
-              onOpenProfile={() => setMobileDrawerOpen(true)}
               onOpenCareerProfile={openCareerProfile}
               refreshKey={feedRefreshKey}
               gymsRetired={gymsRetired}
+              onAcceptOffer={handleAcceptOffer}
+              onRefreshFighter={loadFighter}
+              onMessage={setMessage}
             />
           )}
 
@@ -1782,6 +1849,10 @@ const handleGetOffers = useCallback(async () => {
                 fighter={fighter}
                 onRefreshFighter={loadFighter}
                 onMessage={setMessage}
+                isGuest={!!accountStatus?.isGuest}
+                onOpenAccount={() => setActiveTab("account")}
+                purchaseReturn={purchaseReturn}
+                onPurchaseReturnConsumed={() => setPurchaseReturn(null)}
               />
             </div>
           )}
@@ -1888,8 +1959,6 @@ const handleGetOffers = useCallback(async () => {
               ) : (
                 <FightOffers
                   fighter={fighter}
-                  offers={offers}
-                  onGetOffers={handleGetOffers}
                   onAcceptOffer={handleAcceptOffer}
                   onRefreshFighter={loadFighter}
                   onMessage={setMessage}
@@ -1945,7 +2014,6 @@ const handleGetOffers = useCallback(async () => {
             <div className="m-drawer-body">
               <FighterProfile
                 fighter={fighter}
-                gyms={gyms}
                 campSlotsUsed={campState?.slotsUsed}
                 onUpdateFighter={handleUpdateFighter}
                 onRefreshFighter={loadFighter}

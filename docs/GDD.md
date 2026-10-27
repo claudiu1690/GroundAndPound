@@ -25,14 +25,38 @@ Single-page web client. Top to bottom: a collapsible **Message Bar**, the **App 
 (left sidebar + content panel), and a fixed **App Footer**.
 
 - **Left sidebar:** Fighter Profile (banner, energy/health bars, meta panel — cash, fame, rank, class, gym, backstory — badges, stat meters, active injuries), an **Inventory** panel (shown only when the fighter owns shop items), and the nav menu. Nav order groups by intent — *build → compete → manage*: **Home, Training, My Camp, Special Moves, Fight, Career, Proving Ground, Rankings, Contracts, Hospital, Shop, Events, Media, Library**. My Camp sits directly after Training (it is an alternative training venue — see §6.8), and Special Moves sits with them (all three "build your fighter") rather than down among the utility tabs. **Once `GYMS_RETIRED` flips, the Training item is removed from the nav entirely** (not disabled — gone, see `buildNavItems` in App.jsx), so My Camp becomes the first item under Home and the only training venue. Player-facing copy positions it that way, so the two must stay in step.
+- **Home ("Fight Night"):** the landing screen, rebuilt 2026-09-05. It leads with the next bout rather than a grid of status tiles. Top to bottom: a **title-shot strip** (progress toward the three title conditions); a **hero** on the octagon image showing you and your next opponent as two stacked **banners** (the shipped `BannerPreview`, since fighters have no portrait art) with a VS mark, the stakes line and the primary call to action; an **undercard** row of the other waiting offers, which becomes a horizontal snap scroller on phones; then a **grid** of every persistent module, grouped under four band headers, *Ringside* (Proving Ground, Rankings, Fighter card), *Corner report* (Vitals, Injuries, Fight camp, Stats and XP, My Camp), *The purse* (Money and Fame, Sponsorship) and *Press and record* (Octagon Gazette, Recent career). Hierarchy carries urgency: the hero and the Proving Ground tile are the loud elements, routine status stays quiet. See §1a for the data behind it.
+
 - **Footer:** game wordmark, contextual status badges (injury count → Hospital, camp → Fight, Fame → Fame drawer), Sign Out.
 - **Overlays:** Training toast stack, Tier-Up / Belt-Won overlays, Fight-block popup (energy / injury), Fame drawer, Octagon Gazette, Onboarding Tutorial, **Fight-Accept Face-Off** (see §10), Fighter Report, Camp Summary, Badge-unlock celebration, Special-Move drop reveal.
+
+---
+
+### 1a. Home screen data and hooks
+
+Home is the **Athlete Page** (rebuilt 2026-09-25, mockup `mockups/home-ufc-redesigns.html` variant C, contract `docs/offer-board-contract.md`). Layout, top to bottom: the title-shot strip; a two-column hero with the fighter's identity block on the left (monogram, nickname, name, division line, record, division rank, OVR, streak) and the **Next fight** card on the right; Fighter stats (all eight stat bars) beside Condition (energy, health, injury, fight camp, home camp); the **Bookings** list, one row per bout on the offer board plus a Call out row; then Rankings, Last fight and Purse & fame tiles. On phones the same DOM order stacks into one column.
+
+Home is served by one call, `GET /fighters/:id/dashboard` (`services/dashboardService.js`), plus the already-loaded fighter payload. Blocks of note:
+
+- **`heroBout`** the bout the Next fight card shows. Resolves to the accepted fight if one is signed, otherwise the best bout on the offer board (an unlocked title shot first, otherwise the highest-OVR acceptable offer), otherwise null. Because the board is persisted (§7), `opponentId` is a durable accept handle: Home accepts a bout directly through the same create-offer and accept calls the Fight Hub uses. The card shows the opponent's record, OVR, rank, streak, difficulty and nemesis or callout chips, the purse and the round count. States: offer on the board, fight signed (CTA becomes the hero action, usually "Go to camp"), board frozen, board blocked by injury, nothing on the board.
+- **`offers`** the offer board: `count` (acceptable bouts), `best`, `list` (every slot, including a locked title shot and frozen slots, max four) and the board meta (`generatedAt`, `expiresAt`, `frozen`, `blockedReason`, `blockedCode`).
+- **`lastFight`** the most recent PvE result from the activity log (result, opponent, outcome line, title flag), or null before the debut.
+- **`pvp.ladderRank` / `ladderSize` / `twistKey` / `twistName`** the ladder standing and the season twist. The twist sentence is frontend copy keyed by `twistKey`, so the server never ships prose.
+- **`homeCamp`** the persistent camp: name, tier, condition band, head coach with rank and morale, wage debit date, and the Monday Trainer Market reset. Read with a single `HomeCamp.findOne`; the dashboard must never call `getCampState`, which lazily ticks and writes.
+
+Two hooks come from the fighter payload rather than the dashboard: the **unread defense report** (`fighter.pvpDefense`) and the **banner** (`fighter.banner`). Home reads the defense summary as a prop and never calls `/pvp/defense-results`, which acknowledges by default and would silently mark reports read on page load.
+
+**Deliberately not shown:** a weekly ladder movement chip. `PVPRecord` stores no historical rank, so it would need a new field plus a weekly snapshot job. The ladder row shows position out of field size only. The per-fight career `ranking.delta` is unaffected and still renders on the Rankings tile.
+
+Every module degrades independently to null and renders an empty state rather than disappearing, because the grid layout assumes its slots. Identity, stats and Condition render synchronously from the fighter payload and are never skeletoned; the modules that wait on the dashboard call render a skeleton only on a cold load, never a wrong state that then flips. Accepting from Home runs the same flow as the Fight Hub, including the confirmation when the fighter carries a non-blocking injury; a stale board (bout gone, fight already booked, title still locked) reloads the board instead of failing silently.
 
 ---
 
 ## 2. Fighter Creation
 
 Three choices: weight class, fighting style, optional backstory.
+
+**Nickname** is optional and follows one rule wherever it is set (creation, the profile editor and Account settings; `utils/nickname.js`, 2026-10-20): 2 to 20 characters, letters, numbers, spaces, hyphens and apostrophes only, no double spaces, and it must pass the profanity filter. Nicknames set before the rule existed are kept until the player changes them.
 
 ### 2.1 Weight Classes (permanent for the career)
 | Weight Class | Limit |
@@ -117,10 +141,11 @@ energy (each fight costs the tier's energy amount above; energy regenerates 1/mi
 - **Regional Pro → National:** beat the Regional Pro champion (title shot — OVR threshold + top 5 + **3 wins earned while top 5**).
 - **National → GCS Contender:** beat the National champion (title shot — OVR threshold + top 5 + **3 wins earned while top 5**).
 - **GCS Contender → GCS:** auto-promotes at OVR 62. **The GCS Contender belt is not a winnable title** (no champion at this tier).
-- **GCS:** final tier — defend the belt indefinitely. Pro title wins (Regional Pro, National, GCS) grant **+200 fame** + a permanent championship badge.
+- **GCS:** final tier, defend the belt indefinitely. Pro title wins (Regional Pro, National, GCS) grant **+200 fame** + a permanent championship badge. At GCS there is no OVR gate (there is no tier above): every GCS fighter is a title contender, and the shot unlocks at **top 5 + 3 wins while top 5 + no rematch cooldown**. Winning does not promote; see §8 "The GCS belt".
 
-> Championship badges (Amateur / Regional Pro / National / GCS) are derived from
+> Championship badges for Amateur / Regional Pro / National are derived from
 > promotion tier: reaching a tier proves you won every winnable title below it.
+> **GCS Champion is not derived:** it is awarded only by winning the GCS title.
 
 ---
 
@@ -695,6 +720,21 @@ check is needed at grant time: Common teaches 1 move, Uncommon 2, Rare 3, Legend
 full domain pool. A Common coach's Rank 4 therefore teaches **nothing** — his single move
 already arrived at Rank 2, and Rank 4 pays him out in the archetype perk instead.
 
+**Domain pools since Special Moves v2** (`DOMAIN_TEACH_POOLS`, pool order is teach order; the
+v1 prefix of each pool was never reordered, and the v2 ids were appended so existing coaches'
+stored pools still match):
+
+| Domain | Pool (in slot order) | Size |
+|---|---|---|
+| Striking | HEAVY_HANDS, BODY_SNATCHER, CLINCH_KILLER, THE_FINISHER, HIGH_GUARD, SECOND_GEAR, SUPERMAN_PUNCH | 7 |
+| Wrestling | SPRAWL_INSTINCT, MOUNT_REAPER, KILLER_INSTINCT, DOUBLE_LEG_PRECISION, TOP_CONTROL, BLAST_DOUBLE | 6 |
+| BJJ | NEVER_TAP, VETERAN_IQ, IRON_RECOVERY, FRAME_AND_BASE, GUILLOTINE_CHOKE, ARM_TRIANGLE | 6 |
+| Conditioning | GRANITE_JAW, SECOND_WIND, PACE_PUSHER, DEEP_WATERS, FIGHTING_SPIRIT | 5 |
+
+`TEACH_RANK_BY_SLOT` now covers slots 0 to 6 (slot 0 at Rank 2, every other slot at Rank 4)
+so the longest pool boots. A coach's pool is frozen at generation: coaches hired before v2.2
+keep the shorter list on their card and are never backfilled.
+
 **Rarity of the copy.** `teachRarityFor(coachRarity, move.minRarity)` — the coach's own
 rarity, floored by the move's catalogue minimum. A Rare coach hands over Rare copies; he
 can never hand over a copy below what the catalogue allows for that move, and never above
@@ -798,6 +838,38 @@ players are compensated out of band (energy drinks) rather than through an in-pl
 conversion. `scripts/migrateFightersToHomeCamp.js` is therefore **not** part of the
 cutover; it remains only for backfilling camps for players who never opened the screen.
 
+##### The compensation grant (owner decision, 2026-08-04)
+
+**3 Energy Drinks to every non-bot fighter, flat.** Not tiered by how much gym progress a
+player had. A flat grant cannot be argued with, needs no explanation of who counted as
+"affected", and costs a fraction of a scaled payout. Drinks are the currency because the loss
+was mostly *time* (energy sunk into gym sessions), and a drink converts straight back into
+training in the camp that replaced them.
+
+> ⚠️ Sizing note. Drinks are now sold for real money (§15.3), so a grant is forgone revenue and
+> a large one would devalue the shop launching in the same release. 3 is deliberately below the
+> smallest bundle (6 for $4.99): a sincere gesture, not a substitute for buying. It is *not* an
+> actuarial refund — the six gym-only perks are permanent and a consumable cannot replace them.
+> Matching them properly would take hundreds of drinks. This is goodwill, and the GDD should say
+> so rather than pretend the maths balances.
+
+| Piece | Location |
+|---|---|
+| Amount + campaign key | `services/compensationService.js` (`GYM_RETIREMENT_DRINKS`, `GYM_RETIREMENT_CAMPAIGN = "gym-retirement-1.6"`) |
+| Ledger | `models/compensationModel.js` — unique `{fighterId, campaign}` **is** the idempotency key |
+| Runner | `scripts/grantGymRetirementCompensation.js` (dry run by default, `--commit` to pay) |
+| Player notice | `ActivityLog` type `GYM_COMPENSATION`, rendered in the career feed as "Goodwill" |
+
+Exactly-once is enforced in this order: **claim** (insert the ledger row, unique index rejects a
+second attempt), **grant** (one atomic `$min`/`$add` pipeline update, so a player spending drinks
+concurrently cannot lose it), **stamp** (`grantedAt` plus what actually landed). A crash between
+claim and grant leaves an unstamped row that the next run completes; the reverse order would
+double-pay after a crash. The grant clamps to the 99 inventory soft cap, and `granted` is stored
+separately from `drinks` so "I got fewer than promised" is answerable from data.
+
+The script is safe to re-run and pays nobody twice. Fighters created *after* it runs never
+receive it, which is correct: they lost nothing.
+
 ⚠️ **The shared-key rule.** Gym perks and camp perks are the same keys — the camp grants
 into `fighter.gymPerks` rather than defining a parallel perk system — and 4 of the 10 gym
 perks (`corner_confidence`, `mat_returns`, `submission_awareness`, `iron_conditioning`)
@@ -860,16 +932,24 @@ appear, via the silent self-heal on profile read, but quietly and at the wrong m
 
 ## 7. Fight Offers & Callouts
 
-Requesting offers returns three opponent cards; a fourth **Title Shot** card appears when eligible.
+Offers live on a persisted **offer board** (`fighter.offerBoard`, `services/offerBoardService.js`, added 2026-09-25). The board holds three opponent slots, plus a fourth **Title Shot** slot when the fighter is a contender. It is "booked by the matchmaker": the player does not request offers, the board is generated the first time anything reads it and the same three names then show on Home, in the Fight Hub and in accept validation until the board is replaced.
 
-| Offer | Opponent Strength |
-|---|---|
-| Easy | 3–5 Overall below the player |
-| Even | Within 3 Overall |
-| Hard | 2–5 Overall above the player |
-| Title Shot | The champion of the current tier |
+| Offer | Opponent Strength | Purse (x tier signing fee) |
+|---|---|---|
+| Easy | 3–5 Overall below the player | 0.70x |
+| Even | Within 3 Overall | 1.00x |
+| Hard | 2–5 Overall above the player | 1.40x |
+| Title Shot | The champion of the current tier | 1.75x |
 
-Accepting costs energy (10–20 by tier) and enters the training-camp phase.
+**Purse by slot** (added 2026-09-25, `consts/offerBoardConfig.js`, `fightService.boutPurse`). Every bout on the board carries its own purse: the tier signing fee times the slot multiplier above, plus up to **5%** more for a tougher opponent inside the slot's OVR window (0% at the soft edge of the window, 5% at the hard edge; a title shot takes no gap bonus), rounded to the nearest $10. The number is deterministic, stamped on the Fight at offer time, and is the base the payout in §8 starts from, so a clean win pays exactly what the card showed. Amateur: Easy $350–370, Even $500–525, Hard $700–740, Title $880. National: Easy $1,540–1,620, Even $2,200–2,310, Hard $3,080–3,230, Title $3,850. Why: the three slots were a difficulty label with no economic weight and the Library had promised otherwise; with Easy 75%, Even 55% and Hard 35% win rates and losses paying 70%, the expected purse across the three slots stays about 0.9x the signing fee, so the economy is not inflated while Hard becomes a real risk-reward call. A callout still lands in the Hard slot, so its +25% win bump now stacks on the Hard purse. Nemesis fights stay fame-only.
+
+**Lifetime.** A board expires **24 hours** after generation ("New set in 18h"). It is also replaced, on the next read, whenever its fingerprint no longer matches the fighter: promotion tier, weight class, nemesis, or contender status changed, or a fight was resolved. Callouts are an overlay, never stored: setting one swaps it into the Hard slot immediately and cancelling brings the original Hard pick back, so a callout can never be used as a free reroll. Title-shot lock state is computed live.
+
+**Frozen.** While a fight is accepted the board is frozen: nothing regenerates and every slot is shown but unacceptable. A blocking injury clears the board and shows the injury reason instead; a fresh board generates once the injury heals.
+
+**Accepting.** `createOffer` resolves the opponent and difficulty from the board. An opponent who is not on the live board is refused, the client never chooses the difficulty, and a locked title shot cannot be accepted. The accept itself is an atomic claim on `acceptedFightId`, so two accepts cannot both go through. Accepting costs energy (10–20 by tier) and enters the training-camp phase.
+
+**No reroll.** There is no way to ask for a new set early (removed 2026-10-26, before release). The board already turns over after every finished fight and every 24 hours, every board offers an Easy, an Even and a Hard bout, and the nemesis, callout and title shot would come back after any reroll anyway. A paid reroll only let players dodge a style matchup, and the old free "Get offers" button let them fish for a soft opponent; neither is worth the extra button.
 
 ### 7.1 Callouts (fame-driven matchmaking)
 Spend **fame** to force a specific opponent into the next Hard slot.
@@ -891,6 +971,18 @@ Each pro tier (Regional Pro, National, GCS) has a persistent NPC champion per we
 - **The fight:** champion gets +5% all stats; their Fighter Report shows only 2 visible fight logs; wildcard hidden; always a full 5-slot camp; gold theme throughout.
 - **Winning:** dethrone the champion, promote, +200 fame (Amateur +75) + permanent Champion badge; a new NPC champion is seeded from the old tier.
 - **Losing a title shot:** 2-win cooldown (card greyed until 2 more wins). Two straight title losses → the champion becomes your **Nemesis**. Pending promotion stays set — you can always retry.
+
+### 8.1 The GCS belt (added 2026-10-20)
+
+GCS has no tier above it, so the GCS title is a belt you win and then keep winning. Code: `fightService.isTitleContender` (contender = in GCS, or has a pending promotion) and `fightService.applyTitleShotWin`; contract `docs/gcs-title-contract.md`.
+
+- **Eligibility:** every GCS fighter is a contender (no OVR gate). The title card appears once you are **top 5** with **3 wins banked while top 5** and no rematch cooldown. The champion is the NPC GCS champion of your weight class.
+- **First GCS title win:** **+200 fame**, the **GCS Champion** badge, **3 Energy Drinks**, and the title purse (**1.75x** the GCS signing fee, $21,000). No promotion, no rank reset. Feed: "Won the GCS {weight class} Title".
+- **Title defenses (every later GCS title win):** **+100 fame** and the 1.75x purse; no new badge, no drinks. Feed: "Defended the GCS {weight class} Title (xN)". Why 100: the first belt is the milestone; defenses must stay worth fighting without out-earning the fame from regular wins and turning the belt into a fame farm.
+- **After any GCS title win:** top-5 wins and the rematch cooldown reset to 0; rank, tier wins and contender status are kept, so the next shot needs 3 fresh top-5 wins (minimum 4 fights between title fights).
+- **Losing:** the same 2-win cooldown and Nemesis rule as every tier.
+- **Rankings:** the NPC champion keeps rank 1 (NPC ranks never move). The player's belt is a career record (`fighter.gcsTitleWins`) shown as a trophy on the player's own Rankings row.
+- **Overlays:** a GCS win shows the Belt Won overlay ("TITLE DEFENDED" on a defense), never a Tier Up.
 
 ---
 
@@ -1014,7 +1106,7 @@ KO/TKO (win), Submission (win), Decision Unanimous (win), Decision Split (win), 
 Multiplied by an outcome modifier: KO/TKO 1.3×, Sub 1.25×, Dec Unanimous 1.1×, Dec Split 1.05×, Draw 1.0×, Loss by Decision 0.8×, Loss by Finish 0.7×. A win in **comeback mode** adds ×1.5.
 
 ### 10.4 Cash Earnings
-Base purse = the tier's signing fee, scaled by outcome: **Win 100%**, **Draw 50%**, **Loss 70%**. Modifiers on top: higher notoriety tier +5%→+50%; comeback +30%; active **Respect** flag on opponent (and you win) +15%; callout win +25%; missing weight −20%.
+Base purse = the bout's own purse from the offer board (§7 "Purse by slot": the tier signing fee times the slot multiplier plus the OVR-gap bonus, stamped on the Fight at offer time; fights created before that carry the flat signing fee), scaled by outcome: **Win 100%**, **Draw 50%**, **Loss 70%**. Modifiers on top: higher notoriety tier +5%→+50%; comeback +30%; active **Respect** flag on opponent (and you win) +15%; callout win +25%; missing weight −20%.
 
 ### 10.5 Fight Description (round-by-round breakdown)
 Every fight produces a **round-by-round event feed** rather than a generic paragraph. It is shown in the right column of the post-fight summary and again in the **career-feed drawer** (§20.4). Both render from the same stored data, so a fight reads identically wherever you open it.
@@ -1134,7 +1226,7 @@ The Shop sells consumables for cash. A separate premium currency, the **Energy D
 Inventory caps at 99 per item. Boosters consume one charge per training session; supplements apply to the next fight only.
 
 ### 15.2 Energy Drinks (premium, +50 energy each)
-Earned free through play, or bought in cash/real-money bundles (bundle pricing currently stubbed). **Free-earn sources:**
+Earned free through play, or bought with real money in bundles (§15.3). **Free-earn sources:**
 - **Win streaks:** 5 / 10 / 15 / 20-fight streaks → 1 / 2 / 2 / 3 drinks.
 - **Promotions:** each tier promotion → 3 drinks.
 - **Sponsor contracts:** select contracts award 2–4 drinks on completion (`rewardDrinks`).
@@ -1142,6 +1234,155 @@ Earned free through play, or bought in cash/real-money bundles (bundle pricing c
 > Design intent: cash items should never be trivially spammable relative to fight
 > purses (a buff costs a meaningful fraction of a win), and the premium Energy Drink
 > is the "earn it through achievement" reward channel, not a pay-to-win staple.
+
+### 15.3 Real-money purchases (Stripe Checkout)
+
+Energy Drink bundles are the game's only real-money product. There is no second premium
+currency and no subscription.
+
+| Bundle id | Product | Price | Drinks | Per drink |
+|---|---|---|---|---|
+| `drinks-6` | 6 Energy Drinks | $4.99 | 6 | $0.83 |
+| `drinks-15` | 15 Energy Drinks | $9.99 | 15 | $0.67 |
+| `drinks-40` | 40 Energy Drinks | $19.99 | 40 | $0.50 |
+| `drinks-100` | 100 Energy Drinks | $39.99 | 100 | $0.40 |
+
+Bundles live in `consts/shopConfig.js` (`PREMIUM_BUNDLES`, `PREMIUM_CURRENCY = "usd"`). Larger
+bundles discount to about half the small bundle's unit price. That curve is deliberately mild:
+Energy Drinks are a tempo item, not a power item, so the top bundle should read as convenience
+rather than as the only sane purchase.
+
+**What a drink can and cannot buy.** A drink is +50 energy. Energy buys training sessions and PvP
+attempts, so money buys *tempo*, never stats, never a fight outcome, and never anything unobtainable
+by playing. Drinks are also earned free (§15.2), which keeps the paid channel a shortcut through the
+same door rather than a door of its own. **No item that alters a fight result may ever be sold for
+real money.** That is the line this system is designed around, and moving it would change what the
+game is.
+
+#### 15.3.1 Purchase flow
+
+1. Player picks a bundle in the Shop's Premium tab.
+2. `POST /fighters/:id/shop/checkout` with `{ bundleId }` and nothing else.
+3. Server looks the price up from config, writes a `Purchase` row (`status: "created"`), and
+   returns a Stripe Checkout URL.
+4. Player is redirected to Stripe, pays there, and returns to `/?purchase=success|cancelled`.
+5. Stripe posts `checkout.session.completed` to `POST /webhooks/stripe`. **Fulfilment happens here
+   and nowhere else.**
+
+**Card details never touch this app.** Stripe Hosted Checkout keeps the integration in PCI scope
+SAQ-A: no card field is ever rendered by us and no card data is ever received by us.
+
+#### 15.3.2 Rules that must not be relaxed
+
+- **The server sets the price.** The request carries a bundle id; any `amount`, `price`,
+  `quantity` or `currency` in the body is ignored. A checkout that trusted a client amount would
+  sell 100 drinks for one cent.
+- **The webhook is the only source of truth.** The `?purchase=success` return param is a
+  navigation hint that anyone can type. It refreshes and reports; it never credits.
+- **Fulfilment is exactly-once.** Stripe delivers at-least-once and retries. Granting is gated on
+  an atomic conditional claim (`updateOne` with `status: { $ne: "fulfilled" }`), so a redelivered
+  event matches nothing and grants nothing. Note this is a *conditional update*, not
+  `saveWithVersionRetry`, which is not a mutex.
+- **Amounts are copied, never re-read.** `amountCents` and `drinks` are frozen onto the `Purchase`
+  at creation, so repricing a bundle can never rewrite what an old order was worth.
+- **Webhook metadata is not trusted.** `metadata.fighterId` is echoed back from what we sent, so
+  the handler resolves the order by session id against the ledger and refuses if there is no match.
+- **Missing keys disable payments.** `config.stripe.enabled` is false unless both the secret and
+  webhook-signing keys are present, and there are no fallback defaults. A placeholder signing
+  secret would be worse than none, since forged events would verify against a key in the repo.
+
+#### 15.3.3 Data & endpoints
+
+| Piece | Location |
+|---|---|
+| Bundle catalogue | `consts/shopConfig.js` |
+| Ledger model | `models/purchaseModel.js` (unique index on `stripeSessionId` is the idempotency key) |
+| Business logic | `services/paymentService.js` |
+| HTTP layer | `controllers/paymentController.js` |
+| Checkout route | `POST /fighters/:id/shop/checkout` (auth required, rate limited) |
+| Webhook route | `POST /webhooks/stripe` (raw body, signature verified, no auth) |
+
+Purchase statuses: `created` → `fulfilled`, plus `failed`, `refunded` and `disputed` (`paid` stays in the enum for compatibility; code never sets it).
+
+> ⚠️ The webhook must be mounted **before** `express.json()` with a raw body parser. Signature
+> verification hashes the exact bytes Stripe sent, so a parsed and re-serialised body fails to
+> verify and every real payment would be rejected.
+
+#### 15.3.4 Access & abuse controls
+
+- **Registered accounts only.** Guests are refused with `account_required`. A guest account can be
+  lost with its device token, and a purchase that cannot be recovered is a refund and a complaint.
+  The player is asked to add an email and password first.
+- **Checkout is rate limited** to 10 attempts per 15 minutes per IP. This is anti-fraud, not
+  anti-load: an open endpoint that mints payment pages is what card-testing rings use to validate
+  stolen cards in bulk, and that traffic gets the *merchant* account penalised. The webhook is
+  deliberately exempt, since rate-limiting Stripe only triggers retries.
+- **Delivery is asynchronous.** The redirect often beats the webhook by a second or two. The
+  client polls `GET /fighters/:id/shop/purchases/:sessionId` (see 15.3.5). Drinks landing late
+  is normal and must never be presented to the player as a failed purchase.
+
+#### 15.3.5 Launch decisions (v2.2.0, 2026-10-27)
+
+Owner decisions: Energy Drink bundles only; **USD, tax-inclusive, collected by Stripe Tax**; built
+and verified in Stripe test mode until the live account exists; ships inside v2.2.0.
+
+- **Checkout session.** `automatic_tax` on, `tax_behavior: "inclusive"` (the label price is the
+  charged price; Stripe backs the tax out). `expires_at` = now + 30 min, so a forgotten page cannot
+  charge hours later (expiry maps to `failed`). `consent_collection.terms_of_service: "required"`
+  with custom text: "I agree to the Terms of Service. I ask for the Energy Drinks to be delivered
+  immediately and acknowledge that I lose my 14-day right of withdrawal once delivery starts. I am
+  18 or older, or have permission from a parent or guardian." The success URL carries
+  `session_id={CHECKOUT_SESSION_ID}`.
+- **Stripe Dashboard prerequisites.** Stripe Tax enabled with an origin address, and public Terms /
+  Privacy URLs (`<APP_URL>/?legal=terms` and `?legal=privacy`, which open the in-game modals).
+  Without them every session create fails and checkout returns 500 `server_error`.
+- **Paid drinks ignore the 99 soft cap.** Fulfilment is a plain add (100 bundle at 99 owned = 199).
+  The cap exists to stop free-earn hoarding; clamping a paid order would lose paid goods. Free-earn
+  grants keep clamping, so they pay 0 while a player sits above 99; the Premium tab says so.
+- **Status endpoint + polling.** `GET /fighters/:id/shop/purchases/:sessionId` returns
+  `{ status, drinks }` for the caller's own purchase only (another player's session is a 404). The
+  Shop polls every 2 s for up to 30 s: fulfilled shows "Done", failed shows the failure banner, and
+  a timeout shows "still confirming" with the support address.
+- **Grant first, then claim.** Step 1 is one atomic `Fighter.updateOne` filtered on "this
+  purchase id is not in `paidPurchaseIds` yet" that `$inc`s the drinks and `$push`es the id, so it
+  is exactly-once per purchase by itself. Step 2 flips the purchase to `fulfilled` and records
+  `consentAccepted`, `amountTotalCents`, `taxCents` and `stripePaymentIntentId` in the same update;
+  whoever wins it sends the receipt and analytics. If the grant throws, nothing is claimed and the
+  500 makes Stripe retry, so a player is never left paid but not granted, and `fulfilled` always
+  means the drinks landed. Only `created | paid | failed` orders are processed, so a replayed
+  `completed` event after a refund or dispute grants nothing. (QA found the reverse order could
+  strand a paid order; fixed before launch.)
+- **Refunds.** `charge.refunded` records `refunded` and never claws back drinks. A refund is the
+  owner's own call in the Stripe Dashboard, so the drinks stay as goodwill.
+- **Chargebacks (added 2026-10-27).** Players cannot refund themselves; the abuse path is buy,
+  spend, then dispute with the bank (which also costs a ~$15 dispute fee). On
+  `charge.dispute.created` for a `fulfilled` or `refunded` order:
+  1. **Claw-back:** `energyDrinks = max(0, energyDrinks - order.drinks)`, one atomic pipeline
+     update guarded by `Fighter.clawedBackPurchaseIds` (exactly once per order). The amount
+     actually removed is stored on `Purchase.clawedBackDrinks`. Spent drinks are gone; the
+     balance never goes negative and nothing else (stats, fights, cash) is touched.
+  2. **Block:** `User.paymentsBlocked = true`, so checkout refuses with `account_blocked`
+     ("Purchases are disabled on this account. Contact support"). The game itself stays playable.
+  3. Status flips to `disputed` last, so a failed write in step 1 or 2 answers 500 and Stripe's
+     retry finishes the job. Unblocking (e.g. after a won dispute) is a manual Mongo edit, and
+     reclaimed drinks are not restored automatically. `paymentsBlocked` can also still be set
+     by hand for fraud.
+  4. **Early disputes.** Stripe does not order events, and a dispute can land before
+     `checkout.session.completed` (the `4000 0000 0000 0259` test card always does this). If the
+     disputed payment belongs to one of our still-open purchases, the handler answers 500 so Stripe
+     redelivers after fulfilment, and the claw-back then runs normally.
+- **Confirmation email** on fulfilment (Resend): bundle, amount incl. tax, date and the consent
+  sentence, which EU consumer law wants on a durable medium. Fire-and-forget: the grant never
+  depends on it. Stripe's own receipt email should also be enabled in the Dashboard.
+- **Removed:** the old stub `POST /fighters/:id/shop/buy-premium`. A fake purchase endpoint must
+  not ship next to the real one.
+- **Analytics:** `checkout_started`, `checkout_blocked_guest`, `purchase_fulfilled`,
+  `purchase_failed`, `purchase_refunded` (with `disputed`).
+- **Legal (owner-approved 2026-10-27):** Terms section 6 "Purchases and refunds" and a Stripe
+  paragraph in the Privacy Policy. Operator: Digital Olive. Governing law stays generic
+  (section 12). Age: 13+ to play, 18+ or guardian permission to buy (stated in section 6 and in
+  the checkout consent line). Still open before live payments: Stripe Tax registrations /
+  product tax code and the live Stripe account.
 
 ---
 
@@ -1189,7 +1430,7 @@ A **public character** that emerges from the media choices the player already ma
 |---|---|---|---|---|
 | **The Villain** | Hated+Loud | +15% purses; trash-talk fame ×2; callout fame cost ×0.5; listeners +35% (cosmetic) | sponsor payouts −35%; beef-lapse penalty ×2; respect/charity fame ×0.5; **beef-loss heat drain** (−15/axis toward center) | **Bad Blood** — nemesis + active-Beef fights pay ×1.5 fame & +15% purse (stacks on the +30% grudge base) |
 | **The People's Champ** | Loved+Loud | comeback-mode fight bonuses +5%; +1 sponsor slot; +1 appearance-pool slot; listeners +20% | purses only +5%; trash-talk fame ×0.5; upset-loss −150 fame (lose to a lower-rated foe) | **Hometown Hero** — comeback-mode win adds +30% purse (additive) & +250 flat fame |
-| **The Boogeyman** | Hated+Quiet | damage taken −2% (shares the OPPONENT_DAMAGE_REDUCTION lane); +8% purses; cryptic fame ×1.5 | listeners −10%; sponsor payouts −20%; loud-action fame ×0.5 | **Ambush** — equipped **Proc** special moves fire ×1.10 (excludes Sprawl Instinct's lane; capped +0.02/move) |
+| **The Boogeyman** | Hated+Quiet | damage taken −2% (shares the OPPONENT_DAMAGE_REDUCTION lane); +8% purses; cryptic fame ×1.5 | listeners −10%; sponsor payouts −20%; loud-action fame ×0.5 | **Ambush** — equipped **Proc** special moves fire ×1.10 (excludes Sprawl's lane; capped +0.02/move). Since Special Moves v2, Ambush also scales the STRIKE_DAMAGE, SUBMISSION_SUCCESS and FLASH_KO_RESISTANCE proc lanes (Second Gear, Deep Waters, Guillotine Choke, Fighting Spirit), still under the +0.02 cap. |
 | **The Role Model** | Loved+Quiet | sponsor payouts +10%; gym rank-up cost −10%; hospital bills −15%; beef-lapse/weight-miss fame penalties halved | no purse bonus; heat builds 25% slower; Trash a Rival relies on Breaking Character | **Legacy** — documentary & win-milestone fame ×1.5 |
 
 **Modifier shapes:** Type A additive fraction (`full × heatFrac`), Type B reward multiplier (`1 + (mult−1) × heatFrac`), Type C flat counts (+1 sponsor slot / +1 appearance slot — no fractional scale, unlock in full only at heat ≥70). `heatFrac` uses the floored curve above (0.5 at heat 25 → 1.0 at heat 100), so e.g. a fresh Villain already earns beef fame ×1.5 and +7.5% purses.
@@ -1262,7 +1503,7 @@ The dashboard player-identity card is clickable and deep-links to the Profile su
 ### 20.2 Badges (PvE catalog + synthesized Proving Ground category)
 Permanent profile markers. PvE categories: **Career**, **Championships**, **Style**, **Gym**, **Media**, plus a synthesized **Proving Ground** category for PvP badges (§22.12). Locked badges show progress bars where applicable; newly-unlocked badges show a **NEW** corner flag (acknowledged by viewing the Profile — no modal). Examples:
 - **Career:** First Blood, 10/25/50 Wins, win streaks, Division Dominator, The Long Game, Veteran.
-- **Championships:** Amateur / Regional Pro / National / GCS Contender (non-winnable) / GCS Champion — **derived from promotion tier**; the belts on the Profile mirror these.
+- **Championships:** Amateur / Regional Pro / National are **derived from promotion tier**; GCS Contender is non-winnable; **GCS Champion is earned only by winning the GCS title** (§8.1). The belts on the Profile mirror these.
 - **Style:** Finisher, KO Artist, Sub Hunter, Decision Machine, Iron Chin, Iron Will, Giant Killer, Comeback Kid, Fight of the Night, Perfect Camp, Called It, Nemesis Slayer, beef/respect badges.
 - **Gym:** Rank-4 mastery badges (one per gym) **plus training-session milestones — Gym Regular (50), Gym Rat (100), Tireless (250)**, driven by lifetime `careerTrainingSessions`.
 - **Media:** On the Mic, Media Star, The Documentary, Controversy, People's Champion, Star Power.
@@ -1595,7 +1836,7 @@ version constant and no backend endpoint — the version ships inside the bundle
 
 ## 26. Special Moves
 
-Collectible, named techniques (*Granite Jaw*, *Sprawl Instinct*, *The Finisher*) that
+Collectible, named techniques (*Granite Jaw*, *Sprawl*, *Overhand Right*) that
 give a **small, permanent in-fight edge** — a fighter-identity layer on top of stats.
 Distinct from Fight Camp (§9): camp is *per-fight, opponent-reactive prep*; Special
 Moves are *permanent, always-equipped*. **PvE-only** — they do **not** apply in the
@@ -1657,7 +1898,9 @@ existing fight trigger), **Signature** (Rare+ only, one bounded one-shot per fig
   drawn from **that coach's own teach pool** (the moves on his card — already
   breadth-limited by his rarity, so the bias never points at moves he can't teach)
   whenever the pool contains a move available at the rolled rarity, **falling back to the
-  whole catalog** only when it doesn't. Ordering guarantees the bias can never inflate rarity — it only narrows *which*
+  whole catalog** only when it doesn't (in practice this fallback can never trigger: boot
+  rule 12 keeps a Common-minimum move at slot 0 of every pool, so every pool has an eligible
+  move at any rolled rarity and flagship drops are effectively pool-only). Ordering guarantees the bias can never inflate rarity — it only narrows *which*
   move arrives, making drops feel authored ("my striking coach dropped me a striking
   move") and previewing the Phase-2 teaching fantasy. **Open Mat Sparring keeps zero bias**
   (whole catalog, 4%) as the unbiased control, directly comparable to the gym path. Gym
@@ -1670,6 +1913,10 @@ existing fight trigger), **Signature** (Rare+ only, one bounded one-shot per fig
   (`teachRarityFor`), so this channel is how a player *chooses* a Legendary copy instead of
   waiting for one to roll. Granting is idempotent against the coach's stored `taughtMoveIds`,
   and a coach migrated in at Rank 4 has no promotions left, so he teaches nothing.
+  A coach's teach list is frozen at hire; coaches hired before v2.2 keep their shorter lists.
+- **Drop dilution (Special Moves v2):** catalog-wide drops now spread across 24 moves instead
+  of 12, so each individual move drops about half as often. Coach-pool bias and teaching are
+  the ways to aim at a specific move.
 - **Upgrade vs duplicate:** a pull of a *strictly higher* rarity than owned **upgrades** the
   move in place (keeps `acquiredAt`); an equal-or-lower pull is a **duplicate → cash**
   (`fighter.iron`): Common 100 / Uncommon 250 / Rare 600 / Legendary 1,500. **Teaching uses
@@ -1677,7 +1924,7 @@ existing fight trigger), **Signature** (Rare+ only, one bounded one-shot per fig
   `specialMovesOwned`, so a taught move and a dropped move can never diverge.
 - **No leveling, no pity timer, no PvP** (all deliberately cut from v1).
 
-### 26.4 The roster (v1 — 12 moves) & balance
+### 26.4 The roster (v2, 24 moves) & balance
 Values are per-rarity (C/U/R/L). Passive/Proc reuse existing engine `bonusType` branches;
 Signatures use new per-fight, per-move one-shot state. **Numbers below are the post-QA
 balance pass** — a Monte-Carlo sweep against the real engine showed the pre-trim values
@@ -1689,27 +1936,110 @@ Legendary loadout is a **smaller swing than a matched Fight Camp**, consistent w
 A 5th passive concept, **Complete Package** (`ALL_STATS`), was **cut** from v1: the sweep
 proved `ALL_STATS` is untunable in this engine — it responds non-monotonically across styles
 (≈+7 pts on Boxer but ≈0 on BJJ at the same value, then spiking with a tiny bump), so no
-value gives consistent, fair behavior. The roster is intentionally **4 Passive / 5 Proc /
-3 Signature**; `ALL_STATS` remains a valid engine branch but is used by no move.
+value gives consistent, fair behavior. The roster is intentionally **8 Passive / 10 Proc /
+6 Signature**; `ALL_STATS` remains a valid engine branch but is used by no move.
+
+**v2 expansion (2026-09, `docs/special-moves-v2-spec.md`).** Twelve new moves took the
+roster from 12 to 24, and seven of the shipped moves were renamed (display name only; ids,
+art slugs and values unchanged). Balance decisions from the v2 sweeps: Second Gear and Deep
+Waters ship trimmed because they share the STRIKE_DAMAGE lane with Heavy Hands; the trio
+measured +10.2 pts ungated before the trim and +4.4 after. Fighting Spirit ships at half its
+draft values because there is no precedent for a flash-KO lever anywhere in the bonus system.
+Pace Pusher's lane (OPPONENT_STAMINA_DRAIN) is quantized: stamina is kept in whole points
+and the per-round drain is an integer 8 to 13, so the value only acts in rounds where
+drain x value rounds up to an extra point. The draft .16 measured +8.4 pts alone on the
+Boxer mirror (+16.7 on Capoeira); .08 and .06 both measured +5.3 to +6.3 because both fire
+in nearly every round. It ships at .04/.042/.046/.05 so each rarity sits on its own step
+(1, 2, 3 and 4 rounds in 6) and Legendary lands near the +4 passive ceiling. Tune this lane
+by step, not by percentage (Capoeira amplifies flat bonuses about 2x, so judge it against
+the camp baseline).
+High Guard (+1.9 pts) and Top Control (about 0) were verified on the real engine, and Full
+Mount + Top Control stacked also measured about 0.
+
+**Crossface rework (2026-10-26).** The v2 rename (briefly "Crucifix") put a wrestling name on the old Killer
+Instinct effect (+flash-KO chance once the opponent is under 25% HP), which only rolls in the
+standing exchange, so a Wrestling coach taught a move that did nothing on the ground. It also
+did almost nothing anywhere: paired seeded sims gave +0.06 pts of stoppage wins on a Wrestler
+and +0.15 on a Boxer at Legendary. A stoppage bonus at the same 25% gate is just as dead
+(+0.2 pts even at a guaranteed stoppage) because ground-and-pound damage already finishes a
+fighter that low. Crossface is now an **escape lock**: it arms the first time the opponent
+starts a round under 50% HP, and from then on, whenever the player holds top position, it is
+subtracted from the bottom fighter's escape chance (inside the clamp, so escapeMin 0.18 still
+holds). Measured on the OVR 50 Wrestler mirror at Legendary: +1.05 pts win rate and +2.4 pts
+stoppage wins (Blast Double: +0.5 / +3.3). It is 0 on the Boxer mirror, as a wrestling move
+should be. Id, bonusType and art slug are unchanged; the card unit is now Pin Rating.
+
+**Full card audit (2026-10-27).** Every move was traced through the engine and run through a
+paired seeded sim (same RNG seed per fight with and without the move, 4,000 fights per cell,
+OVR 50 Boxer / Wrestler / BJJ mirrors, Legendary). Three moves measured exactly 0 because their
+"below 25% health" gates opened after ground-and-pound or the stoppage checks had already
+decided the fight, and a fourth only worked in one round of a fight. Changes, with the measured
+result in the move's own style:
+- **Overhand Right**: ready once the opponent starts a round under 75% (was 25%, which a Boxer
+  mirror reached in 0% of fights) and spent on the next striking exchange, so a takedown round
+  never wastes it. R .15 / L .25 (was .08/.15). +3.4 Boxer, +2.6 Wrestler.
+- **Rubber Guard**: was the old Iron Recovery stamina cut below 25% (0.00). Now locks in the
+  first time the player is stuck on the bottom and cuts the ground-and-pound taken from the
+  bottom for the rest of the fight. R .22 / L .32. +4.0 BJJ, +2.7 Wrestler. Unit: Guard Rating.
+- **Fighting Spirit**: was a flash-KO-only cut below 25% (0.00). Now, while the player starts a
+  round under 75%, it cuts ALL damage taken (strikes and ground) by the value. .02/.03/.045/.06.
+  +2.2 Boxer, +2.0 Wrestler, +4.0 to +4.4 Kickboxer/Muay Thai, +8.7 Capoeira (in line with each
+  style's own best moves). A first version also softened every stoppage roll; the 8-style sweep
+  showed that half alone was worth +5 to the low-chin kicking styles and ~0 to everyone else, so
+  it was removed.
+- **Hip Escape**: only protected the round the opponent's takedown landed. Now applies to every
+  opponent submission attempt (takedown round, ground continuation from top, guard attacks while
+  the player is on top) as a relative cut, success * (1 - v). .06/.10/.16/.25. +0.95 BJJ.
+- **Arm Triangle**: was spent on the first takedown even when no submission followed. Now spent
+  on the player's first submission attempt from top (takedown round or continuation). Values
+  unchanged. +0.9 win / +3.5 finishes BJJ.
+- **Veteran IQ**: was striking-only (OPPONENT_DAMAGE_REDUCTION) although a BJJ coach teaches it.
+  New lane ALL_DAMAGE_REDUCTION: strike damage AND ground damage taken from the bottom. Values
+  unchanged; it no longer collapse-stacks with Granite Jaw / High Guard.
+- **Sprawl** cut to .03/.05/.08/.10 (Legendary .18 measured +8.7, about double any other move;
+  now +4.2 Wrestler / +4.5 BJJ). **Second Gear** raised to .011/.02/.033/.045 (+0.35 to +1.1).
+  **Frame & Base** raised to .05/.07/.10/.13 and **Second Wind** Common/Uncommon to .06/.09:
+  damage and stamina are whole numbers, so the old low rarities changed almost no real value.
+- Stacks re-checked: Heavy Hands + Second Gear + Deep Waters +5.4; best 3-move loadouts per
+  style +7.1 (striker), +9.1 (wrestler), +7.4 (BJJ), inside the 5-10 guardrail.
+- Bookkeeping: triggered/triggerCount now only count rounds where a move changed a number
+  (striking-only reductions in striking exchanges, Pace Pusher only when rounding moved the
+  drain, Crossface and Rubber Guard when they actually applied). Merged PASSIVE/PROC entries
+  carry `moveIds`. These flags are not shown to players.
 
 | Move | Type | bonusType | Trigger | C / U / R / L |
 |---|---|---|---|---|
 | Granite Jaw | Passive | OPPONENT_DAMAGE_REDUCTION | always | .0125/.022/.0375/.05 → **trimmed** .008/.014/.023/.03 |
 | Heavy Hands | Passive | STRIKE_DAMAGE | always | **.009/.016/.026/.035** |
 | Body Snatcher | Passive | BODY_DAMAGE | always | **.016/.028/.05/.065** |
-| Veteran IQ | Passive | OPPONENT_DAMAGE_REDUCTION | always | **.007/.012/.02/.028** (collapse-stacks w/ Granite Jaw) |
-| Sprawl Instinct | Proc | SPRAWL_SUCCESS | opp. shoots TD | .05/.09/.14/.18 |
-| Never Tap | Proc | ESCAPE_PROBABILITY | opp. sub attempt | .04/.075/.12/.16 |
-| Clinch Killer | Proc | CLINCH_DAMAGE | striking exchange | **.035/.06/.10/.14** |
-| Second Wind | Proc | STAMINA_DRAIN | stamina < 70% | .04/.07/.12/.16 |
-| Mount Reaper | Proc | GNP_DAMAGE | top position | .04/.07/.13/.17 |
-| The Finisher | Signature | SIG_FINISHER_STRIKE | opp. HP < 25% | R .08 / L .15 |
-| Iron Recovery | Signature | SIG_IRON_RECOVERY | own HP < 25% | R .10 / L .18 |
-| Killer Instinct | Signature | SIG_KILLER_INSTINCT | opp. HP < 25% | R .015 / L .035 |
+| Veteran IQ | Passive | ALL_DAMAGE_REDUCTION | always (strikes + ground damage from the bottom) | .007/.012/.02/.028 |
+| High Guard | Passive | OPPONENT_DAMAGE_REDUCTION | always | .006/.011/.019/.026 (collapse-stacks w/ Granite Jaw, Veteran IQ) |
+| Double-Leg Precision | Passive | TAKEDOWN_SUCCESS | always (your TD attempts) | .02/.035/.06/.08 |
+| Frame & Base | Passive | GROUND_DAMAGE_REDUCTION | always (on your back) | **.05/.07/.10/.13** (raised 2026-10-27) |
+| Pace Pusher | Passive | OPPONENT_STAMINA_DRAIN | always | **.04/.042/.046/.05** (quantized lane; see balance note) |
+| Sprawl *(was Sprawl Instinct)* | Proc | SPRAWL_SUCCESS | opp. shoots TD | **.03/.05/.08/.10** (cut 2026-10-27) |
+| Hip Escape *(was Never Tap)* | Proc | ESCAPE_PROBABILITY | every opp. sub attempt (relative cut) | **.06/.10/.16/.25** |
+| Dirty Boxing *(was Clinch Killer)* | Proc | CLINCH_DAMAGE | striking exchange | **.035/.06/.10/.14** |
+| Second Wind | Proc | STAMINA_DRAIN | stamina < 70% | **.06/.09**/.12/.16 |
+| Full Mount *(was Mount Reaper)* | Proc | GNP_DAMAGE | top position | .04/.07/.13/.17 |
+| Second Gear | Proc | STRIKE_DAMAGE | opp. stamina < 70 | **.011/.02/.033/.045** (raised 2026-10-27) |
+| Top Control | Proc | GNP_DAMAGE | top position | .025/.045/.075/.10 (collapse-stacks w/ Full Mount) |
+| Guillotine Choke | Proc | SUBMISSION_SUCCESS | any sub attempt you make | .03/.05/.08/.11 |
+| Deep Waters | Proc | STRIKE_DAMAGE | round > ceil(total/2) | **.008/.015/.025/.033** (trimmed) |
+| Fighting Spirit | Proc | FLASH_KO_RESISTANCE | own HP < 75% (all damage taken) | **.02/.03/.045/.06** |
+| Overhand Right *(was The Finisher)* | Signature | SIG_FINISHER_STRIKE | opp. HP < 75%, next striking exchange | **R .15 / L .25** |
+| Rubber Guard *(was Iron Recovery)* | Signature | SIG_IRON_RECOVERY | first time on your back, then rest of fight (GnP taken) | **R .22 / L .32** |
+| Crossface *(was Killer Instinct)* | Signature | SIG_KILLER_INSTINCT | opp. HP < 50%, then every round you are on top | **R .10 / L .18** (escape lock, reworked 2026-10-26) |
+| Superman Punch | Signature | SIG_FAST_START | round-1 striking exchange | R .10 / L .18 |
+| Blast Double | Signature | SIG_TAKEDOWN_BLITZ | first TD you land | R .10 / L .18 |
+| Arm Triangle | Signature | SIG_SUBMISSION_HUNT | first submission attempt from top | R .12 / L .20 |
 
-**Collapse rule:** two equipped moves sharing a `bonusType` (e.g. Granite Jaw + Veteran IQ)
-**sum** into one effect at the shared engine branch; move values and camp values also **add**.
-Signatures never merge — each fires independently, keyed by `moveId`.
+**Collapse rule:** equipped entries sharing a `bonusType` AND a trigger (e.g. Granite Jaw +
+Veteran IQ, or Full Mount + Top Control) **sum** into one effect at the shared engine branch;
+move values and camp values also **add**. STRIKE_DAMAGE may carry three triggers (always /
+opp. stamina < 70 / late rounds), each applied only when its own gate is true, so Heavy Hands,
+Second Gear and Deep Waters stay separate entries. Signatures never merge: each fires
+independently, keyed by `moveId`.
 
 **Presentation — Ratings (display-only rebase).** Raw fractions read as "almost nothing"
 (0.8%), so the UI presents every move value as an integer **Rating = fraction × 1000**
@@ -1728,6 +2058,38 @@ mid-camp **upgrade** drop from silently changing an already-booked fight, the lo
 off that frozen snapshot, not live owned-rarity. Data lives on the fighter
 (`specialMovesOwned` / `specialMovesEquipped`); the catalog is code
 (`consts/specialMovesCatalog.js`), not a DB collection.
+
+**v2 engine surface.** Five new engine lanes, all move-exclusive (Fight Camp emits none of
+them): TAKEDOWN_SUCCESS (additive to the player's takedown success roll),
+GROUND_DAMAGE_REDUCTION (scales down damage taken while on the bottom), SUBMISSION_SUCCESS
+(additive to the player's submission finish roll), OPPONENT_STAMINA_DRAIN (raises the
+opponent's per-round stamina loss) and FLASH_KO_RESISTANCE (since 2026-10-27: below 75% HP,
+cuts all damage taken; the name is historical). Three new per-fight
+one-shot signatures: SIG_FAST_START (Superman Punch, round 1 only), SIG_TAKEDOWN_BLITZ (Blast
+Double, the first takedown landed) and SIG_SUBMISSION_HUNT (Arm Triangle, the first submission
+attempt from top). ALL_DAMAGE_REDUCTION (Veteran IQ, 2026-10-27) reduces strike damage and
+ground damage taken from the bottom. `totalRounds`
+is now passed into `resolveRound` so the LATE_ROUNDS gate (Deep Waters) can evaluate
+`roundNum > ceil(totalRounds / 2)`.
+
+### 26.6 The Catalog view (v2.2)
+The Special Moves tab has two sub-tabs: **My Moves** (equip slots and owned collection,
+unchanged) and **Catalog** (read-only, all 24 moves). Presentation only: no new rates, costs
+or fighter fields. Each entry shows the move's discipline (the teach pool it sits in,
+`DOMAIN_TEACH_POOLS`), its type, its Rating at every rarity it exists at (dense from
+`minRarity`, the x1000 contract of §26.4, base values, never persona-adjusted), the
+fighter's owned rarity or Not owned, and a How to get it block. The teach line is derived,
+never authored: pool index i is first teachable by the lowest coach rarity whose
+`TEACH_BREADTH_BY_RARITY` exceeds i (0 Common, 1 Uncommon, 2 Rare, 3+ Legendary), at
+`TEACH_RANK_BY_SLOT[i]` (Rank 2 for slot 0, Rank 4 otherwise); exported as `MOVE_DOMAIN` /
+`MOVE_TEACH_SLOT` from `consts/homeCampConfig.js`, and boot rule 14 requires every catalog
+move to sit in exactly one pool. With `CAMP_TEACH_CHANNEL` off the line reads 'Not currently
+teachable. Train for it instead.' The coach-rarity gate on teaching is independent of the
+catalogue `minRarity` on drops (Overhand Right drops at Rare from training but is taught
+only by a Legendary Striking Coach). The training line says a move drops from the flagship
+session of a coach who knows it (flagship drops are restricted to that coach's own pool, see
+§26.3) and from Open Mat Sparring, never a percentage; gym drops are not shown. Endpoint
+`GET /fighters/:id/moves/catalog`. Design record: `docs/special-moves-catalog-spec.md`.
 
 ---
 

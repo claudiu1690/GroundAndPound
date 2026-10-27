@@ -3,13 +3,15 @@ import { createPortal } from "react-dom";
 /**
  * Privacy Policy modal.
  *
- * ⚠️ BASELINE TEMPLATE — accurate to the app's real data flows, but NOT a
- * lawyer-reviewed document. Before relying on it in production: have it reviewed
- * (or run through a generator like Termly/iubenda), and confirm the placeholders
- * below: company entity ("Digital Olive"), contact email, and the "Last updated"
- * date. Mirrors CookiePolicyModal markup so it inherits the same modal styling.
+ * Accurate to the app's real data flows; owner-approved 2026-10-27 for the real-money
+ * shop launch (Stripe paragraph). Not lawyer-reviewed. Bump "Last updated" whenever the
+ * content changes. Mirrors CookiePolicyModal markup so it inherits the same modal styling.
  */
-const ENTITY = "Digital Olive"; // legal operator (from site footer) — confirm
+const ENTITY = "Digital Olive SRL"; // legal operator (owner-confirmed 2026-10-27)
+// Operator identity required on the site by Romanian Law 365/2002 art. 5. The owner chose not
+// to publish the registered office address (2026-10-27).
+const FISCAL_CODE = "50872480"; // CUI, not VAT registered
+const TRADE_REGISTER_NO = "J29/1032/2024";
 const CONTACT_EMAIL = "support@groundandpound.net"; // live inbox (Cloudflare Email Routing)
 const MIN_AGE = 13;
 
@@ -31,12 +33,13 @@ export function PrivacyPolicyModal({ open, onClose }) {
         </header>
 
         <div className="account-modal-body cookie-policy-body">
-          <p className="cookie-policy-updated">Last updated: June 2026</p>
+          <p className="cookie-policy-updated">Last updated: October 2026</p>
 
           <section className="cookie-policy-section">
             <h4 className="cookie-policy-h">Who we are</h4>
             <p className="cookie-policy-text">
-              Ground &amp; Pound (“the game”) is operated by {ENTITY} (“we”, “us”). This
+              Ground &amp; Pound (“the game”) is operated by {ENTITY} (fiscal code (CUI){" "}
+              {FISCAL_CODE}, Trade Register no. {TRADE_REGISTER_NO}) (“we”, “us”). This
               policy explains what personal data we collect when you use the game, why,
               and your rights over it. Questions: <strong>{CONTACT_EMAIL}</strong>.
             </p>
@@ -80,6 +83,12 @@ export function PrivacyPolicyModal({ open, onClose }) {
               {" "}(transactional email), and <strong>Sentry</strong> (error monitoring).
               Your data may be processed in countries outside your own, with appropriate
               safeguards in place.
+            </p>
+            <p className="cookie-policy-text">
+              If you buy Energy Drinks, <strong>Stripe</strong> processes the payment. Stripe
+              receives your email, payment details and billing country directly and handles them
+              under its own privacy policy. We store only the order record (bundle, amount, tax,
+              status and time), never your card number.
             </p>
           </section>
 

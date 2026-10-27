@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const fightService = require("../services/fightService");
+const offerBoardService = require("../services/offerBoardService");
 const interviewService = require("../services/interviewService");
 
 const FIGHT_ERROR_CODES = {
@@ -9,57 +10,109 @@ const FIGHT_ERROR_CODES = {
     INVALID_STRATEGY: "FIGHT_INVALID_STRATEGY",
     INVALID_WEIGHT_CUT: "FIGHT_INVALID_WEIGHT_CUT",
     MENTAL_RESET_REQUIRED: "FIGHT_MENTAL_RESET_REQUIRED",
+    // Offer board (services/offerBoardService.js builds these with boardError).
+    OFFER_INVALID_INPUT: "OFFER_INVALID_INPUT",
+    OFFER_NOT_ON_BOARD: "OFFER_NOT_ON_BOARD",
+    FIGHT_ALREADY_BOOKED: "FIGHT_ALREADY_BOOKED",
+    TITLE_SHOT_LOCKED: "TITLE_SHOT_LOCKED",
+    FIGHT_BLOCKED_INJURY: "FIGHT_BLOCKED_INJURY",
+    // Resolve claim lost (services/fightService.js resolveFightAndApply, 409).
+    FIGHT_ALREADY_RESOLVED: "FIGHT_ALREADY_RESOLVED",
 };
+
+const KNOWN_CODES = new Set(Object.values(FIGHT_ERROR_CODES));
+
+/** A strict 24-hex ObjectId string (isValidObjectId also accepts any 12-char string). */
+const OBJECT_ID_RE = /^[0-9a-fA-F]{24}$/;
+
+/**
+ * Shared mapper for coded service errors ({code, status}, e.g. boardError). Only known
+ * codes with a 4xx status are echoed; anything else is left to the caller's 500 path so
+ * internal details never reach the client. Returns true when a response was sent.
+ */
+function sendCodedError(res, err) {
+    if (!err || !err.code || !err.status) return false;
+    const status = Number(err.status);
+    if (!KNOWN_CODES.has(err.code) || !(status >= 400 && status < 500)) return false;
+    res.status(status).json({ message: err.message, code: err.code });
+    return true;
+}
+
+/**
+ * Ownership guard for routes that take fighterId in the BODY (ownFighterParam only reads
+ * route params). Sends 403 and returns false when the body fighterId is not the caller's.
+ * A non-string (hostile object) fighterId never matches.
+ */
+function requireOwnBodyFighter(req, res, fighterId) {
+    const own = req.user && req.user.fighterId;
+    if (!own || typeof fighterId !== "string" || fighterId !== String(own)) {
+        res.status(403).json({ message: "Forbidden: you can only act on your own fighter" });
+        return false;
+    }
+    return true;
+}
+
+function sendInternalError(res, err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+}
 
 async function getOffers(req, res) {
     try {
-        const offers = await fightService.generateOffers(req.params.fighterId);
-        res.json(offers);
+        const { offers, meta } = await offerBoardService.getBoard(req.params.fighterId);
+        res.json({ offers, board: meta });
     } catch (err) {
         if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
-        if (err.message?.startsWith("Cannot fight:")) {
-            return res.status(400).json({ message: err.message, code: FIGHT_ERROR_CODES.DOCTOR_VISIT_REQUIRED });
-        }
-        console.error(err);
-        res.status(500).json({ message: "Internal server error" });
+        if (sendCodedError(res, err)) return;
+        sendInternalError(res, err);
     }
 }
 
 async function createOffer(req, res) {
     try {
         const { fighterId } = req.params;
-        const { opponentId, offerType } = req.body;
-        const fight = await fightService.createOffer(fighterId, opponentId, offerType);
+        const body = req.body && typeof req.body === "object" ? req.body : {};
+        const { opponentId } = body; // body.offerType is accepted and ignored: the board decides the type
+        if (typeof opponentId !== "string" || !OBJECT_ID_RE.test(opponentId)) {
+            return res.status(400).json({ message: "opponentId is required", code: FIGHT_ERROR_CODES.OFFER_INVALID_INPUT });
+        }
+        const fight = await fightService.createOffer(fighterId, opponentId);
         res.status(201).json(fight);
     } catch (err) {
-        if (err.message === "Fighter not found" || err.message === "Opponent not found") return res.status(404).json({ message: err.message });
-        if (err.message && (err.message.includes("mismatch") || err.message.includes("required"))) return res.status(400).json({ message: err.message });
-        console.error(err);
-        res.status(500).json({ message: "Internal server error" });
+        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
+        if (sendCodedError(res, err)) return;
+        sendInternalError(res, err);
     }
 }
 
 async function acceptOffer(req, res) {
     try {
         const { fighterId, fightId } = req.params;
+        if (!mongoose.isValidObjectId(fightId)) {
+            return res.status(404).json({ message: "Fight not found or not available" });
+        }
         const fight = await fightService.acceptOffer(fighterId, fightId, req.user.id);
         res.json(fight);
     } catch (err) {
-        if (err.message && err.message.includes("not found")) return res.status(404).json({ message: err.message });
+        if (sendCodedError(res, err)) return;
+        if (err.message === "Fighter not found" || err.message === "Fight not found or not available") {
+            return res.status(404).json({ message: err.message });
+        }
         if (err.message === "Not enough energy") {
             return res.status(400).json({ message: err.message, code: FIGHT_ERROR_CODES.NOT_ENOUGH_ENERGY });
         }
-        console.error(err);
-        res.status(500).json({ message: "Internal server error" });
+        sendInternalError(res, err);
     }
 }
 
 async function setWeightCut(req, res) {
     try {
-        const { fighterId, fightId, weightCut } = req.body;
+        const body = req.body && typeof req.body === "object" ? req.body : {};
+        const { fighterId, fightId, weightCut } = body;
         if (!fighterId || !fightId || !weightCut) {
             return res.status(400).json({ message: "fighterId, fightId, and weightCut are required" });
         }
+        if (!requireOwnBodyFighter(req, res, fighterId)) return;
         const fight = await fightService.setWeightCut(fighterId, fightId, weightCut);
         res.json(fight);
     } catch (err) {
@@ -74,10 +127,12 @@ async function setWeightCut(req, res) {
 
 async function setStrategy(req, res) {
     try {
-        const { fighterId, fightId, strategy } = req.body;
+        const body = req.body && typeof req.body === "object" ? req.body : {};
+        const { fighterId, fightId, strategy } = body;
         if (!fighterId || !fightId || !strategy) {
             return res.status(400).json({ message: "fighterId, fightId, and strategy are required" });
         }
+        if (!requireOwnBodyFighter(req, res, fighterId)) return;
         const fight = await fightService.setStrategy(fighterId, fightId, strategy);
         res.json(fight);
     } catch (err) {
@@ -95,6 +150,7 @@ async function resolveFight(req, res) {
         const result = await fightService.resolveFightAndApply(req.params.fighterId, req.user.id);
         res.json(result);
     } catch (err) {
+        if (sendCodedError(res, err)) return;
         if (err.message === "Fighter not found" || err.message === "Fight not found" || err.message === "Opponent not found") return res.status(404).json({ message: err.message });
         if (err.message === "No accepted fight" || err.message === "Not enough energy"
             || err.message?.startsWith("Cannot fight:")

@@ -159,3 +159,52 @@ export function unusedBuffCount(fighter) {
   const buffs = fighter?.inventory?.prefightBuffs || {};
   return Object.keys(buffs).reduce((n, k) => n + (buffs[k] || 0), 0);
 }
+
+// ── Real-money checkout (pure helpers; copy lives in locales/en.json under shop.*) ──
+
+/** Which state the premium store buy buttons are in: "buy" | "guest" | "disabled". */
+export function premiumBuyMode({ isGuest, paymentsEnabled }) {
+  if (paymentsEnabled === false) return "disabled";
+  if (isGuest) return "guest";
+  return "buy";
+}
+
+/**
+ * True when every bundle would take the player past the free-drink soft cap, i.e. the cap
+ * warning is relevant whichever bundle they pick. Bought drinks are never clamped.
+ */
+export function bundlesCrossSoftCap({ owned, bundles, cap }) {
+  if (!cap || !bundles?.length) return false;
+  const smallest = Math.min(...bundles.map((b) => b.drinks || 0));
+  return owned + smallest > cap;
+}
+
+/** Locale key for a checkout error code; null falls back to the server message. */
+export function checkoutErrorKey(code) {
+  switch (code) {
+    case "account_required": return "shop.premium.guestNotice";
+    case "account_blocked": return "shop.messages.premiumBlocked";
+    case "payments_disabled": return "shop.premium.disabled";
+    case "rate_limited": return "shop.messages.premiumRateLimited";
+    default: return null;
+  }
+}
+
+/**
+ * Banner shown after Stripe sends the player back. `purchaseReturn` is { outcome, sessionId }
+ * from the URL; `status` is the usePurchaseStatus result. Returns { key, vars, tone, busy }
+ * or null when there is nothing to show.
+ */
+export function purchaseReturnBanner(purchaseReturn, status) {
+  if (!purchaseReturn) return null;
+  if (purchaseReturn.outcome === "cancelled") {
+    return { key: "shop.return.cancelled", tone: "info" };
+  }
+  switch (status.phase) {
+    case "pending": return { key: "shop.return.pending", tone: "pending", busy: true };
+    case "fulfilled": return { key: "shop.return.delivered", vars: { drinks: status.drinks }, tone: "ok" };
+    case "failed": return { key: "shop.return.failed", tone: "bad" };
+    case "timeout": return { key: "shop.return.stillConfirming", tone: "info" };
+    default: return null;
+  }
+}

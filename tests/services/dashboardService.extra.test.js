@@ -70,7 +70,7 @@ test("energyCurrent one below cost IS low", () => {
 test("CONTRACT: live buildOffers passes tier=null → purse always null", () => {
     // buildOffers() calls summariseOffers(offers, null) — so even a valid tier
     // fighter gets purse:null in the response. This test documents that gap.
-    const offers = [{ type: "Even", opponent: { name: "X", overallRating: 30 } }];
+    const offers = [{ type: "Even", acceptable: true, opponent: { name: "X", overallRating: 30 } }];
     const s = summariseOffers(offers, null);
     assert.equal(s.best.purse, null);
     // …whereas passing the real tier WOULD populate it:

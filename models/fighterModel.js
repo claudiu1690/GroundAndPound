@@ -205,6 +205,7 @@ const fighterSchema = new mongoose.Schema({
     winsInCurrentTier: { type: Number, default: 0 },      // reset on promotion; feeds rankings + cooldown
     topFiveWinsInTier: { type: Number, default: 0 },      // wins earned WHILE ranked top-5; title-shot gate; reset on promotion
     titleShotCooldown: { type: Number, default: 0 },      // set to 2 on title loss, decremented on wins
+    gcsTitleWins:      { type: Number, default: 0 },      // GCS belt wins (first win plus defenses); never reset
     // Ranking System v1.0 — player's position inside the current tier's roster.
     // rank=null → Unranked (first 2 fights in tier). After fight 3, player enters the rankings.
     // Reset to defaults on tier promotion via rankingService.resetRankingForNewTier().
@@ -380,6 +381,31 @@ const fighterSchema = new mongoose.Schema({
         calledAt:     { type: Date, default: null },
     },
     /**
+     * Persisted fight offer board (services/offerBoardService.js owns its lifecycle).
+     * Slots hold only {offerType, opponentId}; everything else is hydrated live on read.
+     * Order: Easy, Even, Hard (ascending OVR), then TitleShot when present. The active
+     * callout is a read-time overlay and is never stored here. Liveness is decided by
+     * `fingerprint` + `expiresAt`; promotionTier/weightClass are informational only.
+     * Writes ONLY through a conditional Fighter.updateOne with runValidators, never save().
+     */
+    offerBoard: {
+        type: new mongoose.Schema({
+            slots: {
+                type: [new mongoose.Schema({
+                    offerType:  { type: String, enum: ["Easy", "Even", "Hard", "TitleShot"], required: true },
+                    opponentId: { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", required: true },
+                }, { _id: false })],
+                default: [],
+            },
+            generatedAt:   { type: Date, required: true },
+            expiresAt:     { type: Date, required: true },   // generatedAt + OFFER_BOARD_TTL_HOURS
+            promotionTier: { type: String, required: true }, // informational; liveness uses fingerprint
+            weightClass:   { type: String, required: true }, // informational
+            fingerprint:   { type: String, required: true },
+        }, { _id: false }),
+        default: null,
+    },
+    /**
      * Phase 2 — Banner customizer.
      * Unlocks are computed at read time from fighter state (tier, milestones, badges)
      * rather than stored as an inventory, so future catalog additions just work.
@@ -462,6 +488,13 @@ const fighterSchema = new mongoose.Schema({
     // prefightBuffs / usedBuffs are Mixed maps keyed by buff itemId → count.
     // ANY mutation of these maps MUST be followed by fighter.markModified("inventory")
     // or Mongoose silently drops the write.
+    // Real-money purchases already credited to this fighter (Purchase _ids). The paid-drinks grant
+    // is one atomic updateOne filtered on "this id is not here yet", which makes it exactly-once
+    // per purchase even across Stripe retries. select:false keeps it out of every default read.
+    paidPurchaseIds: { type: [mongoose.Schema.Types.ObjectId], default: undefined, select: false },
+    // Purchases whose drinks were taken back after a chargeback. Same exactly-once guard as
+    // paidPurchaseIds, so a redelivered dispute never removes a second batch.
+    clawedBackPurchaseIds: { type: [mongoose.Schema.Types.ObjectId], default: undefined, select: false },
     inventory: {
         energyShots:   { type: Number, default: 0, min: 0 },
         energyDrinks:  { type: Number, default: 0, min: 0 },

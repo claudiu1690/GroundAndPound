@@ -1,4 +1,5 @@
 const Fighter = require("../models/fighterModel");
+const config = require("../config");
 const fighterService = require("./fighterService");
 const energyService = require("./energyService");
 const {
@@ -111,7 +112,6 @@ async function getCatalog(fighterId) {
             name: pb.name,
             priceLabel: pb.priceLabel,
             drinks: pb.drinks,
-            stub: true,
         };
         if (pb.popular) row.popular = true;
         return row;
@@ -125,12 +125,18 @@ async function getCatalog(fighterId) {
         boosters,
         buffs,
         premiumBundles,
+        // false when STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET are unset: the client disables
+        // the Buy buttons instead of letting a checkout bounce off a 503.
+        paymentsEnabled: config.stripe.enabled,
+        // Free drink grants stop at this count; paid drinks always land (see paymentService.fulfil).
+        drinkSoftCap: SOFT_CAP,
     };
 }
 
 /**
  * Purchase a cash item (energy shot, booster, or buff).
- * Premium items are rejected — they only come from the buy-premium stub.
+ * Premium items are rejected: Energy Drinks are only sold for real money through
+ * paymentService (Stripe Checkout), never for in-game cash.
  * @param {string} fighterId
  * @param {string} itemId
  * @param {number} [quantity=1]
@@ -194,18 +200,6 @@ async function buyItem(fighterId, itemId, quantity = 1) {
 }
 
 /**
- * Premium purchase stub — grants nothing, performs ZERO writes.
- * @param {string} bundleId
- */
-async function buyPremium(bundleId) {
-    if (!bundleId || !PREMIUM_BUNDLES[bundleId]) throw new Error("Unknown bundle");
-    return {
-        stub: true,
-        message: "Premium purchases are coming soon. Nothing was charged or granted.",
-    };
-}
-
-/**
  * Consume an owned energy item to restore energy.
  * Reads LIVE energy first and rejects "Energy already full" BEFORE any inventory
  * decrement, so a full-energy attempt never wastes an item.
@@ -254,7 +248,6 @@ async function useEnergyItem(fighterId, itemId) {
 module.exports = {
     getCatalog,
     buyItem,
-    buyPremium,
     useEnergyItem,
     grantEnergyDrinks,
     ensureInventoryShape,

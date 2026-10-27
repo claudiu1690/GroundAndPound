@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { tierLabel } from "../../constants/fame";
 import { getRatingConfig, MATCH_STATUS_LABELS, MATCH_STATUS_COLORS } from "../../constants/campConfig";
+import { BELT_FAME, GCS_DEFENSE_FAME } from "../../constants/gameConstants";
 import { ArrowUpCircle, Trophy } from "lucide-react";
 import { t } from "@/lib/i18n";
 
@@ -43,6 +44,9 @@ export const FightSummary = memo(function FightSummary({ summary, description })
     nemesisSet,
     nemesisName,
     beltWon,
+    beltTier,
+    titleDefense,
+    gcsTitleWins,
     opponentName,
     titleShotLost,
     titleTargetTier,
@@ -100,8 +104,22 @@ export const FightSummary = memo(function FightSummary({ summary, description })
   if (nemesisSet) notices.push({ kind: "danger", glyph: "☠", text: t("fights.summary.noticeNemesisSet", { name: nemesisName }) });
   if (fameTierUp) notices.push({ kind: "good", glyph: "⭐", text: t("fights.summary.noticeFameTierUp", { from: tierLabel(fameTierUp.from), to: tierLabel(fameTierUp.to) }) });
   if (promoted) notices.push({ kind: "good", glyph: "⬆", text: t("fights.summary.noticePromoted", { from: promoted.from, to: promoted.to }) });
+  // A GCS belt win has no promotion, so it gets its own result line (first win vs defense).
+  if (beltWon && beltTier === "GCS") {
+    notices.push({
+      kind: "good",
+      glyph: "🏆",
+      text: titleDefense
+        ? t("fights.summary.noticeGcsDefended", { n: Math.max(1, (gcsTitleWins ?? 2) - 1), fame: GCS_DEFENSE_FAME })
+        : t("fights.summary.noticeGcsChampion", { fame: BELT_FAME.GCS }),
+    });
+  }
   if (streakDrinks > 0) notices.push({ kind: "good", glyph: "⚡", text: t("fights.summary.noticeStreakDrinks", { label: drinkLabel(streakDrinks) }) });
-  if (promoDrinks > 0) notices.push({ kind: "good", glyph: "⚡", text: t("fights.summary.noticePromoDrinks", { label: drinkLabel(promoDrinks) }) });
+  if (promoDrinks > 0) {
+    // The first GCS belt reuses the promotion grant but there is no promotion to name.
+    const drinksKey = beltWon && !promoted ? "fights.summary.noticeChampionDrinks" : "fights.summary.noticePromoDrinks";
+    notices.push({ kind: "good", glyph: "⚡", text: t(drinksKey, { label: drinkLabel(promoDrinks) }) });
+  }
   if (sponsorDrinks > 0) notices.push({ kind: "good", glyph: "⚡", text: t("fights.summary.noticeSponsorDrinks", { label: drinkLabel(sponsorDrinks) }) });
   // Badge earned notice removed — badges still earned/stored; will return as achievements.
   if (milestoneFame?.bonus > 0) notices.push({ kind: "good", glyph: "◆", text: t("fights.summary.statFame") + " " + t("fights.summary.statMilestone", { n: milestoneFame.bonus }) });
@@ -120,7 +138,7 @@ export const FightSummary = memo(function FightSummary({ summary, description })
       <div className={`fs2-hero fs2-hero--${oc}`}>
         {beltWon && (
           <div className="fight-summary-belt-header">
-            <Trophy size={18} /> {t("fights.summary.newChampion")} <Trophy size={18} />
+            <Trophy size={18} /> {titleDefense ? t("fights.summary.titleDefended") : t("fights.summary.newChampion")} <Trophy size={18} />
           </div>
         )}
         <div className="fs2-eyebrow">{beltWon ? t("fights.summary.panelTitleBelt") : t("fights.summary.panelTitle")}</div>

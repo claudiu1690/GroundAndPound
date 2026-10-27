@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { createPortal } from "react-dom";
 import { Trophy } from "lucide-react";
-import { TITLE_WINS } from "../../constants/gameConstants";
+import { TITLE_WINS, TOP_TIER } from "../../constants/gameConstants";
 import { t } from "@/lib/i18n";
 
 /**
@@ -13,7 +13,8 @@ import { t } from "@/lib/i18n";
  * Props:
  *   open          — whether to render
  *   currentTier   — the fighter's current promotionTier
- *   targetTier    — the tier being entered (fighter.pendingPromotion)
+ *   targetTier    : the tier being entered (fighter.pendingPromotion); the top
+ *                   tier itself (GCS) for a fighter who defends the belt
  *   champName     — the champion's display name, or null
  *   onClose       — close handler (also persists the seen key)
  */
@@ -27,15 +28,20 @@ export const ContenderModal = memo(function ContenderModal({
   if (!open) return null;
 
   const isProDebut = targetTier === "Regional Pro";
+  const isGcs = targetTier === TOP_TIER;
   const titleWins = TITLE_WINS[currentTier] ?? 3;
 
   const heading = isProDebut
     ? t("fights.contenderModal.headingPro")
-    : t("fights.contenderModal.headingBelt", { tier: currentTier });
+    : isGcs
+      ? t("fights.contenderModal.headingGcs")
+      : t("fights.contenderModal.headingBelt", { tier: currentTier });
 
   const body = isProDebut
     ? t("fights.contenderModal.bodyPro")
-    : t("fights.contenderModal.bodyBelt", { champ: champName || "The champion", tier: currentTier });
+    : isGcs
+      ? t("fights.contenderModal.bodyGcs", { champ: champName || "The champion" })
+      : t("fights.contenderModal.bodyBelt", { champ: champName || "The champion", tier: currentTier });
 
   const step1 = isProDebut
     ? t("fights.contenderModal.step1Pro")
@@ -46,7 +52,9 @@ export const ContenderModal = memo(function ContenderModal({
 
   const closer = isProDebut
     ? t("fights.contenderModal.closerPro")
-    : t("fights.contenderModal.closerBelt");
+    : isGcs
+      ? t("fights.contenderModal.closerGcs")
+      : t("fights.contenderModal.closerBelt");
 
   return createPortal(
     <div className="contender-modal-overlay" role="dialog" aria-modal="true" aria-label="Title contender">

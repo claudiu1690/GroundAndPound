@@ -1,5 +1,5 @@
 import { memo, useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Lock } from "lucide-react";
 import { moveArtUrl } from "./moveArtUrl";
 import { RARITY_COLORS } from "../../constants/specialMovesCatalog";
 
@@ -31,15 +31,20 @@ function useMoveArtExists(url) {
  *
  * size: "thumb" (equipped-slot tile), "sm" (grid icon), "tall" (detail /
  * drop-reveal portrait card, 2:3).
+ *
+ * `locked` (Catalog view only, docs/special-moves-catalog-spec.md) renders
+ * an unowned move: the rarity frame goes neutral (never a rarity color for
+ * a move the player hasn't pulled), the corner dot is suppressed, and a lock
+ * glyph replaces it. With `locked=false` (the default) output is unchanged.
  */
-export const MoveArt = memo(function MoveArt({ art, rarity, size = "sm", showDot = false, className = "" }) {
+export const MoveArt = memo(function MoveArt({ art, rarity, size = "sm", showDot = false, locked = false, className = "" }) {
     const url = moveArtUrl(art);
     const exists = useMoveArtExists(url);
-    const color = RARITY_COLORS[rarity] || RARITY_COLORS.COMMON;
+    const color = locked ? "var(--c-border)" : (RARITY_COLORS[rarity] || RARITY_COLORS.COMMON);
 
     return (
         <div
-            className={`move-art move-art--${size} ${className}`}
+            className={`move-art move-art--${size}${locked ? " move-art--locked" : ""} ${className}`}
             style={{ "--rarity-color": color }}
         >
             {exists ? (
@@ -49,7 +54,12 @@ export const MoveArt = memo(function MoveArt({ art, rarity, size = "sm", showDot
                     <Sparkles size={size === "tall" ? 34 : size === "thumb" ? 16 : 18} />
                 </div>
             )}
-            {showDot && <span className="move-rarity-dot" aria-hidden="true" />}
+            {!locked && showDot && <span className="move-rarity-dot" aria-hidden="true" />}
+            {locked && (
+                <span className="move-art-lock" aria-hidden="true">
+                    <Lock size={size === "tall" ? 16 : 10} />
+                </span>
+            )}
         </div>
     );
 });

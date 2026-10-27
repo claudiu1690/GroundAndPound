@@ -76,13 +76,14 @@ async function listRoster(fighterId) {
         style: o.style,
         overallRating: o.overallRating,
         promotionTier: o.promotionTier,
-        // Display rank: NPC at/below player's rank shifts +1; stretch tier opponents
-        // keep their own tier's fixedRank (cross-tier shift doesn't apply). Then shift
-        // to display rank (champion → null, contenders shift down by 1).
-        rank: rankingService.toDisplayRank(
-            isStretch
-                ? (o.fixedRank ?? null)
-                : rankingService.displayRankForNpc(o.fixedRank, playerRank)
+        // The number the Rankings tab prints (rankingService.npcDisplayRank). The list a
+        // row came from decides its tier: same-tier rows shift around the player's rank,
+        // stretch rows keep their own fixedRank.
+        rank: rankingService.npcDisplayRank(
+            o.fixedRank,
+            isStretch ? stretch : fighter.promotionTier,
+            fighter.promotionTier,
+            playerRank,
         ),
         record: o.record || { wins: 0, losses: 0, draws: 0 },
         cost: Math.round(computeCalloutCost(fighter, o) * calloutCostMult),
@@ -225,8 +226,11 @@ async function cancelCallout(fighterId) {
 }
 
 /**
- * In-memory helper used by generateOffers: swap the called-out opponent into the
- * Hard slot. If the opponent is already present in the offers, do nothing.
+ * In-memory helper used by fightService.hydrateOffers: swap the called-out opponent
+ * into the Hard slot. If the opponent is already present in the offers, do nothing.
+ * The callout is a read-time overlay on the stored offer board, never persisted. The
+ * `context` copied onto the callout offer below is overwritten by hydrateOffers, which
+ * recomputes context from each opponent's own fightHistory.
  * @param {object} fighter mongoose doc
  * @param {Array} offers
  * @returns {Promise<Array>} possibly-modified offers

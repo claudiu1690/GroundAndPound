@@ -7,6 +7,7 @@ import { LegalModals } from "../legal/LegalModals";
 import { ReportBugModal } from "../shared/ReportBugModal";
 import { DiscordIcon } from "../shared/DiscordIcon";
 import { useSeasonBand } from "../../hooks/useSeasonBand";
+import { openLegalFromUrl } from "../../lib/legalDeepLink";
 
 // How close the NEXT season has to be before the landing hero starts counting
 // down to it instead of showing the live one. Seasons run 70 days, so this gives
@@ -97,10 +98,10 @@ const COACH_CARDS = [
 
 const FAN_CARDS = [
   { id: "granite-jaw",     name: "Granite Jaw",     rarity: "Common",    rar: "#888888", glow: "rgba(136,136,136,.25)" },
-  { id: "sprawl-instinct", name: "Sprawl Instinct", rarity: "Uncommon",  rar: "#22c55e", glow: "rgba(34,197,94,.3)" },
-  { id: "the-finisher",    name: "The Finisher",    rarity: "Legendary", rar: "#D4A820", glow: "rgba(212,168,32,.45)" },
+  { id: "sprawl-instinct", name: "Sprawl",          rarity: "Uncommon",  rar: "#22c55e", glow: "rgba(34,197,94,.3)" },
+  { id: "the-finisher",    name: "Overhand Right",  rarity: "Legendary", rar: "#D4A820", glow: "rgba(212,168,32,.45)" },
   { id: "heavy-hands",     name: "Heavy Hands",     rarity: "Rare",      rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
-  { id: "killer-instinct", name: "Killer Instinct", rarity: "Rare",      rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
+  { id: "killer-instinct", name: "Crossface",        rarity: "Rare",      rar: "#3b82f6", glow: "rgba(59,130,246,.32)" },
 ];
 
 export function LandingPage({ onAuthenticated, initialResetToken }) {
@@ -123,6 +124,10 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
           : null
       : null;
   const promoted = teaser || seasonData;
+
+  // `/?legal=terms|privacy` deep link (Stripe's Dashboard points at these). LegalModals is a
+  // child, so its listeners are registered by the time this mount effect runs.
+  useEffect(() => { openLegalFromUrl(); }, []);
 
   // Nav scroll darkening
   const [scrolled, setScrolled] = useState(false);
@@ -561,10 +566,10 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         <div className="ss-head ss-head--center">
           <div className="sec-eye">Special Moves</div>
           <h2 className="sec-title">Build your arsenal</h2>
-          {/* COUNT SOURCE OF TRUTH: consts/specialMovesCatalog.js (12 move ids today).
+          {/* COUNT SOURCE OF TRUTH: consts/specialMovesCatalog.js (24 move ids today).
               The landing is unauthenticated so it cannot read the catalog at runtime —
               if a move is added or removed, this word changes with it. */}
-          <p className="sec-sub">Twelve collectible signature techniques, painted like trading cards. Pull them from sparring, upgrade them by rarity, equip up to three.</p>
+          <p className="sec-sub">Twenty-four collectible signature techniques, painted like trading cards. Pull them from sparring, upgrade them by rarity, equip up to three.</p>
         </div>
 
         <div className="fan-row">
@@ -853,7 +858,8 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
             <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-terms")}>Terms</a>
             <a className="foot-link" href="#" onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent("open-bug-report")); }}>Report a Bug</a>
           </div>
-          <div className="foot-copy">&copy; 2026 Digital Olive. All rights reserved.</div>
+          <div className="foot-copy">&copy; 2026 Digital Olive SRL. All rights reserved.</div>
+          <div className="foot-copy">CUI 50872480 · Trade Register J29/1032/2024 · support@groundandpound.net</div>
         </footer>
       </div>
 

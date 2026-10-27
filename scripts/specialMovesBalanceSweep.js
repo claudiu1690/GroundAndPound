@@ -115,9 +115,9 @@ for (const [a, b] of pairs) {
 
 console.log("");
 
-// ── 5. COLLAPSE-RULE stacking: two moves sharing a bonusType (GRANITE_JAW + VETERAN_IQ,
-//     both OPPONENT_DAMAGE_REDUCTION) SUM per buildMoveBonuses' collapse rule. This is a
-//     legal, biggest-defensive-stack loadout worth checking against the guardrail too. ──
+// ── 5. Biggest defensive stack: GRANITE_JAW (OPPONENT_DAMAGE_REDUCTION) + VETERAN_IQ (since
+//     2026-10-27 ALL_DAMAGE_REDUCTION, a separate lane that adds on the strike site). Still a
+//     legal, biggest-defensive-stack loadout worth checking against the guardrail. ──
 console.log(`\n-- 5. Collapse-rule stack: GRANITE_JAW + VETERAN_IQ (both OPPONENT_DAMAGE_REDUCTION, summed) --`);
 const stackFn = () => {
   const a = bonusEntryFor("GRANITE_JAW", RARITY.LEGENDARY);
@@ -126,5 +126,32 @@ const stackFn = () => {
   return [{ ...a, effectiveValue: a.effectiveValue + b.effectiveValue }];
 };
 const stackRes = runMirror(stackFn, SIMS);
-console.log(`   merged effectiveValue: ${(0.08 + 0.06).toFixed(2)} (8% + 6%)`);
+console.log(`   merged effectiveValue: ${stackFn()[0].effectiveValue.toFixed(3)}`);
 console.log(`   win rate: ${stackRes.wr.toFixed(1)}%  (delta vs baseline: ${(stackRes.wr - baseline.wr).toFixed(1)} pts)  ${stackRes.wr > 60 ? "<== EXCEEDS GUARDRAIL" : ""}`);
+
+// ── 6. Special Moves v2 worst-case rows (v2 spec §5). Built through the REAL
+//     specialMovesService.buildMoveBonuses so the bonusType|triggerCondition collapse is what
+//     the engine actually sees: the STRIKE_DAMAGE trio stays 3 gated entries, the GNP_DAMAGE
+//     pair merges into one summed entry. ──
+const specialMovesService = require("../services/specialMovesService");
+function builtLoadout(ids, rarity = RARITY.LEGENDARY) {
+  return () => specialMovesService.buildMoveBonuses({
+    specialMovesOwned: ids.map((id) => ({ moveId: id, rarity, acquiredAt: new Date(0) })),
+    specialMovesEquipped: [...ids],
+  });
+}
+console.log(`\n-- 6. Special Moves v2 worst-case rows (built via buildMoveBonuses) --`);
+const v2Rows = [
+  ["HEAVY_HANDS + SECOND_GEAR + DEEP_WATERS (L)", ["HEAVY_HANDS", "SECOND_GEAR", "DEEP_WATERS"]],
+  ["MOUNT_REAPER + TOP_CONTROL (L)", ["MOUNT_REAPER", "TOP_CONTROL"]],
+];
+for (const [label, ids] of v2Rows) {
+  const fn = builtLoadout(ids);
+  const entries = fn().map((b) => `${b.bonusType}${b.triggerCondition ? `@${b.triggerCondition}` : ""}=${b.effectiveValue.toFixed(3)}`);
+  const res = runMirror(fn, SIMS * 2);
+  const delta = res.wr - baseline.wr;
+  const flag = delta > 10 ? "  <== EXCEEDS GUARDRAIL (>10 pts)" : "";
+  console.log(`   ${label.padEnd(45)}: ${res.wr.toFixed(1)}%  (delta ${delta >= 0 ? "+" : ""}${delta.toFixed(1)})${flag}`);
+  console.log(`      entries: ${entries.join(", ")}`);
+}
+console.log("");

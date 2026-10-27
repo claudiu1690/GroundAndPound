@@ -27,13 +27,12 @@ const FightCamp = require("../models/fightCampModel");
 const Sponsorship = require("../models/sponsorshipModel");
 const { TEMPLATES } = require("../consts/gazetteTemplates");
 const { makeGazetteRng } = require("../utils/gazetteRng");
-const { toDisplayRank } = require("./rankingService");
+const { toDisplayRank, RANKED_AFTER_FIGHTS: RANKED_MIN_FIGHTS } = require("./rankingService");
 const { NOTORIETY_TIERS } = require("../consts/notorietyConfig");
 
 const RANK_JUMP_THRESHOLD = 5;
 const LOSS_STREAK_MIN = 2;
 const FAME_DELTA_THRESHOLD = 100;
-const RANKED_MIN_FIGHTS = 3;
 
 // ── Palette (hex per build contract) ─────────────────────────────────────────
 const COLOR = {

@@ -54,6 +54,18 @@ async function getMoveDetail(req, res) {
     }
 }
 
+/** GET /fighters/:id/moves/catalog -> MovesCatalogResponse (see specialMovesService.buildCatalog). */
+async function getCatalog(req, res) {
+    try {
+        const fighter = await getFighterOr404(req, res);
+        if (!fighter) return;
+        res.json(specialMovesService.buildCatalog(fighter));
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 async function equipMove(req, res) {
     try {
         const { moveId, slotIndex } = req.body || {};
@@ -95,6 +107,7 @@ async function unequipMove(req, res) {
 module.exports = {
     listMoves,
     getMoveDetail,
+    getCatalog,
     equipMove,
     unequipMove,
 };

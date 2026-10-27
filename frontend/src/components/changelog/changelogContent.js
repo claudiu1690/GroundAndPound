@@ -18,6 +18,66 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.2",
+    date: "2026-10-27",
+    major: true,
+    highlights: [
+      "Twelve new Special Moves double the roster to 24, across all four disciplines. Striking gets High Guard, Second Gear and Superman Punch. Wrestling gets Double-Leg Precision, Top Control and Blast Double. Brazilian Jiu-Jitsu gets Frame & Base, Guillotine Choke and Arm Triangle. Conditioning gets Pace Pusher, Deep Waters and Fighting Spirit.",
+      "Three new Signatures, each a one-shot moment per fight. Superman Punch is a first-round power surge. Blast Double makes your first takedown hit harder. Arm Triangle makes your first submission attempt from top the dangerous one.",
+      "Coaches hired from now on know more. A Legendary coach covers his whole expanded discipline, up to seven moves. Coaches already on your roster keep the list on their card, so what you read at hire is what you get.",
+      "The Shop's Premium tab is open. You can buy Energy Drink bundles for real money, from 6 for $4.99 to 100 for $39.99, with tax included. Payment runs on Stripe, so your card details never touch the game, and drinks are the only thing for sale: nothing that changes a fight result is sold, and every drink can still be earned by playing.",
+      "A new Catalog sits at the top of the Special Moves tab. All 24 moves in one place: what each one is worth at every rarity, which ones you own and at what rarity, and how to get the rest, down to which coach teaches it and at what rank.",
+    ],
+    sections: {
+      changed: [
+        "Seven moves have new names: Sprawl Instinct is now Sprawl, Never Tap is Hip Escape, Clinch Killer is Dirty Boxing, Mount Reaper is Full Mount, The Finisher is Overhand Right, Iron Recovery is Rubber Guard, and Killer Instinct is Crossface. Several moves also work differently now; the Balance notes below say how.",
+        "Guest accounts can see the bundles but need an email and password before buying, so a purchase can always be recovered.",
+        "Special Move cards got new and repainted art. Every card now shows the technique it names, and each type looks like one set: red Passives, blue Procs, gold Signatures.",
+        "Drops can now land on any of 24 moves, so each one turns up about half as often as before. Coach teaching is how you aim at the move you actually want.",
+        "The Boogeyman's Ambush now boosts the new proc moves too, under the same cap as before.",
+        "Title shot screens count the right wins. The Path to the Belt checklist and the sidebar progress now count wins earned in the title zone, the same as the game does.",
+        "The title zone is #4 or better, because the champion holds the first of the top five places. Screens that called #5 \"top 5\" now agree with the game.",
+        "Nicknames follow one rule everywhere you can set them: 2 to 20 characters, letters, numbers, spaces, hyphens and apostrophes. It used to be enforced only in Account settings, so a nickname picked at sign-up could be one you were then not allowed to save. A nickname you already have stays as it is.",
+      ],
+      fixed: [],
+      balance: [
+        "Deep Waters ships at about half strength, and Second Gear got stronger.",
+        "Pace Pusher ships at under a third of its first draft.",
+        "Fighting Spirit now kicks in once you drop below 75% health and makes every blow land softer.",
+        "Overhand Right is ready once your opponent drops below 75% health and lands on your next striking exchange.",
+        "Rubber Guard locks in the first time you end up on your back and softens their ground-and-pound for the rest of the fight.",
+        "Hip Escape protects you from every submission attempt against you, not only the one in the round you get taken down.",
+        "Arm Triangle now waits for your first submission attempt from top instead of being spent on your first takedown.",
+        "Veteran IQ now protects you on the ground as well as on the feet.",
+        "Sprawl was trimmed to roughly half.",
+        "Frame & Base and the lower rarities of Second Wind got stronger.",
+        "Crossface now pins your opponent instead of adding knockout odds. Once they drop below half health, every round you are on top they escape less often, by 10% at Rare and 18% at Legendary.",
+      ],
+    },
+  },
+  {
+    version: "2.1",
+    date: "2026-09-25",
+    major: false,
+    highlights: [
+      "Home is now your athlete page. Your name, record, rank, Overall and streak up top, your next fight beside them, all eight stats and your condition underneath, then every bout on your board with an Accept on each. You can sign a fight straight from Home and land in camp.",
+      "The matchmaker books your fights now. The Get Offers button is gone: your three bouts are waiting when you open the Fight Hub or Home, and they are the same three everywhere. The board turns over every 24 hours, or sooner when you fight, move up a tier or your nemesis changes.",
+      "Every bout now carries its own purse, printed on the card. Easy pays 70% of your tier's signing fee, Even pays the full fee, Hard pays 140% and a title shot 175%, with a little extra for the tougher opponent inside each slot. What the card says is what a clean win pays.",
+      "Your last fight, the latest Gazette issue and your Proving Ground notes now sit together at the bottom of Home, next to your division rankings and your purse.",
+    ],
+    sections: {
+      changed: [
+        "The Fight Hub shows your board on open, with the countdown to the next set in the footer next to Call out.",
+        "Calling someone out no longer touches the rest of your board. Your callout takes the Hard slot while it is active and the original opponent comes back if you cancel.",
+      ],
+      fixed: [],
+      balance: [
+        "Purses now differ by difficulty. Every fight in a tier used to pay the same, so Easy, Even and Hard were only a stat check. Now Hard pays double what Easy does and the expected purse across the three stays about the same, so the board is a real risk-reward choice without more cash flooding in.",
+        "There is no way to swap your board early any more. The old Get Offers button let you fish for a soft matchup until one appeared; now the board only changes after you fight or once a day, so the bouts in front of you are the ones to choose from.",
+      ],
+    },
+  },
+  {
     version: "2.0",
     date: "2026-09-20",
     major: true,

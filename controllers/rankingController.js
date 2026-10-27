@@ -3,7 +3,7 @@
  */
 const Opponent = require("../models/opponentModel");
 const Fighter = require("../models/fighterModel");
-const { ROSTER_SIZE, displayRankForNpc, toDisplayRank } = require("../services/rankingService");
+const { ROSTER_SIZE, npcDisplayRank, toDisplayRank } = require("../services/rankingService");
 
 const PUBLIC_OPPONENT_FIELDS = "name nickname style overallRating record fixedRank isChampion weightClass promotionTier";
 
@@ -44,7 +44,7 @@ async function getRankings(req, res) {
         let playerRankInTier = null;
         if (fighterId) {
             const fighter = await Fighter.findById(fighterId).select(
-                "firstName lastName nickname promotionTier weightClass style overallRating record ranking"
+                "firstName lastName nickname promotionTier weightClass style overallRating record ranking gcsTitleWins"
             ).lean();
             if (fighter && fighter.promotionTier === tier && fighter.weightClass === weightClass) {
                 const r = fighter.ranking || {};
@@ -62,13 +62,18 @@ async function getRankings(req, res) {
                     isChampion: false,
                     isPlayer: true,
                     isUnranked: r.rank == null,
+                    // Career GCS belt wins (first win plus defenses). The NPC champion keeps
+                    // isChampion; this is the marker on the player's own row.
+                    titleWins: fighter.gcsTitleWins ?? 0,
                 };
             }
         }
 
         const roster = npcs.map((npc) => ({
             id: String(npc._id),
-            rank: toDisplayRank(displayRankForNpc(npc.fixedRank, playerRankInTier)),
+            // Every NPC here is in `tier`; the shift applies only when the player is too
+            // (playerRankInTier stays null otherwise), exactly as before.
+            rank: npcDisplayRank(npc.fixedRank, tier, tier, playerRankInTier),
             fixedRank: npc.fixedRank,
             name: npc.name,
             nickname: npc.nickname || null,
