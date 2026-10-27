@@ -7,6 +7,7 @@ import { LegalModals } from "../legal/LegalModals";
 import { ReportBugModal } from "../shared/ReportBugModal";
 import { DiscordIcon } from "../shared/DiscordIcon";
 import { useSeasonBand } from "../../hooks/useSeasonBand";
+import { openLegalFromUrl } from "../../lib/legalDeepLink";
 
 // How close the NEXT season has to be before the landing hero starts counting
 // down to it instead of showing the live one. Seasons run 70 days, so this gives
@@ -123,6 +124,10 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
           : null
       : null;
   const promoted = teaser || seasonData;
+
+  // `/?legal=terms|privacy` deep link (Stripe's Dashboard points at these). LegalModals is a
+  // child, so its listeners are registered by the time this mount effect runs.
+  useEffect(() => { openLegalFromUrl(); }, []);
 
   // Nav scroll darkening
   const [scrolled, setScrolled] = useState(false);

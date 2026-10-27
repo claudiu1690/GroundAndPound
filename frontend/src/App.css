@@ -13036,6 +13036,21 @@ code {
 .shop-premium-bal-val { font-family: var(--font-display); font-weight: 800; font-size: 32px; color: var(--c-blue); line-height: 1; }
 .shop-premium-bal-lbl { font-size: 11px; color: var(--text-muted); letter-spacing: .06em; text-transform: uppercase; margin-top: 3px; }
 .shop-premium-notice { display: flex; align-items: center; gap: 8px; margin: 16px 24px 0; padding: 10px 14px; font-size: 12px; color: var(--c-amber-bright); background: rgba(212,168,32,.08); border: 1px solid rgba(212,168,32,.2); border-radius: 6px; }
+.shop-premium-notice svg { flex-shrink: 0; }
+/* Stripe return banner: sits between the shop tabs and body, visible on every tab */
+.shop-return { display: flex; align-items: flex-start; gap: 10px; padding: 12px 18px; font-size: 13px; line-height: 1.5; color: var(--text-secondary); background: var(--c-bg-bar); border-left: 1px solid var(--c-border); border-right: 1px solid var(--c-border); border-top: 1px solid var(--c-border); }
+.shop-return-icon { flex-shrink: 0; margin-top: 3px; }
+.shop-return-text { flex: 1; min-width: 0; }
+.shop-return-close { all: unset; box-sizing: border-box; flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-top: -2px; border-radius: 4px; color: var(--text-muted); cursor: pointer; }
+.shop-return-close:hover { color: var(--text); background: rgba(255,255,255,.06); }
+.shop-return-close:focus-visible { outline: 2px solid var(--c-blue); outline-offset: 1px; }
+.shop-return--pending { color: var(--c-amber-bright); background: rgba(212,168,32,.08); }
+.shop-return--pending .shop-return-icon { animation: shop-return-pulse 1.4s ease-in-out infinite; }
+.shop-return--ok { color: #4ADE80; background: rgba(74,222,128,.08); }
+.shop-return--bad { color: #f87171; background: rgba(248,113,113,.08); }
+.shop-return--info { color: var(--text); }
+@keyframes shop-return-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .shop-return--pending .shop-return-icon { animation: none; } }
 .shop-bundle-grid { padding: 20px 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 @media (max-width: 900px) { .shop-bundle-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 540px) { .shop-bundle-grid { grid-template-columns: 1fr; } }

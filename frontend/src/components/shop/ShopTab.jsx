@@ -1,8 +1,13 @@
-import { memo, useCallback, useEffect, useState } from "react";
-import { Coins, Zap, TrendingUp, ShoppingBag, Info, Check } from "lucide-react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { Coins, Zap, TrendingUp, ShoppingBag, Info, Check, X } from "lucide-react";
 import { api } from "../../api";
 import { t } from "@/lib/i18n";
+import { usePurchaseStatus } from "../../hooks/usePurchaseStatus";
 import {
+  bundlesCrossSoftCap,
+  checkoutErrorKey,
+  premiumBuyMode,
+  purchaseReturnBanner,
   buffStatTags,
   boosterStatTags,
   boosterEffectLine,
@@ -165,7 +170,7 @@ function tagStripeStyle(tags) {
 
 // ── Premium bundle card ─────────────────────────────────────
 
-function BundleCard({ bundle, smallest, busy, onBuy }) {
+function BundleCard({ bundle, smallest, busy, locked, mode, onBuy }) {
   // Derive per-drink + savings vs smallest bundle for the 3 bigger ones.
   const price = parsePrice(bundle.priceLabel);
   const perDrink = price != null && bundle.drinks ? price / bundle.drinks : null;
@@ -188,8 +193,17 @@ function BundleCard({ bundle, smallest, busy, onBuy }) {
         {perDrink != null ? `$${perDrink.toFixed(2)} ${t("shop.bundle.perDrinkSuffix")}` : ""}
         {savings != null && savings > 0 ? ` · ${t("shop.bundle.save", { pct: savings })}` : ""}
       </div>
-      <button type="button" className="shop-bundle-btn" onClick={onBuy} disabled={busy}>
-        {busy ? "…" : t("shop.bundle.buy")}
+      <button
+        type="button"
+        className="shop-bundle-btn"
+        onClick={onBuy}
+        disabled={busy || locked || mode === "disabled"}
+      >
+        {busy
+          ? t("shop.bundle.redirecting")
+          : mode === "guest"
+            ? t("shop.bundle.buyGuest")
+            : t("shop.bundle.buy")}
       </button>
     </div>
   );
@@ -259,11 +273,19 @@ function InventoryBoosterCard({ booster }) {
 
 // ── Main component ──────────────────────────────────────────
 
-export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMessage }) {
+export const ShopTab = memo(function ShopTab({
+  fighter,
+  onRefreshFighter,
+  onMessage,
+  isGuest = false,
+  onOpenAccount,
+  purchaseReturn = null, // { outcome: "success" | "cancelled", sessionId } from the Stripe return URL
+  onPurchaseReturnConsumed,
+}) {
   const [catalog, setCatalog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState("cash"); // cash | premium | inventory
+  const [tab, setTab] = useState(purchaseReturn ? "premium" : "cash"); // cash | premium | inventory
   const [busyId, setBusyId] = useState(null); // item/bundle id currently mutating
   const [premiumNotice, setPremiumNotice] = useState("");
 
@@ -292,6 +314,33 @@ export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMess
     if (onRefreshFighter && fighterId) await onRefreshFighter(fighterId);
   }, [loadCatalog, onRefreshFighter, fighterId]);
 
+  // ── Return from Stripe Checkout ──
+  // The hook follows the order until the webhook has delivered (or given up). Only a
+  // "success" return with a session id is followed; "cancelled" needs no lookup.
+  const followSessionId = purchaseReturn?.outcome === "success" ? purchaseReturn.sessionId : null;
+  const purchaseStatus = usePurchaseStatus(fighterId, followSessionId);
+  const banner = purchaseReturnBanner(purchaseReturn, purchaseStatus);
+
+  useEffect(() => {
+    if (purchaseReturn) setTab("premium");
+  }, [purchaseReturn]);
+
+  // Delivered: pull the new inventory in once (fighter + catalog owned counts).
+  const refreshedForSession = useRef(null);
+  useEffect(() => {
+    if (purchaseStatus.phase !== "fulfilled" || refreshedForSession.current === followSessionId) return;
+    refreshedForSession.current = followSessionId;
+    afterMutation();
+  }, [purchaseStatus.phase, followSessionId, afterMutation]);
+
+  // Browser back from Stripe can restore this page from bfcache with the "opening checkout"
+  // state still set. Re-enable the buttons when that happens.
+  useEffect(() => {
+    const onShow = (e) => { if (e.persisted) setBusyId(null); };
+    window.addEventListener("pageshow", onShow);
+    return () => window.removeEventListener("pageshow", onShow);
+  }, []);
+
   const handleBuy = useCallback(async (itemId) => {
     if (!fighterId || busyId) return;
     setBusyId(itemId);
@@ -306,21 +355,34 @@ export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMess
     }
   }, [fighterId, busyId, afterMutation, onMessage]);
 
+  /**
+   * Real money. Opens a Stripe Checkout Session and hands the browser to Stripe.
+   *
+   * ⚠️ DELIBERATELY GRANTS NOTHING AND REFRESHES NOTHING. The old stub could safely pretend;
+   * this cannot. Goods are granted by the signature-verified webhook, so anything optimistic
+   * here would show drinks the player has not paid for yet — and the payment can still fail,
+   * be abandoned at Stripe, or complete minutes later on a card that needs 3-D Secure.
+   *
+   * `busyId` is intentionally left set: this navigates away, so re-enabling the button would
+   * only offer a second click during the redirect.
+   */
   const handleBuyPremium = useCallback(async (bundleId) => {
     if (!fighterId || busyId) return;
     setBusyId(bundleId);
     setPremiumNotice("");
     try {
-      const res = await api.buyPremium(fighterId, bundleId);
-      // Stub: grant nothing, surface the message. No balance change.
-      const msg = res.message || t("shop.messages.premiumUnavailable");
-      setPremiumNotice(msg);
-      if (onMessage) onMessage(msg);
+      const res = await api.createCheckout(fighterId, bundleId);
+      if (!res || !res.url) throw new Error(t("shop.messages.premiumPurchaseUnavailable"));
+      window.location.assign(res.url);
+      return;
     } catch (e) {
-      const msg = e.message || t("shop.messages.premiumPurchaseUnavailable");
+      // Contract codes carry a specific, actionable message; anything else is generic.
+      const key = checkoutErrorKey(e.code);
+      const msg = key
+        ? t(key)
+        : (e.message || t("shop.messages.premiumPurchaseUnavailable"));
       setPremiumNotice(msg);
       if (onMessage) onMessage(msg);
-    } finally {
       setBusyId(null);
     }
   }, [fighterId, busyId, onMessage]);
@@ -366,6 +428,24 @@ export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMess
         </button>
       </div>
 
+      {banner && (
+        <div className={`shop-return shop-return--${banner.tone}`} role="status" aria-live="polite">
+          <Info size={14} className="shop-return-icon" />
+          <div className="shop-return-text">{t(banner.key, banner.vars)}</div>
+          {!banner.busy && onPurchaseReturnConsumed && (
+            <button
+              type="button"
+              className="shop-return-close"
+              onClick={onPurchaseReturnConsumed}
+              aria-label={t("common.close")}
+              title={t("common.close")}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="shop-body">
         {loading && <div className="shop-state shop-state--loading">{t("shop.loading")}</div>}
 
@@ -392,6 +472,8 @@ export const ShopTab = memo(function ShopTab({ fighter, onRefreshFighter, onMess
                 fighter={fighter}
                 busyId={busyId}
                 notice={premiumNotice}
+                isGuest={isGuest}
+                onOpenAccount={onOpenAccount}
                 onBuy={handleBuyPremium}
               />
             )}
@@ -482,9 +564,19 @@ function CashStore({ catalog, busyId, onBuy, onGetMore }) {
 
 // ── PREMIUM STORE ───────────────────────────────────────────
 
-function PremiumStore({ catalog, fighter, busyId, notice, onBuy }) {
+function PremiumStore({ catalog, fighter, busyId, notice, isGuest, onOpenAccount, onBuy }) {
   const bundles = catalog.premiumBundles || [];
   const drinks = fighter?.inventory?.energyDrinks ?? 0;
+  const mode = premiumBuyMode({ isGuest, paymentsEnabled: catalog.paymentsEnabled });
+  const redirecting = busyId != null && bundles.some((b) => b.id === busyId);
+  const showOverCap = mode === "buy"
+    && bundlesCrossSoftCap({ owned: drinks, bundles, cap: catalog.drinkSoftCap });
+  // Standing notice for the current buy mode; a checkout error (`notice`) goes beneath it.
+  const modeNotice = mode === "guest"
+    ? t("shop.premium.guestNotice")
+    : mode === "disabled"
+      ? t("shop.premium.disabled")
+      : null;
   // Smallest by drink count drives savings comparison.
   const smallest = bundles.reduce(
     (min, b) => (!min || (b.drinks || 0) < (min.drinks || 0) ? b : min),
@@ -506,7 +598,22 @@ function PremiumStore({ catalog, fighter, busyId, notice, onBuy }) {
         </div>
       </div>
 
-      {notice && (
+      {modeNotice && (
+        <div className="shop-premium-notice">
+          <Info size={14} /> {modeNotice}
+        </div>
+      )}
+      {redirecting && (
+        <div className="shop-premium-notice">
+          <Info size={14} /> {t("shop.premium.redirecting")}
+        </div>
+      )}
+      {showOverCap && (
+        <div className="shop-premium-notice">
+          <Info size={14} /> {t("shop.premium.overCap", { owned: drinks, cap: catalog.drinkSoftCap })}
+        </div>
+      )}
+      {notice && notice !== modeNotice && (
         <div className="shop-premium-notice">
           <Info size={14} /> {notice}
         </div>
@@ -514,7 +621,15 @@ function PremiumStore({ catalog, fighter, busyId, notice, onBuy }) {
 
       <div className="shop-bundle-grid">
         {bundles.map((b) => (
-          <BundleCard key={b.id} bundle={b} smallest={smallest} busy={busyId === b.id} onBuy={() => onBuy(b.id)} />
+          <BundleCard
+            key={b.id}
+            bundle={b}
+            smallest={smallest}
+            busy={busyId === b.id}
+            locked={busyId != null}
+            mode={mode}
+            onBuy={() => (mode === "guest" ? onOpenAccount?.() : onBuy(b.id))}
+          />
         ))}
       </div>
 

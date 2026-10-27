@@ -45,6 +45,7 @@ import { ShopTab } from "./components/shop/ShopTab";
 import { InventorySidebar } from "./components/shop/InventorySidebar";
 import { CookieConsent } from "./components/legal/CookieConsent";
 import { LegalModals } from "./components/legal/LegalModals";
+import { openLegalFromUrl } from "./lib/legalDeepLink";
 import { ReportBugModal } from "./components/shared/ReportBugModal";
 import { ChangelogModal } from "./components/changelog/ChangelogModal";
 import { CHANGELOG_ENTRIES, CURRENT_VERSION } from "./components/changelog/changelogContent";
@@ -500,6 +501,9 @@ function App() {
   const [feedRefreshKey, setFeedRefreshKey]     = useState(0);
   const [champions, setChampions]               = useState([]);
   const [activeTab, setActiveTab]               = useState("home");
+  // Set when Stripe sends the player back to /?purchase=...; ShopTab renders the order banner.
+  // Shape: { outcome: "success" | "cancelled", sessionId: string | null } | null.
+  const [purchaseReturn, setPurchaseReturn]     = useState(null);
   // Your Camp (Phase 2) — learned from the 410 the boot-time `loadGyms` call
   // gets back once GYMS_RETIRED flips server-side (contract §6.3). Drives:
   // NAV_ITEMS (drops the gym tab), forcing activeTab "gym"→"camp", the
@@ -708,6 +712,52 @@ function App() {
     const t = setInterval(() => loadFighter(fighter._id), 60 * 1000);
     return () => clearInterval(t);
   }, [fighter?._id, loadFighter]);
+
+  /**
+   * Return leg of a Stripe Checkout: `/?purchase=success&session_id=cs_...` or
+   * `/?purchase=cancelled`.
+   *
+   * THE PARAMS ARE A HINT, NOT PROOF OF PAYMENT. Anyone can type this URL, and the goods are
+   * granted by the signature-verified webhook alone. So this only navigates to the Shop and
+   * hands `{ outcome, sessionId }` to ShopTab, which asks the server what happened to that
+   * session (usePurchaseStatus) and reports it. Nothing is credited from the URL.
+   *
+   * The params are stripped with replaceState so a page refresh does not replay the banner.
+   * `legal` and any other params are left alone.
+   */
+  const purchaseReturnHandled = useRef(false);
+  useEffect(() => {
+    if (purchaseReturnHandled.current || !fighter?._id) return;
+    const url = new URL(window.location.href);
+    const outcome = url.searchParams.get("purchase");
+    if (!outcome) return;
+    purchaseReturnHandled.current = true;
+
+    const rawSession = url.searchParams.get("session_id");
+    url.searchParams.delete("purchase");
+    url.searchParams.delete("session_id");
+    const qs = url.searchParams.toString();
+    window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : "") + url.hash);
+
+    if (outcome !== "success" && outcome !== "cancelled") return;
+    // Shape check only (the server re-validates); keeps junk out of the status URL.
+    const sessionId = rawSession && /^cs_[A-Za-z0-9_]{1,200}$/.test(rawSession) ? rawSession : null;
+    setPurchaseReturn({ outcome, sessionId });
+    setActiveTab("shop");
+  }, [fighter?._id]);
+
+  // The banner belongs to the Shop visit that followed the redirect: once the player moves to
+  // another tab, drop it so coming back later does not replay a stale "payment received".
+  useEffect(() => {
+    if (activeTab !== "shop") setPurchaseReturn((cur) => (cur ? null : cur));
+  }, [activeTab]);
+
+  // `/?legal=terms|privacy` deep link for authed players (Stripe Dashboard legal URLs). Waits
+  // for the real shell: LegalModals is not mounted behind the loading spinner. Logged-out
+  // visitors are handled by LandingPage.
+  useEffect(() => {
+    if (authed && !loading) openLegalFromUrl();
+  }, [authed, loading]);
 
   // Surface the transient `message` state as an auto-dismissing notice toast.
   // Many handlers (hospital, training, camp, account, etc.) call setMessage/onMessage
@@ -1799,6 +1849,10 @@ function App() {
                 fighter={fighter}
                 onRefreshFighter={loadFighter}
                 onMessage={setMessage}
+                isGuest={!!accountStatus?.isGuest}
+                onOpenAccount={() => setActiveTab("account")}
+                purchaseReturn={purchaseReturn}
+                onPurchaseReturnConsumed={() => setPurchaseReturn(null)}
               />
             </div>
           )}

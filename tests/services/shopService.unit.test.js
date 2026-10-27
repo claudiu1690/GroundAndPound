@@ -25,6 +25,6 @@ test("booster mid-batch partial", () => { let sl=3,active=true,boosted=0,unboost
 // and letting it through findItem would expose it to the CASH buy endpoint.
 // When stripe-integration merges, bundles become real Stripe products (amountCents, no stub
 // flag) and that branch carries its own version of this test: take THAT side of the conflict.
-test("PREMIUM_BUNDLES are stub products, not shop items", () => { for(const [id,b] of Object.entries(PREMIUM_BUNDLES)){assert.equal(b.stub,true,id);assert.ok(typeof b.priceLabel==="string"&&b.priceLabel.length>0,id);assert.ok(Number.isInteger(b.drinks)&&b.drinks>0,id);assert.equal(findItem(id),null,id);} });
+test("PREMIUM_BUNDLES are real-money products with a server-side price, never in-game shop items", () => { for(const [id,b] of Object.entries(PREMIUM_BUNDLES)){assert.equal(b.stub,undefined,id);assert.ok(Number.isInteger(b.amountCents)&&b.amountCents>0,id);assert.ok(typeof b.priceLabel==="string"&&b.priceLabel.length>0,id);assert.ok(Number.isInteger(b.drinks)&&b.drinks>0,id);assert.equal(findItem(id),null,id);} });
 test("boosterAffects uppercase matches lowercase", () => { const s=new Set(boosterStatList(BOOSTERS["strike-blend"])); const a=(stat)=>s.has(String(stat).toLowerCase()); assert.ok(a("STR")); assert.ok(a("SPD")); assert.ok(!a("WRE")); });
 test("backfill idempotency gate", () => { const t=(f)=>f.inventory===undefined||f.inventory===null; assert.equal(t({}),true); assert.equal(t({inventory:{}}),false); assert.equal(t({inventory:{energyShots:0}}),false); });

@@ -37,6 +37,12 @@ const analyticsEventSchema = new mongoose.Schema({
             "gym_purchase",
             "pvp_unlocked",
             "pvp_first_fight",
+            // Real-money shop (paymentService).
+            "checkout_started",
+            "checkout_blocked_guest",
+            "purchase_fulfilled",
+            "purchase_failed",
+            "purchase_refunded",
         ],
     },
     day: {

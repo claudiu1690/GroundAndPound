@@ -134,11 +134,33 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ itemId, quantity }),
     }),
-  buyPremium: (id, bundleId) =>
-    request(`/fighters/${id}/shop/buy-premium`, {
+  /**
+   * Opens a real-money Stripe Checkout Session and returns `{ url, purchaseId }`
+   * (CheckoutResponse in controllers/paymentController.js) to redirect to. Errors carry
+   * `err.code` from PaymentErrorBody (account_required, account_blocked, payments_disabled,
+   * rate_limited, unknown_bundle, server_error).
+   *
+   * ⚠️ SENDS ONLY THE BUNDLE ID. No amount, quantity or currency — the server resolves what to
+   * charge from its own config. Adding a price field here would be handing the client control
+   * of the charge.
+   *
+   * Grants nothing on its own: goods arrive from the Stripe webhook, so a player who closes the
+   * tab mid-payment still gets what they paid for, and one who fakes a return to the success URL
+   * gets nothing.
+   */
+  createCheckout: (id, bundleId) =>
+    request(`/fighters/${id}/shop/checkout`, {
       method: "POST",
       body: JSON.stringify({ bundleId }),
     }),
+  /**
+   * Read-only status of one Stripe Checkout Session, for the return leg of a purchase.
+   * Resolves `{ status, drinks }` (PurchaseStatusResponse in controllers/paymentController.js);
+   * status is created | paid | fulfilled | failed | refunded | disputed. 404 purchase_not_found
+   * is normal for a moment after the redirect, and 400 bad_session means a malformed id.
+   */
+  getPurchaseStatus: (id, sessionId) =>
+    request(`/fighters/${id}/shop/purchases/${encodeURIComponent(sessionId)}`),
   useEnergyItem: (id, itemId) =>
     request(`/fighters/${id}/inventory/use-energy`, {
       method: "POST",

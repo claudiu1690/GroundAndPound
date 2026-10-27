@@ -31,7 +31,7 @@ export function PrivacyPolicyModal({ open, onClose }) {
         </header>
 
         <div className="account-modal-body cookie-policy-body">
-          <p className="cookie-policy-updated">Last updated: June 2026</p>
+          <p className="cookie-policy-updated">Last updated: October 2026</p>
 
           <section className="cookie-policy-section">
             <h4 className="cookie-policy-h">Who we are</h4>
@@ -80,6 +80,13 @@ export function PrivacyPolicyModal({ open, onClose }) {
               {" "}(transactional email), and <strong>Sentry</strong> (error monitoring).
               Your data may be processed in countries outside your own, with appropriate
               safeguards in place.
+            </p>
+            {/* DRAFT (2026-10-27) for the real-money shop: owner legal review required. */}
+            <p className="cookie-policy-text">
+              If you buy Energy Drinks, <strong>Stripe</strong> processes the payment. Stripe
+              receives your email, payment details and billing country directly and handles them
+              under its own privacy policy. We store only the order record (bundle, amount, tax,
+              status and time), never your card number.
             </p>
           </section>
 

@@ -488,6 +488,10 @@ const fighterSchema = new mongoose.Schema({
     // prefightBuffs / usedBuffs are Mixed maps keyed by buff itemId → count.
     // ANY mutation of these maps MUST be followed by fighter.markModified("inventory")
     // or Mongoose silently drops the write.
+    // Real-money purchases already credited to this fighter (Purchase _ids). The paid-drinks grant
+    // is one atomic updateOne filtered on "this id is not here yet", which makes it exactly-once
+    // per purchase even across Stripe retries. select:false keeps it out of every default read.
+    paidPurchaseIds: { type: [mongoose.Schema.Types.ObjectId], default: undefined, select: false },
     inventory: {
         energyShots:   { type: Number, default: 0, min: 0 },
         energyDrinks:  { type: Number, default: 0, min: 0 },

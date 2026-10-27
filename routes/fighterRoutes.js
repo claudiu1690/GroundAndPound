@@ -3,16 +3,7 @@ const router = express.Router();
 const fighterController = require("../controllers/fighterController");
 const rankingController = require("../controllers/rankingController");
 const shopController = require("../controllers/shopController");
-// controllers/paymentController.js only exists on the unmerged stripe-integration
-// branch — a bare require here crashes the whole API at boot on this branch. Load
-// it optionally so the server can start; the checkout route below mounts only when
-// the controller is present and 404s until the Stripe branch lands.
-let paymentController = null;
-try {
-    paymentController = require("../controllers/paymentController");
-} catch (err) {
-    if (err.code !== "MODULE_NOT_FOUND") throw err;
-}
+const paymentController = require("../controllers/paymentController");
 const specialMovesController = require("../controllers/specialMovesController");
 const ownFighter = require("../middleware/ownFighterMiddleware");
 // PHASE 2 gym retirement — a no-op while GYMS_RETIRED is unset/false. It must sit in FRONT of
@@ -229,12 +220,13 @@ router.get("/:id/moves/:moveId", ownFighter, specialMovesController.getMoveDetai
 // ── Shop, Inventory & Pre-Fight Supplements v1.0 ───────────
 router.get("/:id/shop/catalog", ownFighter, shopController.getCatalog);
 router.post("/:id/shop/buy", ownFighter, shopController.buy);
-router.post("/:id/shop/buy-premium", ownFighter, shopController.buyPremium);
-// Real money. Opens a Stripe Checkout Session and returns its URL; grants NOTHING on its own —
+// Real money. Opens a Stripe Checkout Session and returns its URL; grants NOTHING on its own:
 // goods are handed over only by the signature-verified webhook (POST /webhooks/stripe).
-if (paymentController) {
-    router.post("/:id/shop/checkout", ownFighter, paymentController.createCheckout);
-}
+// checkoutLimiter (app.js) runs in front of this path. Mounted even when Stripe is disabled so
+// the client gets a clean 503 payments_disabled instead of a 404.
+router.post("/:id/shop/checkout", ownFighter, paymentController.createCheckout);
+// Post-redirect status poll. A Mongo read only, so it works with Stripe disabled too.
+router.get("/:id/shop/purchases/:sessionId", ownFighter, paymentController.getPurchaseStatus);
 router.post("/:id/inventory/use-energy", ownFighter, shopController.useEnergy);
 
 module.exports = router;
