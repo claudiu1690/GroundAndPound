@@ -25,7 +25,12 @@ function ChangelogModalImpl({ open, onClose }) {
 
   if (!open) return null;
 
-  const [latest, ...older] = CHANGELOG_ENTRIES;
+  // Expand the newest entries down to the latest major release, so a patch shipped on top of a
+  // major one doesn't fold that release into the "Earlier" accordion.
+  const lastMajorIdx = CHANGELOG_ENTRIES.findIndex((e) => e.major === true);
+  const splitAt = lastMajorIdx === -1 ? 1 : lastMajorIdx + 1;
+  const expanded = CHANGELOG_ENTRIES.slice(0, splitAt);
+  const older = CHANGELOG_ENTRIES.slice(splitAt);
 
   const SECTION_ORDER = [
     { key: "changed", label: t("changelog.sections.changed"), cls: "cl-cat-changed" },
@@ -66,23 +71,25 @@ function ChangelogModalImpl({ open, onClose }) {
           <h2 className="cl-title">{t("changelog.title")}</h2>
         </div>
 
-        {/* ── LATEST ENTRY (expanded) ── */}
-        <div className="cl-entry cl-entry-latest">
-          <div className="cl-entry-head">
-            <span className="cl-version">v{latest.version}</span>
-            <span className="cl-date">{latest.date}</span>
+        {/* ── LATEST ENTRIES (expanded, down to the latest major) ── */}
+        {expanded.map((entry) => (
+          <div key={entry.version} className="cl-entry cl-entry-latest">
+            <div className="cl-entry-head">
+              <span className="cl-version">v{entry.version}</span>
+              <span className="cl-date">{entry.date}</span>
+            </div>
+
+            {Array.isArray(entry.highlights) && entry.highlights.length > 0 && (
+              <ul className="cl-highlights">
+                {entry.highlights.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            )}
+
+            {renderSections(entry.sections)}
           </div>
-
-          {Array.isArray(latest.highlights) && latest.highlights.length > 0 && (
-            <ul className="cl-highlights">
-              {latest.highlights.map((line, i) => (
-                <li key={i}>{line}</li>
-              ))}
-            </ul>
-          )}
-
-          {renderSections(latest.sections)}
-        </div>
+        ))}
 
         {/* ── OLDER ENTRIES (accordion) ── skip heading entirely with only one entry */}
         {older.length > 0 && (

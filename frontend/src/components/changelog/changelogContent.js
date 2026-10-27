@@ -18,6 +18,19 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.2.2",
+    date: "2026-10-27",
+    major: false,
+    highlights: [],
+    sections: {
+      changed: [],
+      fixed: [
+        "What's New keeps the 2.2 notes open under the small updates that came after it, instead of folding them away under Earlier.",
+      ],
+      balance: [],
+    },
+  },
+  {
     version: "2.2.1",
     date: "2026-10-27",
     major: false,
