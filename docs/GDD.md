@@ -1352,9 +1352,21 @@ and verified in Stripe test mode until the live account exists; ships inside v2.
   means the drinks landed. Only `created | paid | failed` orders are processed, so a replayed
   `completed` event after a refund or dispute grants nothing. (QA found the reverse order could
   strand a paid order; fixed before launch.)
-- **Refunds and disputes.** `charge.refunded` records `refunded`, never claws back drinks.
-  `charge.dispute.created` records `disputed` and warns. `User.paymentsBlocked` (manual, set by
-  the owner) makes checkout refuse with `account_blocked`. No automation at launch.
+- **Refunds.** `charge.refunded` records `refunded` and never claws back drinks. A refund is the
+  owner's own call in the Stripe Dashboard, so the drinks stay as goodwill.
+- **Chargebacks (added 2026-10-27).** Players cannot refund themselves; the abuse path is buy,
+  spend, then dispute with the bank (which also costs a ~$15 dispute fee). On
+  `charge.dispute.created` for a `fulfilled` or `refunded` order:
+  1. **Claw-back:** `energyDrinks = max(0, energyDrinks - order.drinks)`, one atomic pipeline
+     update guarded by `Fighter.clawedBackPurchaseIds` (exactly once per order). The amount
+     actually removed is stored on `Purchase.clawedBackDrinks`. Spent drinks are gone; the
+     balance never goes negative and nothing else (stats, fights, cash) is touched.
+  2. **Block:** `User.paymentsBlocked = true`, so checkout refuses with `account_blocked`
+     ("Purchases are disabled on this account. Contact support"). The game itself stays playable.
+  3. Status flips to `disputed` last, so a failed write in step 1 or 2 answers 500 and Stripe's
+     retry finishes the job. Unblocking (e.g. after a won dispute) is a manual Mongo edit, and
+     reclaimed drinks are not restored automatically. `paymentsBlocked` can also still be set
+     by hand for fraud.
 - **Confirmation email** on fulfilment (Resend): bundle, amount incl. tax, date and the consent
   sentence, which EU consumer law wants on a durable medium. Fire-and-forget: the grant never
   depends on it. Stripe's own receipt email should also be enabled in the Dashboard.

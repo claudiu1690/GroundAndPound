@@ -288,7 +288,7 @@ test("S3 a duplicate (and a later different) completed event grants nothing more
     assert.equal(fakes.emails.length, 1, "one receipt");
 });
 
-test("S4 charge.dispute.created marks the purchase disputed and leaves the inventory alone", async () => {
+test("S4 charge.dispute.created marks disputed, takes the drinks back and blocks payments", async () => {
     const fighter = seedBuyer({ drinks: 0 });
     const svc = require("../../services/paymentService");
     const p = addOpenPurchase({ _id: "pur_disp", stripeSessionId: "cs_test_disp", bundleId: "drinks-40", amountCents: 1999, drinks: 40 });
@@ -299,14 +299,19 @@ test("S4 charge.dispute.created marks the purchase disputed and leaves the inven
     const res = await svc.handleEvent(dispute);
     assert.equal(res.handled, true);
     assert.equal(p.status, "disputed");
-    assert.equal(fighter.inventory.energyDrinks, 40, "no claw-back");
+    assert.equal(fighter.inventory.energyDrinks, 0, "unspent drinks taken back");
+    assert.equal(p.clawedBackDrinks, 40);
+    assert.equal(fakes.users.get(USER_ID).paymentsBlocked, true, "buyer can no longer check out");
     const refunds = fakes.tracked.filter((t) => t.type === "purchase_refunded");
     assert.equal(refunds.length, 1);
     assert.deepEqual(refunds[0].meta, { bundleId: "drinks-40", disputed: true });
 
-    // Redelivered dispute: no second analytics event.
+    // Redelivered dispute: no second analytics event, nothing taken twice.
+    fighter.inventory.energyDrinks = 7; // earned some since
     await svc.handleEvent(dispute);
     assert.equal(fakes.tracked.filter((t) => t.type === "purchase_refunded").length, 1);
+    assert.equal(fighter.inventory.energyDrinks, 7, "a redelivered dispute takes nothing more");
+    assert.equal(p.clawedBackDrinks, 40, "audit amount not overwritten");
 });
 
 test("S5 charge.refunded marks refunded, keeps the drinks, and never overwrites disputed", async () => {
@@ -335,7 +340,7 @@ test("S5 charge.refunded marks refunded, keeps the drinks, and never overwrites 
     await svc.handleEvent({ id: "evt_d2", type: "charge.dispute.created", data: { object: { payment_intent: "pi_dr" } } });
     await svc.handleEvent({ id: "evt_r2", type: "charge.refunded", data: { object: { payment_intent: "pi_dr" } } });
     assert.equal(p2.status, "disputed", "refund does not overwrite disputed");
-    assert.equal(f2.inventory.energyDrinks, 6);
+    assert.equal(f2.inventory.energyDrinks, 0, "the dispute took the 6 back; the later refund changes nothing");
     refunds = fakes.tracked.filter((t) => t.type === "purchase_refunded");
     assert.equal(refunds.length, 1, "purchase_refunded fired once for this order");
     assert.equal(refunds[0].meta.disputed, true);
@@ -344,6 +349,68 @@ test("S5 charge.refunded marks refunded, keeps the drinks, and never overwrites 
     const res = await svc.handleEvent({ id: "evt_r3", type: "charge.refunded", data: { object: { id: "ch_x" } } });
     assert.equal(res.handled, true);
     assert.equal(p2.status, "disputed");
+});
+
+test("S4b a chargeback after the drinks were partly spent takes back only what is left, never below 0", async () => {
+    const fighter = seedBuyer({ drinks: 0 });
+    const svc = require("../../services/paymentService");
+    const p = addOpenPurchase({ _id: "pur_spent", stripeSessionId: "cs_test_spent", bundleId: "drinks-15", amountCents: 999, drinks: 15 });
+    await svc.handleEvent(completedEvent("cs_test_spent", { session: { payment_intent: "pi_spent" } }));
+    fighter.inventory.energyDrinks = 4; // spent 11
+    await svc.handleEvent({ id: "evt_ds", type: "charge.dispute.created", data: { object: { payment_intent: "pi_spent" } } });
+    assert.equal(fighter.inventory.energyDrinks, 0);
+    assert.equal(p.clawedBackDrinks, 4, "records what was actually removed");
+    assert.equal(fakes.users.get(USER_ID).paymentsBlocked, true);
+});
+
+test("S4c a chargeback on an order already refunded still takes the drinks back and blocks", async () => {
+    const fighter = seedBuyer({ drinks: 2 });
+    const svc = require("../../services/paymentService");
+    const p = addOpenPurchase({ _id: "pur_rd", stripeSessionId: "cs_test_rd" });
+    await svc.handleEvent(completedEvent("cs_test_rd", { session: { payment_intent: "pi_rd" } }));
+    await svc.handleEvent({ id: "evt_rr", type: "charge.refunded", data: { object: { payment_intent: "pi_rd" } } });
+    assert.equal(fighter.inventory.energyDrinks, 8, "the refund alone keeps the drinks");
+    await svc.handleEvent({ id: "evt_rd", type: "charge.dispute.created", data: { object: { payment_intent: "pi_rd" } } });
+    assert.equal(p.status, "disputed");
+    assert.equal(fighter.inventory.energyDrinks, 2);
+    assert.equal(fakes.users.get(USER_ID).paymentsBlocked, true);
+});
+
+test("S4d a claw-back write that fails rethrows (Stripe retries) and the retry finishes exactly once", async () => {
+    const fighter = seedBuyer({ drinks: 0 });
+    const svc = require("../../services/paymentService");
+    const p = addOpenPurchase({ _id: "pur_cf", stripeSessionId: "cs_test_cf", bundleId: "drinks-15", amountCents: 999, drinks: 15 });
+    await svc.handleEvent(completedEvent("cs_test_cf", { session: { payment_intent: "pi_cf" } }));
+    const dispute = (id) => ({ id, type: "charge.dispute.created", data: { object: { payment_intent: "pi_cf" } } });
+
+    fakes.clawbackImpl = async () => { throw new Error("mongo write timeout"); };
+    await assert.rejects(svc.handleEvent(dispute("evt_cf1")), /mongo write timeout/);
+    assert.equal(p.status, "fulfilled", "status not flipped, so the retry still finds it");
+    assert.equal(fighter.inventory.energyDrinks, 15);
+    assert.equal(fakes.users.get(USER_ID).paymentsBlocked, false);
+
+    fakes.clawbackImpl = null;
+    await svc.handleEvent(dispute("evt_cf2"));
+    await svc.handleEvent(dispute("evt_cf3"));
+    assert.equal(p.status, "disputed");
+    assert.equal(fighter.inventory.energyDrinks, 0, "taken back once");
+    assert.equal(fakes.users.get(USER_ID).paymentsBlocked, true);
+    assert.equal(fakes.tracked.filter((t) => t.type === "purchase_refunded").length, 1);
+});
+
+test("S4e a dispute for an unknown payment intent touches no fighter and blocks nobody", async () => {
+    const fighter = seedBuyer({ drinks: 9 });
+    const svc = require("../../services/paymentService");
+    const origWarn = console.warn;
+    console.warn = () => {};
+    try {
+        const res = await svc.handleEvent({ id: "evt_du", type: "charge.dispute.created", data: { object: { payment_intent: "pi_nobody" } } });
+        assert.equal(res.handled, true);
+    } finally {
+        console.warn = origWarn;
+    }
+    assert.equal(fighter.inventory.energyDrinks, 9);
+    assert.equal(fakes.users.get(USER_ID).paymentsBlocked, false);
 });
 
 test("S5b expired / async-failed sessions fail only from created|paid", async () => {

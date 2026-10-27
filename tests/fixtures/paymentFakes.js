@@ -51,6 +51,8 @@ function installPaymentFakes() {
         sendEmailImpl: async () => ({ id: "fake-email" }),
         // Set to an async function that throws to simulate a failing grant write.
         fighterUpdateImpl: null,
+        // Set to an async function that throws to simulate a failing chargeback claw-back write.
+        clawbackImpl: null,
         nextSessionNo: 1,
         reset() {
             this.users.clear();
@@ -61,6 +63,7 @@ function installPaymentFakes() {
             this.stripeCreates.length = 0;
             this.sendEmailImpl = async () => ({ id: "fake-email" });
             this.fighterUpdateImpl = null;
+            this.clawbackImpl = null;
         },
         addUser(u) { this.users.set(String(u._id), { ...u }); return this.users.get(String(u._id)); },
         addFighter(f) {
@@ -112,6 +115,12 @@ function installPaymentFakes() {
     // ── Models ──────────────────────────────────────────────────────────────
     inject(P("models/userModel.js"), {
         findById: (id) => query(state.users.get(String(id)) || null),
+        async updateOne(filter, update) {
+            const doc = state.users.get(String(filter._id));
+            if (!doc) return { matchedCount: 0, modifiedCount: 0 };
+            Object.assign(doc, update.$set || {});
+            return { matchedCount: 1, modifiedCount: 1 };
+        },
     });
     inject(P("models/fighterModel.js"), {
         findById: (id) => query(state.fighters.get(String(id)) || null),
@@ -134,6 +143,22 @@ function installPaymentFakes() {
             }
             for (const [k, v] of Object.entries(update.$push || {})) doc[k] = [...(doc[k] || []), v];
             return { matchedCount: 1, modifiedCount: 1 };
+        },
+        // Supports exactly what paymentService.clawBackDrinks sends: {_id, clawedBackPurchaseIds: {$ne}}
+        // with a one-stage pipeline that sets energyDrinks = max(0, x - n) and appends the id.
+        // Returns the PRE-update document. (The real pipeline is proven against local Mongo.)
+        async findOneAndUpdate(filter, update) {
+            const doc = state.fighters.get(String(filter._id));
+            if (!doc) return null;
+            const ne = filter.clawedBackPurchaseIds && filter.clawedBackPurchaseIds.$ne;
+            if (ne != null && (doc.clawedBackPurchaseIds || []).map(String).includes(String(ne))) return null;
+            if (state.clawbackImpl) await state.clawbackImpl();
+            const set = update[0].$set;
+            const n = set["inventory.energyDrinks"].$max[1].$subtract[1];
+            const before = { ...doc, inventory: { ...doc.inventory } };
+            doc.inventory.energyDrinks = Math.max(0, (doc.inventory.energyDrinks || 0) - n);
+            doc.clawedBackPurchaseIds = [...(doc.clawedBackPurchaseIds || []), ne];
+            return before;
         },
     });
     let purchaseNo = 0;

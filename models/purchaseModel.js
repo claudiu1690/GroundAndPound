@@ -50,7 +50,8 @@ const purchaseSchema = new mongoose.Schema({
      * fulfilled— drinks granted to the fighter. TERMINAL for the happy path.
      * failed   — payment failed or the session expired.
      * refunded — money returned. Does NOT claw the drinks back; see paymentService.
-     * disputed — the buyer opened a chargeback. Recorded for support; goods are NOT reclaimed.
+     * disputed — the buyer opened a chargeback. The unspent drinks from this order are taken
+     *            back and the buyer's payments are blocked; see paymentService.
      *
      * In practice a purchase goes created -> fulfilled in one step (the webhook claim); `paid`
      * stays in the enum for compatibility with older documents and the failure filters.
@@ -69,6 +70,9 @@ const purchaseSchema = new mongoose.Schema({
     taxCents: { type: Number, default: null },
     // When the Checkout Session stops accepting payment (session expires_at), for support.
     expiresAt: { type: Date, default: null },
+    // Drinks actually removed from the fighter after a chargeback (may be less than `drinks`
+    // when some were already spent). Null until a dispute.
+    clawedBackDrinks: { type: Number, default: null },
     // Last Stripe error seen, for support. Never contains card data.
     lastError: { type: String, default: null },
 }, { timestamps: true });

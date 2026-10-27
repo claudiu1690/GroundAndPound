@@ -492,6 +492,9 @@ const fighterSchema = new mongoose.Schema({
     // is one atomic updateOne filtered on "this id is not here yet", which makes it exactly-once
     // per purchase even across Stripe retries. select:false keeps it out of every default read.
     paidPurchaseIds: { type: [mongoose.Schema.Types.ObjectId], default: undefined, select: false },
+    // Purchases whose drinks were taken back after a chargeback. Same exactly-once guard as
+    // paidPurchaseIds, so a redelivered dispute never removes a second batch.
+    clawedBackPurchaseIds: { type: [mongoose.Schema.Types.ObjectId], default: undefined, select: false },
     inventory: {
         energyShots:   { type: Number, default: 0, min: 0 },
         energyDrinks:  { type: Number, default: 0, min: 0 },

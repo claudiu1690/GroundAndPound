@@ -351,6 +351,29 @@ async function fulfil(purchaseDoc, eventId, session = {}) {
 }
 
 /**
+ * Take back what is left of a disputed order's drinks: energyDrinks = max(0, energyDrinks - drinks).
+ * One atomic pipeline update guarded by clawedBackPurchaseIds, so it runs at most once per
+ * purchase however often Stripe redelivers the dispute.
+ *
+ * @returns {Promise<number|null>} drinks actually removed, or null when this purchase was already
+ *   clawed back (or the fighter no longer exists).
+ */
+async function clawBackDrinks(purchaseDoc) {
+    const before = await Fighter.findOneAndUpdate(
+        { _id: purchaseDoc.fighterId, clawedBackPurchaseIds: { $ne: purchaseDoc._id } },
+        [{
+            $set: {
+                "inventory.energyDrinks": { $max: [0, { $subtract: [{ $ifNull: ["$inventory.energyDrinks", 0] }, purchaseDoc.drinks] }] },
+                clawedBackPurchaseIds: { $concatArrays: [{ $ifNull: ["$clawedBackPurchaseIds", []] }, [purchaseDoc._id]] },
+            },
+        }],
+        { new: false, projection: { "inventory.energyDrinks": 1 } }
+    );
+    if (!before) return null;
+    return Math.min(before.inventory?.energyDrinks ?? 0, purchaseDoc.drinks);
+}
+
+/**
  * Email the buyer a receipt. Async on purpose: any throw, sync or not, becomes a rejection the
  * caller's `.catch` logs, so a mail outage can never reach the webhook response.
  *
@@ -425,9 +448,9 @@ async function handleEvent(event) {
         }
         case "charge.refunded": {
             /**
-             * Recorded, NOT clawed back. Removing consumables a player may already have spent
-             * would drive their balance negative and punish them for a support action. Refunds
-             * are handled by a human who can also decide whether the account should be limited.
+             * Recorded, NOT clawed back. A refund is the owner's own decision in the Stripe
+             * Dashboard, so the drinks are left as goodwill. (Chargebacks are different: see
+             * charge.dispute.created.)
              *
              * Filtered on "fulfilled" so a refund that follows a dispute does not overwrite
              * "disputed" or count the same order as refunded twice.
@@ -448,21 +471,32 @@ async function handleEvent(event) {
         }
         case "charge.dispute.created": {
             /**
-             * A chargeback. Same rule as a refund: record it, never reclaim goods. Disputes cost a
-             * fee and count against the Stripe account, so a human reviews every one and can set
-             * User.paymentsBlocked.
+             * A chargeback: the buyer asked their bank to reverse the payment, which also costs a
+             * dispute fee. Buy, spend, charge back is the abuse this blocks:
+             *   1. take back what is left of this order's drinks (never below 0), and
+             *   2. block real-money purchases on the buyer's account.
+             * Both steps are idempotent and run BEFORE the status flip, so if either throws the
+             * 500 makes Stripe redeliver and the retry finishes the job. Unblocking (say, after a
+             * won dispute) stays a manual Mongo edit, and reclaimed drinks are not restored.
              */
             const dispute = event.data.object;
             const pi = stripeId(dispute.payment_intent);
             if (!pi) return { handled: true, granted: false };
+            const purchase = await Purchase.findOne({ stripePaymentIntentId: pi, status: { $in: ["fulfilled", "refunded", "disputed"] } });
+            if (!purchase) {
+                console.warn(`[stripe] DISPUTE opened for payment_intent ${pi} (no matching purchase), review manually`);
+                return { handled: true, granted: false };
+            }
+            const clawedBack = await clawBackDrinks(purchase);
+            await User.updateOne({ _id: purchase.userId }, { $set: { paymentsBlocked: true } });
             // Returns the PRE-update document, so analytics can tell a fresh dispute from one on
             // an order already counted as refunded. A redelivered dispute matches nothing.
             const before = await Purchase.findOneAndUpdate(
-                { stripePaymentIntentId: pi, status: { $in: ["fulfilled", "refunded"] } },
-                { $set: { status: "disputed" } },
+                { _id: purchase._id, status: { $in: ["fulfilled", "refunded"] } },
+                { $set: { status: "disputed", ...(clawedBack != null ? { clawedBackDrinks: clawedBack } : {}) } },
                 { new: false }
             );
-            console.warn(`[stripe] DISPUTE opened for payment_intent ${pi}${before ? ` purchase=${before._id}` : " (no matching purchase)"}; goods NOT reclaimed, review manually`);
+            console.warn(`[stripe] DISPUTE opened for payment_intent ${pi} purchase=${purchase._id}: ${clawedBack != null ? `took back ${clawedBack} of ${purchase.drinks} drinks` : "nothing taken back (already done or fighter gone)"}, payments blocked for user ${purchase.userId}`);
             if (before && before.status === "fulfilled") {
                 analyticsService.track(before.userId, "purchase_refunded", { bundleId: before.bundleId, disputed: true }, { fighterId: before.fighterId });
             }
@@ -479,6 +513,7 @@ module.exports = {
     verifyWebhook,
     handleEvent,
     fulfil,
+    clawBackDrinks,
     sendPurchaseReceipt,
     payErr,
     CONSENT_MESSAGE,

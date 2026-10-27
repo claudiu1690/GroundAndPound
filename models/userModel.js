@@ -73,8 +73,9 @@ const userSchema = new mongoose.Schema({
     lastActiveAt: { type: Date, default: Date.now },
 
     // ── Payments ──────────────────────────────────────────────────
-    /** Ops kill switch for real-money purchases on this account (fraud, chargeback
-     *  abuse). Flipped by hand in Mongo; checkout answers 403 account_blocked. */
+    /** Kill switch for real-money purchases on this account. Set automatically when the buyer
+     *  opens a chargeback (paymentService), or by hand in Mongo for fraud. Cleared only by hand,
+     *  e.g. after a dispute is won. Checkout answers 403 account_blocked. */
     paymentsBlocked: { type: Boolean, default: false },
 
     // ── Soft-delete + 30-day grace ────────────────────────────────

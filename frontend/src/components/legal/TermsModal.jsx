@@ -101,8 +101,9 @@ export function TermsModal({ open, onClose }) {
               delivery failed. If something went wrong, contact us at{" "}
               <strong>{CONTACT_EMAIL}</strong> with the time of your purchase. Energy Drinks give
               energy only, never stats or fight results, and like all virtual items they have no
-              monetary value. If a payment is reversed or disputed with your bank, we may limit
-              purchases on the account.
+              monetary value. If you dispute a payment with your bank (a chargeback), the Energy
+              Drinks from that order that are still in your inventory are removed and purchases
+              are disabled on your account. The rest of your account is not affected.
             </p>
           </section>
 
