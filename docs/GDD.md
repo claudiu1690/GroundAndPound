@@ -1367,6 +1367,10 @@ and verified in Stripe test mode until the live account exists; ships inside v2.
      retry finishes the job. Unblocking (e.g. after a won dispute) is a manual Mongo edit, and
      reclaimed drinks are not restored automatically. `paymentsBlocked` can also still be set
      by hand for fraud.
+  4. **Early disputes.** Stripe does not order events, and a dispute can land before
+     `checkout.session.completed` (the `4000 0000 0000 0259` test card always does this). If the
+     disputed payment belongs to one of our still-open purchases, the handler answers 500 so Stripe
+     redelivers after fulfilment, and the claw-back then runs normally.
 - **Confirmation email** on fulfilment (Resend): bundle, amount incl. tax, date and the consent
   sentence, which EU consumer law wants on a durable medium. Fire-and-forget: the grant never
   depends on it. Stripe's own receipt email should also be enabled in the Dashboard.

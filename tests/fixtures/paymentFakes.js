@@ -54,6 +54,8 @@ function installPaymentFakes() {
         // Set to an async function that throws to simulate a failing chargeback claw-back write.
         clawbackImpl: null,
         nextSessionNo: 1,
+        // payment_intent -> checkout session id, for checkout.sessions.list({ payment_intent }).
+        sessionsByPi: new Map(),
         reset() {
             this.users.clear();
             this.fighters.clear();
@@ -64,6 +66,7 @@ function installPaymentFakes() {
             this.sendEmailImpl = async () => ({ id: "fake-email" });
             this.fighterUpdateImpl = null;
             this.clawbackImpl = null;
+            this.sessionsByPi.clear();
         },
         addUser(u) { this.users.set(String(u._id), { ...u }); return this.users.get(String(u._id)); },
         addFighter(f) {
@@ -98,6 +101,10 @@ function installPaymentFakes() {
                         state.stripeCreates.push({ params, opts });
                         const id = `cs_test_fake${state.nextSessionNo++}`;
                         return { id, url: `https://checkout.stripe.test/c/pay/${id}` };
+                    },
+                    async list({ payment_intent }) {
+                        const id = state.sessionsByPi.get(payment_intent);
+                        return { data: id ? [{ id }] : [] };
                     },
                 },
             },

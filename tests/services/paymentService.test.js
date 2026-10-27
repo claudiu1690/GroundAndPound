@@ -398,6 +398,26 @@ test("S4d a claw-back write that fails rethrows (Stripe retries) and the retry f
     assert.equal(fakes.tracked.filter((t) => t.type === "purchase_refunded").length, 1);
 });
 
+test("S4f a dispute that arrives BEFORE checkout.session.completed is retried, then claws back once fulfilled", async () => {
+    const fighter = seedBuyer({ drinks: 3 });
+    const svc = require("../../services/paymentService");
+    const p = addOpenPurchase({ _id: "pur_early", stripeSessionId: "cs_test_early", bundleId: "drinks-6", amountCents: 499, drinks: 6 });
+    fakes.sessionsByPi.set("pi_early", "cs_test_early");
+    const dispute = (id) => ({ id, type: "charge.dispute.created", data: { object: { payment_intent: "pi_early" } } });
+
+    await assert.rejects(svc.handleEvent(dispute("evt_early1")), /arrived before fulfilment/);
+    assert.equal(p.status, "created", "nothing changed yet");
+    assert.equal(fakes.users.get(USER_ID).paymentsBlocked, false);
+
+    await svc.handleEvent(completedEvent("cs_test_early", { session: { payment_intent: "pi_early" } }));
+    assert.equal(fighter.inventory.energyDrinks, 9);
+
+    await svc.handleEvent(dispute("evt_early2")); // Stripe's retry
+    assert.equal(p.status, "disputed");
+    assert.equal(fighter.inventory.energyDrinks, 3, "the 6 bought drinks are taken back");
+    assert.equal(fakes.users.get(USER_ID).paymentsBlocked, true);
+});
+
 test("S4e a dispute for an unknown payment intent touches no fighter and blocks nobody", async () => {
     const fighter = seedBuyer({ drinks: 9 });
     const svc = require("../../services/paymentService");

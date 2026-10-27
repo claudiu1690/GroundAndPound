@@ -484,6 +484,16 @@ async function handleEvent(event) {
             if (!pi) return { handled: true, granted: false };
             const purchase = await Purchase.findOne({ stripePaymentIntentId: pi, status: { $in: ["fulfilled", "refunded", "disputed"] } });
             if (!purchase) {
+                // Stripe does not order events: a dispute can arrive before checkout.session.completed
+                // (the 0259 test card does this every time), when the purchase has no payment intent
+                // recorded yet. If the payment is one of OUR open checkouts, throw so the 500 makes
+                // Stripe redeliver after fulfilment; ignoring it would let the drinks land unclaimed.
+                const sessions = await stripe().checkout.sessions.list({ payment_intent: pi, limit: 1 });
+                const sessionId = sessions.data[0] && sessions.data[0].id;
+                const pending = sessionId && await Purchase.findOne({ stripeSessionId: sessionId, status: { $in: CLAIMABLE_STATUSES } });
+                if (pending) {
+                    throw new Error(`dispute for purchase ${pending._id} arrived before fulfilment; retry later`);
+                }
                 console.warn(`[stripe] DISPUTE opened for payment_intent ${pi} (no matching purchase), review manually`);
                 return { handled: true, granted: false };
             }
