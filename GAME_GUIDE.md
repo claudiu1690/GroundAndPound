@@ -60,6 +60,7 @@
 
 **Shop & Supplements**
 - The Shop — Energy, Boosters & Buffs
+- Buying Energy Drink Bundles
 
 **Events & Media**
 - Events — Betting on the Card
@@ -904,6 +905,35 @@ Pre-Fight Buffs are consumed the moment your next fight resolves. You can hold m
 Spending discipline matters. Boosters pay off most during a focused training push toward a stat threshold or promotion. Pre-fight buffs are worth it for a fight you genuinely need to win — a title shot, a grudge match, or a fight you're slightly underdog in. Energy items are for the days you log in to a full bar you can't spend fast enough. Buying everything every day is how you go broke; timing your purchases is how you climb.
 
 > **Key takeaway:** One XP Booster active at a time, one Pre-Fight Buff per fight (picked in Camp). Time your spending to the moments that matter instead of buying on autopilot.
+
+### Buying Energy Drink Bundles
+
+*What's for sale, what it can't buy you, and how a purchase actually works.*
+
+Energy Drink bundles are the only thing in Ground & Pound you can buy with real money. There is no second premium currency, no subscription, and no season pass. You'll find them under Premium in the Shop. Prices are in US dollars and already include any tax, so the price on the card is what you pay.
+
+| Bundle | Price | Per drink |
+| --- | --- | --- |
+| 6 Energy Drinks | $4.99 | $0.83 |
+| 15 Energy Drinks | $9.99 | $0.67 |
+| 40 Energy Drinks | $19.99 | $0.50 |
+| 100 Energy Drinks | $39.99 | $0.40 |
+
+Here is the important part, and we'd rather say it plainly than bury it. A drink is 50 energy. Energy buys training sessions and Proving Ground attempts, so what money buys you is time, not power. It cannot buy stats, it cannot buy a fight result, and there is nothing on sale that you can't also get by playing. We don't sell anything that changes how a fight turns out, and we're not planning to.
+
+You can earn drinks without spending a cent, and most players do. Win streaks pay out at 5, 10, 15 and 20 fights. Every promotion to a new tier hands you 3. A number of sponsor contracts pay 2 to 4 on completion, and the Proving Ground pays them out at the end of a season. Buying a bundle is a shortcut through a door that's already open.
+
+When you pick a bundle, we hand you off to Stripe, our payment processor, and you pay on their page. Your card details never pass through this game. We never see them, never store them, and never receive them. When you're done you come straight back here.
+
+Your drinks are credited by Stripe telling our server the payment went through, which is usually a few seconds. When you come back, the Shop shows "Confirming your order" and then "Done" once the drinks are in your inventory. If it says delivery is taking longer than usual, your payment is still safe and the drinks will land on their own. If they are not there within an hour, write to support@groundandpound.net with the time of purchase. If you close the payment page or cancel, nothing is charged and nothing changes. A checkout page you leave open for more than 30 minutes expires, so start a fresh one if that happens.
+
+On the payment page you confirm that you want the drinks delivered right away. Because they arrive immediately, that also means giving up the 14-day right to cancel that some online purchases have. You get an email confirming the order and that choice. Delivered drinks are not refundable unless delivery failed or the law says otherwise.
+
+Bought drinks always land, even if they take you past 99. Free drinks are different: streaks, promotions and sponsors only add drinks while you hold fewer than 99, so if you are sitting above that, free drinks stop until you use some.
+
+You need a registered account to buy, with an email and a password. Guest accounts can't. That isn't an upsell: a guest account lives on the device that made it, and if you lose that device you lose the account and anything you paid for with it. Securing your account first means a purchase can always be recovered. If you're playing as a guest, add an email and password from your account settings and the Premium tab will open up.
+
+> **Key takeaway:** Drinks buy tempo, never power, and never a fight result. You can earn every one of them by playing. Buying needs a registered account, and your card details never touch this game.
 
 ---
 

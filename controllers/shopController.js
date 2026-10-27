@@ -9,7 +9,6 @@ const BAD_REQUEST_MESSAGES = new Set([
     "You already own the maximum of this item",
     "Unknown item",
     "Invalid quantity",
-    "Unknown bundle",
     "Energy already full",
     "You don't own any of that item",
 ]);
@@ -51,16 +50,6 @@ async function buy(req, res) {
     }
 }
 
-async function buyPremium(req, res) {
-    try {
-        const { bundleId } = req.body || {};
-        const result = await shopService.buyPremium(bundleId);
-        res.json(result);
-    } catch (err) {
-        handleError(err, res);
-    }
-}
-
 async function useEnergy(req, res) {
     try {
         const { itemId } = req.body || {};
@@ -74,4 +63,4 @@ async function useEnergy(req, res) {
     }
 }
 
-module.exports = { getCatalog, buy, buyPremium, useEnergy };
+module.exports = { getCatalog, buy, useEnergy };

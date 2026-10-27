@@ -2213,7 +2213,9 @@
       "energyDrinks": "Energy Drinks",
       "perDrinkSuffix": "per drink",
       "save": "save {pct}%",
-      "buy": "Buy"
+      "buy": "Buy",
+      "buyGuest": "Secure your account to buy",
+      "redirecting": "Opening secure checkout..."
     },
     "buy": {
       "label": "Buy",
@@ -2227,12 +2229,16 @@
     "premium": {
       "eye": "Premium",
       "title": "Energy Drinks",
-      "desc": "Restore 50 energy instantly. Never let a full energy bar go to waste. Earn them through gameplay or buy a bundle — buying is always optional.",
+      "desc": "Restore 50 energy instantly. Never let a full energy bar go to waste. Earn them through gameplay or buy a bundle. Buying is always optional.",
+      "guestNotice": "Buying needs an email and password on your account. A guest account lives on this device only, so a purchase could not be recovered. Secure it in Account, then come back.",
+      "disabled": "Purchases are not available right now. Nothing has changed in your inventory.",
+      "redirecting": "You are being sent to Stripe to pay. Your card details never pass through the game.",
+      "overCap": "You have {owned} drinks. Bought drinks always land, but free drinks from streaks, promotions and sponsors only land while you hold fewer than {cap}.",
       "drinksInInventory": "Drinks in inventory",
       "earnNote": "You can also earn Energy Drinks for free through contract completions, win streaks and tier promotions. Buying is always optional."
     },
     "inventory": {
-      "energyFull": "Energy is full — nothing to restore right now.",
+      "energyFull": "Energy is full. Nothing to restore right now.",
       "noBooster": "No active XP booster.",
       "browseStore": "Browse the Cash Store →",
       "noBuffs": "No pre-fight buffs owned.",
@@ -2241,6 +2247,13 @@
       "owned": "owned",
       "use": "Use",
       "sessionsLeft": "sessions left of {total}"
+    },
+    "return": {
+      "pending": "Payment received. Confirming your order and delivering your drinks...",
+      "delivered": "Done. {drinks} Energy Drinks have been added to your inventory.",
+      "cancelled": "Checkout cancelled. You have not been charged.",
+      "failed": "The payment did not go through. Nothing was charged and nothing changed.",
+      "stillConfirming": "Payment received, delivery is taking longer than usual. Your drinks will land as soon as the payment is confirmed. If they are not here in an hour, write to support@groundandpound.net with the time of purchase."
     },
     "sidebar": {
       "title": "Inventory",
@@ -2261,7 +2274,7 @@
     },
     "camp": {
       "supplementsTitle": "Supplements",
-      "supplementsSub": "Optional pre-fight buffs — consumed after the fight resolves",
+      "supplementsSub": "Optional pre-fight buffs, consumed after the fight resolves",
       "maxBadge": "Max 1 per fight",
       "loading": "Loading supplements…",
       "noSupplement": "No supplement",
@@ -2277,8 +2290,9 @@
     "messages": {
       "purchaseComplete": "Purchase complete.",
       "purchaseFailed": "Purchase failed.",
-      "premiumUnavailable": "Premium purchases are not available yet.",
-      "premiumPurchaseUnavailable": "Premium purchase unavailable.",
+      "premiumPurchaseUnavailable": "Could not start checkout. Nothing has been charged.",
+      "premiumBlocked": "Purchases are disabled on this account. Contact support@groundandpound.net.",
+      "premiumRateLimited": "Too many checkout attempts. Wait a few minutes and try again.",
       "restoredEnergy": "Restored {restored} energy.",
       "couldNotUse": "Could not use item."
     }

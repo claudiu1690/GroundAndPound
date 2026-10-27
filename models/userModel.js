@@ -72,6 +72,11 @@ const userSchema = new mongoose.Schema({
      *  guests only; drives the inactivity purge. */
     lastActiveAt: { type: Date, default: Date.now },
 
+    // ── Payments ──────────────────────────────────────────────────
+    /** Ops kill switch for real-money purchases on this account (fraud, chargeback
+     *  abuse). Flipped by hand in Mongo; checkout answers 403 account_blocked. */
+    paymentsBlocked: { type: Boolean, default: false },
+
     // ── Soft-delete + 30-day grace ────────────────────────────────
     deletionRequestedAt: { type: Date,    default: null },
     deleted:             { type: Boolean, default: false, index: true },

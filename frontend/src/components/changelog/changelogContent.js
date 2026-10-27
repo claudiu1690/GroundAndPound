@@ -25,11 +25,13 @@ export const CHANGELOG_ENTRIES = [
       "Twelve new Special Moves double the roster to 24, across all four disciplines. Striking gets High Guard, Second Gear and Superman Punch. Wrestling gets Double-Leg Precision, Top Control and Blast Double. Brazilian Jiu-Jitsu gets Frame & Base, Guillotine Choke and Arm Triangle. Conditioning gets Pace Pusher, Deep Waters and Fighting Spirit.",
       "Three new Signatures, each a one-shot moment per fight. Superman Punch is a first-round power surge. Blast Double makes your first takedown hit harder. Arm Triangle makes your first submission attempt from top the dangerous one.",
       "Coaches hired from now on know more. A Legendary coach covers his whole expanded discipline, up to seven moves. Coaches already on your roster keep the list on their card, so what you read at hire is what you get.",
+      "The Shop's Premium tab is open. You can buy Energy Drink bundles for real money, from 6 for $4.99 to 100 for $39.99, with tax included. Payment runs on Stripe, so your card details never touch the game, and drinks are the only thing for sale: nothing that changes a fight result is sold, and every drink can still be earned by playing.",
       "A new Catalog sits at the top of the Special Moves tab. All 24 moves in one place: what each one is worth at every rarity, which ones you own and at what rarity, and how to get the rest, down to which coach teaches it and at what rank.",
     ],
     sections: {
       changed: [
         "Seven moves have new names: Sprawl Instinct is now Sprawl, Never Tap is Hip Escape, Clinch Killer is Dirty Boxing, Mount Reaper is Full Mount, The Finisher is Overhand Right, Iron Recovery is Rubber Guard, and Killer Instinct is Crossface. Several moves also work differently now; the Balance notes below say how.",
+        "Guest accounts can see the bundles but need an email and password before buying, so a purchase can always be recovered.",
         "Special Move cards got new and repainted art. Every card now shows the technique it names, and each type looks like one set: red Passives, blue Procs, gold Signatures.",
         "Drops can now land on any of 24 moves, so each one turns up about half as often as before. Coach teaching is how you aim at the move you actually want.",
         "The Boogeyman's Ambush now boosts the new proc moves too, under the same cap as before.",

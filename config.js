@@ -66,6 +66,39 @@ const features = {
     campTeachChannel: String(process.env.CAMP_TEACH_CHANNEL || '').toLowerCase() !== 'false',
 };
 
+/**
+ * Stripe. Real money, so the rules here are stricter than anywhere else in this file.
+ *
+ * ⚠️ NO DEFAULTS, EVER. Every other secret in this config falls back to a dev value; these must
+ * not. A placeholder secret key would silently point at nothing, and a placeholder WEBHOOK
+ * secret is worse than none at all: signature verification would run against a key an attacker
+ * can read in the repo, so forged "payment succeeded" events would verify and grant goods for
+ * free. Missing keys leave payments DISABLED, which fails closed.
+ *
+ * `enabled` is what the rest of the app checks. It is false unless both keys are present, so a
+ * misconfigured deploy shows "temporarily unavailable" instead of half-working.
+ */
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || null;
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || null;
+const stripe = {
+    enabled: !!(stripeSecretKey && stripeWebhookSecret),
+    secretKey: stripeSecretKey,
+    webhookSecret: stripeWebhookSecret,
+    /**
+     * Where Stripe returns the player. Absolute, and must match the deployed origin.
+     *
+     * ⚠️ ROOT PATH, NOT `/shop`. This is a single-page app with NO router: the visible screen
+     * is `activeTab` state that always starts at "home", so a path like /shop would 404 on a
+     * static host or silently land on the dashboard. The `?purchase=` param is what App.jsx
+     * reads to switch to the Shop tab and report the outcome.
+     */
+    successUrl: process.env.STRIPE_SUCCESS_URL || 'http://localhost:5173/?purchase=success',
+    cancelUrl: process.env.STRIPE_CANCEL_URL || 'http://localhost:5173/?purchase=cancelled',
+    // Live keys start "sk_live_". Surfaced so the boot log can say which mode is armed —
+    // shipping test keys to production is a silent failure that looks like nobody is buying.
+    liveMode: !!(stripeSecretKey && stripeSecretKey.startsWith('sk_live_')),
+};
+
 const mongoUri = resolveMongoUri();
 const redisUrl = resolveRedisUrl();
 
@@ -83,6 +116,7 @@ console.log(`[config] Redis: ${usingRemoteRedis ? 'REMOTE' : 'LOCAL'} → ${mask
 // FIRST question is always "which side of the cutover is this process on?" and the answer must
 // be in the log, not inferred from behaviour.
 console.log(`[config] Features: GYMS_RETIRED=${features.gymsRetired} · CAMP_TEACH_CHANNEL=${features.campTeachChannel}`);
+console.log(`[config] Stripe: ${stripe.enabled ? (stripe.liveMode ? 'ENABLED (LIVE MODE — real charges)' : 'enabled (test mode)') : 'DISABLED (STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET not set)'}`);
 
 module.exports = {
     port: process.env.PORT || 4001,
@@ -100,4 +134,5 @@ module.exports = {
     // Guests have no fallback credential unless they save their recovery code, so
     // their JWT (the "device token") is long-lived. Env-overridable for tuning.
     guestJwtExpiresIn: process.env.GUEST_JWT_EXPIRES_IN || '365d',
+    stripe,
 };
