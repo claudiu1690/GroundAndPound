@@ -23,7 +23,7 @@
 - Weight Cut — The Gamble Before the Fight
 - Fight Outcomes — What Can Happen
 - The Fight Summary — Understanding What Happened
-- Special Moves — Your Fighter's Signature Techniques
+- Special Moves: Your Fighter's Signature Techniques
 
 **The Proving Ground**
 - The Proving Ground — PvP, Explained
@@ -334,21 +334,21 @@ If it was a title fight, a dedicated championship victory screen appears with go
 
 > **Key takeaway:** The Camp Performance section tells you whether your preparation was right. Check it after every fight — it's the fastest way to become a better player.
 
-### Special Moves — Your Fighter's Signature Techniques
+### Special Moves: Your Fighter's Signature Techniques
 
-*Collectible named techniques that give a small permanent edge — how to get them, equip them, and the 2-passive cap.*
+*Collectible named techniques that give a small permanent edge: how to get them, equip them, and the 2-passive cap.*
 
-Special Moves are collectible, named techniques — things like a signature counter or a submission instinct — that give your fighter a small edge in a fight. Where camp is temporary, per-fight prep you choose fresh every time, Special Moves are permanent: once you own one, it's part of your fighter's identity for good, sitting on top of your stats rather than replacing them.
+Special Moves are collectible, named techniques, things like a signature counter or a submission instinct, that give your fighter a small edge in a fight. Where camp is temporary, per-fight prep you choose fresh every time, Special Moves are permanent: once you own one, it's part of your fighter's identity for good, sitting on top of your stats rather than replacing them.
 
-You get 3 equip slots for your career, but they don't all open at once. Slot 1 is available from the start at Amateur. Slot 2 unlocks when you turn Regional Pro. Slot 3 unlocks at National. Equipping and unequipping is free and instant outside an active fight camp — a move locked in when you accept a fight stays equipped for that fight's resolution, but otherwise you can rearrange your loadout any time.
+You get 3 equip slots for your career, but they don't all open at once. Slot 1 is available from the start at Amateur. Slot 2 unlocks when you turn Regional Pro. Slot 3 unlocks at National. Equipping and unequipping is free and instant outside an active fight camp. A move locked in when you accept a fight stays equipped for that fight's resolution, but otherwise you can rearrange your loadout any time.
 
-There's one rule to plan around: at most 2 always-on Passive moves can be equipped at the same time. Your 3rd slot has to hold a Proc or a Signature move. Swapping one passive for another passive is always fine since the total doesn't change — the cap only stops you from stacking a 3rd passive in.
+There's one rule to plan around: at most 2 always-on Passive moves can be equipped at the same time. Your 3rd slot has to hold a Proc or a Signature move. Swapping one passive for another passive is always fine since the total doesn't change. The cap only stops you from stacking a 3rd passive in.
 
 | Effect Type | How It Works |
 | --- | --- |
-| Passive | Always on, every fight — a flat, unconditional bonus. This is the type the 2-slot cap applies to. |
-| Proc | Fires when a specific situation comes up in the fight — for example, when your opponent shoots a takedown. |
-| Signature | Only Rare and Legendary moves can be Signature-type. One big, one-shot moment per fight, capped to fire once. |
+| Passive | Always on, every fight: a flat, unconditional bonus. This is the type the 2-slot cap applies to. |
+| Proc | Fires when a specific situation comes up in the fight, for example when your opponent shoots a takedown. |
+| Signature | Only Rare and Legendary moves can be Signature-type. One big moment per fight: most fire once, and a few (Crossface, Rubber Guard) lock in once and then stay on for the rest of the fight. |
 
 There are 24 moves in the catalogue, spread across the four coaching disciplines. Which discipline a move belongs to is also which coach can teach it.
 
@@ -363,17 +363,21 @@ Want the full picture? Open the Catalog at the top of the Special Moves tab. It 
 
 Seven moves were renamed in v2.2: Sprawl Instinct is now Sprawl, Never Tap is Hip Escape, Clinch Killer is Dirty Boxing, Mount Reaper is Full Mount, The Finisher is Overhand Right, Iron Recovery is Rubber Guard, and Killer Instinct is Crossface. Six of them are the same moves with the same numbers. Crossface also changed what it does. Once your opponent drops below half health, every round you have them on their back they struggle to get out from under you, so you stay on top and keep landing ground-and-pound.
 
-Moves come in four rarities — Common, Uncommon, Rare, and Legendary — and rarity is the only thing that scales a move's power. There's no separate leveling system: if you pull a copy of a move you already own at a higher rarity, it upgrades the one you have. Pull an equal-or-lower rarity copy instead, and it's sold automatically for a small cash payout rather than sitting uselessly in your collection.
+Several moves were also reworked in v2.2 so every card does what it says. Overhand Right is ready once your opponent drops below 75% health and waits for a striking exchange. Rubber Guard locks in the first time you end up on your back and softens their ground-and-pound for the rest of the fight. Fighting Spirit kicks in below 75% health: every blow lands softer. Hip Escape now protects you from every submission attempt, not just the first. Arm Triangle waits for your first real submission attempt from top. Veteran IQ protects you on the ground as well as on the feet. Sprawl was too strong and got trimmed, and Second Gear, Frame & Base and Second Wind got stronger.
 
-A move's strength is shown as a Rating — "+30 Defense Rating" — with magnitude pips from Slight (Common) up to Brutal (Legendary), and the exact percentage in the fine print for the mathematically curious. Don't let small-looking percentages fool you: these edges are deliberately subtle per exchange but they compound across every round of every fight — a top-rarity move is worth several extra wins per hundred fights on its own, and that's before it stacks with your camp prep.
+Moves come in four rarities, Common, Uncommon, Rare and Legendary, and rarity is the only thing that scales a move's power. There's no separate leveling system: if you pull a copy of a move you already own at a higher rarity, it upgrades the one you have. Pull an equal-or-lower rarity copy instead, and it's sold automatically for a small cash payout rather than sitting uselessly in your collection.
 
-There are two ways to earn Special Moves, and only one of them is luck. The first is training: the hard sessions in your camp roll for a drop. Your coach's flagship rounds (unlocked at coach Rank 2) have the best chance in the game, and Open Mat Sparring rolls too, at a lower rate. The cheap, safe drills never drop a move at all — that's the trade you make when you take one. Drops are rare events, so more rounds mean better odds, and it's your camp's tier that decides how rare a drop can be, not how often one happens.
+A move's strength is shown as a Rating, like "+30 Defense Rating", with magnitude pips from Slight (Common) up to Brutal (Legendary), and the exact percentage in the fine print for the mathematically curious. Don't let small-looking percentages fool you: these edges are deliberately subtle per exchange but they compound across every round of every fight. A top-rarity move is worth several extra wins per hundred fights on its own, and that's before it stacks with your camp prep.
 
-The second way is your coaches, and it isn't a roll at all. Every coach knows a short list of moves outright and hands them over when you promote him — visible on his card before you ever hire him. That makes it the only way to choose which moves you end up owning, and a Legendary coach teaches Legendary copies. See "What Your Coach Teaches You".
+Some cards fire on a chance rather than every time, and the card says so. Body Snatcher lands on about half your exchanges and Dirty Boxing on about one exchange in three; on those exchanges they hit harder.
 
-Special Moves only apply in PvE — regular fights against the game's roster. They have no effect in the Proving Ground (PvP); your gameplan, not your equipped moves, is what matters there.
+There are two ways to earn Special Moves, and only one of them is luck. The first is training: the hard sessions in your camp roll for a drop. Your coach's flagship rounds (unlocked at coach Rank 2) have the best chance in the game, and Open Mat Sparring rolls too, at a lower rate. The cheap, safe drills never drop a move at all. That's the trade you make when you take one. Drops are rare events, so more rounds mean better odds, and it's your camp's tier that decides how rare a drop can be, not how often one happens.
 
-> **Key takeaway:** Equip up to 3 moves, unlocked by tier — but no more than 2 always-on Passives at once, so your 3rd slot should be a Proc or Signature. Hard camp sessions roll for drops; promoting a coach is the only way to pick which move you get. The Catalog shows every move and exactly how to get it.
+The second way is your coaches, and it isn't a roll at all. Every coach knows a short list of moves outright and hands them over when you promote him, visible on his card before you ever hire him. That makes it the only way to choose which moves you end up owning, and a Legendary coach teaches Legendary copies. See "What Your Coach Teaches You".
+
+Special Moves only apply in PvE, the regular fights against the game's roster. They have no effect in the Proving Ground (PvP); your gameplan, not your equipped moves, is what matters there.
+
+> **Key takeaway:** Equip up to 3 moves, unlocked by tier, but no more than 2 always-on Passives at once, so your 3rd slot should be a Proc or Signature. Hard camp sessions roll for drops; promoting a coach is the only way to pick which move you get. The Catalog shows every move and exactly how to get it.
 
 ---
 

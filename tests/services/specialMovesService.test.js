@@ -77,19 +77,20 @@ test("grantOrUpgrade: unknown moveId is guarded, returns null, does not throw or
     assert.equal(f.specialMovesOwned.length, 0);
 });
 
-test("buildMoveBonuses: two equipped moves sharing a bonusType (GRANITE_JAW + VETERAN_IQ, both OPPONENT_DAMAGE_REDUCTION) collapse into ONE summed entry", () => {
+test("buildMoveBonuses: two equipped moves sharing a bonusType (GRANITE_JAW + HIGH_GUARD, both OPPONENT_DAMAGE_REDUCTION) collapse into ONE summed entry", () => {
     const f = makeFighter({
         specialMovesOwned: [
             { moveId: "GRANITE_JAW", rarity: RARITY.LEGENDARY, acquiredAt: new Date() },
-            { moveId: "VETERAN_IQ", rarity: RARITY.LEGENDARY, acquiredAt: new Date() },
+            { moveId: "HIGH_GUARD", rarity: RARITY.LEGENDARY, acquiredAt: new Date() },
         ],
-        specialMovesEquipped: ["GRANITE_JAW", "VETERAN_IQ"],
+        specialMovesEquipped: ["GRANITE_JAW", "HIGH_GUARD"],
     });
     const bonuses = specialMovesService.buildMoveBonuses(f);
     const reductionEntries = bonuses.filter((b) => b.bonusType === "OPPONENT_DAMAGE_REDUCTION");
     assert.equal(reductionEntries.length, 1, "must collapse to exactly one entry, not silently drop one");
-    const expectedSum = SPECIAL_MOVES_BY_ID.GRANITE_JAW.values.LEGENDARY + SPECIAL_MOVES_BY_ID.VETERAN_IQ.values.LEGENDARY;
+    const expectedSum = SPECIAL_MOVES_BY_ID.GRANITE_JAW.values.LEGENDARY + SPECIAL_MOVES_BY_ID.HIGH_GUARD.values.LEGENDARY;
     assert.equal(reductionEntries[0].effectiveValue, expectedSum);
+    assert.deepEqual(reductionEntries[0].moveIds, ["GRANITE_JAW", "HIGH_GUARD"], "merged entry remembers both moves");
 });
 
 test("buildMoveBonuses: SIGNATURE entries are never merged, even when sharing a triggerCondition", () => {

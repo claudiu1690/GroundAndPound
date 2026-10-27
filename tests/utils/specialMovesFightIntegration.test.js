@@ -54,7 +54,7 @@ test("no-moves fighter with moveBonuses empty array is numerically identical to 
     assert.strictEqual(withKey.outcome, withoutKey.outcome);
 });
 
-test("Signature independence: THE_FINISHER (opponent below 25 percent) and KILLER_INSTINCT (below 50 percent) fire independently, keyed per moveId", () => {
+test("Signature independence: THE_FINISHER (opponent below 75 percent, next striking exchange) and KILLER_INSTINCT (below 50 percent, from top) fire independently, keyed per moveId", () => {
     const equippedFighter = ownedFighter(["THE_FINISHER", "KILLER_INSTINCT"], RARITY.LEGENDARY);
     const moveBonuses = specialMovesService.buildMoveBonuses(equippedFighter);
     assert.equal(moveBonuses.length, 2, "both signatures present as separate entries");
@@ -71,10 +71,12 @@ test("Signature independence: THE_FINISHER (opponent below 25 percent) and KILLE
     const killerEntry = result.moveBonuses.find((b) => b.moveId === "KILLER_INSTINCT");
     assert.ok(finisherEntry, "THE_FINISHER entry must survive in the result");
     assert.ok(killerEntry, "KILLER_INSTINCT entry must survive in the result");
-    if (result.rounds.some((r) => r.opponentHealth < 25)) {
-        assert.equal(finisherEntry.triggered, true, "THE_FINISHER should have armed once opponent health crossed 25 percent");
-        assert.equal(killerEntry.triggered, true, "KILLER_INSTINCT should have armed independently of THE_FINISHER");
-    }
+    // Health at the START of round i is the previous round's end health (100 before round 1).
+    const startHealth = (i) => (i === 0 ? 100 : result.rounds[i - 1].opponentHealth);
+    const finisherShouldFire = result.rounds.some((r, i) => r.event === "Striking exchange." && startHealth(i) < 75);
+    const killerShouldApply = result.rounds.some((r, i) => r.event === "Holding top control; ground and pound." && startHealth(i) < 50);
+    assert.equal(finisherEntry.triggerCount, finisherShouldFire ? 1 : 0, "THE_FINISHER fires once, on a striking exchange after the opponent is below 75 percent");
+    assert.equal(killerEntry.triggered, killerShouldApply, "KILLER_INSTINCT only counts rounds where it actually held the opponent down");
 });
 
 test("moveBonuses freshness across back to back fights on the SAME fighter object, no cross fight state leak", () => {
@@ -112,9 +114,9 @@ test("moveBonuses freshness across back to back fights on the SAME fighter objec
     );
 });
 
-test("Passive COLLAPSE rule end to end: GRANITE_JAW plus VETERAN_IQ equipped together reduce opponent damage by the SUM, not just one move value", () => {
+test("Passive COLLAPSE rule end to end: GRANITE_JAW plus HIGH_GUARD equipped together reduce opponent damage by the SUM, not just one move value", () => {
     const soloFighter = ownedFighter(["GRANITE_JAW"], RARITY.LEGENDARY);
-    const stackedFighter = ownedFighter(["GRANITE_JAW", "VETERAN_IQ"], RARITY.LEGENDARY);
+    const stackedFighter = ownedFighter(["GRANITE_JAW", "HIGH_GUARD"], RARITY.LEGENDARY);
 
     const soloBonuses = specialMovesService.buildMoveBonuses(soloFighter);
     const stackedBonuses = specialMovesService.buildMoveBonuses(stackedFighter);

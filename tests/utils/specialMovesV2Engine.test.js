@@ -202,27 +202,37 @@ const FLASH_P = { chn: 70 };
 const FLASH_O = { str: 60, leg: 60, spd: 50 };
 const FLASH_SEQ = [...STRIKE_ONLY, 0.07];
 
-test("FLASH_KO_RESISTANCE: active at round-start health < 25 (a 0.07 roll KOs bare, not with the move)", () => {
+test("FLASH_KO_RESISTANCE: active below 75 at round start (Legendary cuts the 11-point hit to 10)", () => {
     const without = fight(FLASH_SEQ, { p: { ...FLASH_P, health: 20 }, o: FLASH_O });
     const withMove = fight(FLASH_SEQ, { p: { ...FLASH_P, health: 20 }, o: FLASH_O, moveBonuses: built(["FIGHTING_SPIRIT"]) });
     assert.equal(without.rounds[0].playerDamage, 11, "fixture sanity");
-    assert.equal(without.outcome, "Loss (KO/TKO)");
-    assert.notEqual(withMove.outcome, "Loss (KO/TKO)");
+    assert.equal(withMove.rounds[0].playerDamage, 10);
     assert.equal(find(withMove, "FLASH_KO_RESISTANCE").triggerCount, 1);
 });
 
-test("FLASH_KO_RESISTANCE: inactive at round-start health >= 25, even if the round ends below 25", () => {
-    const withMove = fight(FLASH_SEQ, { p: { ...FLASH_P, health: 30 }, o: FLASH_O, moveBonuses: built(["FIGHTING_SPIRIT"]) });
+test("FLASH_KO_RESISTANCE: inactive at round-start health >= 75", () => {
+    const withMove = fight(FLASH_SEQ, { p: { ...FLASH_P, health: 80 }, o: FLASH_O, moveBonuses: built(["FIGHTING_SPIRIT"]) });
     assert.equal(withMove.outcome, "Loss (KO/TKO)");
     assert.equal(find(withMove, "FLASH_KO_RESISTANCE").triggerCount, 0);
 });
 
-test("FLASH_KO_RESISTANCE: floored at minProb (value 1.0 vs a 0.0 roll: no KO; bare: KO)", () => {
+test("FLASH_KO_RESISTANCE: below 75 at round start it cuts the strike damage the player takes", () => {
+    const bare = fight(STRIKE_ONLY, { p: { health: 60 }, o: { str: 80, spd: 70 } });
+    const grit = fight(STRIKE_ONLY, { p: { health: 60 }, o: { str: 80, spd: 70 }, moveBonuses: [entry("FLASH_KO_RESISTANCE", 0.5, "PLAYER_HEALTH_BELOW_75", "PROC")] });
+    assert.ok(grit.rounds[0].playerDamage < bare.rounds[0].playerDamage, "damage taken must drop while hurt");
+    assert.equal(find(grit, "FLASH_KO_RESISTANCE").triggerCount, 1);
+    const fresh = fight(STRIKE_ONLY, { p: { health: 100 }, o: { str: 80, spd: 70 }, moveBonuses: [entry("FLASH_KO_RESISTANCE", 0.5, "PLAYER_HEALTH_BELOW_75", "PROC")] });
+    const freshBare = fight(STRIKE_ONLY, { p: { health: 100 }, o: { str: 80, spd: 70 } });
+    assert.equal(fresh.rounds[0].playerDamage, freshBare.rounds[0].playerDamage, "no effect above 75");
+});
+
+test("FLASH_KO_RESISTANCE: never touches the stoppage rolls (same 0.0 accumulation roll stops the fight either way)", () => {
+    // Damage is cut to 0 by a 1.0 value, but the koCheck at health 20 still rolls on its own.
     const seq = [...STRIKE_ONLY, 0.0];
-    const bare = fight(seq, { p: { ...FLASH_P, health: 20 }, o: FLASH_O });
-    assert.equal(bare.outcome, "Loss (KO/TKO)");
-    const huge = fight(seq, { p: { ...FLASH_P, health: 20 }, o: FLASH_O, moveBonuses: [entry("FLASH_KO_RESISTANCE", 1.0, "PLAYER_HEALTH_BELOW_25", "PROC")] });
-    assert.notEqual(huge.outcome, "Loss (KO/TKO)");
+    const huge = fight(seq, { p: { ...FLASH_P, health: 20 }, o: FLASH_O, moveBonuses: [entry("FLASH_KO_RESISTANCE", 1.0, "PLAYER_HEALTH_BELOW_75", "PROC")] });
+    assert.equal(huge.rounds[0].playerDamage, 0, "a 1.0 cut takes all the damage");
+    assert.equal(huge.outcome, "Loss (KO/TKO)");
+    assert.equal(huge.finishCause, "tko");
 });
 
 // ── STRIKE_DAMAGE gates ───────────────────────────────────────────────────────────────────
@@ -308,6 +318,7 @@ test("SIG_FAST_START: never fires when round 1 was a takedown (and does not carr
 });
 
 // Two landed player takedowns: r1, then escape + a fresh takedown in r2.
+const GRAPPLER_TOP = { gnd: 70, str: 60 };
 const TWO_TAKEDOWNS = [...PLAYER_TD, 0.0, 0.99, /* r2 */ 0.5, 0.0, 0.0, 0.0, 0.99, 0.0, 0.99];
 
 test("SIG_TAKEDOWN_BLITZ: boosts GnP on the first player takedown only", () => {
@@ -329,13 +340,25 @@ test("SIG_SUBMISSION_HUNT: adds to the first takedown round's submission (0.2 ro
     assert.equal(find(sig, "SIG_SUBMISSION_HUNT").triggerCount, 1);
 });
 
-test("SIG_SUBMISSION_HUNT: spent on arming even with no attempt; the second takedown's submission gets nothing", () => {
+test("SIG_SUBMISSION_HUNT: NOT spent on a takedown with no attempt; it waits for the first real submission attempt", () => {
     // r1 lands, no attempt; r2 escape, lands again, attempts (0.0) and rolls 0.2.
     const seq = [...PLAYER_TD, 0.0, 0.99, /* r2 */ 0.5, 0.0, 0.0, 0.0, 0.99, 0.0, 0.0, 0.2];
+    const bare = fight(seq, { maxRounds: 2 });
     const sig = fight(seq, { maxRounds: 2, moveBonuses: built(["ARM_TRIANGLE"]) });
     assert.equal(sig.rounds[1].event, "Takedown; ground and pound.");
-    assert.notEqual(sig.outcome, "Submission");
+    assert.notEqual(bare.outcome, "Submission");
+    assert.equal(sig.outcome, "Submission");
     assert.equal(find(sig, "SIG_SUBMISSION_HUNT").triggerCount, 1);
+});
+
+test("SIG_SUBMISSION_HUNT: also fires on a continuation-top submission attempt", () => {
+    // r1 lands, no attempt; r2 held on top (0.99 escape), attempts (0.0), rolls 0.2.
+    const seq = [...PLAYER_TD, 0.0, 0.99, /* r2 */ 0.5, 0.99, 0.0, 0.2];
+    const bare = fight(seq, { maxRounds: 2 });
+    const sig = fight(seq, { maxRounds: 2, moveBonuses: built(["ARM_TRIANGLE"]) });
+    assert.equal(sig.rounds[1].event, "Holding top control; ground and pound.");
+    assert.notEqual(bare.outcome, "Submission");
+    assert.equal(sig.outcome, "Submission");
 });
 
 // ── SIG_KILLER_INSTINCT (Crossface): escape lock once the opponent is below 50% ──────────────
@@ -384,10 +407,105 @@ test("signatures re-arm per fight: back-to-back fights with a fresh buildMoveBon
     const second = run();
     assert.deepEqual(second.rounds, first.rounds);
     assert.equal(second.outcome, first.outcome);
-    for (const bt of ["SIG_TAKEDOWN_BLITZ", "SIG_SUBMISSION_HUNT"]) {
-        assert.equal(find(first, bt).triggerCount, 1, `${bt} fired in fight 1`);
-        assert.equal(find(second, bt).triggerCount, 1, `${bt} re-armed in fight 2`);
+    assert.equal(find(first, "SIG_TAKEDOWN_BLITZ").triggerCount, 1, "SIG_TAKEDOWN_BLITZ fired in fight 1");
+    assert.equal(find(second, "SIG_TAKEDOWN_BLITZ").triggerCount, 1, "SIG_TAKEDOWN_BLITZ re-armed in fight 2");
+    assert.equal(find(second, "SIG_SUBMISSION_HUNT").triggerCount, find(first, "SIG_SUBMISSION_HUNT").triggerCount, "SIG_SUBMISSION_HUNT behaves identically in fight 2");
+});
+
+// ── 2026-10-27 rework: Overhand Right, Rubber Guard, Hip Escape, Veteran IQ ──────────────────
+
+test("SIG_FINISHER_STRIKE (Overhand Right): ready below 75, spent on the striking exchange", () => {
+    const bare = fight(STRIKE_ONLY, { p: HITTER, o: { health: 70 } });
+    const sig = fight(STRIKE_ONLY, { p: HITTER, o: { health: 70 }, moveBonuses: built(["THE_FINISHER"]) });
+    assert.ok(sig.rounds[0].opponentDamage > bare.rounds[0].opponentDamage);
+    assert.equal(find(sig, "SIG_FINISHER_STRIKE").triggerCount, 1);
+    const healthy = fight(STRIKE_ONLY, { p: HITTER, o: { health: 80 }, moveBonuses: built(["THE_FINISHER"]) });
+    assert.equal(find(healthy, "SIG_FINISHER_STRIKE").triggerCount, 0, "not ready at 75+");
+});
+
+test("SIG_FINISHER_STRIKE (Overhand Right): a takedown round does not waste it", () => {
+    const seq = [...PLAYER_TD, 0.0, 0.99];
+    const sig = fight(seq, { o: { health: 20 }, moveBonuses: built(["THE_FINISHER"]) });
+    assert.equal(sig.rounds[0].event, "Takedown; ground and pound.");
+    assert.equal(find(sig, "SIG_FINISHER_STRIKE").triggerCount, 0);
+});
+
+test("SIG_IRON_RECOVERY (Rubber Guard): locks in the first time the player is on the bottom and cuts the ground-and-pound", () => {
+    const seq = [...OPP_TD, 0.0, 0.99];
+    const bare = fight(seq, { o: GRAPPLER_TOP });
+    const sig = fight(seq, { o: GRAPPLER_TOP, moveBonuses: built(["IRON_RECOVERY"]) });
+    assert.equal(bare.rounds[0].event, "Opponent took you down.");
+    assert.ok(sig.rounds[0].playerDamage < bare.rounds[0].playerDamage);
+    assert.equal(find(sig, "SIG_IRON_RECOVERY").triggerCount, 1);
+    const standing = fight(STRIKE_ONLY, { moveBonuses: built(["IRON_RECOVERY"]) });
+    assert.equal(find(standing, "SIG_IRON_RECOVERY").triggerCount, 0, "never on the feet");
+});
+
+test("ESCAPE_PROBABILITY (Hip Escape): also protects against the opponent's continuation-top submission", () => {
+    // r2: opponent holds top (0.99 escape fails), attempts (0.0), rolls 0.14 against a bare 0.1504.
+    const seq = [...OPP_TD, 0.0, 0.99, /* r2 */ 0.5, 0.99, 0.0, 0.14, 0.99];
+    const bare = fight(seq, { maxRounds: 2 });
+    const withMove = fight(seq, { maxRounds: 2, moveBonuses: built(["NEVER_TAP"]) });
+    assert.equal(bare.outcome, "Loss (submission)");
+    assert.notEqual(withMove.outcome, "Loss (submission)");
+    assert.equal(find(withMove, "ESCAPE_PROBABILITY").triggerCount, 1);
+});
+
+test("ALL_DAMAGE_REDUCTION (Veteran IQ): cuts strike damage AND ground-and-pound taken from the bottom", () => {
+    const big = [entry("ALL_DAMAGE_REDUCTION", 0.5)];
+    const strikeBare = fight(STRIKE_ONLY, { o: { str: 80, spd: 70 } });
+    const strikeIq = fight(STRIKE_ONLY, { o: { str: 80, spd: 70 }, moveBonuses: big });
+    assert.ok(strikeIq.rounds[0].playerDamage < strikeBare.rounds[0].playerDamage);
+    const seq = [...OPP_TD, 0.0, 0.99];
+    const groundBare = fight(seq, { o: GRAPPLER_TOP });
+    const groundIq = fight(seq, { o: GRAPPLER_TOP, moveBonuses: [entry("ALL_DAMAGE_REDUCTION", 0.5)] });
+    assert.ok(groundIq.rounds[0].playerDamage < groundBare.rounds[0].playerDamage);
+});
+
+test("SIG_FINISHER_STRIKE (Overhand Right): stays ready through a takedown round, then fires once on a later exchange", () => {
+    // r1 player takedown (no sub attempt); r2 escape (0.0) and nobody shoots -> striking exchange; r3 strike again.
+    const seq = [...PLAYER_TD, 0.0, 0.99, /* r2 */ 0.5, 0.0, 0.99, 0.99, 0.5, 0.5, /* r3 */ 0.5, 0.99, 0.99, 0.5, 0.5];
+    const sig = fight(seq, { maxRounds: 3, o: { health: 70 }, moveBonuses: built(["THE_FINISHER"]) });
+    assert.equal(sig.rounds[0].event, "Takedown; ground and pound.");
+    assert.equal(sig.rounds[1].event, "Striking exchange.");
+    assert.equal(find(sig, "SIG_FINISHER_STRIKE").triggerCount, 1, "spent once, on the round-2 exchange");
+});
+
+test("SIG_IRON_RECOVERY (Rubber Guard): persists into a later round stuck on the bottom", () => {
+    // r1 opponent takedown; r2 player fails to escape (0.99) and is ground-and-pounded again.
+    const seq = [...OPP_TD, 0.0, 0.99, /* r2 */ 0.5, 0.99, 0.99, 0.99];
+    const bare = fight(seq, { maxRounds: 2, o: GRAPPLER_TOP });
+    const sig = fight(seq, { maxRounds: 2, o: GRAPPLER_TOP, moveBonuses: built(["IRON_RECOVERY"]) });
+    assert.equal(bare.rounds[1].event, "Stuck on bottom; opponent grinds.");
+    assert.ok(sig.rounds[1].playerDamage < bare.rounds[1].playerDamage, "round 2 is softened too");
+    assert.equal(find(sig, "SIG_IRON_RECOVERY").triggerCount, 2);
+});
+
+test("FLASH_KO_RESISTANCE (Fighting Spirit): also softens ground-and-pound while hurt", () => {
+    const seq = [...OPP_TD, 0.0, 0.99];
+    const bare = fight(seq, { p: { health: 60 }, o: GRAPPLER_TOP });
+    const grit = fight(seq, { p: { health: 60 }, o: GRAPPLER_TOP, moveBonuses: [entry("FLASH_KO_RESISTANCE", 0.5, "PLAYER_HEALTH_BELOW_75", "PROC")] });
+    assert.ok(grit.rounds[0].playerDamage < bare.rounds[0].playerDamage);
+});
+
+test("ESCAPE_PROBABILITY (Hip Escape): also protects against the opponent's submission from guard while the player is on top", () => {
+    // r1 player takedown; r2 player holds top (0.99), no top attempt (0.99), opponent attacks from guard (0.0) and rolls low.
+    const probe = (roll, moves) => fight([...PLAYER_TD, 0.0, 0.99, /* r2 */ 0.5, 0.99, 0.99, 0.0, roll], { maxRounds: 2, o: { sub: 80, gnd: 70 }, moveBonuses: moves });
+    let roll = null;
+    for (let r = 0.01; r < 0.6; r += 0.01) {
+        if (probe(r, []).outcome === "Loss (submission)" && probe(r, built(["NEVER_TAP"])).outcome !== "Loss (submission)") { roll = r; break; }
     }
+    assert.ok(roll !== null, "some guard-submission roll lands bare but is escaped with Hip Escape");
+    assert.equal(find(probe(roll, built(["NEVER_TAP"])), "ESCAPE_PROBABILITY").triggerCount, 1);
+});
+
+test("old frozen snapshot: VETERAN_IQ still carrying OPPONENT_DAMAGE_REDUCTION resolves without error (strike-only, as before)", () => {
+    const old = [{ moveId: "VETERAN_IQ", bonusType: "OPPONENT_DAMAGE_REDUCTION", effectiveValue: 0.5, triggerCondition: "ALWAYS", effectType: "PASSIVE", triggered: false, triggerCount: 0 }];
+    const strike = fight(STRIKE_ONLY, { o: { str: 80, spd: 70 }, moveBonuses: old });
+    const bare = fight(STRIKE_ONLY, { o: { str: 80, spd: 70 } });
+    assert.ok(strike.rounds[0].playerDamage < bare.rounds[0].playerDamage);
+    const seq = [...OPP_TD, 0.0, 0.99];
+    assert.equal(fight(seq, { o: GRAPPLER_TOP, moveBonuses: old }).rounds[0].playerDamage, fight(seq, { o: GRAPPLER_TOP }).rounds[0].playerDamage);
 });
 
 // ── Inertness ─────────────────────────────────────────────────────────────────────────────

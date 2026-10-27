@@ -115,9 +115,9 @@ for (const [a, b] of pairs) {
 
 console.log("");
 
-// ── 5. COLLAPSE-RULE stacking: two moves sharing a bonusType (GRANITE_JAW + VETERAN_IQ,
-//     both OPPONENT_DAMAGE_REDUCTION) SUM per buildMoveBonuses' collapse rule. This is a
-//     legal, biggest-defensive-stack loadout worth checking against the guardrail too. ──
+// ── 5. Biggest defensive stack: GRANITE_JAW (OPPONENT_DAMAGE_REDUCTION) + VETERAN_IQ (since
+//     2026-10-27 ALL_DAMAGE_REDUCTION, a separate lane that adds on the strike site). Still a
+//     legal, biggest-defensive-stack loadout worth checking against the guardrail. ──
 console.log(`\n-- 5. Collapse-rule stack: GRANITE_JAW + VETERAN_IQ (both OPPONENT_DAMAGE_REDUCTION, summed) --`);
 const stackFn = () => {
   const a = bonusEntryFor("GRANITE_JAW", RARITY.LEGENDARY);

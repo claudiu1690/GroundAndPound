@@ -1788,32 +1788,70 @@ holds). Measured on the OVR 50 Wrestler mirror at Legendary: +1.05 pts win rate 
 stoppage wins (Blast Double: +0.5 / +3.3). It is 0 on the Boxer mirror, as a wrestling move
 should be. Id, bonusType and art slug are unchanged; the card unit is now Pin Rating.
 
+**Full card audit (2026-10-27).** Every move was traced through the engine and run through a
+paired seeded sim (same RNG seed per fight with and without the move, 4,000 fights per cell,
+OVR 50 Boxer / Wrestler / BJJ mirrors, Legendary). Three moves measured exactly 0 because their
+"below 25% health" gates opened after ground-and-pound or the stoppage checks had already
+decided the fight, and a fourth only worked in one round of a fight. Changes, with the measured
+result in the move's own style:
+- **Overhand Right**: ready once the opponent starts a round under 75% (was 25%, which a Boxer
+  mirror reached in 0% of fights) and spent on the next striking exchange, so a takedown round
+  never wastes it. R .15 / L .25 (was .08/.15). +3.4 Boxer, +2.6 Wrestler.
+- **Rubber Guard**: was the old Iron Recovery stamina cut below 25% (0.00). Now locks in the
+  first time the player is stuck on the bottom and cuts the ground-and-pound taken from the
+  bottom for the rest of the fight. R .22 / L .32. +4.0 BJJ, +2.7 Wrestler. Unit: Guard Rating.
+- **Fighting Spirit**: was a flash-KO-only cut below 25% (0.00). Now, while the player starts a
+  round under 75%, it cuts ALL damage taken (strikes and ground) by the value. .02/.03/.045/.06.
+  +2.2 Boxer, +2.0 Wrestler, +4.0 to +4.4 Kickboxer/Muay Thai, +8.7 Capoeira (in line with each
+  style's own best moves). A first version also softened every stoppage roll; the 8-style sweep
+  showed that half alone was worth +5 to the low-chin kicking styles and ~0 to everyone else, so
+  it was removed.
+- **Hip Escape**: only protected the round the opponent's takedown landed. Now applies to every
+  opponent submission attempt (takedown round, ground continuation from top, guard attacks while
+  the player is on top) as a relative cut, success * (1 - v). .06/.10/.16/.25. +0.95 BJJ.
+- **Arm Triangle**: was spent on the first takedown even when no submission followed. Now spent
+  on the player's first submission attempt from top (takedown round or continuation). Values
+  unchanged. +0.9 win / +3.5 finishes BJJ.
+- **Veteran IQ**: was striking-only (OPPONENT_DAMAGE_REDUCTION) although a BJJ coach teaches it.
+  New lane ALL_DAMAGE_REDUCTION: strike damage AND ground damage taken from the bottom. Values
+  unchanged; it no longer collapse-stacks with Granite Jaw / High Guard.
+- **Sprawl** cut to .03/.05/.08/.10 (Legendary .18 measured +8.7, about double any other move;
+  now +4.2 Wrestler / +4.5 BJJ). **Second Gear** raised to .011/.02/.033/.045 (+0.35 to +1.1).
+  **Frame & Base** raised to .05/.07/.10/.13 and **Second Wind** Common/Uncommon to .06/.09:
+  damage and stamina are whole numbers, so the old low rarities changed almost no real value.
+- Stacks re-checked: Heavy Hands + Second Gear + Deep Waters +5.4; best 3-move loadouts per
+  style +7.1 (striker), +9.1 (wrestler), +7.4 (BJJ), inside the 5-10 guardrail.
+- Bookkeeping: triggered/triggerCount now only count rounds where a move changed a number
+  (striking-only reductions in striking exchanges, Pace Pusher only when rounding moved the
+  drain, Crossface and Rubber Guard when they actually applied). Merged PASSIVE/PROC entries
+  carry `moveIds`. These flags are not shown to players.
+
 | Move | Type | bonusType | Trigger | C / U / R / L |
 |---|---|---|---|---|
 | Granite Jaw | Passive | OPPONENT_DAMAGE_REDUCTION | always | .0125/.022/.0375/.05 → **trimmed** .008/.014/.023/.03 |
 | Heavy Hands | Passive | STRIKE_DAMAGE | always | **.009/.016/.026/.035** |
 | Body Snatcher | Passive | BODY_DAMAGE | always | **.016/.028/.05/.065** |
-| Veteran IQ | Passive | OPPONENT_DAMAGE_REDUCTION | always | **.007/.012/.02/.028** (collapse-stacks w/ Granite Jaw) |
+| Veteran IQ | Passive | ALL_DAMAGE_REDUCTION | always (strikes + ground damage from the bottom) | .007/.012/.02/.028 |
 | High Guard | Passive | OPPONENT_DAMAGE_REDUCTION | always | .006/.011/.019/.026 (collapse-stacks w/ Granite Jaw, Veteran IQ) |
 | Double-Leg Precision | Passive | TAKEDOWN_SUCCESS | always (your TD attempts) | .02/.035/.06/.08 |
-| Frame & Base | Passive | GROUND_DAMAGE_REDUCTION | always (on your back) | .015/.026/.044/.06 |
+| Frame & Base | Passive | GROUND_DAMAGE_REDUCTION | always (on your back) | **.05/.07/.10/.13** (raised 2026-10-27) |
 | Pace Pusher | Passive | OPPONENT_STAMINA_DRAIN | always | **.04/.042/.046/.05** (quantized lane; see balance note) |
-| Sprawl *(was Sprawl Instinct)* | Proc | SPRAWL_SUCCESS | opp. shoots TD | .05/.09/.14/.18 |
-| Hip Escape *(was Never Tap)* | Proc | ESCAPE_PROBABILITY | opp. sub attempt | .04/.075/.12/.16 |
+| Sprawl *(was Sprawl Instinct)* | Proc | SPRAWL_SUCCESS | opp. shoots TD | **.03/.05/.08/.10** (cut 2026-10-27) |
+| Hip Escape *(was Never Tap)* | Proc | ESCAPE_PROBABILITY | every opp. sub attempt (relative cut) | **.06/.10/.16/.25** |
 | Dirty Boxing *(was Clinch Killer)* | Proc | CLINCH_DAMAGE | striking exchange | **.035/.06/.10/.14** |
-| Second Wind | Proc | STAMINA_DRAIN | stamina < 70% | .04/.07/.12/.16 |
+| Second Wind | Proc | STAMINA_DRAIN | stamina < 70% | **.06/.09**/.12/.16 |
 | Full Mount *(was Mount Reaper)* | Proc | GNP_DAMAGE | top position | .04/.07/.13/.17 |
-| Second Gear | Proc | STRIKE_DAMAGE | opp. stamina < 70 | **.005/.009/.015/.020** (trimmed) |
+| Second Gear | Proc | STRIKE_DAMAGE | opp. stamina < 70 | **.011/.02/.033/.045** (raised 2026-10-27) |
 | Top Control | Proc | GNP_DAMAGE | top position | .025/.045/.075/.10 (collapse-stacks w/ Full Mount) |
 | Guillotine Choke | Proc | SUBMISSION_SUCCESS | any sub attempt you make | .03/.05/.08/.11 |
 | Deep Waters | Proc | STRIKE_DAMAGE | round > ceil(total/2) | **.008/.015/.025/.033** (trimmed) |
-| Fighting Spirit | Proc | FLASH_KO_RESISTANCE | own HP < 25% (flash KO only) | **.004/.008/.012/.018** (half of draft) |
-| Overhand Right *(was The Finisher)* | Signature | SIG_FINISHER_STRIKE | opp. HP < 25% | R .08 / L .15 |
-| Rubber Guard *(was Iron Recovery)* | Signature | SIG_IRON_RECOVERY | own HP < 25% | R .10 / L .18 |
+| Fighting Spirit | Proc | FLASH_KO_RESISTANCE | own HP < 75% (all damage taken) | **.02/.03/.045/.06** |
+| Overhand Right *(was The Finisher)* | Signature | SIG_FINISHER_STRIKE | opp. HP < 75%, next striking exchange | **R .15 / L .25** |
+| Rubber Guard *(was Iron Recovery)* | Signature | SIG_IRON_RECOVERY | first time on your back, then rest of fight (GnP taken) | **R .22 / L .32** |
 | Crossface *(was Killer Instinct)* | Signature | SIG_KILLER_INSTINCT | opp. HP < 50%, then every round you are on top | **R .10 / L .18** (escape lock, reworked 2026-10-26) |
 | Superman Punch | Signature | SIG_FAST_START | round-1 striking exchange | R .10 / L .18 |
 | Blast Double | Signature | SIG_TAKEDOWN_BLITZ | first TD you land | R .10 / L .18 |
-| Arm Triangle | Signature | SIG_SUBMISSION_HUNT | first time on top (= first TD) | R .12 / L .20 |
+| Arm Triangle | Signature | SIG_SUBMISSION_HUNT | first submission attempt from top | R .12 / L .20 |
 
 **Collapse rule:** equipped entries sharing a `bonusType` AND a trigger (e.g. Granite Jaw +
 Veteran IQ, or Full Mount + Top Control) **sum** into one effect at the shared engine branch;
@@ -1844,10 +1882,12 @@ off that frozen snapshot, not live owned-rarity. Data lives on the fighter
 them): TAKEDOWN_SUCCESS (additive to the player's takedown success roll),
 GROUND_DAMAGE_REDUCTION (scales down damage taken while on the bottom), SUBMISSION_SUCCESS
 (additive to the player's submission finish roll), OPPONENT_STAMINA_DRAIN (raises the
-opponent's per-round stamina loss) and FLASH_KO_RESISTANCE (subtracts from the flash-KO
-probability while the player is under 25% HP). Three new per-fight one-shot signatures:
-SIG_FAST_START (Superman Punch, round 1 only), SIG_TAKEDOWN_BLITZ (Blast Double, the first
-takedown landed) and SIG_SUBMISSION_HUNT (Arm Triangle, the first time on top). `totalRounds`
+opponent's per-round stamina loss) and FLASH_KO_RESISTANCE (since 2026-10-27: below 75% HP,
+cuts all damage taken; the name is historical). Three new per-fight
+one-shot signatures: SIG_FAST_START (Superman Punch, round 1 only), SIG_TAKEDOWN_BLITZ (Blast
+Double, the first takedown landed) and SIG_SUBMISSION_HUNT (Arm Triangle, the first submission
+attempt from top). ALL_DAMAGE_REDUCTION (Veteran IQ, 2026-10-27) reduces strike damage and
+ground damage taken from the bottom. `totalRounds`
 is now passed into `resolveRound` so the LATE_ROUNDS gate (Deep Waters) can evaluate
 `roundNum > ceil(totalRounds / 2)`.
 

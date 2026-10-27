@@ -77,8 +77,11 @@ function describeMove(def, value) {
         r != null ? withNum.replace("{r}", String(r)).replace("{p}", p) : withoutNum;
     switch (def.bonusType) {
         case "OPPONENT_DAMAGE_REDUCTION":
-            return fmt("+{r} Defense Rating — shrugs off incoming strikes. ({p}% less strike damage taken)",
-                "Raises your Defense Rating — shrugs off incoming strikes.");
+            return fmt("+{r} Defense Rating: shrugs off incoming strikes. ({p}% less strike damage taken)",
+                "Raises your Defense Rating: shrugs off incoming strikes.");
+        case "ALL_DAMAGE_REDUCTION":
+            return fmt("+{r} Defense Rating: takes less punishment on the feet and on the ground. ({p}% less strike and ground-and-pound damage taken)",
+                "Raises your Defense Rating on the feet and on the ground.");
         case "STRIKE_DAMAGE":
             // Three moves share this bonusType on different gates (engine: triggerGatedMoveBonus),
             // so the text must say WHEN it applies or Heavy Hands / Second Gear / Deep Waters read alike.
@@ -90,23 +93,23 @@ function describeMove(def, value) {
                 return fmt("+{r} Power Rating in the late rounds, once the fight passes halfway. (+{p}% strike damage)",
                     "Raises your Power Rating in the late rounds.");
             }
-            return fmt("+{r} Power Rating — every punch lands heavier. (+{p}% strike damage)",
-                "Raises your Power Rating — every punch lands heavier.");
+            return fmt("+{r} Power Rating: every punch lands heavier. (+{p}% strike damage)",
+                "Raises your Power Rating: every punch lands heavier.");
         case "ALL_STATS":
-            return fmt("+{r} All-Round Rating — lifts every attribute for the whole fight. (+{p}% to all stats)",
-                "Raises your All-Round Rating — lifts every attribute for the whole fight.");
+            return fmt("+{r} All-Round Rating: lifts every attribute for the whole fight. (+{p}% to all stats)",
+                "Raises your All-Round Rating: lifts every attribute for the whole fight.");
         case "BODY_DAMAGE":
-            return fmt("+{r} Body-Shot Rating — digs deeper to the ribs and liver. (+{p}% body damage)",
-                "Raises your Body-Shot Rating — digs deeper to the ribs and liver.");
+            return fmt("+{r} Body-Shot Rating: about half your exchanges go to the ribs and liver, and those hit harder. (+{p}% damage on those exchanges)",
+                "Raises your Body-Shot Rating: about half your exchanges go to the ribs and liver.");
         case "SPRAWL_SUCCESS":
             return fmt("+{r} Sprawl Rating when the opponent shoots a takedown. (+{p}% sprawl success)",
                 "Raises your Sprawl Rating when the opponent shoots a takedown.");
         case "ESCAPE_PROBABILITY":
-            return fmt("+{r} Escape Rating when caught in a submission. (+{p}% escape chance)",
-                "Raises your Escape Rating when caught in a submission.");
+            return fmt("+{r} Escape Rating whenever the opponent goes for a submission. ({p}% less likely to be finished)",
+                "Raises your Escape Rating whenever the opponent goes for a submission.");
         case "CLINCH_DAMAGE":
-            return fmt("+{r} Clinch Rating — punishes them against the fence. (+{p}% clinch damage)",
-                "Raises your Clinch Rating — punishes them against the fence.");
+            return fmt("+{r} Clinch Rating: about 1 exchange in 3 ends up against the fence, and those hit harder. (+{p}% damage on those exchanges)",
+                "Raises your Clinch Rating: punishes them against the fence.");
         case "STAMINA_DRAIN":
             return fmt("+{r} Cardio Rating once you tire below 70% stamina. ({p}% less stamina drain)",
                 "Raises your Cardio Rating once you tire.");
@@ -126,8 +129,8 @@ function describeMove(def, value) {
             return fmt("+{r} Pressure Rating: your opponent burns more gas every round. (+{p}% opponent stamina drain)",
                 "Raises your Pressure Rating: your opponent burns more gas every round.");
         case "FLASH_KO_RESISTANCE":
-            return fmt("+{r} Grit Rating once you drop below 25% health. (-{p}% flash-KO chance against you)",
-                "Raises your Grit Rating once you're badly hurt.");
+            return fmt("+{r} Grit Rating once you drop below 75% health: every strike and ground-and-pound lands softer. ({p}% less damage taken)",
+                "Raises your Grit Rating once you're hurt: every blow lands softer.");
         case "SIG_FAST_START":
             return fmt("Signature: +{r} Blitz Rating on your opening exchange in round 1, once per fight. (+{p}% strike damage that exchange)",
                 "Signature: a first-round power surge on your opening exchange.");
@@ -135,14 +138,14 @@ function describeMove(def, value) {
             return fmt("Signature: +{r} Slam Rating on the first takedown you land, once per fight. (+{p}% ground-and-pound damage that round)",
                 "Signature: your first takedown of the night hits harder.");
         case "SIG_SUBMISSION_HUNT":
-            return fmt("Signature: +{r} Hunter Rating the first time you take top position, once per fight. (+{p}% submission finish chance that round)",
-                "Signature: the first time you get on top, you hunt the tap.");
+            return fmt("Signature: +{r} Hunter Rating on your first submission attempt from top, once per fight. (+{p}% submission finish chance on that attempt)",
+                "Signature: your first submission attempt from top is the dangerous one.");
         case "SIG_FINISHER_STRIKE":
-            return fmt("Signature — +{r} Finisher Rating for the round the opponent first drops below 25% health, once per fight. (+{p}% strike damage that round)",
-                "Signature — a once-per-fight Finisher Rating surge when the opponent is badly hurt.");
+            return fmt("Signature: +{r} Finisher Rating on your next striking exchange once the opponent drops below 75% health, once per fight. (+{p}% strike damage that exchange)",
+                "Signature: a once-per-fight power shot once the opponent is hurt.");
         case "SIG_IRON_RECOVERY":
-            return fmt("Signature — +{r} Recovery Rating for the rest of the fight after you first drop below 25% health, once per fight. ({p}% less stamina drain)",
-                "Signature — a once-per-fight Recovery Rating surge after you're badly hurt.");
+            return fmt("Signature: +{r} Guard Rating the first time you're stuck on your back. For the rest of the fight, their ground-and-pound lands softer. ({p}% less ground-and-pound damage taken)",
+                "Signature: the first time you're on your back, you lock in a guard they can't posture out of.");
         case "SIG_KILLER_INSTINCT":
             return fmt("Signature: +{r} Pin Rating once the opponent first drops below 50% health, for the rest of the fight. Whenever you have them on their back, they escape less often. ({p}% lower escape chance)",
                 "Signature: once the opponent is hurt, they struggle to escape from under you.");
@@ -159,6 +162,7 @@ function describeMove(def, value) {
  */
 const RATING_UNIT_BY_BONUS_TYPE = Object.freeze({
     OPPONENT_DAMAGE_REDUCTION: "Defense Rating",
+    ALL_DAMAGE_REDUCTION: "Defense Rating",
     STRIKE_DAMAGE: "Power Rating", // all three triggers (ALWAYS / OPPONENT_STAMINA_BELOW_70 / LATE_ROUNDS)
     ALL_STATS: "All-Round Rating",
     BODY_DAMAGE: "Body-Shot Rating",
@@ -176,7 +180,7 @@ const RATING_UNIT_BY_BONUS_TYPE = Object.freeze({
     SIG_TAKEDOWN_BLITZ: "Slam Rating",
     SIG_SUBMISSION_HUNT: "Hunter Rating",
     SIG_FINISHER_STRIKE: "Finisher Rating",
-    SIG_IRON_RECOVERY: "Recovery Rating",
+    SIG_IRON_RECOVERY: "Guard Rating",
     SIG_KILLER_INSTINCT: "Pin Rating",
 });
 
@@ -494,7 +498,7 @@ async function equipMove(fighter, moveId, slotIndex) {
         const passivesAfter =
             equipped.filter(isPassive).length - (replacedId && isPassive(replacedId) ? 1 : 0) + 1;
         if (passivesAfter > MAX_PASSIVES) {
-            throw new Error("Only 2 always-on passives can be equipped — that slot needs a Proc or Signature move");
+            throw new Error("Only 2 always-on passives can be equipped. That slot needs a Proc or Signature move");
         }
     }
 
@@ -763,9 +767,11 @@ function buildMoveBonuses(fighter) {
         const mergeKey = `${def.bonusType}|${def.triggerCondition}`;
         if (mergedByKey[mergeKey]) {
             mergedByKey[mergeKey].effectiveValue += value; // collapse: sum
+            mergedByKey[mergeKey].moveIds.push(moveId);
         } else {
             mergedByKey[mergeKey] = {
                 moveId,
+                moveIds: [moveId], // every move collapsed into this entry; triggered covers all of them
                 bonusType: def.bonusType,
                 effectiveValue: value,
                 triggerCondition: def.triggerCondition,
@@ -791,7 +797,7 @@ function buildMoveBonuses(fighter) {
  * Since v2 buildMoveBonuses merges on bonusType|triggerCondition, so "the first same-bonusType
  * entry" is only guaranteed to be THE entry for bonusTypes with a single triggerCondition
  * catalog-wide (validateCatalog enforces that for everything outside MULTI_TRIGGER_BONUS_TYPES).
- * OPPONENT_DAMAGE_REDUCTION qualifies: Granite Jaw, Veteran IQ and High Guard are all ALWAYS and
+ * OPPONENT_DAMAGE_REDUCTION qualifies: Granite Jaw and High Guard are both ALWAYS and
  * collapse into one entry. Do NOT call this with a MULTI_TRIGGER bonusType (e.g. STRIKE_DAMAGE):
  * the first match could be a gated entry such as Second Gear.
  *

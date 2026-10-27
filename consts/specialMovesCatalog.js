@@ -46,6 +46,8 @@ const ENGINE_BONUS_TYPES = new Set([
     "SUBMISSION_SUCCESS",
     "OPPONENT_STAMINA_DRAIN",
     "FLASH_KO_RESISTANCE",
+    // Veteran IQ (2026-10-27): strike damage AND ground damage taken from the bottom.
+    "ALL_DAMAGE_REDUCTION",
 ]);
 
 /**
@@ -97,7 +99,7 @@ const SPECIAL_MOVES = [
         // Trimmed post-QA (2 rounds): ~+3.5pt single-move ceiling; also shares the strike
         // lane with THE_FINISHER, compounding hardest on striker mirrors.
         values: { COMMON: 0.009, UNCOMMON: 0.016, RARE: 0.026, LEGENDARY: 0.035 },
-        flavor: "Every punch carries bad intentions — opponents feel it before the bell rings.",
+        flavor: "Every punch carries bad intentions. Opponents feel it before the bell rings.",
         art: "heavy_hands",
     },
     // NOTE: "Complete Package" (ALL_STATS) was CUT from v1. A Monte-Carlo sweep proved
@@ -115,14 +117,14 @@ const SPECIAL_MOVES = [
         // Trimmed post-QA (2 rounds): always-on; kept to ~+3.5pt single-move ceiling so it
         // can't combine with other passives past the 3-stack guardrail.
         values: { COMMON: 0.016, UNCOMMON: 0.028, RARE: 0.05, LEGENDARY: 0.065 },
-        flavor: "Kill the body — this fighter never forgets where the liver lives.",
+        flavor: "Kill the body. This fighter never forgets where the liver lives.",
         art: "body_snatcher",
     },
     {
         id: "VETERAN_IQ",
         name: "Veteran IQ",
         effectType: EFFECT_TYPE.PASSIVE,
-        bonusType: "OPPONENT_DAMAGE_REDUCTION",
+        bonusType: "ALL_DAMAGE_REDUCTION",
         triggerCondition: "ALWAYS",
         minRarity: RARITY.COMMON,
         // Trimmed post-QA (2 rounds): collapse-stacks with GRANITE_JAW (same bonusType);
@@ -162,7 +164,9 @@ const SPECIAL_MOVES = [
         bonusType: "GROUND_DAMAGE_REDUCTION",
         triggerCondition: "ALWAYS",
         minRarity: RARITY.COMMON,
-        values: { COMMON: 0.015, UNCOMMON: 0.026, RARE: 0.044, LEGENDARY: 0.06 },
+        // Raised 2026-10-27: damage is rounded to whole points, so the old .015/.026 changed almost
+        // no real hit. Legendary measured +1.0 (BJJ mirror) after the raise.
+        values: { COMMON: 0.05, UNCOMMON: 0.07, RARE: 0.10, LEGENDARY: 0.13 },
         flavor: "Flat on the back and still structurally sound. Nothing gets through the frame.",
         art: "frame_and_base",
     },
@@ -192,7 +196,8 @@ const SPECIAL_MOVES = [
         bonusType: "SPRAWL_SUCCESS",
         triggerCondition: "OPPONENT_SHOOTS_TAKEDOWN",
         minRarity: RARITY.COMMON,
-        values: { COMMON: 0.05, UNCOMMON: 0.09, RARE: 0.14, LEGENDARY: 0.18 },
+        // Cut 2026-10-27: Legendary .18 measured +8.7 (Wrestler) / +8.3 (BJJ). .10 measures ~+4.2.
+        values: { COMMON: 0.03, UNCOMMON: 0.05, RARE: 0.08, LEGENDARY: 0.10 },
         flavor: "The hips snap back before the brain finishes the thought: not today.",
         art: "sprawl_instinct",
     },
@@ -203,7 +208,9 @@ const SPECIAL_MOVES = [
         bonusType: "ESCAPE_PROBABILITY",
         triggerCondition: "OPPONENT_ATTEMPTS_SUBMISSION",
         minRarity: RARITY.COMMON,
-        values: { COMMON: 0.04, UNCOMMON: 0.075, RARE: 0.12, LEGENDARY: 0.16 },
+        // Relative cut to the opponent's finish chance (success * (1 - v)) on EVERY submission
+        // attempt against the player since 2026-10-27; raised so Legendary is worth ~+1 (BJJ).
+        values: { COMMON: 0.06, UNCOMMON: 0.10, RARE: 0.16, LEGENDARY: 0.25 },
         flavor: "Caught in the choke and still calm. One hip escape and the grip is gone.",
         art: "never_tap",
     },
@@ -228,7 +235,7 @@ const SPECIAL_MOVES = [
         bonusType: "STAMINA_DRAIN",
         triggerCondition: "PLAYER_STAMINA_BELOW_70",
         minRarity: RARITY.COMMON,
-        values: { COMMON: 0.04, UNCOMMON: 0.07, RARE: 0.12, LEGENDARY: 0.16 },
+        values: { COMMON: 0.06, UNCOMMON: 0.09, RARE: 0.12, LEGENDARY: 0.16 },
         flavor: "The tank empties for everyone else. This fighter just finds another one.",
         art: "second_wind",
     },
@@ -252,7 +259,8 @@ const SPECIAL_MOVES = [
         minRarity: RARITY.COMMON,
         // v2 spec §5: TRIMMED (~half the first draft). Shares the strike lane with HEAVY_HANDS
         // and DEEP_WATERS; the ungated trio measured +10.2 pts at draft values.
-        values: { COMMON: 0.005, UNCOMMON: 0.009, RARE: 0.015, LEGENDARY: 0.020 },
+        // Raised 2026-10-27: .020 measured +0.35 (Boxer). .045 measures ~+1.2; trio re-checked.
+        values: { COMMON: 0.011, UNCOMMON: 0.02, RARE: 0.033, LEGENDARY: 0.045 },
         flavor: "A tired man's guard drops an inch. This fighter never misses the inch.",
         art: "second_gear",
     },
@@ -297,11 +305,14 @@ const SPECIAL_MOVES = [
         name: "Fighting Spirit",
         effectType: EFFECT_TYPE.PROC,
         bonusType: "FLASH_KO_RESISTANCE",
-        triggerCondition: "PLAYER_HEALTH_BELOW_25",
+        triggerCondition: "PLAYER_HEALTH_BELOW_75",
         minRarity: RARITY.COMMON,
-        // v2 spec §5: HALF the drafted values. No precedent for a flash-KO lever anywhere in
-        // the bonus system; revisit after a dedicated sweep.
-        values: { COMMON: 0.004, UNCOMMON: 0.008, RARE: 0.012, LEGENDARY: 0.018 },
+        // Reworked 2026-10-27: the 25% gate + flash-KO-only lever measured 0. Now, once the
+        // player starts a round below 75%, it cuts ALL damage taken (strikes and ground) by the
+        // value. Legendary measures +2.0 to +2.2 (Boxer/Wrestler), +4.0 to +4.4 on the low-chin
+        // kicking styles, in line with their own best moves. Do NOT re-add stoppage softening:
+        // it alone was worth +5 to the kicking styles and ~0 to everyone else.
+        values: { COMMON: 0.02, UNCOMMON: 0.03, RARE: 0.045, LEGENDARY: 0.06 },
         flavor: "Hurt, not gone. The chin negotiates a longer fight.",
         art: "fighting_spirit",
     },
@@ -312,11 +323,12 @@ const SPECIAL_MOVES = [
         name: "Overhand Right",
         effectType: EFFECT_TYPE.SIGNATURE,
         bonusType: "SIG_FINISHER_STRIKE",
-        triggerCondition: "OPPONENT_HEALTH_BELOW_25",
+        triggerCondition: "OPPONENT_HEALTH_BELOW_75",
         minRarity: RARITY.RARE,
-        // Trimmed post-QA: feeds the same strike lane as HEAVY_HANDS; pulled down so the
-        // striker-mirror worst case lands in-band.
-        values: { RARE: 0.08, LEGENDARY: 0.15 },
+        // Reworked 2026-10-27: ready once the opponent starts a round below 75% (was 25%, which
+        // a Boxer mirror reached in 0% of fights), spent on the next striking exchange only.
+        // Legendary measures ~+3.4 (Boxer), level with Superman Punch.
+        values: { RARE: 0.15, LEGENDARY: 0.25 },
         flavor: "Smells blood in the water and closes like the cage door just locked.",
         art: "the_finisher",
     },
@@ -325,10 +337,13 @@ const SPECIAL_MOVES = [
         name: "Rubber Guard",
         effectType: EFFECT_TYPE.SIGNATURE,
         bonusType: "SIG_IRON_RECOVERY",
-        triggerCondition: "PLAYER_HEALTH_BELOW_25",
+        triggerCondition: "PLAYER_ON_BOTTOM",
         minRarity: RARITY.RARE,
-        values: { RARE: 0.10, LEGENDARY: 0.18 },
-        flavor: "Hurt should slow a fighter down. This one just resets the clock.",
+        // Reworked 2026-10-27 (was the old Iron Recovery stamina cut below 25% health, measured 0):
+        // locks in the first time the player is stuck on the bottom, then cuts ground-and-pound
+        // taken from the bottom for the rest of the fight. Legendary measures ~+3.5 (BJJ).
+        values: { RARE: 0.22, LEGENDARY: 0.32 },
+        flavor: "Flat on his back and still in charge. Nobody postures up out of this guard.",
         art: "iron_recovery",
     },
     {
@@ -369,9 +384,11 @@ const SPECIAL_MOVES = [
         name: "Arm Triangle",
         effectType: EFFECT_TYPE.SIGNATURE,
         bonusType: "SIG_SUBMISSION_HUNT",
-        triggerCondition: "PLAYER_ACHIEVES_TOP_POSITION",
+        triggerCondition: "FIRST_SUBMISSION_FROM_TOP",
         minRarity: RARITY.RARE,
         values: { RARE: 0.12, LEGENDARY: 0.20 },
+        // Spent on the player's first submission attempt from top (2026-10-27); it used to be
+        // spent on the first takedown even when no submission followed.
         flavor: "Top position is an invitation. This fighter RSVPs immediately.",
         art: "arm_triangle",
     },

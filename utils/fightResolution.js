@@ -90,10 +90,11 @@ function playerShootsTakedown(player, opponent) {
 
 /**
  * `bonus` (Special Moves v2 SUBMISSION_SUCCESS / SIG_SUBMISSION_HUNT) is added INSIDE the clamp,
- * so a bonus can never push the finish chance past CFG.submission.chanceMax. Default 0 keeps
+ * so a bonus can never push the finish chance past CFG.submission.chanceMax. `successMult`
+ * (ESCAPE_PROBABILITY, Hip Escape on the defender) scales the clamped chance down. Defaults keep
  * every existing caller identical.
  */
-function submissionSuccess(attacker, defender, bonus = 0) {
+function submissionSuccess(attacker, defender, bonus = 0, successMult = 1) {
     const aSub = getStat(attacker, "sub");
     const dSub = getStat(defender, "sub");
     const aWre = getStat(attacker, "wre");
@@ -111,7 +112,7 @@ function submissionSuccess(attacker, defender, bonus = 0) {
         CFG.submission.chanceMin,
         CFG.submission.chanceMax
     );
-    return roll < chance;
+    return roll < chance * successMult;
 }
 
 function submissionDefenseMod(defender) {
@@ -263,6 +264,15 @@ function fireSignatureOnce(entry, sigState) {
     return entry.effectiveValue;
 }
 
+/**
+ * Mark a persistent signature (Rubber Guard, Crossface) as having actually changed a roll this
+ * round. Arming alone never marks it, so triggerCount counts real applications.
+ */
+function markSignatureApplied(entry) {
+    entry.triggered = true;
+    entry.triggerCount = (entry.triggerCount || 0) + 1;
+}
+
 // ── Resolve round (v2 with conditional bonuses) ─────────────────────────────
 
 function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk = false, sessionBonuses = [], opponentStrategy = null, groundPosition = 0, moveBonuses = [], sigState = {}, totalRounds = null) {
@@ -285,55 +295,50 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
 
     // ── Special Moves: signature arming (PvE only; moveBonuses is [] in PvP) ─────
     // Each signature is armed at most ONCE, keyed by moveId in the request-local sigState
-    // (never module-level). THE_FINISHER keys off the opponent's sub-25% health and
-    // KILLER_INSTINCT (Crossface) off sub-50%; distinct moveIds/bonusTypes, so they fire independently.
+    // (never module-level). Health gates are read at ROUND START. The old 25% gates fired so late
+    // that ground-and-pound or the stoppage checks had already decided the fight (measured ~0
+    // effect), so Overhand Right now opens at 75% and Crossface at 50%, and Rubber Guard keys off
+    // position instead of health.
     const finisherEntry = getSignatureEntry(moveBonuses, 'SIG_FINISHER_STRIKE');
     const ironRecEntry = getSignatureEntry(moveBonuses, 'SIG_IRON_RECOVERY');
     const killerEntry = getSignatureEntry(moveBonuses, 'SIG_KILLER_INSTINCT');
     const playerHealthNow = player.health ?? CFG.defaults.health;
     const opponentHealthNow = opponent.health ?? CFG.defaults.health;
 
-    // SIG_FINISHER_STRIKE — one-shot, THIS round only (applied in the striking exchange).
-    let sigFinisherStrikeBonus = 0;
-    if (finisherEntry) {
-        const st = sigState[finisherEntry.moveId] || (sigState[finisherEntry.moveId] = { fired: false });
-        if (!st.fired && opponentHealthNow < 25) {
-            st.fired = true;
-            sigFinisherStrikeBonus = finisherEntry.effectiveValue;
-            finisherEntry.triggered = true;
-            finisherEntry.triggerCount = (finisherEntry.triggerCount || 0) + 1;
-        }
-    }
+    // SIG_FINISHER_STRIKE (Overhand Right): ready once the opponent starts a round below 75%.
+    // Spent only in a round that reaches the striking exchange (fired there), so a takedown or
+    // ground round never wastes the one shot.
+    const finisherReady = !!finisherEntry
+        && !(sigState[finisherEntry.moveId] && sigState[finisherEntry.moveId].fired)
+        && opponentHealthNow < 75;
 
-    // SIG_IRON_RECOVERY — arm once when player first drops below 25%; persistent drain cut.
-    if (ironRecEntry) {
-        const st = sigState[ironRecEntry.moveId] || (sigState[ironRecEntry.moveId] = { fired: false });
-        if (!st.fired && playerHealthNow < 25) {
-            st.fired = true;
-            st.value = ironRecEntry.effectiveValue;
-            ironRecEntry.triggered = true;
-            ironRecEntry.triggerCount = (ironRecEntry.triggerCount || 0) + 1;
-        }
-    }
-    const sigDrainReduction = (ironRecEntry && sigState[ironRecEntry.moveId] && sigState[ironRecEntry.moveId].fired)
+    // SIG_IRON_RECOVERY (Rubber Guard): arms the first time the player is stuck on the bottom
+    // (armed inside reduceBottomDamage below); from that hit on, for the rest of the fight, it
+    // cuts the ground-and-pound the player takes from the bottom. Marked only when it reduces a hit.
+    let sigGuardReduction = (ironRecEntry && sigState[ironRecEntry.moveId] && sigState[ironRecEntry.moveId].fired)
         ? (sigState[ironRecEntry.moveId].value || 0)
         : 0;
 
-    // SIG_KILLER_INSTINCT (Crossface) — arm once when opponent first drops below 50%; from then on
-    // it cuts the opponent's escape chance whenever the player holds top position (ground
-    // continuation below). Never applies standing.
+    // SIG_KILLER_INSTINCT (Crossface): arms once the opponent starts a round below 50%; from then
+    // on it cuts the opponent's escape chance whenever the player holds top position (ground
+    // continuation below, marked there). Never applies standing.
     if (killerEntry) {
         const st = sigState[killerEntry.moveId] || (sigState[killerEntry.moveId] = { fired: false });
         if (!st.fired && opponentHealthNow < 50) {
             st.fired = true;
             st.value = killerEntry.effectiveValue;
-            killerEntry.triggered = true;
-            killerEntry.triggerCount = (killerEntry.triggerCount || 0) + 1;
         }
     }
     const sigKillerInstinctBonus = (killerEntry && sigState[killerEntry.moveId] && sigState[killerEntry.moveId].fired)
         ? (sigState[killerEntry.moveId].value || 0)
         : 0;
+
+    // FLASH_KO_RESISTANCE (Fighting Spirit): open while the player starts the round below 75%.
+    // Cuts all damage the player takes (strikes and ground) by the value. It deliberately does
+    // NOT touch the stoppage rolls: that half measured +5 on the low-chin kicking styles and ~0
+    // on everyone else (2026-10-27 style sweep), so it was removed.
+    const moveGrit = playerHealthNow < 75 ? getBonusValue(moveBonuses, 'FLASH_KO_RESISTANCE') : 0;
+    let gritUsed = false;
 
     let playerDamage = 0;
     let opponentDamage = 0;
@@ -351,8 +356,8 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     const campCommentary = []; // Camp-specific commentary for this round
 
     // ── Stamina drain ───────────────────────────────────────────────────
-    // CARDIO_PUSH (camp) + SECOND_WIND (move) both fire below 70% stamina; SIG_IRON_RECOVERY
-    // adds a persistent cut once armed. All are additive reductions to the drain multiplier.
+    // CARDIO_PUSH (camp) + SECOND_WIND (move) both fire below 70% stamina; additive reductions
+    // to the drain multiplier.
     const currentPlayerStamina = player.stamina ?? CFG.defaults.stamina;
     let playerDrainMult = 1;
     let drainReduction = 0;
@@ -364,7 +369,6 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             campCommentary.push('campCardio');
         }
     }
-    drainReduction += sigDrainReduction; // SIG_IRON_RECOVERY: persistent, not gated on <70%
     if (drainReduction > 0) {
         playerDrainMult = Math.max(0, 1 - drainReduction); // never negative (would add stamina)
     }
@@ -372,24 +376,51 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     const pStamina = Math.max(0, currentPlayerStamina - Math.round(staminaDrain * playerDrainMult));
     // OPPONENT_STAMINA_DRAIN (Pace Pusher): mirror of the player-side line. With no entry the
     // multiplier is exactly 1 and Math.round(integer) is the integer, so this is inert.
-    const moveOppDrain = triggerBonus(moveBonuses, 'OPPONENT_STAMINA_DRAIN');
-    const oStamina = Math.max(0, currentOpponentStamina - Math.round(staminaDrain * (1 + moveOppDrain)));
+    // Marked only in rounds where the rounding actually moved the drain (quantized lane).
+    const moveOppDrain = getBonusValue(moveBonuses, 'OPPONENT_STAMINA_DRAIN');
+    const oDrain = Math.round(staminaDrain * (1 + moveOppDrain));
+    if (moveOppDrain > 0 && oDrain !== staminaDrain) triggerBonus(moveBonuses, 'OPPONENT_STAMINA_DRAIN');
+    const oStamina = Math.max(0, currentOpponentStamina - oDrain);
     const pStaminaMod = pStamina / 100;
     const oStaminaMod = oStamina / 100;
 
-    // ── GAME_PLAN_STUDY (camp) + GRANITE_JAW/VETERAN_IQ (move) → reduce opponent damage ─
-    // Additive; applied together to the striking-exchange damage below.
+    // ── GAME_PLAN_STUDY (camp) + GRANITE_JAW/HIGH_GUARD (move) → reduce opponent damage ─
+    // Additive; applied together to the striking-exchange damage below. VETERAN_IQ
+    // (ALL_DAMAGE_REDUCTION) adds to this AND to the ground damage taken from the bottom.
     const campDmgReduction = getBonusValue(sessionBonuses, 'OPPONENT_DAMAGE_REDUCTION');
     const moveDmgReduction = getBonusValue(moveBonuses, 'OPPONENT_DAMAGE_REDUCTION');
-    const gamePlanReduction = campDmgReduction + moveDmgReduction;
+    const moveAllDmgReduction = getBonusValue(moveBonuses, 'ALL_DAMAGE_REDUCTION');
+    const gamePlanReduction = campDmgReduction + moveDmgReduction + moveAllDmgReduction;
     if (campDmgReduction > 0) triggerBonus(sessionBonuses, 'OPPONENT_DAMAGE_REDUCTION');
-    if (moveDmgReduction > 0) triggerBonus(moveBonuses, 'OPPONENT_DAMAGE_REDUCTION');
 
     // Special Moves v2: read once per round, applied (and marked) at each site that fires.
     // FRAME_AND_BASE → GnP the player takes from the bottom. GUILLOTINE_CHOKE → every player
-    // submission attempt (takedown top, continuation top, guard).
+    // submission attempt (takedown top, continuation top, guard). NEVER_TAP (Hip Escape) →
+    // every opponent submission attempt against the player (takedown round, continuation top,
+    // and the opponent's guard attacks while the player is on top).
     const groundDmgReduction = getBonusValue(moveBonuses, 'GROUND_DAMAGE_REDUCTION');
     const moveSubSuccess = getBonusValue(moveBonuses, 'SUBMISSION_SUCCESS');
+    const moveEscape = getBonusValue(moveBonuses, 'ESCAPE_PROBABILITY');
+    const subHuntReady = !!subHuntEntry && !(sigState[subHuntEntry.moveId] && sigState[subHuntEntry.moveId].fired);
+
+    // Ground damage the player takes from the bottom: Frame & Base + Veteran IQ + Rubber Guard +
+    // Fighting Spirit (while hurt), additive. Each source is marked only when it reduced a hit.
+    const reduceBottomDamage = (dmg) => {
+        if (ironRecEntry && !(sigGuardReduction > 0)) {
+            // Rubber Guard: the first time the player ends up on the bottom it locks in for good.
+            const st = sigState[ironRecEntry.moveId] || (sigState[ironRecEntry.moveId] = { fired: false });
+            st.fired = true;
+            st.value = ironRecEntry.effectiveValue;
+            sigGuardReduction = st.value;
+        }
+        const total = groundDmgReduction + moveAllDmgReduction + sigGuardReduction + moveGrit;
+        if (!(total > 0)) return dmg;
+        if (groundDmgReduction > 0) triggerBonus(moveBonuses, 'GROUND_DAMAGE_REDUCTION');
+        if (moveAllDmgReduction > 0) triggerBonus(moveBonuses, 'ALL_DAMAGE_REDUCTION');
+        if (sigGuardReduction > 0) markSignatureApplied(ironRecEntry);
+        if (moveGrit > 0) gritUsed = true;
+        return Math.round(dmg * Math.max(0, 1 - total));
+    };
 
     // ── Ground continuation ─────────────────────────────────────────────
     // If the previous round ended with someone in top control, the round starts
@@ -411,6 +442,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             CFG.groundHold.escapeMin,
             CFG.groundHold.escapeMax
         );
+        if (playerOnTop && sigKillerInstinctBonus > 0) markSignatureApplied(killerEntry);
 
         if (Math.random() < escapeChance) {
             // Bottom escapes — fight resets to standing for the rest of the round.
@@ -434,12 +466,8 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
                 opponentDamage = gnpDamage;
                 event = "Holding top control; ground and pound.";
             } else {
-                playerDamage = gnpDamage;
-                // GROUND_DAMAGE_REDUCTION (Frame & Base): the player is on the bottom.
-                if (groundDmgReduction > 0) {
-                    playerDamage = Math.round(playerDamage * (1 - groundDmgReduction));
-                    triggerBonus(moveBonuses, 'GROUND_DAMAGE_REDUCTION');
-                }
+                // Frame & Base / Veteran IQ / Rubber Guard: the player is on the bottom.
+                playerDamage = reduceBottomDamage(gnpDamage);
                 event = "Stuck on bottom; opponent grinds.";
             }
 
@@ -451,7 +479,11 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             );
             if (Math.random() < topSubChance) {
                 if (playerOnTop && moveSubSuccess > 0) triggerBonus(moveBonuses, 'SUBMISSION_SUCCESS');
-                if (submissionSuccess(top, bottom, playerOnTop ? moveSubSuccess : 0)) {
+                // SIG_SUBMISSION_HUNT (Arm Triangle): the player's first submission attempt from top.
+                const huntBonus = playerOnTop && subHuntReady ? fireSignatureOnce(subHuntEntry, sigState) : 0;
+                // ESCAPE_PROBABILITY (Hip Escape): the opponent attacks the player from top.
+                if (!playerOnTop && moveEscape > 0) triggerBonus(moveBonuses, 'ESCAPE_PROBABILITY');
+                if (submissionSuccess(top, bottom, playerOnTop ? moveSubSuccess + huntBonus : 0, playerOnTop ? 1 : 1 - moveEscape)) {
                     finished = true;
                     outcome = playerOnTop ? "Submission" : "Loss (submission)";
                 }
@@ -469,6 +501,8 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
                     // SUBMISSION_SUCCESS (Guillotine Choke) when the PLAYER attacks from guard:
                     // flat, added after the guard multiplier, inside the clamp.
                     if (!playerOnTop && moveSubSuccess > 0) triggerBonus(moveBonuses, 'SUBMISSION_SUCCESS');
+                    // ESCAPE_PROBABILITY (Hip Escape): the opponent attacks the player from guard.
+                    if (playerOnTop && moveEscape > 0) triggerBonus(moveBonuses, 'ESCAPE_PROBABILITY');
                     const guardSuccess = clamp(
                         (CFG.submission.baseChance
                             + (getStat(bottom, "sub") - getStat(top, "sub")) / CFG.submission.subDiffDivisor
@@ -479,7 +513,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
                         CFG.submission.chanceMin,
                         CFG.submission.chanceMax
                     );
-                    if (Math.random() < guardSuccess) {
+                    if (Math.random() < guardSuccess * (playerOnTop ? 1 - moveEscape : 1)) {
                         finished = true;
                         outcome = playerOnTop ? "Loss (submission)" : "Submission";
                     }
@@ -520,9 +554,6 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         const moveGnp = triggerBonus(moveBonuses, 'GNP_DAMAGE');
         // SIG_TAKEDOWN_BLITZ (Blast Double): the first takedown the player lands, once per fight.
         const sigBlitzBonus = fireSignatureOnce(blitzEntry, sigState);
-        // SIG_SUBMISSION_HUNT (Arm Triangle): the first time the player takes top position, once
-        // per fight. Spent on arming even if no submission attempt follows this round.
-        const sigSubHuntBonus = fireSignatureOnce(subHuntEntry, sigState);
         const gnpBonus = campGnp + moveGnp + sigBlitzBonus;
         if (gnpBonus > 0) {
             gnpDamage = Math.round(gnpDamage * (1 + gnpBonus));
@@ -540,7 +571,10 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         );
         if (Math.random() < subChance) {
             if (moveSubSuccess > 0) triggerBonus(moveBonuses, 'SUBMISSION_SUCCESS');
-            if (submissionSuccess(player, opponent, moveSubSuccess + sigSubHuntBonus)) {
+            // SIG_SUBMISSION_HUNT (Arm Triangle): spent on the player's first submission attempt
+            // from top, never on the takedown alone.
+            const huntBonus = subHuntReady ? fireSignatureOnce(subHuntEntry, sigState) : 0;
+            if (submissionSuccess(player, opponent, moveSubSuccess + huntBonus)) {
                 finished = true;
                 outcome = "Submission";
                 finishCause = "submission";
@@ -571,12 +605,8 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
 
         if (tdSucceeded) {
             const base = getStat(opponent, "gnd") * 0.55 + getStat(opponent, "str") * 0.15 - getStat(player, "chn") * 0.2;
-            playerDamage = Math.round(Math.max(2, base) * oStaminaMod);
-            // GROUND_DAMAGE_REDUCTION (Frame & Base): the player just got put on the bottom.
-            if (groundDmgReduction > 0) {
-                playerDamage = Math.round(playerDamage * (1 - groundDmgReduction));
-                triggerBonus(moveBonuses, 'GROUND_DAMAGE_REDUCTION');
-            }
+            // Frame & Base / Veteran IQ / Rubber Guard: the player just got put on the bottom.
+            playerDamage = reduceBottomDamage(Math.round(Math.max(2, base) * oStaminaMod));
             event = "Opponent took you down.";
             grapplingControl = -1;
 
@@ -590,7 +620,6 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             if (Math.random() < oppSubChance) {
                 // SUBMISSION_ESCAPES (camp) + NEVER_TAP (move): additive escape bonus.
                 const campEscape = getBonusValue(sessionBonuses, 'ESCAPE_PROBABILITY');
-                const moveEscape = getBonusValue(moveBonuses, 'ESCAPE_PROBABILITY');
                 const escapeBonus = campEscape + moveEscape;
                 let subSucceeded;
                 if (escapeBonus > 0) {
@@ -647,15 +676,24 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         // SIG_FAST_START (Superman Punch): arms ONLY here, so a round 1 spent on the ground never
         // fires it (and it is not carried into round 2).
         const sigFastStartBonus = roundNum === 1 ? fireSignatureOnce(fastStartEntry, sigState) : 0;
+        // SIG_FINISHER_STRIKE (Overhand Right): spent here, the first exchange after it is ready.
+        const sigFinisherStrikeBonus = finisherReady ? fireSignatureOnce(finisherEntry, sigState) : 0;
         const strikeMult = campStrike + moveStrike + sigFinisherStrikeBonus + sigFastStartBonus;
         if (strikeMult > 0) {
             plStrike *= (1 + strikeMult);
             if (campStrike > 0 || moveStrike > 0) campCommentary.push('campStrikingAccuracy');
         }
 
-        // GAME_PLAN_STUDY (camp) + GRANITE_JAW/VETERAN_IQ (move): reduce opponent damage
+        // FLASH_KO_RESISTANCE (Fighting Spirit) while hurt: its own multiplicative cut.
+        if (moveGrit > 0) {
+            oppStrike *= (1 - moveGrit);
+            gritUsed = true;
+        }
+        // GAME_PLAN_STUDY (camp) + GRANITE_JAW/HIGH_GUARD/VETERAN_IQ (move): reduce opponent damage
         if (gamePlanReduction > 0) {
             oppStrike *= (1 - gamePlanReduction);
+            if (moveDmgReduction > 0) triggerBonus(moveBonuses, 'OPPONENT_DAMAGE_REDUCTION');
+            if (moveAllDmgReduction > 0) triggerBonus(moveBonuses, 'ALL_DAMAGE_REDUCTION');
         }
 
         // BODY_SHOT_FOCUS (camp) + BODY_SNATCHER (move): roll for body attack (50% chance when
@@ -709,13 +747,8 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             }
         }
         if (!finished && playerDamage >= CFG.flashKo.minDamage) {
-            // FLASH_KO_RESISTANCE (Fighting Spirit): while the player started the round below 25%
-            // health (same gate as SIG_IRON_RECOVERY). Subtracted INSIDE the clamp so it can
-            // never take the chance below minProb; ironWill still multiplies after the clamp.
-            const moveFlashResist = playerHealthNow < 25 ? getBonusValue(moveBonuses, 'FLASH_KO_RESISTANCE') : 0;
-            if (moveFlashResist > 0) triggerBonus(moveBonuses, 'FLASH_KO_RESISTANCE');
             const oppFlashKoChance = clamp(
-                CFG.flashKo.baseChance + strikingProfileMod(opponent) + (playerDamage - CFG.flashKo.minDamage) / CFG.flashKo.extraDamageDivisor - moveFlashResist,
+                CFG.flashKo.baseChance + strikingProfileMod(opponent) + (playerDamage - CFG.flashKo.minDamage) / CFG.flashKo.extraDamageDivisor,
                 CFG.flashKo.minProb,
                 CFG.flashKo.maxProb
             );
@@ -742,6 +775,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     if (!finished && exhaustionTkoCheck(player, playerDamage, ironWillPerk)) { finished = true; outcome = "Loss (KO/TKO)"; finishCause = "tko"; }
     if (!finished && exhaustionTkoCheck(opponent, opponentDamage, false)) { finished = true; outcome = "KO/TKO"; finishCause = "tko"; }
     if (!finished && player.health < CFG.koCheck.healthWindow.normalWindow && koCheck(player, playerDamage, ironWillPerk, opponent)) { finished = true; outcome = "Loss (KO/TKO)"; finishCause = "tko"; }
+    if (gritUsed) triggerBonus(moveBonuses, 'FLASH_KO_RESISTANCE');
     if (!finished && opponent.health < CFG.koCheck.healthWindow.normalWindow && koCheck(opponent, opponentDamage, false, player)) { finished = true; outcome = "KO/TKO"; finishCause = "tko"; }
 
     return {

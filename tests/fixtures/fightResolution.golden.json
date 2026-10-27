@@ -94,6 +94,12 @@
         "triggerCount": 1
       },
       {
+        "moveId": "VETERAN_IQ",
+        "bonusType": "ALL_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 1
+      },
+      {
         "moveId": "NEVER_TAP",
         "bonusType": "ESCAPE_PROBABILITY",
         "triggered": false,
@@ -431,6 +437,12 @@
       {
         "moveId": "GRANITE_JAW",
         "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 5
+      },
+      {
+        "moveId": "VETERAN_IQ",
+        "bonusType": "ALL_DAMAGE_REDUCTION",
         "triggered": true,
         "triggerCount": 5
       },
@@ -782,6 +794,12 @@
       {
         "moveId": "GRANITE_JAW",
         "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "VETERAN_IQ",
+        "bonusType": "ALL_DAMAGE_REDUCTION",
         "triggered": true,
         "triggerCount": 5
       },
@@ -798,18 +816,18 @@
     "outcome": "Loss (decision)",
     "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 7,
+    "playerHealthAfter": 37,
     "opponentHealthAfter": 100,
-    "playerStaminaAfter": 44,
-    "rngDraws": 36,
+    "playerStaminaAfter": 41,
+    "rngDraws": 34,
     "rounds": [
       {
         "round": 1,
         "event": "Opponent took you down.",
         "grapplingControl": -1,
-        "playerDamage": 25,
+        "playerDamage": 17,
         "opponentDamage": 0,
-        "playerHealth": 75,
+        "playerHealth": 83,
         "opponentHealth": 100,
         "campCommentary": []
       },
@@ -817,9 +835,9 @@
         "round": 2,
         "event": "Stuck on bottom; opponent grinds.",
         "grapplingControl": -1,
-        "playerDamage": 22,
+        "playerDamage": 15,
         "opponentDamage": 0,
-        "playerHealth": 53,
+        "playerHealth": 68,
         "opponentHealth": 100,
         "campCommentary": []
       },
@@ -827,9 +845,9 @@
         "round": 3,
         "event": "Stuck on bottom; opponent grinds.",
         "grapplingControl": -1,
-        "playerDamage": 19,
+        "playerDamage": 13,
         "opponentDamage": 0,
-        "playerHealth": 34,
+        "playerHealth": 55,
         "opponentHealth": 100,
         "campCommentary": []
       },
@@ -837,9 +855,9 @@
         "round": 4,
         "event": "Opponent took you down.",
         "grapplingControl": -1,
-        "playerDamage": 15,
+        "playerDamage": 10,
         "opponentDamage": 0,
-        "playerHealth": 19,
+        "playerHealth": 45,
         "opponentHealth": 100,
         "campCommentary": []
       },
@@ -847,9 +865,9 @@
         "round": 5,
         "event": "Stuck on bottom; opponent grinds.",
         "grapplingControl": -1,
-        "playerDamage": 12,
+        "playerDamage": 8,
         "opponentDamage": 0,
-        "playerHealth": 7,
+        "playerHealth": 37,
         "opponentHealth": 100,
         "campCommentary": []
       }
@@ -871,7 +889,7 @@
         "moveId": "IRON_RECOVERY",
         "bonusType": "SIG_IRON_RECOVERY",
         "triggered": true,
-        "triggerCount": 1
+        "triggerCount": 5
       }
     ],
     "sessionBonuses": []
@@ -1182,6 +1200,12 @@
         "moveId": "GRANITE_JAW",
         "bonusType": "OPPONENT_DAMAGE_REDUCTION",
         "triggered": true,
+        "triggerCount": 3
+      },
+      {
+        "moveId": "VETERAN_IQ",
+        "bonusType": "ALL_DAMAGE_REDUCTION",
+        "triggered": true,
         "triggerCount": 5
       },
       {
@@ -1197,7 +1221,7 @@
     "outcome": "Loss (decision)",
     "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 53,
+    "playerHealthAfter": 64,
     "opponentHealthAfter": 87,
     "playerStaminaAfter": 52,
     "rngDraws": 47,
@@ -1236,9 +1260,9 @@
         "round": 4,
         "event": "Opponent took you down.",
         "grapplingControl": -1,
-        "playerDamage": 19,
+        "playerDamage": 13,
         "opponentDamage": 0,
-        "playerHealth": 69,
+        "playerHealth": 75,
         "opponentHealth": 87,
         "campCommentary": []
       },
@@ -1246,9 +1270,9 @@
         "round": 5,
         "event": "Stuck on bottom; opponent grinds.",
         "grapplingControl": -1,
-        "playerDamage": 16,
+        "playerDamage": 11,
         "opponentDamage": 0,
-        "playerHealth": 53,
+        "playerHealth": 64,
         "opponentHealth": 87,
         "campCommentary": []
       }
@@ -1269,8 +1293,8 @@
       {
         "moveId": "IRON_RECOVERY",
         "bonusType": "SIG_IRON_RECOVERY",
-        "triggered": false,
-        "triggerCount": 0
+        "triggered": true,
+        "triggerCount": 2
       }
     ],
     "sessionBonuses": []
@@ -1394,11 +1418,11 @@
     "sessionBonuses": []
   },
   "brawler-vs-striker-3r::offense_L": {
-    "outcome": "Loss (decision)",
-    "winner": "opponent",
+    "outcome": "Decision (split)",
+    "winner": "player",
     "finishCause": null,
     "playerHealthAfter": 47,
-    "opponentHealthAfter": 54,
+    "opponentHealthAfter": 51,
     "playerStaminaAfter": 64,
     "rngDraws": 32,
     "rounds": [
@@ -1431,9 +1455,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 15,
-        "opponentDamage": 13,
+        "opponentDamage": 16,
         "playerHealth": 47,
-        "opponentHealth": 54,
+        "opponentHealth": 51,
         "campCommentary": [
           "campStrikingAccuracy"
         ]
@@ -1449,8 +1473,8 @@
       {
         "moveId": "THE_FINISHER",
         "bonusType": "SIG_FINISHER_STRIKE",
-        "triggered": false,
-        "triggerCount": 0
+        "triggered": true,
+        "triggerCount": 1
       },
       {
         "moveId": "KILLER_INSTINCT",
@@ -1505,6 +1529,12 @@
       {
         "moveId": "GRANITE_JAW",
         "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 3
+      },
+      {
+        "moveId": "VETERAN_IQ",
+        "bonusType": "ALL_DAMAGE_REDUCTION",
         "triggered": true,
         "triggerCount": 3
       },
@@ -1864,6 +1894,12 @@
       {
         "moveId": "GRANITE_JAW",
         "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 5
+      },
+      {
+        "moveId": "VETERAN_IQ",
+        "bonusType": "ALL_DAMAGE_REDUCTION",
         "triggered": true,
         "triggerCount": 5
       },
@@ -2272,6 +2308,12 @@
         "triggerCount": 5
       },
       {
+        "moveId": "VETERAN_IQ",
+        "bonusType": "ALL_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 5
+      },
+      {
         "moveId": "NEVER_TAP",
         "bonusType": "ESCAPE_PROBABILITY",
         "triggered": false,
@@ -2603,7 +2645,7 @@
     "outcome": "Decision (unanimous)",
     "winner": "player",
     "finishCause": null,
-    "playerHealthAfter": 69,
+    "playerHealthAfter": 70,
     "opponentHealthAfter": 73,
     "playerStaminaAfter": 70,
     "rngDraws": 25,
@@ -2612,9 +2654,9 @@
         "round": 1,
         "event": "Opponent took you down.",
         "grapplingControl": -1,
-        "playerDamage": 26,
+        "playerDamage": 25,
         "opponentDamage": 0,
-        "playerHealth": 74,
+        "playerHealth": 75,
         "opponentHealth": 100,
         "campCommentary": []
       },
@@ -2624,7 +2666,7 @@
         "grapplingControl": 0,
         "playerDamage": 3,
         "opponentDamage": 14,
-        "playerHealth": 71,
+        "playerHealth": 72,
         "opponentHealth": 86,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2636,7 +2678,7 @@
         "grapplingControl": 0,
         "playerDamage": 2,
         "opponentDamage": 13,
-        "playerHealth": 69,
+        "playerHealth": 70,
         "opponentHealth": 73,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2647,6 +2689,12 @@
       {
         "moveId": "GRANITE_JAW",
         "bonusType": "OPPONENT_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 2
+      },
+      {
+        "moveId": "VETERAN_IQ",
+        "bonusType": "ALL_DAMAGE_REDUCTION",
         "triggered": true,
         "triggerCount": 3
       },
@@ -2679,7 +2727,7 @@
     "outcome": "Decision (unanimous)",
     "winner": "player",
     "finishCause": null,
-    "playerHealthAfter": 68,
+    "playerHealthAfter": 76,
     "opponentHealthAfter": 73,
     "playerStaminaAfter": 70,
     "rngDraws": 25,
@@ -2688,9 +2736,9 @@
         "round": 1,
         "event": "Opponent took you down.",
         "grapplingControl": -1,
-        "playerDamage": 26,
+        "playerDamage": 18,
         "opponentDamage": 0,
-        "playerHealth": 74,
+        "playerHealth": 82,
         "opponentHealth": 100,
         "campCommentary": []
       },
@@ -2700,7 +2748,7 @@
         "grapplingControl": 0,
         "playerDamage": 3,
         "opponentDamage": 14,
-        "playerHealth": 71,
+        "playerHealth": 79,
         "opponentHealth": 86,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2712,7 +2760,7 @@
         "grapplingControl": 0,
         "playerDamage": 3,
         "opponentDamage": 13,
-        "playerHealth": 68,
+        "playerHealth": 76,
         "opponentHealth": 73,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2735,8 +2783,8 @@
       {
         "moveId": "IRON_RECOVERY",
         "bonusType": "SIG_IRON_RECOVERY",
-        "triggered": false,
-        "triggerCount": 0
+        "triggered": true,
+        "triggerCount": 1
       }
     ],
     "sessionBonuses": [
@@ -2930,8 +2978,8 @@
       {
         "moveId": "THE_FINISHER",
         "bonusType": "SIG_FINISHER_STRIKE",
-        "triggered": true,
-        "triggerCount": 1
+        "triggered": false,
+        "triggerCount": 0
       },
       {
         "moveId": "KILLER_INSTINCT",
@@ -2986,8 +3034,14 @@
       {
         "moveId": "GRANITE_JAW",
         "bonusType": "OPPONENT_DAMAGE_REDUCTION",
-        "triggered": true,
-        "triggerCount": 3
+        "triggered": false,
+        "triggerCount": 0
+      },
+      {
+        "moveId": "VETERAN_IQ",
+        "bonusType": "ALL_DAMAGE_REDUCTION",
+        "triggered": false,
+        "triggerCount": 0
       },
       {
         "moveId": "NEVER_TAP",
@@ -3162,11 +3216,11 @@
   "dominant-striker-5r::offense_L": {
     "outcome": "KO/TKO",
     "winner": "player",
-    "finishCause": "tko",
+    "finishCause": "ko",
     "playerHealthAfter": 100,
     "opponentHealthAfter": 0,
     "playerStaminaAfter": 64,
-    "rngDraws": 30,
+    "rngDraws": 29,
     "rounds": [
       {
         "round": 1,
@@ -3195,9 +3249,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 0,
-        "opponentDamage": 31,
+        "opponentDamage": 38,
         "playerHealth": 100,
-        "opponentHealth": 5,
+        "opponentHealth": 0,
         "campCommentary": [
           "campStrikingAccuracy"
         ]
@@ -3213,14 +3267,14 @@
       {
         "moveId": "THE_FINISHER",
         "bonusType": "SIG_FINISHER_STRIKE",
-        "triggered": false,
-        "triggerCount": 0
+        "triggered": true,
+        "triggerCount": 1
       },
       {
         "moveId": "KILLER_INSTINCT",
         "bonusType": "SIG_KILLER_INSTINCT",
-        "triggered": true,
-        "triggerCount": 1
+        "triggered": false,
+        "triggerCount": 0
       }
     ],
     "sessionBonuses": []
@@ -3270,7 +3324,13 @@
         "moveId": "GRANITE_JAW",
         "bonusType": "OPPONENT_DAMAGE_REDUCTION",
         "triggered": true,
-        "triggerCount": 3
+        "triggerCount": 2
+      },
+      {
+        "moveId": "VETERAN_IQ",
+        "bonusType": "ALL_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 2
       },
       {
         "moveId": "NEVER_TAP",
@@ -3589,7 +3649,13 @@
         "moveId": "GRANITE_JAW",
         "bonusType": "OPPONENT_DAMAGE_REDUCTION",
         "triggered": true,
-        "triggerCount": 3
+        "triggerCount": 1
+      },
+      {
+        "moveId": "VETERAN_IQ",
+        "bonusType": "ALL_DAMAGE_REDUCTION",
+        "triggered": true,
+        "triggerCount": 1
       },
       {
         "moveId": "NEVER_TAP",

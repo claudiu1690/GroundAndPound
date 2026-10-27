@@ -100,7 +100,7 @@ test("ladder: dense from minRarity, Signatures 2 rungs else 4, rating = round(va
     }
     const ratings = (id) => byId(cat, id).ladder.map((r) => r.rating);
     assert.deepEqual(ratings("HEAVY_HANDS"), [9, 16, 26, 35]);
-    assert.deepEqual(ratings("THE_FINISHER"), [80, 150]);
+    assert.deepEqual(ratings("THE_FINISHER"), [150, 250]);
     assert.deepEqual(ratings("PACE_PUSHER"), [40, 42, 46, 50]);
 });
 

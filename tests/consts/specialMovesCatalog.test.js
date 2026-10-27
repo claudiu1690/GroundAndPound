@@ -27,16 +27,16 @@ const v2 = (r, l) => ({ RARE: r, LEGENDARY: l });
 const NEW_MOVES = [
     { id: "HIGH_GUARD", name: "High Guard", effectType: "PASSIVE", bonusType: "OPPONENT_DAMAGE_REDUCTION", triggerCondition: "ALWAYS", minRarity: "COMMON", values: v4(0.006, 0.011, 0.019, 0.026), flavor: "Hands high, chin down. Nothing clean gets through." },
     { id: "DOUBLE_LEG_PRECISION", name: "Double-Leg Precision", effectType: "PASSIVE", bonusType: "TAKEDOWN_SUCCESS", triggerCondition: "ALWAYS", minRarity: "COMMON", values: v4(0.02, 0.035, 0.06, 0.08), flavor: "The shot never misses because it was never sloppy to begin with." },
-    { id: "FRAME_AND_BASE", name: "Frame & Base", effectType: "PASSIVE", bonusType: "GROUND_DAMAGE_REDUCTION", triggerCondition: "ALWAYS", minRarity: "COMMON", values: v4(0.015, 0.026, 0.044, 0.06), flavor: "Flat on the back and still structurally sound. Nothing gets through the frame." },
+    { id: "FRAME_AND_BASE", name: "Frame & Base", effectType: "PASSIVE", bonusType: "GROUND_DAMAGE_REDUCTION", triggerCondition: "ALWAYS", minRarity: "COMMON", values: v4(0.05, 0.07, 0.10, 0.13), flavor: "Flat on the back and still structurally sound. Nothing gets through the frame." },
     { id: "PACE_PUSHER", name: "Pace Pusher", effectType: "PASSIVE", bonusType: "OPPONENT_STAMINA_DRAIN", triggerCondition: "ALWAYS", minRarity: "COMMON", values: v4(0.04, 0.042, 0.046, 0.05), flavor: "Every exchange costs the other guy a little more than it should." },
-    { id: "SECOND_GEAR", name: "Second Gear", effectType: "PROC", bonusType: "STRIKE_DAMAGE", triggerCondition: "OPPONENT_STAMINA_BELOW_70", minRarity: "COMMON", values: v4(0.005, 0.009, 0.015, 0.020), flavor: "A tired man's guard drops an inch. This fighter never misses the inch." },
+    { id: "SECOND_GEAR", name: "Second Gear", effectType: "PROC", bonusType: "STRIKE_DAMAGE", triggerCondition: "OPPONENT_STAMINA_BELOW_70", minRarity: "COMMON", values: v4(0.011, 0.02, 0.033, 0.045), flavor: "A tired man's guard drops an inch. This fighter never misses the inch." },
     { id: "TOP_CONTROL", name: "Top Control", effectType: "PROC", bonusType: "GNP_DAMAGE", triggerCondition: "PLAYER_TOP_POSITION", minRarity: "COMMON", values: v4(0.025, 0.045, 0.075, 0.10), flavor: "Top position isn't a reward, it's a job. This fighter clocks in." },
     { id: "GUILLOTINE_CHOKE", name: "Guillotine Choke", effectType: "PROC", bonusType: "SUBMISSION_SUCCESS", triggerCondition: "PLAYER_ATTEMPTS_SUBMISSION", minRarity: "COMMON", values: v4(0.03, 0.05, 0.08, 0.11), flavor: "Once the neck is wrapped, it's only a matter of time." },
     { id: "DEEP_WATERS", name: "Deep Waters", effectType: "PROC", bonusType: "STRIKE_DAMAGE", triggerCondition: "LATE_ROUNDS", minRarity: "COMMON", values: v4(0.008, 0.015, 0.025, 0.033), flavor: "Drag them out past the third round and watch them drown." },
-    { id: "FIGHTING_SPIRIT", name: "Fighting Spirit", effectType: "PROC", bonusType: "FLASH_KO_RESISTANCE", triggerCondition: "PLAYER_HEALTH_BELOW_25", minRarity: "COMMON", values: v4(0.004, 0.008, 0.012, 0.018), flavor: "Hurt, not gone. The chin negotiates a longer fight." },
+    { id: "FIGHTING_SPIRIT", name: "Fighting Spirit", effectType: "PROC", bonusType: "FLASH_KO_RESISTANCE", triggerCondition: "PLAYER_HEALTH_BELOW_75", minRarity: "COMMON", values: v4(0.02, 0.03, 0.045, 0.06), flavor: "Hurt, not gone. The chin negotiates a longer fight." },
     { id: "SUPERMAN_PUNCH", name: "Superman Punch", effectType: "SIGNATURE", bonusType: "SIG_FAST_START", triggerCondition: "ROUND_ONE", minRarity: "RARE", values: v2(0.10, 0.18), flavor: "No feeling-out round. The bell rings and the storm is already here." },
     { id: "BLAST_DOUBLE", name: "Blast Double", effectType: "SIGNATURE", bonusType: "SIG_TAKEDOWN_BLITZ", triggerCondition: "PLAYER_FIRST_TAKEDOWN_LANDED", minRarity: "RARE", values: v2(0.10, 0.18), flavor: "The first takedown of the night is a statement, not a formality." },
-    { id: "ARM_TRIANGLE", name: "Arm Triangle", effectType: "SIGNATURE", bonusType: "SIG_SUBMISSION_HUNT", triggerCondition: "PLAYER_ACHIEVES_TOP_POSITION", minRarity: "RARE", values: v2(0.12, 0.20), flavor: "Top position is an invitation. This fighter RSVPs immediately." },
+    { id: "ARM_TRIANGLE", name: "Arm Triangle", effectType: "SIGNATURE", bonusType: "SIG_SUBMISSION_HUNT", triggerCondition: "FIRST_SUBMISSION_FROM_TOP", minRarity: "RARE", values: v2(0.12, 0.20), flavor: "Top position is an invitation. This fighter RSVPs immediately." },
 ];
 
 const RENAMES = {
@@ -166,5 +166,18 @@ test("no em dash in the name or flavor of the 12 new and 7 renamed moves", () =>
 
 test("renamed flavor edits landed (NEVER_TAP, IRON_RECOVERY)", () => {
     assert.equal(SPECIAL_MOVES_BY_ID.NEVER_TAP.flavor, "Caught in the choke and still calm. One hip escape and the grip is gone.");
-    assert.equal(SPECIAL_MOVES_BY_ID.IRON_RECOVERY.flavor, "Hurt should slow a fighter down. This one just resets the clock.");
+    // Rubber Guard rework (2026-10-27): the old Iron Recovery flavor described a stamina effect it no longer has.
+    assert.equal(SPECIAL_MOVES_BY_ID.IRON_RECOVERY.flavor, "Flat on his back and still in charge. Nobody postures up out of this guard.");
+});
+
+test("2026-10-27 rework: dead health gates moved, Sprawl cut, Veteran IQ protects on the ground too", () => {
+    const M = SPECIAL_MOVES_BY_ID;
+    assert.equal(M.THE_FINISHER.triggerCondition, "OPPONENT_HEALTH_BELOW_75");
+    assert.deepEqual(M.THE_FINISHER.values, v2(0.15, 0.25));
+    assert.equal(M.IRON_RECOVERY.triggerCondition, "PLAYER_ON_BOTTOM");
+    assert.deepEqual(M.IRON_RECOVERY.values, v2(0.22, 0.32));
+    assert.equal(M.VETERAN_IQ.bonusType, "ALL_DAMAGE_REDUCTION");
+    assert.deepEqual(M.SPRAWL_INSTINCT.values, v4(0.03, 0.05, 0.08, 0.10));
+    assert.deepEqual(M.NEVER_TAP.values, v4(0.06, 0.10, 0.16, 0.25));
+    assert.deepEqual(M.SECOND_WIND.values, v4(0.06, 0.09, 0.12, 0.16));
 });
