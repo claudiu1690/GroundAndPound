@@ -18,6 +18,15 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.2.1",
+    date: "2026-10-27",
+    major: false,
+    highlights: [
+      "The Shop tab shows a red dot until you open it, so the new Energy Drink bundles don't slip past you. On a phone the dot sits on More.",
+    ],
+    sections: { changed: [], fixed: [], balance: [] },
+  },
+  {
     version: "2.2",
     date: "2026-10-27",
     major: true,

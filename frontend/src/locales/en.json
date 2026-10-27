@@ -1593,7 +1593,8 @@
     "topbar": {
       "brandName": "GROUND & POUND",
       "openMenu": "Open menu",
-      "unreadDefenseReport": "Unread defense report"
+      "unreadDefenseReport": "Unread defense report",
+      "newInShop": "New in the Shop"
     },
     "drawer": {
       "closeMenu": "Close menu"

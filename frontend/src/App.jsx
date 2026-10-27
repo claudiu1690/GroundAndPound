@@ -52,6 +52,7 @@ import { CHANGELOG_ENTRIES, CURRENT_VERSION } from "./components/changelog/chang
 import { tutorialBus } from "./utils/tutorialBus";
 import { TITLE_WINS, TOP_TIER, isTitleContender, isTopFiveDisplayRank } from "./constants/gameConstants";
 import { useToasts } from "./hooks/useToasts";
+import { useShopNews } from "./hooks/useShopNews";
 import { PvpHub } from "./components/pvp/PvpHub";
 import {
   LayoutDashboard,
@@ -854,7 +855,11 @@ function App() {
     }
 
     setChangelogUnseen(true);
-    const isMajor = CHANGELOG_ENTRIES[0]?.major === true;
+    // Auto-open if ANY entry newer than the one they last saw is major, so a small
+    // patch on top of a major release doesn't swallow that release's popup.
+    const seenIdx = CHANGELOG_ENTRIES.findIndex((e) => e.version === stored);
+    const unseenEntries = seenIdx === -1 ? CHANGELOG_ENTRIES.slice(0, 1) : CHANGELOG_ENTRIES.slice(0, seenIdx);
+    const isMajor = unseenEntries.some((e) => e.major === true);
     const inTutorial = !!(fighter?.tutorial && !fighter.tutorial.completed);
     if (isMajor && inTutorial) {
       // Suppressed while onboarding — leave the ref unset so the effect
@@ -1392,6 +1397,10 @@ function App() {
   // disappear once the flag flipped in production, contract §6.3/§10 risk #14).
   const NAV_ITEMS = useMemo(() => buildNavItems({ gymsRetired }), [gymsRetired]);
 
+  // "Something new in the Shop" dot, cleared the first time the Shop is opened.
+  // Called above the early returns below, like every other hook here.
+  const shopUnseen = useShopNews(activeTab);
+
   // Show auth page if not logged in. When the user arrived via the
   // password-reset email link we land directly on the forgot-password "apply"
   // form by passing the token through.
@@ -1636,6 +1645,7 @@ function App() {
                   <span className="nav-icon">{item.icon}</span>
                   {item.label}
                   {item.id === "pvp" && pvpUnread && <span className="nav-dot" aria-label={t("layout.topbar.unreadDefenseReport")} />}
+                  {item.id === "shop" && shopUnseen && <span className="nav-dot" aria-label={t("layout.topbar.newInShop")} />}
                 </button>
               ) : (
                 <span key={i} className="tni disabled">
@@ -1681,6 +1691,7 @@ function App() {
                   <span className="nav-icon">{item.icon}</span>
                   {item.label}
                   {item.id === "pvp" && pvpUnread && <span className="nav-dot" aria-label={t("layout.topbar.unreadDefenseReport")} />}
+                  {item.id === "shop" && shopUnseen && <span className="nav-dot" aria-label={t("layout.topbar.newInShop")} />}
                 </a>
               ) : (
                 <div key={i} className="sb-menu-item disabled">
@@ -1994,6 +2005,7 @@ function App() {
         </button>
         <button type="button" className={`m-nav-item ${mobileDrawerOpen ? "act" : ""}`} onClick={() => setMobileDrawerOpen(true)}>
           <Menu size={17} strokeWidth={2.2} /><span>{t("layout.nav.more")}</span>
+          {shopUnseen && <span className="nav-dot" aria-label={t("layout.topbar.newInShop")} />}
         </button>
       </nav>
 
@@ -2039,6 +2051,7 @@ function App() {
                       <span className="nav-icon">{item.icon}</span>
                       {item.label}
                       {item.id === "pvp" && pvpUnread && <span className="nav-dot" aria-label={t("layout.topbar.unreadDefenseReport")} />}
+                      {item.id === "shop" && shopUnseen && <span className="nav-dot" aria-label={t("layout.topbar.newInShop")} />}
                     </a>
                   ) : (
                     <div key={i} className="sb-menu-item disabled">
