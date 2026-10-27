@@ -7,7 +7,11 @@ import { createPortal } from "react-dom";
  * shop launch (Stripe paragraph). Not lawyer-reviewed. Bump "Last updated" whenever the
  * content changes. Mirrors CookiePolicyModal markup so it inherits the same modal styling.
  */
-const ENTITY = "Digital Olive"; // legal operator (owner-confirmed 2026-10-27)
+const ENTITY = "Digital Olive SRL"; // legal operator (owner-confirmed 2026-10-27)
+// Operator identity required on the site by Romanian Law 365/2002 art. 5. The owner chose not
+// to publish the registered office address (2026-10-27).
+const FISCAL_CODE = "50872480"; // CUI, not VAT registered
+const TRADE_REGISTER_NO = "J29/1032/2024";
 const CONTACT_EMAIL = "support@groundandpound.net"; // live inbox (Cloudflare Email Routing)
 const MIN_AGE = 13;
 
@@ -34,7 +38,8 @@ export function PrivacyPolicyModal({ open, onClose }) {
           <section className="cookie-policy-section">
             <h4 className="cookie-policy-h">Who we are</h4>
             <p className="cookie-policy-text">
-              Ground &amp; Pound (“the game”) is operated by {ENTITY} (“we”, “us”). This
+              Ground &amp; Pound (“the game”) is operated by {ENTITY} (fiscal code (CUI){" "}
+              {FISCAL_CODE}, Trade Register no. {TRADE_REGISTER_NO}) (“we”, “us”). This
               policy explains what personal data we collect when you use the game, why,
               and your rights over it. Questions: <strong>{CONTACT_EMAIL}</strong>.
             </p>

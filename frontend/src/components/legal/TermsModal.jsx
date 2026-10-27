@@ -7,7 +7,11 @@ import { createPortal } from "react-dom";
  * governing law deliberately generic (section 12), 13+ to play and 18+ (or guardian
  * permission) to buy (section 6). Not lawyer-reviewed. Mirrors CookiePolicyModal markup.
  */
-const ENTITY = "Digital Olive"; // legal operator (owner-confirmed 2026-10-27)
+const ENTITY = "Digital Olive SRL"; // legal operator (owner-confirmed 2026-10-27)
+// Operator identity required on the site by Romanian Law 365/2002 art. 5. The owner chose not
+// to publish the registered office address (2026-10-27).
+const FISCAL_CODE = "50872480"; // CUI, not VAT registered
+const TRADE_REGISTER_NO = "J29/1032/2024";
 const CONTACT_EMAIL = "support@groundandpound.net"; // live inbox (Cloudflare Email Routing)
 const MIN_AGE = 13;
 
@@ -34,7 +38,8 @@ export function TermsModal({ open, onClose }) {
           <section className="cookie-policy-section">
             <h4 className="cookie-policy-h">1. Acceptance</h4>
             <p className="cookie-policy-text">
-              Ground &amp; Pound (“the game”) is operated by {ENTITY}. By creating an
+              Ground &amp; Pound (“the game”) is operated by {ENTITY} (fiscal code (CUI){" "}
+              {FISCAL_CODE}, Trade Register no. {TRADE_REGISTER_NO}). By creating an
               account or using the game, you agree to these Terms. If you do not agree,
               do not use the game.
             </p>

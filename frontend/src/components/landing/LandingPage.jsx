@@ -858,7 +858,8 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
             <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-terms")}>Terms</a>
             <a className="foot-link" href="#" onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent("open-bug-report")); }}>Report a Bug</a>
           </div>
-          <div className="foot-copy">&copy; 2026 Digital Olive. All rights reserved.</div>
+          <div className="foot-copy">&copy; 2026 Digital Olive SRL. All rights reserved.</div>
+          <div className="foot-copy">CUI 50872480 · Trade Register J29/1032/2024 · support@groundandpound.net</div>
         </footer>
       </div>
 
