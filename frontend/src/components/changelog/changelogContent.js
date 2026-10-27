@@ -19,7 +19,7 @@
 export const CHANGELOG_ENTRIES = [
   {
     version: "2.2",
-    date: "2026-10-21",
+    date: "2026-10-27",
     major: true,
     highlights: [
       "Twelve new Special Moves double the roster to 24, across all four disciplines. Striking gets High Guard, Second Gear and Superman Punch. Wrestling gets Double-Leg Precision, Top Control and Blast Double. Brazilian Jiu-Jitsu gets Frame & Base, Guillotine Choke and Arm Triangle. Conditioning gets Pace Pusher, Deep Waters and Fighting Spirit.",

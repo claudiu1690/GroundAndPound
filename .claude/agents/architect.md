@@ -5,7 +5,7 @@ description: >
   change to data models, API surface, or job/queue design. Defines the API
   contract, file/module placement, and data flow. Plans only — never writes code.
 tools: Read, Grep, Glob
-model: opus
+model: fable
 ---
 
 You are the technical architect for a browser-based, text-driven web RPG.

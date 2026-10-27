@@ -99,6 +99,41 @@
         "--strictPort"
       ],
       "port": 4173
+    },
+    {
+      "name": "e2e-api",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "cross-env",
+        "LOCAL_MODE=true",
+        "PORT=4101",
+        "MONGODB_URI_LOCAL=mongodb://localhost:27017/mmaGameE2E",
+        "REDIS_URL_LOCAL=redis://127.0.0.1:6379",
+        "FRONTEND_URL=http://localhost:5273",
+        "GUEST_CREATE_RATE_LIMIT_MAX=1000000",
+        "RATE_LIMIT_MAX=1000000",
+        "node",
+        "app.js"
+      ],
+      "port": 4101
+    },
+    {
+      "name": "e2e-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "cross-env",
+        "VITE_API_URL=http://localhost:4101",
+        "npm",
+        "--prefix",
+        "frontend",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5273",
+        "--strictPort"
+      ],
+      "port": 5273
     }
   ]
 }
