@@ -142,7 +142,6 @@ export const ROADMAP_SHIPPED = [
     points: [
       "The Shop got a new look: every item has its own painted art.",
       "Out of energy? The game tells you how long to wait, or lets you use a Shot or a drink right there.",
-      "Five days of off-season between seasons to see where you finished before the ladder resets.",
       "This Roadmap, and Ground & Pound on Instagram, Facebook and TikTok.",
     ],
   },
