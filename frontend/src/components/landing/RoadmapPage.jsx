@@ -173,7 +173,7 @@ export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false 
         <div className="sec-eye">Roadmap</div>
         <h1 className="sec-title rm-h1">Built round<br />by round</h1>
         <p className="sec-sub">
-          Every season and every update since day one. Newest on top, so read it from the bottom up to see how the game grew.
+          Every season and every update since day one.
         </p>
         <div className="pvp-pills rm-hero-pills">
           <span className="pill">{RELEASE_COUNT} releases</span>
