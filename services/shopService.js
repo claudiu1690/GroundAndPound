@@ -269,6 +269,10 @@ async function buyItem(fighterId, itemId, quantity = 1) {
     const item = findItem(itemId);
     if (!item) throw new Error("Unknown item");
     if (item.premium) throw new Error("That item must be bought with premium");
+    // Granted-only items (price null, e.g. the Documentary's DOC_TECHNICIAN booster) are not
+    // for sale. Without this, `iron < null` is false and `iron -= null` subtracts 0, so the
+    // item was free to anyone who sent its id.
+    if (!Number.isInteger(item.price) || item.price <= 0) throw new Error("That item is not for sale");
 
     // Boosters always buy exactly one charge-pack; everything else accepts 1-99.
     let qty;

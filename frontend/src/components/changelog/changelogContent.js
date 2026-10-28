@@ -38,6 +38,19 @@ export const CHANGELOG_ENTRIES = [
     },
   },
   {
+    version: "2.2.3",
+    date: "2026-10-28",
+    major: false,
+    highlights: [],
+    sections: {
+      changed: [],
+      fixed: [
+        "Documentary Focus no longer shows up in the Shop. It is the reward from the Documentary, never something for sale, and it could be picked up there for nothing.",
+      ],
+      balance: [],
+    },
+  },
+  {
     version: "2.2.2",
     date: "2026-10-27",
     major: false,
