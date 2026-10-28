@@ -52,7 +52,7 @@ test("every image the roadmap uses exists under frontend/public", () => {
     const fs = require("node:fs");
     const pub = path.resolve(__dirname, "../../frontend/public");
     for (const item of allArt()) {
-        for (const src of [item.art.img, ...(item.art.cards || [])].filter(Boolean)) {
+        for (const src of [item.art.img, ...(item.art.faces || []), ...(item.art.cards || [])].filter(Boolean)) {
             assert.ok(fs.existsSync(path.join(pub, src)), `${item.title}: ${src} is missing`);
         }
     }
@@ -68,12 +68,12 @@ test("formatMilestoneDate keeps the calendar day (no UTC shift)", () => {
     assert.equal(rm.formatMilestoneDate("bad"), null);
 });
 
-const PLAN = { seasonNumber: 3, theme: "Winter" };
+const PLAN = { seasonNumber: 3, theme: "Black Ice" };
 
 test("seasonNodes: no data means nothing live and no date", () => {
     const { now, next } = rm.seasonNodes(null, PLAN);
     assert.equal(now, null);
-    assert.deepEqual(next, { seasonNumber: 3, theme: "Winter", startDate: null });
+    assert.deepEqual(next, { seasonNumber: 3, theme: "Black Ice", startDate: null });
 });
 
 test("seasonNodes: active season with the planned season queued shows its date", () => {
@@ -97,7 +97,7 @@ test("seasonNodes: a different next season never lends its date to a stale plan"
         status: "active", seasonNumber: 3, name: "Frostbite", endDate: "x",
         next: { seasonNumber: 4, startDate: "2027-02-07T00:00:00Z" },
     }, PLAN);
-    assert.deepEqual(next, { seasonNumber: 3, theme: "Winter", startDate: null });
+    assert.deepEqual(next, { seasonNumber: 3, theme: "Black Ice", startDate: null });
 });
 
 test("seasonNodes: upcoming season is next, nothing is live", () => {

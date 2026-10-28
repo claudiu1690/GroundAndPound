@@ -616,7 +616,12 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
 .landing-page .nav-link--instagram:hover{color:#E1306C}
 .landing-page .nav-link--facebook:hover{color:#1877F2}
 .landing-page .nav-link--tiktok:hover{color:#25F4EE}
-.landing-page .foot-links{flex-wrap:wrap}
+/* Footer: logo and links on the first row, the company lines underneath (with the
+   social links added, four items no longer fit one row). */
+.landing-page .foot-links{flex-wrap:wrap;justify-content:flex-end;gap:10px 20px}
+.landing-page footer{flex-wrap:wrap;row-gap:14px}
+.landing-page footer .foot-copy{flex-basis:100%;color:#6a6a6a}
+.landing-page footer .foot-copy + .foot-copy{margin-top:-8px}
 
 /* Phones: four icons plus the logo and Play Free do not fit; Discord stays,
    the rest live in the footer. */

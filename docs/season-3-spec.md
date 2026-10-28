@@ -6,6 +6,8 @@ days). Open format continues (`OPEN_SPLIT_AT_SEASON = null`). Theme: winter. Rej
 proposed: advent calendar, daily login rewards, anything time-limited that is not cosmetic, anything
 sold that touches fight results. No em dashes or en dashes in player-facing copy.
 
+**Name decided 2026-10-28: the owner named Season 3 "Black Ice".** The twist key becomes `black_ice` (name "Black Ice") and everything this spec calls Frostbite (twist, theme map, banner set, badges `pvp_winter_s3*`, poster lines) takes the Black Ice name.
+
 **Status: design only. Owner answers to the open questions (marked per item) are pending. The
 architect contract (step 2) comes after those answers.**
 
@@ -115,7 +117,7 @@ Line 1 is always the auto-derived twist line. These follow it:
 "s3": {
   "line1": { "lead": "Winter on the ladder.", "body": "The Proving Ground runs cold all season. Grind it out: submissions and decisions pay extra under Frostbite." },
   "line2": { "lead": "Frostbite banner set.", "body": "Fight once this season and the Frostbite background, the Frost accent and the snowflake badge are yours to keep, forever. Ten fights add the Long Night background." },
-  "line3": { "lead": "Faces.", "body": "Choose your fighter's portrait from your Profile. Free, and you can change it any time." }
+  "line3": { "lead": "Faces.", "body": "Choose your fighter's portrait from your Profile." }
 }
 ```
 If portraits slip, drop line3 and the default line takes over.

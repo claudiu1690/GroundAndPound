@@ -1,7 +1,9 @@
 import "./landing.css";
 import "./roadmap.css";
 import { formatDateShort, weeksLeftLabel } from "../../lib/countdown";
+import { useEffect, useRef } from "react";
 import { PIECES_BY_ID } from "../banner/bannerCatalog";
+import { NavSocialIcons, SiteFooter } from "./SiteChrome";
 import {
   ROADMAP_LATER,
   formatMilestoneDate,
@@ -20,11 +22,16 @@ const FIRST_RELEASE = shippedMilestones().at(-1);
  * the point's title carries the meaning.
  */
 function RoadmapArt({ art }) {
-  const cls = `rm-art${art.css ? ` rm-art--${art.css}` : ""}`;
+  const cls = `rm-art${art.css ? ` rm-art--${art.css}` : ""}${art.paint ? " rm-art--paint" : ""}`;
   return (
     <div className={cls} aria-hidden="true">
       {art.img && (
         <img src={art.img} alt="" loading="lazy" style={art.pos ? { objectPosition: art.pos } : undefined} />
+      )}
+      {art.faces && (
+        <div className="rm-faces">
+          {art.faces.map((src) => <img key={src} src={src} alt="" loading="lazy" />)}
+        </div>
       )}
       {art.cards && (
         <div className="rm-fan">
@@ -65,7 +72,7 @@ function RoadmapArt({ art }) {
  */
 function RoadmapRow({ item, kicker }) {
   return (
-    <article className="rm-row">
+    <article className="rm-row rm-reveal">
       <RoadmapArt art={item.art} />
       <div className="rm-row-body">
         {kicker && <div className="rm-kicker">{kicker}</div>}
@@ -84,7 +91,7 @@ function RoadmapRow({ item, kicker }) {
  */
 function SeasonBanner({ number, name, art, kicker, pill, points, tone }) {
   return (
-    <header className={`rm-season rm-season--${tone}`}>
+    <header className={`rm-season rm-season--${tone} rm-reveal`}>
       <RoadmapArt art={art} />
       <div className="rm-season-body">
         <div className="rm-season-kicker">{kicker}</div>
@@ -114,6 +121,29 @@ function SeasonBanner({ number, name, art, kicker, pill, points, tone }) {
  */
 export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false }) {
   const { now, next } = seasonNodes(seasonLoading ? null : seasonData);
+  const rootRef = useRef(null);
+
+  // Fade rows and banners in as they scroll into view. Anything already on screen,
+  // or passed by a fast scroll, is revealed outright by the sweep: content failing to
+  // appear is worse than a skipped animation. Scroll is caught in the capture phase so
+  // it also works inside the signed-in overlay, which scrolls itself, not the window.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+    const targets = [...root.querySelectorAll(".rm-reveal")];
+    const show = (el) => el.classList.add("in");
+    if (typeof IntersectionObserver === "undefined") { targets.forEach(show); return undefined; }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { show(e.target); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    targets.forEach((el) => io.observe(el));
+    const sweep = () => targets.forEach((el) => {
+      if (!el.classList.contains("in") && el.getBoundingClientRect().top < window.innerHeight * 0.95) show(el);
+    });
+    sweep();
+    document.addEventListener("scroll", sweep, { capture: true, passive: true });
+    return () => { io.disconnect(); document.removeEventListener("scroll", sweep, { capture: true }); };
+  }, []);
   const nextIsLive = now?.seasonNumber === next.seasonNumber;
 
   const go = (hash) => (e) => {
@@ -126,10 +156,11 @@ export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false 
     now?.seasonNumber === number ? `Live now${now.endDate ? ` · ${weeksLeftLabel(now.endDate)}` : ""}` : null;
 
   return (
-    <div className="landing-page rm-page">
+    <div className="landing-page rm-page" ref={rootRef}>
       <nav className="scrolled">
         <a className="nav-logo" href="/" onClick={go("")}>Ground <span>&amp;</span> Pound</a>
         <div className="nav-links">
+          <NavSocialIcons />
           {player ? (
             <a className="nav-cta" href="/" onClick={go("")}>&larr; Back to the game</a>
           ) : (
@@ -145,7 +176,7 @@ export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false 
         <div className="sec-eye">Roadmap</div>
         <h1 className="sec-title rm-h1">Built round<br />by round</h1>
         <p className="sec-sub">
-          What is planned and the next season at the top, and every season and release since the doors opened below it, newest first.
+          Every season and every update since day one. Newest on top, so read it from the bottom up to see how the game grew.
         </p>
         <div className="pvp-pills rm-hero-pills">
           <span className="pill">{RELEASE_COUNT} releases</span>
@@ -169,7 +200,7 @@ export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false 
           number={next.seasonNumber}
           name={next.theme}
           tone="next"
-          art={{ css: "season-next", img: "/assets/landing/arena.jpg" }}
+          art={{ css: "season-next", img: "/assets/moves/second-wind.webp", pos: "center 12%", paint: true }}
           kicker={nextIsLive ? "Live now" : "Coming next"}
           pill={nextIsLive ? livePill(next.seasonNumber) : next.startDate ? `Opens ${formatDateShort(next.startDate)}` : "Date to come"}
         />
@@ -210,6 +241,8 @@ export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false 
           ? <a className="btn-primary" href="/" onClick={go("")}>Back to the game</a>
           : <a className="btn-primary" href="/#play" onClick={go("#play")}>Start Your Career</a>}
       </div>
+
+      <SiteFooter legal={!player} />
     </div>
   );
 }

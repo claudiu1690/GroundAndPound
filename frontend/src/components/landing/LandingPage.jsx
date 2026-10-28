@@ -5,18 +5,10 @@ import { AuthPage } from "../auth/AuthPage";
 import { CookieConsent } from "../legal/CookieConsent";
 import { LegalModals } from "../legal/LegalModals";
 import { ReportBugModal } from "../shared/ReportBugModal";
-import { DiscordIcon } from "../shared/DiscordIcon";
-import { InstagramIcon, FacebookIcon, TikTokIcon } from "../shared/SocialIcons";
 import { RoadmapPage } from "./RoadmapPage";
+import { NavSocialIcons, SiteFooter } from "./SiteChrome";
 import { useSeasonBand } from "../../hooks/useSeasonBand";
 
-// One list for the nav icons and the footer links. `key` names the nav-link--{key} hover tint.
-const SOCIAL_LINKS = [
-  { key: "discord", label: "Discord", aria: "Join our Discord", href: "https://discord.gg/jDmh4wuBMb", Icon: DiscordIcon },
-  { key: "instagram", label: "Instagram", aria: "Ground & Pound on Instagram", href: "https://www.instagram.com/groundandpoundgame/", Icon: InstagramIcon },
-  { key: "facebook", label: "Facebook", aria: "Ground & Pound on Facebook", href: "https://www.facebook.com/profile.php?id=1163953513473862", Icon: FacebookIcon },
-  { key: "tiktok", label: "TikTok", aria: "Ground & Pound on TikTok", href: "https://www.tiktok.com/@groundandpound1", Icon: TikTokIcon },
-];
 import { openLegalFromUrl } from "../../lib/legalDeepLink";
 
 // How close the NEXT season has to be before the landing hero starts counting
@@ -35,11 +27,6 @@ const ROADMAP_QUERY = "?page=roadmap";
 const viewFromUrl = () =>
   new URLSearchParams(window.location.search).get("page") === "roadmap" ? "roadmap" : "home";
 
-// Open a legal modal from a footer link without navigating.
-const openLegal = (e, eventName) => {
-  e.preventDefault();
-  window.dispatchEvent(new CustomEvent(eventName));
-};
 
 /**
  * The Training Camp collage — cropped captures of the real camp UI.
@@ -346,7 +333,15 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
   }
 
   if (view === "roadmap") {
-    return <RoadmapPage seasonData={seasonData} seasonLoading={seasonLoading} onHome={openHome} />;
+    return (
+      <>
+        <RoadmapPage seasonData={seasonData} seasonLoading={seasonLoading} onHome={openHome} />
+        {/* The roadmap's footer opens these, same as the landing page's. */}
+        <CookieConsent />
+        <LegalModals />
+        <ReportBugModal />
+      </>
+    );
   }
 
   return (
@@ -363,19 +358,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
           <a className="nav-link" href="#pvp">
             {seasonData ? `Season ${seasonData.seasonNumber}` : "Season 1"}
           </a>
-          {SOCIAL_LINKS.map(({ key, label, aria, href, Icon }) => (
-            <a
-              key={key}
-              className={`nav-link nav-link--icon nav-link--${key}`}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={aria}
-              title={label}
-            >
-              <Icon size={17} />
-            </a>
-          ))}
+          <NavSocialIcons />
           <a className="nav-cta" href="#play">Play Free</a>
         </div>
       </nav>
@@ -903,20 +886,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
       {/* FOOTER */}
       <SectionDivider c="#D4A820" c2="#C8102E" />
       <div style={{ marginTop: "40px" }}>
-        <footer>
-          <div className="foot-logo">Ground <span>&amp;</span> Pound</div>
-          <div className="foot-links">
-            {SOCIAL_LINKS.map(({ key, label, href }) => (
-              <a key={key} className="foot-link" href={href} target="_blank" rel="noopener noreferrer">{label}</a>
-            ))}
-            <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-cookie-policy")}>Cookie Policy</a>
-            <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-privacy-policy")}>Privacy</a>
-            <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-terms")}>Terms</a>
-            <a className="foot-link" href="#" onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent("open-bug-report")); }}>Report a Bug</a>
-          </div>
-          <div className="foot-copy">&copy; 2026 Digital Olive SRL. All rights reserved.</div>
-          <div className="foot-copy">CUI 50872480 · Trade Register J29/1032/2024 · support@groundandpound.net</div>
-        </footer>
+        <SiteFooter />
       </div>
 
       {/* Cookie consent banner + legal modals for logged-out visitors */}

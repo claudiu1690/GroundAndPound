@@ -2,7 +2,7 @@
 
 Owner decisions 2026-10-28. Season 2 ends **Sun 2026-11-29** (started 2026-09-20 + `SEASON_LENGTH_DAYS`
 70). A **5-day off-season** follows (`SEASON_GAP_DAYS`), so Season 3 opens automatically on
-**Fri 2026-12-04** and ends **Fri 2027-02-12**. Theme: winter / Christmas. Advent calendar was
+**Fri 2026-12-04** and ends **Fri 2027-02-12**. Theme: winter / Christmas. Name: **Black Ice** (owner, 2026-10-28). Advent calendar was
 proposed and dropped by the owner.
 
 ## v2.3.0: roadmap, social links, off-season (target 2026-10-30 to 11-02)

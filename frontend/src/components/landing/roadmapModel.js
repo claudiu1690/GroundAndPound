@@ -125,7 +125,7 @@ export const ROADMAP_SHIPPED = [
       "12 new Special Moves, 24 in all across four disciplines.",
       "Three new Signatures: Superman Punch, Blast Double and Arm Triangle.",
       "The Catalog: every move, its value at each rarity and how to get it.",
-      "Energy Drink bundles in the Shop. Nothing that changes a fight is for sale.",
+      "Energy Drink bundles in the Shop.",
     ],
   },
 ];
@@ -152,7 +152,8 @@ export const ROADMAP_SEASONS = [
     number: 2,
     name: "Blood Sport",
     fromVersion: "2.0",
-    art: { css: "season-2", img: "/assets/landing/arena.jpg" },
+    // Painted Heavy Hands card: a red fist for the KO and submission season.
+    art: { css: "season-2", img: "/assets/moves/heavy-hands.webp", paint: true },
     points: [
       "+25% Division Points on every KO and submission win.",
       "My Camp replaces the gyms: coaches, wages, drills.",
@@ -164,18 +165,27 @@ export const ROADMAP_SEASONS = [
 // The next season, shown as a banner at the top of the page (no feature list).
 // Its opening date is shown only while the ladder's own next season has this
 // number, so a stale entry never borrows the date of a different season.
-export const ROADMAP_NEXT = { seasonNumber: 3, theme: "Winter" };
+// Season 3 is "Black Ice" (owner, 2026-10-28). The 3.0 twist must carry the same name,
+// since in-game and on the landing countdown a season is named after its twist.
+export const ROADMAP_NEXT = { seasonNumber: 3, theme: "Black Ice" };
 
 // Later: planned work with no date and no season attached. Hand-maintained;
 // move an item out the day it ships. Nothing here may describe a feature that
 // is not decided.
 export const ROADMAP_LATER = [
   {
+    title: "A face for your fighter",
+    art: { css: "faces", faces: ["/assets/roadmap/face-09.webp", "/assets/roadmap/face-17.webp", "/assets/roadmap/face-21.webp"] },
+    points: [
+      "Pick a portrait for your fighter.",
+      "It shows on your profile, the ladder and fight night.",
+    ],
+  },
+  {
     title: "Fight Camp, rebuilt",
     art: { css: "wip", img: "/assets/roadmap/fight-camp-today.webp", pos: "left top" },
     points: [
       "The camp you run before every fight gets a full redesign.",
-      "Still in design. The picture is today's screen.",
     ],
   },
   {
