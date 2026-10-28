@@ -52,7 +52,7 @@ test("every image the roadmap uses exists under frontend/public", () => {
     const fs = require("node:fs");
     const pub = path.resolve(__dirname, "../../frontend/public");
     for (const item of allArt()) {
-        for (const src of [item.art.img, ...(item.art.faces || []), ...(item.art.cards || [])].filter(Boolean)) {
+        for (const src of [item.art.img, item.art.can, ...(item.art.faces || []), ...(item.art.cards || []), ...(item.art.shelf || [])].filter(Boolean)) {
             assert.ok(fs.existsSync(path.join(pub, src)), `${item.title}: ${src} is missing`);
         }
     }

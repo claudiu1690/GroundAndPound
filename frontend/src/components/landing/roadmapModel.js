@@ -114,18 +114,36 @@ export const ROADMAP_SHIPPED = [
   {
     version: "2.2",
     title: "24 moves and the Shop",
-    // A fan of three of the new 2.2 cards plus Energy Drink cans (drawn in CSS:
-    // the game has no drink art, the Shop uses an icon).
+    // A fan of three of the new 2.2 cards plus the painted Energy Drink can from the Shop.
     art: {
       css: "moves-shop",
       cards: ["/assets/moves/blast-double.webp", "/assets/moves/superman-punch.webp", "/assets/moves/arm-triangle.webp"],
-      cans: 3,
+      can: "/assets/shop/energy-drink.webp",
     },
     points: [
       "12 new Special Moves, 24 in all across four disciplines.",
       "Three new Signatures: Superman Punch, Blast Double and Arm Triangle.",
       "The Catalog: every move, its value at each rarity and how to get it.",
       "Energy Drink bundles in the Shop.",
+    ],
+  },
+  {
+    version: "2.3",
+    title: "The new Shop",
+    // Painted Shop products laid out like a shelf.
+    art: {
+      css: "shop-shelf",
+      shelf: [
+        "/assets/shop/pre-workout.webp",
+        "/assets/shop/energy-shot.webp",
+        "/assets/shop/whey-protein-shake.webp",
+      ],
+    },
+    points: [
+      "The Shop got a new look: every item has its own painted art.",
+      "Out of energy? The game tells you how long to wait, or lets you use a Shot or a drink right there.",
+      "Five days of off-season between seasons to see where you finished before the ladder resets.",
+      "This Roadmap, and Ground & Pound on Instagram, Facebook and TikTok.",
     ],
   },
 ];

@@ -113,7 +113,7 @@
 .rm-page .rm-art-mark{position:relative;z-index:1;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:40px;color:#fff;letter-spacing:1px}
 .rm-page .rm-art-mark i{font-style:normal;color:var(--r)}
 
-/* 24 moves and the Shop: three move cards fanned on the left, Energy Drink cans on the right. */
+/* 24 moves and the Shop: three move cards fanned on the left, the painted Energy Drink can on the right. */
 .rm-page .rm-art--moves-shop{background:radial-gradient(ellipse at 35% 110%,rgba(212,168,32,.22),transparent 60%),
   radial-gradient(ellipse at 85% 100%,rgba(59,130,246,.25),transparent 55%),#0f0f12}
 .rm-page .rm-fan{position:absolute;left:4%;right:36%;top:9%;bottom:7%;display:flex;align-items:center;justify-content:center;z-index:1}
@@ -122,13 +122,22 @@
 .rm-page .rm-fan img:nth-child(1){transform:rotate(-13deg)}
 .rm-page .rm-fan img:nth-child(2){position:relative;z-index:1;height:100%;border-color:#d4a820}
 .rm-page .rm-fan img:nth-child(3){transform:rotate(13deg)}
-.rm-page .rm-cans{position:absolute;right:6%;bottom:12%;display:flex;align-items:flex-end;gap:4px;z-index:3}
-.rm-page .rm-can{position:relative;width:16px;height:32px;border-radius:4px 4px 3px 3px;display:flex;align-items:center;justify-content:center;
-  color:#fff;background:linear-gradient(90deg,#1d4ed8,#3b82f6 45%,#93c5fd 55%,#2563eb);
-  box-shadow:0 6px 12px rgba(0,0,0,.6),0 0 14px rgba(59,130,246,.35)}
-.rm-page .rm-can::before{content:"";position:absolute;top:-3px;left:3px;right:3px;height:4px;border-radius:3px 3px 0 0;background:#c9d3e0}
-.rm-page .rm-can:nth-child(2){height:38px}
-.rm-page .rm-can svg{width:11px;height:11px}
+.rm-page .rm-art--moves-shop .rm-fan{left:2%;right:33%}
+.rm-page .rm-art--moves-shop .rm-fan img{height:80%;margin:0 -14px}
+.rm-page .rm-art--moves-shop .rm-fan img:nth-child(2){height:88%}
+.rm-page .rm-art > img.rm-can{inset:auto;right:6%;top:14%;width:auto;height:74%;aspect-ratio:320/610;z-index:3;
+  border-radius:4px;border:1px solid #3b82f6;transform:rotate(6deg);
+  box-shadow:0 8px 18px rgba(0,0,0,.7),0 0 18px rgba(59,130,246,.4)}
+
+/* The new Shop: painted products standing in a row like a shelf. */
+.rm-page .rm-art--shop-shelf{background:radial-gradient(ellipse at 50% 115%,rgba(59,130,246,.22),transparent 60%),
+  linear-gradient(180deg,#0f0f12 72%,#17171b 72%,#0c0c0e)}
+.rm-page .rm-shelf{position:absolute;left:4%;right:4%;top:12%;bottom:20%;display:flex;align-items:flex-end;justify-content:center;z-index:1}
+.rm-page .rm-shelf img{height:72%;aspect-ratio:1;object-fit:cover;border-radius:3px;border:1px solid #2a2a30;margin:0 -8px;
+  box-shadow:0 6px 14px rgba(0,0,0,.7)}
+.rm-page .rm-shelf img:nth-child(1){transform:rotate(-6deg)}
+.rm-page .rm-shelf img:nth-child(2){height:92%;position:relative;z-index:1;border-color:#3b82f6}
+.rm-page .rm-shelf img:nth-child(3){transform:rotate(6deg)}
 
 /* Banner unlocks: small real banners dropped on a table at odd angles. */
 .rm-page .rm-art--banner-pile{background:radial-gradient(ellipse at 50% 120%,rgba(212,168,32,.14),transparent 60%),#0e0e11}

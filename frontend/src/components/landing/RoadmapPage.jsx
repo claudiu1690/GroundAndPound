@@ -38,13 +38,10 @@ function RoadmapArt({ art }) {
           {art.cards.map((src) => <img key={src} src={src} alt="" loading="lazy" />)}
         </div>
       )}
-      {art.cans > 0 && (
-        <div className="rm-cans">
-          {Array.from({ length: art.cans }, (_, i) => (
-            <span key={i} className="rm-can">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg>
-            </span>
-          ))}
+      {art.can && <img className="rm-can" src={art.can} alt="" loading="lazy" />}
+      {art.shelf && (
+        <div className="rm-shelf">
+          {art.shelf.map((src) => <img key={src} src={src} alt="" loading="lazy" />)}
         </div>
       )}
       {art.banners && (
