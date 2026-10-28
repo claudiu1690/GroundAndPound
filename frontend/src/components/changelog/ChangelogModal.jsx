@@ -9,12 +9,13 @@ import { CHANGELOG_ENTRIES } from "./changelogContent";
  * Props:
  *   open    — boolean
  *   onClose — () => void
+ *   onOpenRoadmap — optional () => void; shows a "See the roadmap" button in the header
  *
  * No fetch, no backend call — content comes straight from changelogContent.js.
  * Skeleton (escape-to-close, backdrop-click close, close button) mirrors
  * GazetteModal. No user-trapping.
  */
-function ChangelogModalImpl({ open, onClose }) {
+function ChangelogModalImpl({ open, onClose, onOpenRoadmap }) {
   // Escape key to close
   useEffect(() => {
     if (!open) return undefined;
@@ -69,6 +70,11 @@ function ChangelogModalImpl({ open, onClose }) {
 
         <div className="cl-head">
           <h2 className="cl-title">{t("changelog.title")}</h2>
+          {onOpenRoadmap && (
+            <button type="button" className="cl-roadmap-btn" onClick={onOpenRoadmap}>
+              {t("changelog.roadmapCta")}
+            </button>
+          )}
         </div>
 
         {/* ── LATEST ENTRIES (expanded, down to the latest major) ── */}

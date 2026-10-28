@@ -14,6 +14,7 @@ const {
     TWIST_METHOD_LABELS,
     NEXT_SEASON_TEASE,
     SEASON_LENGTH_DAYS,
+    SEASON_GAP_DAYS,
 } = require("../consts/pvpConfig");
 
 // Twists eligible for the deterministic N+1 rotation (all of them, including iron_circuit).
@@ -75,6 +76,17 @@ function pickTwistForSeason(seasonNumber) {
 
 function addDays(date, days) {
     return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * When the season after `endedSeason` opens: its endDate plus the off-season
+ * (SEASON_GAP_DAYS). THE single source for that date. finalizeSeason seeds N+1 with it
+ * and teaseSeason advertises it, so the countdown and the real opening always agree.
+ * @param {{endDate: Date|string}} endedSeason
+ * @returns {Date} an Invalid Date when endDate is unparseable (callers check)
+ */
+function nextSeasonStart(endedSeason) {
+    return addDays(new Date(endedSeason.endDate), SEASON_GAP_DAYS);
 }
 
 /** Is this an Open (cross-weight-class) season? */
@@ -183,8 +195,9 @@ async function collapseUpcomingPerWcCycle(doc) {
  * one. Returns null when the switch is off or there is no anchor season to derive from.
  * The `_id` is a sentinel string — it can never collide with an ObjectId.
  *
- * Nothing here is hand-maintained. The advertised start IS the anchor's endDate, which
- * is exactly what pvpRewardService.finalizeSeason seeds season N+1 with, and the twist
+ * Nothing here is hand-maintained. The advertised start IS nextSeasonStart(anchor) (its
+ * endDate plus the off-season), which is exactly what pvpRewardService.finalizeSeason
+ * seeds season N+1 with, and the twist
  * comes from the SAME pickTwistForSeason(N+1) call finalizeSeason makes — so the
  * countdown physically cannot disagree with the rollover it is counting down to.
  * NEXT_SEASON_TEASE is now only the on/off switch.
@@ -199,7 +212,7 @@ function teaseSeason(anchorSeason) {
     if (!NEXT_SEASON_TEASE || !NEXT_SEASON_TEASE.enabled) return null;
     if (!anchorSeason) return null;
 
-    const start = new Date(anchorSeason.endDate);
+    const start = nextSeasonStart(anchorSeason);
     if (Number.isNaN(start.getTime())) {
         console.error("[pvpSeasonService] anchor season endDate is unparseable — tease suppressed.");
         return null;
@@ -232,9 +245,9 @@ function teaseSeason(anchorSeason) {
  * getPublicSeason resolves active-before-upcoming, so while a season is live the one
  * after it is invisible to the landing page — exactly the window where a "next season
  * starts in N days" tease is worth the most, hence this second read. In practice (a) is
- * almost always empty mid-season: finalizeSeason seeds N+1 with startDate = the ending
- * season's endDate and the same sweep immediately activates it, so no upcoming doc
- * survives. That is why (b) exists.
+ * almost always empty mid-season: finalizeSeason seeds N+1 only when N ends, and
+ * getPublicSeason then serves that upcoming doc as the head (no season is active during
+ * the off-season), so mid-season there is nothing to find here. That is why (b) exists.
  *
  * Cheap + .lean() — this is polled anonymously by every landing visitor.
  *
@@ -427,6 +440,7 @@ module.exports = {
     seedOpenSeason,
     seedPerWcCycle,
     runSeasonTransitionSweep,
+    nextSeasonStart,
     pickTwistForSeason,
     seasonNameFor,
     addDays,

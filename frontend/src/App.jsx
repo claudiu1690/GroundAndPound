@@ -48,6 +48,7 @@ import { LegalModals } from "./components/legal/LegalModals";
 import { openLegalFromUrl } from "./lib/legalDeepLink";
 import { ReportBugModal } from "./components/shared/ReportBugModal";
 import { ChangelogModal } from "./components/changelog/ChangelogModal";
+import { RoadmapOverlay, urlHasRoadmap } from "./components/landing/RoadmapOverlay";
 import { CHANGELOG_ENTRIES, CURRENT_VERSION } from "./components/changelog/changelogContent";
 import { tutorialBus } from "./utils/tutorialBus";
 import { TITLE_WINS, TOP_TIER, isTitleContender, isTopFiveDisplayRank } from "./constants/gameConstants";
@@ -562,6 +563,9 @@ function App() {
   // "What's New" changelog — auto-opens once for returning players on a major
   // release they haven't seen yet (gated on fighter load, see effect below).
   const [changelogOpen, setChangelogOpen] = useState(false);
+  // Roadmap page over the game. Starts open when a signed-in player follows a
+  // shared `/?page=roadmap` link.
+  const [roadmapOpen, setRoadmapOpen] = useState(urlHasRoadmap);
   const [changelogUnseen, setChangelogUnseen] = useState(false);
   const changelogCheckedRef = useRef(false);
   /** Bumps after train / membership pay so gym quest panel refetches without a full page reload. */
@@ -1528,7 +1532,10 @@ function App() {
       <ChangelogModal
         open={changelogOpen}
         onClose={() => setChangelogOpen(false)}
+        onOpenRoadmap={() => { setChangelogOpen(false); setRoadmapOpen(true); }}
       />
+
+      {roadmapOpen && <RoadmapOverlay onClose={() => setRoadmapOpen(false)} />}
 
       {/* ── ONBOARDING TUTORIAL ── */}
       {fighter?._id && fighter.tutorial && !fighter.tutorial.completed && (
@@ -2096,6 +2103,10 @@ function App() {
                   {t("changelog.whatsNewButton")} v{CURRENT_VERSION}
                   {changelogUnseen && <span className="nav-dot nav-dot--pulse" aria-label={t("changelog.unseenLabel")} />}
                 </button>
+                <span>·</span>
+                <button type="button" className="bb-btn-roadmap" onClick={() => { setMobileDrawerOpen(false); setRoadmapOpen(true); }}>
+                  {t("changelog.roadmapButton")}
+                </button>
               </div>
             </div>
           </aside>
@@ -2167,6 +2178,9 @@ function App() {
             >
               {t("changelog.whatsNewButton")} v{CURRENT_VERSION}
               {changelogUnseen && <span className="nav-dot nav-dot--pulse" aria-label={t("changelog.unseenLabel")} />}
+            </button>
+            <button type="button" className="bb-btn bb-btn-roadmap" onClick={() => setRoadmapOpen(true)}>
+              {t("changelog.roadmapButton")}
             </button>
             <button type="button" className="bb-btn" onClick={handleLogout} title={t("layout.bottombar.signOutTitle")}>{t("layout.bottombar.signOut")}</button>
           </div>

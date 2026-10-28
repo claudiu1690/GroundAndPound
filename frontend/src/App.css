@@ -14976,6 +14976,13 @@ code {
   position: relative;
 }
 
+/* Roadmap: the same ice blue as the landing hero's Roadmap button. */
+.bottombar .bb-btn-roadmap,
+.m-drawer-legal .bb-btn-roadmap {
+  color: #7dd3fc;
+}
+.bottombar .bb-btn-roadmap:hover { color: #dff4ff; }
+
 /* The drawer-legal buttons have zero padding, so without clearance the unseen
    dot (absolute, right:6px) lands on the label's last glyphs. */
 .m-drawer-legal .bb-btn-whatsnew {

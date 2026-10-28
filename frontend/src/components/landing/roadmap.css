@@ -1,0 +1,190 @@
+/* Roadmap page (/?page=roadmap). Rides on landing.css: the root is
+   `.landing-page.rm-page`, so the tokens, nav, pills and buttons are shared.
+   Seasons are the landmarks (big banners); everything else is a loose row. */
+
+.landing-page.rm-page{padding-top:64px}
+
+/* Signed-in players: the same page over the game. The game pins #root to the
+   viewport, so the overlay is its own scroll container. */
+.rm-overlay{position:fixed;inset:0;z-index:2000;overflow-y:auto;overscroll-behavior:contain;background:#0A0A0A}
+.rm-overlay .landing-page nav{z-index:2001}
+
+.rm-page .nav-logo{color:var(--tp);text-decoration:none}
+.rm-page .rm-nav-back{display:inline-flex}
+.rm-page .rm-hero{max-width:1100px;margin:0 auto;padding:64px 40px 10px}
+.rm-page .rm-h1{font-size:clamp(44px,7vw,80px);line-height:.92}
+.rm-page .rm-hero-pills{justify-content:flex-start;margin-top:22px}
+
+.rm-page .rm-block{max-width:1100px;margin:0 auto;padding:46px 40px 0}
+
+/* ── Season banner ── */
+.rm-page .rm-season{position:relative;display:flex;align-items:flex-end;min-height:260px;border-radius:6px;overflow:hidden;
+  margin-top:22px;box-shadow:0 24px 50px -24px rgba(0,0,0,.9)}
+.rm-page .rm-season > .rm-art{position:absolute;inset:0;aspect-ratio:auto}
+.rm-page .rm-season > .rm-art::after{background:linear-gradient(90deg,rgba(8,8,10,.92) 0%,rgba(8,8,10,.6) 45%,rgba(8,8,10,.15) 100%)}
+.rm-page .rm-season-body{position:relative;z-index:3;padding:30px 34px}
+.rm-page .rm-season-kicker{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:3px;
+  text-transform:uppercase;color:var(--ts);margin-bottom:8px}
+.rm-page .rm-season-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;text-transform:uppercase;line-height:.9;margin-bottom:14px}
+.rm-page .rm-season-num{display:block;font-size:clamp(46px,7vw,84px);color:#fff}
+.rm-page .rm-season-name{display:block;font-size:clamp(26px,3.6vw,40px);letter-spacing:1px}
+.rm-page .rm-season-points{list-style:none;display:flex;flex-wrap:wrap;gap:6px 22px;font-size:14px;color:#cfcfcf;max-width:720px}
+.rm-page .rm-season-points li{position:relative;padding-left:12px}
+.rm-page .rm-season-points li::before{content:"";position:absolute;left:0;top:.55em;width:5px;height:5px;transform:rotate(45deg);background:currentColor;opacity:.7}
+.rm-page .rm-season-pill{display:inline-block;margin-top:16px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:11px;
+  letter-spacing:2px;text-transform:uppercase;padding:6px 12px;border-radius:2px;border:1px solid currentColor}
+
+/* Each season has its own colour. */
+.rm-page .rm-season--s1{border-left:4px solid #9a9a9a}
+.rm-page .rm-season--s1 .rm-season-name,.rm-page .rm-season--s1 .rm-season-pill{color:#c9c9c9}
+.rm-page .rm-season--s1 .rm-art > img{filter:grayscale(1) brightness(.75)}
+.rm-page .rm-season--s2{border-left:4px solid var(--r)}
+.rm-page .rm-season--s2 .rm-season-name,.rm-page .rm-season--s2 .rm-season-pill,.rm-page .rm-season--s2 .rm-season-kicker{color:#ff4d63}
+.rm-page .rm-season--s2 .rm-art::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,transparent 30%,rgba(200,16,46,.45))}
+.rm-page .rm-season--next{border-left:4px solid #7dd3fc}
+.rm-page .rm-season--next .rm-season-name,.rm-page .rm-season--next .rm-season-pill,.rm-page .rm-season--next .rm-season-kicker{color:#9ddcff}
+
+/* ── Loose rows: art + text, no box ── */
+.rm-page .rm-row{display:flex;gap:18px;align-items:flex-start;padding:16px 0;border-bottom:1px solid #1c1c1f}
+.rm-page .rm-row:last-child{border-bottom:none}
+.rm-page .rm-row > .rm-art{flex:0 0 150px;height:96px;border-radius:4px;aspect-ratio:auto}
+.rm-page .rm-row-body{min-width:0}
+.rm-page .rm-kicker{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--tm);margin-bottom:4px}
+.rm-page .rm-kicker b{color:var(--g);font-weight:800;font-size:12px}
+.rm-page .rm-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;text-transform:uppercase;
+  line-height:1.05;margin-bottom:6px}
+.rm-page .rm-points{list-style:none;font-size:13.5px;color:#9a9a9a;line-height:1.5}
+.rm-page .rm-points li{position:relative;padding-left:13px;margin-bottom:3px}
+.rm-page .rm-points li::before{content:"";position:absolute;left:0;top:.6em;width:5px;height:5px;background:var(--g);
+  opacity:.7;transform:rotate(45deg)}
+
+/* Releases hang off a gold rail, one dot per release. */
+.rm-page .rm-releases{position:relative;margin-left:10px;padding-left:28px}
+.rm-page .rm-releases::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:2px}
+.rm-page .rm-releases::before{background:linear-gradient(to bottom,var(--g),rgba(212,168,32,.25))}
+.rm-page .rm-releases .rm-row{position:relative}
+.rm-page .rm-releases .rm-row::before{content:"";position:absolute;top:22px;width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 4px var(--bg)}
+.rm-page .rm-releases .rm-row::before{left:-33px;background:var(--g)}
+
+/* Later: undated work on a dashed rail with hollow dots (not built yet). */
+.rm-page .rm-col-head{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;
+  margin:0 0 6px;display:flex;align-items:baseline;gap:12px;color:var(--ts)}
+.rm-page .rm-col-head i{font-style:normal;font-size:10px;letter-spacing:2px;color:var(--tm);font-weight:700}
+.rm-page .rm-later{position:relative;margin-left:10px;padding-left:28px}
+.rm-page .rm-later::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:2px;
+  background:repeating-linear-gradient(to bottom,#666 0 6px,transparent 6px 12px)}
+.rm-page .rm-later .rm-row{position:relative;opacity:.88}
+.rm-page .rm-later .rm-row::before{content:"";position:absolute;top:22px;left:-33px;width:12px;height:12px;border-radius:50%;
+  background:var(--bg);border:2px solid #777;box-shadow:0 0 0 4px var(--bg)}
+.rm-page .rm-later .rm-row > .rm-art{filter:saturate(.55) brightness(.85)}
+.rm-page .rm-later .rm-points li::before{background:#777}
+
+/* ── Art: existing game art plus a few CSS compositions ── */
+.rm-page .rm-art{position:relative;overflow:hidden;background:#101012}
+.rm-page .rm-art > img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 30%}
+.rm-page .rm-art::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:linear-gradient(to top,rgba(10,10,10,.45),transparent 55%)}
+
+/* A real screen, cropped and tilted like a photo dropped on the table. */
+.rm-page .rm-art--screen{background:radial-gradient(ellipse at 30% 120%,rgba(212,168,32,.18),transparent 60%),#0e0e11}
+.rm-page .rm-art--screen > img{inset:auto;left:9%;top:24%;width:150%;height:auto;object-fit:fill;
+  border:1px solid rgba(255,255,255,.18);border-radius:4px;transform:rotate(-7deg);transform-origin:0 0;
+  box-shadow:0 12px 26px rgba(0,0,0,.75)}
+
+.rm-page .rm-art--brand{display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(115deg,transparent 0 56%,rgba(200,16,46,.9) 56.3% 66%,transparent 66.3%),
+    linear-gradient(115deg,#1d1416,#0d0d0f 70%)}
+.rm-page .rm-art-mark{position:relative;z-index:1;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:40px;color:#fff;letter-spacing:1px}
+.rm-page .rm-art-mark i{font-style:normal;color:var(--r)}
+
+/* 24 moves and the Shop: three move cards fanned on the left, Energy Drink cans on the right. */
+.rm-page .rm-art--moves-shop{background:radial-gradient(ellipse at 35% 110%,rgba(212,168,32,.22),transparent 60%),
+  radial-gradient(ellipse at 85% 100%,rgba(59,130,246,.25),transparent 55%),#0f0f12}
+.rm-page .rm-fan{position:absolute;left:4%;right:36%;top:9%;bottom:7%;display:flex;align-items:center;justify-content:center;z-index:1}
+.rm-page .rm-fan img{height:92%;aspect-ratio:2/3;object-fit:cover;border-radius:3px;border:1px solid #3b82f6;
+  box-shadow:0 8px 18px rgba(0,0,0,.7);margin:0 -12px;transform-origin:50% 110%}
+.rm-page .rm-fan img:nth-child(1){transform:rotate(-13deg)}
+.rm-page .rm-fan img:nth-child(2){position:relative;z-index:1;height:100%;border-color:#d4a820}
+.rm-page .rm-fan img:nth-child(3){transform:rotate(13deg)}
+.rm-page .rm-cans{position:absolute;right:6%;bottom:12%;display:flex;align-items:flex-end;gap:4px;z-index:3}
+.rm-page .rm-can{position:relative;width:16px;height:32px;border-radius:4px 4px 3px 3px;display:flex;align-items:center;justify-content:center;
+  color:#fff;background:linear-gradient(90deg,#1d4ed8,#3b82f6 45%,#93c5fd 55%,#2563eb);
+  box-shadow:0 6px 12px rgba(0,0,0,.6),0 0 14px rgba(59,130,246,.35)}
+.rm-page .rm-can::before{content:"";position:absolute;top:-3px;left:3px;right:3px;height:4px;border-radius:3px 3px 0 0;background:#c9d3e0}
+.rm-page .rm-can:nth-child(2){height:38px}
+.rm-page .rm-can svg{width:11px;height:11px}
+
+/* Banner unlocks: small real banners dropped on a table at odd angles. */
+.rm-page .rm-art--banner-pile{background:radial-gradient(ellipse at 50% 120%,rgba(212,168,32,.14),transparent 60%),#0e0e11}
+.rm-page .rm-pile{position:absolute;inset:0;z-index:1}
+.rm-page .rm-mini-banner{position:absolute;width:52%;height:34%;border-radius:3px;border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 8px 16px rgba(0,0,0,.7);overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:0 9%;
+  font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;line-height:1;color:#fff}
+.rm-page .rm-mini-banner small{font-size:7px;font-weight:700;letter-spacing:1.2px;opacity:.75}
+.rm-page .rm-mini-banner b{font-size:12px;font-weight:900;letter-spacing:.5px;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.rm-page .rm-mini-banner:nth-child(1){left:2%;top:9%;transform:rotate(-7deg)}
+.rm-page .rm-mini-banner:nth-child(2){right:2%;top:5%;transform:rotate(6deg)}
+.rm-page .rm-mini-banner:nth-child(3){left:5%;bottom:7%;transform:rotate(5deg)}
+.rm-page .rm-mini-banner:nth-child(4){right:3%;bottom:10%;transform:rotate(-8deg)}
+
+.rm-page .rm-art--banner-red{
+  background:linear-gradient(115deg,transparent 0 58%,rgba(200,16,46,.92) 58.3% 66%,transparent 66.3%),
+    linear-gradient(115deg,transparent 0 67%,rgba(200,16,46,.3) 67.3% 71%,transparent 71.3%),
+    linear-gradient(115deg,#1a1416,#141416 65%)}
+
+/* Winter: the arena graded cold under a still snowfall (no animation, nothing to reduce).
+   Flakes: layers with coprime tile sizes and offsets, so the dots never line up into a grid. */
+.rm-page .rm-art--season-next > img{filter:saturate(.35) brightness(.8) hue-rotate(175deg)}
+.rm-page .rm-art--season-next::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(circle,rgba(255,255,255,.9) 0 1.6px,transparent 2.4px) 7px 13px/71px 83px,
+    radial-gradient(circle,rgba(255,255,255,.7) 0 1.1px,transparent 1.8px) 31px 5px/43px 59px,
+    radial-gradient(circle,rgba(255,255,255,.5) 0 .8px,transparent 1.4px) 19px 37px/29px 41px,
+    radial-gradient(circle,rgba(255,255,255,.35) 0 2.2px,transparent 3.4px) 53px 61px/97px 89px,
+    linear-gradient(to bottom,rgba(156,207,232,.28),rgba(11,18,32,.15) 60%,rgba(207,239,255,.3))}
+
+
+
+
+
+/* An unknown opponent: a real portrait pushed into shadow, so a face is there but nobody you know. */
+.rm-page .rm-art--silhouette{background:radial-gradient(ellipse at 50% 30%,rgba(200,16,46,.18),transparent 60%),#0b0b0d}
+.rm-page .rm-art--silhouette > img{object-fit:contain;filter:grayscale(1) brightness(.42) contrast(1.5) blur(1.5px)}
+.rm-page .rm-art-q{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:3;
+  font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:40px;color:rgba(255,255,255,.75)}
+
+.rm-page .rm-art--wip > img{filter:grayscale(.6) brightness(.7)}
+.rm-page .rm-art-stamp{position:absolute;top:8px;right:8px;z-index:3;font-family:'Barlow Condensed',sans-serif;font-weight:800;
+  font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#ddd;border:1px solid rgba(255,255,255,.35);padding:3px 7px;
+  background:rgba(0,0,0,.55);border-radius:2px}
+
+.rm-page .rm-art--holiday-card{display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle,rgba(255,255,255,.6) 0 1px,transparent 1.6px) 11px 7px/41px 37px,
+    radial-gradient(circle,rgba(255,255,255,.35) 0 .8px,transparent 1.4px) 27px 19px/29px 31px,
+    radial-gradient(ellipse at 50% 0,rgba(212,168,32,.25),transparent 60%),#121014}
+.rm-page .rm-art-card{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 12px;
+  border:1px solid rgba(212,168,32,.6);border-radius:3px;background:rgba(10,10,10,.7);
+  font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.rm-page .rm-art-card b{font-size:14px;font-weight:900;color:var(--g);letter-spacing:1px}
+.rm-page .rm-art-card i{font-style:normal;font-size:8px;letter-spacing:2px;color:#bbb}
+
+.rm-page .rm-end{max-width:1100px;margin:0 auto;padding:46px 40px 90px;display:flex;align-items:center;
+  justify-content:space-between;gap:18px;flex-wrap:wrap}
+.rm-page .rm-note{font-size:12px;color:var(--tm)}
+
+@media (max-width: 860px) {
+  .rm-page .rm-hero{padding:44px 20px 6px}
+  .rm-page .rm-block{padding:36px 20px 0}
+  .rm-page .rm-end{padding:34px 20px 70px}
+  .rm-page .rm-season{min-height:230px}
+  .rm-page .rm-season-body{padding:22px 20px}
+  .rm-page .rm-releases,
+  .rm-page .rm-later{margin-left:4px;padding-left:22px}
+  .rm-page .rm-later .rm-row::before{left:-27px}
+  .rm-page .rm-releases .rm-row::before{left:-27px}
+}
+@media (max-width: 480px) {
+  .rm-page .rm-row{flex-direction:column;gap:10px}
+  .rm-page .rm-row > .rm-art{flex:none;width:100%;height:auto;aspect-ratio:16/9}
+}

@@ -61,7 +61,9 @@ function buildWhatsNewLines(season) {
  *   lastSeasonRecord — the ended-season block (assumed non-null while mounted)
  *   season           — the new current season, or null / non-"active" /
  *                       seasonNumber <= lastSeasonRecord.seasonNumber when
- *                       there is no next season yet
+ *                       there is no next season yet. An "upcoming" next season
+ *                       (the off-season between seasons) renders the band as
+ *                       "Opens <date>" with a Close button instead of "Now live"
  *   onEnterLadder, onClose — required callbacks. This
  *   component never calls the API itself — PvpHub owns the acknowledge POST.
  *
@@ -77,11 +79,17 @@ export function SeasonPosterModal({ lastSeasonRecord, season, onEnterLadder, onC
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }, []);
 
-  const hasNextSeason = !!season
-    && season.status === "active"
+  const isNextSeason = !!season
     && (lastSeasonRecord?.seasonNumber == null || season.seasonNumber > lastSeasonRecord.seasonNumber);
+  const hasNextSeason = isNextSeason && season.status === "active";
+  // Off-season: the next season is queued but not open yet (SEASON_GAP_DAYS).
+  const opensLater = isNextSeason && season.status === "upcoming";
+  const opensLabel = opensLater ? formatEndDate(season.startDate) : "";
 
-  const lines = useMemo(() => (hasNextSeason ? buildWhatsNewLines(season) : []), [hasNextSeason, season]);
+  const lines = useMemo(
+    () => (hasNextSeason || opensLater ? buildWhatsNewLines(season) : []),
+    [hasNextSeason, opensLater, season]
+  );
 
   const rank = lastSeasonRecord?.rank ?? null;
   const poolSize = lastSeasonRecord?.poolSize;
@@ -353,14 +361,21 @@ export function SeasonPosterModal({ lastSeasonRecord, season, onEnterLadder, onC
           )}
 
           <div className="sp-band">
-            {hasNextSeason ? (
+            {hasNextSeason || opensLater ? (
               <>
-                <p className="sp-eyebrow">{t("pvp.seasonPoster.nextEyebrow", { weeks: weeksLeft })}</p>
+                <p className="sp-eyebrow">
+                  {opensLater
+                    ? t("pvp.seasonPoster.nextEyebrowSoon", { date: opensLabel })
+                    : t("pvp.seasonPoster.nextEyebrow", { weeks: weeksLeft })}
+                </p>
                 <p className="sp-kicker">{t("pvp.seasonPoster.kicker", { n: season.seasonNumber })}</p>
                 <h2 className="sp-title">{season.name}</h2>
-                <span className="sp-stamp sp-stamp-live" aria-hidden="true">{t("pvp.seasonPoster.stampLive")}</span>
+                <span className="sp-stamp sp-stamp-live" aria-hidden="true">
+                  {opensLater ? t("pvp.seasonPoster.stampSoon", { date: opensLabel }) : t("pvp.seasonPoster.stampLive")}
+                </span>
                 <p className="sp-s2">
-                  {t("pvp.seasonPoster.nextBody", {
+                  {t(opensLater ? "pvp.seasonPoster.nextBodySoon" : "pvp.seasonPoster.nextBody", {
+                    date: opensLabel,
                     n: season.seasonNumber,
                     name: season.name,
                     division: divisionLabel(newDivision ?? "prospect"),

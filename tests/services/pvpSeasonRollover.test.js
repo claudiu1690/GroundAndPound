@@ -283,8 +283,13 @@ test("finalize Open S1: creates exactly ONE next season, and it is Open", async 
     assert.equal(next.status, "upcoming");
     assert.equal(
         new Date(next.startDate).getTime(),
-        s1.endDate.getTime(),
-        "season N+1 starts exactly when N ended — the public tease derives the same value"
+        s1.endDate.getTime() + pvpConfig.SEASON_GAP_DAYS * 24 * 60 * 60 * 1000,
+        "season N+1 opens one off-season after N ended; the public tease derives the same value"
+    );
+    assert.equal(
+        new Date(next.startDate).getTime(),
+        pvpSeasonService.nextSeasonStart(s1).getTime(),
+        "the rollover and the tease share nextSeasonStart"
     );
     assert.equal(next.twist, pvpSeasonService.pickTwistForSeason(2), "the SAME deterministic pick the tease makes");
     assert.equal(next.name, pvpSeasonService.seasonNameFor(pvpSeasonService.pickTwistForSeason(2)));
@@ -385,7 +390,7 @@ test("OPEN_SPLIT_AT_SEASON = 2: the same Open S1 fans out into 4 per-WC seasons"
         assert.equal(created.filter((s) => s.weightClass === OPEN_WEIGHT_CLASS).length, 0, "no Open season when splitting");
         for (const s of created) {
             assert.equal(s.config.crossWeightClass, false);
-            assert.equal(new Date(s.startDate).getTime(), s1.endDate.getTime());
+            assert.equal(new Date(s.startDate).getTime(), s1.endDate.getTime() + pvpConfig.SEASON_GAP_DAYS * 24 * 60 * 60 * 1000);
         }
 
         for (const old of before) {

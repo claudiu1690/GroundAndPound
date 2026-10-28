@@ -1855,6 +1855,9 @@
       "beltHolder": "You finished the season as belt holder. Hall of Fame entry earned.",
       "nextEyebrow": "Next event · {weeks} weeks · Starts now",
       "stampLive": "Now live",
+      "nextEyebrowSoon": "Next event · Opens {date}",
+      "stampSoon": "Opens {date}",
+      "nextBodySoon": "Season {n}, {name}, opens on {date} with a fresh ladder for everyone. You will start as {division} with {dp} DP. Your badges and career record carry over.",
       "nextBody": "Season {n}, {name}, is live now with a fresh ladder for everyone. You start as {division} with {dp} DP. Your badges and career record carry over.",
       "noNextSeason": "The next season has not been announced yet. Check back soon.",
       "onTheCard": "On the card",
@@ -2572,6 +2575,8 @@
   },
   "changelog": {
     "whatsNewButton": "What's New",
+    "roadmapButton": "Roadmap",
+    "roadmapCta": "See the roadmap",
     "title": "What's New",
     "unseenLabel": "New updates available",
     "closeAriaLabel": "Close",

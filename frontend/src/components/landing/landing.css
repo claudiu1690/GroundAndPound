@@ -445,6 +445,19 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
   text-decoration: none; display: inline-block;
 }
 
+/* Roadmap: ice blue, the roadmap page's Season 3 colour, so it reads as its own
+   destination next to the gold career button and the white What's New outline. */
+.landing-page .btn-roadmap {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 12px;
+  letter-spacing: 2.5px; text-transform: uppercase; text-decoration: none; cursor: pointer;
+  color: #dff4ff; background: rgba(125, 211, 252, 0.16); border: 1px solid #7dd3fc;
+  padding: 13px 26px; border-radius: 2px; box-shadow: 0 0 18px rgba(125, 211, 252, 0.28);
+  transition: background .2s, box-shadow .2s;
+}
+.landing-page .btn-roadmap:hover { background: rgba(125, 211, 252, 0.28); box-shadow: 0 0 26px rgba(125, 211, 252, 0.45); }
+.landing-page .btn-roadmap-dot { width: 7px; height: 7px; border-radius: 50%; background: #7dd3fc; box-shadow: 0 0 8px #7dd3fc; }
+
 /* ── Hero entry: the walkout. Slam in through a red flash, then shake. ── */
 @keyframes gnpSlamIn {
   0%   { opacity: 0; transform: scale(2.4); filter: blur(14px); }
@@ -597,4 +610,21 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
   .landing-page .sdiv::after,
   .landing-page .s2-dot { animation: none !important; }
   .landing-page .hero--season::after { display: none; }
+}
+
+/* ── SOCIAL ICONS (nav) ── brand tint on hover; Discord keeps the base rule. */
+.landing-page .nav-link--instagram:hover{color:#E1306C}
+.landing-page .nav-link--facebook:hover{color:#1877F2}
+.landing-page .nav-link--tiktok:hover{color:#25F4EE}
+.landing-page .foot-links{flex-wrap:wrap}
+
+/* Phones: four icons plus the logo and Play Free do not fit; Discord stays,
+   the rest live in the footer. */
+@media (max-width: 480px) {
+  .landing-page .nav-link--instagram,
+  .landing-page .nav-link--facebook,
+  .landing-page .nav-link--tiktok{display:none}
+}
+@media (max-width: 860px) {
+  .landing-page .foot-links{justify-content:center}
 }
