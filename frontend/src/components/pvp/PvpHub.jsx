@@ -205,8 +205,23 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
 
   // Pre-season countdown — shown when the resolved season hasn't started yet.
   // Locked gate above has top priority: a locked player never reaches this branch.
+  // During the off-season the season that just ended has already paid out, so its
+  // results poster shows over the countdown (its band reads "Opens <date>").
   if (season?.status === "upcoming") {
-    return <PreSeasonCountdown season={season} fighter={fighter} onElapsed={silentRefetch} />;
+    return (
+      <>
+        {showSeasonEnd && lastSeasonRecord && (
+          <SeasonPosterModal
+            key={lastSeasonRecord.seasonId}
+            lastSeasonRecord={lastSeasonRecord}
+            season={season}
+            onEnterLadder={handleSeasonEndClose}
+            onClose={handleSeasonEndClose}
+          />
+        )}
+        <PreSeasonCountdown season={season} fighter={fighter} onElapsed={silentRefetch} />
+      </>
+    );
   }
 
   return (

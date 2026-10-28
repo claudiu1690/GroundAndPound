@@ -233,7 +233,7 @@ async function finalizeSeason(season) {
         try {
             const nextSeasons = await pvpSeasonService.seedPerWcCycle(
                 nextNumber,
-                season.endDate,
+                pvpSeasonService.nextSeasonStart(season),
                 "upcoming"
             );
             await softResetOpen(season, ladder, nextSeasons);
@@ -245,12 +245,14 @@ async function finalizeSeason(season) {
         // Seed N+1 BEFORE the soft reset (deliberate order): softReset looks up
         // {weightClass, seasonNumber: N+1} and only falls back to seeding it itself if
         // that misses, and that fallback used to create a config-less (half-Open) doc.
+        // N+1 opens after the off-season (SEASON_GAP_DAYS), not the instant N ends.
         try {
+            const nextStart = pvpSeasonService.nextSeasonStart(season);
             const nextTwist = pvpSeasonService.pickTwistForSeason(nextNumber);
             if (openNow) {
-                await pvpSeasonService.seedOpenSeason(nextNumber, nextTwist, season.endDate, "upcoming");
+                await pvpSeasonService.seedOpenSeason(nextNumber, nextTwist, nextStart, "upcoming");
             } else {
-                await pvpSeasonService.seedSeason(nextNumber, season.weightClass, nextTwist, season.endDate, "upcoming");
+                await pvpSeasonService.seedSeason(nextNumber, season.weightClass, nextTwist, nextStart, "upcoming");
             }
         } catch (err) {
             console.error(`[PVP finalize] seed N+1 failed for season ${season._id}:`, err.message);
@@ -292,7 +294,7 @@ async function softReset(season, ladder = null) {
             season.seasonNumber + 1,
             season.weightClass,
             pvpSeasonService.pickTwistForSeason(season.seasonNumber + 1),
-            season.endDate,
+            pvpSeasonService.nextSeasonStart(season),
             "upcoming",
             { crossWeightClass: pvpSeasonService.isCrossWeightClass(season) }
         );

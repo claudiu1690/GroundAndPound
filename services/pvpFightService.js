@@ -1275,7 +1275,10 @@ async function listFights(seasonId, fighterId, { page = 1, limit = 25 } = {}) {
  * ALSO write the active record and keep the two in sync.
  *
  *   - season active  → write record.defenseGameplan + fighter.pvpDefenseGameplan; scope "season".
- *   - no season / upcoming → write fighter.pvpDefenseGameplan only; scope "fighter".
+ *   - no season / upcoming → write fighter.pvpDefenseGameplan; scope "fighter". During the
+ *     off-season (SEASON_GAP_DAYS) returning players already HAVE an upcoming-season record
+ *     (finalizeSeason's soft reset creates it), and fights read the record, not the fighter
+ *     default, so that record is updated too or the choice would be ignored on opening day.
  */
 async function setDefenseGameplan(fighterId, gameplan) {
     // Strict validation — legacy "aggressive" is rejected on new writes.
@@ -1298,10 +1301,14 @@ async function setDefenseGameplan(fighterId, gameplan) {
         return { defenseGameplan: gameplan, scope: "season" };
     }
 
-    // No season, or pre-season (upcoming): persist on the fighter only. This seeds the
-    // next season's record when it is created.
+    // No season, or pre-season (upcoming): persist on the fighter, which seeds the next
+    // season's record when one is created later. A soft-reset record that already exists
+    // for the upcoming season gets the same choice (atomic; no-op when there is none).
     fighter.pvpDefenseGameplan = gameplan;
     await fighter.save();
+    if (season && season.status === "upcoming") {
+        await PVPRecord.updateOne({ playerId: fighterId, seasonId: season._id }, { $set: { defenseGameplan: gameplan } });
+    }
     return { defenseGameplan: gameplan, scope: "fighter" };
 }
 

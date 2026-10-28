@@ -923,7 +923,7 @@ export const LIBRARY_ARTICLES = [
         summary: "How PvP seasons run, what twists do, end-of-season rewards, and why the ladder is currently Open to every weight class.",
         tags: ["pvp", "season", "twist", "rewards", "soft reset", "open season", "cross weight class", "belt", "hall of fame"],
         body: [
-            "The Proving Ground runs in seasons of 70 days. Each season carries a twist, a rule that rewards a particular way of winning: Blood Sport pays +25% on KO and submission wins, Iron Fist +30% on KOs, Ground War +30% on submissions, The Marathon +20% on decisions, The Contenders switches on streak bonuses sooner, and Iron Circuit is the clean, no-twist baseline. Read the twist when a season opens and lean your gameplan into it.",
+            "The Proving Ground runs in seasons of 70 days, with a 5-day off-season between one season and the next. During the off-season the ladder is closed: your results and rewards from the season that ended are already paid, and the Proving Ground counts down to the next opening, where you can still set your defense gameplan. Each season carries a twist, a rule that rewards a particular way of winning: Blood Sport pays +25% on KO and submission wins, Iron Fist +30% on KOs, Ground War +30% on submissions, The Marathon +20% on decisions, The Contenders switches on streak bonuses sooner, and Iron Circuit is the clean, no-twist baseline. Read the twist when a season opens and lean your gameplan into it.",
             "When a season ends, everyone who fought at least once is paid by the division they finished in. The belt holder's reward replaces the Champion reward. It does not stack on top of it.",
             {
                 type: "table",
@@ -944,7 +944,7 @@ export const LIBRARY_ARTICLES = [
             "The first time you open the Proving Ground after a season you fought in has ended, a results poster takes over the screen. It stamps the old season CLOSED and shows the division you finished in, your final rank out of everyone on your ladder, your record, and every reward the season paid you, on tear-off stubs. Below that it announces the new season, the division and DP you restart from, and a short list of what changed. Close it, enter the ladder, or view the final ladder and it is marked seen: you get it once per season and never again. If you sat a season out you will not see it at all, because there is nothing to pay you.",
             "The four-ladder split is deferred, not cancelled. When there are enough fighters to fill four ladders the seasons will separate and each class will crown its own champion. One thing will not come back either way: the Open Champion badge is tied to the Season 1 belt alone and can never be earned again.",
         ],
-        keyTakeaway: "70-day seasons, each with a twist; rewards scale by final division and soft-reset you one tier for the next. The ladder is currently Open: every weight class on one ladder, one belt for everyone.",
+        keyTakeaway: "70-day seasons with a 5-day off-season between them, each with a twist; rewards scale by final division and soft-reset you one tier for the next. The ladder is currently Open: every weight class on one ladder, one belt for everyone.",
     },
 ];
 

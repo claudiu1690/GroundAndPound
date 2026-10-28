@@ -85,11 +85,11 @@ const TWIST_METHOD_LABELS = {
  * value (start date, end date, season number, twist, name, weight-class format) is
  * DERIVED at read time from the live season by pvpSeasonService.teaseSeason(anchor).
  *
- * Why derived and not configured: finalizeSeason seeds season N+1 with
- * startDate = the ending season's endDate and twist = pickTwistForSeason(N+1), then the
- * SAME transition sweep immediately flips it to active — so a real "upcoming" doc never
- * survives long enough to tease, and a hand-maintained date/twist here could silently
- * disagree with the rollover that actually happens. teaseSeason calls the very same
+ * Why derived and not configured: season N+1 does not exist while N is live.
+ * finalizeSeason seeds it only when N ends, with startDate = nextSeasonStart(N) (N's
+ * endDate plus SEASON_GAP_DAYS) and twist = pickTwistForSeason(N+1). Mid-season there is
+ * no upcoming doc to tease, and a hand-maintained date/twist here could silently disagree
+ * with the rollover that actually happens. teaseSeason calls the very same
  * helpers finalizeSeason does, so the countdown and reality cannot drift apart.
  *
  * Display-only: never persisted, never matched on, never scored. Used only when no real
@@ -168,6 +168,16 @@ const PLACEMENT_FIGHTS = 3;
 const PVP_UNLOCK_WINS = 3;
 
 const SEASON_LENGTH_DAYS = 70;
+/**
+ * Off-season between two seasons, in days. When season N ends, season N+1 is seeded
+ * `upcoming` to open this many days later; in between the Proving Ground shows the
+ * pre-season countdown and the ended season's results poster. Applied in ONE place,
+ * pvpSeasonService.nextSeasonStart, which both the rollover (finalizeSeason) and the
+ * public tease use, so the advertised date cannot drift from the real one. 0 = the old
+ * back-to-back behaviour. Owner decision 2026-10-28: 5 days (Season 2 ends 2026-11-29,
+ * Season 3 opens 2026-12-04).
+ */
+const SEASON_GAP_DAYS = 5;
 /**
  * THE format switch for what an ending Open season rolls into.
  *
@@ -265,6 +275,7 @@ module.exports = {
     REWARDS,
     SOFT_RESET,
     SEASON_LENGTH_DAYS,
+    SEASON_GAP_DAYS,
     OPEN_SPLIT_AT_SEASON,
     DECAY_AFTER_DAYS,
     DECAY_AMOUNT,
