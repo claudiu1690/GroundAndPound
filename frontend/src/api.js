@@ -166,6 +166,19 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ itemId }),
     }),
+  /** Idempotent. Marks the full premium panel as shown. Resolves `{ acknowledged }`. */
+  markPremiumPanelSeen: (id) =>
+    request(`/fighters/${id}/shop/premium-seen`, { method: "POST" }),
+  /**
+   * Fire-and-forget analytics beacon (premium_panel_expanded, energy_offer_shown,
+   * energy_offer_choice). The server answers 204 with an empty body; request() already
+   * tolerates that (res.json() failure falls back to {}). Callers must `.catch(() => {})`.
+   */
+  trackClientEvent: (id, type, meta) =>
+    request(`/fighters/${id}/analytics/events`, {
+      method: "POST",
+      body: JSON.stringify({ type, meta }),
+    }),
   selectCampBuff: (fightId, fighterId, buffId) =>
     request(`/fights/camp/${fightId}/buff`, {
       method: "PUT",

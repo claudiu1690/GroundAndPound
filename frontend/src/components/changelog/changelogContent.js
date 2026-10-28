@@ -25,6 +25,8 @@ export const CHANGELOG_ENTRIES = [
     highlights: [
       "There is a Roadmap now. Open it from the Roadmap button at the bottom of the screen, from the top of What's New, or from the front page. It shows when Season 3 opens, then the road so far season by season: every release since the doors opened, with its date and a piece of the game. The next season's opening date is read straight off the ladder, so it is always the real one.",
       "Ground & Pound is on Instagram, Facebook and TikTok. The links sit next to Discord at the top of the front page and in the footer.",
+      "The Shop has a new look. Every item has its own painted art, your Cash and Energy Drinks sit at the top, and the Energy Drink bundles show in full the first time you visit, then fold to one line. The panel also shows how close you are to your next free drinks.",
+      "Run out of energy on a Proving Ground attack, a fight, a camp drill or a Fight Camp session and the game now tells you how long to wait, or lets you use an Energy Shot or a drink you own right there. It never presses the button for you.",
       "Seasons now have a 5-day off-season between them. Season 2 still ends on 29 November and pays out that day, and Season 3 opens on 4 December. In between, the Proving Ground counts down to the opening and shows your Season 2 results.",
     ],
     sections: {

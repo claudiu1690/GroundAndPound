@@ -39,7 +39,7 @@ function buildTabs() {
  * /pvp/acknowledge-season exactly once (see `fireAck`) so the poster
  * doesn't reappear on subsequent visits this session.
  */
-export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFight }) {
+export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFight, onEnergyShort }) {
   const weightClass = fighter?.weightClass ?? "featherweight";
   const fighterId = fighter?._id;
 
@@ -383,6 +383,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
                 onboarding={onboarding}
                 preSelectedDefenderId={preSelectedDefenderId}
                 onPreSelectionConsumed={() => setPreSelectedDefenderId(null)}
+                onEnergyShort={onEnergyShort}
               />
             )}
             {activeTab === "history" && (

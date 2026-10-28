@@ -16,6 +16,7 @@ const pvpRecordService = require("../services/pvpRecordService");
 const pvpMatchmakingService = require("../services/pvpMatchmakingService");
 const pvpFightService = require("../services/pvpFightService");
 const analyticsService = require("../services/analyticsService");
+const { shortfallFields } = require("../utils/energyShortfall");
 const { WEIGHT_CLASSES_PVP, SEASON_WEIGHT_CLASSES, OPEN_WEIGHT_CLASS, DIVISION_KEYS } = require("../consts/pvpConfig");
 
 // Accepted weightClass query values for the full ladder screen: FW|LW|MW|HW or "All".
@@ -64,7 +65,10 @@ async function beltHolderName(season) {
 /** Map a PvpError (or generic) to the response. */
 function handleError(res, err) {
     if (err && err.isPvp) {
-        return res.status(err.status || 400).json({ message: err.message, code: err.code });
+        const body = { message: err.message, code: err.code };
+        // The out-of-energy offer reads need/have; only this code may carry them.
+        if (err.code === "insufficient_energy") Object.assign(body, shortfallFields(err));
+        return res.status(err.status || 400).json(body);
     }
     console.error("[pvpController]", err);
     return res.status(500).json({ message: "Internal server error" });

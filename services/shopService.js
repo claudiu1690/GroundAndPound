@@ -1,15 +1,114 @@
 const Fighter = require("../models/fighterModel");
+const Sponsorship = require("../models/sponsorshipModel");
 const config = require("../config");
 const fighterService = require("./fighterService");
 const energyService = require("./energyService");
+const analyticsService = require("./analyticsService");
 const {
     SOFT_CAP,
     ENERGY_ITEMS,
     BOOSTERS,
     BUFFS,
     PREMIUM_BUNDLES,
+    FREE_DRINK_GRANTS,
     findItem,
 } = require("../consts/shopConfig");
+const { SPONSOR_OFFERS } = require("../consts/sponsorCatalog");
+
+// ── Shop redesign: premium panel state + free-earn progress (GDD §15.4) ─────
+
+/** Streak milestones as ascending numbers (keys of FREE_DRINK_GRANTS.streak). */
+const STREAK_MILESTONES = Object.keys(FREE_DRINK_GRANTS.streak)
+    .map(Number)
+    .filter(Number.isInteger)
+    .sort((a, b) => a - b);
+
+/** Catalog range shown when the fighter has no active drink-paying sponsor deal. */
+const SPONSOR_DRINK_VALUES = SPONSOR_OFFERS
+    .map((o) => Number(o.rewardDrinks) || 0)
+    .filter((n) => n > 0);
+const SPONSOR_DRINK_RANGE = {
+    min: SPONSOR_DRINK_VALUES.length ? Math.min(...SPONSOR_DRINK_VALUES) : 0,
+    max: SPONSOR_DRINK_VALUES.length ? Math.max(...SPONSOR_DRINK_VALUES) : 0,
+};
+
+/**
+ * A1 / A2 decision from the two one-time flags. Pure. Precedence: first visit beats the
+ * account-secured reshow (a guest who claims before ever opening the Shop gets first_visit,
+ * and the seen call clears both).
+ * @param {{ premiumPanelSeen?: boolean, premiumPanelReshowPending?: boolean }|null} fighter
+ * @returns {{ mode: "full"|"collapsed", reason: "first_visit"|"account_secured"|null }}
+ */
+function premiumPanelState(fighter) {
+    const f = fighter || {};
+    if (!f.premiumPanelSeen) return { mode: "full", reason: "first_visit" };
+    if (f.premiumPanelReshowPending) return { mode: "full", reason: "account_secured" };
+    return { mode: "collapsed", reason: null };
+}
+
+/**
+ * The free-earn progress line (spec 2.5). Pure: every input is passed in.
+ * @param {object} p
+ * @param {number} p.winStreak           career fighter.winStreak
+ * @param {string} p.promotionTier
+ * @param {number} p.gcsTitleWins
+ * @param {number} p.energyDrinks        inventory.energyDrinks
+ * @param {number[]} p.activeRewardDrinks rewardDrinks of the fighter's ACTIVE sponsorships
+ */
+function buildFreeEarn({ winStreak, promotionTier, gcsTitleWins, energyDrinks, activeRewardDrinks } = {}) {
+    // Lazy: fightService lazy-requires this module, so a top-level require would be circular.
+    const { TOP_TIER } = require("./fightService");
+
+    const current = Math.max(0, Math.floor(Number(winStreak) || 0));
+    const next = STREAK_MILESTONES.find((m) => m > current);
+    const streak = next === undefined
+        ? null
+        : { current, next, drinks: FREE_DRINK_GRANTS.streak[next] };
+
+    let promotion = null;
+    if (promotionTier !== TOP_TIER) {
+        promotion = { drinks: FREE_DRINK_GRANTS.promotion, kind: "promotion" };
+    } else if ((Number(gcsTitleWins) || 0) === 0) {
+        promotion = { drinks: FREE_DRINK_GRANTS.promotion, kind: "gcs_belt" };
+    }
+
+    const sum = (Array.isArray(activeRewardDrinks) ? activeRewardDrinks : [])
+        .map((n) => Number(n))
+        .filter((n) => Number.isFinite(n) && n > 0)
+        .reduce((a, b) => a + b, 0);
+    const sponsor = sum > 0
+        ? { active: true, drinks: sum }
+        : { active: false, min: SPONSOR_DRINK_RANGE.min, max: SPONSOR_DRINK_RANGE.max };
+
+    const overCap = (Number(energyDrinks) || 0) >= SOFT_CAP;
+
+    return { streak, promotion, sponsor, overCap };
+}
+
+/**
+ * Mark the full premium panel as shown (POST /fighters/:id/shop/premium-seen). Idempotent.
+ * ONE atomic write that clears both flags; the pre-image decides whether this call was the
+ * one that acknowledged a full panel (and therefore tracks premium_panel_shown).
+ * @param {string} fighterId
+ * @param {string} userId   req.user.id, for analytics
+ * @returns {Promise<{ acknowledged: boolean }>}
+ */
+async function markPremiumPanelSeen(fighterId, userId) {
+    const before = await Fighter.findOneAndUpdate(
+        { _id: fighterId },
+        { $set: { premiumPanelSeen: true, premiumPanelReshowPending: false } },
+        { new: false, projection: "premiumPanelSeen premiumPanelReshowPending" }
+    );
+    if (!before) throw new Error("Fighter not found");
+
+    const { reason } = premiumPanelState(before);
+    const acknowledged = reason !== null;
+    if (acknowledged) {
+        // Fire-and-forget: track never rejects and never blocks the response.
+        analyticsService.track(userId, "premium_panel_shown", { reason }, { fighterId });
+    }
+    return { acknowledged };
+}
 
 /**
  * Ensure the inventory subdocument exists in memory (defensive — backfill covers
@@ -81,7 +180,8 @@ async function getCatalog(fighterId) {
         canAfford: !it.premium && it.price != null && iron >= it.price,
     }));
 
-    const boosters = Object.values(BOOSTERS).map((b) => ({
+    // Granted-only boosters (price null, e.g. DOC_TECHNICIAN) never render in the Shop.
+    const boosters = Object.values(BOOSTERS).filter((b) => b.price != null).map((b) => ({
         id: b.id,
         name: b.name,
         price: b.price,
@@ -112,9 +212,31 @@ async function getCatalog(fighterId) {
             name: pb.name,
             priceLabel: pb.priceLabel,
             drinks: pb.drinks,
+            // Display math only (per-drink price, savings). Checkout never takes an amount
+            // from the client; the server looks the bundle up by id.
+            amountCents: pb.amountCents,
         };
         if (pb.popular) row.popular = true;
         return row;
+    });
+
+    // Read-only: the panel mode and the free-earn line are derived, never written here.
+    // The sponsor chip is cosmetic: a failed lookup falls back to the catalog range rather
+    // than failing the whole catalog (Cash purchases and the energy offer read it too).
+    let activeSponsorships = [];
+    try {
+        activeSponsorships = await Sponsorship.find({ fighterId: fighter._id, status: "active" })
+            .select("rewardDrinks")
+            .lean();
+    } catch (err) {
+        console.error("[shopService.getCatalog] sponsorship lookup failed:", err.message);
+    }
+    const freeEarn = buildFreeEarn({
+        winStreak: fighter.winStreak,
+        promotionTier: fighter.promotionTier,
+        gcsTitleWins: fighter.gcsTitleWins,
+        energyDrinks: inv.energyDrinks,
+        activeRewardDrinks: (activeSponsorships || []).map((s) => s && s.rewardDrinks),
     });
 
     return {
@@ -130,6 +252,8 @@ async function getCatalog(fighterId) {
         paymentsEnabled: config.stripe.enabled,
         // Free drink grants stop at this count; paid drinks always land (see paymentService.fulfil).
         drinkSoftCap: SOFT_CAP,
+        premiumPanel: premiumPanelState(fighter),
+        freeEarn,
     };
 }
 
@@ -251,4 +375,7 @@ module.exports = {
     useEnergyItem,
     grantEnergyDrinks,
     ensureInventoryShape,
+    premiumPanelState,
+    buildFreeEarn,
+    markPremiumPanelSeen,
 };

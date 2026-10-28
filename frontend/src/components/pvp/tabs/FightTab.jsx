@@ -34,7 +34,7 @@ function DiffPill({ difficulty }) {
  *   result.isPlacement           — FightResult branches to PlacementResult automatically
  *   result.placementComplete     — PlacementResult shows completion screen
  */
-export function FightTab({ fighter, season, myRecord, onFightResolved, onboarding, preSelectedDefenderId, onPreSelectionConsumed }) {
+export function FightTab({ fighter, season, myRecord, onFightResolved, onboarding, preSelectedDefenderId, onPreSelectionConsumed, onEnergyShort }) {
   const { data, loading, refreshing, error, silentRefetch } = usePvpOpponents();
   const [selected, setSelected] = useState(null);   // candidate chosen
   const [fightResult, setFightResult] = useState(null);
@@ -94,6 +94,7 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
         myRecord={myRecord}
         onBack={() => setSelected(null)}
         onFightComplete={handleFightComplete}
+        onEnergyShort={onEnergyShort}
       />
     );
   }
@@ -216,10 +217,15 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
                 </div>
                 <div className="pvp-mc-action">
                   <button
-                    className="pvp-chal-btn"
-                    onClick={() => !c.isProtected && !c.isRecovering && setSelected(c)}
-                    disabled={energyCur < 15 || !!c.isProtected || !!c.isRecovering}
-                    style={(energyCur < 15 || c.isProtected || c.isRecovering) ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+                    className={`pvp-chal-btn${energyCur < 15 && !c.isProtected && !c.isRecovering ? " pvp-chal-btn--low" : ""}`}
+                    onClick={() => {
+                      if (c.isProtected || c.isRecovering) return;
+                      // Short on energy: the button stays clickable and opens the offer.
+                      if (energyCur < 15) onEnergyShort?.({ source: "pvp", need: 15, have: energyCur });
+                      else setSelected(c);
+                    }}
+                    disabled={!!c.isProtected || !!c.isRecovering}
+                    style={(c.isProtected || c.isRecovering) ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                     title={
                       c.isRecovering
                         ? t("pvp.fight.challengeRecoveringTooltip")
@@ -237,11 +243,6 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
         </div>
       )}
 
-      {energyCur < 15 && !loading && (
-        <div className="pvp-energy-warn">
-          {t("pvp.fight.energyWarnLow")}
-        </div>
-      )}
     </div>
   );
 }

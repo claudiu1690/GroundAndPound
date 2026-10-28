@@ -32,6 +32,7 @@ const pvpSeasonService = require("./pvpSeasonService");
 const pvpRivalryService = require("./pvpRivalryService");
 const pvpBadgeService = require("./pvpBadgeService");
 const energyService = require("./energyService");
+const { markShortfall } = require("../utils/energyShortfall");
 const { computeDp, applyDpAndDivision } = require("./pvpDpService");
 const { BOT_MAX_DP } = require("../consts/pvpBotConfig");
 const {
@@ -213,7 +214,11 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     // directly sees a stale value and spuriously 402s a player who actually has energy.
     const { current: energyCurrent } = await energyService.getEnergy(attackerFighterId);
     if (energyCurrent < PVP_ENERGY_COST) {
-        throw new PvpError("insufficient_energy", "Not enough energy — PVP fights cost 15 energy.", 402);
+        throw markShortfall(
+            new PvpError("insufficient_energy", "Not enough energy — PVP fights cost 15 energy.", 402),
+            PVP_ENERGY_COST,
+            energyCurrent
+        );
     }
 
     // ── Real-consequence (a): attacker can't fight with a doctor-visit injury. Checked

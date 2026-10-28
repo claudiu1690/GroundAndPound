@@ -43,6 +43,13 @@ const analyticsEventSchema = new mongoose.Schema({
             "purchase_fulfilled",
             "purchase_failed",
             "purchase_refunded",
+            // Shop redesign (GDD §15.4). premium_panel_shown is server-only (shopService);
+            // the other three arrive through the whitelisted client beacon
+            // (analyticsService.trackClientEvent).
+            "premium_panel_shown",
+            "premium_panel_expanded",
+            "energy_offer_shown",
+            "energy_offer_choice",
         ],
     },
     day: {

@@ -32,4 +32,23 @@ async function getRetention(req, res) {
     }
 }
 
-module.exports = { getRetention };
+/**
+ * POST /fighters/:id/analytics/events. Body { type, meta } (hostile).
+ * 204 accepted | 400 { message: "Invalid event", code: "invalid_event" } | 500.
+ * The write is fire-and-forget: an accepted event never fails on a storage error.
+ */
+async function trackClientEvent(req, res) {
+    try {
+        const body = req.body && typeof req.body === "object" && !Array.isArray(req.body) ? req.body : {};
+        await analyticsService.trackClientEvent(req.user && req.user.id, req.params.id, body.type, body.meta);
+        return res.status(204).end();
+    } catch (err) {
+        if (err && err.code === "invalid_event") {
+            return res.status(400).json({ message: "Invalid event", code: "invalid_event" });
+        }
+        console.error("[analytics] trackClientEvent failed:", err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+module.exports = { getRetention, trackClientEvent };

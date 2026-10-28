@@ -1386,6 +1386,18 @@ and verified in Stripe test mode until the live account exists; ships inside v2.
 
 ---
 
+### 15.4 Shop presentation and the out-of-energy offer (v2.3)
+
+Design of record `docs/shop-redesign-spec.md`, contract `docs/shop-redesign-contract.md`. Premium is shown in full once, then kept quiet, and the honest moment to offer energy is where an action failed.
+
+- **Layout.** Wallet strip (Cash, Energy Drinks; the drinks chip opens the bundle panel), the bundle area, then two tabs: Cash store and My inventory. The old Premium tab is gone. Every Cash product has painted art (`frontend/public/assets/shop/<product-id>.webp`, masters and provenance in `art/shop/`).
+- **Full panel once, then a bar.** Per fighter, on the server: `premiumPanelSeen` and `premiumPanelReshowPending`. The catalog sends `premiumPanel: { mode: full | collapsed, reason: first_visit | account_secured | null }`. The full panel shows on the fighter's first Shop visit and once more after a guest secures the account (`claimAccount` sets the reshow flag after the user save). `POST /fighters/:id/shop/premium-seen` (atomic, idempotent) clears both. Every other visit shows a one-line bar with See bundles; opening it is never remembered. Existing fighters see the full panel once at release. The Stripe return and the offer's See bundles open the panel expanded for that view only.
+- **Panel copy.** "Skip the wait when it matters", "Each drink is +50 energy, one time", one neutral "Our pick" flag on the 15 pack (`popular`), savings stated "vs the 6 pack", no gold "best value" flag anywhere in the Shop, Stripe trust line.
+- **Free-earn line.** Server-computed `freeEarn` from the real grants (`FREE_DRINK_GRANTS` in `consts/shopConfig.js`, also read by `fightService`): win streak `current/next` toward 5/10/15/20 (1/2/2/3 drinks), next promotion or the first GCS belt (3), active sponsor drinks or the catalog's 2 to 4. At 99 drinks it becomes the cap line. The full panel shows every applicable chip; the bar and the offer show one (streak, then promotion, then sponsor).
+- **Out-of-energy offer.** For four actions only: Proving Ground attack, accepting a fight, a My Camp drill batch (only when zero sessions were funded) and a Fight Camp session. Their not-enough-energy errors now carry `need` and `have` (codes and statuses unchanged), and their buttons stay clickable when energy is short. The offer lists, in order: wait `need - have` minutes (free), Energy Shot (use one, buy and use one for 600 Cash, or disabled when Cash is short), Energy Drink (use one, or the free-earn hint and See bundles). "Use one" restores energy and never retries the action. Never on login, no timers, never in the Hospital or the small media actions.
+- **Analytics.** `premium_panel_shown` server-side; `premium_panel_expanded`, `energy_offer_shown`, `energy_offer_choice` through a whitelisted owner-only beacon (`POST /fighters/:id/analytics/events`).
+- **Unchanged.** Every §15.3 rule: the server sets the price from `amountCents` (now also sent to the client for display only), checkout takes a bundle id only, guests are refused, fulfilment is webhook-only and exactly-once.
+
 ## 16. Media Hub
 
 The **Media** tab is a 5-tab hub for building fame outside the cage.

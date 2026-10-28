@@ -42,6 +42,7 @@ import { EmailVerifyBanner } from "./components/account/EmailVerifyBanner";
 import { GuestBanner } from "./components/account/GuestBanner";
 import { DashboardTab } from "./components/dashboard/DashboardTab";
 import { ShopTab } from "./components/shop/ShopTab";
+import { EnergyOffer } from "./components/shop/EnergyOffer";
 import { InventorySidebar } from "./components/shop/InventorySidebar";
 import { CookieConsent } from "./components/legal/CookieConsent";
 import { LegalModals } from "./components/legal/LegalModals";
@@ -51,9 +52,11 @@ import { ChangelogModal } from "./components/changelog/ChangelogModal";
 import { RoadmapOverlay, urlHasRoadmap } from "./components/landing/RoadmapOverlay";
 import { CHANGELOG_ENTRIES, CURRENT_VERSION } from "./components/changelog/changelogContent";
 import { tutorialBus } from "./utils/tutorialBus";
-import { TITLE_WINS, TOP_TIER, isTitleContender, isTopFiveDisplayRank } from "./constants/gameConstants";
+import { TITLE_WINS, TOP_TIER, FIGHT_ENERGY_COST, isTitleContender, isTopFiveDisplayRank } from "./constants/gameConstants";
+import { CAMP_SESSIONS } from "./constants/campConfig";
 import { useToasts } from "./hooks/useToasts";
 import { useShopNews } from "./hooks/useShopNews";
+import { useEnergyOffer } from "./hooks/useEnergyOffer";
 import { PvpHub } from "./components/pvp/PvpHub";
 import {
   LayoutDashboard,
@@ -506,6 +509,9 @@ function App() {
   // Set when Stripe sends the player back to /?purchase=...; ShopTab renders the order banner.
   // Shape: { outcome: "success" | "cancelled", sessionId: string | null } | null.
   const [purchaseReturn, setPurchaseReturn]     = useState(null);
+  // Set when something asks the Shop to open with the bundle panel expanded (e.g. "See bundles"
+  // in the out-of-energy offer). Shape: { from, nonce } | null; cleared when the Shop is left.
+  const [shopExpand, setShopExpand]             = useState(null);
   // Your Camp (Phase 2) — learned from the 410 the boot-time `loadGyms` call
   // gets back once GYMS_RETIRED flips server-side (contract §6.3). Drives:
   // NAV_ITEMS (drops the gym tab), forcing activeTab "gym"→"camp", the
@@ -554,6 +560,8 @@ function App() {
     return () => window.removeEventListener(PERSONA_MOMENT_EVENT, onMoment);
   }, []);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
+  // Out-of-energy offer (A3): one instance for the whole app, opened by any in-scope screen.
+  const energyOffer = useEnergyOffer({ fighterId: fighter?._id });
   // One-time "you're a contender" announcement. We track the previous
   // pendingPromotion value so we only fire on the absent→set transition.
   const [contenderModal, setContenderModal] = useState(null);
@@ -754,8 +762,17 @@ function App() {
   // The banner belongs to the Shop visit that followed the redirect: once the player moves to
   // another tab, drop it so coming back later does not replay a stale "payment received".
   useEffect(() => {
-    if (activeTab !== "shop") setPurchaseReturn((cur) => (cur ? null : cur));
+    if (activeTab !== "shop") {
+      setPurchaseReturn((cur) => (cur ? null : cur));
+      setShopExpand((cur) => (cur ? null : cur));
+    }
   }, [activeTab]);
+
+  // "See bundles" in the out-of-energy offer: open the Shop with the bundle panel expanded.
+  const openShopBundles = useCallback((from) => {
+    setShopExpand({ from, nonce: Date.now() });
+    setActiveTab("shop");
+  }, []);
 
   // `/?legal=terms|privacy` deep link for authed players (Stripe Dashboard legal URLs). Waits
   // for the real shell: LegalModals is not mounted behind the loading spinner. Logged-out
@@ -1176,12 +1193,22 @@ function App() {
         return { ok: true };
       } catch (e) {
         const errMsg = e.message || "Accept failed";
-        maybeShowBlockPopup(errMsg, e.code);
-        setMessage(errMsg);
+        // Not enough energy opens the out-of-energy offer instead of the blocking popup. Every
+        // other refusal keeps its existing path. The server's need/have win over our guess.
+        const offered = energyOffer.openFromError(e, "fight", {
+          need: FIGHT_ENERGY_COST[fighter.promotionTier] ?? 10,
+          have: fighter.energy?.current ?? 0,
+        });
+        if (offered) {
+          setMessage("");
+        } else {
+          maybeShowBlockPopup(errMsg, e.code);
+          setMessage(errMsg);
+        }
         return { ok: false, code: e.code, message: errMsg };
       }
     },
-    [fighter?._id, loadFighter, maybeShowBlockPopup]
+    [fighter?._id, fighter?.promotionTier, fighter?.energy?.current, loadFighter, maybeShowBlockPopup, energyOffer.openFromError]
   );
 
   const loadCampState = useCallback(async (fightId) => {
@@ -1206,10 +1233,15 @@ function App() {
       }
       loadFighter(fighter._id, { clearMessage: false });
     } catch (e) {
-      setMessage(e.message || "Failed to add session");
+      // Not enough energy opens the offer; anything else is the usual toast.
+      const offered = energyOffer.openFromError(e, "fightcamp", {
+        need: CAMP_SESSIONS[sessionType]?.energy,
+        have: fighter.energy?.current ?? 0,
+      });
+      if (!offered) setMessage(e.message || "Failed to add session");
     }
     setAddingSession(null);
-  }, [fighter?._id, fighter?.acceptedFightId, loadFighter]);
+  }, [fighter?._id, fighter?.acceptedFightId, fighter?.energy?.current, loadFighter, energyOffer.openFromError]);
 
   const handleRemoveCampSession = useCallback(async (slotIndex) => {
     const fightId = fighter?.acceptedFightId;
@@ -1514,6 +1546,15 @@ function App() {
         onClose={() => setFightLimitPopup({ open: false, message: "" })}
       />
 
+      <EnergyOffer
+        {...energyOffer.state}
+        fighter={fighter}
+        onClose={energyOffer.close}
+        onRefreshFighter={loadFighter}
+        onMessage={setMessage}
+        onSeeBundles={() => { energyOffer.close(); openShopBundles("offer"); }}
+      />
+
       <ContenderModal
         open={!!contenderModal}
         currentTier={contenderModal?.currentTier}
@@ -1758,6 +1799,7 @@ function App() {
                 onMessage={setMessage}
                 addToast={addToast}
                 onMoveDropReveal={enqueueMoveDrop}
+                onEnergyShort={energyOffer.open}
               />
             </div>
           )}
@@ -1871,6 +1913,7 @@ function App() {
                 onOpenAccount={() => setActiveTab("account")}
                 purchaseReturn={purchaseReturn}
                 onPurchaseReturnConsumed={() => setPurchaseReturn(null)}
+                expandRequest={shopExpand}
               />
             </div>
           )}
@@ -1895,6 +1938,7 @@ function App() {
                 onNavigate={handleNavTab}
                 onRefreshFighter={loadFighter}
                 onOpenCareerFight={onOpenCareerFight}
+                onEnergyShort={energyOffer.open}
               />
             </div>
           )}
@@ -1918,6 +1962,7 @@ function App() {
                   onMessage={setMessage}
                   onNavigateShop={() => handleNavTab("shop")}
                   onRefreshFighter={loadFighter}
+                  onEnergyShort={energyOffer.open}
                   onSelectBuff={(buffId, label) => {
                     setCampState((prev) => prev ? { ...prev, selectedBuffId: buffId } : prev);
                     setSelectedBuffLabel(buffId ? label : null);

@@ -27,6 +27,7 @@ const { calculateOverall } = require("../utils/overallRating");
 const { STAT_TO_VAL_KEY } = require("../utils/statProgression");
 const { BACKSTORIES } = require("../consts/gameConstants");
 const { BOOSTERS, boosterStatList } = require("../consts/shopConfig");
+const { markShortfall } = require("../utils/energyShortfall");
 const {
     buildInjury,
     applyInjuryToFighter,
@@ -219,8 +220,12 @@ async function runDrill(fighterId, body = {}) {
 
     // ── Energy: atomically fund up to clampedQ sessions ─────────────────────
     const energyBefore = fighter.energy?.current ?? 0;
-    const { funded: k } = await energyService.deductBatchEnergy(fighterId, drill.energy, clampedQ);
-    if (k === 0) throw campError("not_enough_energy", "Not enough energy", 400);
+    const { funded: k, current: energyAtRefusal } = await energyService.deductBatchEnergy(fighterId, drill.energy, clampedQ);
+    // Zero funded is the only failure (a partial batch is a 200). need = one session's cost
+    // AFTER the trait, have = the live Redis value the Lua script saw.
+    if (k === 0) {
+        throw markShortfall(campError("not_enough_energy", "Not enough energy", 400), drill.energy, energyAtRefusal);
+    }
 
     const injuryLockedStats = new Set(fighterService.getInjuryLockedStats(fighter));
     const valueBefore = {};

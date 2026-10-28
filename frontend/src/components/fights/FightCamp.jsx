@@ -41,19 +41,22 @@ function CampSlotDots({ maxSlots, slotsUsed, canRemove, onRemove }) {
     );
 }
 
-function CampSessionCard({ sessionKey, energyAvailable, isInjuredPending, alreadyLogged, onAddSession, loading }) {
+function CampSessionCard({ sessionKey, energyAvailable, isInjuredPending, alreadyLogged, onAddSession, onEnergyShort, loading }) {
     const session = CAMP_SESSIONS[sessionKey];
     if (!session) return null;
     const color = CAMP_SESSION_COLOR[sessionKey] ?? "blue";
     const notEnoughEnergy = (energyAvailable ?? 0) < session.energy;
-    const blocked = notEnoughEnergy || isInjuredPending || loading;
+    // Hard block: injury or a request in flight. Short on energy is NOT a hard block: the button
+    // stays clickable in a dimmed style and opens the out-of-energy offer.
+    const blocked = isInjuredPending || loading;
+    const lowEnergy = notEnoughEnergy && !blocked;
 
     let tooltip = "";
     if (isInjuredPending) tooltip = t("fights.camp.sessionResolveInjury");
     else if (notEnoughEnergy) tooltip = t("fights.camp.sessionNeedEnergy", { need: session.energy, have: energyAvailable ?? 0 });
 
     return (
-        <div className={`camp-session-card${blocked ? " camp-session-card--disabled" : ""}`}>
+        <div className={`camp-session-card${blocked || lowEnergy ? " camp-session-card--disabled" : ""}`}>
             <div className={`camp-session-stripe camp-stripe-${color}`} />
             <div className="camp-session-body">
                 <div className="camp-session-top">
@@ -66,10 +69,14 @@ function CampSessionCard({ sessionKey, energyAvailable, isInjuredPending, alread
                 {alreadyLogged && <span className="camp-session-added">{t("fights.camp.sessionAdded")}</span>}
                 <button
                     type="button"
-                    className="camp-add-btn"
+                    className={`camp-add-btn${lowEnergy ? " camp-add-btn--low" : ""}`}
                     disabled={blocked}
                     title={tooltip || undefined}
-                    onClick={() => !blocked && onAddSession(sessionKey)}
+                    onClick={() => {
+                        if (blocked) return;
+                        if (lowEnergy) onEnergyShort?.({ source: "fightcamp", need: session.energy, have: energyAvailable ?? 0 });
+                        else onAddSession(sessionKey);
+                    }}
                 >
                     {loading ? t("fights.camp.sessionAdding") : t("fights.camp.sessionAddBtn")}
                 </button>
@@ -94,6 +101,7 @@ export const FightCamp = memo(function FightCamp({
     onNavigateShop,
     onRefreshFighter,
     onSelectBuff,
+    onEnergyShort,
 }) {
     if (!fighter?.acceptedFightId || !campState) return null;
 
@@ -181,6 +189,7 @@ export const FightCamp = memo(function FightCamp({
                                 isInjuredPending={isInjuredPending}
                                 alreadyLogged={sessions.some((s) => s.sessionType === key)}
                                 onAddSession={onAddSession}
+                                onEnergyShort={onEnergyShort}
                                 loading={addingSession === key}
                             />
                         ))}

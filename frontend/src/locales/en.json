@@ -2021,10 +2021,8 @@
       "fightBtnReady": "Fight · 15 energy",
       "energyNoteInjured": "Can’t fight while recovering from injury",
       "energyNoteAfter": "{n} energy remaining after this fight",
-      "energyNoteLow": "Not enough energy (need 15)",
       "errInjured": "You’re injured — visit the Hospital before fighting.",
       "errDefenderRecovering": "This fighter is recovering and can’t be challenged right now.",
-      "errNotEnoughEnergy": "Not enough energy — PVP fights cost 15 energy.",
       "errLocked": "The Proving Ground unlocks at 3 career wins.",
       "errProtected": "This fighter is protected and can’t be challenged right now.",
       "errDefault": "Fight failed. Try again."
@@ -2086,7 +2084,6 @@
       "challengeBtn": "Challenge",
       "challengeRecoveringTooltip": "This fighter is recovering from an injury and can’t be challenged right now.",
       "challengeProtectedTooltip": "This fighter is protected — they’re still finding their footing.",
-      "energyWarnLow": "Not enough energy to fight. You need at least 15 energy.",
       "diffEasy": "Easy",
       "diffEven": "Even",
       "diffHard": "Hard"
@@ -2176,30 +2173,38 @@
     "pageTitle": "Shop",
     "pageSub": "Consumables, pre-fight buffs, XP boosters and energy. Spend Cash or go premium.",
     "tabs": {
-      "cash": "Cash Store",
-      "premium": "Premium",
-      "premiumBadge": "Energy Drinks",
-      "inventory": "My Inventory"
+      "cash": "Cash store",
+      "inventory": "My inventory"
+    },
+    "wallet": {
+      "cash": "Cash",
+      "drinks": "Energy Drinks"
+    },
+    "shelves": {
+      "energy": "Energy",
+      "boosters": "XP boosters, one at a time",
+      "supplements": "Pre-fight supplements, next fight only"
+    },
+    "product": {
+      "shotEffect": "+30 energy, instant",
+      "boosterXp": "+{pct}% XP",
+      "boosterAllStats": "all stats",
+      "boosterSessions": "{n} sessions",
+      "collagenEffect": "Injury risk x0.8 next fight"
     },
     "loading": "Loading the shop…",
     "loadError": "Failed to load the shop.",
     "sections": {
       "energy": "Energy",
       "xpBoosters": "XP Boosters",
-      "xpBoostersSub": "· one active at a time · cash cost",
-      "preFightBuffs": "Pre-Fight Buffs",
-      "preFightBuffsSub": "· 1 fight only · one per category"
+      "preFightBuffs": "Pre-Fight Buffs"
     },
     "energy": {
-      "premiumTag": "Premium",
       "restoresDesc": "Restores {energy} energy instantly.",
       "inInventoryPrefix": "You have ",
-      "inInventorySuffix": " in inventory",
-      "realMoneyLabel": "Real money →",
-      "getMore": "Get More"
+      "inInventorySuffix": " in inventory"
     },
     "booster": {
-      "bestValue": "Best Value",
       "sessionsSuffix": "sessions",
       "activeSessionsLeft": "sessions left",
       "locked": "Locked",
@@ -2213,10 +2218,10 @@
       "effectConsumed": "Consumed after your next fight resolves."
     },
     "bundle": {
-      "mostPopular": "Most Popular",
+      "ourPick": "Our pick",
       "energyDrinks": "Energy Drinks",
-      "perDrinkSuffix": "per drink",
-      "save": "save {pct}%",
+      "perDrink": "${price} per drink",
+      "save": "save {pct}% vs the 6 pack",
       "buy": "Buy",
       "buyGuest": "Secure your account to buy",
       "redirecting": "Opening secure checkout..."
@@ -2231,15 +2236,57 @@
       "sessionsLeft": "sessions left"
     },
     "premium": {
-      "eye": "Premium",
-      "title": "Energy Drinks",
-      "desc": "Restore 50 energy instantly. Never let a full energy bar go to waste. Earn them through gameplay or buy a bundle. Buying is always optional.",
       "guestNotice": "Buying needs an email and password on your account. A guest account lives on this device only, so a purchase could not be recovered. Secure it in Account, then come back.",
       "disabled": "Purchases are not available right now. Nothing has changed in your inventory.",
       "redirecting": "You are being sent to Stripe to pay. Your card details never pass through the game.",
-      "overCap": "You have {owned} drinks. Bought drinks always land, but free drinks from streaks, promotions and sponsors only land while you hold fewer than {cap}.",
-      "drinksInInventory": "Drinks in inventory",
-      "earnNote": "You can also earn Energy Drinks for free through contract completions, win streaks and tier promotions. Buying is always optional."
+      "overCap": "You have {owned} drinks. Bought drinks always land, but free drinks from streaks, promotions and sponsors only land while you hold fewer than {cap}."
+    },
+    "panel": {
+      "eye": "Premium. Energy Drinks",
+      "eyeSecured": "Account secured. Bundles are available now.",
+      "title": "Skip the wait when it matters",
+      "body": "Each drink is +50 energy, one time. Real money, paid securely through Stripe.",
+      "earnedPrefix": "Earned free by playing",
+      "trust": "Secure checkout by Stripe. Your card never touches the game.",
+      "hide": "Hide",
+      "seeBundles": "See bundles",
+      "barLine": "{owned} owned. +50 energy each. {hint}"
+    },
+    "freeEarn": {
+      "streak": "Win streak {current}/{next} earns {drinks}",
+      "promotion": "Next promotion earns 3",
+      "gcsBelt": "The GCS belt earns 3",
+      "sponsorActive": "Sponsor deal pays {drinks} on completion",
+      "sponsorNone": "Some sponsor deals pay {min} to {max}",
+      "capLine": "You hold {owned} drinks. Free drinks land again below {cap}."
+    },
+    "offer": {
+      "eye": "Not enough energy",
+      "title": "This {action} needs {need} energy. You have {have}.",
+      "action": {
+        "attack": "attack",
+        "fight": "fight",
+        "session": "session",
+        "drill": "drill"
+      },
+      "wait": "Wait {n} minutes",
+      "waitOne": "Wait 1 minute",
+      "waitSub": "Free. Energy refills 1 per minute.",
+      "ok": "OK",
+      "shotTitle": "Energy Shot. +30",
+      "shotOwned": "You own {owned}. More cost {price} Cash.",
+      "shotZero": "You own 0. One costs {price} Cash.",
+      "shotZeroNoCash": "You own 0. One costs {price} Cash. You have {cash}.",
+      "useOne": "Use one",
+      "buyAndUse": "Buy and use one",
+      "notEnoughCash": "Not enough Cash",
+      "drinkTitle": "Energy Drink. +50",
+      "drinkOwned": "You own {owned}.",
+      "drinkZero": "You own 0. {hint}.",
+      "seeBundles": "See bundles",
+      "close": "Close",
+      "loading": "Checking your inventory...",
+      "loadError": "Could not load your inventory."
     },
     "inventory": {
       "energyFull": "Energy is full. Nothing to restore right now.",

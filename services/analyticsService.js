@@ -405,4 +405,86 @@ async function computeEnergyReturn() {
     };
 }
 
-module.exports = { track, computeRetention };
+// ── Client beacon (POST /fighters/:id/analytics/events) ─────────────────────
+//
+// The browser may report a few UI-only events. The request body is hostile: the type must be
+// on this whitelist and the meta is rebuilt from scratch per type (unknown keys dropped, every
+// required key validated). Server-only types (premium_panel_shown) are NOT accepted here.
+//
+// The track() call for these lives in THIS file on purpose: the enum drift test scans call
+// sites, and a dynamic type at a controller call site would be unresolvable there.
+
+const ENERGY_OFFER_SOURCES = new Set(["pvp", "fight", "camp", "fightcamp"]);
+const PANEL_EXPAND_FROM = new Set(["bar", "chip", "offer", "purchase_return"]);
+const ENERGY_OFFER_CHOICES = new Set(["wait", "use_shot", "buy_use_shot", "use_drink", "see_bundles", "dismiss"]);
+
+function intInRange(v, lo, hi) {
+    return typeof v === "number" && Number.isInteger(v) && v >= lo && v <= hi;
+}
+
+/** Per-type meta builders. Each returns the clean meta, or null when invalid. */
+const CLIENT_EVENT_SANITIZERS = {
+    premium_panel_expanded: (m) => (PANEL_EXPAND_FROM.has(m.from) ? { from: m.from } : null),
+    energy_offer_shown: (m) => (
+        ENERGY_OFFER_SOURCES.has(m.source) && intInRange(m.need, 1, 100) && intInRange(m.have, 0, 100)
+            ? { source: m.source, need: m.need, have: m.have }
+            : null
+    ),
+    energy_offer_choice: (m) => (
+        ENERGY_OFFER_SOURCES.has(m.source) && ENERGY_OFFER_CHOICES.has(m.choice)
+            ? { source: m.source, choice: m.choice }
+            : null
+    ),
+};
+
+/** Event types the client beacon accepts. Every one is in the AnalyticsEvent type enum. */
+const CLIENT_EVENT_TYPES = Object.freeze(Object.keys(CLIENT_EVENT_SANITIZERS));
+
+/**
+ * Validate a client event. Pure.
+ * @param {*} type
+ * @param {*} meta
+ * @returns {{ type: string, meta: object }|null} the clean event, or null when rejected
+ */
+function sanitizeClientEvent(type, meta) {
+    if (typeof type !== "string" || !Object.prototype.hasOwnProperty.call(CLIENT_EVENT_SANITIZERS, type)) {
+        return null;
+    }
+    if (!meta || typeof meta !== "object" || Array.isArray(meta)) return null;
+    // Only the payload's OWN string-keyed values are read; a prototype-polluted or getter-laden
+    // object cannot smuggle a value in.
+    const own = {};
+    for (const key of Object.keys(meta)) {
+        if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
+        own[key] = meta[key];
+    }
+    const clean = CLIENT_EVENT_SANITIZERS[type](own);
+    return clean ? { type, meta: clean } : null;
+}
+
+/**
+ * Record a client-reported event. Throws `{ code: "invalid_event" }` when rejected; the write
+ * itself is fire-and-forget through track(), which never rejects.
+ * @param {string} userId     req.user.id
+ * @param {string} fighterId  the owner-checked :id
+ * @param {*} type
+ * @param {*} meta
+ */
+function trackClientEvent(userId, fighterId, type, meta) {
+    const clean = sanitizeClientEvent(type, meta);
+    if (!clean) {
+        const err = new Error("Invalid event");
+        err.code = "invalid_event";
+        throw err;
+    }
+    // Through module.exports so tests can stub track without a database.
+    module.exports.track(userId, clean.type, clean.meta, { fighterId });
+}
+
+module.exports = {
+    track,
+    computeRetention,
+    CLIENT_EVENT_TYPES,
+    sanitizeClientEvent,
+    trackClientEvent,
+};

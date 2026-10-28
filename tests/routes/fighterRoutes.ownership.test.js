@@ -11,6 +11,8 @@ const assert = require("node:assert/strict");
 const router = require("../../routes/fighterRoutes");
 const fighterController = require("../../controllers/fighterController");
 const rankingController = require("../../controllers/rankingController");
+const shopController = require("../../controllers/shopController");
+const analyticsController = require("../../controllers/analyticsController");
 const ownFighter = require("../../middleware/ownFighterMiddleware");
 const blockWhenGymsRetired = require("../../middleware/gymsRetiredMiddleware");
 
@@ -41,6 +43,8 @@ const OWNER_WRITES = [
     ["post", "/:id/callouts", fighterController.createCallout],
     ["delete", "/:id/callouts", fighterController.cancelCallout],
     ["post", "/:id/media-event", fighterController.mediaEventStub],
+    ["post", "/:id/shop/premium-seen", shopController.premiumSeen],
+    ["post", "/:id/analytics/events", analyticsController.trackClientEvent],
 ];
 
 const GYM_WRITES = [

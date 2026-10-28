@@ -659,6 +659,18 @@ async function claimAccount(accountId, emailRaw, password) {
         throw e;
     }
 
+    // Shop redesign: buying is possible from now on, so the full premium panel is owed once
+    // more. Set only AFTER the claim committed (users and fighters are separate collections
+    // and there are no transactions). Best effort: a failure here costs one panel reshow,
+    // never the claim.
+    if (user.fighterId) {
+        try {
+            await Fighter.updateOne({ _id: user.fighterId }, { $set: { premiumPanelReshowPending: true } });
+        } catch (e) {
+            console.error("[claimAccount] reshow flag failed:", e.message);
+        }
+    }
+
     // Fire-and-forget the verification email — never block the claim on the send.
     sendVerifyEmail(user).catch((e) => {
         console.error("[claimAccount] sendVerifyEmail failed:", e.message);

@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const fightService = require("../services/fightService");
 const offerBoardService = require("../services/offerBoardService");
 const interviewService = require("../services/interviewService");
+const { shortfallFields } = require("../utils/energyShortfall");
 
 const FIGHT_ERROR_CODES = {
     DOCTOR_VISIT_REQUIRED: "FIGHT_DOCTOR_VISIT_REQUIRED",
@@ -99,7 +100,11 @@ async function acceptOffer(req, res) {
             return res.status(404).json({ message: err.message });
         }
         if (err.message === "Not enough energy") {
-            return res.status(400).json({ message: err.message, code: FIGHT_ERROR_CODES.NOT_ENOUGH_ENERGY });
+            return res.status(400).json({
+                message: err.message,
+                code: FIGHT_ERROR_CODES.NOT_ENOUGH_ENERGY,
+                ...shortfallFields(err),
+            });
         }
         sendInternalError(res, err);
     }

@@ -11,6 +11,7 @@ import { OpenMatPanel } from "./OpenMatPanel";
 import { MarketPanel } from "./MarketPanel";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DEEP_CLEAN_COST, DEEP_CLEAN_GAIN } from "./campConstants";
+import { shortfallFromError } from "../shop/energyOfferModel";
 
 /** Scrolls + pulses an element by id (Needs-Today "jump to it" targeting). */
 function flashElementById(id) {
@@ -212,7 +213,7 @@ function buildFirePreview(coach, campState) {
  * camp renovation, and Deep Clean — all funnelled through the same
  * `useHomeCamp` hook so it stays the ONLY camp API caller.
  */
-export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMessage, addToast, onMoveDropReveal }) {
+export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMessage, addToast, onMoveDropReveal, onEnergyShort }) {
   const fighterId = fighter?._id;
   const {
     camp: campState, loading, error, refetch, train, promote, claimPerk, claimTeach, rename,
@@ -352,12 +353,21 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
 
         if (onRefreshFighter) await onRefreshFighter(fighterId);
       } catch (e) {
-        setActionError(describeTrainError(e));
+        // Zero sessions could be funded: open the out-of-energy offer (the server's need/have win).
+        // A partial batch is a 200 ("Stopped early") and never reaches this branch.
+        if (e?.code === "not_enough_energy" && onEnergyShort) {
+          onEnergyShort({
+            source: "camp",
+            ...shortfallFromError(e, { need: drill.energy, have: fighter?.energy?.current ?? 0 }),
+          });
+        } else {
+          setActionError(describeTrainError(e));
+        }
       } finally {
         setTrainingDrillKey(null);
       }
     },
-    [fighterId, training, train, addToast, onMoveDropReveal, onRefreshFighter]
+    [fighterId, fighter?.energy?.current, training, train, addToast, onMoveDropReveal, onRefreshFighter, onEnergyShort]
   );
 
   const handlePromote = useCallback(

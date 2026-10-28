@@ -26,6 +26,10 @@ function inject(rel, exports) {
 }
 inject("services/energyService.js", { getEnergy: async () => ({ current: 10, max: 100 }) });
 inject("services/fighterService.js", { toPublicFighter: (f) => f });
+// The catalog's free-earn line reads the fighter's active sponsorships; no deals here.
+inject("models/sponsorshipModel.js", {
+    find: () => ({ select() { return this; }, lean: async () => [] }),
+});
 
 const config = require("../../config");
 
@@ -86,8 +90,8 @@ test("D4 the catalog reports paymentsEnabled false, the soft cap, and no stub fl
         assert.equal(row.stub, undefined, `${row.id} has no stub flag`);
         assert.deepEqual(
             Object.keys(row).filter((k) => k !== "popular").sort(),
-            ["drinks", "id", "name", "priceLabel"],
-            `${row.id} exposes only the contract fields (never amountCents)`,
+            ["amountCents", "drinks", "id", "name", "priceLabel"],
+            `${row.id} exposes only the contract fields (amountCents is display-only, shop redesign)`,
         );
     }
     assert.equal(typeof shopService.buyPremium, "undefined", "the buy-premium stub is gone");

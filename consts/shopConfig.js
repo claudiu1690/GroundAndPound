@@ -80,6 +80,18 @@ const PREMIUM_BUNDLES = {
     "drinks-100": { id: "drinks-100", name: "100 Energy Drinks", priceLabel: "$39.99", amountCents: 3999, drinks: 100 },
 };
 
+/**
+ * Free Energy Drink grants (§15.2, "earn it through achievement").
+ *  - streak:    career win-streak milestone -> drinks granted on the win that reaches it
+ *  - promotion: drinks per tier promotion, and on the first GCS belt win (a defense pays none)
+ * Read by fightService (the grant) and shopService (the free-earn progress line), so the two
+ * can never disagree. All grants clamp to SOFT_CAP through shopService.grantEnergyDrinks.
+ */
+const FREE_DRINK_GRANTS = Object.freeze({
+    streak: Object.freeze({ 5: 1, 10: 2, 15: 2, 20: 3 }),
+    promotion: 3,
+});
+
 // Fail at boot, not at checkout: a label/amount mismatch is a mispriced product, and the first
 // person to notice would otherwise be a customer who was charged the wrong amount.
 for (const b of Object.values(PREMIUM_BUNDLES)) {
@@ -126,6 +138,7 @@ module.exports = {
     BUFFS,
     PREMIUM_BUNDLES,
     PREMIUM_CURRENCY,
+    FREE_DRINK_GRANTS,
     findItem,
     boosterStatList,
 };
