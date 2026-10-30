@@ -18,6 +18,21 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.2.4",
+    date: "2026-10-30",
+    major: false,
+    highlights: [
+      "Ground & Pound has its own icon now. Add it to your phone's home screen (Safari: Share, then Add to Home Screen; Chrome: Install app) and it opens full screen like an app. The Library has the steps.",
+    ],
+    sections: {
+      changed: [
+        "The Privacy Policy now mentions one more thing we keep: if you came in through one of our own links or ads, its short label (like \"reddit\") is saved with your new account so we know which posts bring players in. Nothing is stored on your device.",
+      ],
+      fixed: [],
+      balance: [],
+    },
+  },
+  {
     version: "2.2.3",
     date: "2026-10-28",
     major: false,

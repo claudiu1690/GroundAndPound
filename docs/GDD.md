@@ -1803,6 +1803,34 @@ Guest creation is rate-limited per IP (~5/hour) on top of the general auth limit
 recovery-code resume is rate-limited per IP (~10/hour) with a generic failure message
 (no account-existence oracle). The 80-bit code space makes brute force infeasible.
 
+### 24.6 Home-screen install (phones)
+
+The game is a web app with a manifest (`frontend/public/manifest.webmanifest`) and
+home-screen icons (a gold octagon with "G&P", from the card-back style), so "Add to
+Home Screen" (iOS Safari) or "Install app" (Android Chrome) gives a branded icon,
+labelled "Ground&Pound", that opens full screen (`display: standalone`). There is no
+service worker and no offline mode: the icon just opens the live game.
+
+The home-screen version keeps its own storage, separate from the browser (iOS does
+this), so the player must log in once there. Email accounts just log in. A guest needs
+the recovery code (§24.2) or a claimed account; the Library article "Play on Your
+Phone" tells guests to have it ready before installing. Added in v2.2.4.
+
+### 24.7 Acquisition tag (which link brought a player in)
+
+Our own links and ads carry `?src=<tag>` (optionally `&c=<campaign>`; `utm_source` /
+`utm_campaign` are read too). The client reads the tag once at boot, keeps it **in
+memory only** (nothing on the device, so the Cookie Policy's essential-storage-only
+promise holds), removes it from the address bar, and sends it with the signup request
+(`acquisition: { src, campaign? }` on `POST /auth/register` and `POST /auth/guest`).
+The server accepts only `[a-z0-9_-]{1,40}` tags, drops anything else silently, and
+stores the tag as `meta.src` / `meta.campaign` on the `signup` / `guest_signup`
+analytics event. The admin report `GET /admin/analytics/retention` returns
+`acquisition: [{ src, campaign, signups, guests, firstFight }]` (untagged = "direct", so a
+link tagged "direct" counts as untagged; `firstFight` = has ever resolved a fight).
+A visitor who reloads or returns later counts as direct: the accepted price of storing
+nothing. Added in v2.2.4 for the first paid ad tests; disclosed in the Privacy Policy.
+
 ---
 
 ## 25. Versioning & the What's New Changelog

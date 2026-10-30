@@ -132,6 +132,20 @@ export const LIBRARY_ARTICLES = [
         keyTakeaway: "Guests get the full game, no email needed. Save your one-time recovery code — and claim your account with an email to make your career permanent.",
     },
     {
+        id: "play-on-your-phone",
+        category: "Getting Started",
+        title: "Play on Your Phone: Add It to Your Home Screen",
+        summary: "No app store needed. Put Ground & Pound on your home screen and it opens full screen, like an app.",
+        tags: ["phone", "mobile", "iphone", "android", "home screen", "install", "app", "pwa"],
+        body: [
+            "Ground & Pound runs in the browser on your phone, tablet or computer, with nothing to download. On a phone you can also pin it to your home screen: it gets its own icon and opens full screen, without the browser bars, just like an app.",
+            "On an iPhone or iPad: open the game in Safari, tap the Share button, then \"Add to Home Screen\", then Add. On Android: open it in Chrome, tap the menu (three dots), then \"Install app\" or \"Add to Home screen\".",
+            "The first time you open it from the home screen, you'll need to log in once. Your phone keeps the home-screen version separate from the browser, so it doesn't know you're already logged in there. After that one login it remembers you.",
+            "Playing as a guest? Before you add it, make sure you have your recovery code (or claim your account with an email in the Account tab). Then use \"Resume with a recovery code\" on the home-screen version. Without the code or an email, the home-screen version can't find your guest fighter.",
+        ],
+        keyTakeaway: "Safari: Share, Add to Home Screen. Chrome: Install app. Log in once in the new icon; guests, have your recovery code ready first.",
+    },
+    {
         id: "whats-new-changelog",
         category: "Getting Started",
         title: "What's New — Game Updates",

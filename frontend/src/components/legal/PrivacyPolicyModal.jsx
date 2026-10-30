@@ -57,6 +57,9 @@ export function PrivacyPolicyModal({ open, onClose }) {
               <li className="cookie-policy-item">
                 <span className="cookie-policy-purpose"><strong>Technical data</strong> — your IP address and basic request logs, used for security, rate-limiting, and diagnosing errors.</span>
               </li>
+              <li className="cookie-policy-item">
+                <span className="cookie-policy-purpose"><strong>How you found us</strong>: if you arrived through one of our own links or ads, its short label (for example “reddit”) is saved with your new account, so we know which of our posts bring players in. It is not stored on your device and is never shared.</span>
+              </li>
             </ul>
             <p className="cookie-policy-text cookie-policy-note">
               We do not use advertising trackers, and we do not sell your personal data.
