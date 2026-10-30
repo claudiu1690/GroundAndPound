@@ -12848,8 +12848,17 @@ code {
     flex-direction: column;
     align-items: stretch;
     gap: 0.6rem;
-    bottom: 56px; /* clear the .m-bottom-nav (height 56px) so it isn't hidden */
     padding: 0.7rem 0.9rem;
+  }
+  /* Clear the .m-bottom-nav (height 56px) only when it is on screen; the landing
+     and auth pages have no nav, so there the banner sits on the bottom edge. */
+  body:has(.m-bottom-nav) .cookie-consent {
+    bottom: 56px;
+  }
+  /* In the column layout the desktop flex-basis (360px) becomes a HEIGHT and the
+     banner stood ~360px tall on a portrait phone. Size the text to its content. */
+  .cookie-consent-text {
+    flex: 0 0 auto;
   }
   .cookie-consent-actions {
     justify-content: space-between;
