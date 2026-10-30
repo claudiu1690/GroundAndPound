@@ -17,6 +17,10 @@ import '@fontsource/playfair-display/900.css';
 import '@fontsource/playfair-display/400-italic.css';
 import '@fontsource/playfair-display/700-italic.css';
 import './App.css';
+import { captureAcquisition } from './lib/acquisition';
+
+// Before the first render, so the router never sees (or drops) the ?src= tag.
+captureAcquisition();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

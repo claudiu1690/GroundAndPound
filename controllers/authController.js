@@ -29,7 +29,7 @@ module.exports.signToken = signToken;
 
 async function register(req, res) {
     try {
-        const { email, password, fighter } = req.body;
+        const { email, password, fighter, acquisition } = req.body;
 
         if (!email || !password)
             return res.status(400).json({ message: "Email and password are required" });
@@ -70,7 +70,8 @@ async function register(req, res) {
         });
 
         // Fire-and-forget analytics — never blocks or breaks registration.
-        analyticsService.track(user._id, "signup", {}, { fighterId: newFighter._id });
+        // `acquisition` is the link tag the player arrived with (?src=reddit), sanitised there.
+        analyticsService.track(user._id, "signup", analyticsService.acquisitionMeta(acquisition), { fighterId: newFighter._id });
 
         const token = signToken(user);
         res.status(201).json({ token, fighterId: newFighter._id });
@@ -139,7 +140,7 @@ async function login(req, res) {
  */
 async function createGuest(req, res) {
     try {
-        const { fighter } = req.body || {};
+        const { fighter, acquisition } = req.body || {};
         if (!fighter || typeof fighter !== "object") {
             return res.status(400).json({ message: "Fighter details are required" });
         }
@@ -155,7 +156,7 @@ async function createGuest(req, res) {
             await accountService.createGuestAccount({ fighter });
 
         // Fire-and-forget analytics — never blocks or breaks guest creation.
-        analyticsService.track(user._id, "guest_signup", {}, { fighterId: newFighter._id });
+        analyticsService.track(user._id, "guest_signup", analyticsService.acquisitionMeta(acquisition), { fighterId: newFighter._id });
 
         const token = signToken(user, { guest: true });
         return res.status(201).json({
