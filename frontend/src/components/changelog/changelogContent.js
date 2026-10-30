@@ -35,6 +35,19 @@ export const CHANGELOG_ENTRIES = [
     },
   },
   {
+    version: "2.2.5",
+    date: "2026-10-30",
+    major: false,
+    highlights: [],
+    sections: {
+      changed: [],
+      fixed: [
+        "On phones the storage notice at the bottom of the screen is a slim bar again. It had grown to cover half the screen, and floated above the bottom edge on the front page.",
+      ],
+      balance: [],
+    },
+  },
+  {
     version: "2.2.4",
     date: "2026-10-30",
     major: false,
