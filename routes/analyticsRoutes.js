@@ -21,7 +21,10 @@ const analyticsController = require("../controllers/analyticsController");
  *         description: ISO date; defaults to now.
  *     responses:
  *       200:
- *         description: Retention cohorts and funnel metrics.
+ *         description: >
+ *           Retention cohorts and funnel metrics, plus `acquisition`: new players
+ *           (email + guest signups) in range grouped by the link tag they arrived
+ *           with, as [{ src, campaign, signups, guests, firstFight }]; untagged = "direct".
  *       400:
  *         description: Invalid date range.
  *       403:

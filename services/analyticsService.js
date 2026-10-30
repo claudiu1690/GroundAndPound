@@ -14,6 +14,34 @@ function dayOf(date) {
     return date.toISOString().slice(0, 10);
 }
 
+// ── Acquisition (where a new player came from) ─────────────────────────────
+
+// Campaign tags are our own link labels ("reddit", "ig-bio"), never free text:
+// lowercase letters, digits, "-" and "_", at most 40 characters.
+const ACQUISITION_TAG = /^[a-z0-9_-]{1,40}$/;
+
+function cleanTag(value) {
+    if (typeof value !== "string") return null;
+    const tag = value.trim().toLowerCase();
+    return ACQUISITION_TAG.test(tag) ? tag : null;
+}
+
+/**
+ * Turn the client's `acquisition` body field into signup-event meta.
+ * Hostile or malformed input is dropped silently: it must never fail a signup.
+ *
+ * @param {*} raw  Expected `{ src?: string, campaign?: string }`.
+ * @returns {Object} `{ src, campaign? }`, or `{}` when there is no usable source.
+ */
+function acquisitionMeta(raw) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+    const src = cleanTag(raw.src);
+    // "direct" is the report's label for untagged signups, so a link tagged "direct" is untagged.
+    if (!src || src === "direct") return {};
+    const campaign = cleanTag(raw.campaign);
+    return campaign ? { src, campaign } : { src };
+}
+
 /**
  * Record an analytics event.
  *
@@ -111,6 +139,7 @@ async function computeRetention(from, to) {
         gymPurchases,
         pvpUnlock,
         energyReturn,
+        acquisition,
     ] = await Promise.all([
         computeRetentionCohorts(range),
         computeFirstFight(range),
@@ -118,6 +147,7 @@ async function computeRetention(from, to) {
         computeGymPurchases(range),
         computePvpUnlock(range),
         computeEnergyReturn(),
+        computeAcquisition(range),
     ]);
 
     return {
@@ -131,6 +161,7 @@ async function computeRetention(from, to) {
             pvpUnlock,
             energyReturn,
         },
+        acquisition,
     };
 }
 
@@ -317,6 +348,48 @@ async function computePvpUnlock(range) {
     };
 }
 
+/**
+ * New players by source. Counts BOTH signup lanes (email `signup` and
+ * `guest_signup`) in range, grouped by the link tag captured at signup
+ * (`meta.src` / `meta.campaign`; no tag = "direct"). `firstFight` = how many of
+ * those players have resolved at least one fight (any time), the quickest
+ * "did this source bring real players" check.
+ */
+async function computeAcquisition(range) {
+    const groups = await AnalyticsEvent.aggregate([
+        { $match: { type: { $in: ["signup", "guest_signup"] }, createdAt: range } },
+        {
+            $group: {
+                _id: {
+                    src: { $ifNull: ["$meta.src", "direct"] },
+                    campaign: { $ifNull: ["$meta.campaign", null] },
+                },
+                signups: { $sum: 1 },
+                guests: { $sum: { $cond: [{ $eq: ["$type", "guest_signup"] }, 1, 0] } },
+                userIds: { $addToSet: "$userId" },
+            },
+        },
+    ]);
+    if (groups.length === 0) return [];
+
+    const allUserIds = groups.flatMap((g) => g.userIds);
+    const fought = await AnalyticsEvent.aggregate([
+        { $match: { type: "fight_resolved", userId: { $in: allUserIds } } },
+        { $group: { _id: "$userId" } },
+    ]);
+    const foughtSet = new Set(fought.map((r) => String(r._id)));
+
+    return groups
+        .map((g) => ({
+            src: g._id.src,
+            campaign: g._id.campaign,
+            signups: g.signups,
+            guests: g.guests,
+            firstFight: g.userIds.filter((id) => foughtSet.has(String(id))).length,
+        }))
+        .sort((a, b) => b.signups - a.signups || (a.src < b.src ? -1 : 1));
+}
+
 async function countSignups(range) {
     const res = await AnalyticsEvent.aggregate([
         { $match: { type: "signup", createdAt: range } },
@@ -487,4 +560,5 @@ module.exports = {
     CLIENT_EVENT_TYPES,
     sanitizeClientEvent,
     trackClientEvent,
+    acquisitionMeta,
 };

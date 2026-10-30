@@ -1,3 +1,5 @@
+import { getAcquisition } from "./lib/acquisition";
+
 const API = import.meta.env.VITE_API_URL || "http://localhost:4001";
 
 const TOKEN_KEY = "gnp_token";
@@ -50,8 +52,9 @@ async function request(path, options = {}) {
 
 export const api = {
   // ── Auth ────────────────────────────────────────────────
+  // Both signup lanes carry the link tag the visitor arrived with (lib/acquisition).
   register: (body) =>
-    request("/auth/register", { method: "POST", body: JSON.stringify(body) }),
+    request("/auth/register", { method: "POST", body: JSON.stringify({ ...body, acquisition: getAcquisition() }) }),
   login: (body) =>
     request("/auth/login", { method: "POST", body: JSON.stringify(body) }),
 
@@ -59,7 +62,7 @@ export const api = {
   // Success 201: { token, fighterId, accountId, recoveryCode } — recoveryCode
   // is shown only here and at regenerateRecoveryCode, never again.
   createGuest: (fighter) =>
-    request("/auth/guest", { method: "POST", body: JSON.stringify({ fighter }) }),
+    request("/auth/guest", { method: "POST", body: JSON.stringify({ fighter, acquisition: getAcquisition() }) }),
   // Success 200: { token, fighterId, accountId }
   resumeGuest: (recoveryCode) =>
     request("/auth/guest/resume", { method: "POST", body: JSON.stringify({ recoveryCode }) }),
