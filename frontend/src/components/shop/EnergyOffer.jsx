@@ -147,7 +147,9 @@ export const EnergyOffer = memo(function EnergyOffer({
   const drinkKind = drinkRow({ owned: drinkOwned });
   const minutes = waitMinutes(need, have);
   const hint = freeEarnHint(catalog?.freeEarn, catalog?.drinkSoftCap, drinkOwned);
-  const canSeeBundles = catalog?.paymentsEnabled !== false;
+  // No `onSeeBundles` (e.g. during the onboarding tutorial) means no link: leaving for the Shop
+  // mid-tutorial strands the player behind the scrim with no tooltip and no Skip.
+  const canSeeBundles = !!onSeeBundles && catalog?.paymentsEnabled !== false;
   const shotArt = shopArtSrc(SHOT_ID);
   const drinkArt = shopArtSrc(DRINK_ID);
 

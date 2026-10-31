@@ -13154,9 +13154,11 @@ button.shop-wallet-chip:disabled { cursor: default; opacity: .7; }
 .shop-item-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .shop-item-price { display: flex; align-items: center; gap: 3px; font-family: var(--font-display); font-weight: 800; font-size: 14px; color: var(--c-amber-bright); }
 
-/* A3: out-of-energy offer. GLOBAL classes on purpose: it portals to <body>, outside .your-camp. */
+/* A3: out-of-energy offer. GLOBAL classes on purpose: it portals to <body>, outside .your-camp.
+   z-index matches the blocking popup it replaced (FightLimitPopup): above the tutorial scrim
+   (50000), so an out-of-energy refusal during onboarding is never hidden under it. */
 .energy-offer-overlay {
-  position: fixed; inset: 0; z-index: 9400; background: rgba(0,0,0,.6);
+  position: fixed; inset: 0; z-index: 50600; background: rgba(0,0,0,.6);
   display: flex; align-items: center; justify-content: center; padding: 16px;
 }
 .energy-offer {

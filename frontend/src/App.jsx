@@ -932,7 +932,13 @@ function App() {
     tutorialResumedRef.current = true;
     // Gyms retired (contract §6.3): the training_session step's anchors live
     // in Your Camp now, not the old gym screen.
-    const STEP_RESUME_TAB = { training_session: gymsRetired ? "camp" : "gym" };
+    // fight_camp: every phase is skipIfAbsent, so on Home they all auto-skipped
+    // and the step jumped to the result with no fight. The camp is server state
+    // (acceptedFightId) and renders on the Fights tab after a reload.
+    const STEP_RESUME_TAB = {
+      training_session: gymsRetired ? "camp" : "gym",
+      fight_camp: "fights",
+    };
     const tab = STEP_RESUME_TAB[tut.current_step];
     if (tab) setActiveTab(tab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1301,6 +1307,9 @@ function App() {
       sessions: campState.sessions ?? [],
     });
     setShowCampSummary(true);
+    // A tutorial resumed after a reload with the camp already finalised waits on this
+    // to reach its weight-cut phase. No-op outside the tutorial.
+    tutorialBus.emit("camp_finalised");
   }, [campState]);
 
   const handleResolve = useCallback(async () => {
@@ -1552,7 +1561,11 @@ function App() {
         onClose={energyOffer.close}
         onRefreshFighter={loadFighter}
         onMessage={setMessage}
-        onSeeBundles={() => { energyOffer.close(); openShopBundles("offer"); }}
+        // Not during the onboarding tutorial: the Shop is off its path, so the scrim would
+        // strand the player there (no tooltip, no Skip). Wait and Energy Shot still work.
+        onSeeBundles={fighter?.tutorial && !fighter.tutorial.completed
+          ? undefined
+          : () => { energyOffer.close(); openShopBundles("offer"); }}
       />
 
       <ContenderModal
@@ -1960,7 +1973,11 @@ function App() {
                   addingSession={addingSession}
                   finalising={resolving}
                   onMessage={setMessage}
-                  onNavigateShop={() => handleNavTab("shop")}
+                  // Not during the onboarding tutorial: the supplements' "Buy →" would leave
+                  // the camp for the Shop, where the scrim has nothing to cut out.
+                  onNavigateShop={fighter?.tutorial && !fighter.tutorial.completed
+                    ? undefined
+                    : () => handleNavTab("shop")}
                   onRefreshFighter={loadFighter}
                   onEnergyShort={energyOffer.open}
                   onSelectBuff={(buffId, label) => {
