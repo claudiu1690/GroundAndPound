@@ -44,6 +44,8 @@ export const CHANGELOG_ENTRIES = [
       fixed: [
         "On a phone held upright the tutorial no longer locks the screen. It now points at the buttons in the bottom bar, and for Events and Hospital it points at More first, then at the tab inside it.",
         "The tutorial's first tips on a phone point at your energy, health, cash and record at the top of the screen instead of a hidden panel.",
+        "On small or sideways screens the tutorial tips always stay on screen, and the tab they point at scrolls into view, so the next button is always in reach.",
+        "The storage notice waits until the tutorial is over, so it no longer covers the tab the tutorial asks you to tap.",
         "If the tutorial ever has nothing to point at, a Skip tutorial button appears so you are never stuck.",
       ],
       balance: [],

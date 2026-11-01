@@ -230,6 +230,10 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
                     && r.bottom <= window.innerHeight && r.right <= window.innerWidth;
                 if (!visible) {
                     el.scrollIntoView({ block: "center", inline: "center" });
+                } else {
+                    // On screen but maybe clipped by a scroll box (the sidebar menu
+                    // on a short screen); "nearest" is a no-op when fully shown.
+                    el.scrollIntoView({ block: "nearest", inline: "nearest" });
                 }
             }
             timer = setTimeout(attempt, 150);

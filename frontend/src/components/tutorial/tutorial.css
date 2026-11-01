@@ -157,6 +157,14 @@
     color: #e31837;
 }
 
+/* The storage notice (z 8000) sits under the scrim, so it cannot be dismissed
+   during the tutorial, yet on tall phones it covers drawer tabs showing through
+   the cut-out (Hospital). It only states essential storage, so park it until
+   the tutorial is gone. */
+body:has(.tut-overlay) .cookie-consent {
+    display: none;
+}
+
 /* Shown only when the scrim has no cut-out and no tooltip, so the player is
    never left behind a blank full-screen scrim. */
 .tut-escape-skip {
