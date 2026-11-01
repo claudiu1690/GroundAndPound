@@ -1600,7 +1600,7 @@ function App() {
           <span className="m-fs-name">{fighter?.firstName} {fighter?.lastName}</span>
           {fighter?.nickname && <span className="m-fs-nick">"{fighter.nickname}"</span>}
         </div>
-        <div className="m-fs-badges">
+        <div className="m-fs-badges" data-tut="m-career">
           <span className="m-fs-ovr">{fighter?.overallRating ?? "—"}</span>
           <span className="m-fs-tier">{fighter?.promotionTier ?? "Amateur"}</span>
           <span className="m-fs-record">{fighter?.record?.wins ?? 0}-{fighter?.record?.losses ?? 0}</span>
@@ -1615,11 +1615,11 @@ function App() {
         const healthPct = Math.min(100, Math.max(0, fighter?.health ?? 0));
         return (
           <div className="m-resource-strip">
-            <div className="m-rs-left">
+            <div className="m-rs-left" data-tut="m-resources">
               <span className="m-rs-iron">{(fighter?.iron ?? 0).toLocaleString()}</span>
               <span className="m-rs-fame" onClick={() => setFameDrawerOpen(true)}>{(fighter?.notoriety?.score ?? 0).toLocaleString()}</span>
             </div>
-            <div className="m-rs-right">
+            <div className="m-rs-right" data-tut="m-vitals">
               <Zap size={12} className="m-rs-icon m-rs-icon-energy" />
               <div className="m-rs-bar"><div className="m-rs-bar-fill m-rs-energy" style={{ width: `${energyPct}%` }} /></div>
               <Heart size={12} className="m-rs-icon m-rs-icon-health" />
@@ -1987,23 +1987,25 @@ function App() {
       <nav className="m-bottom-nav">
         {/* Points at Your Camp once the gyms retire (contract §6.3) — the
             "gym" tab no longer exists in NAV_ITEMS at that point. */}
-        <button type="button" className={`m-nav-item ${activeTab === (gymsRetired ? "camp" : "gym") ? "act" : ""}`} onClick={() => handleNavTab(gymsRetired ? "camp" : "gym")}>
+        {/* data-tut ids mirror the sidebar's: on portrait the sidebar is display:none and the
+            drawer is not rendered, so these are the only nav targets the tutorial can cut out. */}
+        <button type="button" data-tut={gymsRetired ? "nav-camp" : "nav-gym"} className={`m-nav-item ${activeTab === (gymsRetired ? "camp" : "gym") ? "act" : ""}`} onClick={() => handleNavTab(gymsRetired ? "camp" : "gym")}>
           <Dumbbell size={17} strokeWidth={2.2} /><span>{t("layout.nav.train")}</span>
         </button>
-        <button type="button" className={`m-nav-item ${activeTab === "fights" ? "act" : ""}`} onClick={() => handleNavTab("fights")}>
+        <button type="button" data-tut="nav-fights" className={`m-nav-item ${activeTab === "fights" ? "act" : ""}`} onClick={() => handleNavTab("fights")}>
           <Swords size={17} strokeWidth={2.2} /><span>{t("layout.nav.fight")}</span>
         </button>
         <button type="button" className={`m-nav-item ${activeTab === "career" ? "act" : ""}`} onClick={() => handleNavTab("career")}>
           <FileText size={17} strokeWidth={2.2} /><span>{t("layout.nav.career")}</span>
         </button>
-        <button type="button" className={`m-nav-item ${activeTab === "rankings" ? "act" : ""}`} onClick={() => handleNavTab("rankings")}>
+        <button type="button" data-tut="nav-rankings" className={`m-nav-item ${activeTab === "rankings" ? "act" : ""}`} onClick={() => handleNavTab("rankings")}>
           <ListOrdered size={17} strokeWidth={2.2} /><span>{t("layout.nav.rank")}</span>
         </button>
         <button type="button" className={`m-nav-item ${activeTab === "pvp" ? "act" : ""}`} onClick={() => handleNavTab("pvp")}>
           <Crosshair size={17} strokeWidth={2.2} /><span>{t("layout.nav.pvp")}</span>
           {pvpUnread && <span className="nav-dot" aria-label={t("layout.topbar.unreadDefenseReport")} />}
         </button>
-        <button type="button" className={`m-nav-item ${mobileDrawerOpen ? "act" : ""}`} onClick={() => setMobileDrawerOpen(true)}>
+        <button type="button" data-tut="nav-more" className={`m-nav-item ${mobileDrawerOpen ? "act" : ""}`} onClick={() => setMobileDrawerOpen(true)}>
           <Menu size={17} strokeWidth={2.2} /><span>{t("layout.nav.more")}</span>
           {shopUnseen && <span className="nav-dot" aria-label={t("layout.topbar.newInShop")} />}
         </button>
