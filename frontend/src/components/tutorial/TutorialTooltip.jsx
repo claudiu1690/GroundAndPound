@@ -55,6 +55,10 @@ export function TutorialTooltip({
                 placement = "below";
             }
         }
+        // Always keep the card (and its button) on screen. An anchor above or
+        // below the fold on a short phone screen would otherwise push the card
+        // off screen, and the scrim blocks scrolling to reach it.
+        top = Math.max(MARGIN, Math.min(top, vh - size.h - MARGIN));
         let left = anchorCx - size.w / 2;
         left = Math.max(MARGIN, Math.min(left, vw - size.w - MARGIN));
         arrowLeft = Math.max(16, Math.min(anchorCx - left, size.w - 16));

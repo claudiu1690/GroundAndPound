@@ -46,9 +46,27 @@ function resolveEl(idOrArr) {
     return fallback;
 }
 
+/**
+ * The element the cut-out should reveal. Same as resolveEl, except a nav tab that
+ * is not on screen (portrait phones keep Events / Hospital inside the closed
+ * "More" drawer) falls back to the bottom nav's More button, so the player can
+ * open the drawer and the cut-out moves to the tab once it renders. clickFocus
+ * still matches the real tab only, so tapping More does not advance the phase.
+ */
+function resolveFocalEl(idOrArr) {
+    const el = resolveEl(idOrArr);
+    if (el && isVisible(el)) return el;
+    const ids = Array.isArray(idOrArr) ? idOrArr : [idOrArr];
+    if (ids.some((id) => typeof id === "string" && id.startsWith("nav-"))) {
+        const more = resolveEl("nav-more");
+        if (more && isVisible(more)) return more;
+    }
+    return el;
+}
+
 /** Viewport rect of a data-tut element, or null if absent / not laid out. */
 function measureEl(idOrArr) {
-    const el = resolveEl(idOrArr);
+    const el = resolveFocalEl(idOrArr);
     if (!el) return null;
     const r = el.getBoundingClientRect();
     if (r.width === 0 && r.height === 0) return null;
@@ -196,27 +214,32 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
     // ── Scroll the focal element into view ───────────────────
     // The scrim blocks manual scrolling, so a focal element below the fold
     // (e.g. the Events / Hospital nav tabs) would be unreachable. Bring it
-    // into view whenever the focus changes — retrying until it mounts.
+    // into view whenever the focus changes, and again whenever the element it
+    // resolves to changes (on a phone the More button, then the tab inside the
+    // drawer it opens, which can sit below the drawer's fold).
     useEffect(() => {
         if (!effectiveFocus || stepId === "complete") return undefined;
-        let cancelled = false;
-        let tries = 0;
+        let timer;
+        let scrolledEl = null;
         const attempt = () => {
-            if (cancelled) return;
-            const el = resolveEl(effectiveFocus);
-            if (el) {
+            const el = resolveFocalEl(effectiveFocus);
+            if (el && el !== scrolledEl && isVisible(el)) {
+                scrolledEl = el;
                 const r = el.getBoundingClientRect();
                 const visible = r.top >= 0 && r.left >= 0
                     && r.bottom <= window.innerHeight && r.right <= window.innerWidth;
                 if (!visible) {
                     el.scrollIntoView({ block: "center", inline: "center" });
+                } else {
+                    // On screen but maybe clipped by a scroll box (the sidebar menu
+                    // on a short screen); "nearest" is a no-op when fully shown.
+                    el.scrollIntoView({ block: "nearest", inline: "nearest" });
                 }
-                return;
             }
-            if (tries++ < 20) setTimeout(attempt, 150);
+            timer = setTimeout(attempt, 150);
         };
         attempt();
-        return () => { cancelled = true; };
+        return () => clearTimeout(timer);
     }, [effectiveFocus, stepId]);
 
     // ── Continuous measurement of focal + anchor rects ───────
@@ -305,6 +328,13 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
                     index={tooltipIndex}
                     total={tooltips.length}
                 />
+            )}
+            {/* Escape hatch: waiting on an action with nothing to act on (no tooltip,
+                no cut-out) would leave a full-screen scrim and a stuck player. */}
+            {!currentTooltip && !holeRect && (
+                <button type="button" className="tut-escape-skip" onClick={handleSkipTutorial}>
+                    {t("tutorial.tooltip.skipTutorial")}
+                </button>
             )}
         </div>,
         document.body
