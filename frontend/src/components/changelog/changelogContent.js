@@ -35,6 +35,21 @@ export const CHANGELOG_ENTRIES = [
     },
   },
   {
+    version: "2.2.6",
+    date: "2026-11-01",
+    major: false,
+    highlights: [],
+    sections: {
+      changed: [],
+      fixed: [
+        "On a phone held upright the tutorial no longer locks the screen. It now points at the buttons in the bottom bar, and for Events and Hospital it points at More first, then at the tab inside it.",
+        "The tutorial's first tips on a phone point at your energy, health, cash and record at the top of the screen instead of a hidden panel.",
+        "If the tutorial ever has nothing to point at, a Skip tutorial button appears so you are never stuck.",
+      ],
+      balance: [],
+    },
+  },
+  {
     version: "2.2.5",
     date: "2026-10-30",
     major: false,

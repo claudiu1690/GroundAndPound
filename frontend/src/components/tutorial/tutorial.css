@@ -157,6 +157,26 @@
     color: #e31837;
 }
 
+/* Shown only when the scrim has no cut-out and no tooltip, so the player is
+   never left behind a blank full-screen scrim. */
+.tut-escape-skip {
+    position: fixed;
+    z-index: 3;
+    pointer-events: auto;
+    left: 50%;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    background: #FEFEFE;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
 /* ── Completion modal ──────────────────────────────────────── */
 .tut-complete-root {
     position: fixed;

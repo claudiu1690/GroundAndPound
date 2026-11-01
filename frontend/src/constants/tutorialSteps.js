@@ -41,26 +41,26 @@ export const TUTORIAL_STEPS = {
                 skipIfAbsent: true,
                 tooltips: [
                     {
-                        focus: "profile-energy",
-                        anchor: "profile-energy",
+                        focus: ["profile-energy", "m-vitals"],
+                        anchor: ["profile-energy", "m-vitals"],
                         title: "Your Energy",
                         body: "Energy is your daily fuel — training sessions and fights both spend it, and it refills over time. When this bar runs low, rest before you push on.",
                     },
                     {
-                        focus: "profile-health",
-                        anchor: "profile-health",
+                        focus: ["profile-health", "m-vitals"],
+                        anchor: ["profile-health", "m-vitals"],
                         title: "Your Health",
                         body: "Health is how much punishment you're carrying. Fights drain it and it slowly regenerates between them. Stepping into the cage hurt makes you fight worse and get injured more easily.",
                     },
                     {
-                        focus: "profile-resources",
-                        anchor: "profile-resources",
+                        focus: ["profile-resources", "m-resources"],
+                        anchor: ["profile-resources", "m-resources"],
                         title: "Cash & Fame",
                         body: "Cash is your money, earned from fights and spent on coaches, healing and supplies. Fame is your reputation in the division; it grows as you win and perform.",
                     },
                     {
-                        focus: "profile-career",
-                        anchor: "profile-career",
+                        focus: ["profile-career", "m-career"],
+                        anchor: ["profile-career", "m-career"],
                         title: "Your Career",
                         body: "Your rank shows where you stand in your weight class. Win fights to climb — break into the top 5 and a title shot comes into reach.",
                     },
@@ -101,7 +101,7 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: "nav-camp",
                         title: "This Is Your Camp",
-                        body: "Your career starts here. This is your own camp, with your own coach on the payroll. Training costs energy, and the more you train the stronger you get. Tap My Camp to begin.",
+                        body: "Your career starts here. This is your own camp, with your own coach on the payroll. Training costs energy, and the more you train the stronger you get. Tap My Camp (Train on a phone) to begin.",
                     },
                 ],
             },
@@ -333,7 +333,7 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: "nav-events",
                         title: "The Big Stage",
-                        body: "Events are weekly NPC fight cards. You can't fight on them — but you can bet cash on the outcomes. Tap the Events tab.",
+                        body: "Events are weekly NPC fight cards. You can't fight on them — but you can bet cash on the outcomes. Tap the Events tab (under More on a phone).",
                     },
                 ],
             },
@@ -373,7 +373,7 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: "nav-hospital",
                         title: "Your Health",
-                        body: "Every fight takes a toll. The Hospital tracks your health and any injuries you're carrying. Tap the Hospital tab.",
+                        body: "Every fight takes a toll. The Hospital tracks your health and any injuries you're carrying. Tap the Hospital tab (under More on a phone).",
                     },
                 ],
             },
