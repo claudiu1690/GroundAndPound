@@ -5,8 +5,10 @@ import { AuthPage } from "../auth/AuthPage";
 import { CookieConsent } from "../legal/CookieConsent";
 import { LegalModals } from "../legal/LegalModals";
 import { ReportBugModal } from "../shared/ReportBugModal";
-import { DiscordIcon } from "../shared/DiscordIcon";
+import { RoadmapPage } from "./RoadmapPage";
+import { NavSocialIcons, SiteFooter } from "./SiteChrome";
 import { useSeasonBand } from "../../hooks/useSeasonBand";
+
 import { openLegalFromUrl } from "../../lib/legalDeepLink";
 
 // How close the NEXT season has to be before the landing hero starts counting
@@ -18,11 +20,13 @@ const opensWithinTeaseWindow = (season) =>
   new Date(season.startDate) - Date.now() <= NEXT_SEASON_TEASE_WINDOW_DAYS * 86400000;
 import { formatDate, formatDateShort, countdownCells, weeksLeftLabel } from "../../lib/countdown";
 
-// Open a legal modal from a footer link without navigating.
-const openLegal = (e, eventName) => {
-  e.preventDefault();
-  window.dispatchEvent(new CustomEvent(eventName));
-};
+// The roadmap is a second page of the logged-out site, addressed by query string
+// (`/?page=roadmap`) because the app has no router and the static host has no
+// rewrites: a query string survives a reload and a shared link on any host.
+const ROADMAP_QUERY = "?page=roadmap";
+const viewFromUrl = () =>
+  new URLSearchParams(window.location.search).get("page") === "roadmap" ? "roadmap" : "home";
+
 
 /**
  * The Training Camp collage — cropped captures of the real camp UI.
@@ -111,10 +115,10 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
   // The season being promoted across the page: an upcoming season directly, or
   // the one queued behind the live season ONCE IT IS CLOSE. Nav label, hero and
   // the Proving Ground band all read this, so the page never advertises two
-  // seasons at once. The window matters: the sweep seeds N+1 the moment N goes
-  // live, so without it the hero would flip straight from "Season 2 opens in
-  // 3 days" to a 70-day countdown for Season 3 and never once say Season 2 is
-  // live. Outside the window the live season owns the hero.
+  // seasons at once. The window matters: the public DTO always carries a `next`
+  // tease while a season is live, so without it the hero would flip straight from
+  // "Season 2 opens in 3 days" to a 70-day countdown for Season 3 and never once
+  // say Season 2 is live. Outside the window the live season owns the hero.
   const teaser =
     seasonData && !seasonLoading
       ? seasonData.status === "upcoming"
@@ -128,6 +132,32 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
   // `/?legal=terms|privacy` deep link (Stripe's Dashboard points at these). LegalModals is a
   // child, so its listeners are registered by the time this mount effect runs.
   useEffect(() => { openLegalFromUrl(); }, []);
+
+  // Home vs roadmap page. Back/forward move between them like real pages.
+  const [view, setView] = useState(viewFromUrl);
+  useEffect(() => {
+    const onPop = () => setView(viewFromUrl());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  function openRoadmap(e) {
+    e.preventDefault();
+    window.history.pushState({}, "", window.location.pathname + ROADMAP_QUERY);
+    setView("roadmap");
+    window.scrollTo(0, 0);
+  }
+
+  // Back to the landing page, optionally to an anchor on it (e.g. "#play").
+  function openHome(hash) {
+    window.history.pushState({}, "", window.location.pathname + (hash || ""));
+    setView("home");
+    requestAnimationFrame(() => {
+      const target = hash ? document.querySelector(hash) : null;
+      if (target) target.scrollIntoView();
+      else window.scrollTo(0, 0);
+    });
+  }
 
   // Nav scroll darkening
   const [scrolled, setScrolled] = useState(false);
@@ -211,7 +241,9 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
   // observer (plus the scroll backstop) indefinitely while a visitor reads.
   // seasonNumber + status cover every state transition that actually changes
   // what's rendered (evergreen -> upcoming -> active -> next season).
-  }, [seasonLoading, seasonData?.seasonNumber, seasonData?.status]);
+  // `view` too: coming back from the roadmap remounts every section, and the
+  // new nodes need observing or they stay hidden.
+  }, [seasonLoading, seasonData?.seasonNumber, seasonData?.status, view]);
 
   // Lightbox
   const [lightboxSrc, setLightboxSrc] = useState(null);
@@ -300,11 +332,38 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
     );
   }
 
+  if (view === "roadmap") {
+    return (
+      <>
+        <RoadmapPage seasonData={seasonData} seasonLoading={seasonLoading} onHome={openHome} />
+        {/* The roadmap's footer opens these, same as the landing page's. */}
+        <CookieConsent />
+        <LegalModals />
+        <ReportBugModal />
+      </>
+    );
+  }
+
   return (
     <div className="landing-page">
       {/* NAV */}
       <nav className={scrolled ? "scrolled" : ""}>
-        <div className="nav-logo">Ground <span>&amp;</span> Pound</div>
+        <a
+          className="nav-logo"
+          href="/"
+          onClick={(e) => {
+            // Back to the top of this page, not a reload. Drops a #play/#pvp hash so a
+            // later refresh does not jump back down.
+            e.preventDefault();
+            const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+            window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+            if (window.location.hash) {
+              window.history.replaceState(null, "", window.location.pathname + window.location.search);
+            }
+          }}
+        >
+          Ground <span>&amp;</span> Pound
+        </a>
         <div className="nav-links">
           {/* Deliberately sparse. Four section anchors down a page this long read
               as clutter, and the page is a single scroll — the only link worth a
@@ -314,16 +373,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
           <a className="nav-link" href="#pvp">
             {seasonData ? `Season ${seasonData.seasonNumber}` : "Season 1"}
           </a>
-          <a
-            className="nav-link nav-link--icon"
-            href="https://discord.gg/jDmh4wuBMb"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Join our Discord"
-            title="Discord"
-          >
-            <DiscordIcon size={17} />
-          </a>
+          <NavSocialIcons />
           <a className="nav-cta" href="#play">Play Free</a>
         </div>
       </nav>
@@ -360,6 +410,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
                 <div className="hero-actions">
                   <a className="btn-primary" href="#play">Start Your Career</a>
                   <a className="btn-secondary" href="#features">See How It Works</a>
+                  <a className="btn-roadmap" href={ROADMAP_QUERY} onClick={openRoadmap}><span className="btn-roadmap-dot" aria-hidden="true" />Roadmap</a>
                 </div>
               </div>
               <div className="hero-scroll">Scroll</div>
@@ -411,6 +462,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
               <div className="hero-actions">
                 <a className="btn-gold" href="#play">{teaser ? "Claim Your Spot" : "Start Your Career"}</a>
                 <a className="btn-secondary" href="#camp">What&apos;s New</a>
+                <a className="btn-roadmap" href={ROADMAP_QUERY} onClick={openRoadmap}><span className="btn-roadmap-dot" aria-hidden="true" />Roadmap</a>
               </div>
             </div>
             <div className="hero-scroll">Scroll</div>
@@ -849,18 +901,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
       {/* FOOTER */}
       <SectionDivider c="#D4A820" c2="#C8102E" />
       <div style={{ marginTop: "40px" }}>
-        <footer>
-          <div className="foot-logo">Ground <span>&amp;</span> Pound</div>
-          <div className="foot-links">
-            <a className="foot-link" href="https://discord.gg/jDmh4wuBMb" target="_blank" rel="noopener noreferrer">Discord</a>
-            <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-cookie-policy")}>Cookie Policy</a>
-            <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-privacy-policy")}>Privacy</a>
-            <a className="foot-link" href="#" onClick={(e) => openLegal(e, "open-terms")}>Terms</a>
-            <a className="foot-link" href="#" onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent("open-bug-report")); }}>Report a Bug</a>
-          </div>
-          <div className="foot-copy">&copy; 2026 Digital Olive SRL. All rights reserved.</div>
-          <div className="foot-copy">CUI 50872480 · Trade Register J29/1032/2024 · support@groundandpound.net</div>
-        </footer>
+        <SiteFooter />
       </div>
 
       {/* Cookie consent banner + legal modals for logged-out visitors */}

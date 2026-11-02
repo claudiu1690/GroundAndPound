@@ -21,6 +21,7 @@ const {
     WEIGHT_CLASSES_PVP,
     OPEN_WEIGHT_CLASS,
     SEASON_LENGTH_DAYS,
+    SEASON_GAP_DAYS,
 } = require("../../consts/pvpConfig");
 
 // ── Fake Season model ───────────────────────────────────────────────────────
@@ -68,6 +69,8 @@ function wcSeason(weightClass, over = {}) {
 // The live season the tease derives from. A deliberately non-round endDate: the tease
 // must reproduce it to the millisecond, not merely to the day.
 const ANCHOR_END_ISO = "2026-09-09T13:47:11.123Z";
+// Where the tease (and finalizeSeason) put season N+1: one off-season after the anchor ends.
+const NEXT_START_ISO = new Date(Date.parse(ANCHOR_END_ISO) + SEASON_GAP_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
 function activeOpenAnchor(over = {}) {
     return {
@@ -185,7 +188,7 @@ test("publicWeightClassLabel: per-WC season is its own class; null season is nul
 
 // ── teaseSeason — the derivation itself ─────────────────────────────────────
 
-test("teaseSeason: startDate IS the anchor's endDate, to the millisecond", async () => {
+test("teaseSeason: startDate IS the anchor's endDate plus the off-season, to the millisecond", async () => {
     await withTease({ enabled: true }, () => {
         const anchor = activeOpenAnchor();
         const tease = pvpSeasonService.teaseSeason(anchor);
@@ -193,10 +196,10 @@ test("teaseSeason: startDate IS the anchor's endDate, to the millisecond", async
         assert.ok(tease, "an armed tease with a live anchor must produce a season");
         assert.equal(
             new Date(tease.startDate).getTime(),
-            new Date(anchor.endDate).getTime(),
-            "finalizeSeason seeds N+1 with startDate = endingSeason.endDate — the countdown must match it exactly"
+            pvpSeasonService.nextSeasonStart(anchor).getTime(),
+            "finalizeSeason seeds N+1 with nextSeasonStart(endingSeason); the countdown must match it exactly"
         );
-        assert.equal(new Date(tease.startDate).toISOString(), ANCHOR_END_ISO);
+        assert.equal(new Date(tease.startDate).toISOString(), NEXT_START_ISO);
     });
 });
 
@@ -307,7 +310,7 @@ test("teaseSeason: every call returns a FRESH object — one poll cannot poison 
         assert.notEqual(second.config, first.config);
         assert.notEqual(second.name, "MUTATED");
         assert.equal(second.config.crossWeightClass, true);
-        assert.equal(new Date(second.startDate).getTime(), new Date(anchor.endDate).getTime());
+        assert.equal(new Date(second.startDate).toISOString(), NEXT_START_ISO);
     });
 });
 
@@ -337,7 +340,7 @@ test("getNextSeason (b): falls back to the anchor-derived tease when nothing is 
         assert.equal(next.name, pvpSeasonService.seasonNameFor(expectedTwist));
         assert.equal(next.weightClass, OPEN_WEIGHT_CLASS);
         assert.equal(next.config.crossWeightClass, true);
-        assert.equal(new Date(next.startDate).getTime(), anchor.endDate.getTime());
+        assert.equal(new Date(next.startDate).toISOString(), NEXT_START_ISO);
         assert.equal(String(next._id).startsWith("tease:"), true, "sentinel id can never collide with an ObjectId");
     });
 });
@@ -447,11 +450,11 @@ test("GET /pvp/season/public: the derived tease reaches the client, fully shaped
         assert.equal(res._body.next.weightClassLabel, "Open · All Weight Classes");
         assert.equal(res._body.next.twistEffect, pvpSeasonService.twistCopyFor(expectedTwist).twistEffect);
         assert.equal(
-            res._body.next.startDate,
-            res._body.endDate,
-            "the advertised start IS the live season's end — the countdown cannot disagree with the rollover"
+            Date.parse(res._body.next.startDate),
+            Date.parse(res._body.endDate) + SEASON_GAP_DAYS * 24 * 60 * 60 * 1000,
+            "the advertised start IS the live season's end plus the off-season; the countdown cannot disagree with the rollover"
         );
-        assert.equal(res._body.next.startDate, ANCHOR_END_ISO);
+        assert.equal(res._body.next.startDate, NEXT_START_ISO);
         assert.equal("_id" in res._body.next, false, "the sentinel id must never be exposed");
     });
 });

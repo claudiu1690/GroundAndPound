@@ -11,6 +11,7 @@ import { OpenMatPanel } from "./OpenMatPanel";
 import { MarketPanel } from "./MarketPanel";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DEEP_CLEAN_COST, DEEP_CLEAN_GAIN } from "./campConstants";
+import { shortfallFromError } from "../shop/energyOfferModel";
 
 /** Scrolls + pulses an element by id (Needs-Today "jump to it" targeting). */
 function flashElementById(id) {
@@ -212,7 +213,7 @@ function buildFirePreview(coach, campState) {
  * camp renovation, and Deep Clean — all funnelled through the same
  * `useHomeCamp` hook so it stays the ONLY camp API caller.
  */
-export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMessage, addToast, onMoveDropReveal }) {
+export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMessage, addToast, onMoveDropReveal, onEnergyShort }) {
   const fighterId = fighter?._id;
   const {
     camp: campState, loading, error, refetch, train, promote, claimPerk, claimTeach, rename,
@@ -341,23 +342,27 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
           tutorialBus.emit("training_complete");
         }
 
+        // Every drop gets the card flip, duplicates included (they reveal their cash).
         const moveDrop = result.moveDrop || null;
-        if (moveDrop) {
-          if (moveDrop.outcome === "DUPLICATE") {
-            addToast?.({ kind: "moveDupe", name: moveDrop.name, cashAwarded: moveDrop.cashAwarded ?? 0 });
-          } else {
-            onMoveDropReveal?.(moveDrop);
-          }
-        }
+        if (moveDrop) onMoveDropReveal?.(moveDrop);
 
         if (onRefreshFighter) await onRefreshFighter(fighterId);
       } catch (e) {
-        setActionError(describeTrainError(e));
+        // Zero sessions could be funded: open the out-of-energy offer (the server's need/have win).
+        // A partial batch is a 200 ("Stopped early") and never reaches this branch.
+        if (e?.code === "not_enough_energy" && onEnergyShort) {
+          onEnergyShort({
+            source: "camp",
+            ...shortfallFromError(e, { need: drill.energy, have: fighter?.energy?.current ?? 0 }),
+          });
+        } else {
+          setActionError(describeTrainError(e));
+        }
       } finally {
         setTrainingDrillKey(null);
       }
     },
-    [fighterId, training, train, addToast, onMoveDropReveal, onRefreshFighter]
+    [fighterId, fighter?.energy?.current, training, train, addToast, onMoveDropReveal, onRefreshFighter, onEnergyShort]
   );
 
   const handlePromote = useCallback(
@@ -372,19 +377,12 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
         // ── Teach-channel reveals (Phase 2, contract §6.1) ──────────────────
         // `taughtMoves` is ALWAYS an array (never null) — [] when the rank
         // teaches nothing. Walk it with the IDENTICAL branch already used for
-        // a sparring-session `moveDrop`: DUPLICATE -> compact moveDupe toast,
-        // else -> the existing DropRevealModal (tagged source:"coach" so the
-        // eyebrow can differ, per F5). A Rank-4 Rare coach can deliver 2 moves
+        // a sparring-session `moveDrop`: the DropRevealModal for every outcome,
+        // duplicates included (tagged source:"coach" so the eyebrow can differ, per F5). A Rank-4 Rare coach can deliver 2 moves
         // at once, a Legendary up to 3 — App.jsx's moveDropQueue (F2) makes
         // sure none of them are silently swallowed by the single-slot modal.
         const taughtMoves = Array.isArray(promotion?.taughtMoves) ? promotion.taughtMoves : [];
-        for (const m of taughtMoves) {
-          if (m.outcome === "DUPLICATE") {
-            addToast?.({ kind: "moveDupe", name: m.name, cashAwarded: m.cashAwarded ?? 0 });
-          } else {
-            onMoveDropReveal?.({ ...m, source: "coach" });
-          }
-        }
+        for (const m of taughtMoves) onMoveDropReveal?.({ ...m, source: "coach" });
 
         // ── Badge toasts ─────────────────────────────────────────────────
         // `newlyEarnedBadges` can contain UNRELATED badges — evaluateBadges
@@ -459,13 +457,7 @@ export const CampTab = memo(function CampTab({ fighter, onRefreshFighter, onMess
         const res = await claimTeach(coachId);
         onMessage?.(res?.message || t("yourCamp.teach.claimed"));
         const moves = Array.isArray(res?.taughtMoves) ? res.taughtMoves : [];
-        for (const m of moves) {
-          if (m.outcome === "DUPLICATE") {
-            addToast?.({ kind: "moveDupe", name: m.name, cashAwarded: m.cashAwarded ?? 0 });
-          } else {
-            onMoveDropReveal?.({ ...m, source: "coach" });
-          }
-        }
+        for (const m of moves) onMoveDropReveal?.({ ...m, source: "coach" });
         if (onRefreshFighter) await onRefreshFighter(fighterId);
       } catch (e) {
         onMessage?.(e?.message || t("yourCamp.errors.claimTeachFailed"));

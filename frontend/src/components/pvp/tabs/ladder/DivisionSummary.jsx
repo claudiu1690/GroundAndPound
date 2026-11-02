@@ -10,10 +10,11 @@ const DIV_ORDER = [
 ];
 
 /**
- * DivisionSummary — one connected colored spectrum strip spanning all 5 divisions.
+ * DivisionSummary — one connected colored strip spanning all 5 divisions.
  *
- * Each segment has flex proportional to that division's fighter count, tinted in
- * the division color. Clicking a segment → setDivision(key) (toggle: clicking
+ * Five equal segments, tinted in the division color, each labelled with its
+ * fighter count. (Sizing them by count squeezed the small divisions to a sliver
+ * whose labels piled on top of each other, unreadable on a phone.) Clicking a segment → setDivision(key) (toggle: clicking
  * the active segment clears to null / "All").
  *
  * Optional YOU marker: a small ▲ YOU tick positioned at the player's fraction
@@ -36,14 +37,12 @@ export function DivisionSummary({ divisionCounts, division, setDivision, myPosit
   let youFrac = null;
   if (myPosition?.division && total > 0) {
     const myDiv = myPosition.division;
-    let countsBefore = 0;
-    let myDivCount = 0;
+    let divIndex = -1;
     let withinFrac = 0;
 
-    for (const d of DIV_ORDER) {
-      const cnt = divisionCounts[d.key] ?? 0;
+    for (const [i, d] of DIV_ORDER.entries()) {
       if (d.key === myDiv) {
-        myDivCount = cnt;
+        divIndex = i;
         // Use position rank within the division to estimate fraction
         // We know the player's rank from myPosition.rank; approximate within-div rank
         // by looking at fraction from position data if available, else 0.5
@@ -61,11 +60,10 @@ export function DivisionSummary({ divisionCounts, division, setDivision, myPosit
         }
         break;
       }
-      countsBefore += cnt;
     }
 
-    // Position = (fighters before + fraction * fighters in div) / total
-    youFrac = total > 0 ? (countsBefore + withinFrac * myDivCount) / total : null;
+    // Equal segments: the marker sits in its division's fifth, at the DP fraction.
+    youFrac = divIndex >= 0 ? (divIndex + withinFrac) / DIV_ORDER.length : null;
   }
 
   return (
@@ -80,15 +78,12 @@ export function DivisionSummary({ divisionCounts, division, setDivision, myPosit
           const g = parseInt(color.slice(3, 5), 16);
           const b = parseInt(color.slice(5, 7), 16);
 
-          // Use at least flex:1 so zero-count segments don't collapse entirely
-          const flexWeight = Math.max(1, count);
-
           return (
             <div
               key={key}
               className={`lt-ds-seg${isSelected ? " lt-ds-seg-act" : ""}`}
               style={{
-                flex: flexWeight,
+                flex: 1,
                 background: isSelected
                   ? `rgba(${r},${g},${b},0.28)`
                   : `rgba(${r},${g},${b},0.10)`,
@@ -105,7 +100,7 @@ export function DivisionSummary({ divisionCounts, division, setDivision, myPosit
                 className="lt-ds-seg-lbl"
                 style={{ color: isSelected ? color : `rgba(${r},${g},${b},0.7)` }}
               >
-                {count} {label}
+                <b>{count}</b> {label}
               </span>
             </div>
           );
@@ -117,7 +112,8 @@ export function DivisionSummary({ divisionCounts, division, setDivision, myPosit
         <div className="lt-ds-you-row" aria-label={t("pvp.ladder.posYouMarkerAriaLabel", { rank: myPosition?.overallRank ?? myPosition?.rank })}>
           <div
             className="lt-ds-you-marker"
-            style={{ left: `${youFrac * 100}%` }}
+            // Kept off the very edges so the "▲ YOU · #n" label is never cut off.
+            style={{ left: `${Math.min(92, Math.max(8, youFrac * 100))}%` }}
           >
             <div className="lt-ds-you-tick" />
             <span className="lt-ds-you-lbl">

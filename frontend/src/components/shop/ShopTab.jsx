@@ -3,17 +3,15 @@ import { Coins, Zap, TrendingUp, ShoppingBag, Info, Check, X } from "lucide-reac
 import { api } from "../../api";
 import { t } from "@/lib/i18n";
 import { usePurchaseStatus } from "../../hooks/usePurchaseStatus";
+import { PremiumPanel } from "./PremiumPanel";
 import {
-  bundlesCrossSoftCap,
-  checkoutErrorKey,
-  premiumBuyMode,
-  purchaseReturnBanner,
+  boosterEffect,
   buffStatTags,
-  boosterStatTags,
-  boosterEffectLine,
   inventoryCount,
-  pctLabel,
+  purchaseReturnBanner,
+  checkoutErrorKey,
   resolveBoosterDisplay,
+  shopArtSrc,
 } from "./shopConstants";
 
 // ── Small presentational pieces ─────────────────────────────
@@ -21,6 +19,15 @@ import {
 function StatTag({ slug, text }) {
   return <span className={`shop-bt shop-bt-${slug}`}>{text}</span>;
 }
+
+/** Painted product art in a small square. Always decorative: the name and effect sit beside it. */
+function ShopArt({ id }) {
+  const src = shopArtSrc(id);
+  if (!src) return null;
+  return <img className="shop-art" src={src} alt="" loading="lazy" width="68" height="68" />;
+}
+
+const cashLabel = (n) => Number(n || 0).toLocaleString("en-US");
 
 /** A cash buy button that folds "Not enough cash" into its own disabled state. */
 function BuyButton({ canAfford, busy, onClick, label, className = "shop-buy-btn" }) {
@@ -39,181 +46,90 @@ function BuyButton({ canAfford, busy, onClick, label, className = "shop-buy-btn"
   );
 }
 
-// ── Energy section ──────────────────────────────────────────
-
-function EnergyCard({ item, busy, onBuy, onGetMore }) {
-  const isPremium = !!item.premium;
+/** One shelf card: painted art on the left, name, effect line, price and the buy control. */
+function ShopItem({ id, name, effect, extra, price, disabled = false, children }) {
   return (
-    <div className={`shop-energy-card${isPremium ? " shop-energy-card--premium" : ""}`}>
-      <div className={`shop-energy-stripe ${isPremium ? "shop-energy-stripe--gold" : "shop-energy-stripe--blue"}`} />
-      <div className="shop-energy-body">
-        <div className={`shop-energy-icon ${isPremium ? "shop-energy-icon--gold" : "shop-energy-icon--blue"}`}>
-          <Zap size={18} />
-        </div>
-        <div className="shop-energy-info">
-          <div className="shop-energy-name">
-            {item.name}
-            {isPremium && <span className="shop-energy-premium-tag">{t("shop.energy.premiumTag")}</span>}
-          </div>
-          <div className="shop-energy-desc">{t("shop.energy.restoresDesc", { energy: item.energy })}</div>
-          <div className="shop-energy-balance">
-            {t("shop.energy.inInventoryPrefix")}<span className={isPremium ? "shop-energy-bal--gold" : "shop-energy-bal--blue"}>{item.owned ?? 0}</span>{t("shop.energy.inInventorySuffix")}
-          </div>
-        </div>
-        <div className="shop-energy-action">
-          {isPremium ? (
-            <>
-              <div className="shop-energy-cost shop-energy-cost--muted">{t("shop.energy.realMoneyLabel")}</div>
-              <button type="button" className="shop-buy-btn shop-buy-btn--gold" onClick={onGetMore}>
-                {t("shop.energy.getMore")}
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="shop-energy-cost">
-                <Coins size={11} /> {item.price}
-              </div>
-              <BuyButton
-                canAfford={item.canAfford}
-                busy={busy}
-                onClick={onBuy}
-                className="shop-buy-btn shop-buy-btn--gold"
-              />
-            </>
-          )}
+    <div className={`shop-item${disabled ? " shop-item--disabled" : ""}`}>
+      <ShopArt id={id} />
+      <div className="shop-item-main">
+        <div className="shop-item-name">{name}</div>
+        <div className="shop-item-fx">{effect}</div>
+        {extra}
+        <div className="shop-item-row">
+          <div className="shop-item-price"><Coins size={11} /> {cashLabel(price)}</div>
+          {children}
         </div>
       </div>
     </div>
   );
 }
 
-// ── XP booster card ─────────────────────────────────────────
+// ── Cash store cards ────────────────────────────────────────
+
+function EnergyShotCard({ item, busy, onBuy }) {
+  return (
+    <ShopItem
+      id={item.id}
+      name={item.name}
+      effect={t("shop.product.shotEffect")}
+      extra={
+        <div className="shop-item-owned">
+          {t("shop.energy.inInventoryPrefix")}<span className="shop-item-owned-n">{item.owned ?? 0}</span>{t("shop.energy.inInventorySuffix")}
+        </div>
+      }
+      price={item.price}
+    >
+      <BuyButton canAfford={item.canAfford} busy={busy} onClick={onBuy} className="shop-buy-btn shop-buy-btn--ghost" />
+    </ShopItem>
+  );
+}
 
 function BoosterCard({ booster, dimmed, busy, onBuy }) {
-  const tags = boosterStatTags(booster);
-  const isStack = booster.stats === "ALL" && booster.sessions >= 8;
+  const fx = boosterEffect(booster);
   const blocked = dimmed || booster.locked;
   return (
-    <div className={`shop-xp-card${isStack ? " shop-xp-card--stack" : ""}${blocked ? " shop-xp-card--disabled" : ""}`}>
-      <div className="shop-xp-stripe" />
-      <div className="shop-xp-body">
-        {isStack && <span className="shop-stack-tag">{t("shop.booster.bestValue")}</span>}
-        <div className="shop-xp-top">
-          <div className="shop-xp-name">{booster.name}</div>
-          <span className="shop-xp-sessions">{booster.sessions} {t("shop.booster.sessionsSuffix")}</span>
-        </div>
-        <div className="shop-xp-boost">+{pctLabel(booster.pct)}%</div>
-        <div className="shop-xp-boost-lbl">{boosterEffectLine(booster)}</div>
-        <div className="shop-xp-tags">
-          {tags.map((tg, i) => <StatTag key={i} {...tg} />)}
-        </div>
-        <div className="shop-xp-footer">
-          <div className="shop-xp-price"><Coins size={11} /> {booster.price}</div>
-          {booster.locked ? (
-            <button type="button" className="shop-buy-btn shop-buy-btn--ghost" disabled title={t("shop.booster.locked")}>
-              {t("shop.booster.locked")}
-            </button>
-          ) : (
-            <BuyButton canAfford={booster.canAfford} busy={busy} onClick={onBuy} className="shop-buy-btn shop-buy-btn--ghost" />
-          )}
-        </div>
-      </div>
-    </div>
+    <ShopItem
+      id={booster.id}
+      name={booster.name}
+      effect={
+        <>
+          {t("shop.product.boosterXp", { pct: fx.pct })}
+          {fx.allStats
+            ? <>, {t("shop.product.boosterAllStats")}</>
+            : <> {fx.tags.map((tg, i) => <StatTag key={i} {...tg} />)}</>}
+          {" · "}
+          {t("shop.product.boosterSessions", { n: fx.sessions })}
+        </>
+      }
+      price={booster.price}
+      disabled={blocked}
+    >
+      {booster.locked ? (
+        <button type="button" className="shop-buy-btn shop-buy-btn--ghost" disabled title={t("shop.booster.locked")}>
+          {t("shop.booster.locked")}
+        </button>
+      ) : (
+        <BuyButton canAfford={booster.canAfford} busy={busy} onClick={onBuy} className="shop-buy-btn shop-buy-btn--ghost" />
+      )}
+    </ShopItem>
   );
 }
-
-// ── Pre-fight buff card ─────────────────────────────────────
 
 function BuffCard({ buff, busy, onBuy }) {
-  const tags = buffStatTags(buff);
-  const effect = buff.injuryMult != null
-    ? t("shop.buff.effectToughSkin")
-    : t("shop.buff.effectConsumed");
+  const isInjury = buff.injuryMult != null;
+  const tags = isInjury ? [] : buffStatTags(buff);
   return (
-    <div className="shop-buff-card">
-      <div className="shop-buff-stripe" style={tagStripeStyle(tags)} />
-      <div className="shop-buff-body">
-        <div className="shop-buff-top">
-          <div className="shop-buff-name">{buff.name}</div>
-          <span className="shop-buff-duration">{t("shop.buff.duration")}</span>
-        </div>
-        <div className="shop-buff-effect">{effect}</div>
-        <div className="shop-buff-tags">
-          {tags.map((tg, i) => <StatTag key={i} {...tg} />)}
-        </div>
-        <div className="shop-buff-footer">
-          <div className="shop-buff-price"><Coins size={11} /> {buff.price}</div>
-          <BuyButton canAfford={buff.canAfford} busy={busy} onClick={onBuy} className="shop-buy-btn shop-buy-btn--ghost" />
-        </div>
-      </div>
-    </div>
+    <ShopItem
+      id={buff.id}
+      name={buff.name}
+      effect={isInjury
+        ? t("shop.product.collagenEffect")
+        : tags.map((tg, i) => <StatTag key={i} {...tg} />)}
+      price={buff.price}
+    >
+      <BuyButton canAfford={buff.canAfford} busy={busy} onClick={onBuy} className="shop-buy-btn shop-buy-btn--ghost" />
+    </ShopItem>
   );
-}
-
-/** Pick a stripe colour from the first tag's slug (purely cosmetic). */
-function tagStripeStyle(tags) {
-  const slug = tags[0]?.slug ?? "xp";
-  const map = {
-    str: "var(--c-accent)",
-    spd: "var(--c-blue)",
-    gnd: "#8B5CF6",
-    sub: "#14B8A6",
-    leg: "#3A9A4A",
-    wre: "var(--c-amber-bright)",
-    chn: "#7DD3FC",
-    fiq: "#A855F7",
-    def: "#3A9A4A",
-    xp: "var(--c-amber-bright)",
-  };
-  return { background: map[slug] ?? "var(--c-amber-bright)" };
-}
-
-// ── Premium bundle card ─────────────────────────────────────
-
-function BundleCard({ bundle, smallest, busy, locked, mode, onBuy }) {
-  // Derive per-drink + savings vs smallest bundle for the 3 bigger ones.
-  const price = parsePrice(bundle.priceLabel);
-  const perDrink = price != null && bundle.drinks ? price / bundle.drinks : null;
-  let savings = null;
-  if (smallest && smallest.drinks && perDrink != null) {
-    const smallPrice = parsePrice(smallest.priceLabel);
-    const smallPer = smallPrice != null ? smallPrice / smallest.drinks : null;
-    if (smallPer && bundle.id !== smallest.id) {
-      savings = Math.round((1 - perDrink / smallPer) * 100);
-    }
-  }
-  return (
-    <div className={`shop-bundle-card${bundle.popular ? " shop-bundle-card--popular" : ""}`}>
-      {bundle.popular && <div className="shop-bundle-popular">{t("shop.bundle.mostPopular")}</div>}
-      <div className="shop-bundle-icon"><Zap size={26} /></div>
-      <div className="shop-bundle-drinks">{bundle.drinks}</div>
-      <div className="shop-bundle-unit">{t("shop.bundle.energyDrinks")}</div>
-      <div className="shop-bundle-price">{bundle.priceLabel}</div>
-      <div className={`shop-bundle-per${savings != null ? " shop-bundle-per--savings" : ""}`}>
-        {perDrink != null ? `$${perDrink.toFixed(2)} ${t("shop.bundle.perDrinkSuffix")}` : ""}
-        {savings != null && savings > 0 ? ` · ${t("shop.bundle.save", { pct: savings })}` : ""}
-      </div>
-      <button
-        type="button"
-        className="shop-bundle-btn"
-        onClick={onBuy}
-        disabled={busy || locked || mode === "disabled"}
-      >
-        {busy
-          ? t("shop.bundle.redirecting")
-          : mode === "guest"
-            ? t("shop.bundle.buyGuest")
-            : t("shop.bundle.buy")}
-      </button>
-    </div>
-  );
-}
-
-function parsePrice(label) {
-  if (!label) return null;
-  const m = String(label).replace(/[^0-9.]/g, "");
-  const n = parseFloat(m);
-  return Number.isFinite(n) ? n : null;
 }
 
 // ── Inventory tab pieces ────────────────────────────────────
@@ -281,15 +197,39 @@ export const ShopTab = memo(function ShopTab({
   onOpenAccount,
   purchaseReturn = null, // { outcome: "success" | "cancelled", sessionId } from the Stripe return URL
   onPurchaseReturnConsumed,
+  expandRequest = null, // { from, nonce }: App asks for the bundle panel open (e.g. "See bundles" in the offer)
 }) {
   const [catalog, setCatalog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState(purchaseReturn ? "premium" : "cash"); // cash | premium | inventory
+  const [tab, setTab] = useState("cash"); // cash | inventory
   const [busyId, setBusyId] = useState(null); // item/bundle id currently mutating
   const [premiumNotice, setPremiumNotice] = useState("");
 
+  // ── Premium panel state ──
+  // `panelInit` is the server's premiumPanel from the FIRST successful load of this mount and is
+  // never overwritten: a silent reload after a buy/use/delivery must not fold the panel or change
+  // its eyebrow mid-visit. `expanded` is local UI state; A2 never remembers it across visits.
+  const [panelInit, setPanelInit] = useState(null);
+  const [expanded, setExpandedState] = useState(false);
+  const [hideable, setHideable] = useState(false);
+  const panelInitRef = useRef(null);
+  const seenSentRef = useRef(false);
+  const expandedRef = useRef(false);
+
   const fighterId = fighter?._id;
+
+  const setExpanded = useCallback((v) => {
+    expandedRef.current = v;
+    setExpandedState(v);
+  }, []);
+
+  // New fighter => forget the frozen first-load state (declared before the load effect).
+  useEffect(() => {
+    panelInitRef.current = null;
+    seenSentRef.current = false;
+    setPanelInit(null);
+  }, [fighterId]);
 
   const loadCatalog = useCallback(async ({ silent = false } = {}) => {
     if (!fighterId) return;
@@ -300,19 +240,49 @@ export const ShopTab = memo(function ShopTab({
     try {
       const data = await api.getShopCatalog(fighterId);
       setCatalog(data);
+      if (!panelInitRef.current) {
+        const p = data.premiumPanel || { mode: "collapsed", reason: null };
+        panelInitRef.current = p;
+        setPanelInit(p);
+        if (p.mode === "full") setExpanded(true);
+      }
     } catch (e) {
       if (!silent) setError(e.message || t("shop.loadError"));
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [fighterId]);
+  }, [fighterId, setExpanded]);
 
   useEffect(() => { loadCatalog(); }, [loadCatalog]);
+
+  // Mark the full panel seen only once it has actually rendered: an effect runs after commit,
+  // so a player who leaves the Shop before the catalog arrives does not use up the one-time
+  // panel. Idempotent and fire-and-forget; on failure the server shows it in full next visit.
+  useEffect(() => {
+    if (panelInit?.mode !== "full" || seenSentRef.current || !fighterId) return;
+    seenSentRef.current = true;
+    api.markPremiumPanelSeen(fighterId).catch(() => {});
+  }, [panelInit, fighterId]);
 
   const afterMutation = useCallback(async () => {
     await loadCatalog({ silent: true });
     if (onRefreshFighter && fighterId) await onRefreshFighter(fighterId);
   }, [loadCatalog, onRefreshFighter, fighterId]);
+
+  /** Transient expansion (never touches the server flags). No-op when already open. */
+  const openPanel = useCallback((from) => {
+    if (expandedRef.current) return;
+    setExpanded(true);
+    setHideable(true);
+    if (fighterId) {
+      api.trackClientEvent(fighterId, "premium_panel_expanded", { from }).catch(() => {});
+    }
+  }, [fighterId, setExpanded]);
+
+  const hidePanel = useCallback(() => {
+    setExpanded(false);
+    setHideable(false);
+  }, [setExpanded]);
 
   // ── Return from Stripe Checkout ──
   // The hook follows the order until the webhook has delivered (or given up). Only a
@@ -322,8 +292,15 @@ export const ShopTab = memo(function ShopTab({
   const banner = purchaseReturnBanner(purchaseReturn, purchaseStatus);
 
   useEffect(() => {
-    if (purchaseReturn) setTab("premium");
-  }, [purchaseReturn]);
+    if (purchaseReturn) openPanel("purchase_return");
+  }, [purchaseReturn, openPanel]);
+
+  // "See bundles" from the out-of-energy offer (or any other caller) asks for the panel open.
+  const expandNonce = expandRequest?.nonce;
+  const expandFrom = expandRequest?.from;
+  useEffect(() => {
+    if (expandNonce) openPanel(expandFrom || "offer");
+  }, [expandNonce, expandFrom, openPanel]);
 
   // Delivered: pull the new inventory in once (fighter + catalog owned counts).
   const refreshedForSession = useRef(null);
@@ -358,9 +335,9 @@ export const ShopTab = memo(function ShopTab({
   /**
    * Real money. Opens a Stripe Checkout Session and hands the browser to Stripe.
    *
-   * ⚠️ DELIBERATELY GRANTS NOTHING AND REFRESHES NOTHING. The old stub could safely pretend;
+   * DELIBERATELY GRANTS NOTHING AND REFRESHES NOTHING. The old stub could safely pretend;
    * this cannot. Goods are granted by the signature-verified webhook, so anything optimistic
-   * here would show drinks the player has not paid for yet — and the payment can still fail,
+   * here would show drinks the player has not paid for yet, and the payment can still fail,
    * be abandoned at Stripe, or complete minutes later on a card that needs 3-D Secure.
    *
    * `busyId` is intentionally left set: this navigates away, so re-enabling the button would
@@ -405,27 +382,33 @@ export const ShopTab = memo(function ShopTab({
   // Active booster lives on the fighter (not inventory) but is shown in the
   // inventory view, so include it in the tab badge count.
   const invCount = inventoryCount(fighter?.inventory) + (fighter?.activeBooster ? 1 : 0);
+  const drinks = fighter?.inventory?.energyDrinks ?? 0;
+  const showBody = !loading && !error && catalog;
 
   return (
     <div className="shop-tab">
       <div className="shop-page-header">
-        <div className="shop-page-eye">{t("shop.pageEye")}</div>
-        <div className="shop-page-title">{t("shop.pageTitle")}</div>
-        <div className="shop-page-sub">{t("shop.pageSub")}</div>
-      </div>
-
-      <div className="shop-tabs">
-        <button type="button" className={`shop-tab-btn${tab === "cash" ? " act" : ""}`} onClick={() => setTab("cash")}>
-          <Coins size={13} /> {t("shop.tabs.cash")}
-        </button>
-        <button type="button" className={`shop-tab-btn${tab === "premium" ? " act" : ""}`} onClick={() => setTab("premium")}>
-          <Zap size={13} /> {t("shop.tabs.premium")}
-          <span className="shop-tab-badge">{t("shop.tabs.premiumBadge")}</span>
-        </button>
-        <button type="button" className={`shop-tab-btn${tab === "inventory" ? " act" : ""}`} onClick={() => setTab("inventory")}>
-          <ShoppingBag size={13} /> {t("shop.tabs.inventory")}
-          {invCount > 0 && <span className="shop-tab-badge">{invCount}</span>}
-        </button>
+        <div className="shop-page-head-text">
+          <div className="shop-page-eye">{t("shop.pageEye")}</div>
+          <div className="shop-page-title">{t("shop.pageTitle")}</div>
+          <div className="shop-page-sub">{t("shop.pageSub")}</div>
+        </div>
+        <div className="shop-wallet">
+          <div className="shop-wallet-chip">
+            <small>{t("shop.wallet.cash")}</small>
+            <span className="shop-wallet-cash">{cashLabel(fighter?.iron)}</span>
+          </div>
+          <button
+            type="button"
+            className="shop-wallet-chip shop-wallet-chip--drinks"
+            onClick={() => openPanel("chip")}
+            disabled={!showBody}
+          >
+            <small>{t("shop.wallet.drinks")}</small>
+            <span>{drinks}</span>
+            <span className="shop-wallet-plus" aria-hidden="true">+</span>
+          </button>
+        </div>
       </div>
 
       {banner && (
@@ -446,35 +429,52 @@ export const ShopTab = memo(function ShopTab({
         </div>
       )}
 
+      {showBody && (
+        <div className="shop-panel-area">
+          <PremiumPanel
+            expanded={expanded}
+            hideable={hideable}
+            reason={panelInit?.reason ?? null}
+            catalog={catalog}
+            drinks={drinks}
+            busyId={busyId}
+            notice={premiumNotice}
+            isGuest={isGuest}
+            onOpenAccount={onOpenAccount}
+            onBuy={handleBuyPremium}
+            onExpand={openPanel}
+            onHide={hidePanel}
+          />
+        </div>
+      )}
+
+      <div className="shop-tabs">
+        <button type="button" className={`shop-tab-btn${tab === "cash" ? " act" : ""}`} onClick={() => setTab("cash")}>
+          <Coins size={13} /> {t("shop.tabs.cash")}
+        </button>
+        <button type="button" className={`shop-tab-btn${tab === "inventory" ? " act" : ""}`} onClick={() => setTab("inventory")}>
+          <ShoppingBag size={13} /> {t("shop.tabs.inventory")}
+          {invCount > 0 && <span className="shop-tab-badge">{invCount}</span>}
+        </button>
+      </div>
+
       <div className="shop-body">
         {loading && <div className="shop-state shop-state--loading">{t("shop.loading")}</div>}
 
         {!loading && error && (
           <div className="shop-state shop-state--error">
             {error}
-            <button type="button" className="shop-buy-btn shop-buy-btn--ghost" onClick={loadCatalog}>{t("common.retry")}</button>
+            <button type="button" className="shop-buy-btn shop-buy-btn--ghost" onClick={() => loadCatalog()}>{t("common.retry")}</button>
           </div>
         )}
 
-        {!loading && !error && catalog && (
+        {showBody && (
           <>
             {tab === "cash" && (
               <CashStore
                 catalog={catalog}
                 busyId={busyId}
                 onBuy={handleBuy}
-                onGetMore={() => setTab("premium")}
-              />
-            )}
-            {tab === "premium" && (
-              <PremiumStore
-                catalog={catalog}
-                fighter={fighter}
-                busyId={busyId}
-                notice={premiumNotice}
-                isGuest={isGuest}
-                onOpenAccount={onOpenAccount}
-                onBuy={handleBuyPremium}
               />
             )}
             {tab === "inventory" && (
@@ -495,21 +495,22 @@ export const ShopTab = memo(function ShopTab({
 
 // ── CASH STORE ──────────────────────────────────────────────
 
-function CashStore({ catalog, busyId, onBuy, onGetMore }) {
+function CashStore({ catalog, busyId, onBuy }) {
   const { activeBooster, energyItems = [], boosters = [], buffs = [] } = catalog;
+  // The Energy Drink is real money only; it lives in the bundle panel, not on this shelf.
+  const cashEnergy = energyItems.filter((i) => !i.premium);
   return (
     <>
       {/* Energy */}
       <section className="shop-section">
-        <div className="shop-section-label">{t("shop.sections.energy")}</div>
-        <div className="shop-energy-row">
-          {energyItems.map((item) => (
-            <EnergyCard
+        <div className="shop-section-label">{t("shop.shelves.energy")}</div>
+        <div className="shop-shelf">
+          {cashEnergy.map((item) => (
+            <EnergyShotCard
               key={item.id}
               item={item}
               busy={busyId === item.id}
               onBuy={() => onBuy(item.id)}
-              onGetMore={onGetMore}
             />
           ))}
         </div>
@@ -517,9 +518,7 @@ function CashStore({ catalog, busyId, onBuy, onGetMore }) {
 
       {/* XP boosters */}
       <section className="shop-section">
-        <div className="shop-section-label">
-          {t("shop.sections.xpBoosters")} <span className="shop-section-sub">{t("shop.sections.xpBoostersSub")}</span>
-        </div>
+        <div className="shop-section-label">{t("shop.shelves.boosters")}</div>
 
         {activeBooster && (
           <div className="shop-active-banner">
@@ -534,7 +533,7 @@ function CashStore({ catalog, busyId, onBuy, onGetMore }) {
           </div>
         )}
 
-        <div className="shop-grid-4">
+        <div className="shop-shelf">
           {boosters.map((b) => (
             <BoosterCard
               key={b.id}
@@ -547,99 +546,16 @@ function CashStore({ catalog, busyId, onBuy, onGetMore }) {
         </div>
       </section>
 
-      {/* Pre-fight buffs */}
+      {/* Pre-fight supplements */}
       <section className="shop-section">
-        <div className="shop-section-label">
-          {t("shop.sections.preFightBuffs")} <span className="shop-section-sub">{t("shop.sections.preFightBuffsSub")}</span>
-        </div>
-        <div className="shop-grid-3">
+        <div className="shop-section-label">{t("shop.shelves.supplements")}</div>
+        <div className="shop-shelf">
           {buffs.map((bf) => (
             <BuffCard key={bf.id} buff={bf} busy={busyId === bf.id} onBuy={() => onBuy(bf.id)} />
           ))}
         </div>
       </section>
     </>
-  );
-}
-
-// ── PREMIUM STORE ───────────────────────────────────────────
-
-function PremiumStore({ catalog, fighter, busyId, notice, isGuest, onOpenAccount, onBuy }) {
-  const bundles = catalog.premiumBundles || [];
-  const drinks = fighter?.inventory?.energyDrinks ?? 0;
-  const mode = premiumBuyMode({ isGuest, paymentsEnabled: catalog.paymentsEnabled });
-  const redirecting = busyId != null && bundles.some((b) => b.id === busyId);
-  const showOverCap = mode === "buy"
-    && bundlesCrossSoftCap({ owned: drinks, bundles, cap: catalog.drinkSoftCap });
-  // Standing notice for the current buy mode; a checkout error (`notice`) goes beneath it.
-  const modeNotice = mode === "guest"
-    ? t("shop.premium.guestNotice")
-    : mode === "disabled"
-      ? t("shop.premium.disabled")
-      : null;
-  // Smallest by drink count drives savings comparison.
-  const smallest = bundles.reduce(
-    (min, b) => (!min || (b.drinks || 0) < (min.drinks || 0) ? b : min),
-    null
-  );
-  return (
-    <section className="shop-premium">
-      <div className="shop-premium-hero">
-        <div>
-          <div className="shop-premium-eye">{t("shop.premium.eye")}</div>
-          <div className="shop-premium-title">{t("shop.premium.title")}</div>
-          <div className="shop-premium-desc">
-            {t("shop.premium.desc")}
-          </div>
-        </div>
-        <div className="shop-premium-balance">
-          <div className="shop-premium-bal-val">{drinks}</div>
-          <div className="shop-premium-bal-lbl">{t("shop.premium.drinksInInventory")}</div>
-        </div>
-      </div>
-
-      {modeNotice && (
-        <div className="shop-premium-notice">
-          <Info size={14} /> {modeNotice}
-        </div>
-      )}
-      {redirecting && (
-        <div className="shop-premium-notice">
-          <Info size={14} /> {t("shop.premium.redirecting")}
-        </div>
-      )}
-      {showOverCap && (
-        <div className="shop-premium-notice">
-          <Info size={14} /> {t("shop.premium.overCap", { owned: drinks, cap: catalog.drinkSoftCap })}
-        </div>
-      )}
-      {notice && notice !== modeNotice && (
-        <div className="shop-premium-notice">
-          <Info size={14} /> {notice}
-        </div>
-      )}
-
-      <div className="shop-bundle-grid">
-        {bundles.map((b) => (
-          <BundleCard
-            key={b.id}
-            bundle={b}
-            smallest={smallest}
-            busy={busyId === b.id}
-            locked={busyId != null}
-            mode={mode}
-            onBuy={() => (mode === "guest" ? onOpenAccount?.() : onBuy(b.id))}
-          />
-        ))}
-      </div>
-
-      <div className="shop-premium-earn">
-        <Info size={14} className="shop-premium-earn-icon" />
-        <div className="shop-premium-earn-text">
-          {t("shop.premium.earnNote")}
-        </div>
-      </div>
-    </section>
   );
 }
 

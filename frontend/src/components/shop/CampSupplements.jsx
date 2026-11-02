@@ -103,21 +103,26 @@ export const CampSupplements = memo(function CampSupplements({
               const owned = (ownedMap[bf.id] || 0) > 0;
               const selected = localSel === bf.id;
               const tags = buffStatTags(bf);
+              // No `onNavigateShop` (e.g. during the onboarding tutorial) means no "Buy →":
+              // a not-owned card is just a dead card instead of a link off the tutorial's path.
+              const canBuy = !owned && !!onNavigateShop;
               return (
                 <button
                   key={bf.id}
                   type="button"
                   className={`camp-supp-card${selected ? " camp-supp-card--selected" : ""}${owned ? "" : " camp-supp-card--locked"}`}
-                  onClick={() => owned ? select(bf.id) : onNavigateShop && onNavigateShop()}
-                  disabled={saving || disabled}
+                  onClick={() => owned ? select(bf.id) : canBuy && onNavigateShop()}
+                  disabled={saving || disabled || (!owned && !canBuy)}
                   title={owned ? undefined : t("shop.camp.notOwned")}
                 >
                   <div className="camp-supp-top">
                     <span className="camp-supp-name">{bf.name}</span>
                     {owned ? (
                       <span className="camp-supp-owned">{t("shop.camp.ownedCount", { count: ownedMap[bf.id] })}</span>
-                    ) : (
+                    ) : canBuy ? (
                       <span className="camp-supp-buy"><ShoppingBag size={10} /> {t("shop.camp.buyLink")}</span>
+                    ) : (
+                      <span className="camp-supp-buy">{t("shop.camp.notOwned")}</span>
                     )}
                   </div>
                   <div className="camp-supp-tags">

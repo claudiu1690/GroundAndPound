@@ -26,7 +26,8 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
   backdrop-filter:blur(0px);
 }
 .landing-page nav.scrolled{background:rgba(0,0,0,0.92);backdrop-filter:blur(8px)}
-.landing-page .nav-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;letter-spacing:1px}
+.landing-page .nav-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;letter-spacing:1px;color:var(--tp);text-decoration:none}
+.landing-page .nav-logo:hover{color:var(--tp)}
 .landing-page .nav-logo span{color:var(--r)}
 .landing-page .nav-links{display:flex;align-items:center;gap:28px}
 .landing-page .nav-link{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ts);text-decoration:none;transition:color 0.2s}
@@ -445,6 +446,19 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
   text-decoration: none; display: inline-block;
 }
 
+/* Roadmap: ice blue, the roadmap page's Season 3 colour, so it reads as its own
+   destination next to the gold career button and the white What's New outline. */
+.landing-page .btn-roadmap {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 12px;
+  letter-spacing: 2.5px; text-transform: uppercase; text-decoration: none; cursor: pointer;
+  color: #dff4ff; background: rgba(125, 211, 252, 0.16); border: 1px solid #7dd3fc;
+  padding: 13px 26px; border-radius: 2px; box-shadow: 0 0 18px rgba(125, 211, 252, 0.28);
+  transition: background .2s, box-shadow .2s;
+}
+.landing-page .btn-roadmap:hover { background: rgba(125, 211, 252, 0.28); box-shadow: 0 0 26px rgba(125, 211, 252, 0.45); }
+.landing-page .btn-roadmap-dot { width: 7px; height: 7px; border-radius: 50%; background: #7dd3fc; box-shadow: 0 0 8px #7dd3fc; }
+
 /* ── Hero entry: the walkout. Slam in through a red flash, then shake. ── */
 @keyframes gnpSlamIn {
   0%   { opacity: 0; transform: scale(2.4); filter: blur(14px); }
@@ -597,4 +611,33 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
   .landing-page .sdiv::after,
   .landing-page .s2-dot { animation: none !important; }
   .landing-page .hero--season::after { display: none; }
+}
+
+/* ── SOCIAL ICONS (nav) ── brand tint on hover; Discord keeps the base rule. */
+.landing-page .nav-link--instagram:hover{color:#E1306C}
+.landing-page .nav-link--facebook:hover{color:#1877F2}
+.landing-page .nav-link--tiktok:hover{color:#25F4EE}
+/* Footer: logo and links on the first row, the company lines underneath (with the
+   social links added, four items no longer fit one row). */
+.landing-page .foot-links{flex-wrap:wrap;justify-content:flex-end;gap:10px 20px}
+.landing-page footer{flex-wrap:wrap;row-gap:14px}
+.landing-page footer .foot-copy{flex-basis:100%;color:#6a6a6a}
+.landing-page footer .foot-copy + .foot-copy{margin-top:-8px}
+
+/* Phones: a tighter nav so all four icons fit next to the logo and Play Free.
+   Only the narrowest phones (under 360px) fall back to Discord alone; the
+   footer always has every link. */
+@media (max-width: 480px) {
+  .landing-page nav { padding: 14px 16px; }
+  .landing-page .nav-links { gap: 8px; }
+  .landing-page .nav-logo { font-size: 17px; letter-spacing: .5px; }
+  .landing-page .nav-cta { padding: 9px 12px; letter-spacing: 1.5px; }
+}
+@media (max-width: 359px) {
+  .landing-page .nav-link--instagram,
+  .landing-page .nav-link--facebook,
+  .landing-page .nav-link--tiktok{display:none}
+}
+@media (max-width: 860px) {
+  .landing-page .foot-links{justify-content:center}
 }

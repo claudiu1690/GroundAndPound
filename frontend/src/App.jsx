@@ -42,17 +42,21 @@ import { EmailVerifyBanner } from "./components/account/EmailVerifyBanner";
 import { GuestBanner } from "./components/account/GuestBanner";
 import { DashboardTab } from "./components/dashboard/DashboardTab";
 import { ShopTab } from "./components/shop/ShopTab";
+import { EnergyOffer } from "./components/shop/EnergyOffer";
 import { InventorySidebar } from "./components/shop/InventorySidebar";
 import { CookieConsent } from "./components/legal/CookieConsent";
 import { LegalModals } from "./components/legal/LegalModals";
 import { openLegalFromUrl } from "./lib/legalDeepLink";
 import { ReportBugModal } from "./components/shared/ReportBugModal";
 import { ChangelogModal } from "./components/changelog/ChangelogModal";
+import { RoadmapOverlay, urlHasRoadmap } from "./components/landing/RoadmapOverlay";
 import { CHANGELOG_ENTRIES, CURRENT_VERSION } from "./components/changelog/changelogContent";
 import { tutorialBus } from "./utils/tutorialBus";
-import { TITLE_WINS, TOP_TIER, isTitleContender, isTopFiveDisplayRank } from "./constants/gameConstants";
+import { TITLE_WINS, TOP_TIER, FIGHT_ENERGY_COST, isTitleContender, isTopFiveDisplayRank } from "./constants/gameConstants";
+import { CAMP_SESSIONS } from "./constants/campConfig";
 import { useToasts } from "./hooks/useToasts";
 import { useShopNews } from "./hooks/useShopNews";
+import { useEnergyOffer } from "./hooks/useEnergyOffer";
 import { PvpHub } from "./components/pvp/PvpHub";
 import {
   LayoutDashboard,
@@ -505,6 +509,9 @@ function App() {
   // Set when Stripe sends the player back to /?purchase=...; ShopTab renders the order banner.
   // Shape: { outcome: "success" | "cancelled", sessionId: string | null } | null.
   const [purchaseReturn, setPurchaseReturn]     = useState(null);
+  // Set when something asks the Shop to open with the bundle panel expanded (e.g. "See bundles"
+  // in the out-of-energy offer). Shape: { from, nonce } | null; cleared when the Shop is left.
+  const [shopExpand, setShopExpand]             = useState(null);
   // Your Camp (Phase 2) — learned from the 410 the boot-time `loadGyms` call
   // gets back once GYMS_RETIRED flips server-side (contract §6.3). Drives:
   // NAV_ITEMS (drops the gym tab), forcing activeTab "gym"→"camp", the
@@ -553,6 +560,8 @@ function App() {
     return () => window.removeEventListener(PERSONA_MOMENT_EVENT, onMoment);
   }, []);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
+  // Out-of-energy offer (A3): one instance for the whole app, opened by any in-scope screen.
+  const energyOffer = useEnergyOffer({ fighterId: fighter?._id });
   // One-time "you're a contender" announcement. We track the previous
   // pendingPromotion value so we only fire on the absent→set transition.
   const [contenderModal, setContenderModal] = useState(null);
@@ -562,6 +571,9 @@ function App() {
   // "What's New" changelog — auto-opens once for returning players on a major
   // release they haven't seen yet (gated on fighter load, see effect below).
   const [changelogOpen, setChangelogOpen] = useState(false);
+  // Roadmap page over the game. Starts open when a signed-in player follows a
+  // shared `/?page=roadmap` link.
+  const [roadmapOpen, setRoadmapOpen] = useState(urlHasRoadmap);
   const [changelogUnseen, setChangelogUnseen] = useState(false);
   const changelogCheckedRef = useRef(false);
   /** Bumps after train / membership pay so gym quest panel refetches without a full page reload. */
@@ -750,8 +762,17 @@ function App() {
   // The banner belongs to the Shop visit that followed the redirect: once the player moves to
   // another tab, drop it so coming back later does not replay a stale "payment received".
   useEffect(() => {
-    if (activeTab !== "shop") setPurchaseReturn((cur) => (cur ? null : cur));
+    if (activeTab !== "shop") {
+      setPurchaseReturn((cur) => (cur ? null : cur));
+      setShopExpand((cur) => (cur ? null : cur));
+    }
   }, [activeTab]);
+
+  // "See bundles" in the out-of-energy offer: open the Shop with the bundle panel expanded.
+  const openShopBundles = useCallback((from) => {
+    setShopExpand({ from, nonce: Date.now() });
+    setActiveTab("shop");
+  }, []);
 
   // `/?legal=terms|privacy` deep link for authed players (Stripe Dashboard legal URLs). Waits
   // for the real shell: LegalModals is not mounted behind the loading spinner. Logged-out
@@ -911,7 +932,13 @@ function App() {
     tutorialResumedRef.current = true;
     // Gyms retired (contract §6.3): the training_session step's anchors live
     // in Your Camp now, not the old gym screen.
-    const STEP_RESUME_TAB = { training_session: gymsRetired ? "camp" : "gym" };
+    // fight_camp: every phase is skipIfAbsent, so on Home they all auto-skipped
+    // and the step jumped to the result with no fight. The camp is server state
+    // (acceptedFightId) and renders on the Fights tab after a reload.
+    const STEP_RESUME_TAB = {
+      training_session: gymsRetired ? "camp" : "gym",
+      fight_camp: "fights",
+    };
     const tab = STEP_RESUME_TAB[tut.current_step];
     if (tab) setActiveTab(tab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -938,6 +965,16 @@ function App() {
   const handleAuthenticated = useCallback(
     (fighterId) => {
       setAuthed(true);
+      // roadmapOpen was seeded from the URL when the page loaded, so a visitor who looked at
+      // the logged-out roadmap and then signed up landed on it instead of the game and the
+      // tutorial. Signing in always starts on the game, and the param goes so a refresh
+      // does not reopen it.
+      setRoadmapOpen(false);
+      if (urlHasRoadmap()) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("page");
+        window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+      }
       loadFighter(fighterId);
       loadGyms(fighterId);
     },
@@ -947,6 +984,7 @@ function App() {
   const handleLogout = useCallback(() => {
     authStorage.clear();
     setAuthed(false);
+    setRoadmapOpen(false);
     setFighter(null);
     setLastFightSummary(null);
     setLastFightCommentary([]);
@@ -1042,23 +1080,15 @@ function App() {
         }
 
         // ── Special-move drop (sparring-family sessions only) ────────────
-        // NEW/UPGRADE get the tall-card reveal; DUPLICATE is a compact cash
-        // toast that also patches the displayed cash from newBalance so the
+        // Every outcome gets the card flip (DUPLICATE included since 2.3). A
+        // duplicate also patches the displayed cash from newBalance so the
         // sidebar doesn't wait on the fighter refetch below.
         const moveDrop = result.moveDrop || null;
         if (moveDrop) {
-          if (moveDrop.outcome === "DUPLICATE") {
-            addToast({
-              kind: "moveDupe",
-              name: moveDrop.name,
-              cashAwarded: moveDrop.cashAwarded ?? 0,
-            });
-            if (moveDrop.newBalance != null) {
-              setFighter((prev) => (prev ? { ...prev, iron: moveDrop.newBalance } : prev));
-            }
-          } else {
-            enqueueMoveDrop(moveDrop);
+          if (moveDrop.outcome === "DUPLICATE" && moveDrop.newBalance != null) {
+            setFighter((prev) => (prev ? { ...prev, iron: moveDrop.newBalance } : prev));
           }
+          enqueueMoveDrop(moveDrop);
         }
 
         loadFighter(fighter._id, { clearMessage: false });
@@ -1172,12 +1202,22 @@ function App() {
         return { ok: true };
       } catch (e) {
         const errMsg = e.message || "Accept failed";
-        maybeShowBlockPopup(errMsg, e.code);
-        setMessage(errMsg);
+        // Not enough energy opens the out-of-energy offer instead of the blocking popup. Every
+        // other refusal keeps its existing path. The server's need/have win over our guess.
+        const offered = energyOffer.openFromError(e, "fight", {
+          need: FIGHT_ENERGY_COST[fighter.promotionTier] ?? 10,
+          have: fighter.energy?.current ?? 0,
+        });
+        if (offered) {
+          setMessage("");
+        } else {
+          maybeShowBlockPopup(errMsg, e.code);
+          setMessage(errMsg);
+        }
         return { ok: false, code: e.code, message: errMsg };
       }
     },
-    [fighter?._id, loadFighter, maybeShowBlockPopup]
+    [fighter?._id, fighter?.promotionTier, fighter?.energy?.current, loadFighter, maybeShowBlockPopup, energyOffer.openFromError]
   );
 
   const loadCampState = useCallback(async (fightId) => {
@@ -1202,10 +1242,15 @@ function App() {
       }
       loadFighter(fighter._id, { clearMessage: false });
     } catch (e) {
-      setMessage(e.message || "Failed to add session");
+      // Not enough energy opens the offer; anything else is the usual toast.
+      const offered = energyOffer.openFromError(e, "fightcamp", {
+        need: CAMP_SESSIONS[sessionType]?.energy,
+        have: fighter.energy?.current ?? 0,
+      });
+      if (!offered) setMessage(e.message || "Failed to add session");
     }
     setAddingSession(null);
-  }, [fighter?._id, fighter?.acceptedFightId, loadFighter]);
+  }, [fighter?._id, fighter?.acceptedFightId, fighter?.energy?.current, loadFighter, energyOffer.openFromError]);
 
   const handleRemoveCampSession = useCallback(async (slotIndex) => {
     const fightId = fighter?.acceptedFightId;
@@ -1265,6 +1310,9 @@ function App() {
       sessions: campState.sessions ?? [],
     });
     setShowCampSummary(true);
+    // A tutorial resumed after a reload with the camp already finalised waits on this
+    // to reach its weight-cut phase. No-op outside the tutorial.
+    tutorialBus.emit("camp_finalised");
   }, [campState]);
 
   const handleResolve = useCallback(async () => {
@@ -1510,6 +1558,15 @@ function App() {
         onClose={() => setFightLimitPopup({ open: false, message: "" })}
       />
 
+      <EnergyOffer
+        {...energyOffer.state}
+        fighter={fighter}
+        onClose={energyOffer.close}
+        onRefreshFighter={loadFighter}
+        onMessage={setMessage}
+        onSeeBundles={() => { energyOffer.close(); openShopBundles("offer"); }}
+      />
+
       <ContenderModal
         open={!!contenderModal}
         currentTier={contenderModal?.currentTier}
@@ -1528,7 +1585,10 @@ function App() {
       <ChangelogModal
         open={changelogOpen}
         onClose={() => setChangelogOpen(false)}
+        onOpenRoadmap={() => { setChangelogOpen(false); setRoadmapOpen(true); }}
       />
+
+      {roadmapOpen && <RoadmapOverlay onClose={() => setRoadmapOpen(false)} />}
 
       {/* ── ONBOARDING TUTORIAL ── */}
       {fighter?._id && fighter.tutorial && !fighter.tutorial.completed && (
@@ -1542,6 +1602,8 @@ function App() {
                 : null
           }
           onComplete={handleTutorialComplete}
+          activeTab={activeTab}
+          onNavigate={handleNavTab}
         />
       )}
 
@@ -1601,7 +1663,7 @@ function App() {
           {fighter?.nickname && <span className="m-fs-nick">"{fighter.nickname}"</span>}
         </div>
         <div className="m-fs-badges" data-tut="m-career">
-          <span className="m-fs-ovr">{fighter?.overallRating ?? "—"}</span>
+          <span className="m-fs-ovr" data-tut="m-ovr">{fighter?.overallRating ?? "—"}</span>
           <span className="m-fs-tier">{fighter?.promotionTier ?? "Amateur"}</span>
           <span className="m-fs-record">{fighter?.record?.wins ?? 0}-{fighter?.record?.losses ?? 0}</span>
         </div>
@@ -1751,6 +1813,7 @@ function App() {
                 onMessage={setMessage}
                 addToast={addToast}
                 onMoveDropReveal={enqueueMoveDrop}
+                onEnergyShort={energyOffer.open}
               />
             </div>
           )}
@@ -1864,6 +1927,7 @@ function App() {
                 onOpenAccount={() => setActiveTab("account")}
                 purchaseReturn={purchaseReturn}
                 onPurchaseReturnConsumed={() => setPurchaseReturn(null)}
+                expandRequest={shopExpand}
               />
             </div>
           )}
@@ -1888,6 +1952,7 @@ function App() {
                 onNavigate={handleNavTab}
                 onRefreshFighter={loadFighter}
                 onOpenCareerFight={onOpenCareerFight}
+                onEnergyShort={energyOffer.open}
               />
             </div>
           )}
@@ -1911,6 +1976,7 @@ function App() {
                   onMessage={setMessage}
                   onNavigateShop={() => handleNavTab("shop")}
                   onRefreshFighter={loadFighter}
+                  onEnergyShort={energyOffer.open}
                   onSelectBuff={(buffId, label) => {
                     setCampState((prev) => prev ? { ...prev, selectedBuffId: buffId } : prev);
                     setSelectedBuffLabel(buffId ? label : null);
@@ -1990,7 +2056,9 @@ function App() {
         {/* data-tut ids mirror the sidebar's: on portrait the sidebar is display:none and the
             drawer is not rendered, so these are the only nav targets the tutorial can cut out. */}
         <button type="button" data-tut={gymsRetired ? "nav-camp" : "nav-gym"} className={`m-nav-item ${activeTab === (gymsRetired ? "camp" : "gym") ? "act" : ""}`} onClick={() => handleNavTab(gymsRetired ? "camp" : "gym")}>
-          <Dumbbell size={17} strokeWidth={2.2} /><span>{t("layout.nav.train")}</span>
+          {gymsRetired
+            ? <><Building2 size={17} strokeWidth={2.2} /><span>{t("layout.nav.camp")}</span></>
+            : <><Dumbbell size={17} strokeWidth={2.2} /><span>{t("layout.nav.train")}</span></>}
         </button>
         <button type="button" data-tut="nav-fights" className={`m-nav-item ${activeTab === "fights" ? "act" : ""}`} onClick={() => handleNavTab("fights")}>
           <Swords size={17} strokeWidth={2.2} /><span>{t("layout.nav.fight")}</span>
@@ -2098,6 +2166,10 @@ function App() {
                   {t("changelog.whatsNewButton")} v{CURRENT_VERSION}
                   {changelogUnseen && <span className="nav-dot nav-dot--pulse" aria-label={t("changelog.unseenLabel")} />}
                 </button>
+                <span>·</span>
+                <button type="button" className="bb-btn-roadmap" onClick={() => { setMobileDrawerOpen(false); setRoadmapOpen(true); }}>
+                  {t("changelog.roadmapButton")}
+                </button>
               </div>
             </div>
           </aside>
@@ -2169,6 +2241,9 @@ function App() {
             >
               {t("changelog.whatsNewButton")} v{CURRENT_VERSION}
               {changelogUnseen && <span className="nav-dot nav-dot--pulse" aria-label={t("changelog.unseenLabel")} />}
+            </button>
+            <button type="button" className="bb-btn bb-btn-roadmap" onClick={() => setRoadmapOpen(true)}>
+              {t("changelog.roadmapButton")}
             </button>
             <button type="button" className="bb-btn" onClick={handleLogout} title={t("layout.bottombar.signOutTitle")}>{t("layout.bottombar.signOut")}</button>
           </div>

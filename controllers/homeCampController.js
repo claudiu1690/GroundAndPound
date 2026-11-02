@@ -54,6 +54,8 @@ const CODE_STATUS = {
 const CODE_EXTRAS = {
     requirements_not_met: ["reqs"],
     insufficient_cash: ["cost", "have"],
+    // The out-of-energy offer. The service sets both or neither (utils/energyShortfall).
+    not_enough_energy: ["need", "have"],
     market_locked: ["requiredTier", "currentTier"],
     no_slot: ["unlocked", "filled"],
     archetype_taken: ["archetype"],

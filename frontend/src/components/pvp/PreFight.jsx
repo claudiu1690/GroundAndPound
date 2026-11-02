@@ -4,13 +4,14 @@ import { gameplanLabel } from "./pvpConst";
 import { GameplanPicker } from "./GameplanPicker";
 import { api } from "../../api";
 import { t } from "../../lib/i18n";
+import { isEnergyShortfall, shortfallFromError } from "../shop/energyOfferModel";
 
 /**
  * Screen 2 — Pre-Fight.
  * Shows VS header, gameplan picker, opponent intel, fight button.
  * On success transitions to FightResult via onFightComplete callback.
  */
-export function PreFight({ fighter, candidate, season, myRecord, onBack, onFightComplete }) {
+export function PreFight({ fighter, candidate, season, myRecord, onBack, onFightComplete, onEnergyShort }) {
   const [gameplan, setGameplan] = useState("balanced");
   const [fighting, setFighting] = useState(false);
   const [error, setError] = useState(null);
@@ -26,6 +27,9 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
   const health = fighter?.health ?? 100;
   const isLowHp = health < 50 && !isInjuryBlocked;
 
+  // Short on energy (and not blocked by an injury): the button stays clickable and opens the
+  // out-of-energy offer instead of attempting the fight.
+  const lowEnergy = energyCur < 15 && !isInjuryBlocked;
   const canFight = energyCur >= 15 && !fighting && !isInjuryBlocked;
 
   const bracketLabel = {
@@ -35,6 +39,10 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
   }[candidate?.bracketBonus ?? "none"];
 
   async function handleFight() {
+    if (lowEnergy && !fighting) {
+      onEnergyShort?.({ source: "pvp", need: 15, have: energyCur });
+      return;
+    }
     if (!canFight) return;
     setFighting(true);
     setError(null);
@@ -47,23 +55,28 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
       });
       onFightComplete(result);
     } catch (e) {
+      // The server's own not-enough-energy refusal (402 insufficient_energy): open the offer with
+      // its live need/have, before the existing error ladder.
+      if (isEnergyShortfall(e)) {
+        onEnergyShort?.({ source: "pvp", ...shortfallFromError(e, { need: 15, have: energyCur }) });
+        setFighting(false);
+        return;
+      }
       const code = e.code ?? e.errorCode ?? null;
       setError(
         code === "attacker_injured"
           ? t("pvp.preFight.errInjured")
           : code === "defender_recovering"
             ? t("pvp.preFight.errDefenderRecovering")
-            : e.status === 402
-              ? t("pvp.preFight.errNotEnoughEnergy")
-              : e.status === 403
-                ? e.message?.toLowerCase().includes("injur") || code?.includes("injur")
-                  ? t("pvp.preFight.errInjured")
-                  : t("pvp.preFight.errLocked")
-                : e.status === 409
-                  ? e.message?.toLowerCase().includes("recover")
-                    ? t("pvp.preFight.errDefenderRecovering")
-                    : t("pvp.preFight.errProtected")
-                  : e.message || t("pvp.preFight.errDefault")
+            : e.status === 403
+              ? e.message?.toLowerCase().includes("injur") || code?.includes("injur")
+                ? t("pvp.preFight.errInjured")
+                : t("pvp.preFight.errLocked")
+              : e.status === 409
+                ? e.message?.toLowerCase().includes("recover")
+                  ? t("pvp.preFight.errDefenderRecovering")
+                  : t("pvp.preFight.errProtected")
+                : e.message || t("pvp.preFight.errDefault")
       );
     } finally {
       setFighting(false);
@@ -213,10 +226,10 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
 
         {/* Fight button */}
         <button
-          className="pvp-fight-btn"
+          className={`pvp-fight-btn${lowEnergy ? " pvp-fight-btn--low" : ""}`}
           onClick={handleFight}
-          disabled={!canFight}
-          style={!canFight ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+          disabled={!canFight && !(lowEnergy && !fighting)}
+          style={!canFight && !lowEnergy ? { opacity: 0.5, cursor: "not-allowed" } : {}}
         >
           {fighting ? t("pvp.preFight.fightBtnFighting") : t("pvp.preFight.fightBtnReady")}
         </button>
@@ -225,9 +238,7 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
             ? t("pvp.preFight.energyNoteInjured")
             : canFight
               ? t("pvp.preFight.energyNoteAfter", { n: energyAfter })
-              : energyCur < 15
-                ? t("pvp.preFight.energyNoteLow")
-                : ""}
+              : ""}
         </div>
       </div>
     </div>

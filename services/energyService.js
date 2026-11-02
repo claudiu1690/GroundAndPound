@@ -1,6 +1,7 @@
 const Fighter = require("../models/fighterModel");
 const { ENERGY } = require("../consts/gameConstants");
 const { redis, ensureRedisConnected } = require("../lib/redis");
+const { markShortfall } = require("../utils/energyShortfall");
 
 /** Build the Redis hash key for a fighter's live energy state. */
 const ENERGY_KEY = (id) => `energy:${id}`;
@@ -57,7 +58,9 @@ async function getEnergy(characterId) {
  */
 async function deductEnergy(characterId, amount) {
     const { current, max } = await getEnergy(characterId);
-    if (current < amount) throw new Error("Not enough energy");
+    // need/have (live Redis value) ride on the error for the out-of-energy offer; the message
+    // stays exactly "Not enough energy" because controllers match on it.
+    if (current < amount) throw markShortfall(new Error("Not enough energy"), amount, current);
     const newValue = current - amount;
 
     await ensureRedisConnected();

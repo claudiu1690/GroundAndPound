@@ -501,6 +501,13 @@ const fighterSchema = new mongoose.Schema({
         prefightBuffs: { type: mongoose.Schema.Types.Mixed, default: {} },
         usedBuffs:     { type: mongoose.Schema.Types.Mixed, default: {} },
     },
+    // Shop redesign (GDD §15.4): one-time premium panel flags, owner-only (never in
+    // PUBLIC_FIGHTER_KEYS). premiumPanelSeen flips true on the first full-panel render
+    // (POST /fighters/:id/shop/premium-seen); premiumPanelReshowPending is set by
+    // accountService.claimAccount so a guest who secures the account sees the panel once more.
+    // Both are written only by atomic single-document updates, never fighter.save().
+    premiumPanelSeen:          { type: Boolean, default: false },
+    premiumPanelReshowPending: { type: Boolean, default: false },
     // Active training booster — consumed one charge per completed XP session.
     // null when no booster is active.
     activeBooster: {

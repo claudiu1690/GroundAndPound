@@ -5,6 +5,7 @@ const rankingController = require("../controllers/rankingController");
 const shopController = require("../controllers/shopController");
 const paymentController = require("../controllers/paymentController");
 const specialMovesController = require("../controllers/specialMovesController");
+const analyticsController = require("../controllers/analyticsController");
 const ownFighter = require("../middleware/ownFighterMiddleware");
 // PHASE 2 gym retirement — a no-op while GYMS_RETIRED is unset/false. It must sit in FRONT of
 // the three gym-writing handlers, not inside them: `train` deducts energy through Redis before
@@ -220,6 +221,8 @@ router.get("/:id/moves/:moveId", ownFighter, specialMovesController.getMoveDetai
 // ── Shop, Inventory & Pre-Fight Supplements v1.0 ───────────
 router.get("/:id/shop/catalog", ownFighter, shopController.getCatalog);
 router.post("/:id/shop/buy", ownFighter, shopController.buy);
+// Shop redesign: the first full premium panel has rendered (clears both one-time flags).
+router.post("/:id/shop/premium-seen", ownFighter, shopController.premiumSeen);
 // Real money. Opens a Stripe Checkout Session and returns its URL; grants NOTHING on its own:
 // goods are handed over only by the signature-verified webhook (POST /webhooks/stripe).
 // checkoutLimiter (app.js) runs in front of this path. Mounted even when Stripe is disabled so
@@ -228,5 +231,8 @@ router.post("/:id/shop/checkout", ownFighter, paymentController.createCheckout);
 // Post-redirect status poll. A Mongo read only, so it works with Stripe disabled too.
 router.get("/:id/shop/purchases/:sessionId", ownFighter, paymentController.getPurchaseStatus);
 router.post("/:id/inventory/use-energy", ownFighter, shopController.useEnergy);
+
+// Client analytics beacon: whitelisted event types only (analyticsService.CLIENT_EVENT_TYPES).
+router.post("/:id/analytics/events", ownFighter, analyticsController.trackClientEvent);
 
 module.exports = router;

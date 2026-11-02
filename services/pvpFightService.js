@@ -32,6 +32,7 @@ const pvpSeasonService = require("./pvpSeasonService");
 const pvpRivalryService = require("./pvpRivalryService");
 const pvpBadgeService = require("./pvpBadgeService");
 const energyService = require("./energyService");
+const { markShortfall } = require("../utils/energyShortfall");
 const { computeDp, applyDpAndDivision } = require("./pvpDpService");
 const { BOT_MAX_DP } = require("../consts/pvpBotConfig");
 const {
@@ -213,7 +214,11 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     // directly sees a stale value and spuriously 402s a player who actually has energy.
     const { current: energyCurrent } = await energyService.getEnergy(attackerFighterId);
     if (energyCurrent < PVP_ENERGY_COST) {
-        throw new PvpError("insufficient_energy", "Not enough energy — PVP fights cost 15 energy.", 402);
+        throw markShortfall(
+            new PvpError("insufficient_energy", "Not enough energy — PVP fights cost 15 energy.", 402),
+            PVP_ENERGY_COST,
+            energyCurrent
+        );
     }
 
     // ── Real-consequence (a): attacker can't fight with a doctor-visit injury. Checked
@@ -1275,7 +1280,10 @@ async function listFights(seasonId, fighterId, { page = 1, limit = 25 } = {}) {
  * ALSO write the active record and keep the two in sync.
  *
  *   - season active  → write record.defenseGameplan + fighter.pvpDefenseGameplan; scope "season".
- *   - no season / upcoming → write fighter.pvpDefenseGameplan only; scope "fighter".
+ *   - no season / upcoming → write fighter.pvpDefenseGameplan; scope "fighter". During the
+ *     off-season (SEASON_GAP_DAYS) returning players already HAVE an upcoming-season record
+ *     (finalizeSeason's soft reset creates it), and fights read the record, not the fighter
+ *     default, so that record is updated too or the choice would be ignored on opening day.
  */
 async function setDefenseGameplan(fighterId, gameplan) {
     // Strict validation — legacy "aggressive" is rejected on new writes.
@@ -1298,10 +1306,14 @@ async function setDefenseGameplan(fighterId, gameplan) {
         return { defenseGameplan: gameplan, scope: "season" };
     }
 
-    // No season, or pre-season (upcoming): persist on the fighter only. This seeds the
-    // next season's record when it is created.
+    // No season, or pre-season (upcoming): persist on the fighter, which seeds the next
+    // season's record when one is created later. A soft-reset record that already exists
+    // for the upcoming season gets the same choice (atomic; no-op when there is none).
     fighter.pvpDefenseGameplan = gameplan;
     await fighter.save();
+    if (season && season.status === "upcoming") {
+        await PVPRecord.updateOne({ playerId: fighterId, seasonId: season._id }, { $set: { defenseGameplan: gameplan } });
+    }
     return { defenseGameplan: gameplan, scope: "fighter" };
 }
 

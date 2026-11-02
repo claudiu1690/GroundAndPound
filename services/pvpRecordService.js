@@ -260,7 +260,11 @@ async function getHistoryForCareer(playerId) {
     }).lean();
     const hofSet = new Set(hofEntries.map((h) => String(h.seasonId)));
 
-    const rows = await Promise.all(records.map(async (r) => {
+    // During the off-season returning players already hold a soft-reset record for the
+    // upcoming season; it is not history yet, so it is left out until that season opens.
+    const shown = records.filter((r) => seasonMap.get(String(r.seasonId))?.status !== "upcoming");
+
+    const rows = await Promise.all(shown.map(async (r) => {
         const season = seasonMap.get(String(r.seasonId));
         const meta = divisionMeta(r.division) || DIVISIONS[0];
         const rank = await computeRank(r); // 1-based dp rank within that season's WC ladder

@@ -208,3 +208,124 @@ export function purchaseReturnBanner(purchaseReturn, status) {
     default: return null;
   }
 }
+
+// ── Shop redesign: product art, bundle maths, free-earn lines (pure; copy lives in en.json) ──
+
+/** Product ids that have shipped art in public/assets/shop. DOC_TECHNICIAN deliberately has none. */
+export const SHOP_ART_IDS = [
+  "energy-drink",
+  "energy-shot",
+  "focus-amino",
+  "strength-formula",
+  "ground-protocol",
+  "strike-blend",
+  "leg-press-formula",
+  "iq-boost",
+  "full-camp-stack",
+  "whey-protein-shake",
+  "creatine-stack",
+  "focus-stack",
+  "pre-workout",
+  "leg-day-formula",
+  "grappling-rub",
+  "collagen-recovery",
+];
+
+/** Public URL of a product's painted art, or null when the id has none. */
+export function shopArtSrc(id) {
+  return SHOP_ART_IDS.includes(id) ? `/assets/shop/${id}.webp` : null;
+}
+
+/** How many cans to stand in a bundle card: 6 -> 1, 15 -> 2, 40 -> 3, 100 -> 4. */
+export function canCount(drinks) {
+  const n = Number(drinks) || 0;
+  if (n <= 6) return 1;
+  if (n <= 15) return 2;
+  if (n <= 40) return 3;
+  return 4;
+}
+
+/**
+ * Per-drink price and savings for each bundle, from the server's `amountCents` (display maths
+ * only, never sent anywhere). Savings are measured against the smallest bundle, so the smallest
+ * itself gets null. Returns [{ id, perDrink (dollars, number) | null, savingsPct | null }] in
+ * the same order as `bundles`.
+ */
+export function bundlePricing(bundles) {
+  const list = Array.isArray(bundles) ? bundles : [];
+  const per = (b) => (b && b.amountCents > 0 && b.drinks > 0 ? b.amountCents / b.drinks : null);
+  let smallest = null;
+  for (const b of list) {
+    if (b && b.drinks > 0 && (!smallest || b.drinks < smallest.drinks)) smallest = b;
+  }
+  const basePer = per(smallest);
+  return list.map((b) => {
+    const p = per(b);
+    const savingsPct = p != null && basePer != null && b.id !== smallest.id
+      ? Math.round((1 - p / basePer) * 100)
+      : null;
+    return {
+      id: b?.id,
+      perDrink: p != null ? Math.round(p) / 100 : null,
+      savingsPct: savingsPct != null && savingsPct > 0 ? savingsPct : null,
+    };
+  });
+}
+
+/**
+ * Free-earn chips for the full panel, as unresolved { key, vars } descriptors (the component
+ * runs them through t()). Max three. Sources with nothing to show are omitted. At the soft cap
+ * the whole list collapses to the single cap line. `owned` only matters for that line; when it
+ * is not passed the cap itself is used (overCap implies owned >= cap).
+ */
+export function freeEarnChips(freeEarn, cap, owned) {
+  if (!freeEarn) return [];
+  if (freeEarn.overCap) {
+    return [{ key: "shop.freeEarn.capLine", vars: { owned: owned ?? cap, cap } }];
+  }
+  const chips = [];
+  const { streak, promotion, sponsor } = freeEarn;
+  if (streak) {
+    chips.push({
+      key: "shop.freeEarn.streak",
+      vars: { current: streak.current, next: streak.next, drinks: streak.drinks },
+    });
+  }
+  if (promotion) {
+    chips.push({
+      key: promotion.kind === "gcs_belt" ? "shop.freeEarn.gcsBelt" : "shop.freeEarn.promotion",
+    });
+  }
+  if (sponsor) {
+    chips.push(
+      sponsor.active
+        ? { key: "shop.freeEarn.sponsorActive", vars: { drinks: sponsor.drinks } }
+        : { key: "shop.freeEarn.sponsorNone", vars: { min: sponsor.min, max: sponsor.max } }
+    );
+  }
+  return chips.slice(0, 3);
+}
+
+/**
+ * The single highest-priority free-earn hint (streak, then promotion, then sponsor), as a
+ * { key, vars } descriptor, or null. The cap line wins when the player is over the soft cap.
+ */
+export function freeEarnHint(freeEarn, cap, owned) {
+  const chips = freeEarnChips(freeEarn, cap, owned);
+  return chips.length ? chips[0] : null;
+}
+
+/**
+ * Display parts of an XP booster card: { pct, allStats, tags, sessions }. The component joins
+ * them with the shop.product.* strings.
+ */
+export function boosterEffect(booster) {
+  if (!booster) return { pct: "", allStats: true, tags: [], sessions: 0 };
+  const allStats = booster.stats === "ALL" || booster.stats == null;
+  return {
+    pct: pctLabel(booster.pct),
+    allStats,
+    tags: allStats ? [] : boosterStatTags(booster),
+    sessions: booster.sessions || 0,
+  };
+}

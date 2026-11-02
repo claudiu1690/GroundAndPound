@@ -193,3 +193,28 @@ test("POST accept: energy, not-found and success mappings", async () => {
     assert.equal(res.statusCode, 200);
     assert.equal(res.body, fight);
 });
+
+test("POST accept: not-enough-energy carries need/have from the service error, code and status unchanged", async () => {
+    const { markShortfall } = require("../../utils/energyShortfall");
+    let res = mockRes();
+    await withStub(fightService, "acceptOffer", async () => { throw markShortfall(new Error("Not enough energy"), 15, 7); }, () =>
+        fightController.acceptOffer(req(), res));
+    assert.equal(res.statusCode, 400);
+    assert.deepEqual(res.body, { message: "Not enough energy", code: "FIGHT_NOT_ENOUGH_ENERGY", need: 15, have: 7 });
+
+    // Invalid numbers on the error are never echoed (the pair is all or nothing).
+    res = mockRes();
+    const odd = Object.assign(new Error("Not enough energy"), { need: 15, have: -2 });
+    await withStub(fightService, "acceptOffer", async () => { throw odd; }, () =>
+        fightController.acceptOffer(req(), res));
+    assert.deepEqual(res.body, { message: "Not enough energy", code: "FIGHT_NOT_ENOUGH_ENERGY" });
+});
+
+test("POST resolve: unchanged, no need/have even when the error carries them", async () => {
+    const { markShortfall } = require("../../utils/energyShortfall");
+    const res = mockRes();
+    await withStub(fightService, "resolveFightAndApply", async () => { throw markShortfall(new Error("Not enough energy"), 15, 7); }, () =>
+        fightController.resolveFight(req(), res));
+    assert.equal(res.statusCode, 400);
+    assert.deepEqual(res.body, { message: "Not enough energy", code: "FIGHT_NOT_ENOUGH_ENERGY" });
+});

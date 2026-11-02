@@ -63,4 +63,18 @@ async function useEnergy(req, res) {
     }
 }
 
-module.exports = { getCatalog, buy, useEnergy };
+/**
+ * POST /fighters/:id/shop/premium-seen. Body ignored; idempotent.
+ * 200 { acknowledged } | 404 Fighter not found | 500.
+ */
+async function premiumSeen(req, res) {
+    try {
+        const userId = req.user && req.user.id;
+        const result = await shopService.markPremiumPanelSeen(req.params.id, userId);
+        res.json({ acknowledged: result.acknowledged === true });
+    } catch (err) {
+        handleError(err, res);
+    }
+}
+
+module.exports = { getCatalog, buy, useEnergy, premiumSeen };

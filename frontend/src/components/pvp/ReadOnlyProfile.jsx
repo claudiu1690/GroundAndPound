@@ -43,11 +43,13 @@ export function ReadOnlyProfile({ fighterId, viewerFighter, season, onBack, onCh
   // Hide if self / not_same_season / season_not_active
   const hideButton = reason === "self" || reason === "not_same_season" || reason === "season_not_active";
   const isEnabled = eligibility?.eligible === true;
-  const disabledTooltip =
+  // Shown as text under the header: a hover tooltip never reaches a phone, so a
+  // greyed-out Fight button used to give no reason at all.
+  const disabledReason =
     reason === "protected"
-      ? t("pvp.readOnlyProfile.tooltipProtected")
+      ? t("pvp.readOnlyProfile.reasonProtected")
       : reason === "out_of_range"
-        ? t("pvp.readOnlyProfile.tooltipOutOfRange")
+        ? t("pvp.readOnlyProfile.reasonOutOfRange")
         : null;
 
   return (
@@ -63,7 +65,7 @@ export function ReadOnlyProfile({ fighterId, viewerFighter, season, onBack, onCh
           <button
             className="lt-rop-challenge-btn"
             disabled={!isEnabled}
-            title={!isEnabled ? (disabledTooltip ?? undefined) : undefined}
+            title={!isEnabled ? (disabledReason ?? undefined) : undefined}
             onClick={() => isEnabled && onChallenge(fighterId)}
             style={!isEnabled ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
           >
@@ -79,6 +81,9 @@ export function ReadOnlyProfile({ fighterId, viewerFighter, season, onBack, onCh
           <span className="lt-rop-elig-error">{eligError}</span>
         )}
       </div>
+      {!eligLoading && !hideButton && !isEnabled && disabledReason && (
+        <div className="lt-rop-reason">{disabledReason}</div>
+      )}
 
       {/* Profile — read-only, arbitrary fighterId.
           The profile's CSS is scoped under `.career-page` (see App.css); the Career

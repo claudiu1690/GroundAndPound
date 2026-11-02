@@ -198,3 +198,22 @@ test("the lock maps to 409 CAMP_FIGHT_LOCKED from every write handler", async ()
         assert.equal(res.body.code, "CAMP_FIGHT_LOCKED");
     }
 });
+
+test("addSession: not-enough-energy carries need/have, code and status unchanged", async () => {
+    const { markShortfall } = require("../../utils/energyShortfall");
+    let res = mockRes();
+    await withStub(campService, "addCampSession", async () => { throw markShortfall(new Error("Not enough energy"), 6, 2); },
+        () => campController.addSession(req({ body: { sessionType: "STRIKING" } }), res));
+    assert.equal(res.statusCode, 400);
+    assert.deepEqual(res.body, { message: "Not enough energy", code: "CAMP_NOT_ENOUGH_ENERGY", need: 6, have: 2 });
+
+    // Without the fields (or with invalid ones) the body is exactly what it was before.
+    for (const err of [new Error("Not enough energy"), Object.assign(new Error("Not enough energy"), { need: "6", have: 2 })]) {
+        res = mockRes();
+        // eslint-disable-next-line no-await-in-loop
+        await withStub(campService, "addCampSession", async () => { throw err; },
+            () => campController.addSession(req({ body: { sessionType: "STRIKING" } }), res));
+        assert.equal(res.statusCode, 400);
+        assert.deepEqual(res.body, { message: "Not enough energy", code: "CAMP_NOT_ENOUGH_ENERGY" });
+    }
+});

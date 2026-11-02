@@ -18,6 +18,46 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.3",
+    date: "2026-11-02",
+    // Auto-opens: the new Shop and the Roadmap are worth showing returning players.
+    major: true,
+    highlights: [
+      "There is a Roadmap now. Open it from the Roadmap button at the bottom of the screen, from the top of What's New, or from the front page.",
+      "Ground & Pound is on Instagram, Facebook and TikTok. The links sit next to Discord at the top of the front page and in the footer.",
+      "The Shop has a new look. Every item has its own painted art, your Cash and Energy Drinks sit at the top, and the Energy Drink bundles show in full the first time you visit, then fold to one line. The panel also shows how close you are to your next free drinks.",
+      "Run out of energy on a Proving Ground attack, a fight, a camp drill or a Fight Camp session and the game now tells you how long to wait, or lets you use an Energy Shot or a drink you own right there.",
+      "The tutorial no longer darkens and locks the screen. Tap anything, go anywhere: its tip waits on its own screen, and a Tutorial paused bar takes you back or ends it.",
+    ],
+    sections: {
+      changed: [
+        "On phones the front page shows Instagram, Facebook and TikTok next to Discord, and tapping the Ground & Pound logo takes you back to the top.",
+        "A duplicate special move now arrives as a face-down card you flip like any other drop, showing the move and the cash it turned into, instead of a quick cash message.",
+      ],
+      fixed: [
+        "Creating a fighter after looking at the Roadmap now takes you straight into the game and the tutorial, not back to the Roadmap.",
+        "On phones, character creation has even spacing between every field and no stray line across the form.",
+        "On phones, the tutorial's Your Stats tip now points at your overall rating at the top of the screen instead of showing nothing.",
+        "On phones, the Train button at the bottom of the screen is now called Camp, with the My Camp icon, since that is where it takes you.",
+        "On phones, the tutorial tells you to tap Camp and Rank, the names on the buttons at the bottom of the screen.",
+        "On short landscape screens, tutorial tips sit beside what they point at instead of covering it.",
+        "Winning a banner piece during the tutorial no longer opens the banner editor and leaves you stuck. Customize it from your profile once the tutorial is done.",
+        "Opening View Report in Fight Camp during the tutorial no longer leaves you stuck. You can close the report and carry on with your camp.",
+        "The sign-up page footer no longer overlaps the guest links on wide screens.",
+        "Scrollbars in pop-ups like the Fighter Report and the Camp Summary match the game's dark look.",
+        "On iPhone the game no longer zooms in when you type your fighter's name, so it no longer starts zoomed in and the recovery code fits on screen.",
+        "On iPhone, Safari's bottom bar no longer covers the menu at the bottom of the screen.",
+        "On phones, the copyright line at the bottom of character creation no longer sits on top of the form.",
+        "In the Shop, the folded Energy Drinks bar has room above the Cash Store tabs.",
+        "On phones, the Proving Ground ladder keeps every name on one line, and the division and tier bars no longer pile their labels on top of each other.",
+        "The Challenge button is now called Fight, stays on screen on phones, and when you can't fight someone it says why (their OVR is too far from yours, or they are protected or recovering).",
+        "Proving Ground fight results show the round-by-round breakdown like career fights, instead of a block of plain text.",
+        "Back to Ladder on the Defense screen now takes you to the Ladder.",
+      ],
+      balance: [],
+    },
+  },
+  {
     version: "2.2.6",
     date: "2026-11-01",
     major: false,

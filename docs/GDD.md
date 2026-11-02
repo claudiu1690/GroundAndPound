@@ -1386,6 +1386,18 @@ and verified in Stripe test mode until the live account exists; ships inside v2.
 
 ---
 
+### 15.4 Shop presentation and the out-of-energy offer (v2.3)
+
+Design of record `docs/shop-redesign-spec.md`, contract `docs/shop-redesign-contract.md`. Premium is shown in full once, then kept quiet, and the honest moment to offer energy is where an action failed.
+
+- **Layout.** Wallet strip (Cash, Energy Drinks; the drinks chip opens the bundle panel), the bundle area, then two tabs: Cash store and My inventory. The old Premium tab is gone. Every Cash product has painted art (`frontend/public/assets/shop/<product-id>.webp`, masters and provenance in `art/shop/`).
+- **Full panel once, then a bar.** Per fighter, on the server: `premiumPanelSeen` and `premiumPanelReshowPending`. The catalog sends `premiumPanel: { mode: full | collapsed, reason: first_visit | account_secured | null }`. The full panel shows on the fighter's first Shop visit and once more after a guest secures the account (`claimAccount` sets the reshow flag after the user save). `POST /fighters/:id/shop/premium-seen` (atomic, idempotent) clears both. Every other visit shows a one-line bar with See bundles; opening it is never remembered. Existing fighters see the full panel once at release. The Stripe return and the offer's See bundles open the panel expanded for that view only.
+- **Panel copy.** "Skip the wait when it matters", "Each drink is +50 energy, one time", one neutral "Our pick" flag on the 15 pack (`popular`), savings stated "vs the 6 pack", no gold "best value" flag anywhere in the Shop, Stripe trust line.
+- **Free-earn line.** Server-computed `freeEarn` from the real grants (`FREE_DRINK_GRANTS` in `consts/shopConfig.js`, also read by `fightService`): win streak `current/next` toward 5/10/15/20 (1/2/2/3 drinks), next promotion or the first GCS belt (3), active sponsor drinks or the catalog's 2 to 4. At 99 drinks it becomes the cap line. The full panel shows every applicable chip; the bar and the offer show one (streak, then promotion, then sponsor).
+- **Out-of-energy offer.** For four actions only: Proving Ground attack, accepting a fight, a My Camp drill batch (only when zero sessions were funded) and a Fight Camp session. Their not-enough-energy errors now carry `need` and `have` (codes and statuses unchanged), and their buttons stay clickable when energy is short. The offer lists, in order: wait `need - have` minutes (free), Energy Shot (use one, buy and use one for 600 Cash, or disabled when Cash is short), Energy Drink (use one, or the free-earn hint and See bundles). "Use one" restores energy and never retries the action. Never on login, no timers, never in the Hospital or the small media actions.
+- **Analytics.** `premium_panel_shown` server-side; `premium_panel_expanded`, `energy_offer_shown`, `energy_offer_choice` through a whitelisted owner-only beacon (`POST /fighters/:id/analytics/events`).
+- **Unchanged.** Every §15.3 rule: the server sets the price from `amountCents` (now also sent to the client for display only), checkout takes a bundle id only, guests are refused, fulfilment is webhook-only and exactly-once.
+
 ## 16. Media Hub
 
 The **Media** tab is a 5-tab hub for building fame outside the cage.
@@ -1552,6 +1564,43 @@ New accounts run a guided tooltip sequence through the core loop: fighter profil
 > "Skip tutorial" the only way into the game. Both steps now carry `skipIfAbsent: true`, so a
 > missing anchor degrades to a skipped beat instead of a dead end.
 
+**Never blocking (v2.3).** The tutorial used to lay a dark scrim over the game with one
+cut-out for the current target. Every target that moved, opened a pop-up or lived somewhere the
+scrim did not expect (phone layouts, View Report in Fight Camp, the banner editor) left players
+stuck. Since 2.3 there is no scrim: the game stays fully usable and the tutorial only adds a
+pulsing ring on the target plus its tooltip card.
+
+- **Screens.** Each phase that teaches one screen names it (`tab` in `tutorialSteps.js`: My Camp
+  for the first training session, Fight for the offer, camp and result, Rankings, Events,
+  Hospital). The profile tour and the "go to X" nav phases work on every screen.
+- **Paused, not lost.** On any other screen the tooltip and ring disappear and a small
+  **Tutorial paused** bar shows **Back to tutorial** (jumps to the step's screen) and
+  **End tutorial**. Coming back by any route resumes on the same tooltip. Nothing times out or
+  skips while paused.
+- **"Go to X" steps** (`doneOnTab`) complete as soon as the player is on X, however they got
+  there. Steps the player already did out of order (a fight accepted before the offer step)
+  skip themselves after 3.5 s on their own screen (`skipIfAbsent`).
+- **Pop-ups win.** While a pop-up the player opened is up (Roadmap, What's New, a reward, the
+  out-of-energy offer), the tip, ring and bar step aside; they return when it closes. A pop-up
+  that holds the step's target (Fighter Report, camp summary, the phone's More menu) is the
+  lesson itself and keeps the tip. The paused bar also hides while the More menu is open.
+- **Optional beats wait for their target.** A tip on a beat that may not happen (the win-only
+  interview, the event headliner, the Fighter Report after a reload) shows only once its target
+  exists, instead of flashing up in the middle of the screen before skipping.
+- **Acting ahead jumps forward.** A phase listens for its own action and those of the later
+  phases in its step, so doing a later thing first (Continue on the fight result during its
+  first tip, answering the interview early, finalising camp during the camp tips) moves the
+  tutorial straight to that point instead of leaving it waiting on a beat that is gone.
+- On a "go to X" step, leaving for some other screen brings its tip back as a reminder.
+- Tip cards never cover the phone's bottom nav. A target taller than the screen gets its tip
+  pinned to the top (panels keep their buttons at the bottom); a desktop side-menu target gets
+  its tip beside the menu, not over the neighbouring items.
+- **End tutorial** (in every tooltip and on the paused bar, formerly "Skip tutorial") opens
+  the completion modal; the $500 signing bonus is still paid on Enter the Game.
+- The Customize button on banner unlocks, the Shop link in Fight Camp supplements and "See
+  bundles" in the out-of-energy offer are back during the tutorial; they were hidden only
+  because the scrim stranded players off its path.
+
 ---
 
 ## 22. The Proving Ground (PvP)
@@ -1605,7 +1654,7 @@ Matchmaking surfaces up to **5** opponents from your season pool, expanding an O
 - **Inactivity decay:** going **7 days without a PvP fight** costs **−10 DP** (floored at your division floor; Prospects are exempt). It nudges idle ladders without punishing newcomers.
 
 ### 22.6 Seasons, Twists & Rewards
-Seasons run **70 days**. Each season carries one **twist** that rewards a style of finish: *Iron Circuit* (standard), *Blood Sport* (KO/sub +25%), *Iron Fist* (KO +30%), *Ground War* (sub +30%), *The Marathon* (decision +20%), *The Contenders* (streak bonus from 3 wins). At season end, every player with at least one fight is paid by their final division; the belt reward **replaces** the Champion reward (no stack):
+Seasons run **70 days**, separated by a **5-day off-season** (`SEASON_GAP_DAYS` in `consts/pvpConfig.js`; owner decision 2026-10-28). When season N ends, `finalizeSeason` pays out, soft-resets and seeds N+1 as `upcoming` with `startDate = pvpSeasonService.nextSeasonStart(N)` = N's `endDate` + 5 days; the same helper feeds the public tease, so the landing countdown and the real opening cannot disagree. During the off-season no season is active: the Proving Ground shows the pre-season countdown, the ended season's results poster opens over it with its new-season band reading "Opens <date>" (Close only; "Now live" and Enter the Ladder are for an already-open season), and the landing page counts down to the opening. The transition sweep activates N+1 on its first run after `startDate`. Season 2 ends 2026-11-29, so Season 3 opens 2026-12-04 and ends 2027-02-12. Each season carries one **twist** that rewards a style of finish: *Iron Circuit* (standard), *Blood Sport* (KO/sub +25%), *Iron Fist* (KO +30%), *Ground War* (sub +30%), *The Marathon* (decision +20%), *The Contenders* (streak bonus from 3 wins). At season end, every player with at least one fight is paid by their final division; the belt reward **replaces** the Champion reward (no stack):
 
 | Final division | Cash | Fame | Energy drinks | Badge |
 |---|---|---|---|---|
@@ -1623,6 +1672,8 @@ Seasons are controlled by a per-season **config block** (`Season.config`), so be
 **Between seasons — the pre-season countdown.** When the live season is taken offline and the next is seeded as `upcoming` with a future `startDate`, entering the Proving Ground shows a **pre-season countdown** instead of the ladder: a live `hh:mm:ss` timer to the new season (red, pulsing `mm:ss` in the final hour; "Season opening…" held at zero), the upcoming season's name/twist, the stakes, and a primer for new players. When the timer reaches zero the transition sweep flips the season to `active` and the hub returns automatically (client polls 30s, 5s once at zero — no manual button). **Defense gameplan is editable during the pre-season window:** it persists as a fighter-level default (`fighter.pvpDefenseGameplan`) and seeds your PVPRecord's `defenseGameplan` when the new season's record is created — defaulting to **Balanced** if never set. Setting it during an active season writes both the record and the fighter default (kept in sync).
 
 **Public landing-page season band.** The marketing landing page mirrors the same season state for logged-out visitors via a public, unauthenticated read (`GET /pvp/season/public` → `{ status, seasonNumber, name, startDate, endDate, crossWeightClass, weightClass, twistEffect, weightClassLabel, next }`; returns `null` when no season exists). `twistEffect` and `weightClassLabel` are produced by `pvpSeasonService.twistCopyFor` / `publicWeightClassLabel` so the marketing page and the in-game season block can never word the same twist differently. `next` carries the season queued behind the live one (same shape, never nested) or `null`, sourced from a real upcoming season doc or, when none is queued, from a tease **derived from the live season**: its `startDate` IS the live season's `endDate` (exactly what `finalizeSeason` seeds season N+1 with), its twist is the same `pickTwistForSeason(N+1)` rotation pick, and it carries the live season's Open/per-class format forward. `NEXT_SEASON_TEASE` in `consts/pvpConfig.js` is now only the `{ enabled }` marketing on/off switch: no date, season number or twist is hand-maintained, so the advertised countdown cannot drift from the rollover it counts down to. A failure resolving `next` degrades to `next: null` rather than failing the request. The PVP band is data-driven: an `upcoming` season shows the same live countdown to `startDate` (`H:MM:SS`, `MM:SS` sub-hour, "Opening…" at zero), an `active` season shows "Live Now" with a computed weeks-remaining pill, and a missing/errored fetch falls back to evergreen copy so the page never looks broken. The band polls (30s, 5s near zero) so it ticks down and auto-flips `upcoming → active` without a reload. Presentation only — no player-specific or authenticated data is exposed.
+
+**Roadmap page (v2.3).** A second page at `/?page=roadmap` (`landing/RoadmapPage.jsx`, data and rules in `landing/roadmapModel.js`, styles in `landing/roadmap.css`). Logged-out visitors open it from an ice-blue **Roadmap** button in both landing heroes (next to Start Your Career and What's New); signed-in players open it from a **Roadmap** button in the bottom bar (and the phone menu) or a "See the roadmap" button at the top of What's New, which show the same page full screen over the game (`RoadmapOverlay.jsx`). A query string rather than a path because the SPA has no router and the static host has no rewrites; `pushState` plus `popstate` make Back close it or return to the landing page, and a shared link opens it for both audiences. **Seasons are the landmarks, and the page reads upward from the bottom like a timeline.** Season 1's banner is at the foot of the page with v1.0 to v1.5 stacked above it, then the Season 2 banner with v2.0 to v2.2 above it, and at the top the next season's banner on its own ("Season 3 · Black Ice", opening date from the season DTO only when the DTO's next season has that number). No features are listed for the next season or beyond: the roadmap only shows what has shipped. A season's banner always sits under its releases, as the point where that season started. Each season gets a full-width banner in its own colour and art (Season 1 grey over the arena photo, Season 2 red with the painted Heavy Hands fist, Season 3 ice blue with the painted Second Wind card under snow) with its twist and headline changes, "Live now" plus weeks left when the DTO says it is live, and "Opened with v2.0" naming the release that opened it (`fromVersion`; Season 1 reads "The first season"). One continuous line runs the length of the page: dashed with hollow dots through Later into the Season 3 banner, then gold with a dot per release from each season banner down into the next. Rows and banners fade in as they scroll into view (off under reduced motion). The page has the site footer (social links, plus legal links when logged out) and the social icons in its nav. On phones the images stay small thumbnails beside the text. Later also lists player profile pictures. Every shipped release sits under the season it shipped in as a loose row: version, 2 to 4 points and a small image. Images are existing game art (move and sponsor cards, the persona map), tilted crops of real screens (Home tab, My Camp roster, fight summary), or CSS compositions (winter frost, scattered real banner pieces with names, Energy Drink cans); nothing is generated for this page, and tests fail if a referenced image or banner piece is missing. **No dates on anything that shipped** (owner, 2026-11-01): no release dates, no season date ranges, no "Since" pill in the header. Version numbers keep the order. Dates made a young game look young, invited "is it dead?" reads on any gap between releases, and drifted (a changelog date is written before release day; Season 3 opens days after 3.0 ships). The only dates on the page are live from the ladder: the live season's weeks left and the next season's opening. A milestone whose version is missing from the changelog is still dropped. Social links (Discord, Instagram, Facebook, TikTok) come from one `SOCIAL_LINKS` list that feeds the landing nav icons (Discord only under 480px) and the footer.
 
 ### 22.6a The season rollover poster
 
@@ -1950,6 +2001,11 @@ existing fight trigger), **Signature** (Rare+ only, one bounded one-shot per fig
   (`fighter.iron`): Common 100 / Uncommon 250 / Rare 600 / Legendary 1,500. **Teaching uses
   the identical three outcomes** — one `grantOrUpgrade` is the sole writer of
   `specialMovesOwned`, so a taught move and a dropped move can never diverge.
+- **Every outcome gets the card flip (v2.3).** New, upgrade and duplicate drops (and taught
+  moves) all open the face-down card reveal; new and duplicate show the same face-down header
+  ("Special Move Drop!") so the flip is the reveal. A duplicate's face then shows the move and
+  its cash ("+$600 cash, you already own this move"). Duplicates used to be a cash toast, so
+  players never saw what they had pulled (owner, 2026-11-02).
 - **No leveling, no pity timer, no PvP** (all deliberately cut from v1).
 
 ### 26.4 The roster (v2, 24 moves) & balance

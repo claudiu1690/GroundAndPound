@@ -1,4 +1,5 @@
 const campService = require("../services/campService");
+const { shortfallFields } = require("../utils/energyShortfall");
 
 const CAMP_ERROR_CODES = {
     CAMP_NOT_FOUND:          "CAMP_NOT_FOUND",
@@ -35,7 +36,7 @@ function handleError(err, res) {
     if (msg === "Invalid choice — must be STOP or PUSH_THROUGH" || msg === "No active camp injury" || msg === "Injury already resolved")
         return res.status(400).json({ message: msg, code: CAMP_ERROR_CODES.CAMP_INVALID_CHOICE });
     if (msg === "Not enough energy")
-        return res.status(400).json({ message: msg, code: CAMP_ERROR_CODES.NOT_ENOUGH_ENERGY });
+        return res.status(400).json({ message: msg, code: CAMP_ERROR_CODES.NOT_ENOUGH_ENERGY, ...shortfallFields(err) });
     // Shop v1.0: pre-fight supplement selection errors.
     if (msg === "You don't own that supplement" || msg === "Unknown supplement")
         return res.status(400).json({ message: msg });

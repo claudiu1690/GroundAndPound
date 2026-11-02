@@ -219,14 +219,21 @@ Rehearse the whole sequence on staging before doing it on production.
   scheduler every 10 minutes. It ends any active season past `endDate`
   (`pvpRewardService.finalizeSeason`: payouts, Hall of Fame, redistribution of
   every fighter WITH a record into their real weight class, seeds N+1 with
-  `startDate` = the ending season's `endDate`) and then activates upcoming
+  `startDate` = the ending season's `endDate` + `SEASON_GAP_DAYS` (5, the
+  off-season; `pvpSeasonService.nextSeasonStart`)) and then activates upcoming
   seasons whose `startDate` has passed. Nobody has to press anything on
-  release night; prod Season 1 ends 2026-09-20 and flips within 10 minutes.
+  release night; prod Season 1 ended 2026-09-20 and flipped within 10 minutes.
+* Since v2.3 there is a 5-day off-season (`SEASON_GAP_DAYS`): N+1 is seeded
+  `upcoming` when N ends and opens 5 days later. Season 2 ends 2026-11-29,
+  Season 3 opens 2026-12-04. In the gap the Proving Ground shows the countdown
+  and the results poster; fights, matchmaking, bots and decay all wait for an
+  active season.
 * Fighters with no Season N record are not carried over; they enrol when they
   next open the Proving Ground.
 * To force it on staging: set the active season's `endDate` a minute into the
   past directly in Mongo, then poll `/pvp/season/public` until `seasonNumber`
-  changes. Rehearsal result: S1 Open ended + redistributed, S2 "Blood Sport"
+  changes (it comes back `upcoming`, opening 5 days later). To end the
+  off-season early, set that upcoming season's `startDate` into the past too. Rehearsal result: S1 Open ended + redistributed, S2 "Blood Sport"
   active as 4 per-weight-class ladders, 25 bot records moved (6/7/7/5), Hall of
   Fame empty because the S1 belt was never claimed.
 * Staging is therefore already on Season 2 with gyms retired. To rehearse

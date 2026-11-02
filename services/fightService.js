@@ -3,6 +3,7 @@ const Opponent = require("../models/opponentModel");
 const Fight = require("../models/fightModel");
 const FightCamp = require("../models/fightCampModel");
 const { PROMOTION_TIERS, FIGHT_OUTCOMES } = require("../consts/gameConstants");
+const { FREE_DRINK_GRANTS } = require("../consts/shopConfig");
 
 const [
     OUT_KO_TKO,       // "KO/TKO"
@@ -1292,8 +1293,10 @@ async function resolveFightAndApply(fighterId, userId) {
         let streakDrinksGranted = 0;
         if (isWin) {
             const { grantEnergyDrinks } = require("./shopService");
-            const tbl = { 5: 1, 10: 2, 15: 2, 20: 3 };
-            if (tbl[winStreakAfterWin]) streakDrinksGranted = grantEnergyDrinks(fighter, tbl[winStreakAfterWin]);
+            const tbl = FREE_DRINK_GRANTS.streak;
+            if (Object.prototype.hasOwnProperty.call(tbl, winStreakAfterWin)) {
+                streakDrinksGranted = grantEnergyDrinks(fighter, tbl[winStreakAfterWin]);
+            }
         }
 
         const awardCtx = {
@@ -1490,7 +1493,7 @@ async function resolveFightAndApply(fighterId, userId) {
         let promotionDrinksGranted = 0;
         if (promoted || (beltWon && !titleDefense)) {
             const { grantEnergyDrinks } = require("./shopService");
-            promotionDrinksGranted = grantEnergyDrinks(fighter, 3);
+            promotionDrinksGranted = grantEnergyDrinks(fighter, FREE_DRINK_GRANTS.promotion);
         }
 
         // Phase 6: Beef/respect flag lifecycle.

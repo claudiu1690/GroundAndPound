@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shop redesigns · mock</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* Shop redesign directions. Every product, price, effect and bundle is the real one from
+   consts/shopConfig.js (Cash items) and PREMIUM_BUNDLES (real money). Product pictures
+   are CSS stand-ins until product art exists. */
+:root{
+  --bg:#0A0A0A;--panel:#121214;--card:#17171a;--line:#26262b;--t1:#f2f2f2;--t2:#b9b9b9;--t3:#8a8a8a;
+  --red:#C8102E;--gold:#D4A820;--blue:#3b82f6;--ice:#7dd3fc;--green:#22c55e;
+  --disp:'Barlow Condensed','Barlow',sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#060606;color:var(--t1);font:14px/1.45 'Barlow',system-ui,sans-serif}
+.intro{max-width:1180px;margin:0 auto;padding:36px 20px 10px}
+.intro h1{font:900 34px/1 var(--disp);text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px}
+.intro p{color:var(--t2);max-width:820px;margin:0 0 6px}
+.dir{max-width:1180px;margin:0 auto;padding:30px 20px 10px}
+.dir>h2{font:800 24px/1 var(--disp);text-transform:uppercase;letter-spacing:1px;margin:0 0 4px}
+.dir>h2 i{font-style:normal;color:var(--gold);margin-right:8px}
+.dir>.why{color:var(--t2);margin:0 0 16px;max-width:860px}
+.screen{background:var(--bg);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+
+/* ── shared bits ── */
+.eyebrow{font:800 11px/1 var(--disp);letter-spacing:3px;text-transform:uppercase}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:800 12px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;
+  border-radius:3px;padding:11px 16px;border:1px solid transparent;cursor:pointer;color:#fff;background:#2a2a2e}
+.btn.cash{background:transparent;border-color:#3a3a40;color:#ddd}
+.btn.prem{background:linear-gradient(180deg,#4f8ff7,#2563eb);box-shadow:0 6px 18px -6px rgba(59,130,246,.8)}
+.btn.gold{background:linear-gradient(180deg,#e7bf37,#b8901a);color:#141006}
+.pill{font:800 10px/1 var(--disp);letter-spacing:1.5px;text-transform:uppercase;padding:4px 7px;border-radius:2px;border:1px solid}
+.cashv{font:800 14px/1 var(--disp);color:var(--gold)}
+.stat{font:800 9px/1 var(--disp);letter-spacing:1px;padding:3px 5px;border-radius:2px;background:#222;color:#ddd}
+.trust{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--t3)}
+.trust b{color:var(--t2);font-weight:600}
+.wallet{display:flex;gap:10px;align-items:center}
+.wchip{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:4px;background:#141416;border:1px solid var(--line);font:800 15px/1 var(--disp)}
+.wchip small{font:700 10px/1 var(--disp);letter-spacing:1.5px;color:var(--t3);text-transform:uppercase}
+.wchip.drinks{border-color:rgba(59,130,246,.55);box-shadow:0 0 16px -6px rgba(59,130,246,.7)}
+.wchip .plus{width:22px;height:22px;border-radius:3px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff}
+
+/* ── CSS product stand-ins ── */
+/* The Energy Drink can is real art now (generated test, art/shop/PROVENANCE.md); its
+   painted background is feathered away so several cans can stand together. */
+.can{position:relative;width:40px;aspect-ratio:260/495;
+  background:url("assets/shop/energy-drink-can.webp") center/contain no-repeat;
+  -webkit-mask-image:radial-gradient(ellipse 58% 54% at 50% 50%,#000 72%,transparent 100%);
+          mask-image:radial-gradient(ellipse 58% 54% at 50% 50%,#000 72%,transparent 100%);
+  filter:drop-shadow(0 0 12px rgba(59,130,246,.35))}
+.cans{display:flex;align-items:flex-end;justify-content:center;height:96px}
+.cans .can + .can{margin-left:-10px}
+.cans .can:nth-child(even){width:36px;margin-bottom:-2px}
+.cans.sm{height:62px}
+.cans.sm .can{width:30px}.cans.sm .can:nth-child(even){width:27px}
+.vial{width:20px;height:48px;border-radius:4px 4px 8px 8px;background:linear-gradient(90deg,#3a2a05,#d4a820 45%,#ffe39a 52%,#a87d10);position:relative}
+.vial::before{content:"";position:absolute;top:-8px;left:3px;right:3px;height:9px;border-radius:2px;background:#222}
+.tub{width:46px;height:42px;border-radius:6px 6px 8px 8px;background:linear-gradient(90deg,#111,var(--c,#555) 45%,#fff3 50%,var(--c,#555) 55%,#111);position:relative}
+.tub::before{content:"";position:absolute;top:-7px;left:-2px;right:-2px;height:9px;border-radius:3px;background:#2b2b2f}
+.bottle{width:26px;height:54px;border-radius:8px 8px 6px 6px;background:linear-gradient(90deg,#111,var(--c,#666) 45%,#fff3 50%,var(--c,#666) 55%,#111);position:relative}
+.bottle::before{content:"";position:absolute;top:-9px;left:7px;right:7px;height:10px;border-radius:2px;background:#2b2b2f}
+.prod-art{display:flex;align-items:flex-end;justify-content:center;height:70px}
+
+/* ═══ A. PREMIUM UP FRONT ═══ */
+.a-head{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line)}
+.a-head h3{font:900 30px/1 var(--disp);text-transform:uppercase;margin:4px 0 0}
+.a-hero{position:relative;margin:18px 22px;border-radius:8px;overflow:hidden;padding:22px;
+  background:radial-gradient(120% 140% at 85% 0,rgba(59,130,246,.35),transparent 55%),radial-gradient(80% 120% at 0 100%,rgba(212,168,32,.12),transparent 60%),linear-gradient(135deg,#0d1424,#0b0c10 60%);
+  border:1px solid rgba(59,130,246,.45);box-shadow:0 0 40px -18px rgba(59,130,246,.9)}
+.a-hero-top{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px}
+.a-hero h4{font:900 34px/1 var(--disp);text-transform:uppercase;margin:6px 0 6px}
+.a-hero p{margin:0;color:var(--t2);max-width:520px}
+.a-bundles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.a-b{position:relative;border-radius:6px;background:rgba(10,12,18,.85);border:1px solid #263248;padding:14px 12px 14px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+.a-b .flag{position:absolute;top:-1px;left:-1px;right:-1px;padding:4px;border-radius:6px 6px 0 0;font:800 10px/1 var(--disp);letter-spacing:2px;text-transform:uppercase}
+.a-b.pop{border-color:var(--blue);background:linear-gradient(180deg,rgba(59,130,246,.18),rgba(10,12,18,.9) 50%);transform:translateY(-6px)}
+.a-b.pop .flag{background:var(--blue)}
+.a-b.best{border-color:var(--gold)}
+.a-b.best .flag{background:var(--gold);color:#140f02}
+.a-b .n{font:900 42px/1 var(--disp);margin-top:12px}
+.a-b .u{font:800 11px/1 var(--disp);letter-spacing:2px;color:var(--t3);text-transform:uppercase}
+.a-b .p{font:900 24px/1 var(--disp);margin-top:2px}
+.a-b .per{font-size:12px;color:var(--t3)}.a-b .per b{color:var(--green);font-weight:700}
+.a-b .btn{width:100%;margin-top:4px}
+.a-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:16px}
+.a-tabs{display:flex;gap:2px;padding:0 22px;border-bottom:1px solid var(--line)}
+.a-tabs span{font:800 12px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--t3);padding:12px 14px;border-bottom:2px solid transparent}
+.a-tabs span.on{color:#fff;border-color:var(--red)}
+.a-shelf{padding:16px 22px 22px}
+.a-shelf h5{font:800 13px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin:6px 0 10px}
+.a-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.a-p{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px;display:flex;gap:12px;align-items:center}
+.a-p .prod-art{width:56px;height:62px;flex:0 0 56px}
+/* Painted product art (art/shop/PROVENANCE.md): a small square on the card's left. */
+.a-p .a-art{width:68px;height:68px;flex:0 0 68px;border-radius:5px;object-fit:cover;border:1px solid #2a2a2e}
+.a-p .nm{font:800 15px/1.1 var(--disp);text-transform:uppercase}
+.a-p .fx{font-size:12px;color:var(--t2);margin:2px 0 6px}
+.a-p .row{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.a-p .btn{padding:7px 10px;font-size:10px}
+
+/* ═══ B. CORNER SHOP WITH A VAULT ═══ */
+.b{display:grid;grid-template-columns:230px 1fr;min-height:620px}
+.b-rail{background:#0e0e10;border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:6px}
+.b-rail .wallet{flex-direction:column;align-items:stretch;margin-bottom:12px}
+.b-rail a{display:flex;justify-content:space-between;align-items:center;padding:11px 12px;border-radius:4px;color:var(--t2);text-decoration:none;font:800 13px/1 var(--disp);letter-spacing:1.5px;text-transform:uppercase}
+.b-rail a.vault{color:#fff;background:linear-gradient(90deg,rgba(59,130,246,.3),rgba(59,130,246,.05));border:1px solid rgba(59,130,246,.6);box-shadow:0 0 18px -8px rgba(59,130,246,.9)}
+.b-rail a.vault em{font-style:normal;font-size:9px;letter-spacing:1.5px;color:var(--ice)}
+.b-rail a.on{background:#18181b;color:#fff}
+.b-rail hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+.b-main{padding:20px 22px}
+.b-vault{position:relative;border-radius:8px;padding:22px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),transparent 30%),repeating-linear-gradient(90deg,transparent 0 120px,rgba(255,255,255,.025) 120px 122px),linear-gradient(160deg,#0c1322,#08090c);
+  border:1px solid #233250}
+.b-vault h4{font:900 32px/1 var(--disp);text-transform:uppercase;margin:6px 0 4px}
+.b-vault>p{color:var(--t2);margin:0 0 18px;max-width:560px}
+.b-feature{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;align-items:stretch}
+.b-big{position:relative;border-radius:8px;border:1px solid var(--blue);padding:20px;display:flex;gap:20px;align-items:center;
+  background:radial-gradient(90% 120% at 20% 50%,rgba(59,130,246,.35),transparent 60%),#0b0f19;box-shadow:0 0 34px -12px rgba(59,130,246,.9)}
+.b-big .cans{height:130px}.b-big .can{width:58px}.b-big .can:nth-child(even){width:52px}
+.b-big .n{font:900 64px/.9 var(--disp)}
+.b-big .u{font:800 12px/1 var(--disp);letter-spacing:2px;color:var(--ice);text-transform:uppercase}
+.b-big .p{font:900 30px/1 var(--disp);margin:10px 0 2px}
+.b-big .per{font-size:12px;color:var(--t3);margin-bottom:12px}.b-big .per b{color:var(--green)}
+.b-small{display:grid;gap:10px}
+.b-s{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:6px;background:rgba(10,12,18,.9);border:1px solid #263248}
+.b-s.best{border-color:var(--gold)}
+.b-s .l{display:flex;align-items:center;gap:12px}
+.b-s .n{font:900 26px/1 var(--disp)}
+.b-s .u{font:700 10px/1 var(--disp);letter-spacing:1.5px;color:var(--t3);text-transform:uppercase}
+.b-s .r{text-align:right}
+.b-s .p{font:900 18px/1 var(--disp)}
+.b-s .per{font-size:11px;color:var(--t3)}.b-s .per b{color:var(--green)}
+.b-strip{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;padding:12px 14px;border-radius:6px;background:#111317;border:1px dashed #2c3448}
+.b-cashnote{margin-top:18px;padding:14px;border-radius:6px;background:var(--card);border:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}
+
+/* ═══ C. PAINTED PRODUCT CARDS ═══ */
+.c{padding:20px 22px 24px}
+.c-top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.c-top h3{font:900 30px/1 var(--disp);text-transform:uppercase;margin:4px 0 0}
+.c-row-h{display:flex;align-items:baseline;gap:12px;margin:18px 0 10px}
+.c-row-h h4{font:900 20px/1 var(--disp);text-transform:uppercase;margin:0}
+.c-row-h span{font-size:12px;color:var(--t3)}
+.c-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.c-card{--a:#3b3b42;position:relative;border-radius:10px;overflow:hidden;aspect-ratio:3/4.1;display:flex;flex-direction:column;
+  background:radial-gradient(90% 60% at 50% 30%,color-mix(in srgb,var(--a) 30%,transparent),transparent 70%),linear-gradient(180deg,#141418,#0c0c0e);
+  border:1px solid color-mix(in srgb,var(--a) 70%,#000);box-shadow:0 18px 34px -18px rgba(0,0,0,.95)}
+.c-card.prem{--a:#3b82f6}
+.c-card.prem.pop{box-shadow:0 0 0 1px var(--blue),0 0 30px -8px rgba(59,130,246,.9)}
+.c-card.prem.best{--a:#D4A820;box-shadow:0 0 0 1px var(--gold),0 0 30px -10px rgba(212,168,32,.8)}
+.c-card .art{flex:1;display:flex;align-items:center;justify-content:center;position:relative}
+.c-card .art .cans{height:150px}.c-card .art .can{width:62px}.c-card .art .can:nth-child(even){width:56px}.c-card .art .can + .can{margin-left:-16px}
+.c-card .tag{position:absolute;top:10px;left:10px;z-index:2}
+.c-card .plate{padding:10px 12px 12px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.65) 25%);border-top:1px solid color-mix(in srgb,var(--a) 50%,transparent)}
+.c-card .nm{font:900 22px/1 var(--disp);text-transform:uppercase}
+.c-card .sub{font:700 11px/1.3 var(--disp);letter-spacing:1.5px;text-transform:uppercase;color:var(--t3)}
+.c-card .buy{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px}
+.c-card .price{font:900 20px/1 var(--disp)}
+.c-card .btn{padding:8px 12px;font-size:11px}
+.c-cards.cash .c-card{aspect-ratio:3/3.6}
+.c-cards.cash .nm{font-size:17px}
+.c-note{margin-top:14px;font-size:12px;color:var(--t3)}
+
+/* ── A, reworked: steps, free-earn line, collapsed bar, out-of-energy offer ── */
+.a-step{font:800 13px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin:22px 0 8px}
+.a-cap{font-size:12px;color:var(--t3);margin:8px 0 0}
+.a-b.pick{border-color:#c9d3e0}
+.a-b.pick .flag{background:#e6ebf2;color:#111}
+.a-earn{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;margin:0 0 14px;padding:10px 12px;border-radius:5px;
+  background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.35);font-size:13.5px;color:#d6e9dc}
+.a-earn b{color:#fff}
+.a-earn-k{font:800 11px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--green)}
+.a-foot.trust{font-size:13.5px}
+.muted{color:var(--t3)}
+.a-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:14px 22px;padding:8px 12px;border-radius:5px;
+  background:#0f1420;border:1px solid #263248}
+.a-bar-l{display:flex;align-items:center;gap:10px;font-size:14px}
+.a-bar-btn{font:800 11px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--ice);border:1px solid rgba(125,211,252,.5);
+  padding:8px 12px;border-radius:3px;cursor:pointer;white-space:nowrap}
+.a-ctx{position:relative;min-height:420px;display:flex;align-items:center;justify-content:center;padding:30px;
+  background:radial-gradient(80% 90% at 50% 0,rgba(200,16,46,.18),transparent 60%),#0b0b0d}
+.a-ctx-bg{position:absolute;left:28px;top:24px;opacity:.45}
+.a-ctx-title{font:900 28px/1 var(--disp);text-transform:uppercase;margin-top:6px}
+.a-ctx-sub{color:var(--t2);margin-top:4px}
+.a-modal{position:relative;width:min(520px,100%);background:#141417;border:1px solid #2f2f35;border-radius:8px;padding:20px;
+  box-shadow:0 30px 60px -20px rgba(0,0,0,.9)}
+.a-modal h4{font:900 22px/1.1 var(--disp);text-transform:uppercase;margin:6px 0 14px}
+.a-opt{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #23232a}
+.a-opt-ic{width:44px;height:44px;border-radius:5px;background:#1c1c20;display:flex;align-items:center;justify-content:center;font-size:20px}
+.a-opt-art{width:44px;height:44px;border-radius:5px;object-fit:cover;flex:0 0 44px}
+.a-opt-can{display:flex;align-items:center;justify-content:center;background:#0d1322}
+.a-opt-b{flex:1;display:flex;flex-direction:column}
+.a-opt-b b{font:800 15px/1.1 var(--disp);text-transform:uppercase}
+.a-opt-b span{font-size:13px;color:var(--t2)}
+.a-link{font:800 11px/1 var(--disp);letter-spacing:2px;text-transform:uppercase;color:var(--ice);text-decoration:underline;cursor:pointer}
+
+.notes{max-width:1180px;margin:0 auto;padding:26px 20px 60px;color:var(--t2)}
+.notes h2{font:800 22px/1 var(--disp);text-transform:uppercase;color:var(--t1)}
+.notes li{margin:4px 0}
+@media (max-width:900px){.a-bundles,.a-grid,.c-cards{grid-template-columns:repeat(2,1fr)}.b{grid-template-columns:1fr}.b-feature{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>Shop redesign · three directions</h1>
+  <p>Every product, price and effect below is the real one from the game's config. Direction A has the generated product art for every item (Energy Drink can, Energy Shot, 7 boosters, 7 supplements). B and C still show CSS stand-ins for the Cash items.</p>
+  <p>Premium (real money) is the Energy Drink bundles only: 6 for $4.99, 15 for $9.99, 40 for $19.99, 100 for $39.99. Each direction gives them the emphasis a different way.</p>
+</div>
+
+<!-- ═════════════════════════ A ═════════════════════════ -->
+<section class="dir">
+  <h2><i>A</i>Premium up front, then quiet</h2>
+  <p class="why">Reworked after the game designer's review. Premium is shown in full once (the first Shop visit, and once after a guest secures their account), then folds to a single line. The free ways to earn drinks sit inside the panel, and the strongest honest moment to offer a drink is when an action fails for lack of energy, with the free and Cash options listed first.</p>
+
+  <div class="a-step">A1 · First Shop visit: the full bundle panel</div>
+  <div class="screen">
+    <div class="a-head">
+      <div><div class="eyebrow" style="color:var(--red)">Store</div><h3>Shop</h3></div>
+      <div class="wallet">
+        <div class="wchip"><small>Cash</small><span class="cashv">500</span></div>
+        <div class="wchip drinks"><small>Energy Drinks</small>0<span class="plus">+</span></div>
+      </div>
+    </div>
+    <div class="a-hero">
+      <div class="a-hero-top">
+        <div>
+          <div class="eyebrow" style="color:var(--ice)">Premium · Energy Drinks</div>
+          <h4>Skip the wait when it matters</h4>
+          <p>Each drink is +50 energy, one time. Real money, paid securely through Stripe.</p>
+        </div>
+        <div class="cans"><div class="can"></div><div class="can"></div><div class="can"></div></div>
+      </div>
+      <div class="a-earn">
+        <span class="a-earn-k">Earned free by playing</span>
+        <span>Win streak <b>3/5</b> earns 1 drink</span>
+        <span>Next promotion earns <b>3</b></span>
+        <span>Sponsor contracts pay <b>2 to 4</b></span>
+      </div>
+      <div class="a-bundles">
+        <div class="a-b">
+          
+          <div class="cans sm"><div class="can"></div></div>
+          <div class="n">6</div><div class="u">Energy Drinks</div>
+          <div class="p">$4.99</div><div class="per">$0.83 per drink</div>
+          <a class="btn prem">Buy</a>
+        </div>
+        <div class="a-b pick">
+          <div class="flag">Our pick</div>
+          <div class="cans sm"><div class="can"></div><div class="can"></div></div>
+          <div class="n">15</div><div class="u">Energy Drinks</div>
+          <div class="p">$9.99</div><div class="per">$0.67 per drink · <b>save 20% vs the 6 pack</b></div>
+          <a class="btn prem">Buy</a>
+        </div>
+        <div class="a-b">
+          
+          <div class="cans sm"><div class="can"></div><div class="can"></div><div class="can"></div></div>
+          <div class="n">40</div><div class="u">Energy Drinks</div>
+          <div class="p">$19.99</div><div class="per">$0.50 per drink · <b>save 40% vs the 6 pack</b></div>
+          <a class="btn prem">Buy</a>
+        </div>
+        <div class="a-b">
+          
+          <div class="cans sm"><div class="can"></div><div class="can"></div><div class="can"></div><div class="can"></div></div>
+          <div class="n">100</div><div class="u">Energy Drinks</div>
+          <div class="p">$39.99</div><div class="per">$0.40 per drink · <b>save 52% vs the 6 pack</b></div>
+          <a class="btn prem">Buy</a>
+        </div>
+      </div>
+      <div class="a-foot trust">
+        <span><b>Secure checkout</b> by Stripe. Your card never touches the game.</span>
+      </div>
+    </div>
+    <div class="a-tabs"><span class="on">Cash store</span><span>My inventory</span></div>
+    <div class="a-shelf">
+      <h5>Energy</h5>
+      <div class="a-grid">
+        <div class="a-p"><img class="a-art" src="assets/shop/energy-shot.webp" alt=""><div style="flex:1"><div class="nm">Energy Shot</div><div class="fx">+30 energy, instant</div><div class="row"><span class="cashv">600</span><a class="btn cash">Buy</a></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="a-step">A2 · Every visit after that: one line, opens on click</div>
+  <div class="screen">
+    <div class="a-head">
+      <div><div class="eyebrow" style="color:var(--red)">Store</div><h3>Shop</h3></div>
+      <div class="wallet">
+        <div class="wchip"><small>Cash</small><span class="cashv">500</span></div>
+        <div class="wchip drinks"><small>Energy Drinks</small>0<span class="plus">+</span></div>
+      </div>
+    </div>
+    <div class="a-bar">
+      <div class="a-bar-l">
+        <div class="cans sm" style="height:40px"><div class="can" style="width:20px"></div></div>
+        <div><b>Energy Drinks</b> <span class="muted">· 0 owned · +50 energy each · win streak 3/5 earns 1</span></div>
+      </div>
+      <a class="a-bar-btn">See bundles <span aria-hidden="true">▾</span></a>
+    </div>
+    <div class="a-tabs"><span class="on">Cash store</span><span>My inventory</span></div>
+    <div class="a-shelf">
+      <h5>Energy</h5>
+      <div class="a-grid">
+        <div class="a-p"><img class="a-art" src="assets/shop/energy-shot.webp" alt=""><div style="flex:1"><div class="nm">Energy Shot</div><div class="fx">+30 energy, instant</div><div class="row"><span class="cashv">600</span><a class="btn cash">Buy</a></div></div></div>
+      </div>
+      <h5>XP boosters · one at a time</h5>
+      <div class="a-grid">
+        <div class="a-p"><img class="a-art" src="assets/shop/focus-amino.webp" alt=""><div style="flex:1"><div class="nm">Focus Amino</div><div class="fx">+20% XP, all stats · 3 sessions</div><div class="row"><span class="cashv">850</span><a class="btn cash">Buy</a></div></div></div>
+        <div class="a-p"><img class="a-art" src="assets/shop/strength-formula.webp" alt=""><div style="flex:1"><div class="nm">Strength Formula</div><div class="fx">+25% XP <span class="stat">STR</span> <span class="stat">WRE</span> · 3 sessions</div><div class="row"><span class="cashv">750</span><a class="btn cash">Buy</a></div></div></div>
+        <div class="a-p"><img class="a-art" src="assets/shop/ground-protocol.webp" alt=""><div style="flex:1"><div class="nm">Ground Protocol</div><div class="fx">+25% XP <span class="stat">GND</span> <span class="stat">SUB</span> · 3 sessions</div><div class="row"><span class="cashv">750</span><a class="btn cash">Buy</a></div></div></div>
+        <div class="a-p"><img class="a-art" src="assets/shop/strike-blend.webp" alt=""><div style="flex:1"><div class="nm">Strike Blend</div><div class="fx">+25% XP <span class="stat">STR</span> <span class="stat">SPD</span> <span class="stat">CHN</span> · 3 sessions</div><div class="row"><span class="cashv">750</span><a class="btn cash">Buy</a></div></div></div>
+        <div class="a-p"><img class="a-art" src="assets/shop/leg-press-formula.webp" alt=""><div style="flex:1"><div class="nm">Leg Press Formula</div><div class="fx">+25% XP <span class="stat">LEG</span> · 3 sessions</div><div class="row"><span class="cashv">500</span><a class="btn cash">Buy</a></div></div></div>
+        <div class="a-p"><img class="a-art" src="assets/shop/iq-boost.webp" alt=""><div style="flex:1"><div class="nm">IQ Boost</div><div class="fx">+25% XP <span class="stat">FIQ</span> <span class="stat">CHN</span> · 3 sessions</div><div class="row"><span class="cashv">750</span><a class="btn cash">Buy</a></div></div></div>
+        <div class="a-p"><img class="a-art" src="assets/shop/full-camp-stack.webp" alt=""><div style="flex:1"><div class="nm">Full Camp Stack</div><div class="fx">+20% XP, all stats · 8 sessions</div><div class="row"><span class="cashv">1,900</span><a class="btn cash">Buy</a></div></div></div>
+      </div>
+      <h5>Pre-fight supplements · next fight only</h5>
+      <div class="a-grid">
+        <div class="a-p"><img class="a-art" src="assets/shop/whey-protein-shake.webp" alt=""><div style="flex:1"><div class="nm">Whey Protein Shake</div><div class="fx"><span class="stat">STR +3</span></div><div class="row"><span class="cashv">650</span><a class="btn cash">Buy</a></div></div></div>
+        <div class="a-p"><img class="a-art" src="assets/shop/creatine-stack.webp" alt=""><div style="flex:1"><div class="nm">Creatine Stack</div><div class="fx"><span class="stat">STR +3</span> <span class="stat">WRE +2</span></div><div class="row"><span class="cashv">1,150</span><a class="btn cash">Buy</a></div></div></div>
+        <div class="a-p"><img class="a-art" src="assets/shop/focus-stack.webp" alt=""><div style="flex:1"><div class="nm">Focus Stack</div><div class="fx"><span class="stat">FIQ +3</span> <span class="stat">CHN +2</span></div><div class="row"><span class="cashv">1,100</span><a class="btn cash">Buy</a></div></div></div>
+        <div class="a-p"><img class="a-art" src="assets/shop/pre-workout.webp" alt=""><div style="flex:1"><div class="nm">Pre-Workout</div><div class="fx"><span class="stat">SPD +3</span> <span class="stat">STR +2</span></div><div class="row"><span class="cashv">1,050</span><a class="btn cash">Buy</a></div></div></div>
+        <div class="a-p"><img class="a-art" src="assets/shop/leg-day-formula.webp" alt=""><div style="flex:1"><div class="nm">Leg Day Formula</div><div class="fx"><span class="stat">LEG +3</span></div><div class="row"><span class="cashv">600</span><a class="btn cash">Buy</a></div></div></div>
+        <div class="a-p"><img class="a-art" src="assets/shop/grappling-rub.webp" alt=""><div style="flex:1"><div class="nm">Grappling Rub</div><div class="fx"><span class="stat">GND +3</span> <span class="stat">SUB +2</span></div><div class="row"><span class="cashv">1,100</span><a class="btn cash">Buy</a></div></div></div>
+        <div class="a-p"><img class="a-art" src="assets/shop/collagen-recovery.webp" alt=""><div style="flex:1"><div class="nm">Collagen Recovery</div><div class="fx">Injury risk ×0.8 next fight</div><div class="row"><span class="cashv">1,000</span><a class="btn cash">Buy</a></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="a-step">A3 · Out of energy, where the action failed (not a popup on login)</div>
+  <div class="screen">
+    <div class="a-ctx">
+      <div class="a-ctx-bg">
+        <div class="eyebrow" style="color:var(--red)">Proving Ground</div>
+        <div class="a-ctx-title">Attack Dante Reyes</div>
+        <div class="a-ctx-sub">Ranked fight · costs 15 energy</div>
+      </div>
+      <div class="a-modal" role="dialog" aria-label="Not enough energy">
+        <div class="eyebrow" style="color:var(--t3)">Not enough energy</div>
+        <h4>This attack needs 15 energy. You have 6.</h4>
+        <div class="a-opt">
+          <div class="a-opt-ic">⏱</div>
+          <div class="a-opt-b"><b>Wait 9 minutes</b><span>Free. Energy refills 1 per minute.</span></div>
+          <a class="btn cash">OK</a>
+        </div>
+        <div class="a-opt">
+          <img class="a-opt-art" src="assets/shop/energy-shot.webp" alt="">
+          <div class="a-opt-b"><b>Energy Shot · +30</b><span>You own 2. More cost 600 Cash.</span></div>
+          <a class="btn cash">Use one</a>
+        </div>
+        <div class="a-opt">
+          <div class="a-opt-art a-opt-can"><div class="can" style="width:24px"></div></div>
+          <div class="a-opt-b"><b>Energy Drink · +50</b><span>You own 0. Win streak 3/5 earns 1 free.</span></div>
+          <a class="a-link">See bundles</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="a-cap">Example numbers: a Proving Ground attack costs 15 energy and energy refills at 1 per minute (GDD §4). Owned counts and the 3/5 streak are an example fighter.</p>
+</section>
+
+<!-- ═════════════════════════ B ═════════════════════════ -->
+<section class="dir">
+  <h2><i>B</i>Corner shop with a vault</h2>
+  <p class="why">A side rail replaces the tabs. The Premium Vault is pinned first and glows; inside it, one big featured bundle (the real "most popular", 15) leads, with the other three stacked beside it. The Cash aisles keep a quiet one-line nudge back to the Vault.</p>
+  <div class="screen b">
+    <aside class="b-rail">
+      <div class="wallet">
+        <div class="wchip"><small>Cash</small><span class="cashv">500</span></div>
+        <div class="wchip drinks"><small>Drinks</small>0<span class="plus">+</span></div>
+      </div>
+      <a class="vault">Premium Vault <em>Real money</em></a>
+      <hr>
+      <a>Energy</a>
+      <a>XP Boosters</a>
+      <a>Pre-fight</a>
+      <hr>
+      <a>My inventory</a>
+    </aside>
+    <div class="b-main">
+      <div class="b-vault">
+        <div class="eyebrow" style="color:var(--ice)">Premium Vault</div>
+        <h4>Energy Drinks</h4>
+        <p>+50 energy each. Skip the wait and stack more sessions and fights into tonight.</p>
+        <div class="b-feature">
+          <div class="b-big">
+            <div class="cans"><div class="can"></div><div class="can"></div><div class="can"></div></div>
+            <div>
+              <span class="pill" style="color:var(--ice);border-color:var(--ice)">Most popular</span>
+              <div class="n" style="margin-top:8px">15</div><div class="u">Energy Drinks</div>
+              <div class="p">$9.99</div><div class="per">$0.67 per drink · <b>save 20%</b></div>
+              <a class="btn prem" style="width:220px">Buy 15 drinks</a>
+            </div>
+          </div>
+          <div class="b-small">
+            <div class="b-s"><div class="l"><div class="cans sm" style="height:50px"><div class="can"></div></div><div><div class="n">6</div><div class="u">Drinks</div></div></div><div class="r"><div class="p">$4.99</div><div class="per">$0.83 each</div></div><a class="btn prem">Buy</a></div>
+            <div class="b-s"><div class="l"><div class="cans sm" style="height:50px"><div class="can"></div><div class="can"></div></div><div><div class="n">40</div><div class="u">Drinks</div></div></div><div class="r"><div class="p">$19.99</div><div class="per">$0.50 each · <b>save 40%</b></div></div><a class="btn prem">Buy</a></div>
+            <div class="b-s best"><div class="l"><div class="cans sm" style="height:50px"><div class="can"></div><div class="can"></div><div class="can"></div></div><div><div class="n">100</div><div class="u" style="color:var(--gold)">Best value</div></div></div><div class="r"><div class="p">$39.99</div><div class="per">$0.40 each · <b>save 52%</b></div></div><a class="btn gold">Buy</a></div>
+          </div>
+        </div>
+        <div class="b-strip trust">
+          <span><b>Secure checkout</b> by Stripe. Your card never touches the game.</span>
+          <span>Also earned by win streaks, promotions and contracts.</span>
+        </div>
+      </div>
+      <div class="b-cashnote">
+        <div><div class="eyebrow" style="color:var(--t3)">On a Cash aisle</div><div style="margin-top:4px">Out of energy? <b>Energy Shot</b> +30 for 600 Cash, or a drink from the Vault for +50.</div></div>
+        <div style="display:flex;gap:8px"><a class="btn cash">Shot · 600</a><a class="btn prem">Open Vault</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════════ C ═════════════════════════ -->
+<section class="dir">
+  <h2><i>C</i>Painted product cards</h2>
+  <p class="why">Every product becomes a card in the game's painted card style, like Special Moves and sponsors. Premium bundles come first, in blue and gold frames that read like the rarest cards. The strongest visual change, and the one that needs real product art to land.</p>
+  <div class="screen c">
+    <div class="c-top">
+      <div><div class="eyebrow" style="color:var(--red)">Store</div><h3>Shop</h3></div>
+      <div class="wallet">
+        <div class="wchip"><small>Cash</small><span class="cashv">500</span></div>
+        <div class="wchip drinks"><small>Energy Drinks</small>0<span class="plus">+</span></div>
+      </div>
+    </div>
+
+    <div class="c-row-h"><h4 style="color:var(--ice)">Premium · Energy Drinks</h4><span>Real money · +50 energy each</span></div>
+    <div class="c-cards">
+      <div class="c-card prem"><div class="art"><div class="cans"><div class="can"></div></div></div>
+        <div class="plate"><div class="nm">6 Drinks</div><div class="sub">$0.83 per drink</div><div class="buy"><span class="price">$4.99</span><a class="btn prem">Buy</a></div></div></div>
+      <div class="c-card prem pop"><span class="tag pill" style="color:#fff;background:var(--blue);border-color:var(--blue)">Most popular</span><div class="art"><div class="cans"><div class="can"></div><div class="can"></div></div></div>
+        <div class="plate"><div class="nm">15 Drinks</div><div class="sub">$0.67 per drink · save 20%</div><div class="buy"><span class="price">$9.99</span><a class="btn prem">Buy</a></div></div></div>
+      <div class="c-card prem"><div class="art"><div class="cans"><div class="can"></div><div class="can"></div><div class="can"></div></div></div>
+        <div class="plate"><div class="nm">40 Drinks</div><div class="sub">$0.50 per drink · save 40%</div><div class="buy"><span class="price">$19.99</span><a class="btn prem">Buy</a></div></div></div>
+      <div class="c-card prem best"><span class="tag pill" style="color:#140f02;background:var(--gold);border-color:var(--gold)">Best value</span><div class="art"><div class="cans"><div class="can"></div><div class="can"></div><div class="can"></div><div class="can"></div></div></div>
+        <div class="plate"><div class="nm">100 Drinks</div><div class="sub">$0.40 per drink · save 52%</div><div class="buy"><span class="price">$39.99</span><a class="btn gold">Buy</a></div></div></div>
+    </div>
+    <div class="c-note trust"><span><b>Secure checkout</b> by Stripe. Your card never touches the game.</span><span>Also earned by win streaks, promotions and contracts.</span></div>
+
+    <div class="c-row-h"><h4>Cash store</h4><span>Energy, XP boosters and pre-fight supplements</span></div>
+    <div class="c-cards cash">
+      <div class="c-card" style="--a:#D4A820"><div class="art"><div class="vial" style="transform:scale(1.6)"></div></div>
+        <div class="plate"><div class="nm">Energy Shot</div><div class="sub">+30 energy, instant</div><div class="buy"><span class="price cashv">600</span><a class="btn cash">Buy</a></div></div></div>
+      <div class="c-card" style="--a:#7c5cff"><div class="art"><div class="tub" style="--c:#7c5cff;transform:scale(1.5)"></div></div>
+        <div class="plate"><div class="nm">Focus Amino</div><div class="sub">+20% XP all stats · 3 sessions</div><div class="buy"><span class="price cashv">850</span><a class="btn cash">Buy</a></div></div></div>
+      <div class="c-card" style="--a:#C8102E"><div class="art"><div class="bottle" style="--c:#C8102E;transform:scale(1.5)"></div></div>
+        <div class="plate"><div class="nm">Creatine Stack</div><div class="sub">STR +3 · WRE +2 · next fight</div><div class="buy"><span class="price cashv">1,150</span><a class="btn cash">Buy</a></div></div></div>
+      <div class="c-card" style="--a:#22c55e"><div class="art"><div class="bottle" style="--c:#22c55e;transform:scale(1.5)"></div></div>
+        <div class="plate"><div class="nm">Collagen Recovery</div><div class="sub">Injury risk ×0.8 · next fight</div><div class="buy"><span class="price cashv">1,000</span><a class="btn cash">Buy</a></div></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="notes">
+  <h2>Kept from today, in every direction</h2>
+  <ul>
+    <li>Only Energy Drinks are sold for real money; nothing that changes a fight result.</li>
+    <li>Real prices and the real per-drink savings, always stated against the 6 pack. In A, one neutral "Our pick" flag (the 15 pack) and no gold "Best value" treatment; B and C still show the older flags.</li>
+    <li>No timers, countdowns or "limited offer" pressure.</li>
+    <li>Guests still have to secure their account before buying; the Buy button becomes "Secure your account to buy" for them, as today.</li>
+  </ul>
+</div>
+</body>
+</html>

@@ -39,7 +39,7 @@ function buildTabs() {
  * /pvp/acknowledge-season exactly once (see `fireAck`) so the poster
  * doesn't reappear on subsequent visits this session.
  */
-export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFight }) {
+export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFight, onEnergyShort }) {
   const weightClass = fighter?.weightClass ?? "featherweight";
   const fighterId = fighter?._id;
 
@@ -205,8 +205,23 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
 
   // Pre-season countdown — shown when the resolved season hasn't started yet.
   // Locked gate above has top priority: a locked player never reaches this branch.
+  // During the off-season the season that just ended has already paid out, so its
+  // results poster shows over the countdown (its band reads "Opens <date>").
   if (season?.status === "upcoming") {
-    return <PreSeasonCountdown season={season} fighter={fighter} onElapsed={silentRefetch} />;
+    return (
+      <>
+        {showSeasonEnd && lastSeasonRecord && (
+          <SeasonPosterModal
+            key={lastSeasonRecord.seasonId}
+            lastSeasonRecord={lastSeasonRecord}
+            season={season}
+            onEnterLadder={handleSeasonEndClose}
+            onClose={handleSeasonEndClose}
+          />
+        )}
+        <PreSeasonCountdown season={season} fighter={fighter} onElapsed={silentRefetch} />
+      </>
+    );
   }
 
   return (
@@ -227,7 +242,8 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
         <DefenseResults
           myRecord={yourRecord}
           fighter={fighter}
-          onBack={() => setShowDefense(false)}
+          // Both buttons say "Ladder": land on the Ladder tab, not whatever tab was open before.
+          onBack={() => { setShowDefense(false); setActiveTab("ladder"); }}
           onGameplanChanged={() => silentRefetch()}
         />
       )}
@@ -368,6 +384,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
                 onboarding={onboarding}
                 preSelectedDefenderId={preSelectedDefenderId}
                 onPreSelectionConsumed={() => setPreSelectedDefenderId(null)}
+                onEnergyShort={onEnergyShort}
               />
             )}
             {activeTab === "history" && (
