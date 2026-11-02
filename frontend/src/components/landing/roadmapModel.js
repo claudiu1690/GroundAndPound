@@ -3,13 +3,13 @@
  *
  * Plain ESM, no JSX, so tests/frontend/roadmapModel.test.js can load it directly.
  *
- * SHIPPED: titles, points and art live here. The date comes from the changelog
- * entry with the same version, and a milestone whose version is not in the
- * changelog yet is dropped, so the page can never claim a release that has not
- * been written up in What's New.
+ * SHIPPED: titles, points and art live here, shown by version with no date. A
+ * milestone whose version is not in the changelog yet is dropped, so the page
+ * can never claim a release that has not been written up in What's New.
  *
- * NEXT: the next season's number and theme only, no features. The only future
- * date the roadmap shows is that season's opening, read live from the ladder.
+ * NEXT: the next season's number and theme only, no features. The only dates
+ * the roadmap shows come live from the ladder: the live season's weeks left and
+ * the next season's opening.
  * LATER: undated work not tied to a season.
  *
  * ART: `{ img }` is a path under frontend/public, always existing game art or a
@@ -149,10 +149,8 @@ export const ROADMAP_SHIPPED = [
 
 /**
  * Seasons are the landmarks of the history. Each one opens with the release
- * named in `fromVersion`, and that release's changelog date is the season's
- * opening date. Season 1's start is not recorded anywhere, so it has no
- * `fromVersion`: its banner only says when it ended (the day Season 2 opened).
- * Every shipped release is listed under the season it shipped in.
+ * named in `fromVersion`; Season 1 came before versioned releases, so it has
+ * none. Every shipped release is listed under the season it shipped in.
  */
 export const ROADMAP_SEASONS = [
   {
@@ -223,17 +221,17 @@ export const ROADMAP_LATER = [
   },
 ];
 
-/** Shipped milestones with their changelog dates, newest first. */
+/**
+ * Shipped milestones, newest first. A milestone only counts once its version is
+ * in the changelog. No dates: the roadmap shows the order, not the calendar.
+ */
 export function shippedMilestones(entries = CHANGELOG_ENTRIES) {
-  const dateByVersion = new Map(entries.map((e) => [e.version, e.date]));
-  return ROADMAP_SHIPPED
-    .filter((m) => dateByVersion.has(m.version))
-    .map((m) => ({ ...m, date: dateByVersion.get(m.version) }))
-    .reverse();
+  const versions = new Set(entries.map((e) => e.version));
+  return ROADMAP_SHIPPED.filter((m) => versions.has(m.version)).reverse();
 }
 
 const versionParts = (v) => String(v).split(".").map(Number);
-function compareVersions(a, b) {
+export function compareVersions(a, b) {
   const pa = versionParts(a), pb = versionParts(b);
   for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
     const d = (pa[i] || 0) - (pb[i] || 0);
@@ -245,34 +243,19 @@ function compareVersions(a, b) {
 /**
  * The history as season eras, newest season first. The page reads upward from
  * the bottom like a timeline: a season's banner sits under its releases, and
- * those releases run newest at the top. Each era carries its
- * opening date (changelog date of `fromVersion`, or null), its end date (the
- * next season's opening date, or null while it is the latest), and the shipped
- * releases from its opening up to the next season, newest first.
+ * those releases run newest at the top. Each era carries the
+ * shipped releases from its opening up to the next season, newest first.
  */
 export function seasonEras(entries = CHANGELOG_ENTRIES, seasons = ROADMAP_SEASONS) {
-  const dateByVersion = new Map(entries.map((e) => [e.version, e.date]));
   const releases = shippedMilestones(entries);
   const eras = seasons.map((s, i) => {
     const nextSeason = seasons[i + 1];
-    const startDate = s.fromVersion ? dateByVersion.get(s.fromVersion) || null : null;
-    const endDate = nextSeason?.fromVersion ? dateByVersion.get(nextSeason.fromVersion) || null : null;
     const inEra = releases.filter((r) =>
       (!s.fromVersion || compareVersions(r.version, s.fromVersion) >= 0) &&
       (!nextSeason?.fromVersion || compareVersions(r.version, nextSeason.fromVersion) < 0));
-    return { ...s, startDate, endDate, releases: inEra };
+    return { ...s, releases: inEra };
   });
   return eras.reverse();
-}
-
-/**
- * "2026-07-04" -> "Jul 4, 2026". Built from the parts, not `new Date(str)`: a
- * bare ISO date parses as UTC midnight and shows the day before west of London.
- */
-export function formatMilestoneDate(ymd) {
-  const [y, m, d] = String(ymd).split("-").map(Number);
-  if (!y || !m || !d) return null;
-  return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 /**

@@ -1,7 +1,8 @@
 /**
  * roadmapModel.js is a plain ESM module under frontend/src (no JSX), loaded
  * directly with Node's native loader. Covers the landing-page roadmap rules:
- * shipped dates come from the changelog, the future never invents a season.
+ * shipped releases come from the changelog and carry no dates, the future
+ * never invents a season.
  */
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
@@ -20,16 +21,21 @@ test("load roadmapModel.js", async () => {
     assert.equal(typeof rm.shippedMilestones, "function");
 });
 
-test("every shipped milestone names a real changelog version and takes its date", () => {
-    const byVersion = new Map(changelog.CHANGELOG_ENTRIES.map((e) => [e.version, e.date]));
+test("every shipped milestone names a real changelog version and carries no date", () => {
+    const versions = new Set(changelog.CHANGELOG_ENTRIES.map((e) => e.version));
     const shipped = rm.shippedMilestones();
     assert.equal(shipped.length, rm.ROADMAP_SHIPPED.length, "a roadmap milestone has no changelog entry");
-    for (const m of shipped) assert.equal(m.date, byVersion.get(m.version));
+    for (const m of shipped) {
+        assert.ok(versions.has(m.version));
+        assert.equal(m.date, undefined);
+    }
 });
 
+const newestFirst = (versions) => [...versions].sort((a, b) => rm.compareVersions(b, a));
+
 test("shipped milestones are newest first", () => {
-    const dates = rm.shippedMilestones().map((m) => m.date);
-    assert.deepEqual(dates, [...dates].sort().reverse());
+    const versions = rm.shippedMilestones().map((m) => m.version);
+    assert.deepEqual(versions, newestFirst(versions));
 });
 
 test("a milestone whose version is not in the changelog is dropped", () => {
@@ -61,11 +67,6 @@ test("every image the roadmap uses exists under frontend/public", () => {
 test("roadmap copy has no em or en dashes", () => {
     const copy = JSON.stringify(allPoints().map((i) => [i.title, i.points]));
     assert.doesNotMatch(copy, /[–—]/);
-});
-
-test("formatMilestoneDate keeps the calendar day (no UTC shift)", () => {
-    assert.equal(rm.formatMilestoneDate("2026-07-04"), "Jul 4, 2026");
-    assert.equal(rm.formatMilestoneDate("bad"), null);
 });
 
 const PLAN = { seasonNumber: 3, theme: "Black Ice" };
@@ -120,13 +121,14 @@ test("seasonEras: newest season first, every release under exactly one season", 
     assert.ok(eras[1].releases.every((r) => Number(r.version.split(".")[0]) < 2));
 });
 
-test("seasonEras: dates come from the changelog, Season 1 has no invented start", () => {
+test("seasonEras: no dates on past seasons, Season 1 has no opening release", () => {
     const [s2, s1] = rm.seasonEras();
-    const v20 = changelog.CHANGELOG_ENTRIES.find((e) => e.version === "2.0").date;
-    assert.equal(s2.startDate, v20);
-    assert.equal(s2.endDate, null);
-    assert.equal(s1.startDate, null);
-    assert.equal(s1.endDate, v20);
+    for (const era of [s2, s1]) {
+        assert.equal(era.startDate, undefined);
+        assert.equal(era.endDate, undefined);
+    }
+    assert.equal(s2.fromVersion, "2.0");
+    assert.equal(s1.fromVersion, undefined);
 });
 
 test("banner pile art names real customizer pieces", async () => {
@@ -142,8 +144,8 @@ test("banner pile art names real customizer pieces", async () => {
 test("seasonEras: inside a season releases run newest first, the opener last (it sits on the banner)", () => {
     const [s2] = rm.seasonEras();
     assert.equal(s2.releases.at(-1).version, "2.0");
-    const dates = s2.releases.map((r) => r.date);
-    assert.deepEqual(dates, [...dates].sort().reverse());
+    const versions = s2.releases.map((r) => r.version);
+    assert.deepEqual(versions, newestFirst(versions));
 });
 
 test("the next season carries no feature list, only its number and theme", () => {

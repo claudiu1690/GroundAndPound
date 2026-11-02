@@ -6,7 +6,6 @@ import { PIECES_BY_ID } from "../banner/bannerCatalog";
 import { NavSocialIcons, SiteFooter } from "./SiteChrome";
 import {
   ROADMAP_LATER,
-  formatMilestoneDate,
   seasonEras,
   seasonNodes,
   shippedMilestones,
@@ -14,7 +13,6 @@ import {
 
 const ERAS = seasonEras();
 const RELEASE_COUNT = shippedMilestones().length;
-const FIRST_RELEASE = shippedMilestones().at(-1);
 
 /**
  * Small art for one roadmap point. `img` is existing game art; `css` names a
@@ -177,7 +175,6 @@ export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false 
         </p>
         <div className="pvp-pills rm-hero-pills">
           <span className="pill">{RELEASE_COUNT} releases</span>
-          {FIRST_RELEASE && <span className="pill">Since {formatMilestoneDate(FIRST_RELEASE.date)}</span>}
           {now && <span className="pill hot">Season {now.seasonNumber} live</span>}
         </div>
       </header>
@@ -212,7 +209,7 @@ export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false 
               <RoadmapRow
                 key={m.version}
                 item={m}
-                kicker={<><b>v{m.version}</b> · {formatMilestoneDate(m.date)}</>}
+                kicker={<b>v{m.version}</b>}
               />
             ))}
           </div>
@@ -222,11 +219,7 @@ export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false 
             tone={`s${era.number}`}
             art={era.art}
             points={era.points}
-            kicker={
-              era.endDate
-                ? `${era.startDate ? `${formatMilestoneDate(era.startDate)} to ` : "Ended "}${formatMilestoneDate(era.endDate)}`
-                : era.startDate ? `Opened ${formatMilestoneDate(era.startDate)}` : ""
-            }
+            kicker={era.fromVersion ? `Opened with v${era.fromVersion}` : "The first season"}
             pill={livePill(era.number)}
           />
         </section>
