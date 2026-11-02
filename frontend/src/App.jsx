@@ -1080,23 +1080,15 @@ function App() {
         }
 
         // ── Special-move drop (sparring-family sessions only) ────────────
-        // NEW/UPGRADE get the tall-card reveal; DUPLICATE is a compact cash
-        // toast that also patches the displayed cash from newBalance so the
+        // Every outcome gets the card flip (DUPLICATE included since 2.3). A
+        // duplicate also patches the displayed cash from newBalance so the
         // sidebar doesn't wait on the fighter refetch below.
         const moveDrop = result.moveDrop || null;
         if (moveDrop) {
-          if (moveDrop.outcome === "DUPLICATE") {
-            addToast({
-              kind: "moveDupe",
-              name: moveDrop.name,
-              cashAwarded: moveDrop.cashAwarded ?? 0,
-            });
-            if (moveDrop.newBalance != null) {
-              setFighter((prev) => (prev ? { ...prev, iron: moveDrop.newBalance } : prev));
-            }
-          } else {
-            enqueueMoveDrop(moveDrop);
+          if (moveDrop.outcome === "DUPLICATE" && moveDrop.newBalance != null) {
+            setFighter((prev) => (prev ? { ...prev, iron: moveDrop.newBalance } : prev));
           }
+          enqueueMoveDrop(moveDrop);
         }
 
         loadFighter(fighter._id, { clearMessage: false });

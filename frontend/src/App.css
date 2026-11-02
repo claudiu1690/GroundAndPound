@@ -4099,6 +4099,9 @@ code {
   position: fixed; bottom: 52px; right: 20px; z-index: 1000;
   display: flex; flex-direction: column; gap: 12px; pointer-events: none;
 }
+/* A special-move card reveal is up: the session toast would sit on its button
+   (full width on phones). It drains in 3s on its own, so just keep it out of sight. */
+body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
 
 /* ── Global notice toast (renders the App `message` state) ── */
 .app-msg-toast {
@@ -16577,6 +16580,11 @@ button.shop-wallet-chip:disabled { cursor: default; opacity: .7; }
 .drop-reveal-name { font-family: var(--font-display); font-weight: 800; font-size: 22px; text-transform: uppercase; letter-spacing: .4px; color: #fff; }
 .drop-reveal-rarity-chip--solo { margin-top: -6px; }
 .drop-reveal-desc { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
+/* Duplicate: the card still flips; the payoff is the cash it turned into. */
+.drop-reveal-shell--dupe { animation: dropRevealFlip .5s cubic-bezier(.2, .9, .25, 1); box-shadow: 0 0 50px -12px rgba(74, 222, 128, .25); }
+.drop-reveal-dupe { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 14px; border-radius: 8px; background: rgba(58, 154, 74, .10); border: 1px solid rgba(58, 154, 74, .28); }
+.drop-reveal-dupe-cash { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: 800; font-size: 20px; color: #4ADE80; }
+.drop-reveal-dupe-note { font-size: 12px; line-height: 1.4; color: var(--text-secondary); text-align: center; }
 .drop-reveal-flavor { margin: 0; font-size: 12px; font-style: italic; color: var(--text-muted); }
 .drop-reveal-cta { margin-top: 8px; width: 100%; }
 
@@ -16632,12 +16640,9 @@ button.shop-wallet-chip:disabled { cursor: default; opacity: .7; }
 .move-detail-howto-line { margin: 0; font-size: 11px; line-height: 1.5; color: var(--text-secondary); text-align: center; }
 .move-detail-howto-line--off { color: var(--text-muted); font-style: italic; }
 
-/* ── Duplicate-drop toast accent (reuses .train-toast base) ── */
-.train-toast--movedupe { border-color: rgba(212, 168, 32, .4); }
-.train-toast-movedupe-icon { color: var(--c-amber-bright); }
 
 @media (prefers-reduced-motion: reduce) {
-  .move-detail-shell, .drop-reveal-shell--new, .drop-reveal-shell--upgrade, .drop-reveal-rarity-chip--to,
+  .move-detail-shell, .drop-reveal-shell--new, .drop-reveal-shell--upgrade, .drop-reveal-shell--dupe, .drop-reveal-rarity-chip--to,
   .drop-cardback, .drop-reveal-hint, .drop-reveal-info,
   .drop-flip.is-flipped, .drop-aura.is-live, .drop-flip-shine, .drop-spark { animation: none; }
   .drop-flip-inner { transition: none; }

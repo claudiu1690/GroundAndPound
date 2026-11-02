@@ -1139,8 +1139,7 @@
       "greatSession": "Great session!",
       "sluggish": "Sluggish",
       "greatCount": "{n} great session{plural}",
-      "dismiss": "Dismiss",
-      "moveDuplicate": "Duplicate {name} — sold to the gym for ${cash}"
+      "dismiss": "Dismiss"
     }
   },
   "fights": {
@@ -2490,6 +2489,10 @@
       "upgradeEyebrow": "Move Upgraded!",
       "coachNewEyebrow": "Your Coach Taught You a Move!",
       "coachUpgradeEyebrow": "Your Coach Upgraded a Move!",
+      "dropEyebrow": "Special Move Drop!",
+      "duplicateEyebrow": "Duplicate",
+      "duplicateCash": "+${cash} cash",
+      "duplicateNote": "You already own this move at this rarity or better, so it turns into cash.",
       "tapToReveal": "Tap the card to reveal",
       "revealLabel": "Reveal your new move",
       "cta": "Awesome"

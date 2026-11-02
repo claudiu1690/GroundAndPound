@@ -32,6 +32,7 @@ export const CHANGELOG_ENTRIES = [
     sections: {
       changed: [
         "On phones the front page shows Instagram, Facebook and TikTok next to Discord, and tapping the Ground & Pound logo takes you back to the top.",
+        "A duplicate special move now arrives as a face-down card you flip like any other drop, showing the move and the cash it turned into, instead of a quick cash message.",
       ],
       fixed: [
         "Creating a fighter after looking at the Roadmap now takes you straight into the game and the tutorial, not back to the Roadmap.",

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Sparkles, ArrowUpCircle } from "lucide-react";
+import { X, Sparkles, ArrowUpCircle, Coins } from "lucide-react";
 import { MoveArt } from "./MoveArt";
 import { RarityPips } from "./RarityPips";
 import { RARITY_LABELS, RARITY_COLORS, rarityIndex } from "../../constants/specialMovesCatalog";
@@ -23,10 +23,10 @@ const SPARK_COUNT = [10, 14, 18, 22]; // by rarity index: Common → Legendary
 
 /**
  * The drop-reveal payoff — shown when a sparring session's response carries
- * `moveDrop`. Only handles NEW and UPGRADE (the tall-card moments); DUPLICATE
- * is intentionally NOT rendered here — the caller (App.jsx) surfaces it as a
- * compact cash toast instead (see TrainingToast's "moveDupe" kind), per spec:
- * "a compact cash toast/line, NOT a big card."
+ * `moveDrop`, and for coach-taught moves. Every outcome gets the flip: NEW,
+ * UPGRADE and, since 2.3, DUPLICATE (owner: a duplicate used to be a cash toast,
+ * so players never got to turn the card and see what they pulled). A duplicate's
+ * front shows the move, then the cash it converted into.
  *
  * Reveal flow: the card arrives FACE-DOWN (card back). Clicking it flips it
  * (3D rotateY) to expose the art, then the name / rarity / effect text stage
@@ -46,9 +46,10 @@ export function DropRevealModal({ drop, onClose }) {
         return () => window.removeEventListener("keydown", onKey);
     }, [drop, onClose]);
 
-    if (!drop || drop.outcome === "DUPLICATE") return null;
+    if (!drop) return null;
 
     const isUpgrade = drop.outcome === "UPGRADE";
+    const isDuplicate = drop.outcome === "DUPLICATE";
     // Phase 2 (F5): a coach's rank-up teach channel reuses this same modal
     // (contract §6.1) — `source:"coach"` (set by CampTab#handlePromote before
     // calling onMoveDropReveal) swaps only the eyebrow copy so a coach-taught
@@ -61,7 +62,7 @@ export function DropRevealModal({ drop, onClose }) {
     return createPortal(
         <div className="drop-reveal-root" role="dialog" aria-modal="true" aria-label={t("moves.dropReveal.dialogLabel")}>
             <div className="drop-reveal-backdrop" onClick={onClose} />
-            <div className={`drop-reveal-shell${isUpgrade ? " drop-reveal-shell--upgrade" : " drop-reveal-shell--new"}${flipped ? " is-revealed" : ""}`}>
+            <div className={`drop-reveal-shell${isUpgrade ? " drop-reveal-shell--upgrade" : isDuplicate ? " drop-reveal-shell--dupe" : " drop-reveal-shell--new"}${flipped ? " is-revealed" : ""}`}>
                 <button type="button" className="drop-reveal-close" onClick={onClose} aria-label={t("moves.dropReveal.closeLabel")}>
                     <X size={18} />
                 </button>
@@ -70,7 +71,14 @@ export function DropRevealModal({ drop, onClose }) {
                     {isUpgrade ? (
                         <><ArrowUpCircle size={14} /> {t(fromCoach ? "moves.dropReveal.coachUpgradeEyebrow" : "moves.dropReveal.upgradeEyebrow")}</>
                     ) : (
-                        <><Sparkles size={14} /> {t(fromCoach ? "moves.dropReveal.coachNewEyebrow" : "moves.dropReveal.newEyebrow")}</>
+                        // New and duplicate drops look the same until the flip, so the flip
+                        // is the reveal; only then does the eyebrow say which it was.
+                        <><Sparkles size={14} /> {t(
+                            flipped && isDuplicate ? "moves.dropReveal.duplicateEyebrow"
+                                : fromCoach ? "moves.dropReveal.coachNewEyebrow"
+                                    : flipped ? "moves.dropReveal.newEyebrow"
+                                        : "moves.dropReveal.dropEyebrow"
+                        )}</>
                     )}
                 </div>
 
@@ -149,6 +157,14 @@ export function DropRevealModal({ drop, onClose }) {
                         )}
                         <RarityPips rarity={shownRarity} />
 
+                        {isDuplicate && (
+                            <div className="drop-reveal-dupe">
+                                <span className="drop-reveal-dupe-cash">
+                                    <Coins size={16} /> {t("moves.dropReveal.duplicateCash", { cash: (drop.cashAwarded ?? 0).toLocaleString() })}
+                                </span>
+                                <span className="drop-reveal-dupe-note">{t("moves.dropReveal.duplicateNote")}</span>
+                            </div>
+                        )}
                         {drop.description && <p className="drop-reveal-desc">{drop.description}</p>}
                         {drop.flavor && <p className="drop-reveal-flavor">“{drop.flavor}”</p>}
 

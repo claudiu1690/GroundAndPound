@@ -2001,6 +2001,11 @@ existing fight trigger), **Signature** (Rare+ only, one bounded one-shot per fig
   (`fighter.iron`): Common 100 / Uncommon 250 / Rare 600 / Legendary 1,500. **Teaching uses
   the identical three outcomes** — one `grantOrUpgrade` is the sole writer of
   `specialMovesOwned`, so a taught move and a dropped move can never diverge.
+- **Every outcome gets the card flip (v2.3).** New, upgrade and duplicate drops (and taught
+  moves) all open the face-down card reveal; new and duplicate show the same face-down header
+  ("Special Move Drop!") so the flip is the reveal. A duplicate's face then shows the move and
+  its cash ("+$600 cash, you already own this move"). Duplicates used to be a cash toast, so
+  players never saw what they had pulled (owner, 2026-11-02).
 - **No leveling, no pity timer, no PvP** (all deliberately cut from v1).
 
 ### 26.4 The roster (v2, 24 moves) & balance
