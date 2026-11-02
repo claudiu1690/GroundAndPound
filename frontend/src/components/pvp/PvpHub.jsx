@@ -242,7 +242,8 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
         <DefenseResults
           myRecord={yourRecord}
           fighter={fighter}
-          onBack={() => setShowDefense(false)}
+          // Both buttons say "Ladder": land on the Ladder tab, not whatever tab was open before.
+          onBack={() => { setShowDefense(false); setActiveTab("ladder"); }}
           onGameplanChanged={() => silentRefetch()}
         />
       )}

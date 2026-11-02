@@ -1899,10 +1899,12 @@
     },
     "readOnlyProfile": {
       "backToLadder": "Back to Ladder",
-      "challengeBtn": "Challenge",
+      "challengeBtn": "Fight",
       "checkingEligibility": "Checking eligibility…",
       "tooltipProtected": "Protected",
-      "tooltipOutOfRange": "Out of range — OVR gap too large to challenge directly"
+      "tooltipOutOfRange": "Out of range — OVR gap too large to challenge directly",
+      "reasonProtected": "You can't fight them yet: they are new to the Proving Ground and protected for now.",
+      "reasonOutOfRange": "You can't fight them: their OVR is too far from yours. Find an opponent in the Fight tab."
     },
     "consequences": {
       "title": "Your Physical Cost",
@@ -2071,9 +2073,6 @@
       "energyCardSub": "Each PVP fight costs 15 energy",
       "placementMatchTitle": "Placement Match {n} of 3",
       "placementMatchSub": "Win to start higher on the ladder. No DP gained or lost during placement.",
-      "refreshBtn": "Refresh",
-      "refreshingBtn": "Refreshing…",
-      "refreshTitle": "Refresh opponents",
       "availableOpponents": "Available Opponents · {weightClass}",
       "loadingOpponents": "Finding opponents…",
       "noOpponents": "No opponents found. The pool may be too small — check back later.",
@@ -2086,7 +2085,7 @@
       "rivalNote": "Rivalry Resolved if you win — bonus DP",
       "bracketPlus10": "+10% bonus DP — expanded bracket",
       "bracketPlus25": "+25% bonus DP — large bracket",
-      "challengeBtn": "Challenge",
+      "challengeBtn": "Fight",
       "challengeRecoveringTooltip": "This fighter is recovering from an injury and can’t be challenged right now.",
       "challengeProtectedTooltip": "This fighter is protected — they’re still finding their footing.",
       "diffEasy": "Easy",

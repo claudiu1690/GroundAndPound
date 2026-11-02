@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { RefreshCw, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { usePvpOpponents } from "../../../hooks/usePvpOpponents";
 import { PreFight } from "../PreFight";
 import { FightResult } from "../FightResult";
@@ -35,7 +35,7 @@ function DiffPill({ difficulty }) {
  *   result.placementComplete     — PlacementResult shows completion screen
  */
 export function FightTab({ fighter, season, myRecord, onFightResolved, onboarding, preSelectedDefenderId, onPreSelectionConsumed, onEnergyShort }) {
-  const { data, loading, refreshing, error, silentRefetch } = usePvpOpponents();
+  const { data, loading, error, silentRefetch } = usePvpOpponents();
   const [selected, setSelected] = useState(null);   // candidate chosen
   const [fightResult, setFightResult] = useState(null);
 
@@ -123,30 +123,12 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
           <div className="pvp-placement-fight-sub">
             {t("pvp.fight.placementMatchSub")}
           </div>
-          <button
-            className="pvp-refresh-btn"
-            onClick={silentRefetch}
-            disabled={refreshing}
-            title={t("pvp.fight.refreshTitle")}
-          >
-            <RefreshCw size={13} strokeWidth={2} className={refreshing ? "pvp-spin" : ""} />
-            {refreshing ? t("pvp.fight.refreshingBtn") : t("pvp.fight.refreshBtn")}
-          </button>
         </div>
       ) : (
         <div className="pvp-fight-header">
           <div className="pvp-section-lbl" style={{ marginBottom: 0 }}>
             {t("pvp.fight.availableOpponents", { weightClass: seasonWeightClassLabel(season) })}
           </div>
-          <button
-            className="pvp-refresh-btn"
-            onClick={silentRefetch}
-            disabled={refreshing}
-            title={t("pvp.fight.refreshTitle")}
-          >
-            <RefreshCw size={13} strokeWidth={2} className={refreshing ? "pvp-spin" : ""} />
-            {refreshing ? t("pvp.fight.refreshingBtn") : t("pvp.fight.refreshBtn")}
-          </button>
         </div>
       )}
 
@@ -203,6 +185,12 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
                         <span className="pvp-wc-pill">{c.realWeightClass}</span>
                       )}
                     </div>
+                    {/* Why Fight is greyed out, in words: the tooltip never shows on a phone. */}
+                    {(c.isRecovering || c.isProtected) && (
+                      <div className="pvp-mc-blocked">
+                        {c.isRecovering ? t("pvp.fight.challengeRecoveringTooltip") : t("pvp.fight.challengeProtectedTooltip")}
+                      </div>
+                    )}
                     {(beltNote || rivalNote || bracketNote) && (
                       <div className={`pvp-mc-bonus ${c.isRival ? "pvp-mc-bonus-amb" : ""}`}>
                         {beltNote || rivalNote || bracketNote}

@@ -95,7 +95,7 @@ export function PositionCard({ position, viewerBanner }) {
         {/* Name / tags / meta */}
         <div className="lt-pos-info">
           <div className="lt-pos-name">
-            {name}
+            <span className="lt-pos-name-txt">{name}</span>
             <span className="lt-tag lt-tag-you">{t("pvp.ladder.youTag")}</span>
             {winStreak >= 3 && (
               <span className="lt-tag lt-tag-streak">🔥 {winStreak}-win streak</span>

@@ -160,6 +160,8 @@ export function LadderRow({ row, season, onOpenProfile, viewerBanner }) {
           {metaParts.length > 0 && (
             <span>{metaParts.join(" · ")}</span>
           )}
+          {/* Phones drop the OVR column; the rating moves into this line instead. */}
+          <span className="lt-cn-ovr">OVR {ovr ?? "—"}</span>
         </div>
       </div>
 

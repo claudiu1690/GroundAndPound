@@ -1,6 +1,7 @@
 import { DIVISIONS, divisionLabel, divisionMeta, OPEN_LABEL } from "./pvpConst";
 import { PlacementResult } from "./PlacementResult";
 import { ConsequencesBlock } from "./ConsequencesBlock";
+import { PvpFightStory } from "./PvpFightStory";
 import { t } from "../../lib/i18n";
 
 /**
@@ -590,13 +591,7 @@ export function FightResult({ result, fighter, onFightAgain, onBackToLadder }) {
         )}
 
         {/* Commentary — full fight play-by-play */}
-        {commentary && commentary.length > 0 && (
-          <div className="pvp-commentary">
-            {commentary.map((line, i) => (
-              <div key={i} className="pvp-commentary-line">{line}</div>
-            ))}
-          </div>
-        )}
+        <PvpFightStory fightId={result.fightId} commentary={commentary} playerName={attacker?.name} />
 
         {energyRemaining != null && (
           <div className="pvp-energy-remaining">

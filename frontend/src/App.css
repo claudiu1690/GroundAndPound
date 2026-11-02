@@ -14272,6 +14272,73 @@ button.shop-wallet-chip:disabled { cursor: default; opacity: .7; }
   .pvp-sb-cell { padding: 10px 12px; }
 }
 
+/* ── PvP on phones (2.3): one-line names, no overlapping labels ──────────
+   The ladder was a 6-column desktop table squeezed into 390px, so names wrapped
+   onto 3-5 lines; the division strip and tier track labels piled on top of each
+   other; the Fight list pushed its button off screen. */
+.lt-cn-ovr { display: none; }
+.lt-rop-reason { padding: 8px 16px; font-size: 12px; line-height: 1.45; color: #E0A060; background: rgba(200,122,16,0.08); border-bottom: 1px solid #1E1E1E; }
+.pvp-mc-blocked { font-size: 11px; line-height: 1.4; color: #E0A060; margin-top: 3px; }
+.lt-ds-seg { min-width: 0; padding: 0 4px; }
+.lt-ds-seg-lbl { text-overflow: ellipsis; }
+.lt-ds-seg-lbl b { font-weight: 800; }
+
+@media (max-width: 600px) {
+  /* Single padding: tab body and ladder content each added 22px a side. */
+  .pvp-body { padding: 14px 12px; }
+  .lt-content { padding: 0; }
+}
+/* Up to 900px: portrait phones, and landscape phones / small tablets where the
+   desktop sidebar leaves the ladder ~560px. */
+@media (max-width: 900px) {
+  /* Filters: each group is one swipeable line under its label. */
+  .lt-filters-bar { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px 6px; }
+  .lt-filter-sep { display: none; }
+  .lt-filter-group { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .lt-filter-group::-webkit-scrollbar { display: none; }
+  .lt-fb { flex-shrink: 0; }
+  .lt-filters-right { grid-column: 1 / -1; text-align: left; }
+
+  /* Division strip: count above the name, both always readable. */
+  .lt-ds-strip { height: 34px; }
+  .lt-ds-seg-lbl { display: flex; flex-direction: column; align-items: center; line-height: 1.15; letter-spacing: 0.5px; font-size: 7.5px; }
+  .lt-ds-seg-lbl b { font-size: 11px; }
+
+  /* Tier track: no tier names (they overlap); the line under it names the next one. */
+  .lt-pos-tier-wrap { padding: 12px 12px 26px; }
+  .lt-pos-tier-labels { display: none; }
+  .lt-pos-name { flex-wrap: nowrap; min-width: 0; }
+  .lt-pos-name-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .lt-pos-info { min-width: 0; }
+
+  /* Ladder rows: rank | name on one line, meta under it | DP over record. */
+  .lt-head { display: none; }
+  .lt-row { grid-template-columns: 30px minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 8px; row-gap: 2px; padding: 9px 10px; }
+  .lt-row-you { padding-left: 8px; }
+  .lt-cell-rank { grid-column: 1; grid-row: 1 / span 2; }
+  .lt-cell-name { grid-column: 2; grid-row: 1 / span 2; }
+  .lt-cn-name { flex-wrap: nowrap; min-width: 0; }
+  .lt-cn-name > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .lt-cn-meta { flex-wrap: wrap; row-gap: 2px; }
+  .lt-cn-ovr { display: inline; color: #8A8A8A; }
+  .lt-cn-ovr::before { content: "· "; color: #555; }
+  .lt-cell-dp { grid-column: 3; grid-row: 1; }
+  .lt-cell-record { grid-column: 3; grid-row: 2; white-space: nowrap; }
+  .lt-cell-ovr, .lt-cell-active { display: none; }
+
+  /* Fight list: name, then meta, then OVR / DP / difficulty; Fight stays on screen. */
+  .pvp-matchup-card { min-width: 0; }
+  .pvp-mc-body { flex-wrap: wrap; min-width: 0; gap: 6px 10px; padding: 10px; }
+  .pvp-mc-info { flex: 1 1 100%; min-width: 0; }
+  .pvp-mc-name-row { min-width: 0; flex-wrap: nowrap; }
+  .pvp-mc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .pvp-mc-meta { flex-wrap: wrap; row-gap: 4px; }
+  .pvp-mc-meta > span { white-space: nowrap; }
+  .pvp-mc-stats { flex-direction: row; align-items: baseline; gap: 8px; margin-right: 0; }
+  .pvp-mc-action { padding: 0 10px; }
+  .pvp-chal-btn { padding: 9px 14px; }
+}
+
 /* ── Dead old pill classes — kept so no errors if referenced elsewhere ── */
 /* .lt-ds-pill, .lt-ds-count, .lt-ds-lbl defined above; still valid */
 
