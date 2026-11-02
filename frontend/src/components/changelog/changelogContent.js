@@ -19,7 +19,7 @@
 export const CHANGELOG_ENTRIES = [
   {
     version: "2.3",
-    date: "2026-10-28",
+    date: "2026-11-02",
     // Auto-opens: the new Shop and the Roadmap are worth showing returning players.
     major: true,
     highlights: [
