@@ -36,6 +36,7 @@ export const CHANGELOG_ENTRIES = [
         "Creating a fighter after looking at the Roadmap now takes you straight into the game and the tutorial, not back to the Roadmap.",
         "On phones, character creation has even spacing between every field and no stray line across the form.",
         "On phones, the tutorial's Your Stats tip now points at your overall rating at the top of the screen instead of showing nothing.",
+        "On short landscape screens, tutorial tips sit beside what they point at instead of covering it.",
         "Winning a banner piece during the tutorial no longer opens the banner editor and leaves you stuck. Customize it from your profile once the tutorial is done.",
         "The sign-up page footer no longer overlaps the guest links on wide screens.",
         "Scrollbars in pop-ups like the Fighter Report and the Camp Summary match the game's dark look.",

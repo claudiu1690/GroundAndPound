@@ -38,30 +38,45 @@ export function TutorialTooltip({
 
     let style;
     let placement = "center";
-    let arrowLeft = null;
+    let arrowStyle = null;
 
     if (anchorRect) {
         const anchorCx = anchorRect.left + anchorRect.width / 2;
+        const anchorCy = anchorRect.top + anchorRect.height / 2;
+        const clampTop = (t) => Math.max(MARGIN, Math.min(t, vh - size.h - MARGIN));
         let top = anchorRect.bottom + GAP;
+        let left = null;
         placement = "below";
         if (top + size.h > vh - MARGIN) {
             const aboveTop = anchorRect.top - size.h - GAP;
             if (aboveTop >= MARGIN) {
                 top = aboveTop;
                 placement = "above";
+            } else if (anchorRect.right + GAP + size.w <= vw - MARGIN) {
+                // No room above or below (short landscape screens): sit beside the anchor
+                // instead of on top of it, e.g. right of the sidebar stats panel.
+                placement = "right";
+                left = anchorRect.right + GAP;
+                top = clampTop(anchorCy - size.h / 2);
+            } else if (anchorRect.left - GAP - size.w >= MARGIN) {
+                placement = "left";
+                left = anchorRect.left - GAP - size.w;
+                top = clampTop(anchorCy - size.h / 2);
             } else {
-                // No room above or below — pin beside, clamped vertically.
-                top = Math.max(MARGIN, Math.min(top, vh - size.h - MARGIN));
+                // Nowhere clear: clamp on screen and accept the overlap.
                 placement = "below";
             }
         }
         // Always keep the card (and its button) on screen. An anchor above or
         // below the fold on a short phone screen would otherwise push the card
         // off screen, and the scrim blocks scrolling to reach it.
-        top = Math.max(MARGIN, Math.min(top, vh - size.h - MARGIN));
-        let left = anchorCx - size.w / 2;
-        left = Math.max(MARGIN, Math.min(left, vw - size.w - MARGIN));
-        arrowLeft = Math.max(16, Math.min(anchorCx - left, size.w - 16));
+        top = clampTop(top);
+        if (placement === "left" || placement === "right") {
+            arrowStyle = { top: Math.max(16, Math.min(anchorCy - top, size.h - 16)) };
+        } else {
+            left = Math.max(MARGIN, Math.min(anchorCx - size.w / 2, vw - size.w - MARGIN));
+            arrowStyle = { left: Math.max(16, Math.min(anchorCx - left, size.w - 16)) };
+        }
         style = { top: Math.round(top), left: Math.round(left) };
     } else {
         style = {
@@ -73,7 +88,7 @@ export function TutorialTooltip({
     return (
         <div ref={cardRef} className={`tut-tooltip tut-tooltip--${placement}`} style={style} role="dialog" aria-modal="true">
             {placement !== "center" && (
-                <span className={`tut-tooltip-arrow tut-tooltip-arrow--${placement}`} style={{ left: arrowLeft }} />
+                <span className={`tut-tooltip-arrow tut-tooltip-arrow--${placement}`} style={arrowStyle} />
             )}
             <div className="tut-tooltip-title">{title}</div>
             <div className="tut-tooltip-body">{body}</div>

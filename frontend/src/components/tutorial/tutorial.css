@@ -86,6 +86,23 @@
     border-top: 9px solid #FEFEFE;
     transform: translateX(-9px);
 }
+/* Beside the anchor (short landscape screens): the arrow points sideways. */
+.tut-tooltip-arrow--right,
+.tut-tooltip-arrow--left {
+    border-left: none;
+    border-right: none;
+    border-top: 9px solid transparent;
+    border-bottom: 9px solid transparent;
+    transform: translateY(-9px);
+}
+.tut-tooltip-arrow--right {
+    left: -9px;
+    border-right: 9px solid #FEFEFE;
+}
+.tut-tooltip-arrow--left {
+    right: -9px;
+    border-left: 9px solid #FEFEFE;
+}
 
 .tut-tooltip-title {
     font-size: 15px;
