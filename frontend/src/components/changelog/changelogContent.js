@@ -29,8 +29,12 @@ export const CHANGELOG_ENTRIES = [
       "Run out of energy on a Proving Ground attack, a fight, a camp drill or a Fight Camp session and the game now tells you how long to wait, or lets you use an Energy Shot or a drink you own right there.",
     ],
     sections: {
-      changed: [],
+      changed: [
+        "On phones the front page shows Instagram, Facebook and TikTok next to Discord, and tapping the Ground & Pound logo takes you back to the top.",
+      ],
       fixed: [
+        "Creating a fighter after looking at the Roadmap now takes you straight into the game and the tutorial, not back to the Roadmap.",
+        "On phones, character creation has even spacing between every field and no stray line across the form.",
         "On iPhone the game no longer zooms in when you type your fighter's name, so it no longer starts zoomed in and the recovery code fits on screen.",
         "On iPhone, Safari's bottom bar no longer covers the menu at the bottom of the screen.",
         "On phones, the copyright line at the bottom of character creation no longer sits on top of the form.",

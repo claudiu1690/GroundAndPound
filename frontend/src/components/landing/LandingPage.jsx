@@ -348,7 +348,22 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
     <div className="landing-page">
       {/* NAV */}
       <nav className={scrolled ? "scrolled" : ""}>
-        <div className="nav-logo">Ground <span>&amp;</span> Pound</div>
+        <a
+          className="nav-logo"
+          href="/"
+          onClick={(e) => {
+            // Back to the top of this page, not a reload. Drops a #play/#pvp hash so a
+            // later refresh does not jump back down.
+            e.preventDefault();
+            const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+            window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+            if (window.location.hash) {
+              window.history.replaceState(null, "", window.location.pathname + window.location.search);
+            }
+          }}
+        >
+          Ground <span>&amp;</span> Pound
+        </a>
         <div className="nav-links">
           {/* Deliberately sparse. Four section anchors down a page this long read
               as clutter, and the page is a single scroll — the only link worth a

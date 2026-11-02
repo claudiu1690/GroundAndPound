@@ -92,7 +92,11 @@ body {
   background-repeat: repeat;
   background-position: 0 0;
   color: var(--text);
+  /* dvh: on iPhone 100vh is taller than the visible screen, which let the page itself
+     scroll a little under full-screen layers like the roadmap (whose own scroll does not
+     chain out), so only a strip at the top could scroll it back. */
   min-height: 100vh;
+  min-height: 100dvh;
   font-size: 11px;
   line-height: 1.35;
 }
@@ -4687,6 +4691,11 @@ code {
     padding: 60px 0 40px;
   }
   .auth-center { flex-shrink: 0; }
+  /* The background art and its 1px bottom rule were sized to the first screen, so
+     scrolling the form showed a line (and the art's edge) across it. Pin the art to
+     the screen and drop the rule. */
+  .auth-bg { position: fixed; }
+  .auth-bottombar { display: none; }
   /* Prefixed: the base .auth-cookie-link rule sits further down this file. */
   .auth-page .auth-beta,
   .auth-page .auth-cookie-link {
@@ -12326,7 +12335,7 @@ code {
   .auth-center { max-width: 360px; padding-left: 16px; padding-right: 16px; }
   .auth-container { width: 100%; }
   /* Paired name / class+style rows stack so inputs stay tappable. */
-  .auth-row { flex-direction: column; gap: 0; }
+  .auth-row { flex-direction: column; gap: 16px; } /* the form's own field gap */
   .auth-row.auth-row-btns { flex-direction: row; gap: 12px; }
 
   /* ── 16. GYM (GymSelector.jsx + GymTraining.jsx) ────────── */

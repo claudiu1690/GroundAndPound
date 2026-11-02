@@ -965,6 +965,16 @@ function App() {
   const handleAuthenticated = useCallback(
     (fighterId) => {
       setAuthed(true);
+      // roadmapOpen was seeded from the URL when the page loaded, so a visitor who looked at
+      // the logged-out roadmap and then signed up landed on it instead of the game and the
+      // tutorial. Signing in always starts on the game, and the param goes so a refresh
+      // does not reopen it.
+      setRoadmapOpen(false);
+      if (urlHasRoadmap()) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("page");
+        window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+      }
       loadFighter(fighterId);
       loadGyms(fighterId);
     },
@@ -974,6 +984,7 @@ function App() {
   const handleLogout = useCallback(() => {
     authStorage.clear();
     setAuthed(false);
+    setRoadmapOpen(false);
     setFighter(null);
     setLastFightSummary(null);
     setLastFightCommentary([]);

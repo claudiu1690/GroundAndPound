@@ -26,7 +26,8 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
   backdrop-filter:blur(0px);
 }
 .landing-page nav.scrolled{background:rgba(0,0,0,0.92);backdrop-filter:blur(8px)}
-.landing-page .nav-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;letter-spacing:1px}
+.landing-page .nav-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;letter-spacing:1px;color:var(--tp);text-decoration:none}
+.landing-page .nav-logo:hover{color:var(--tp)}
 .landing-page .nav-logo span{color:var(--r)}
 .landing-page .nav-links{display:flex;align-items:center;gap:28px}
 .landing-page .nav-link{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ts);text-decoration:none;transition:color 0.2s}
@@ -623,9 +624,16 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
 .landing-page footer .foot-copy{flex-basis:100%;color:#6a6a6a}
 .landing-page footer .foot-copy + .foot-copy{margin-top:-8px}
 
-/* Phones: four icons plus the logo and Play Free do not fit; Discord stays,
-   the rest live in the footer. */
+/* Phones: a tighter nav so all four icons fit next to the logo and Play Free.
+   Only the narrowest phones (under 360px) fall back to Discord alone; the
+   footer always has every link. */
 @media (max-width: 480px) {
+  .landing-page nav { padding: 14px 16px; }
+  .landing-page .nav-links { gap: 8px; }
+  .landing-page .nav-logo { font-size: 17px; letter-spacing: .5px; }
+  .landing-page .nav-cta { padding: 9px 12px; letter-spacing: 1.5px; }
+}
+@media (max-width: 359px) {
   .landing-page .nav-link--instagram,
   .landing-page .nav-link--facebook,
   .landing-page .nav-link--tiktok{display:none}
