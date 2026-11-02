@@ -100,6 +100,17 @@ body {
 a { color: var(--red); text-decoration: none; }
 a:hover { color: var(--red-bright); }
 
+/* iOS Safari zooms the page in when a field under 16px gets focus, and never zooms back
+   out: a guest who typed their name played the whole game, tutorial included, zoomed in
+   and with dialogs wider than the screen. Touch screens get 16px fields everywhere;
+   !important because many screens set a smaller size on their own fields. The two
+   fields styled larger than 16px are left alone. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not(.yc-name-input):not(.bet-stake-input-big),
+  select,
+  textarea { font-size: 16px !important; }
+}
+
 code {
   background: var(--bg-surface);
   padding: 0.15rem 0.4rem;
@@ -129,9 +140,14 @@ code {
 @media (min-width: 2400px) { :root { --ui-zoom: 1.4; } }
 @media (min-width: 3000px) { :root { --ui-zoom: 1.6; } }
 
+/* Heights use dvh (the visible height) with vh as the fallback. In iPhone Safari 100vh is
+   the height with the toolbar hidden, and since only .app-main scrolls the toolbar never
+   hides, so a 100vh shell put the fixed bottom nav (fixed to .app, which is transformed)
+   behind Safari's bottom bar. */
 #root {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   display: flex;
   justify-content: center;
@@ -145,6 +161,7 @@ code {
      .app would overflow by (zoom - 1) × viewport on both axes. */
   width: calc(100vw / var(--ui-zoom, 1));
   height: calc(100vh / var(--ui-zoom, 1));
+  height: calc(100dvh / var(--ui-zoom, 1));
   overflow: hidden;
   transform: scale(var(--ui-zoom, 1));
   /* top center keeps the layout anchored at the top of the viewport and
@@ -4659,11 +4676,26 @@ code {
 .guest-banner-dismiss:hover { color: var(--text); }
 
 @media (max-height: 760px), (max-width: 480px) {
+  /* The page scrolls here, so the footer (Cookie Policy, copyright, Beta) goes in the flow
+     under the form. Pinned to the bottom it sat on the first screen's bottom edge, on top
+     of the character creation fields. */
   .auth-page {
     overflow-y: auto;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
     padding: 60px 0 40px;
   }
+  .auth-center { flex-shrink: 0; }
+  /* Prefixed: the base .auth-cookie-link rule sits further down this file. */
+  .auth-page .auth-beta,
+  .auth-page .auth-cookie-link {
+    position: static;
+    transform: none;
+    flex-shrink: 0;
+  }
+  .auth-page .auth-beta { margin-top: 24px; }
+  .auth-page .auth-cookie-link { margin-top: 6px; pointer-events: auto; }
   .auth-title-block { margin-bottom: 24px; }
   .auth-form-body { padding: 20px; }
 }
@@ -13053,7 +13085,7 @@ button.shop-wallet-chip:disabled { cursor: default; opacity: .7; }
 .shop-wallet-plus { width: 22px; height: 22px; border-radius: 3px; background: var(--c-blue); display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; }
 
 /* Bundle area sits between the header and the tabs */
-.shop-panel-area { background: var(--bg-card); border-left: 1px solid var(--c-border); border-right: 1px solid var(--c-border); padding: 14px 20px 0; }
+.shop-panel-area { background: var(--bg-card); border-left: 1px solid var(--c-border); border-right: 1px solid var(--c-border); padding: 14px 20px; }
 
 /* Cans: the painted can art, feathered so several can stand together */
 .shop-cans { display: flex; align-items: flex-end; justify-content: center; height: 96px; flex-shrink: 0; }

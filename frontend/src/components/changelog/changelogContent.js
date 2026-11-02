@@ -30,7 +30,12 @@ export const CHANGELOG_ENTRIES = [
     ],
     sections: {
       changed: [],
-      fixed: [],
+      fixed: [
+        "On iPhone the game no longer zooms in when you type your fighter's name, so it no longer starts zoomed in and the recovery code fits on screen.",
+        "On iPhone, Safari's bottom bar no longer covers the menu at the bottom of the screen.",
+        "On phones, the copyright line at the bottom of character creation no longer sits on top of the form.",
+        "In the Shop, the folded Energy Drinks bar has room above the Cash Store tabs.",
+      ],
       balance: [],
     },
   },
