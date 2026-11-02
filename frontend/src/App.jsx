@@ -1551,11 +1551,7 @@ function App() {
       <BannerUnlockModal
         pieces={currentOverlay?.type === "banner" ? currentOverlay.pieces : null}
         onClose={advanceOverlay}
-        // Not during the onboarding tutorial: the editor opened under the scrim, whose cut-out
-        // left its close button unclickable, so the player was stuck. "Later" still closes it.
-        onCustomize={fighter?.tutorial && !fighter.tutorial.completed
-          ? undefined
-          : () => { advanceOverlay(); setOpenBannerEditorSignal((n) => n + 1); }}
+        onCustomize={() => { advanceOverlay(); setOpenBannerEditorSignal((n) => n + 1); }}
       />
 
       <PersonaMomentModal
@@ -1576,11 +1572,7 @@ function App() {
         onClose={energyOffer.close}
         onRefreshFighter={loadFighter}
         onMessage={setMessage}
-        // Not during the onboarding tutorial: the Shop is off its path, so the scrim would
-        // strand the player there (no tooltip, no Skip). Wait and Energy Shot still work.
-        onSeeBundles={fighter?.tutorial && !fighter.tutorial.completed
-          ? undefined
-          : () => { energyOffer.close(); openShopBundles("offer"); }}
+        onSeeBundles={() => { energyOffer.close(); openShopBundles("offer"); }}
       />
 
       <ContenderModal
@@ -1618,6 +1610,8 @@ function App() {
                 : null
           }
           onComplete={handleTutorialComplete}
+          activeTab={activeTab}
+          onNavigate={handleNavTab}
         />
       )}
 
@@ -1988,11 +1982,7 @@ function App() {
                   addingSession={addingSession}
                   finalising={resolving}
                   onMessage={setMessage}
-                  // Not during the onboarding tutorial: the supplements' "Buy →" would leave
-                  // the camp for the Shop, where the scrim has nothing to cut out.
-                  onNavigateShop={fighter?.tutorial && !fighter.tutorial.completed
-                    ? undefined
-                    : () => handleNavTab("shop")}
+                  onNavigateShop={() => handleNavTab("shop")}
                   onRefreshFighter={loadFighter}
                   onEnergyShort={energyOffer.open}
                   onSelectBuff={(buffId, label) => {

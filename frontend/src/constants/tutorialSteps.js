@@ -2,13 +2,20 @@
  * Onboarding tutorial — client-side step / phase / tooltip configuration.
  *
  * Each STEP corresponds to a server step id (see consts/tutorialConfig.js).
- * A step is made of one or more PHASES; each phase reveals one focal element
- * through the scrim and shows a sequence of tooltips before advancing.
+ * A step is made of one or more PHASES; each phase rings one focal element
+ * and shows a sequence of tooltips before advancing. Nothing is blocked: the
+ * player can use the whole game while the tutorial runs.
  *
  * Phase shape:
  *   focus              data-tut id (or array — first present in the DOM wins)
- *                      of the element revealed through the scrim cut-out.
- *   focusAfterTooltips optional data-tut id the cut-out switches to once every
+ *                      of the element the highlight ring sits on.
+ *   tab                screen id(s) the phase lives on (App's activeTab). On any
+ *                      other screen the tutorial pauses and shows a bar with
+ *                      Back to tutorial / End tutorial. Omit for phases that work
+ *                      everywhere (the profile strip, the nav).
+ *   doneOnTab          for "go to X" phases: the phase completes as soon as the
+ *                      player is on that screen, however they got there.
+ *   focusAfterTooltips optional data-tut id the ring switches to once every
  *                      tooltip has been dismissed (used when the player must
  *                      act on a different element than the one being taught).
  *   tooltips           ordered tooltip cards. Non-final tooltips show "Got it";
@@ -18,7 +25,8 @@
  *                        { type: "event", name }           — tutorialBus event fires
  *                        { type: "tooltipButton", label }  — final tooltip button itself advances
  *   skipIfAbsent       if true, auto-advance the phase when the focus element
- *                      never appears (covers mid-step browser-refresh resume).
+ *                      never appears on its screen (mid-step refresh resume, or
+ *                      the player already did the thing out of order).
  *
  * Tooltip shape:
  *   anchor          data-tut id the tooltip card points at (defaults to focus).
@@ -95,6 +103,7 @@ export const TUTORIAL_STEPS = {
         phases: [
             {
                 focus: "nav-camp",
+                doneOnTab: "camp",
                 // Belt and braces: if the anchor is ever missing again, auto-advance instead of
                 // trapping the player. Its absence is exactly what made this unrecoverable.
                 skipIfAbsent: true,
@@ -124,6 +133,7 @@ export const TUTORIAL_STEPS = {
                 // the cut-out to the drills for the train action that fires `training_complete`.
                 focus: "gym-sessions",
                 focusAfterTooltips: "gym-sessions",
+                tab: "camp",
                 // Emitted by CampTab on a completed session. It used to come from the gym's
                 // handleTrain in App.jsx, which retires with the gym tab.
                 advance: { type: "event", name: "training_complete" },
@@ -160,6 +170,7 @@ export const TUTORIAL_STEPS = {
         phases: [
             {
                 focus: "nav-fights",
+                doneOnTab: "fights",
                 advance: { type: "clickFocus" },
                 tooltips: [
                     {
@@ -171,7 +182,10 @@ export const TUTORIAL_STEPS = {
             },
             {
                 focus: "offer-card",
+                tab: "fights",
                 advance: { type: "event", name: "fight_accepted" },
+                // Already in camp (accepted before the tutorial got here): move on.
+                skipIfAbsent: true,
                 tooltips: [
                     {
                         anchor: "offer-card",
@@ -194,6 +208,7 @@ export const TUTORIAL_STEPS = {
         phases: [
             {
                 focus: "fighter-report",
+                tab: "fights",
                 advance: { type: "event", name: "fighter_report_closed" },
                 skipIfAbsent: true,
                 tooltips: [
@@ -207,10 +222,10 @@ export const TUTORIAL_STEPS = {
             // Tooltips 4b–4d fire in sequence, then the whole camp panel stays
             // open and interactive so the player can pick sessions AND finalise.
             // "View Report" in the camp header reopens the Fighter Report on top of
-            // the camp, so the cut-out follows the report while it is open; otherwise
-            // its close button sits under the scrim and the player is stuck.
+            // the camp, so the ring follows the report while it is open.
             {
                 focus: ["fighter-report", "camp-summary", "fight-camp"],
+                tab: "fights",
                 advance: { type: "event", name: "camp_finalised" },
                 skipIfAbsent: true,
                 tooltips: [
@@ -234,6 +249,7 @@ export const TUTORIAL_STEPS = {
             // Pre-fight camp summary — explains the weight cut strategy choice.
             {
                 focus: "camp-summary",
+                tab: "fights",
                 advance: { type: "event", name: "fight_resolved" },
                 skipIfAbsent: true,
                 tooltips: [
@@ -253,6 +269,7 @@ export const TUTORIAL_STEPS = {
         phases: [
             {
                 focus: "result",
+                tab: "fights",
                 advance: { type: "tooltipButton", label: "Got it" },
                 skipIfAbsent: true,
                 tooltips: [
@@ -274,6 +291,7 @@ export const TUTORIAL_STEPS = {
             },
             {
                 focus: "post-fight-interview",
+                tab: "fights",
                 advance: { type: "event", name: "interview_done" },
                 skipIfAbsent: true,
                 tooltips: [
@@ -286,6 +304,7 @@ export const TUTORIAL_STEPS = {
             },
             {
                 focus: "result-continue",
+                tab: "fights",
                 advance: { type: "event", name: "result_dismissed" },
                 skipIfAbsent: true,
                 tooltips: [
@@ -305,6 +324,7 @@ export const TUTORIAL_STEPS = {
         phases: [
             {
                 focus: "nav-rankings",
+                doneOnTab: "rankings",
                 advance: { type: "clickFocus" },
                 tooltips: [
                     {
@@ -317,6 +337,7 @@ export const TUTORIAL_STEPS = {
             },
             {
                 focus: "rankings-tab",
+                tab: "rankings",
                 advance: { type: "tooltipButton", label: "Continue" },
                 skipIfAbsent: true,
                 tooltips: [
@@ -336,6 +357,7 @@ export const TUTORIAL_STEPS = {
         phases: [
             {
                 focus: "nav-events",
+                doneOnTab: "events",
                 advance: { type: "clickFocus" },
                 tooltips: [
                     {
@@ -347,6 +369,7 @@ export const TUTORIAL_STEPS = {
             },
             {
                 focus: "event-headliner",
+                tab: "events",
                 advance: { type: "tooltipButton", label: "Continue" },
                 skipIfAbsent: true,
                 tooltips: [
@@ -376,6 +399,7 @@ export const TUTORIAL_STEPS = {
         phases: [
             {
                 focus: "nav-hospital",
+                doneOnTab: "hospital",
                 advance: { type: "clickFocus" },
                 tooltips: [
                     {
@@ -387,6 +411,7 @@ export const TUTORIAL_STEPS = {
             },
             {
                 focus: "hospital-health",
+                tab: "hospital",
                 advance: { type: "tooltipButton", label: "Continue" },
                 skipIfAbsent: true,
                 tooltips: [

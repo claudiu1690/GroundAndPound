@@ -1,5 +1,6 @@
 /* ───────────────────────────────────────────────────────────
-   Onboarding tutorial — scrim, tooltips, completion modal.
+   Onboarding tutorial — highlight ring, tooltips, paused bar, completion modal.
+   No scrim: the game stays fully usable while the tutorial runs.
    See: GnP Onboarding & Tutorial Spec v1.0, section 5.
    ─────────────────────────────────────────────────────────── */
 
@@ -9,20 +10,6 @@
     z-index: 50000;
     isolation: isolate;
     pointer-events: none;
-}
-
-/* ── Scrim ─────────────────────────────────────────────────── */
-.tut-scrim-panel {
-    position: fixed;
-    background: rgba(0, 0, 0, 0.65);
-    pointer-events: auto;
-    z-index: 1;
-    transition: top 200ms ease, left 200ms ease, width 200ms ease,
-                height 200ms ease, right 200ms ease, bottom 200ms ease;
-}
-
-.tut-scrim-full {
-    inset: 0;
 }
 
 /* ── Focal-element highlight ring ──────────────────────────── */
@@ -174,32 +161,93 @@
     color: #e31837;
 }
 
-/* The storage notice (z 8000) sits under the scrim, so it cannot be dismissed
-   during the tutorial, yet on tall phones it covers drawer tabs showing through
-   the cut-out (Hospital). It only states essential storage, so park it until
-   the tutorial is gone. */
+/* The storage notice (z 8000) only states essential storage; on phones it would
+   sit on top of the tooltips and the paused bar, so park it until the tutorial
+   is gone. */
 body:has(.tut-overlay) .cookie-consent {
     display: none;
 }
 
-/* Shown only when the scrim has no cut-out and no tooltip, so the player is
-   never left behind a blank full-screen scrim. */
-.tut-escape-skip {
+/* ── Paused bar ─────────────────────────────────────────────
+   Shown when the player is on a screen the current tutorial step does not
+   live on. Small and out of the way: the game below stays usable. */
+.tut-paused {
     position: fixed;
     z-index: 3;
     pointer-events: auto;
     left: 50%;
-    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    /* Clear the desktop footer bar (~40px). */
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
+    padding: 8px 8px 8px 16px;
     background: #FEFEFE;
     color: #1a1a1a;
+    border-radius: 999px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    font-size: 13px;
+    white-space: nowrap;
+}
+.tut-paused-text {
+    font-weight: 700;
+}
+.tut-paused-btn {
+    background: #e31837;
+    color: #fff;
     border: none;
     border-radius: 999px;
-    padding: 10px 20px;
+    padding: 7px 14px;
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+.tut-paused-btn:hover {
+    background: #c1142e;
+}
+.tut-paused-end {
+    background: none;
+    border: none;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+.tut-paused-end:hover {
+    color: #e31837;
+}
+/* Phones: sit above the bottom nav (56px). */
+@media (max-width: 768px) {
+    .tut-paused {
+        bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+        gap: 6px;
+        padding-left: 12px;
+    }
+}
+/* The phone menu (More) is open: the bar would sit on its items. It returns when
+   the menu closes. */
+body:has(.m-drawer.open) .tut-paused {
+    display: none;
+}
+/* Narrow phones: the label gets its own line so both buttons fit. */
+@media (max-width: 400px) {
+    .tut-paused {
+        flex-wrap: wrap;
+        justify-content: center;
+        row-gap: 6px;
+        border-radius: 16px;
+        padding: 8px 10px;
+    }
+    .tut-paused-text {
+        width: 100%;
+        text-align: center;
+    }
 }
 
 /* ── Completion modal ──────────────────────────────────────── */

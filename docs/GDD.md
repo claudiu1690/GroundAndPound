@@ -1564,6 +1564,36 @@ New accounts run a guided tooltip sequence through the core loop: fighter profil
 > "Skip tutorial" the only way into the game. Both steps now carry `skipIfAbsent: true`, so a
 > missing anchor degrades to a skipped beat instead of a dead end.
 
+**Never blocking (v2.3).** The tutorial used to lay a dark scrim over the game with one
+cut-out for the current target. Every target that moved, opened a pop-up or lived somewhere the
+scrim did not expect (phone layouts, View Report in Fight Camp, the banner editor) left players
+stuck. Since 2.3 there is no scrim: the game stays fully usable and the tutorial only adds a
+pulsing ring on the target plus its tooltip card.
+
+- **Screens.** Each phase that teaches one screen names it (`tab` in `tutorialSteps.js`: My Camp
+  for the first training session, Fight for the offer, camp and result, Rankings, Events,
+  Hospital). The profile tour and the "go to X" nav phases work on every screen.
+- **Paused, not lost.** On any other screen the tooltip and ring disappear and a small
+  **Tutorial paused** bar shows **Back to tutorial** (jumps to the step's screen) and
+  **End tutorial**. Coming back by any route resumes on the same tooltip. Nothing times out or
+  skips while paused.
+- **"Go to X" steps** (`doneOnTab`) complete as soon as the player is on X, however they got
+  there. Steps the player already did out of order (a fight accepted before the offer step)
+  skip themselves after 3.5 s on their own screen (`skipIfAbsent`).
+- **Pop-ups win.** While a pop-up the player opened is up (Roadmap, What's New, a reward, the
+  out-of-energy offer), the tip, ring and bar step aside; they return when it closes. A pop-up
+  that holds the step's target (Fighter Report, camp summary, the phone's More menu) is the
+  lesson itself and keeps the tip. The paused bar also hides while the More menu is open.
+- **Optional beats wait for their target.** A tip on a beat that may not happen (the win-only
+  interview, the event headliner, the Fighter Report after a reload) shows only once its target
+  exists, instead of flashing up in the middle of the screen before skipping.
+- Tip cards never cover the phone's bottom nav.
+- **End tutorial** (in every tooltip and on the paused bar, formerly "Skip tutorial") opens
+  the completion modal; the $500 signing bonus is still paid on Enter the Game.
+- The Customize button on banner unlocks, the Shop link in Fight Camp supplements and "See
+  bundles" in the out-of-energy offer are back during the tutorial; they were hidden only
+  because the scrim stranded players off its path.
+
 ---
 
 ## 22. The Proving Ground (PvP)

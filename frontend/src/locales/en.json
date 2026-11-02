@@ -325,7 +325,11 @@
   },
   "tutorial": {
     "tooltip": {
-      "skipTutorial": "Skip tutorial"
+      "skipTutorial": "End tutorial"
+    },
+    "paused": {
+      "text": "Tutorial paused",
+      "continue": "Back to tutorial"
     },
     "overlay": {
       "gotIt": "Got it",

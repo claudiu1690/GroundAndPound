@@ -8,7 +8,7 @@ import { TutorialCompleteModal } from "./TutorialCompleteModal";
 import { t } from "../../lib/i18n";
 import "./tutorial.css";
 
-/** Padding (px) around the focal element when cutting the scrim hole. */
+/** Padding (px) around the focal element's highlight ring. */
 const HOLE_PAD = 8;
 /** How long to wait for an absent focal element before skipping (resume safety). */
 const SKIP_ABSENT_MS = 3500;
@@ -64,6 +64,21 @@ function resolveFocalEl(idOrArr) {
     return el;
 }
 
+/**
+ * True while a pop-up the player opened (Roadmap, What's New, a reward, the
+ * out-of-energy offer) is up and is not what the current tip is about. The tip,
+ * ring and paused bar then step aside so they never sit on the pop-up's controls.
+ * A pop-up holding the focal element (the Fighter Report, the camp summary, the
+ * phone drawer) is the lesson itself and keeps the tutorial showing.
+ */
+function foreignModalOpen(focusIdOrArr) {
+    const modals = [...document.querySelectorAll('[aria-modal="true"]')]
+        .filter((m) => !m.closest(".tut-overlay, .tut-complete-root") && m.getClientRects().length > 0);
+    if (modals.length === 0) return false;
+    const focal = focusIdOrArr ? resolveFocalEl(focusIdOrArr) : null;
+    return modals.some((m) => !(focal && m.contains(focal)));
+}
+
 /** Viewport rect of a data-tut element, or null if absent / not laid out. */
 function measureEl(idOrArr) {
     const el = resolveFocalEl(idOrArr);
@@ -83,37 +98,17 @@ function sameRect(a, b) {
 }
 
 /**
- * Scrim — the grey overlay. Renders four panels around the focal element so the
- * hole region passes pointer events through to the (interactive) focal element,
- * while every panel blocks interaction with the rest of the UI. With no focal
- * element it renders a single full-viewport panel.
- */
-function Scrim({ holeRect }) {
-    if (!holeRect) {
-        return <div className="tut-scrim-panel tut-scrim-full" />;
-    }
-    const t = Math.max(0, holeRect.top - HOLE_PAD);
-    const l = Math.max(0, holeRect.left - HOLE_PAD);
-    const r = holeRect.right + HOLE_PAD;
-    const b = holeRect.bottom + HOLE_PAD;
-    return (
-        <>
-            <div className="tut-scrim-panel" style={{ top: 0, left: 0, right: 0, height: t }} />
-            <div className="tut-scrim-panel" style={{ top: b, left: 0, right: 0, bottom: 0 }} />
-            <div className="tut-scrim-panel" style={{ top: t, left: 0, width: l, height: b - t }} />
-            <div className="tut-scrim-panel" style={{ top: t, left: r, right: 0, height: b - t }} />
-        </>
-    );
-}
-
-/**
  * TutorialOverlay — the onboarding orchestrator.
  *
  * Reads the current step from `initialStep`, walks its phases, renders the
- * scrim + tooltip(s) for the active phase, and advances (server-validated)
+ * highlight ring + tooltip(s) for the active phase, and advances (server-validated)
  * when the player completes each phase's action. See constants/tutorialSteps.js.
+ *
+ * Nothing is blocked: there is no scrim, so the player can go anywhere at any
+ * time. A phase with a `tab` belongs to that screen; on any other screen the
+ * tutorial pauses (no tooltip, no ring) and shows a small bar to go back or end it.
  */
-export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onComplete }) {
+export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onComplete, activeTab, onNavigate }) {
     const [stepId, setStepId] = useState(initialStep || "gym_intro");
     const [phaseIndex, setPhaseIndex] = useState(0);
     const [tooltipIndex, setTooltipIndex] = useState(0);
@@ -123,17 +118,22 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
     // True when the tooltip points at a button in the phone's bottom nav, whose
     // labels are shorter than the sidebar's (Train, not My Camp).
     const [anchorInBottomNav, setAnchorInBottomNav] = useState(false);
+    const [modalOpen, setModalOpen] = useState(false);
     const advancingRef = useRef(false);
 
     const step = TUTORIAL_STEPS[stepId] || null;
     const phase = step?.phases?.[phaseIndex] || null;
     const tooltips = phase?.tooltips || [];
-    const currentTooltip = phase && !tooltipsDone ? tooltips[tooltipIndex] : null;
+    // The screen(s) this phase lives on. Off them the tutorial waits, and nothing
+    // (skip timers, scrolling, the ring) runs against a screen it doesn't belong to.
+    const phaseTabs = phase?.tab ? [].concat(phase.tab) : null;
+    const paused = !!(phaseTabs && activeTab && !phaseTabs.includes(activeTab));
+    const currentTooltip = phase && !tooltipsDone && !paused ? tooltips[tooltipIndex] : null;
 
     // The cut-out follows, in priority order: the current tooltip's own `focus`
     // (lets a multi-tooltip step walk the cut-out element by element), then
     // `focusAfterTooltips` once tooltips are done, then the phase's `focus`.
-    const effectiveFocus = phase
+    const effectiveFocus = phase && !paused
         ? (currentTooltip?.focus
             || (tooltipsDone && phase.focusAfterTooltips ? phase.focusAfterTooltips : phase.focus))
         : null;
@@ -158,12 +158,18 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
         advancingRef.current = false;
     }, [stepId, fighterId]);
 
+    // One advance per phase. A nav tap can complete a phase twice in one go (the click
+    // itself, then doneOnTab once the tab renders), which used to skip the next phase.
+    const advancedRef = useRef(null);
     const advancePhase = useCallback(() => {
         if (advancingRef.current) return;
         const st = TUTORIAL_STEPS[stepId];
         if (!st) return;
+        const key = `${stepId}:${phaseIndex}`;
+        if (advancedRef.current === key) return;
+        advancedRef.current = key;
         if (phaseIndex < st.phases.length - 1) {
-            setPhaseIndex((i) => i + 1);
+            setPhaseIndex(phaseIndex + 1);
             setTooltipIndex(0);
             setTooltipsDone(false);
         } else {
@@ -199,6 +205,13 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
         return () => document.removeEventListener("click", onClick);
     }, [phase, tooltipsDone, tooltipIndex, tooltips.length, effectiveFocus, advancePhase]);
 
+    // ── doneOnTab: a "go to X" phase is done once the player is on X ──
+    // Without a scrim the player may already be there, or get there another way.
+    useEffect(() => {
+        if (!phase?.doneOnTab || !activeTab) return;
+        if ([].concat(phase.doneOnTab).includes(activeTab)) advancePhase();
+    }, [phase, activeTab, advancePhase]);
+
     // ── event advancement ────────────────────────────────────
     useEffect(() => {
         if (!phase || phase.advance?.type !== "event") return undefined;
@@ -207,19 +220,18 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
 
     // ── skipIfAbsent (mid-step refresh resume safety) ────────
     useEffect(() => {
-        if (!phase || !phase.skipIfAbsent) return undefined;
+        if (!phase || !phase.skipIfAbsent || paused || modalOpen) return undefined;
         const timer = setTimeout(() => {
             if (!resolveEl(phase.focus)) advancePhase();
         }, SKIP_ABSENT_MS);
         return () => clearTimeout(timer);
-    }, [phase, phaseIndex, stepId, advancePhase]);
+    }, [phase, phaseIndex, stepId, paused, modalOpen, advancePhase]);
 
     // ── Scroll the focal element into view ───────────────────
-    // The scrim blocks manual scrolling, so a focal element below the fold
-    // (e.g. the Events / Hospital nav tabs) would be unreachable. Bring it
-    // into view whenever the focus changes, and again whenever the element it
-    // resolves to changes (on a phone the More button, then the tab inside the
-    // drawer it opens, which can sit below the drawer's fold).
+    // Bring it into view whenever the focus changes, and again whenever the element
+    // it resolves to changes (on a phone the More button, then the tab inside the
+    // drawer it opens, which can sit below the drawer's fold). Once per element, so
+    // the player can still scroll away freely.
     useEffect(() => {
         if (!effectiveFocus || stepId === "complete") return undefined;
         let timer;
@@ -258,6 +270,8 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
             // The More fallback does not count: the tooltip then names a tab inside the drawer.
             const anchorEl = anchorId ? resolveFocalEl(anchorId) : null;
             setAnchorInBottomNav(!!anchorEl?.closest(".m-bottom-nav") && anchorEl.dataset.tut !== "nav-more");
+            // Uses the phase focus even while paused (null focus): any pop-up then hides the bar.
+            setModalOpen(foreignModalOpen(effectiveFocus));
             timer = setTimeout(tick, MEASURE_INTERVAL_MS);
         };
         tick();
@@ -289,7 +303,7 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
     // We portal to document.body so the overlay sits OUTSIDE any transformed
     // ancestor. `.app` has a `transform: scale()` for UI scaling on wide monitors,
     // and any `position: fixed` descendant of a transformed element is positioned
-    // relative to that element's coordinate space — which would shift the scrim
+    // relative to that element's coordinate space — which would shift the ring
     // and tooltip by the zoom factor. Portaling to body restores true viewport
     // positioning so the cut-out lines up with the focal element exactly.
     if (stepId === "complete") {
@@ -309,9 +323,11 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
         body += currentTooltip.variantSuffix[lastFightOutcome] || ".";
     }
 
+    // A pop-up the player opened is on top: stay out of its way until it closes.
+    if (modalOpen) return createPortal(<div className="tut-overlay" />, document.body);
+
     return createPortal(
         <div className="tut-overlay">
-            <Scrim holeRect={holeRect} />
             {holeRect && (
                 <div
                     className="tut-glow"
@@ -323,7 +339,9 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
                     }}
                 />
             )}
-            {currentTooltip && (
+            {/* An optional beat (skipIfAbsent) shows nothing until its target exists: on a
+                loss there is no interview, and its tip used to flash up for 3.5 s anyway. */}
+            {currentTooltip && !(phase?.skipIfAbsent && !holeRect) && (
                 <TutorialTooltip
                     anchorRect={anchorRect}
                     title={currentTooltip.title}
@@ -335,12 +353,16 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
                     total={tooltips.length}
                 />
             )}
-            {/* Escape hatch: waiting on an action with nothing to act on (no tooltip,
-                no cut-out) would leave a full-screen scrim and a stuck player. */}
-            {!currentTooltip && !holeRect && (
-                <button type="button" className="tut-escape-skip" onClick={handleSkipTutorial}>
-                    {t("tutorial.tooltip.skipTutorial")}
-                </button>
+            {paused && (
+                <div className="tut-paused" role="status">
+                    <span className="tut-paused-text">{t("tutorial.paused.text")}</span>
+                    <button type="button" className="tut-paused-btn" onClick={() => onNavigate?.(phaseTabs[0])}>
+                        {t("tutorial.paused.continue")}
+                    </button>
+                    <button type="button" className="tut-paused-end" onClick={handleSkipTutorial}>
+                        {t("tutorial.tooltip.skipTutorial")}
+                    </button>
+                </div>
             )}
         </div>,
         document.body

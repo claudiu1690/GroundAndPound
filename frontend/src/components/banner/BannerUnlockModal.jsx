@@ -37,7 +37,7 @@ function PieceSwatch({ id, kind }) {
  * @param {Array<{id, kind, label, unlockBadgeId}>|null} pieces
  * @param {() => void} onClose        dismiss (button / × / backdrop / Esc)
  * @param {() => void} [onCustomize]  dismiss + deep-link into the banner editor; omitted
- *                                    (no button) during the onboarding tutorial
+ *                                    means no Customize button
  */
 export function BannerUnlockModal({ pieces, onClose, onCustomize }) {
     const hasPieces = Array.isArray(pieces) && pieces.length > 0;

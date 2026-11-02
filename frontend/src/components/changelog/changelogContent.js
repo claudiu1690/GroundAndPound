@@ -27,6 +27,7 @@ export const CHANGELOG_ENTRIES = [
       "Ground & Pound is on Instagram, Facebook and TikTok. The links sit next to Discord at the top of the front page and in the footer.",
       "The Shop has a new look. Every item has its own painted art, your Cash and Energy Drinks sit at the top, and the Energy Drink bundles show in full the first time you visit, then fold to one line. The panel also shows how close you are to your next free drinks.",
       "Run out of energy on a Proving Ground attack, a fight, a camp drill or a Fight Camp session and the game now tells you how long to wait, or lets you use an Energy Shot or a drink you own right there.",
+      "The tutorial no longer darkens and locks the screen. Tap anything, go anywhere: its tip waits on its own screen, and a Tutorial paused bar takes you back or ends it.",
     ],
     sections: {
       changed: [

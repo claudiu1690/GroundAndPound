@@ -90,6 +90,19 @@ export const LIBRARY_ARTICLES = [
         keyTakeaway: "Style affects how your stats are weighted in your OVR. Backstory gives a permanent bonus. Both matter — choose deliberately.",
     },
     {
+        id: "the-tutorial",
+        category: "Getting Started",
+        title: "The Tutorial",
+        summary: "How the first-time walkthrough works, and how to pause or end it.",
+        tags: ["tutorial", "onboarding", "new player", "signing bonus"],
+        body: [
+            "A new fighter gets a short walkthrough: your profile, My Camp and your first training session, a fight offer, Fight Camp, your first result, then the Rankings, Events and the Hospital. A red ring marks what each tip is about, and a white card explains it.",
+            "The tutorial never locks the game. You can tap anything, open any screen and come back. Each tip belongs to one screen, so if you leave, the tip waits and a small Tutorial paused bar appears. Tap Back to tutorial to jump straight back, or just return to that screen yourself and it picks up where you left off. Open the Roadmap or any other pop-up and the tip steps aside until you close it.",
+            "You can stop at any time with End tutorial, on every tip and on the paused bar. You still get the $500 signing bonus when you tap Enter the Game.",
+        ],
+        keyTakeaway: "Explore freely. Leave a tip and it waits for you; End tutorial is always one tap away and keeps the signing bonus.",
+    },
+    {
         id: "the-eight-stats",
         category: "Getting Started",
         title: "The Eight Stats — What Each One Does",

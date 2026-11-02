@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { t } from "../../lib/i18n";
 
 /**
- * A single tutorial tooltip card — a white card floating above the scrim,
+ * A single tutorial tooltip card — a white card floating above the game,
  * anchored to a focal element with a small pointer arrow.
  *
  * Positioning is computed from the anchor's viewport rect: the card prefers to
@@ -32,7 +32,11 @@ export function TutorialTooltip({
     });
 
     const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
-    const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+    // Usable height stops above the phone's bottom nav, so a card never covers it:
+    // the game stays usable during the tutorial and the nav is how players move on.
+    const bottomNav = typeof document !== "undefined" ? document.querySelector(".m-bottom-nav") : null;
+    const navH = bottomNav && getComputedStyle(bottomNav).display !== "none" ? bottomNav.getBoundingClientRect().height : 0;
+    const vh = (typeof window !== "undefined" ? window.innerHeight : 800) - navH;
     const GAP = 14;
     const MARGIN = 12;
 
@@ -69,7 +73,7 @@ export function TutorialTooltip({
         }
         // Always keep the card (and its button) on screen. An anchor above or
         // below the fold on a short phone screen would otherwise push the card
-        // off screen, and the scrim blocks scrolling to reach it.
+        // off screen.
         top = clampTop(top);
         if (placement === "left" || placement === "right") {
             arrowStyle = { top: Math.max(16, Math.min(anchorCy - top, size.h - 16)) };
