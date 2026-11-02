@@ -65,10 +65,12 @@ export const TUTORIAL_STEPS = {
                         body: "Your rank shows where you stand in your weight class. Win fights to climb — break into the top 5 and a title shot comes into reach.",
                     },
                     {
-                        focus: "profile-stats",
-                        anchor: "profile-stats",
+                        // Phones have no stats panel on screen (it lives in the menu, which only
+                        // renders while open), so there the tip points at the OVR badge instead.
+                        focus: ["profile-stats", "m-ovr"],
+                        anchor: ["profile-stats", "m-ovr"],
                         title: "Your Stats",
-                        body: "These eight stats define your fighter. Training raises them, and together they set your overall rating (OVR) — the single number that sums up how good you are.",
+                        body: "Eight stats define your fighter. Training raises them, and together they set your overall rating (OVR), the single number that sums up how good you are. On a phone, OVR is the red number up top and all eight stats are in the menu.",
                     },
                 ],
             },

@@ -1551,7 +1551,11 @@ function App() {
       <BannerUnlockModal
         pieces={currentOverlay?.type === "banner" ? currentOverlay.pieces : null}
         onClose={advanceOverlay}
-        onCustomize={() => { advanceOverlay(); setOpenBannerEditorSignal((n) => n + 1); }}
+        // Not during the onboarding tutorial: the editor opened under the scrim, whose cut-out
+        // left its close button unclickable, so the player was stuck. "Later" still closes it.
+        onCustomize={fighter?.tutorial && !fighter.tutorial.completed
+          ? undefined
+          : () => { advanceOverlay(); setOpenBannerEditorSignal((n) => n + 1); }}
       />
 
       <PersonaMomentModal
@@ -1673,7 +1677,7 @@ function App() {
           {fighter?.nickname && <span className="m-fs-nick">"{fighter.nickname}"</span>}
         </div>
         <div className="m-fs-badges" data-tut="m-career">
-          <span className="m-fs-ovr">{fighter?.overallRating ?? "—"}</span>
+          <span className="m-fs-ovr" data-tut="m-ovr">{fighter?.overallRating ?? "—"}</span>
           <span className="m-fs-tier">{fighter?.promotionTier ?? "Amateur"}</span>
           <span className="m-fs-record">{fighter?.record?.wins ?? 0}-{fighter?.record?.losses ?? 0}</span>
         </div>

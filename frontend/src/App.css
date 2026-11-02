@@ -104,6 +104,18 @@ body {
 a { color: var(--red); text-decoration: none; }
 a:hover { color: var(--red-bright); }
 
+/* Scrollbars: one dark, thin default for every scrolling box (only .main had one, so
+   modals like the Fighter Report showed the browser's white bar). color-scheme also
+   darkens any browser-drawn chrome. Boxes that hide their bar keep their own rules,
+   which are more specific. The ::-webkit- rules are for Safari, which ignores
+   scrollbar-color. */
+html { color-scheme: dark; }
+* { scrollbar-width: thin; scrollbar-color: #3a3a3a transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
+
 /* iOS Safari zooms the page in when a field under 16px gets focus, and never zooms back
    out: a guest who typed their name played the whole game, tutorial included, zoomed in
    and with dialogs wider than the screen. Touch screens get 16px fields everywhere;
@@ -4282,14 +4294,19 @@ code {
 /* ============================================================
    AUTH PAGE — full-screen login / registration gate
    ============================================================ */
+/* A scrolling column at every size: .auth-center's auto margins centre the form when it
+   fits and fall to 0 when it does not (so its top is never clipped), and the footer
+   (.auth-cookie-link) follows in the flow, at the bottom of the screen when there is room.
+   A footer pinned to the bottom edge overlapped the guest links on landscape HD screens. */
 .auth-page {
   position: fixed;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   background: #060606;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   z-index: 10000;
 }
 
@@ -4347,6 +4364,8 @@ code {
   max-width: 440px;
   padding: 0 16px;
   box-sizing: border-box;
+  margin: auto 0;
+  flex-shrink: 0;
 }
 
 .auth-title-block {
@@ -4680,31 +4699,15 @@ code {
 .guest-banner-dismiss:hover { color: var(--text); }
 
 @media (max-height: 760px), (max-width: 480px) {
-  /* The page scrolls here, so the footer (Cookie Policy, copyright, Beta) goes in the flow
-     under the form. Pinned to the bottom it sat on the first screen's bottom edge, on top
-     of the character creation fields. */
-  .auth-page {
-    overflow-y: auto;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 60px 0 40px;
-  }
-  .auth-center { flex-shrink: 0; }
+  /* Room for the wordmark above the form; the column itself is the base .auth-page. */
+  .auth-page { padding: 60px 0 40px; }
   /* The background art and its 1px bottom rule were sized to the first screen, so
      scrolling the form showed a line (and the art's edge) across it. Pin the art to
      the screen and drop the rule. */
   .auth-bg { position: fixed; }
   .auth-bottombar { display: none; }
-  /* Prefixed: the base .auth-cookie-link rule sits further down this file. */
-  .auth-page .auth-beta,
-  .auth-page .auth-cookie-link {
-    position: static;
-    transform: none;
-    flex-shrink: 0;
-  }
-  .auth-page .auth-beta { margin-top: 24px; }
-  .auth-page .auth-cookie-link { margin-top: 6px; pointer-events: auto; }
+  /* Beta leaves its corner and goes in the flow above the footer. */
+  .auth-page .auth-beta { position: static; flex-shrink: 0; margin-top: 24px; }
   .auth-title-block { margin-bottom: 24px; }
   .auth-form-body { padding: 20px; }
 }
@@ -12768,23 +12771,19 @@ code {
   white-space: nowrap;
 }
 
-/* Auth page footer link (below login). pointer-events:none on the wrapper —
-   at short viewports it overlaps the form's submit button and was swallowing
-   clicks (blocked guest signup); only the actual link stays clickable. */
+/* Auth page footer (Cookie Policy + copyright): in the .auth-page column under the
+   form, never pinned over it (see .auth-page). */
 .auth-cookie-link {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
   z-index: 6;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  padding: 20px 0 10px;
   text-align: center;
-  pointer-events: none;
 }
-.auth-cookie-link > button, .auth-cookie-link > a { pointer-events: auto; }
 
 .auth-copyright {
   font-size: 10px;
