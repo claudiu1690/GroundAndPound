@@ -120,6 +120,9 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
     const [tooltipsDone, setTooltipsDone] = useState(false);
     const [holeRect, setHoleRect] = useState(null);
     const [anchorRect, setAnchorRect] = useState(null);
+    // True when the tooltip points at a button in the phone's bottom nav, whose
+    // labels are shorter than the sidebar's (Train, not My Camp).
+    const [anchorInBottomNav, setAnchorInBottomNav] = useState(false);
     const advancingRef = useRef(false);
 
     const step = TUTORIAL_STEPS[stepId] || null;
@@ -252,6 +255,7 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
             const anchorId = currentTooltip ? (currentTooltip.anchor || effectiveFocus) : null;
             const anchor = anchorId ? measureEl(anchorId) : null;
             setAnchorRect((prev) => (sameRect(prev, anchor) ? prev : anchor));
+            setAnchorInBottomNav(!!(anchorId && resolveFocalEl(anchorId)?.closest(".m-bottom-nav")));
             timer = setTimeout(tick, MEASURE_INTERVAL_MS);
         };
         tick();
@@ -298,7 +302,7 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
             : t("tutorial.overlay.letsGo");
     }
 
-    let body = currentTooltip?.body || "";
+    let body = (anchorInBottomNav && currentTooltip?.bodyBottomNav) || currentTooltip?.body || "";
     if (currentTooltip?.variantSuffix) {
         body += currentTooltip.variantSuffix[lastFightOutcome] || ".";
     }

@@ -103,7 +103,9 @@ export const TUTORIAL_STEPS = {
                     {
                         anchor: "nav-camp",
                         title: "This Is Your Camp",
-                        body: "Your career starts here. This is your own camp, with your own coach on the payroll. Training costs energy, and the more you train the stronger you get. Tap My Camp (Train on a phone) to begin.",
+                        body: "Your career starts here. This is your own camp, with your own coach on the payroll. Training costs energy, and the more you train the stronger you get. Tap My Camp to begin.",
+                        // Shown when the anchor is the phone's bottom-nav button, labelled Train.
+                        bodyBottomNav: "Your career starts here. This is your own camp, with your own coach on the payroll. Training costs energy, and the more you train the stronger you get. Tap Train to begin.",
                     },
                 ],
             },
@@ -309,6 +311,7 @@ export const TUTORIAL_STEPS = {
                         anchor: "nav-rankings",
                         title: "The Rankings",
                         body: "Time to see where you stand. Every fighter in your division sits on a ranked ladder — climbing it is your path to a title. Tap the Rankings tab.",
+                        bodyBottomNav: "Time to see where you stand. Every fighter in your division sits on a ranked ladder, and climbing it is your path to a title. Tap Rank at the bottom of the screen.",
                     },
                 ],
             },
