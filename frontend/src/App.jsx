@@ -2074,7 +2074,9 @@ function App() {
         {/* data-tut ids mirror the sidebar's: on portrait the sidebar is display:none and the
             drawer is not rendered, so these are the only nav targets the tutorial can cut out. */}
         <button type="button" data-tut={gymsRetired ? "nav-camp" : "nav-gym"} className={`m-nav-item ${activeTab === (gymsRetired ? "camp" : "gym") ? "act" : ""}`} onClick={() => handleNavTab(gymsRetired ? "camp" : "gym")}>
-          <Dumbbell size={17} strokeWidth={2.2} /><span>{t("layout.nav.train")}</span>
+          {gymsRetired
+            ? <><Building2 size={17} strokeWidth={2.2} /><span>{t("layout.nav.camp")}</span></>
+            : <><Dumbbell size={17} strokeWidth={2.2} /><span>{t("layout.nav.train")}</span></>}
         </button>
         <button type="button" data-tut="nav-fights" className={`m-nav-item ${activeTab === "fights" ? "act" : ""}`} onClick={() => handleNavTab("fights")}>
           <Swords size={17} strokeWidth={2.2} /><span>{t("layout.nav.fight")}</span>

@@ -104,8 +104,8 @@ export const TUTORIAL_STEPS = {
                         anchor: "nav-camp",
                         title: "This Is Your Camp",
                         body: "Your career starts here. This is your own camp, with your own coach on the payroll. Training costs energy, and the more you train the stronger you get. Tap My Camp to begin.",
-                        // Shown when the anchor is the phone's bottom-nav button, labelled Train.
-                        bodyBottomNav: "Your career starts here. This is your own camp, with your own coach on the payroll. Training costs energy, and the more you train the stronger you get. Tap Train to begin.",
+                        // Shown when the anchor is the phone's bottom-nav button, labelled Camp.
+                        bodyBottomNav: "Your career starts here. This is your own camp, with your own coach on the payroll. Training costs energy, and the more you train the stronger you get. Tap Camp at the bottom of the screen to begin.",
                     },
                 ],
             },

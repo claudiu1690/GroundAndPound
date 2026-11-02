@@ -255,7 +255,9 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
             const anchorId = currentTooltip ? (currentTooltip.anchor || effectiveFocus) : null;
             const anchor = anchorId ? measureEl(anchorId) : null;
             setAnchorRect((prev) => (sameRect(prev, anchor) ? prev : anchor));
-            setAnchorInBottomNav(!!(anchorId && resolveFocalEl(anchorId)?.closest(".m-bottom-nav")));
+            // The More fallback does not count: the tooltip then names a tab inside the drawer.
+            const anchorEl = anchorId ? resolveFocalEl(anchorId) : null;
+            setAnchorInBottomNav(!!anchorEl?.closest(".m-bottom-nav") && anchorEl.dataset.tut !== "nav-more");
             timer = setTimeout(tick, MEASURE_INTERVAL_MS);
         };
         tick();
