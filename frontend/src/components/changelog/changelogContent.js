@@ -38,6 +38,7 @@ export const CHANGELOG_ENTRIES = [
         "On phones, the tutorial's Your Stats tip now points at your overall rating at the top of the screen instead of showing nothing.",
         "On short landscape screens, tutorial tips sit beside what they point at instead of covering it.",
         "Winning a banner piece during the tutorial no longer opens the banner editor and leaves you stuck. Customize it from your profile once the tutorial is done.",
+        "Opening View Report in Fight Camp during the tutorial no longer leaves you stuck. You can close the report and carry on with your camp.",
         "The sign-up page footer no longer overlaps the guest links on wide screens.",
         "Scrollbars in pop-ups like the Fighter Report and the Camp Summary match the game's dark look.",
         "On iPhone the game no longer zooms in when you type your fighter's name, so it no longer starts zoomed in and the recovery code fits on screen.",

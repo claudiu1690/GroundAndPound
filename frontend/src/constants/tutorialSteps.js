@@ -204,8 +204,11 @@ export const TUTORIAL_STEPS = {
             },
             // Tooltips 4b–4d fire in sequence, then the whole camp panel stays
             // open and interactive so the player can pick sessions AND finalise.
+            // "View Report" in the camp header reopens the Fighter Report on top of
+            // the camp, so the cut-out follows the report while it is open; otherwise
+            // its close button sits under the scrim and the player is stuck.
             {
-                focus: ["camp-summary", "fight-camp"],
+                focus: ["fighter-report", "camp-summary", "fight-camp"],
                 advance: { type: "event", name: "camp_finalised" },
                 skipIfAbsent: true,
                 tooltips: [
