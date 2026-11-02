@@ -1587,7 +1587,14 @@ pulsing ring on the target plus its tooltip card.
 - **Optional beats wait for their target.** A tip on a beat that may not happen (the win-only
   interview, the event headliner, the Fighter Report after a reload) shows only once its target
   exists, instead of flashing up in the middle of the screen before skipping.
-- Tip cards never cover the phone's bottom nav.
+- **Acting ahead jumps forward.** A phase listens for its own action and those of the later
+  phases in its step, so doing a later thing first (Continue on the fight result during its
+  first tip, answering the interview early, finalising camp during the camp tips) moves the
+  tutorial straight to that point instead of leaving it waiting on a beat that is gone.
+- On a "go to X" step, leaving for some other screen brings its tip back as a reminder.
+- Tip cards never cover the phone's bottom nav. A target taller than the screen gets its tip
+  pinned to the top (panels keep their buttons at the bottom); a desktop side-menu target gets
+  its tip beside the menu, not over the neighbouring items.
 - **End tutorial** (in every tooltip and on the paused bar, formerly "Skip tutorial") opens
   the completion modal; the $500 signing bonus is still paid on Enter the Game.
 - The Customize button on banner unlocks, the Shop link in Fight Camp supplements and "See

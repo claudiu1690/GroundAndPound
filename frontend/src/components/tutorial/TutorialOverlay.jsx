@@ -119,6 +119,8 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
     // labels are shorter than the sidebar's (Train, not My Camp).
     const [anchorInBottomNav, setAnchorInBottomNav] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
+    // Anchor sits in the desktop sidebar (profile panel, menu items): tips go beside it.
+    const [anchorInSidebar, setAnchorInSidebar] = useState(false);
     const advancingRef = useRef(false);
 
     const step = TUTORIAL_STEPS[stepId] || null;
@@ -161,21 +163,24 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
     // One advance per phase. A nav tap can complete a phase twice in one go (the click
     // itself, then doneOnTab once the tab renders), which used to skip the next phase.
     const advancedRef = useRef(null);
-    const advancePhase = useCallback(() => {
+    // Complete phase `done` (the current one, or a later one of this step the player
+    // already finished out of order) and move to the phase after it, or the next step.
+    const advancePast = useCallback((done) => {
         if (advancingRef.current) return;
         const st = TUTORIAL_STEPS[stepId];
         if (!st) return;
         const key = `${stepId}:${phaseIndex}`;
         if (advancedRef.current === key) return;
         advancedRef.current = key;
-        if (phaseIndex < st.phases.length - 1) {
-            setPhaseIndex(phaseIndex + 1);
+        if (done < st.phases.length - 1) {
+            setPhaseIndex(done + 1);
             setTooltipIndex(0);
             setTooltipsDone(false);
         } else {
             advanceStep();
         }
     }, [stepId, phaseIndex, advanceStep]);
+    const advancePhase = useCallback(() => advancePast(phaseIndex), [advancePast, phaseIndex]);
 
     // ── Tooltip button ───────────────────────────────────────
     const handleTooltipButton = useCallback(() => {
@@ -207,16 +212,34 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
 
     // ── doneOnTab: a "go to X" phase is done once the player is on X ──
     // Without a scrim the player may already be there, or get there another way.
+    const prevTabRef = useRef(activeTab);
     useEffect(() => {
+        const moved = prevTabRef.current !== activeTab;
+        prevTabRef.current = activeTab;
         if (!phase?.doneOnTab || !activeTab) return;
-        if ([].concat(phase.doneOnTab).includes(activeTab)) advancePhase();
+        if ([].concat(phase.doneOnTab).includes(activeTab)) {
+            advancePhase();
+        } else if (moved) {
+            // Went somewhere else after dismissing the tip: bring its last card back,
+            // or all that is left is a ring on a nav button (on a phone, on More).
+            setTooltipIndex(Math.max(0, (phase.tooltips?.length || 1) - 1));
+            setTooltipsDone(false);
+        }
     }, [phase, activeTab, advancePhase]);
 
     // ── event advancement ────────────────────────────────────
+    // Listens for this phase's event AND those of the step's later phases: with no scrim
+    // the player can act ahead (hit Continue on the fight result during its first tips),
+    // and that must jump the tutorial forward, not leave it waiting on a beat that is gone.
     useEffect(() => {
-        if (!phase || phase.advance?.type !== "event") return undefined;
-        return tutorialBus.on(phase.advance.name, () => advancePhase());
-    }, [phase, advancePhase]);
+        const phases = TUTORIAL_STEPS[stepId]?.phases || [];
+        const offs = [];
+        for (let j = phaseIndex; j < phases.length; j++) {
+            const adv = phases[j].advance;
+            if (adv?.type === "event") offs.push(tutorialBus.on(adv.name, () => advancePast(j)));
+        }
+        return () => offs.forEach((off) => off());
+    }, [stepId, phaseIndex, advancePast]);
 
     // ── skipIfAbsent (mid-step refresh resume safety) ────────
     useEffect(() => {
@@ -270,6 +293,7 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
             // The More fallback does not count: the tooltip then names a tab inside the drawer.
             const anchorEl = anchorId ? resolveFocalEl(anchorId) : null;
             setAnchorInBottomNav(!!anchorEl?.closest(".m-bottom-nav") && anchorEl.dataset.tut !== "nav-more");
+            setAnchorInSidebar(!!anchorEl?.closest(".sidebar"));
             // Uses the phase focus even while paused (null focus): any pop-up then hides the bar.
             setModalOpen(foreignModalOpen(effectiveFocus));
             timer = setTimeout(tick, MEASURE_INTERVAL_MS);
@@ -349,6 +373,7 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
                     buttonLabel={buttonLabel}
                     onButton={handleTooltipButton}
                     onSkip={handleSkipTutorial}
+                    preferSide={anchorInSidebar}
                     index={tooltipIndex}
                     total={tooltips.length}
                 />

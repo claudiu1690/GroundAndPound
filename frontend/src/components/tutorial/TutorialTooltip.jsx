@@ -15,7 +15,8 @@ export function TutorialTooltip({
     body,
     buttonLabel,
     onButton,
-    onSkip,             // optional — renders a "Skip tutorial" link in the footer when provided
+    onSkip,             // optional — renders an "End tutorial" link in the footer when provided
+    preferSide = false, // anchor sits in the desktop side menu: go beside it, not over its neighbours
     index = 0,
     total = 1,
 }) {
@@ -51,7 +52,12 @@ export function TutorialTooltip({
         let top = anchorRect.bottom + GAP;
         let left = null;
         placement = "below";
-        if (top + size.h > vh - MARGIN) {
+        if (preferSide && anchorRect.right + GAP + size.w <= vw - MARGIN) {
+            // A side-menu item: above or below would sit on the items next to it.
+            placement = "right";
+            left = anchorRect.right + GAP;
+            top = clampTop(anchorCy - size.h / 2);
+        } else if (top + size.h > vh - MARGIN) {
             const aboveTop = anchorRect.top - size.h - GAP;
             if (aboveTop >= MARGIN) {
                 top = aboveTop;
@@ -67,8 +73,11 @@ export function TutorialTooltip({
                 left = anchorRect.left - GAP - size.w;
                 top = clampTop(anchorCy - size.h / 2);
             } else {
-                // Nowhere clear: clamp on screen and accept the overlap.
-                placement = "below";
+                // Nowhere clear (a target taller than the screen): pin to the top. Panels
+                // keep their buttons at the bottom (Accept, Finalise, Begin Fight, Continue),
+                // and pinning low used to cover exactly the button the tip asks for.
+                placement = "pinned";
+                top = MARGIN;
             }
         }
         // Always keep the card (and its button) on screen. An anchor above or
@@ -91,7 +100,7 @@ export function TutorialTooltip({
 
     return (
         <div ref={cardRef} className={`tut-tooltip tut-tooltip--${placement}`} style={style} role="dialog" aria-modal="true">
-            {placement !== "center" && (
+            {placement !== "center" && placement !== "pinned" && (
                 <span className={`tut-tooltip-arrow tut-tooltip-arrow--${placement}`} style={arrowStyle} />
             )}
             <div className="tut-tooltip-title">{title}</div>
