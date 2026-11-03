@@ -18,7 +18,7 @@ const NEXT_SEASON_TEASE_WINDOW_DAYS = 14;
 const opensWithinTeaseWindow = (season) =>
   !!season?.startDate &&
   new Date(season.startDate) - Date.now() <= NEXT_SEASON_TEASE_WINDOW_DAYS * 86400000;
-import { formatDate, formatDateShort, countdownCells, weeksLeftLabel } from "../../lib/countdown";
+import { formatDate, formatDateShort, weeksLeftLabel } from "../../lib/countdown";
 
 // The roadmap is a second page of the logged-out site, addressed by query string
 // (`/?page=roadmap`) because the app has no router and the static host has no
@@ -48,6 +48,14 @@ const CAMP_PLATES = [
     copy: "Energy against XP, injury risk against move-drop odds, camp condition up or down. There is no free session." },
   { col: "wide", img: "crop-needs", eye: "Camp needs you", title: "The camp tells you what it wants",
     copy: "One nudge at the top of the screen the moment a coach starts slipping, and one click to put him back to work." },
+];
+
+/** The Reddit ad's four cards (marketing/reddit-ads-01/carousel), same order. */
+const PITCH_CARDS = [
+  { id: "scout", alt: "Fight night: scout your opponent, pick your camp, make weight." },
+  { id: "corner", alt: "Hire your corner: four coach slots, one per discipline." },
+  { id: "ladder", alt: "Climb the ranked ladder against other players." },
+  { id: "moves", alt: "24 special moves to collect and drill in camp." },
 ];
 
 function CampPlate({ plate, onOpen }) {
@@ -301,6 +309,11 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
     setShowAuth(true);
   }
 
+  function openLogin() {
+    setAuthTab("login");
+    setShowAuth(true);
+  }
+
   function openForgot() {
     setAuthTab("forgot");
     setShowAuth(true);
@@ -321,21 +334,11 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
     return <AuthPage onAuthenticated={onAuthenticated} initialResetToken={initialResetToken} />;
   }
 
-  // Full AuthPage overlay (register / forgot flows)
-  if (showAuth) {
-    return (
-      <AuthPage
-        onAuthenticated={onAuthenticated}
-        initialTab={authTab}
-        onBack={() => setShowAuth(false)}
-      />
-    );
-  }
 
   if (view === "roadmap") {
     return (
       <>
-        <RoadmapPage seasonData={seasonData} seasonLoading={seasonLoading} onHome={openHome} />
+        <RoadmapPage seasonData={seasonData} seasonLoading={seasonLoading} onHome={openHome} onPlay={() => { openHome(); openRegister(); }} />
         {/* The roadmap's footer opens these, same as the landing page's. */}
         <CookieConsent />
         <LegalModals />
@@ -345,6 +348,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
   }
 
   return (
+    <>
     <div className="landing-page">
       {/* NAV */}
       <nav className={scrolled ? "scrolled" : ""}>
@@ -374,101 +378,60 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
             {seasonData ? `Season ${seasonData.seasonNumber}` : "Season 1"}
           </a>
           <NavSocialIcons />
-          <a className="nav-cta" href="#play">Play Free</a>
+          <button type="button" className="nav-cta" onClick={openRegister}>Play Now</button>
         </div>
       </nav>
 
-      {/* HERO — takes over for the season when there is one to promote.
-          `teaser` is the season being counted down to: an upcoming season
-          directly, or the one queued behind the live season (DTO `next`). */}
+      {/* HERO: what the game is and one way in. The season rides along as the kicker;
+          the headline is the brand one-liner, the line under it the ad's own words. */}
       {(() => {
-        const showSeasonHero = !seasonLoading && !!(seasonData && (teaser || seasonData.status === "active"));
-        const head = promoted;
-        // Straight off the DTO — null for the no-twist baseline (Iron Circuit),
-        // in which case the clause renders as nothing at all.
-        const rule = head ? head.twistEffect : null;
-
-        if (!showSeasonHero) {
-          // Evergreen hero — no season data, still loading, or the fetch failed.
-          return (
-            <div className="hero">
-              <img
-                className="hero-bg"
-                src="/assets/landing/arena.jpg"
-                alt="MMA Arena"
-                loading="eager"
-                // lowercase, NOT `fetchPriority` — React only learned the camelCase spelling in 19,
-                // and on 18 it fails the prop through to the DOM with a warning instead of setting
-                // the attribute. Lowercase is passed through verbatim, which is what browsers read.
-                fetchpriority="high"
-              />
-              <div className="hero-overlay"></div>
-              <div className="hero-body">
-                <div className="hero-eye">Step into the cage</div>
-                <h1 className="hero-title">Ground<br /><span>&amp;</span> Pound</h1>
-                <p className="hero-sub">Build your MMA career from zero. Train eight combat stats, run your own camp, climb ranked seasons, and take the championship belt.</p>
-                <div className="hero-actions">
-                  <a className="btn-primary" href="#play">Start Your Career</a>
-                  <a className="btn-secondary" href="#features">See How It Works</a>
-                  <a className="btn-roadmap" href={ROADMAP_QUERY} onClick={openRoadmap}><span className="btn-roadmap-dot" aria-hidden="true" />Roadmap</a>
-                </div>
-              </div>
-              <div className="hero-scroll">Scroll</div>
-            </div>
-          );
-        }
-
+        const showSeason = !seasonLoading && !!(seasonData && (teaser || seasonData.status === "active"));
+        const head = showSeason ? promoted : null;
         return (
-          <div className="hero hero--season">
+          <div className="hero hero--pitch">
             <img
               className="hero-bg"
               src="/assets/landing/arena.jpg"
-              alt="MMA Arena"
+              alt=""
               loading="eager"
+              // lowercase, NOT `fetchPriority` — React only learned the camelCase spelling in 19,
+              // and on 18 it fails the prop through to the DOM with a warning instead of setting
+              // the attribute. Lowercase is passed through verbatim, which is what browsers read.
               fetchpriority="high"
             />
             <div className="hero-overlay"></div>
             <div className="hero-body">
-              <div className="s2-kicker">
-                <span className="s2-dot" />
-                <b>Season {head.seasonNumber} · {head.name}</b>
-                <i>{teaser ? `Opens ${formatDateShort(teaser.startDate)}` : "Live Now"}</i>
-              </div>
-
-              <h1 className="hero-title">
-                Season <span>{head.seasonNumber}</span><br />{head.name}
-              </h1>
-
-              <p className="hero-sub">
-                {teaser ? "The ladder resets and everyone starts level" : "Ranked PvP against real players"}
-                {rule ? <>. This season: <b style={{ color: "#ddd" }}>{rule}</b>.</> : "."}
-              </p>
-
-              {/* Countdown only while teasing. A live season shows no clock up
-                  here at all: the weeks pill in the Proving Ground band already
-                  says how long is left, and a lone "Days Left" cell in countdown
-                  styling read as a launch timer for a season that had launched. */}
-              {teaser && (
-                <div className="cd">
-                  {countdownCells(teaser.startDate).map((c) => (
-                    <div className="cd-cell" key={c.l}>
-                      <div className="cd-n">{c.n}</div>
-                      <div className="cd-l">{c.l}</div>
-                    </div>
-                  ))}
+              {head && (
+                <div className="s2-kicker">
+                  <span className="s2-dot" />
+                  <b>Season {head.seasonNumber} · {head.name}</b>
+                  <i>{teaser ? `Opens ${formatDateShort(teaser.startDate)}` : "Live Now"}</i>
                 </div>
               )}
-
+              <h1 className="hero-title">The MMA{" "}<br /><span>Career Game</span></h1>
+              <p className="hero-sub">Run the camp, pick the fights, climb ranked seasons. Free on mobile and desktop.</p>
               <div className="hero-actions">
-                <a className="btn-gold" href="#play">{teaser ? "Claim Your Spot" : "Start Your Career"}</a>
-                <a className="btn-secondary" href="#camp">What&apos;s New</a>
-                <a className="btn-roadmap" href={ROADMAP_QUERY} onClick={openRoadmap}><span className="btn-roadmap-dot" aria-hidden="true" />Roadmap</a>
+                <button type="button" className="btn-play" onClick={openRegister}>Play Now</button>
+                <button type="button" className="btn-login" onClick={openLogin}>I have an account</button>
               </div>
+              {/* No countdown here: the kicker already says when the next season opens,
+                  and a ticking clock under Play Now means nothing to someone from an ad. */}
+              <a className="btn-roadmap" href={ROADMAP_QUERY} onClick={openRoadmap}><span className="btn-roadmap-dot" aria-hidden="true" />Roadmap</a>
             </div>
-            <div className="hero-scroll">Scroll</div>
           </div>
         );
       })()}
+
+      {/* THE PITCH: the four cards from the ad, in the ad's order. */}
+      <section className="pitch-cards" aria-label="What you do in Ground and Pound">
+        <div className="pitch-track">
+          {PITCH_CARDS.map((c) => (
+            <img key={c.id} className="pitch-card" src={`/assets/landing/cards/${c.id}.webp`} alt={c.alt} width="640" height="800" />
+          ))}
+        </div>
+        <p className="pitch-note">Promo screens built from the game&apos;s own art and UI.</p>
+        <button type="button" className="btn-play" onClick={openRegister}>Play Now</button>
+      </section>
 
       <SectionDivider c="#3b82f6" />
 
@@ -904,8 +867,7 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         <SiteFooter />
       </div>
 
-      {/* Cookie consent banner + legal modals for logged-out visitors */}
-      <CookieConsent />
+      {/* Legal modals for logged-out visitors */}
       <LegalModals />
       <ReportBugModal />
 
@@ -923,5 +885,20 @@ export function LandingPage({ onAuthenticated, initialResetToken }) {
         <img id="lightbox-img" src={lightboxSrc || ""} alt={lightboxAlt} />
       </div>
     </div>
+
+    {/* Outside .landing-page on purpose: its `*` reset (margin/padding 0) would
+        flatten the sign-up form and the cookie bar. */}
+    {/* Sign-up / login opens over the page, so Back drops you where you were. */}
+    {showAuth && (
+      <AuthPage
+        sheet
+        onAuthenticated={onAuthenticated}
+        initialTab={authTab}
+        onBack={() => setShowAuth(false)}
+      />
+    )}
+    {/* Cookie consent banner for logged-out visitors */}
+    <CookieConsent />
+    </>
   );
 }

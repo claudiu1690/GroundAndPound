@@ -37,7 +37,7 @@
       "recoverBtn": "Recover account"
     },
     "register": {
-      "step1Label": "Step 1 of 2 — Create your account",
+      "step1Label": "Step 1 of 2: Create your account",
       "emailLabel": "Email",
       "emailPlaceholder": "fighter@example.com",
       "passwordLabel": "Password",
@@ -45,10 +45,10 @@
       "passwordPlaceholder": "••••••••",
       "confirmPasswordLabel": "Confirm Password",
       "confirmPasswordPlaceholder": "••••••••",
-      "nextBtn": "Next — Build your fighter →",
+      "nextBtn": "Next: Build your fighter →",
       "alreadyHaveAccount": "Already have an account?",
       "signIn": "Sign in",
-      "step2Label": "Step 2 of 2 — Build your fighter",
+      "step2Label": "Step 2 of 2: Build your fighter",
       "firstNameLabel": "First Name",
       "firstNamePlaceholder": "Alex",
       "lastNameLabel": "Last Name",
@@ -99,7 +99,7 @@
       "recoverFailed": "Could not recover account."
     },
     "guest": {
-      "playAsGuestCta": "Play as guest — no email needed",
+      "playAsGuestCta": "Play as guest, no email needed",
       "resumeWithCodeCta": "Resume with a recovery code",
       "startLabel": "Play as guest",
       "startDesc": "Build your fighter and jump straight in — no email or password required. You can secure your account with an email later from Account Settings.",
@@ -275,9 +275,9 @@
   "legal": {
     "cookieConsent": {
       "bannerAriaLabel": "Cookie notice",
-      "text": "We use essential browser storage to keep you signed in and load your fighter. We don't use tracking or advertising cookies.",
-      "policyLink": "Cookie Policy",
-      "acceptBtn": "Got it"
+      "text": "Essential storage only, to keep you signed in. No tracking or ad cookies.",
+      "policyLink": "Policy",
+      "acceptBtn": "OK"
     },
     "cookiePolicy": {
       "modalAriaLabel": "Cookie Policy",

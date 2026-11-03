@@ -4409,7 +4409,7 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
   z-index: 2;
   width: 100%;
   background: rgba(10,10,10,.95);
-  border: 1px solid #1E1E1E;
+  border: 1px solid #2A2A2A;
   border-radius: 8px;
   overflow: hidden;
 }
@@ -4437,7 +4437,7 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #444;
+  color: #8A8A8A;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 12px;
@@ -4465,20 +4465,20 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
 .auth-field label {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: #444;
+  color: #AAAAAA;
 }
 
 .auth-field input,
 .auth-field select {
-  background: #080808;
-  border: 1px solid #1E1E1E;
+  background: #111111;
+  border: 1px solid #333333;
   border-radius: 4px;
   color: #F0F0F0;
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 16px;
   padding: 12px 14px;
   width: 100%;
   box-sizing: border-box;
@@ -4496,8 +4496,8 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
 .auth-field select option { background: #080808; color: #F0F0F0; }
 
 .auth-field input:focus,
-.auth-field select:focus { outline: none; border-color: #2A2A2A; }
-.auth-field input::placeholder { color: #2A2A2A; }
+.auth-field select:focus { outline: none; border-color: var(--red); }
+.auth-field input::placeholder { color: #5C5C5C; }
 
 .auth-submit {
   width: 100%;
@@ -4523,25 +4523,25 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
   justify-content: space-between;
   align-items: center;
   font-family: var(--font-body);
-  font-size: 12px;
-  color: #444;
+  font-size: 13px;
+  color: #888;
 }
 .auth-form-link {
   background: none;
   border: none;
-  color: #444;
-  font-size: 12px;
+  color: #AAAAAA;
+  font-size: 13px;
   cursor: pointer;
   padding: 0;
   font-family: inherit;
 }
 .auth-form-link:hover { color: var(--red); }
-.auth-form-links span { color: #555; }
+.auth-form-links span { color: #888; }
 
 .auth-step-label {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--red);
@@ -4558,8 +4558,8 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
-  font-size: 10px;
-  color: #444;
+  font-size: 11px;
+  color: #888;
 }
 
 .auth-desc {
@@ -4600,15 +4600,15 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
 .auth-switch {
   text-align: center;
   font-family: var(--font-body);
-  font-size: 12px;
-  color: #444;
+  font-size: 13px;
+  color: #999;
   margin: 0;
 }
 .auth-link {
   background: none;
   border: none;
-  color: var(--red);
-  font-size: 12px;
+  color: var(--red-bright);
+  font-size: 13px;
   cursor: pointer;
   padding: 0;
   text-decoration: underline;
@@ -4625,7 +4625,76 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
   font-size: 10px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: #333;
+  color: #555;
+}
+
+/* Sheet mode (AuthPage `sheet`): opened over the landing page, which stays behind. */
+.auth-page--sheet {
+  background: rgba(4, 4, 4, .84);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.auth-page--sheet .auth-bg,
+.auth-page--sheet .auth-wordmark,
+.auth-page--sheet .auth-beta,
+.auth-page--sheet .auth-cookie-link { display: none; }
+/* The whole form must fit on a laptop screen without scrolling: no second logo
+   (the page behind already says Ground & Pound) and tighter spacing. */
+.auth-page--sheet .auth-center { padding-top: 20px; padding-bottom: 20px; }
+.auth-page--sheet .auth-title-block { display: none; }
+/* The 60px top padding short screens get is room for the wordmark, which the sheet hides. */
+.auth-page.auth-page--sheet { padding: 0; }
+.auth-page--sheet .auth-back-link { margin: 0 0 6px; }
+.auth-page--sheet .auth-tab { padding: 12px 0; }
+.auth-page--sheet .auth-form-body { padding: 20px 26px 22px; gap: 12px; }
+.auth-page--sheet .auth-form { gap: 12px; }
+.auth-page--sheet .auth-field { gap: 5px; }
+.auth-page--sheet .auth-field input,
+.auth-page--sheet .auth-field select { padding: 10px 14px; }
+.auth-page--sheet .auth-consent { margin: 0 0 2px; }
+.auth-page--sheet .auth-guest-links { margin-top: 12px; gap: 8px; }
+.auth-page--sheet .auth-guest-cta { padding: 11px 14px; }
+@media (max-width: 480px) {
+  .auth-page--sheet .auth-center { padding-top: 6px; padding-bottom: 4px; }
+  .auth-page--sheet .auth-back-link { padding: 4px 0; margin-bottom: 4px; }
+  .auth-page--sheet .auth-form-body { padding: 14px 18px 16px; gap: 9px; }
+  .auth-page--sheet .auth-form { gap: 9px; }
+  .auth-page--sheet .auth-guest-links { margin-top: 10px; }
+  /* Step 2 keeps its name and class/style pairs side by side so it fits too. */
+  .auth-page--sheet .auth-row { flex-direction: row; gap: 10px; }
+  .auth-page--sheet .auth-field select { padding-right: 28px; background-position: right 10px center; }
+  .auth-page--sheet .auth-desc { padding: 6px 9px; }
+}
+
+/* Sheet on a phone held sideways (~320-375px tall): fields go side by side so the
+   whole step fits without scrolling. Back moves to the corner. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .auth-page--sheet .auth-center { max-width: 640px; padding-top: 30px; padding-bottom: 8px; }
+  .auth-page--sheet .auth-back-link { position: fixed; top: 4px; left: 12px; z-index: 3; margin: 0; padding: 4px; }
+  .auth-page--sheet .auth-tab { padding: 9px 0; }
+  .auth-page--sheet .auth-form-body { padding: 12px 20px 14px; gap: 8px; }
+  .auth-page--sheet .auth-field { gap: 3px; }
+  .auth-page--sheet .auth-field label { font-size: 10px; }
+  .auth-page--sheet .auth-field input,
+  .auth-page--sheet .auth-field select { padding: 8px 12px; }
+  .auth-page--sheet .auth-submit { padding: 11px; }
+  .auth-page--sheet .auth-step-label,
+  .auth-page--sheet .auth-switch,
+  .auth-page--sheet .auth-desc { display: none; }
+  .auth-page--sheet .auth-guest-links { margin-top: 10px; }
+
+  /* Step 1: email / password + confirm / checkbox / Next */
+  .auth-page--sheet .auth-form--account { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+  .auth-page--sheet .auth-form--account > * { grid-column: 1 / -1; }
+  .auth-page--sheet .auth-form--account > .auth-field:nth-child(3),
+  .auth-page--sheet .auth-form--account > .auth-field:nth-child(4) { grid-column: auto; }
+
+  /* Step 2: first / last / nickname, class / style / backstory, Back + Create */
+  .auth-page--sheet .auth-form--fighter { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px; }
+  .auth-page--sheet .auth-form--fighter > * { grid-column: 1 / -1; }
+  .auth-page--sheet .auth-form--fighter .auth-row { display: contents; }
+  .auth-page--sheet .auth-form--fighter > .auth-field { grid-column: auto; }
+  .auth-page--sheet .auth-form--fighter .auth-submit-create { grid-column: span 2; }
 }
 
 /* ── Guest account entry points (AuthPage) ───────────────── */
@@ -4633,15 +4702,65 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
   position: relative;
   z-index: 2;
   display: flex;
-  justify-content: center;
-  gap: 18px;
-  margin-top: 14px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 16px;
 }
-.auth-guest-cta { color: #888; }
-.auth-guest-cta:hover { color: #F0F0F0; }
-.auth-resume-cta { color: #555; font-size: 11px; }
-.auth-resume-cta:hover { color: var(--red); }
+/* The no-sign-up lane: a real button, not a footnote. */
+.auth-guest-cta {
+  width: 100%;
+  border: 1px solid #3A3A3A;
+  border-radius: 4px;
+  padding: 13px 14px;
+  color: #F0F0F0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: border-color .15s, background .15s;
+}
+.auth-guest-cta:hover { color: #F0F0F0; border-color: var(--red); background: rgba(200,16,46,.08); }
+.auth-resume-cta { color: #999; font-size: 12px; }
+.auth-resume-cta:hover { color: var(--red-bright); }
+
+/* Back to the front page: above the card, not jammed into its corner. */
+.auth-back-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 6px 0;
+  margin: -24px 0 10px;
+  color: #AAAAAA;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.auth-back-link:hover { color: #F0F0F0; }
+
+/* Age / terms checkbox on step 1. */
+.auth-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 2px 0 6px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #BBBBBB;
+  cursor: pointer;
+}
+.auth-consent input {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--red);
+}
 
 /* ── Recovery code modal (one-time reveal) ───────────────── */
 .recovery-code-modal { max-width: 440px; }
@@ -12732,21 +12851,19 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  padding: 0.75rem 1.1rem;
-  background: var(--bg-card);
-  border-top: 1px solid var(--gold-bright);
-  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.4);
+  gap: 0.9rem;
+  padding: 0.45rem 1rem;
+  background: rgba(14, 14, 14, .94);
+  border-top: 1px solid #2A2A2A;
 }
 
 .cookie-consent-text {
   margin: 0;
-  flex: 1 1 360px;
+  flex: 0 1 auto;
   min-width: 0;
   font-size: 12px;
-  line-height: 1.45;
-  color: var(--text-secondary);
+  line-height: 1.4;
+  color: #9A9A9A;
 }
 
 .cookie-consent-actions {
@@ -12770,9 +12887,20 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
 }
 .cookie-consent-link:hover { color: var(--text); }
 
-.cookie-consent-accept {
+/* Small and quiet on purpose: it must never be the biggest button on the screen. */
+.cookie-consent .cookie-consent-accept {
   white-space: nowrap;
+  background: transparent;
+  border: 1px solid #444;
+  border-radius: 3px;
+  color: #DDD;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 14px;
+  cursor: pointer;
 }
+.cookie-consent .cookie-consent-accept:hover { border-color: #888; color: #FFF; background: transparent; }
 
 /* Auth page footer (Cookie Policy + copyright): in the .auth-page column under the
    form, never pinned over it (see .auth-page). */
@@ -12888,10 +13016,8 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
 /* ── Mobile: stack the button below the text, sit above bottom nav ── */
 @media (max-width: 768px) {
   .cookie-consent {
-    flex-direction: column;
-    align-items: stretch;
     gap: 0.6rem;
-    padding: 0.7rem 0.9rem;
+    padding: 0.45rem 0.75rem;
   }
   /* Clear the .m-bottom-nav (height 56px) only when it is on screen; the landing
      and auth pages have no nav, so there the banner sits on the bottom edge. */
@@ -12901,15 +13027,8 @@ body:has(.drop-reveal-root) .toast-container { visibility: hidden; }
   /* In the column layout the desktop flex-basis (360px) becomes a HEIGHT and the
      banner stood ~360px tall on a portrait phone. Size the text to its content. */
   .cookie-consent-text {
-    flex: 0 0 auto;
-  }
-  .cookie-consent-actions {
-    justify-content: space-between;
-  }
-  .cookie-consent-accept {
     flex: 1 1 auto;
-    text-align: center;
-    justify-content: center;
+    font-size: 11px;
   }
 }
 
