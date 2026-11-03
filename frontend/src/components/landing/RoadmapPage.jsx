@@ -114,7 +114,8 @@ function SeasonBanner({ number, name, art, kicker, pill, points, tone }) {
  * anchor on it. With `player` (signed in, shown over the game by
  * RoadmapOverlay) the nav and the closing button lead back to the game instead.
  */
-export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false }) {
+/** `onPlay`: open sign-up over the front page (logged-out only). */
+export function RoadmapPage({ seasonData, seasonLoading, onHome, onPlay, player = false }) {
   const { now, next } = seasonNodes(seasonLoading ? null : seasonData);
   const rootRef = useRef(null);
 
@@ -145,6 +146,10 @@ export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false 
     e.preventDefault();
     onHome(hash);
   };
+  const play = (e) => {
+    e.preventDefault();
+    if (onPlay) onPlay(); else onHome("#play");
+  };
 
   // The live season's banner carries what the ladder says right now.
   const livePill = (number) =>
@@ -161,7 +166,7 @@ export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false 
           ) : (
             <>
               <a className="nav-link rm-nav-back" href="/" onClick={go("")}>&larr; Home</a>
-              <a className="nav-cta" href="/#play" onClick={go("#play")}>Play Free</a>
+              <a className="nav-cta" href="/#play" onClick={play}>Play Now</a>
             </>
           )}
         </div>
@@ -229,7 +234,7 @@ export function RoadmapPage({ seasonData, seasonLoading, onHome, player = false 
         <p className="rm-note">What comes next is the plan, not a promise. Dates go up when they are locked.</p>
         {player
           ? <a className="btn-primary" href="/" onClick={go("")}>Back to the game</a>
-          : <a className="btn-primary" href="/#play" onClick={go("#play")}>Start Your Career</a>}
+          : <a className="btn-primary" href="/#play" onClick={play}>Play Now</a>}
       </div>
 
       <SiteFooter legal={!player} />

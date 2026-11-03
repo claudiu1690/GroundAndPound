@@ -74,7 +74,7 @@ export function CookieConsent() {
             >
               {t("legal.cookieConsent.policyLink")}
             </button>
-            <button type="button" className="btn btn-primary cookie-consent-accept" onClick={acknowledge}>
+            <button type="button" className="cookie-consent-accept" onClick={acknowledge}>
               {t("legal.cookieConsent.acceptBtn")}
             </button>
           </div>

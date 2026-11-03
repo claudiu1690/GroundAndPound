@@ -641,3 +641,100 @@ body.landing-active #root{display:block;height:auto;min-height:100vh;overflow:vi
 @media (max-width: 860px) {
   .landing-page .foot-links{justify-content:center}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PITCH HERO + AD CARDS (2026-11-03): say what the game is, one way in, and the
+   four cards from the ad right under it. Shorter than a full screen on phones so
+   the cards peek in and say "there is more".
+   ═══════════════════════════════════════════════════════════════════════════ */
+.landing-page .hero--pitch { height: 86vh; height: 86svh; min-height: 560px; }
+.landing-page .hero--pitch .hero-title { font-size: clamp(50px, 7.4vw, 92px); margin: 14px 0 18px; }
+.landing-page .hero--pitch .hero-sub { font-size: 19px; color: #d0d0d0; margin-bottom: 28px; }
+.landing-page .hero--pitch .btn-roadmap { margin-top: 24px; }
+
+.landing-page .btn-play {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 17px;
+  letter-spacing: 3px; text-transform: uppercase;
+  background: var(--r); color: #fff; border: none; border-radius: 3px;
+  padding: 18px 48px; cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 10px 34px rgba(200,16,46,.45);
+  transition: transform .12s, box-shadow .15s, background .15s;
+}
+.landing-page .btn-play:hover { background: #e8102e; box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 12px 40px rgba(232,16,46,.6); }
+.landing-page .btn-play:active { transform: translateY(1px); }
+.landing-page .btn-login {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px;
+  letter-spacing: 2px; text-transform: uppercase;
+  background: transparent; color: #e6e6e6; border: 1px solid rgba(255,255,255,.28);
+  border-radius: 3px; padding: 17px 26px; cursor: pointer;
+}
+.landing-page .btn-login:hover { border-color: rgba(255,255,255,.6); color: #fff; }
+
+.landing-page .pitch-cards { max-width: 1200px; margin: 0 auto; padding: 8px 24px 64px; text-align: center; }
+.landing-page .pitch-track { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.landing-page .pitch-card {
+  display: block; width: 100%; height: auto; aspect-ratio: 4 / 5;
+  border-radius: 10px; border: 1px solid #262626;
+  box-shadow: 0 18px 40px rgba(0,0,0,.55);
+}
+.landing-page .pitch-note { font-size: 12px; color: #777; margin: 16px 0 26px; }
+
+@media (max-width: 860px) {
+  .landing-page .pitch-cards { padding: 0 0 52px; }
+  /* One swipeable row; the next card peeks so it reads as a carousel. */
+  .landing-page .pitch-track {
+    display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+    gap: 14px; padding: 4px 24px 8px; scrollbar-width: none;
+  }
+  .landing-page .pitch-track::-webkit-scrollbar { display: none; }
+  .landing-page .pitch-card { flex: 0 0 74vw; max-width: 340px; scroll-snap-align: center; }
+  .landing-page .pitch-note { padding: 0 24px; }
+}
+@media (max-width: 480px) {
+  /* Compact so the first card already shows on the first screen. */
+  .landing-page .hero--pitch { height: auto; min-height: 0; padding: 92px 0 28px; }
+  .landing-page .hero--pitch .hero-title { font-size: 46px; margin: 12px 0 14px; }
+  .landing-page .hero--pitch .hero-sub { font-size: 16px; margin-bottom: 22px; }
+  .landing-page .hero--pitch .hero-actions { gap: 10px; }
+  .landing-page .hero--pitch .btn-login { padding: 12px 20px; }
+  .landing-page .hero--pitch .btn-roadmap { margin-top: 16px; padding: 7px 14px; font-size: 11px; }
+  .landing-page .btn-play { width: 100%; padding: 18px 20px; }
+  .landing-page .pitch-cards .btn-play { width: calc(100% - 48px); }
+}
+
+/* Phone held sideways: the hero is exactly one screen (clear of the fixed nav),
+   with the headline on one line and Play Now in view. The cards below are sized
+   by the screen's height so each one shows whole, never cut off. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .landing-page .hero--pitch {
+    height: 100vh; height: 100svh; min-height: 0;
+    padding: 58px 0 14px; box-sizing: border-box;
+    display: flex; align-items: center;
+  }
+  .landing-page .hero--pitch .hero-title { font-size: 34px; margin: 10px 0 8px; }
+  .landing-page .hero--pitch .hero-title br { display: none; }
+  .landing-page .hero--pitch .hero-sub { font-size: 15px; line-height: 1.45; margin-bottom: 16px; max-width: 620px; }
+  .landing-page .hero--pitch .hero-actions { flex-direction: row; align-items: center; gap: 10px; }
+  .landing-page .hero--pitch .btn-play { width: auto; padding: 13px 32px; font-size: 15px; }
+  .landing-page .hero--pitch .btn-login { padding: 12px 20px; }
+  .landing-page .hero--pitch .btn-roadmap { display: none; }
+
+  /* The cards get a screen of their own too: all four whole, side by side, sized to
+     whichever runs out first (height under the nav, or width). The nav's Play Now
+     stays on screen, so the second button is dropped here. */
+  .landing-page .pitch-cards {
+    min-height: 100vh; min-height: 100svh; box-sizing: border-box;
+    padding: 66px 24px 12px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+  }
+  .landing-page .pitch-track {
+    display: grid; grid-template-columns: repeat(4, auto); justify-content: center;
+    gap: 12px; padding: 0; overflow: visible;
+  }
+  .landing-page .pitch-card {
+    flex: none; max-width: none; width: auto;
+    height: min(calc(100svh - 112px), calc((100vw - 84px) / 4 * 1.25));
+  }
+  .landing-page .pitch-note { margin: 10px 0 0; padding: 0; }
+  .landing-page .pitch-cards .btn-play { display: none; }
+}

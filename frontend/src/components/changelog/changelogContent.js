@@ -18,6 +18,26 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.3.1",
+    date: "2026-11-03",
+    major: false,
+    highlights: [],
+    sections: {
+      changed: [
+        "The front page now says what Ground & Pound is right at the top, with one big Play Now button and a look at the game underneath.",
+        "Play Now opens Create Account over the front page instead of sending you to a separate page. Back puts you right where you were.",
+        "The storage notice is now one slim line at the bottom of the screen.",
+      ],
+      fixed: [
+        "Create Account fits on one screen without scrolling, on laptops and on phones held upright or sideways.",
+        "Text on the sign-up screen is easier to read, and Back no longer sits jammed in the corner of the form.",
+        "On phones held sideways, the front page shows one full section per screen and nothing is cut off.",
+        "Play Now on the Roadmap page opens Create Account instead of jumping to the bottom of the front page.",
+      ],
+      balance: [],
+    },
+  },
+  {
     version: "2.3",
     date: "2026-11-02",
     // Auto-opens: the new Shop and the Roadmap are worth showing returning players.

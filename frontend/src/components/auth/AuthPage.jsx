@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api, authStorage } from "../../api";
 import { ForgotPasswordFlow } from "./ForgotPasswordFlow";
 import { GuestStart } from "./GuestStart";
@@ -7,7 +7,12 @@ import { CookieConsent } from "../legal/CookieConsent";
 import { FighterFields, WEIGHT_CLASSES, STYLES, BACKSTORIES } from "./FighterFields";
 import { t } from "../../lib/i18n";
 
-export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab = null, onBack = null }) {
+/**
+ * `sheet`: opened over the landing page instead of replacing it. The landing stays
+ * mounted behind (its own cookie banner included), so this skips the full-page
+ * backdrop, wordmark and footer and locks the page scroll while open.
+ */
+export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab = null, onBack = null, sheet = false }) {
   const [tab, setTab] = useState(initialResetToken ? "forgot" : (initialTab || "login")); // "login" | "register" | "forgot"
   const [step, setStep] = useState(1);     // register step 1=account, 2=fighter
   // `initialResetToken` is set when the user arrived via the reset email link
@@ -38,6 +43,19 @@ export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab
   // using the same email+password already typed.
   const [recoverInfo, setRecoverInfo] = useState(null); // { daysLeft } | null
   const [recovering, setRecovering]   = useState(false);
+
+  // Sheet mode: the landing page behind must not scroll under the form.
+  useEffect(() => {
+    if (!sheet) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => { if (e.key === "Escape" && onBack) onBack(); };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [sheet, onBack]);
 
   function resetForm() {
     setEmail(""); setPassword(""); setConfirmPw(""); setAgeConfirmed(false);
@@ -128,7 +146,7 @@ export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab
   }
 
   return (
-    <div className="auth-page">
+    <div className={`auth-page${sheet ? " auth-page--sheet" : ""}`}>
       <div className="auth-bg" aria-hidden="true">
         <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
           <defs><radialGradient id="auth-rad" cx="50%" cy="50%" r="70%"><stop offset="0%" stopColor="#1A0005"/><stop offset="100%" stopColor="#060606"/></radialGradient></defs>
@@ -154,12 +172,12 @@ export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab
           <h1 className="auth-title-main">Ground<span className="auth-amp">&amp;</span>Pound</h1>
           <div className="auth-title-divider" />
         </div>
+        {onBack && (
+          <button type="button" className="auth-back-link" onClick={onBack}>
+            ← Back
+          </button>
+        )}
         <div className="auth-container">
-          {onBack && (
-            <button type="button" className="auth-form-link" style={{ marginBottom: "12px", display: "block" }} onClick={onBack}>
-              ← Back
-            </button>
-          )}
           {tab !== "forgot" && (
             <div className="auth-tabs">
               <button className={`auth-tab ${tab === "login" ? "active" : ""}`} onClick={() => switchTab("login")}>{t("auth.tabs.login")}</button>
@@ -217,13 +235,13 @@ export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab
 
             {/* REGISTER step 1 */}
             {tab === "register" && step === 1 && (
-              <form className="auth-form" onSubmit={handleAccountNext} autoComplete="on">
+              <form className="auth-form auth-form--account" onSubmit={handleAccountNext} autoComplete="on">
                 <div className="auth-step-label">{t("auth.register.step1Label")}</div>
                 <div className="auth-field"><label>{t("auth.register.emailLabel")}</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t("auth.register.emailPlaceholder")} required autoComplete="email" /></div>
                 <div className="auth-field"><label>{t("auth.register.passwordLabel")} <span className="auth-hint">{t("auth.register.passwordHint")}</span></label><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={t("auth.register.passwordPlaceholder")} required autoComplete="new-password" /></div>
                 <div className="auth-field"><label>{t("auth.register.confirmPasswordLabel")}</label><input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder={t("auth.register.confirmPasswordPlaceholder")} required autoComplete="new-password" /></div>
-                <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "12px", color: "#999", margin: "2px 0 6px", cursor: "pointer", lineHeight: 1.4 }}>
-                  <input type="checkbox" checked={ageConfirmed} onChange={e => setAgeConfirmed(e.target.checked)} style={{ marginTop: "2px", flexShrink: 0 }} />
+                <label className="auth-consent">
+                  <input type="checkbox" checked={ageConfirmed} onChange={e => setAgeConfirmed(e.target.checked)} />
                   <span>{t("auth.register.ageConfirmLabel")}</span>
                 </label>
                 {error && <div className="auth-error">{error}</div>}
@@ -234,7 +252,7 @@ export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab
 
             {/* REGISTER step 2 */}
             {tab === "register" && step === 2 && (
-              <form className="auth-form" onSubmit={handleRegister}>
+              <form className="auth-form auth-form--fighter" onSubmit={handleRegister}>
                 <div className="auth-step-label">{t("auth.register.step2Label")}</div>
                 <FighterFields
                   firstName={firstName} setFirstName={setFirstName}
@@ -269,7 +287,7 @@ export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab
             )}
           </div>
         </div>
-        {tab !== "forgot" && tab !== "guest" && tab !== "resume" && (
+        {tab !== "forgot" && tab !== "guest" && tab !== "resume" && !(tab === "register" && step === 2) && (
           <div className="auth-guest-links">
             <button type="button" className="auth-form-link auth-guest-cta" onClick={() => switchTab("guest")}>
               {t("auth.guest.playAsGuestCta")}
@@ -291,7 +309,7 @@ export function AuthPage({ onAuthenticated, initialResetToken = null, initialTab
         </button>
         <span className="auth-copyright">{t("auth.copyright", { year: new Date().getFullYear() })}</span>
       </div>
-      <CookieConsent />
+      {!sheet && <CookieConsent />}
     </div>
   );
 }
