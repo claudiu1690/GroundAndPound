@@ -18,6 +18,19 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.4.1",
+    date: "2026-11-05",
+    major: false,
+    highlights: [],
+    sections: {
+      changed: [
+        "The Roadmap now shows 2.4: fights that play out, special moves that glow when they are ready, the debut bout, and protection for hurt fighters in the Proving Ground.",
+      ],
+      fixed: [],
+      balance: [],
+    },
+  },
+  {
     version: "2.4",
     date: "2026-11-05",
     // Auto-opens: every fight now plays out, which every returning player will notice.
