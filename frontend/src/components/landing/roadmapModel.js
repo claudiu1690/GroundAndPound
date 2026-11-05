@@ -145,6 +145,18 @@ export const ROADMAP_SHIPPED = [
       "This Roadmap, and Ground & Pound on Instagram, Facebook and TikTok.",
     ],
   },
+  {
+    version: "2.4",
+    title: "Fights, played out",
+    // Crop of the real fight replay on desktop: both fighter panels and a Superman Punch slam.
+    art: { css: "screen", img: "/assets/roadmap/fight-replay.webp", pos: "center center" },
+    points: [
+      "Every fight plays out: real exchanges, your special moves slamming in, and the scorecard at the end.",
+      "Your special moves glow gold when they are ready to fire.",
+      "New fighters start with a winnable debut bout and four short tips.",
+      "In the Proving Ground, a fighter under 50 health can't be challenged until they heal.",
+    ],
+  },
 ];
 
 /**
