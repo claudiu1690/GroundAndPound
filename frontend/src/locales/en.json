@@ -2117,7 +2117,8 @@
       "errDefenderRecovering": "This fighter is recovering and can’t be challenged right now.",
       "errLocked": "The Proving Ground unlocks at 3 career wins.",
       "errProtected": "This fighter is protected and can’t be challenged right now.",
-      "errDefault": "Fight failed. Try again."
+      "errDefault": "Fight failed. Try again.",
+      "errDefenderHurt": "This fighter is under 50 health and can’t be challenged until they heal."
     },
     "defense": {
       "navTitle": "Defense Report",
@@ -2175,7 +2176,10 @@
       "challengeProtectedTooltip": "This fighter is protected — they’re still finding their footing.",
       "diffEasy": "Easy",
       "diffEven": "Even",
-      "diffHard": "Hard"
+      "diffHard": "Hard",
+      "hurt": "Hurt",
+      "challengeHurtTooltip": "This fighter is under 50 health and can’t be challenged until they heal.",
+      "hurtUntil": "Under 50 health. Can be challenged again at {time}."
     },
     "history": {
       "loading": "Loading history…",

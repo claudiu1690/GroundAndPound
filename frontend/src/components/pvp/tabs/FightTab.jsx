@@ -23,12 +23,23 @@ function DiffPill({ difficulty }) {
   );
 }
 
+
+/** "Under 50 health. Can be challenged again at 18:40." (local time; no time when unknown). */
+function hurtLine(hurtUntil) {
+  const d = hurtUntil ? new Date(hurtUntil) : null;
+  if (!d || Number.isNaN(d.getTime())) return t("pvp.fight.challengeHurtTooltip");
+  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return t("pvp.fight.hurtUntil", { time });
+}
+
 /**
  * FightTab — opponents list + pre-fight flow.
  *
  * New onboarding props consumed:
  *   onboarding.placement?.active — when true, show placement header instead of normal header
  *   candidate.isProtected        — grey "Protected" pill + disabled Challenge button
+ *   candidate.isHurt / hurtUntil — "Hurt" pill + disabled Challenge button + when they're back
+ *                                  (under 50 health; regen brings them back at hurtUntil)
  *
  * New result fields routed:
  *   result.isPlacement           — FightResult branches to PlacementResult automatically
@@ -175,6 +186,9 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
                       {c.isRecovering && (
                         <span className="pvp-mc-recovering-pill">{t("pvp.fight.recovering")}</span>
                       )}
+                      {c.isHurt && !c.isRecovering && (
+                        <span className="pvp-mc-recovering-pill pvp-mc-hurt-pill">{t("pvp.fight.hurt")}</span>
+                      )}
                     </div>
                     <div className="pvp-mc-meta">
                       {c.fightingStyle && (
@@ -186,9 +200,13 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
                       )}
                     </div>
                     {/* Why Fight is greyed out, in words: the tooltip never shows on a phone. */}
-                    {(c.isRecovering || c.isProtected) && (
+                    {(c.isRecovering || c.isProtected || c.isHurt) && (
                       <div className="pvp-mc-blocked">
-                        {c.isRecovering ? t("pvp.fight.challengeRecoveringTooltip") : t("pvp.fight.challengeProtectedTooltip")}
+                        {c.isRecovering
+                          ? t("pvp.fight.challengeRecoveringTooltip")
+                          : c.isProtected
+                            ? t("pvp.fight.challengeProtectedTooltip")
+                            : hurtLine(c.hurtUntil)}
                       </div>
                     )}
                     {(beltNote || rivalNote || bracketNote) && (
@@ -205,21 +223,23 @@ export function FightTab({ fighter, season, myRecord, onFightResolved, onboardin
                 </div>
                 <div className="pvp-mc-action">
                   <button
-                    className={`pvp-chal-btn${energyCur < 15 && !c.isProtected && !c.isRecovering ? " pvp-chal-btn--low" : ""}`}
+                    className={`pvp-chal-btn${energyCur < 15 && !c.isProtected && !c.isRecovering && !c.isHurt ? " pvp-chal-btn--low" : ""}`}
                     onClick={() => {
-                      if (c.isProtected || c.isRecovering) return;
+                      if (c.isProtected || c.isRecovering || c.isHurt) return;
                       // Short on energy: the button stays clickable and opens the offer.
                       if (energyCur < 15) onEnergyShort?.({ source: "pvp", need: 15, have: energyCur });
                       else setSelected(c);
                     }}
-                    disabled={!!c.isProtected || !!c.isRecovering}
-                    style={(c.isProtected || c.isRecovering) ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+                    disabled={!!c.isProtected || !!c.isRecovering || !!c.isHurt}
+                    style={(c.isProtected || c.isRecovering || c.isHurt) ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                     title={
                       c.isRecovering
                         ? t("pvp.fight.challengeRecoveringTooltip")
                         : c.isProtected
                           ? t("pvp.fight.challengeProtectedTooltip")
-                          : undefined
+                          : c.isHurt
+                            ? hurtLine(c.hurtUntil)
+                            : undefined
                     }
                   >
                     {t("pvp.fight.challengeBtn")}

@@ -68,6 +68,8 @@ export function PreFight({ fighter, candidate, season, myRecord, onBack, onFight
           ? t("pvp.preFight.errInjured")
           : code === "defender_recovering"
             ? t("pvp.preFight.errDefenderRecovering")
+            : code === "defender_hurt"
+              ? t("pvp.preFight.errDefenderHurt")
             : e.status === 403
               ? e.message?.toLowerCase().includes("injur") || code?.includes("injur")
                 ? t("pvp.preFight.errInjured")

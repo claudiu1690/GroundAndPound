@@ -958,6 +958,7 @@ module.exports = {
     updateFighter,
     reconcileEnergy,
     reconcileHealth,
+    healthRegenIntervalFor,
     deductEnergy,
     debugRefillEnergyToMax,
     doctorVisit,
