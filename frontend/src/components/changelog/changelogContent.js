@@ -19,7 +19,7 @@
 export const CHANGELOG_ENTRIES = [
   {
     version: "2.4",
-    date: "2026-11-04",
+    date: "2026-11-05",
     // Auto-opens: every fight now plays out, which every returning player will notice.
     major: true,
     highlights: [
@@ -30,22 +30,7 @@ export const CHANGELOG_ENTRIES = [
       "Each screen now explains itself the first time you open it, in one to three tips. Hide tips is on every card, and Account settings turns them back on.",
     ],
     sections: {
-      changed: [
-        "The long first-time tour (profile, Rankings, Events and Hospital stops) is gone. Those screens teach themselves when you first visit.",
-        "Banner unlocks now show after you leave the fight result, so they no longer cover your win.",
-        "The full fight report now marks special moves (CARD), camp (CAMP) and your opponent's wildcard (WILDCARD), and ends with a Your corner list of what fired. It always matches the replay.",
-        "The next goal after you get ranked now points at your tier's title shot (for example the Amateur title: reach OVR 30, then win it), since that is how you move up.",
-        "The fight report shows each fighter's stamina and health for every round.",
-        "In the fight replay your health bar starts at the health you walked in with, not a full bar.",
-        "The fight replay now plays out inside a painted cage under the arena lights.",
-        "Hits land in the replay: health drops when the shot lands, with a red damage number and the lost chunk lingering for a beat. Your moments come in from the left, theirs from the right.",
-        "Finishes get their moment: the last blow in slow motion, then the referee steps in, and the result is read out (\"wins by TKO, round 3 at 2:14\").",
-        "Decisions show the scorecard round by round, then who won under it.",
-        "Proving Ground: a fighter under 50 health can't be challenged until they heal back up. They show as Hurt, with the time they can be challenged again, and bots leave them alone too. The harder low-level hits apply in the Proving Ground as well, so this keeps offline players from being knocked out while they're away.",
-        "Strike counters tick up through the whole round instead of jumping between rounds, and a card that says your opponent is hurt now drops his health right then.",
-        "Your special moves light up when they are ready. Overhand Right glows gold once he starts a round under 75 health, a line tells you why, and then you watch for it to fire. Moves that never fired now say why on the end card and in the fight report.",
-        "Camp credit now only appears when a booked camp session fired. Before, a special move firing on the same kind of exchange could be reported as camp work.",
-      ],
+      changed: [],
       fixed: [
         "The banner unlock card now names a badge piece properly instead of showing a code.",
         "On phones, a fight opened from the Career feed now shows fully on screen; its top, tabs and Close button were cut off.",
