@@ -2,6 +2,37 @@ import { memo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { renderEvent, renderRoundWinner } from "./renderEvent.js";
 import { t } from "@/lib/i18n";
+import { RARITY_COLORS } from "../../../constants/specialMovesCatalog";
+
+/** CAMP / CARD / WILDCARD marker in front of the moments the replay highlights, so the report shows them too. */
+function EventChip({ entry, moves }) {
+  if (entry.type === "camp") return <span className="ev-chip ev-chip--camp">{t("fights.roundBlock.chipCamp")}</span>;
+  if (entry.type === "wildcard") return <span className="ev-chip ev-chip--wildcard">{t("fights.roundBlock.chipWildcard")}</span>;
+  if (entry.type === "move") {
+    const rows = (entry.vars?.moveIds ?? []).map((id) => (moves ?? []).find((m) => m.moveId === id)).filter(Boolean);
+    const top = rows[0];
+    return (
+      <span
+        className="ev-chip ev-chip--card"
+        style={{ "--rarity-color": RARITY_COLORS[top?.rarity] || RARITY_COLORS.COMMON }}
+        title={rows.map((m) => m.name).join(" + ") || undefined}
+      >
+        {t("fights.roundBlock.chipCard")}
+      </span>
+    );
+  }
+  return null;
+}
+
+/** Clock time, or a muted R{n} when the event belongs to the round but not to a logged exchange. */
+function EventTime({ entry, className }) {
+  if (entry.timestamp != null) return <span className={className}>{entry.timestamp}</span>;
+  return (
+    <span className={`${className} ev-time--round`} title={t("fights.roundBlock.roundOnlyTitle", { n: entry.round })}>
+      {t("fights.roundBlock.roundOnly", { n: entry.round })}
+    </span>
+  );
+}
 
 /**
  * Renders one round: header + winner line, events, stat row, momentum bar.
@@ -11,7 +42,7 @@ import { t } from "@/lib/i18n";
  *                     of a 10-9 score; `youWon` colors that chip.
  * variant="drawer"  → uses .round-block / .round-head / .events / .round-stats / .stat-row-grid / .sg* classes
  */
-export const RoundBlock = memo(function RoundBlock({ round, events, names, fightId, variant, finish, youWon }) {
+export const RoundBlock = memo(function RoundBlock({ round, events, names, fightId, variant, finish, youWon, moves }) {
   const { playerName, opponentName } = names;
   const isSummary = variant === "summary";
 
@@ -46,6 +77,15 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
   const [pKd, oKd] = round.knockdowns ?? [0, 0];
   const [pDmg, oDmg] = round.damage ?? [0, 0];
   const [pCtrl, oCtrl] = round.controlTime ?? [0, 0];
+
+  // Stamina through this round (drains once at the start of a round); absent on old fights and PvP.
+  const sta = Array.isArray(round.stamina) && round.stamina.length >= 2 && round.stamina[0] != null && round.stamina[1] != null
+    ? [Math.round(Number(round.stamina[0])), Math.round(Number(round.stamina[1]))]
+    : null;
+  // Health at the end of this round (the same values the replay's HP bars land on).
+  const hp = Array.isArray(round.health) && round.health.length >= 2 && round.health[0] != null && round.health[1] != null
+    ? [Math.round(Number(round.health[0])), Math.round(Number(round.health[1]))]
+    : null;
 
   const showSubAttempts = pSub >= 1 || oSub >= 1;
   const showKnockdowns = pKd >= 1 || oKd >= 1;
@@ -127,11 +167,11 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
         {expanded && (
           <div className="rs-events">
             {events.map((entry, idx) => {
-              const { text, styleClass } = renderEvent(entry, { playerName, opponentName, fightId, index: idx });
+              const { text, styleClass } = renderEvent(entry, { playerName, opponentName, fightId, index: idx, moves });
               return (
                 <div className="ev-line" key={`${entry.round}-${idx}`}>
-                  <span className="ev-time">{entry.timestamp}</span>
-                  <span className={`ev-txt ${styleClass}`}>{text}</span>
+                  <EventTime entry={entry} className="ev-time" />
+                  <span className={`ev-txt ${styleClass}`}><EventChip entry={entry} moves={moves} />{text}</span>
                 </div>
               );
             })}
@@ -154,6 +194,27 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
             </div>
           ))}
         </div>
+
+        {hp && (
+          <div className="rs-stamina rs-health" data-testid="rs-health">
+            <span className="rsb-lbl">{t("fights.roundBlock.health")}</span>
+            <span className="rsb-val">
+              <span className={`rsb-p${hp[0] > hp[1] ? " lead" : ""}`}>{hp[0]}</span>
+              <span className="rsb-sep">·</span>
+              <span className={`rsb-o${hp[1] > hp[0] ? " lead" : ""}`}>{hp[1]}</span>
+            </span>
+          </div>
+        )}
+        {sta && (
+          <div className="rs-stamina" data-testid="rs-stamina">
+            <span className="rsb-lbl">{t("fights.roundBlock.stamina")}</span>
+            <span className="rsb-val">
+              <span className={`rsb-p${sta[0] > sta[1] ? " lead" : ""}`}>{sta[0]}</span>
+              <span className="rsb-sep">·</span>
+              <span className={`rsb-o${sta[1] > sta[0] ? " lead" : ""}`}>{sta[1]}</span>
+            </span>
+          </div>
+        )}
 
         <div className="rs-momentum">
           <div className="mom-track">
@@ -192,11 +253,11 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
 
       <div className="events">
         {events.map((entry, idx) => {
-          const { text, styleClass } = renderEvent(entry, { playerName, opponentName, fightId, index: idx });
+          const { text, styleClass } = renderEvent(entry, { playerName, opponentName, fightId, index: idx, moves });
           return (
             <div className="ev" key={`${entry.round}-${idx}`}>
-              <span className="ev-t">{entry.timestamp}</span>
-              <span className={`ev-txt ${styleClass}`}>{text}</span>
+              <EventTime entry={entry} className="ev-t" />
+              <span className={`ev-txt ${styleClass}`}><EventChip entry={entry} moves={moves} />{text}</span>
             </div>
           );
         })}
@@ -246,6 +307,26 @@ export const RoundBlock = memo(function RoundBlock({ round, events, names, fight
                 <span className={`sv ${valClass(oKd, pKd)}`}>{oKd}</span>
               </div>
               <div className="sg-lbl">{t("fights.roundBlock.kds")}</div>
+            </div>
+          )}
+          {hp && (
+            <div className="sg rs-health" data-testid="rs-health">
+              <div className="sg-val">
+                <span className={`sv ${valClass(hp[0], hp[1])}`}>{hp[0]}</span>
+                <span className="sg-sep">·</span>
+                <span className={`sv ${valClass(hp[1], hp[0])}`}>{hp[1]}</span>
+              </div>
+              <div className="sg-lbl">{t("fights.roundBlock.health")}</div>
+            </div>
+          )}
+          {sta && (
+            <div className="sg rs-stamina" data-testid="rs-stamina">
+              <div className="sg-val">
+                <span className={`sv ${valClass(sta[0], sta[1])}`}>{sta[0]}</span>
+                <span className="sg-sep">—</span>
+                <span className={`sv ${valClass(sta[1], sta[0])}`}>{sta[1]}</span>
+              </div>
+              <div className="sg-lbl">{t("fights.roundBlock.stamina")}</div>
             </div>
           )}
           {showControl && (

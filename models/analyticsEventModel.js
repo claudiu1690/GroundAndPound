@@ -50,6 +50,13 @@ const analyticsEventSchema = new mongoose.Schema({
             "premium_panel_expanded",
             "energy_offer_shown",
             "energy_offer_choice",
+            // First-session flow (docs/first-session-contract.md D.1). fighter_created is
+            // server-only (authController); the other four arrive through the client beacon.
+            "fighter_created",
+            "debut_step",
+            "fight_reveal",
+            "next_goal_click",
+            "section_tip",
         ],
     },
     day: {

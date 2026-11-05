@@ -538,7 +538,26 @@ async function saveBanner(req, res) {
     }
 }
 
+/**
+ * PATCH /fighters/:id/settings (ownFighter-guarded). Body { playFightsOut?, sectionTips? }:
+ * at least one key, booleans only, unknown keys rejected. 200 { settings }.
+ */
+async function patchSettings(req, res) {
+    const patch = fighterService.validateSettingsPatch(req.body);
+    if (!patch) return res.status(400).json({ message: "Invalid settings" });
+    try {
+        const out = await fighterService.updateSettings(req.params.id, patch);
+        res.json(out);
+    } catch (err) {
+        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
+        if (err.statusCode === 400) return res.status(400).json({ message: "Invalid settings" });
+        console.error("[fighter] patchSettings failed:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 module.exports = {
+    patchSettings,
     list,
     create,
     getById,

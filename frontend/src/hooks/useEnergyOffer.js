@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { api } from "../api";
 import {
   beaconShortfall,
@@ -16,11 +16,25 @@ const CLOSED = { open: false, source: null, need: 0, have: 0 };
  * `openFromError(err, source, fallback)` is for a server refusal and returns false when the
  * error is not an energy shortfall, so the caller can fall through to its normal error path.
  * Opening fires the `energy_offer_shown` beacon (fire-and-forget; a failed beacon is ignored).
+ *
+ * `suppressed` keeps the offer quiet while the debut flow runs (a new player is never pitched
+ * inside onboarding). While it is true `open` never shows the dialog; it calls `onSuppressed`
+ * with the shortfall so the caller can tell the player in the normal message bar instead of
+ * leaving a dead button, and `openFromError` returns false so callers fall through to their
+ * usual error path.
  */
-export function useEnergyOffer({ fighterId } = {}) {
+export function useEnergyOffer({ fighterId, suppressed = false, onSuppressed } = {}) {
   const [state, setState] = useState(CLOSED);
+  const suppressedRef = useRef(suppressed);
+  suppressedRef.current = suppressed;
+  const onSuppressedRef = useRef(onSuppressed);
+  onSuppressedRef.current = onSuppressed;
 
   const open = useCallback(({ source, need, have } = {}) => {
+    if (suppressedRef.current) {
+      onSuppressedRef.current?.({ need: wholeEnergy(need), have: wholeEnergy(have) });
+      return;
+    }
     const next = { open: true, source, need: wholeEnergy(need), have: wholeEnergy(have) };
     setState(next);
     const meta = beaconShortfall(need, have);
@@ -30,7 +44,7 @@ export function useEnergyOffer({ fighterId } = {}) {
   }, [fighterId]);
 
   const openFromError = useCallback((err, source, fallback) => {
-    if (!isEnergyShortfall(err)) return false;
+    if (suppressedRef.current || !isEnergyShortfall(err)) return false;
     open({ source, ...shortfallFromError(err, fallback) });
     return true;
   }, [open]);

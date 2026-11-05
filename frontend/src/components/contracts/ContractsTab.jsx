@@ -131,7 +131,7 @@ export function ContractsTab({ fighter, onMessage, onRefreshFighter }) {
     const slotsFull = (available.slots.used >= available.slots.max) && available.slots.max > 0;
 
     return (
-        <section className="contracts-tab">
+        <section className="contracts-tab" data-tut="sponsors-root">
             <header className="page-header">
                 <div className="page-header-left">
                     <div className="page-eyebrow">{t("contracts.header.eyebrow")}</div>

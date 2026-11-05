@@ -3,6 +3,7 @@ import { useFightBreakdown } from "../../../hooks/useFightBreakdown.js";
 import { RoundBlock } from "./RoundBlock.jsx";
 import { IntroRow } from "./IntroRow.jsx";
 import { ResultRow } from "./ResultRow.jsx";
+import { YourCorner } from "./YourCorner.jsx";
 import { t } from "@/lib/i18n";
 
 /**
@@ -147,6 +148,7 @@ export const FightDrawer = memo(function FightDrawer({ fightId, kind, onClose })
     method,
     finishRound,
     finishTime,
+    loadout,
   } = data;
 
   const playerName = header?.playerName ?? "You";
@@ -233,6 +235,7 @@ export const FightDrawer = memo(function FightDrawer({ fightId, kind, onClose })
                 names={{ playerName, opponentName }}
                 fightId={fightId}
                 variant="drawer"
+                moves={loadout?.moves}
               />
             );
           })}
@@ -267,6 +270,9 @@ export const FightDrawer = memo(function FightDrawer({ fightId, kind, onClose })
               />
             </div>
           </div>
+
+          {/* Your corner: the cards and camp that fired, same numbers as the replay (PvE only) */}
+          {kind !== "pvp" && loadout && <YourCorner loadout={loadout} eventLog={eventLog} view={data} />}
 
           {/* Camp outcomes (PvE only) */}
           {kind !== "pvp" && campOutcomes && campOutcomes.length > 0 && (

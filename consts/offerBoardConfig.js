@@ -7,10 +7,17 @@
  * OFFER_PURSE_GAP_BONUS_MAX on top. Deterministic, so the number on the card is the
  * number a clean win pays. Windows mirror pickOfferSlots: Easy [O-6, O-2], Even
  * [O-1, O+1], Hard [O+2, O+6]. TitleShot is one fixed champion, so no gap bonus.
+ * Debut (first-session contract B.3) is the single-slot board of a fighter with zero
+ * resolved PvE fights: 1.00x the tier signing fee, no gap bonus ($500 at Amateur).
  */
+
+/** Offer type of the single-slot debut board. One definition; tutorialConfig re-exports it. */
+const DEBUT_OFFER_TYPE = "Debut";
+
 module.exports = {
+    DEBUT_OFFER_TYPE,
     OFFER_BOARD_TTL_HOURS: 24,
-    OFFER_PURSE_MULT: { Easy: 0.7, Even: 1.0, Hard: 1.4, TitleShot: 1.75 },
+    OFFER_PURSE_MULT: { Easy: 0.7, Even: 1.0, Hard: 1.4, TitleShot: 1.75, [DEBUT_OFFER_TYPE]: 1.0 },
     OFFER_PURSE_GAP_BONUS_MAX: 0.05,
     OFFER_PURSE_GAP_WINDOW: { Easy: [-6, -2], Even: [-1, 1], Hard: [2, 6] },
     OFFER_PURSE_ROUND_TO: 10,

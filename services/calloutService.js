@@ -36,6 +36,7 @@ async function listRoster(fighterId) {
     const baseQuery = {
         weightClass: fighter.weightClass,
         isChampion: { $ne: true },
+        isDebut: { $ne: true }, // debut opponents are never callout targets
     };
     if (excludeIds.length) baseQuery._id = { $nin: excludeIds };
 
@@ -137,7 +138,8 @@ async function createCallout(fighterId, opponentId) {
     }
 
     const opponent = await Opponent.findById(opponentId).lean();
-    if (!opponent) throw new Error("Opponent not found");
+    // A debut opponent is never a callout target (first-session C.2): same 404 as missing.
+    if (!opponent || opponent.isDebut) throw new Error("Opponent not found");
     if (opponent.weightClass !== fighter.weightClass) throw new Error("Wrong weight class");
     if (opponent.isChampion) throw new Error("Cannot call out a champion");
 

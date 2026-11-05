@@ -34,6 +34,7 @@
 .ap-chip.is-easy{background:#123d22;color:#4ade80}
 .ap-chip.is-even{background:#3a2d06;color:#fbbf24}
 .ap-chip.is-hard{background:#3b0a12;color:#f87171}
+.ap-chip.is-debut{background:#0f2a3d;color:#7dd3fc;border:1px solid #38bdf8}
 .ap-chip.is-title{background:#3a2d06;color:var(--gold);border:1px solid var(--gold)}
 .ap-chip.is-nem{background:#000;color:#f87171;border:1px solid var(--red-dim)}
 .ap-chip.is-callout{background:#111;color:#93c5fd;border:1px dashed #3b82f6}

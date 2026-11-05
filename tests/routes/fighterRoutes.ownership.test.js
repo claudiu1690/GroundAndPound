@@ -36,6 +36,7 @@ function mockRes() {
 
 const OWNER_WRITES = [
     ["put", "/:id", fighterController.update],
+    ["patch", "/:id/settings", fighterController.patchSettings],
     ["put", "/:id/pinned-badges", fighterController.setPinnedBadges],
     ["post", "/:id/badges/seen", fighterController.markBadgesSeen],
     ["put", "/:id/banner", fighterController.saveBanner],

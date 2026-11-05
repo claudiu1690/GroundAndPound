@@ -18,6 +18,45 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.4",
+    date: "2026-11-04",
+    // Auto-opens: every fight now plays out, which every returning player will notice.
+    major: true,
+    highlights: [
+      "Fights now play out as highlights: health and stamina bars, live strike counters, every real exchange of each round, and big cards for the big moments. Skip to result is always there, 2x speeds it up, and Account settings can turn it off.",
+      "Your special moves and camp are part of the show. Your cards light up when they fire, the first fire slams in with its art, camp sessions that pay off get a gold card, and the end card lists everything that fired.",
+      "After every fight, your next goal sits at the top of the result: fights left to earn your ranking, wins toward the Proving Ground, or how close the title shot is. Next fight takes you straight to your offers.",
+      "New fighters go straight to their debut: the promoter books a winnable first bout, four short tips walk you to the bell, and the $500 signing bonus arrives with your first purse.",
+      "Each screen now explains itself the first time you open it, in one to three tips. Hide tips is on every card, and Account settings turns them back on.",
+    ],
+    sections: {
+      changed: [
+        "The long first-time tour (profile, Rankings, Events and Hospital stops) is gone. Those screens teach themselves when you first visit.",
+        "Banner unlocks now show after you leave the fight result, so they no longer cover your win.",
+        "The full fight report now marks special moves (CARD), camp (CAMP) and your opponent's wildcard (WILDCARD), and ends with a Your corner list of what fired. It always matches the replay.",
+        "The next goal after you get ranked now points at your tier's title shot (for example the Amateur title: reach OVR 30, then win it), since that is how you move up.",
+        "The fight report shows each fighter's stamina and health for every round.",
+        "In the fight replay your health bar starts at the health you walked in with, not a full bar.",
+        "The fight replay now plays out inside a painted cage under the arena lights.",
+        "Hits land in the replay: health drops when the shot lands, with a red damage number and the lost chunk lingering for a beat. Your moments come in from the left, theirs from the right.",
+        "Finishes get their moment: the last blow in slow motion, then the referee steps in, and the result is read out (\"wins by TKO, round 3 at 2:14\").",
+        "Decisions show the scorecard round by round, then who won under it.",
+        "Strike counters tick up through the whole round instead of jumping between rounds, and a card that says your opponent is hurt now drops his health right then.",
+        "Your special moves light up when they are ready. Overhand Right glows gold once he starts a round under 75 health, a line tells you why, and then you watch for it to fire. Moves that never fired now say why on the end card and in the fight report.",
+        "Camp credit now only appears when a booked camp session fired. Before, a special move firing on the same kind of exchange could be reported as camp work.",
+      ],
+      fixed: [
+        "The banner unlock card now names a badge piece properly instead of showing a code.",
+        "On phones, a fight opened from the Career feed now shows fully on screen; its top, tabs and Close button were cut off.",
+        "When your takedown or submission defence from camp worked, the fight report no longer says it was the other way round.",
+      ],
+      balance: [
+        "Strikes hit harder early in your career: every landed exchange now does at least a little damage, with extra weight at low stats that fades out by the mid tiers. Why: low-level fighters lost only about 4 health a round, and debut opponents could not hurt you at all, so a five-round fight looked like nobody got hit. Top-tier fights are unchanged.",
+        "Ground and pound hits harder early in your career too. Why: a low-level fighter on top did about 2 health a round, so whole rounds on your back barely moved your bar. A round stuck underneath at debut level now costs about 7 health. Top-tier ground fights are unchanged.",
+      ],
+    },
+  },
+  {
     version: "2.3.1",
     date: "2026-11-03",
     major: false,

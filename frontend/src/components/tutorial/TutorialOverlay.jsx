@@ -2,9 +2,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../../api";
 import { tutorialBus } from "../../utils/tutorialBus";
-import { TUTORIAL_STEPS } from "../../constants/tutorialSteps";
+import { TUTORIAL_STEPS, normaliseStep } from "../../constants/tutorialSteps";
 import { TutorialTooltip } from "./TutorialTooltip";
-import { TutorialCompleteModal } from "./TutorialCompleteModal";
+import {
+    foreignModalOpen,
+    isVisible,
+    measureEl,
+    resolveEl,
+    resolveFocalEl,
+    sameRect,
+    isInSafeView,
+} from "./tutDom";
+import { adaptInput } from "../../utils/layout";
 import { t } from "../../lib/i18n";
 import "./tutorial.css";
 
@@ -15,101 +24,21 @@ const SKIP_ABSENT_MS = 3500;
 /** Polling interval (ms) for re-measuring focal/anchor element rects. */
 const MEASURE_INTERVAL_MS = 120;
 
-/** True when an element is actually laid out / visible (not display:none). */
-function isVisible(el) {
-    // offsetParent is null for display:none elements (and fixed elements, which
-    // we never tag with data-tut). getClientRects() catches the fixed-position
-    // edge case. Either signal being truthy means the element occupies layout.
-    return el.offsetParent !== null || el.getClientRects().length > 0;
-}
-
 /**
- * First *visible* DOM element matching any of the given data-tut id(s).
+ * TutorialOverlay — the debut-flow orchestrator.
  *
- * The mobile shell renders FighterProfile + the nav menu in BOTH the desktop
- * sidebar and the mobile drawer, so on mobile the same data-tut id exists twice
- * (the desktop copy is display:none but still in the DOM, earlier in document
- * order). Plain querySelector would match the hidden copy first, so we prefer a
- * visible match and only fall back to the first match if none are visible.
- */
-function resolveEl(idOrArr) {
-    if (!idOrArr) return null;
-    const ids = Array.isArray(idOrArr) ? idOrArr : [idOrArr];
-    let fallback = null;
-    for (const id of ids) {
-        const matches = document.querySelectorAll(`[data-tut="${id}"]`);
-        for (const el of matches) {
-            if (isVisible(el)) return el;
-            if (!fallback) fallback = el;
-        }
-    }
-    return fallback;
-}
-
-/**
- * The element the cut-out should reveal. Same as resolveEl, except a nav tab that
- * is not on screen (portrait phones keep Events / Hospital inside the closed
- * "More" drawer) falls back to the bottom nav's More button, so the player can
- * open the drawer and the cut-out moves to the tab once it renders. clickFocus
- * still matches the real tab only, so tapping More does not advance the phase.
- */
-function resolveFocalEl(idOrArr) {
-    const el = resolveEl(idOrArr);
-    if (el && isVisible(el)) return el;
-    const ids = Array.isArray(idOrArr) ? idOrArr : [idOrArr];
-    if (ids.some((id) => typeof id === "string" && id.startsWith("nav-"))) {
-        const more = resolveEl("nav-more");
-        if (more && isVisible(more)) return more;
-    }
-    return el;
-}
-
-/**
- * True while a pop-up the player opened (Roadmap, What's New, a reward, the
- * out-of-energy offer) is up and is not what the current tip is about. The tip,
- * ring and paused bar then step aside so they never sit on the pop-up's controls.
- * A pop-up holding the focal element (the Fighter Report, the camp summary, the
- * phone drawer) is the lesson itself and keeps the tutorial showing.
- */
-function foreignModalOpen(focusIdOrArr) {
-    const modals = [...document.querySelectorAll('[aria-modal="true"]')]
-        .filter((m) => !m.closest(".tut-overlay, .tut-complete-root") && m.getClientRects().length > 0);
-    if (modals.length === 0) return false;
-    const focal = focusIdOrArr ? resolveFocalEl(focusIdOrArr) : null;
-    return modals.some((m) => !(focal && m.contains(focal)));
-}
-
-/** Viewport rect of a data-tut element, or null if absent / not laid out. */
-function measureEl(idOrArr) {
-    const el = resolveFocalEl(idOrArr);
-    if (!el) return null;
-    const r = el.getBoundingClientRect();
-    if (r.width === 0 && r.height === 0) return null;
-    return { top: r.top, left: r.left, width: r.width, height: r.height, bottom: r.bottom, right: r.right };
-}
-
-function sameRect(a, b) {
-    if (a === b) return true;
-    if (!a || !b) return false;
-    return Math.abs(a.top - b.top) < 0.5
-        && Math.abs(a.left - b.left) < 0.5
-        && Math.abs(a.width - b.width) < 0.5
-        && Math.abs(a.height - b.height) < 0.5;
-}
-
-/**
- * TutorialOverlay — the onboarding orchestrator.
- *
- * Reads the current step from `initialStep`, walks its phases, renders the
- * highlight ring + tooltip(s) for the active phase, and advances (server-validated)
- * when the player completes each phase's action. See constants/tutorialSteps.js.
+ * Reads the current step from `initialStep` (an unknown or legacy id starts at the debut),
+ * walks its phases, renders the highlight ring + tooltip(s) for the active phase, and advances
+ * (server-validated) when the player completes each phase's action. The last step does not
+ * advance on the server: the first fight's resolve completes the tutorial and pays the signing
+ * bonus, and the refreshed fighter unmounts this overlay. See constants/tutorialSteps.js.
  *
  * Nothing is blocked: there is no scrim, so the player can go anywhere at any
  * time. A phase with a `tab` belongs to that screen; on any other screen the
  * tutorial pauses (no tooltip, no ring) and shows a small bar to go back or end it.
  */
-export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onComplete, activeTab, onNavigate }) {
-    const [stepId, setStepId] = useState(initialStep || "gym_intro");
+export function TutorialOverlay({ fighterId, initialStep, onComplete, activeTab, onNavigate }) {
+    const [stepId, setStepId] = useState(() => normaliseStep(initialStep));
     const [phaseIndex, setPhaseIndex] = useState(0);
     const [tooltipIndex, setTooltipIndex] = useState(0);
     const [tooltipsDone, setTooltipsDone] = useState(false);
@@ -143,6 +72,12 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
     // ── Step advancement (server-validated) ──────────────────
     const advanceStep = useCallback(async () => {
         const st = TUTORIAL_STEPS[stepId];
+        if (st?.completeLocally) {
+            // Last step: nothing to tell the server. The first resolve marks the tutorial
+            // complete; until then the overlay just goes quiet.
+            setStepId("complete");
+            return;
+        }
         const nextId = st?.next;
         if (!nextId || advancingRef.current) return;
         advancingRef.current = true;
@@ -263,10 +198,7 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
             const el = resolveFocalEl(effectiveFocus);
             if (el && el !== scrolledEl && isVisible(el)) {
                 scrolledEl = el;
-                const r = el.getBoundingClientRect();
-                const visible = r.top >= 0 && r.left >= 0
-                    && r.bottom <= window.innerHeight && r.right <= window.innerWidth;
-                if (!visible) {
+                if (!isInSafeView(el)) {
                     el.scrollIntoView({ block: "center", inline: "center" });
                 } else {
                     // On screen but maybe clipped by a scroll box (the sidebar menu
@@ -302,26 +234,27 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
         return () => clearTimeout(timer);
     }, [effectiveFocus, currentTooltip, stepId]);
 
-    // ── Completion ───────────────────────────────────────────
-    const handleComplete = useCallback(async () => {
+    // ── End tutorial ─────────────────────────────────────────
+    // Marks the tutorial complete on the server (it pays nothing; the signing bonus arrives
+    // with the first fight's result) and hands over to the app, which refreshes the fighter
+    // and unmounts this overlay. If the call fails the tutorial stays up so it can be retried.
+    const endingRef = useRef(false);
+    const handleSkipTutorial = useCallback(async () => {
+        if (endingRef.current) return;
+        endingRef.current = true;
+        const before = stepId;
+        setStepId("complete");
         try {
             await api.completeTutorial(fighterId);
         } catch (e) {
             console.warn("[tutorial] complete failed:", e?.message);
+            setStepId(before);
+            endingRef.current = false;
+            return;
         }
         if (onComplete) await onComplete();
-    }, [fighterId, onComplete]);
-
-    // ── Skip — jump straight to the completion (reward) modal ──
-    // Doesn't call the API yet; the player still has to click "Claim" on the
-    // completion modal which triggers handleComplete. That keeps the 500-iron
-    // reward as an explicit acknowledgement, not a silent grant.
-    const handleSkipTutorial = useCallback(() => {
-        setStepId("complete");
-        setPhaseIndex(0);
-        setTooltipIndex(0);
-        setTooltipsDone(false);
-    }, []);
+        endingRef.current = false;
+    }, [fighterId, onComplete, stepId]);
 
     // ── Render ───────────────────────────────────────────────
     // We portal to document.body so the overlay sits OUTSIDE any transformed
@@ -330,9 +263,7 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
     // relative to that element's coordinate space — which would shift the ring
     // and tooltip by the zoom factor. Portaling to body restores true viewport
     // positioning so the cut-out lines up with the focal element exactly.
-    if (stepId === "complete") {
-        return createPortal(<TutorialCompleteModal onConfirm={handleComplete} />, document.body);
-    }
+    if (stepId === "complete") return null;
 
     const isLastTooltip = tooltipIndex >= tooltips.length - 1;
     let buttonLabel = t("tutorial.overlay.gotIt");
@@ -342,10 +273,7 @@ export function TutorialOverlay({ fighterId, initialStep, lastFightOutcome, onCo
             : t("tutorial.overlay.letsGo");
     }
 
-    let body = (anchorInBottomNav && currentTooltip?.bodyBottomNav) || currentTooltip?.body || "";
-    if (currentTooltip?.variantSuffix) {
-        body += currentTooltip.variantSuffix[lastFightOutcome] || ".";
-    }
+    const body = adaptInput((anchorInBottomNav && currentTooltip?.bodyBottomNav) || currentTooltip?.body || "");
 
     // A pop-up the player opened is on top: stay out of its way until it closes.
     if (modalOpen) return createPortal(<div className="tut-overlay" />, document.body);

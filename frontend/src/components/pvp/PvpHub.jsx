@@ -225,7 +225,7 @@ export function PvpHub({ fighter, onNavigate, onRefreshFighter, onOpenCareerFigh
   }
 
   return (
-    <div className="pvp-hub">
+    <div className="pvp-hub" data-tut="pvp-hub">
       {/* Season Poster Modal — single "Fight Poster" for the season rollover */}
       {showSeasonEnd && lastSeasonRecord && (
         <SeasonPosterModal

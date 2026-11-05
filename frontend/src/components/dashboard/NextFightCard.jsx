@@ -36,11 +36,15 @@ export function NextFightCard({ heroBout, heroAction, offers, loading, accepting
 
   const isOffer = heroBout?.source === "offer";
   const isAccepted = heroBout?.source === "accepted";
+  // The first fight is booked for the player: one door, no Accept on Home.
+  const isDebut = isOffer && heroBout?.offerType === "Debut";
 
   let eyebrowKey = "home.next.eyebrow";
   let subText = null;
 
-  if (isOffer) {
+  if (isDebut) {
+    eyebrowKey = "home.next.debutEyebrow";
+  } else if (isOffer) {
     const time = formatTimeLeft(offers?.expiresAt);
     subText = time ? t("home.next.booked", { time }) : t("home.next.bookedExpired");
   } else if (isAccepted) {
@@ -64,7 +68,7 @@ export function NextFightCard({ heroBout, heroAction, offers, loading, accepting
     <div className="ap-next">
       <div className="ap-next-eb">
         <span className="ap-eyebrow">{t(eyebrowKey)}</span>
-        {isOffer || isAccepted ? <span className="ap-next-lk">{subText}</span> : null}
+        {(isOffer && !isDebut) || isAccepted ? <span className="ap-next-lk">{subText}</span> : null}
       </div>
 
       {heroBout ? (
@@ -107,7 +111,16 @@ export function NextFightCard({ heroBout, heroAction, offers, loading, accepting
       )}
 
       <div className="ap-next-ct">
-        {isOffer ? (
+        {isDebut ? (
+          <button
+            type="button"
+            className="ap-btn is-red"
+            data-tut="debut-hero-cta"
+            onClick={() => onNavigate?.("fights")}
+          >
+            {t("home.next.seeOpponent")}
+          </button>
+        ) : isOffer ? (
           <>
             <button
               type="button"

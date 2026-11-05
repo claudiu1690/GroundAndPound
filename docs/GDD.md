@@ -951,6 +951,29 @@ Offers live on a persisted **offer board** (`fighter.offerBoard`, `services/offe
 
 **No reroll.** There is no way to ask for a new set early (removed 2026-10-26, before release). The board already turns over after every finished fight and every 24 hours, every board offers an Easy, an Even and a Hard bout, and the nemesis, callout and title shot would come back after any reroll anyway. A paid reroll only let players dodge a style matchup, and the old free "Get offers" button let them fish for a soft opponent; neither is worth the extra button.
 
+### 7.0 The Debut bout (v2.4)
+
+A fighter's first PvE fight is a **Debut** (`offerType: "Debut"`, `consts/offerBoardConfig.js`
+`DEBUT_OFFER_TYPE`). While the fighter has zero resolved PvE fights (`record.wins + losses +
+draws`), `pickOfferSlots` books a **single-slot board**: one opponent from the debut pool, no Even,
+Hard, callout, nemesis or title slot. The fingerprint carries the PvE fight count, so the normal
+three-slot board appears as soon as the debut resolves.
+
+- **Pool.** 16 seeded opponents, 4 per weight class (`isDebut: true`, `data/debutOpponents.json`,
+  `scripts/seedDebutOpponents.js`), OVR 8 to 9 with STR, SPD and LEG capped at 7, records 0-0 to
+  1-2. Never ranked, never champions, never callout, interview, media or nemesis targets, and their
+  `fightHistory` is not appended (shared by every new player: the record must not drift and
+  concurrent debuts must not race on one document).
+- **Win rate.** Set by `scripts/simDebutOvr.js` (pure engine, no DB) across 8 styles x 7 backstory
+  options: 87.7% with no camp, 92.0% with a matched camp, worst cell Boxer / Kickboxing Champion
+  81.5% / 87.3%. Why not 100%: the result stays honest, a loss is possible.
+- **Purse.** 1.00x the Amateur signing fee ($500), not Easy's 0.70x. The $500 signing bonus is paid
+  in the same resolve (§21), so a debut win shows $1,000.
+- **Coach's pick.** On the debut Fighter Report and camp only, one session that scores Matched
+  against this opponent carries a Coach's pick chip (`campService.debutCoachPick`).
+- **Fallback.** If the pool is empty (environment not seeded), the normal board is booked and logged.
+- A Debut loss never sets a nemesis. Injury grace (§17.2) is unchanged.
+
 ### 7.1 Callouts (fame-driven matchmaking)
 Spend **fame** to force a specific opponent into the next Hard slot.
 
@@ -1080,6 +1103,126 @@ opponent's detailed combat stats stay fogged for the player to scout in camp (§
 Cosmetic only — no mechanic. Responsive (L/R on desktop, vertical clash on mobile) and
 respects `prefers-reduced-motion`.
 
+### 10.0a The fight reveal (v2.4)
+
+After Begin Fight the server resolves the fight exactly as before; the client then **plays it back**
+from the persisted breakdown (`frontend/src/components/fights/reveal/`, PvE only for now) before
+the result screen.
+
+- **Highlights with your cards** (spec `docs/fight-replay-highlights-spec.md`, contract
+  `docs/fight-replay-highlights-contract.md`; replaced the first v2.4 sentence feed, which read too
+  fast or too slow). Top to bottom: damage bars and clock; Strikes and Takedowns (landed) counters that
+  climb live through each round (2026-11-04): strikes tick through the whole round, each side's round total spread over every card by its time on screen, three times faster on that side's own landed cards (more for a big shot), and the number rolls for the whole time a card is up, so nothing jumps at a round's start or end; one takedown per takedown card; the last card lands on the saved `roundStats` totals; **Your corner**, the equipped Special Moves as mini cards and
+  the booked camp sessions as chips, dimmed until they fire, then lit with an `x{n}` counter; the round
+  label; one highlight at a time; Skip to result and 2x.
+- **Which moments play** (revised 2026-11-04 after the owner's first play: "no text other than camp
+  procs, no shots"). Up to 5 per round, by priority: finish, a move's first fire (painted card slam
+  with rarity glow; signature 2.6 s with flash and shake, proc 2.1 s), a camp session's **first** fire
+  in the fight (gold card, 2.0 s; later fires only tick its corner chip; a first-fire camp and a move
+  on the same exchange play as one combo), the opponent's wildcard (red card naming the real wildcard
+  area), knockdown, submission attempt, takedown, big strike, then **every logged exchange** of the
+  round (clean strikes and body shots naming the real strike from the log, ground and pound, top
+  control, stuffed takedowns) as smaller cards held 0.7 s plus 0.23 s per word (min 1.7 s). Later
+  fires of a move only tick its corner counter. Passive moves show one "always on" pill, only if they
+  really triggered. A quiet line only when a round logged nothing showable. Big-moment holds are 0.9 s
+  plus 0.28 s per word, round result 1.0 s. 2x halves everything. A typical 5-round decision runs
+  about 40 s at 1x.
+- **Fuller screen (2026-11-04, owner: "kinda empty, just one card").** Under the active card, the
+  round's earlier moments stay as compact rows (same lines, CAMP / CARD / WILDCARD chips, newest
+  first, up to 4, cleared each round). Under each health bar a **stamina** bar with its number:
+  the engine drains stamina once at the start of each round and it stays fixed through the round
+  (no recovery), so the bar steps down at each round start to the exact value the round's maths
+  used (`breakdown.staminaStart`, `roundStats.staminaPlayer/staminaOpponent`, saved since v2.4;
+  hidden on older fights). A **round strip** (R1 to R5 pills) fills with each round's score. The
+  detailed report shows the same stamina per round.
+- **Real health and an arena (2026-11-04).** The HP bars start at the health each fighter walked in
+  with (`breakdown.healthStart`; the player's current HP, not 100) and land on each round's saved
+  end-of-round health (`roundStats.healthPlayer/healthOpponent`; the finishing round uses the fight's
+  final health, so a KO shows 0). The report shows "Health at round end" per round. Older fights fall
+  back to "100 minus damage". The replay sits on a painted empty-cage arena (`art/arena`, served as
+  `/assets/arena/reveal-wide.webp`, and `reveal-phone.webp` on portrait screens), dimmed with a
+  gradient so the cards stay readable; the round label and counters carry a text shadow.
+- **Fighter panels in the middle (2026-11-04, owner: "the middle of the screen is empty, put the
+  health bars there").** The top keeps only the clock and Your corner. Each fighter gets a panel in
+  the middle: name, big health number (red under 30), thick health bar, stamina, and that fighter's
+  own strikes and takedowns. Phones: the two panels side by side right above the card; on the result
+  card they step aside so the scorecard and verdict fit. Wide screens (1000 px and up): the panels
+  flank the card on the left and right (76 px health numbers). The damage number shows on the
+  panel of whoever was hit.
+- **Landscape phones and short portrait phones (2026-11-05, owner: "landscape mobile is overlapping
+  everything").** Landscape with a height of 520 px or less: clock and Your corner share one row,
+  the panels flank the card (like desktop, compact), the feed keeps one line, the round strip and
+  buttons slim down, and the result card keeps the panels beside it and scrolls inside its area.
+  Portrait 800 px tall or less (iPhone SE, small Androids, and big Androids in Chrome at ~780
+  visible; raised from 760 on 2026-11-05 after a 412 x 780 render overlapped): the move card sits beside its line,
+  sized to the screen (at most 150 px or 20% of the height), and the feed keeps two lines.
+  Portrait under 600 px of visible height (iPhone SE in Safari with its bars, ~375 x 548; owner:
+  "only for very short screens"): clock and Your corner share one row, the panels shrink (26 px
+  health numbers), the move card is at most 120 px, the feed keeps one line, and the round strip and
+  buttons slim down. Tested at real visible sizes with browser bars (2026-11-05). On wide
+  and landscape layouts the card area fills its row, so a tall result card scrolls instead of
+  covering the buttons.
+- **Bar flash.** The white flash on a hit covers only the health that is left, never the empty part
+  of the track (a full-width flash read as a full bar for a moment at round changes).
+- **Hits that land (2026-11-04).** Each side's health drops on the cards where the other side
+  lands, weighted by the hit (exchange 1, takedown 1, big strike 2, a move that landed 2, knockdown or
+  move knockdown 3, finishing blow 4); a stuffed takedown or a move that did not land hurts nobody.
+  Health a side lost without a visible hit lands on the round card. Every card whose line says
+  he was hurt moves his bar on that card: move cards weigh by outcome (hurt, knockdown, finish 3;
+  landed, ground strikes 2; takedown 1) and camp cards that tell a hit (Striking Accuracy, Clinch
+  Control, Ground and Pound Posture) weigh 1 (owner: "WOBBLED but the HP is the same"; checked over
+  240 engine fights in `tests/integration/moveReadiness.sweep.test.js`). The round still ends on the saved
+  health; only where inside the round each point goes is presentation (`hitWeight` in
+  `revealModel.js`). On each drop: a red "-N" under that fighter's bars (the change in the shown
+  number), a red flash on the bar, and the lost chunk stays pale for about half a second before it
+  drains. Cards fly in from the screen edge on the side that acts (yours from the left, theirs from the
+  right; the stage is not clipped to the 640 px column, owner: "cut off"); a landed shot overshoots
+  and holds for a beat (hitstop), and the bar drop, flash and damage number wait about 0.2 s so they
+  land with the card. The **whole screen shakes** as the card lands, on big moments only (owner: "there
+  is no screen shake", then chose big moments only over a jolt on every hit): medium 5 px for 0.3 s
+  on big strikes, takedowns, landed move cards and their wildcard; heavy 14 px for 0.52 s on
+  knockdowns, finishes, signature slams and the stoppage; routine shots do not shake. Decaying,
+  scaled up 2% so the edges never show; knockdowns and finishes keep the flash. About 5 shakes in
+  a 5-round fight. Reduced motion turns all motion off; the
+  numbers still show.
+- **Finish moment (2026-11-04).** The finishing blow lands in slow motion, then a 2.2 s stoppage
+  beat: "IT'S ALL OVER" and "The referee waves it off." (KO/TKO) or "The tap. The referee steps in."
+  (submission). It names no winner (spoiler rule: only the finish card does). The finish card then
+  reads the result out: "Stone wins by TKO, round 3 at 2:14".
+- **Decision scorecard (2026-11-04, owner: show the score cards per round and who won under it).**
+  Decisions and draws open the finish card with a scorecard: one column per round (10-9, 10-8 when
+  dominant, 10-10 when even; the same round scores the report shows), the round's winner coloured,
+  totals at the end. Rounds fill in one after another (0.45 s each), then the verdict appears under
+  it: VICTORY / DEFEAT / DRAW and "Stone wins by unanimous decision, 49-46" (split when the saved
+  outcome says so; a loss says "decision", since the engine only records unanimity on wins). The
+  engine has three judges but saves only this round-by-round card, so that is the card shown.
+  Auto-advance on a decision: 4 s plus 0.45 s per round plus 0.9 s.
+- **Finish card.** Method, VICTORY / DEFEAT / DRAW, the read-out or the scorecard, and **What fired**:
+  every equipped move with its count ("didn't fire" dimmed) and every camp session ("paid off" or
+  "didn't fire"). Skip lands here with the true totals; See result or the auto-advance continues.
+- **One source of truth (owner rule).** The replay is a filtered view of the persisted `eventLog`;
+  everything it shows is also in the detailed fight description (Career Feed drawer included): the
+  report shows CARD, CAMP and WILDCARD chips on those events and a **Your corner** block with the
+  same counts (`breakdown.loadout`, snapshotted at resolve). The engine records when a PROC or
+  SIGNATURE move's `triggerCount` rises (`rounds[].moveFired`, bookkeeping only, maths and RNG draws
+  pinned by the golden test) and the breakdown ties each firing to the exchange it changed
+  (`move_fired`, sharing that exchange's time); when no exchange is logged the event has no clock
+  time (`R{n}`), never an invented one. Lines are outcome-specific (`vars.outcome`: stuffed, knockdown,
+  finish, ...). Since v2.4 camp credit ("camp work paying off") appears only when a booked camp
+  session fired, not when a move fired on the same lane. Takedown counters show landed only, because
+  attempts are not persisted. Analytics `fight_reveal.beatIndex/beatsTotal` count highlight items.
+- **No spoilers.** The message bar, badge toasts, belt/tier overlays, fighter refreshes (including
+  the 60 s poll), feed and dashboard all wait for one commit point when the reveal ends or is
+  skipped. Banner unlocks wait until the player leaves the result screen.
+- **Reload mid-reveal** lands on the result screen (the resolve response is kept in sessionStorage
+  for 30 minutes, keyed by fighter). Reduced motion keeps the pacing without slides or pulses.
+  Account settings has **Play fights out** (default on).
+- **Result screen.** A **Next goal** card (`services/nextGoalService.js`), first that applies: earn
+  your ranking (fight n of 3), Proving Ground wins (n of 3), climb into the top 5, title-shot wins
+  (n of 3), then the title of the current tier: "Amateur title shot: reach OVR 30" with "Your OVR is 15. Beat the champion to move up to Regional Pro." (the tier is won by beating its champion, OVR is only the first gate; the top-5 and title-win lines also name the tier); plus a Proving Ground line while it is locked. OVR before and after,
+  the signing bonus line on the debut, and the buttons **Next fight** (primary) and **Train in My
+  Camp**. The full fight report stays one tap away, collapsed.
+
 ### 10.1 Weight Cut
 Before every fight the player picks a weight-cut strategy — a stamina gamble with a chance to miss weight.
 
@@ -1093,6 +1236,46 @@ Before every fight the player picks a weight-cut strategy — a stamina gamble w
 
 ### 10.2 Fight Outcomes
 KO/TKO (win), Submission (win), Decision Unanimous (win), Decision Split (win), Draw, Loss — Decision, Loss — KO/TKO (health → 0), Loss — Submission.
+
+### 10.2a Strike damage and the low-level weight (balance, 2026-11-04)
+Each round resolves one exchange. A landed striking exchange does, before strategy, camp and move
+modifiers and the stamina modifier:
+
+`max(minDamage, lowFlat + power x 0.45 + SPD x 0.18 - defender CHN x 0.35) x (0.85 to 1.15)`
+
+where power = (STR + LEG) / 2 and `lowFlat = 10 x max(0, 1 - power / 50)`; `minDamage` = 2
+(`consts/fightResolutionConfig.js` strikeDamage: lowLevelFlat, lowLevelFadeAt, minDamage).
+
+**Why.** Before this, two stat-20 fighters lost about 4 health a round, and the debut opponents
+(STR/SPD/LEG 7) landed for 0 into a starting fighter's chin, so a five-round decision ended near full
+health while the replay showed 20 strikes landing (owner: "nobody hits me for 5 rounds"). The bonus
+fades to 0 at power 50, so the upper tiers keep their numbers and KO rates.
+
+Simulated (3,000 fights each, even stats, starting at 100 health):
+
+| Stats | Health at the end, before | After | KOs before | After |
+|---|---|---|---|---|
+| 12 | 89 | 70 | 0% | 1% |
+| 20 | 82 | 66 | 0% | 2% |
+| 35 | 68 | 60 | 0% | 2% |
+| 55 | 48 | 48 | 10% | 11% |
+| 80 | 30 | 30 | 54% | 54% |
+
+Debut (starting Boxer vs the debut pool): win rate 82% to 83%, the player ends at about 82 health
+(was 98), the opponent at about 62 (was 83). Walking into a stat-20 fight at 60 health now carries a
+real KO-loss risk (13%, was 0%), which is the point of resting and the Hospital; the first 3 fights
+stay concussion-free (`INJURY_GRACE_FIGHTS`). PvP uses the same engine, so low and mid-level ladder
+fights hit harder too. The golden engine fixture was regenerated for this change (7 of 55 scenarios
+end differently, all low-stat ones).
+
+**Ground-and-pound (same day).** Ground damage got the same treatment
+(`groundDamage`: lowLevelFlat 10 fading to 0 at a GND/STR average of 50, minDamage 2; one shared
+`groundBase` for all three ground paths): `max(2, lowFlat + GND x 0.55 + STR x 0.15 - defender CHN x 0.2)`
+times the top fighter's stamina. Before, a low-stat fighter on top did about 2 health a round (owner:
+"pounding away from the top, my HP stayed the same"). Simulated (3,000 fights each): a debut round on
+your back costs ~7.5 (was 2.0), an even stat-20 round ~10.5 (was 6.7), stat-60 grappler fights
+unchanged, win rates unchanged; a stat-30 striker taken down by a wrestler loses by KO 5% (was 2%).
+The golden engine fixture was unchanged by this part (its scenarios are past the fade).
 
 ### 10.3 Post-Fight XP
 | Result | XP Distribution |
@@ -1397,6 +1580,7 @@ Design of record `docs/shop-redesign-spec.md`, contract `docs/shop-redesign-cont
 - **Out-of-energy offer.** For four actions only: Proving Ground attack, accepting a fight, a My Camp drill batch (only when zero sessions were funded) and a Fight Camp session. Their not-enough-energy errors now carry `need` and `have` (codes and statuses unchanged), and their buttons stay clickable when energy is short. The offer lists, in order: wait `need - have` minutes (free), Energy Shot (use one, buy and use one for 600 Cash, or disabled when Cash is short), Energy Drink (use one, or the free-earn hint and See bundles). "Use one" restores energy and never retries the action. Never on login, no timers, never in the Hospital or the small media actions.
 - **Analytics.** `premium_panel_shown` server-side; `premium_panel_expanded`, `energy_offer_shown`, `energy_offer_choice` through a whitelisted owner-only beacon (`POST /fighters/:id/analytics/events`).
 - **Unchanged.** Every §15.3 rule: the server sets the price from `amountCents` (now also sent to the client for display only), checkout takes a bundle id only, guests are refused, fulfilment is webhook-only and exactly-once.
+- **Not during the debut (v2.4).** The out-of-energy offer never opens while the debut walkthrough runs (`tutorial.completed === false`); a short-energy tap shows a message-bar line instead. No purchase prompt inside onboarding (§21). The debut costs at most about 26 of 100 energy, so it is rarely reached.
 
 ## 16. Media Hub
 
@@ -1550,19 +1734,41 @@ A persistent in-game newspaper — **always available, always current**. It is n
 
 ## 21. Onboarding Tutorial
 
-New accounts run a guided tooltip sequence through the core loop: fighter profile → **My Camp** → first training session → request/read a fight offer → fight camp (Fighter Report, session selection, weight cut) → fight result and fame → rankings → events → hospital. Ends with a completion modal granting a **$500 signing bonus**. Legacy accounts are marked complete and never see it.
+**Debut flow (v2.4, replaces the 10-step tour).** Design of record `docs/first-session-spec.md`,
+contract `docs/first-session-contract.md`. Why: new players left after one fight. The old tour put
+about 20 tips before the first punch, showed the fight as a finished report, rolled a real debut
+and then toured Rankings, Events and the Hospital with no next goal (diagnosis 2026-11-04, game dev
+wiki hub). The goal now is the bell within about 90 s of fighter creation, with 4 tips:
 
-> **Step ids are historical and MUST NOT be renamed.** Steps 2 and 3 are still called
-> `gym_intro` and `training_session` because `fighter.tutorial.current_step` persists the id and
-> `validateStepAdvance` checks it against `STEP_ORDER`. Renaming would strand every mid-tutorial
-> player on a step the server rejects. They point at My Camp; only the target changed. The same
-> applies to the `gym-sessions` tutorial anchor, which now sits on the camp's drill grid.
->
-> When the gyms retired, `buildNavItems` stopped rendering the Training item at all, which
-> removed the `nav-gym` anchor step 2 focused and waited on a click for. With no `skipIfAbsent`
-> on that step the tutorial could never advance, and every new player was stuck on step 2 with
-> "Skip tutorial" the only way into the game. Both steps now carry `skipIfAbsent: true`, so a
-> missing anchor degrades to a skipped beat instead of a dead end.
+| Step (`STEP_ORDER`) | Screen | Tip | Advances on |
+|---|---|---|---|
+| `debut_home` | Home hero "Your debut is booked" | "Your promoter booked your first pro fight..." | See your opponent / the Fight tab |
+| `debut_offer` | Fight tab, single Debut bout (§7.0) | "Accepting costs 10 energy..." | `fight_accepted` |
+| `debut_report` | Face-off, Fighter Report with Coach's pick | "This is your opponent..." | `fighter_report_closed` |
+| `debut_camp` | Fight Camp (ring on the Coach's pick, then Finalise); weight cut defaults to Easy | "Your coach's pick counters this opponent..." | `fight_resolve_started` |
+
+Then the fight reveal and the result screen (§10.0a). The server completes the tutorial in the
+first PvE resolve and pays the **$500 signing bonus** there, exactly once (`tutorial.signingBonusPaidAt`),
+shown as "Signing bonus +$500" on the debut result. There is no completion modal any more;
+`POST /tutorial/:id/complete` (End tutorial) pays nothing, the bonus still arrives with fight 1.
+Tutorial routes are ownership-guarded and write only `tutorial.*` paths atomically (the advance and
+the resolve race on Begin Fight).
+
+- **Legacy step ids** (`profile_intro` ... `hospital_intro`) are normalised to `debut_home`
+  (`normaliseStep`), and the boot migration `backfillFirstSession` (marker `tutorial.version: 2`)
+  moves everyone once: completed players with a fight stay complete (tips off); mid-tutorial
+  players with a fight are completed and paid the bonus they were owed; anyone with zero PvE fights
+  enters the debut flow (no second bonus for those who already had it).
+- **Section tips (first visit).** One to three tips the first time the player opens My Camp, the
+  offer board (first normal board), Fight Camp (second camp; the weight-cut tip on its summary),
+  Rankings, Events, Hospital, Proving Ground (after unlock), Special Moves, Contracts, Media. The
+  Shop gets none (no selling inside onboarding). Copy: spec §5, `frontend/src/constants/sectionTips.js`.
+- **Moment tips.** Once each: energy below the cheapest fight's cost, the board shown with health
+  under 60, first loss (Comeback Mode), first injury. A first rank shows as a result-screen line.
+- **State.** `tutorial.tipsSeen` (keys in `consts/tutorialConfig.js` `TIP_KEYS`, `POST
+  /tutorial/:id/tips/seen`), `settings.sectionTips` and `settings.playFightsOut` (`PATCH
+  /fighters/:id/settings`, Account settings, Gameplay). Every tip has Hide tips. Players whose
+  tutorial was complete before v2.4 have section tips off by default.
 
 **Never blocking (v2.3).** The tutorial used to lay a dark scrim over the game with one
 cut-out for the current target. Every target that moved, opened a pop-up or lived somewhere the
@@ -1570,9 +1776,9 @@ scrim did not expect (phone layouts, View Report in Fight Camp, the banner edito
 stuck. Since 2.3 there is no scrim: the game stays fully usable and the tutorial only adds a
 pulsing ring on the target plus its tooltip card.
 
-- **Screens.** Each phase that teaches one screen names it (`tab` in `tutorialSteps.js`: My Camp
-  for the first training session, Fight for the offer, camp and result, Rankings, Events,
-  Hospital). The profile tour and the "go to X" nav phases work on every screen.
+- **Screens.** Each phase that teaches one screen names it (`tab` in `tutorialSteps.js`; since
+  v2.4 the debut's offer, report and camp phases live on Fight). The Home phase works on every
+  screen through its Fight-tab fallback.
 - **Paused, not lost.** On any other screen the tooltip and ring disappear and a small
   **Tutorial paused** bar shows **Back to tutorial** (jumps to the step's screen) and
   **End tutorial**. Coming back by any route resumes on the same tooltip. Nothing times out or
@@ -1595,8 +1801,11 @@ pulsing ring on the target plus its tooltip card.
 - Tip cards never cover the phone's bottom nav. A target taller than the screen gets its tip
   pinned to the top (panels keep their buttons at the bottom); a desktop side-menu target gets
   its tip beside the menu, not over the neighbouring items.
-- **End tutorial** (in every tooltip and on the paused bar, formerly "Skip tutorial") opens
-  the completion modal; the $500 signing bonus is still paid on Enter the Game.
+- **End tutorial** (in every tooltip and on the paused bar, formerly "Skip tutorial") ends the
+  debut walkthrough at once (no modal since v2.4); the $500 signing bonus arrives with the first
+  fight's result.
+- (v2.4) A tutorial target hidden under the phone's fixed bottom nav counts as off screen and is
+  scrolled into view (`tutDom.isInSafeView`): the debut hero button sat under the bar at 375x812.
 - The Customize button on banner unlocks, the Shop link in Fight Camp supplements and "See
   bundles" in the out-of-energy offer are back during the tutorial; they were hidden only
   because the scrim stranded players off its path.
@@ -1884,6 +2093,20 @@ link tagged "direct" counts as untagged; `firstFight` = has ever resolved a figh
 A visitor who reloads or returns later counts as direct: the accepted price of storing
 nothing. Added in v2.2.4 for the first paid ad tests; disclosed in the Privacy Policy.
 
+### 24.8 First-session funnel (v2.4)
+
+Events that measure the first session (spec `docs/first-session-spec.md` §2.7, contract
+`docs/first-session-contract.md` §D). Server-side: `fighter_created` (style, weight class,
+guest), and `fightNumber` + `offerType` on every `fight_accepted` / `fight_resolved`. Client
+beacon (whitelisted, owner-only `POST /fighters/:id/analytics/events`): `debut_step` (1 to 6,
+`msSinceStart`, device), `fight_reveal` (watched or skipped, beat index, speed),
+`next_goal_click` (`next_fight` or `train`), `section_tip` (section, done or hidden).
+`GET /admin/analytics/retention` gains `firstSession`: fighter created, debut accepted, reveal
+watched or skipped, debut result, fight 2 accepted, fight 3 resolved, returned day 1, split by
+device and by acquisition tag. Historic events lack `fightNumber` and are ignored by the funnel.
+Targets for the next 100 to 200 new players: 80%+ resolve fight 1, 50%+ start fight 2, 35%+
+reach fight 3, D1 15%+ on ad cohorts. Session replay is not collected.
+
 ---
 
 ## 25. Versioning & the What's New Changelog
@@ -2157,6 +2380,38 @@ attempt from top). ALL_DAMAGE_REDUCTION (Veteran IQ, 2026-10-27) reduces strike 
 ground damage taken from the bottom. `totalRounds`
 is now passed into `resolveRound` so the LATE_ROUNDS gate (Deep Waters) can evaluate
 `roundNum > ceil(totalRounds / 2)`.
+
+### 26.5a The ready glow (v2.4, `docs/move-ready-glow-spec.md`)
+In the fight replay, a move whose trigger is a state the saved fight shows exactly lights up the
+moment its engine gate opens: full brightness, a pulsing gold ring and a READY tab on its card in
+Your corner, a READY line in the feed ("Overhand Right is ready: he started round 4 on 71 health."),
+and a gold chip on your fighter panel naming every ready move. A one-shot glows until it fires;
+per-round procs glow in every round their gate is open.
+
+| Move | Ready when (the engine's gate) |
+|---|---|
+| Overhand Right | he starts a round under 75 health (until it fires) |
+| Crossface | he starts a round under 50 health |
+| Superman Punch | round 1 |
+| Fighting Spirit | you start a round under 75 health |
+| Second Wind | you start a round under 70 stamina |
+| Second Gear | he starts a round under 70 stamina |
+| Deep Waters | the back half of the scheduled fight (rounds 4 and 5 of 5) |
+
+Gates are read at round start before the stamina drain, so round n uses the values saved at the end
+of round n-1 (`healthStart` / `staminaStart` for round 1); `breakdown.scheduledRounds` is saved at
+resolve (display only). Reactive moves (Sprawl, Hip Escape, Dirty Boxing, Guillotine Choke, Blast
+Double, Arm Triangle) have no "about to" state and stay dark until they fire; position moves (Full
+Mount, Top Control, Rubber Guard) wait for a saved round-start position (phase 2). Passives keep
+their "always on" pill.
+
+**Reasons.** The replay's What fired and the report's Your corner block show, per move, when it was
+ready and, if it did not fire, why ("Never ready: he never started a round under 75 health.",
+"It never got a striking exchange while it was ready."). One shared pure helper
+(`frontend/src/components/fights/moveReadiness.js`) feeds the replay, its finish card and the report.
+Accuracy sweep (`tests/integration/moveReadiness.sweep.test.js`, 360 engine fights, 925 fires): every
+fire lands in a round the glow called ready, and no move called "never ready" fires. Reasons never
+link to the Shop (moves are earned, so this is not near-miss bait).
 
 ### 26.6 The Catalog view (v2.2)
 The Special Moves tab has two sub-tabs: **My Moves** (equip slots and owned collection,

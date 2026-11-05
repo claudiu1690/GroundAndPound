@@ -25,9 +25,11 @@ async function run() {
     console.log("Connected to MongoDB");
 
     // 1. Wipe all opponents — the new seed script will re-create them with fixedRank.
-    const oppCount = await Opponent.countDocuments({});
+    // Debut opponents (isDebut, first-session flow) are kept: they are unranked and
+    // seeded separately by scripts/seedDebutOpponents.js.
+    const oppCount = await Opponent.countDocuments({ isDebut: { $ne: true } });
     if (oppCount > 0) {
-        await Opponent.deleteMany({});
+        await Opponent.deleteMany({ isDebut: { $ne: true } });
         console.log(`Removed ${oppCount} old Opponent docs`);
     } else {
         console.log("No Opponent docs to remove");

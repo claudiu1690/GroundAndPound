@@ -124,6 +124,40 @@ router.put("/:id", ownFighter, fighterController.update);
 
 /**
  * @swagger
+ * /fighters/{id}/settings:
+ *   patch:
+ *     summary: Update owner-only gameplay settings (fight reveal, section tips)
+ *     tags: [Fighters]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: objectId }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             additionalProperties: false
+ *             minProperties: 1
+ *             properties:
+ *               playFightsOut: { type: boolean }
+ *               sectionTips: { type: boolean }
+ *     responses:
+ *       200:
+ *         description: "{ settings: { playFightsOut: boolean, sectionTips: boolean } }"
+ *       400:
+ *         description: "{ message: 'Invalid settings' } (empty body, unknown key or non-boolean value)"
+ *       403:
+ *         description: Not your fighter
+ *       404:
+ *         description: Fighter not found
+ */
+router.patch("/:id/settings", ownFighter, fighterController.patchSettings);
+
+/**
+ * @swagger
  * /fighters/{id}/train:
  *   post:
  *     summary: Run a training session (costs energy; grants XP to stats)

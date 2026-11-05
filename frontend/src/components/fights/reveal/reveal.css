@@ -1,0 +1,1297 @@
+/* ───────────────────────────────────────────────────────────
+   Fight reveal: highlights with your cards.
+   Portaled to <body> so it covers nav and sidebar and sits outside the
+   transformed .app. Phone first, one column; desktop centres the same
+   column at 640px. Look follows mockups/fight-reveal-highlights.html.
+   ─────────────────────────────────────────────────────────── */
+
+.fight-reveal {
+    position: fixed;
+    inset: 0;
+    z-index: 60000;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    padding: max(14px, env(safe-area-inset-top, 0px)) 14px max(14px, env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    background: radial-gradient(ellipse at 50% 0%, #1d1013 0%, #0b0b0c 62%);
+    color: #fff;
+    font-family: var(--font-body, system-ui, sans-serif);
+    animation: fr-rv-fade 200ms ease-out;
+    /* Cards start off-screen; never let that make the page scroll sideways. */
+    overflow: hidden;
+}
+
+@keyframes fr-rv-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ── Top: names, damage bars, clock, counters, corner ───────── */
+.fr-rv-top {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+
+.fr-rv-fighter { min-width: 0; }
+.fr-rv-fighter--opponent { text-align: right; }
+
+.fr-rv-fname {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.fr-rv-bar {
+    position: relative;
+    height: 12px;
+    border-radius: 6px;
+    background: #2a2a2d;
+    overflow: hidden;
+    border: 1px solid #3a3a3e;
+}
+/* Hits that land: the lost chunk lingers pale, then drains after the fill has dropped. */
+.fr-rv-bar-ghost {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    background: #f5e6c8;
+    opacity: 0.85;
+    transition: width 550ms ease-in 700ms;
+}
+.fr-rv-fighter--opponent .fr-rv-bar-ghost { left: auto; right: 0; }
+.fr-rv-bar .fr-rv-bar-fill { position: relative; }
+.fr-rv-bar-hit {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    animation: fr-rv-barhit 380ms ease-out 210ms backwards;
+}
+.fr-rv-fighter--opponent .fr-rv-bar-hit { left: auto; right: 0; }
+@keyframes fr-rv-barhit {
+    0% { opacity: 0.7; }
+    100% { opacity: 0; }
+}
+.fr-rv-fighter { position: relative; }
+.fr-rv-dmg {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 34%;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 26px;
+    line-height: 1;
+    color: #ff4d5e;
+    text-shadow: 0 2px 6px #000, 0 0 2px #000;
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0;
+    animation: fr-rv-dmg 900ms ease-out 210ms backwards;
+}
+.fr-rv-fighter--opponent .fr-rv-dmg { left: auto; right: 34%; }
+@keyframes fr-rv-dmg {
+    0% { opacity: 0; transform: translateY(6px) scale(1.4); }
+    15% { opacity: 1; transform: translateY(0) scale(1); }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-18px); }
+}
+
+.fr-rv-fighter--opponent .fr-rv-bar-fill { margin-left: auto; }
+
+.fr-rv-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3a9a4a, #4ade80);
+    /* Drops when the flying card lands (about 210 ms into its 560 ms flight). */
+    transition: width 140ms ease-out 210ms;
+}
+
+.fr-rv-fighter--opponent .fr-rv-bar-fill {
+    background: linear-gradient(270deg, #c8102e, #f87171);
+}
+
+.fr-rv-bar--pulse {
+    animation: fr-rv-pulse 900ms ease-out;
+}
+
+@keyframes fr-rv-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(212, 168, 32, 0.9); }
+    100% { box-shadow: 0 0 0 12px rgba(212, 168, 32, 0); }
+}
+
+.fr-rv-clock {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: 1px;
+    color: #d4a820;
+    padding: 0 4px 0;
+    min-width: 70px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Counters: strikes and takedowns landed, you | label | opponent, cumulative. */
+
+/* Your corner */
+.fr-rv-corner {
+    margin-top: 8px;
+    border: 1px solid #23232a;
+    border-radius: 10px;
+    padding: 6px 8px 7px;
+    background: #0e0e12;
+    min-width: 0;
+}
+.fr-rv-corner-lab {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #8a8a92;
+    text-transform: uppercase;
+}
+.fr-rv-corner-empty { margin-top: 5px; font-size: 13px; color: #77777f; }
+.fr-rv-corner-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 5px;
+    align-items: center;
+    min-width: 0;
+}
+.fr-rv-mini {
+    position: relative;
+    flex: none;
+    width: 34px;
+    height: 50px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 2px solid var(--rarity-color, #888);
+    box-sizing: border-box;
+    opacity: 0.35;
+    filter: grayscale(0.8);
+    transition: opacity 350ms ease, filter 350ms ease, box-shadow 350ms ease, transform 350ms ease;
+}
+.fr-rv-mini .art-thumb {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+}
+.fr-rv-mini.is-lit {
+    opacity: 1;
+    filter: none;
+    box-shadow: 0 0 14px var(--rarity-color, #888);
+    transform: translateY(-2px);
+    overflow: visible;
+}
+.fr-rv-mini.is-lit .art-thumb { border-radius: 2px; }
+/* Ready glow: the move's gate is open. Full brightness, a pulsing gold ring, a READY tab. */
+.fr-rv-mini.is-ready {
+    opacity: 1;
+    filter: none;
+    overflow: visible;
+    box-shadow: 0 0 0 2px #f5c542, 0 0 10px rgba(245, 197, 66, 0.7);
+    animation: fr-rv-ready-pulse 1.2s ease-in-out infinite;
+}
+.fr-rv-mini.is-lit.is-ready { animation: none; box-shadow: 0 0 0 2px #f5c542, 0 0 14px var(--rarity-color, #888); }
+@keyframes fr-rv-ready-pulse {
+    0%, 100% { box-shadow: 0 0 0 2px #f5c542, 0 0 8px rgba(245, 197, 66, 0.55); }
+    50% { box-shadow: 0 0 0 3px #ffd75e, 0 0 20px rgba(245, 197, 66, 0.95); }
+}
+.fr-rv-mini-ready {
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: #f5c542;
+    color: #111;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 7px;
+    letter-spacing: 0.5px;
+    line-height: 1.5;
+    text-align: center;
+    border-radius: 0 0 3px 3px;
+}
+/* Lit and ready (a per-round proc that already fired this round): tab on top, count stays bottom. */
+.fr-rv-mini.is-lit .fr-rv-mini-ready { top: -2px; bottom: auto; border-radius: 3px 3px 0 0; }
+.fr-rv-mini-n {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 10px;
+    line-height: 1.2;
+    padding: 0 3px;
+    border-top-left-radius: 3px;
+    animation: fr-rv-tick 350ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+@keyframes fr-rv-tick {
+    from { transform: scale(1.8); }
+    to { transform: scale(1); }
+}
+.fr-rv-corner-sep { width: 1px; align-self: stretch; background: #26262b; margin: 0 2px; flex: none; }
+.fr-rv-camps { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.fr-rv-campchip {
+    min-width: 0;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 1px solid #3a3a40;
+    color: #77777f;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 350ms ease;
+}
+.fr-rv-campchip.is-lit {
+    border-color: #d4a820;
+    color: #d4a820;
+    background: #2a2106;
+    box-shadow: 0 0 12px rgba(212, 168, 32, 0.33);
+}
+
+
+/* ── Clock row ───────────────────────────────────────────────── */
+.fr-rv-clockrow { text-align: center; margin-bottom: 8px; }
+.fr-rv-clockrow .fr-rv-clock {
+    display: inline-block;
+    font-size: 24px;
+    padding: 2px 14px;
+    border-radius: 8px;
+    background: rgba(8, 8, 12, 0.6);
+    text-shadow: 0 1px 6px #000;
+}
+
+/* ── Middle: both fighters' panels and the stage ─────────────
+   Phone: the two panels side by side, the card right under them.
+   Wide screens: the panels flank the card, filling the empty sides. */
+.fr-rv-mid {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "you opp" "stage stage";
+    gap: 8px 12px;
+}
+.fr-rv-mid > .fr-rv-fighter--player { grid-area: you; }
+.fr-rv-mid > .fr-rv-fighter--opponent { grid-area: opp; }
+.fr-rv-mid > .fr-rv-stage { grid-area: stage; max-width: none; margin: 0; z-index: 2; }
+
+.fr-rv-fp {
+    position: relative;
+    z-index: 1;
+    padding: 10px 12px 10px;
+    border-radius: 12px;
+    background: rgba(8, 8, 12, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 3px solid #2e66e6;
+    text-shadow: 0 1px 4px #000;
+}
+.fr-rv-fp.fr-rv-fighter--opponent { border-top-color: #c21434; }
+.fr-rv-fp .fr-rv-fname { font-size: 15px; margin-bottom: 2px; }
+.fr-rv-fp-hp { display: flex; align-items: baseline; gap: 5px; }
+.fr-rv-fighter--opponent .fr-rv-fp-hp { justify-content: flex-end; }
+.fr-rv-fp-hpnum {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 48px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    transition: color 300ms;
+}
+.fr-rv-fp.is-hurt .fr-rv-fp-hpnum { color: #ff6b6b; }
+.fr-rv-fp-hplab {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: #8a8a92;
+}
+.fr-rv-fp .fr-rv-bar { height: 18px; border-radius: 9px; margin-top: 6px; }
+.fr-rv-fp .fr-rv-vitals { margin-top: 6px; }
+.fr-rv-fp .fr-rv-sta-bar { height: 8px; border-radius: 4px; }
+.fr-rv-fp .fr-rv-vnum { font-size: 12px; }
+.fr-rv-fp-stats { display: flex; gap: 16px; margin-top: 8px; }
+.fr-rv-fighter--opponent .fr-rv-fp-stats { justify-content: flex-end; }
+.fr-rv-fp-stat { text-align: left; }
+.fr-rv-fighter--opponent .fr-rv-fp-stat { text-align: right; }
+.fr-rv-fp-stat b {
+    display: block;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 28px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: #9cc0ff;
+}
+.fr-rv-fighter--opponent .fr-rv-fp-stat b { color: #ff9aa8; }
+.fr-rv-fp-stat span {
+    display: block;
+    margin-top: 2px;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #a8a8b0;
+}
+/* READY chip on your panel: names the moves whose gate is open (readable where corner cards are tiny). */
+.fr-rv-fp-ready {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: #2a2106;
+    border: 1px solid #d4a820;
+    color: #f5c542;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    animation: fr-rv-fadein 300ms ease-out;
+}
+/* The damage number sits on the panel of whoever was hit, by the health number. */
+.fr-rv-fp .fr-rv-dmg { top: 24px; left: auto; right: 12px; font-size: 34px; }
+.fr-rv-fp.fr-rv-fighter--opponent .fr-rv-dmg { right: auto; left: 12px; }
+
+@media (min-width: 1000px) {
+    .fr-rv-mid {
+        max-width: 1280px;
+        grid-template-columns: minmax(220px, 1fr) minmax(0, 640px) minmax(220px, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        grid-template-areas: "you stage opp";
+        gap: 0 28px;
+        align-items: center;
+    }
+    .fr-rv-mid > .fr-rv-stage { align-self: stretch; min-height: 0; }
+    .fr-rv-fp { padding: 18px 20px; border-top-width: 4px; }
+    .fr-rv-fp .fr-rv-fname { font-size: 22px; }
+    .fr-rv-fp-hpnum { font-size: 76px; }
+    .fr-rv-fp-hplab { font-size: 16px; }
+    .fr-rv-fp .fr-rv-bar { height: 22px; border-radius: 11px; }
+    .fr-rv-fp .fr-rv-sta-bar { height: 10px; }
+    .fr-rv-fp .fr-rv-vnum { font-size: 14px; }
+    .fr-rv-fp-stats { gap: 28px; margin-top: 14px; }
+    .fr-rv-fp-stat b { font-size: 40px; }
+    .fr-rv-fp-stat span { font-size: 11px; }
+    .fr-rv-fp .fr-rv-dmg { top: 40px; right: 20px; font-size: 52px; }
+    .fr-rv-fp-ready { font-size: 13px; padding: 4px 10px; margin-top: 12px; }
+    .fr-rv-fp.fr-rv-fighter--opponent .fr-rv-dmg { left: 20px; }
+}
+/* Phones: the result card needs the whole middle (scorecard, verdict, What fired). */
+@media (max-width: 999px) {
+    /* Narrow panel: the READY chip wraps to show every name. */
+    .fr-rv-fp-ready { white-space: normal; border-radius: 8px; line-height: 1.3; }
+    .fr-rv-mid.is-finish { grid-template-areas: "stage stage"; grid-template-rows: minmax(0, 1fr); }
+    .fr-rv-mid.is-finish > .fr-rv-fp { display: none; }
+}
+@media (max-height: 700px) and (max-width: 999px) {
+    .fr-rv-fp { padding: 7px 10px; }
+    .fr-rv-fp-hpnum { font-size: 30px; }
+    .fr-rv-fp-stat b { font-size: 18px; }
+    .fr-rv-fp-stats { margin-top: 5px; }
+}
+
+/* ── Middle: the stage (one moment at a time) ───────────────── */
+.fr-rv-stage {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Not clipped: cards fly in from the screen edge, across the column's sides. */
+    overflow: visible;
+}
+.fr-rv-stage-in {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    min-height: 0;
+}
+.fr-rv-stage-in.is-shake { animation: fr-rv-shake 450ms cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+/* Cards come from the side that acts: yours from the left, theirs from the right. A landed shot
+   arrives fast and stops dead for a beat (hitstop) before settling. */
+.fr-rv-stage-in.is-from-left { animation: fr-rv-from-left 420ms cubic-bezier(0.2, 1.05, 0.3, 1); }
+.fr-rv-stage-in.is-from-right { animation: fr-rv-from-right 420ms cubic-bezier(0.2, 1.05, 0.3, 1); }
+.fr-rv-stage-in.is-from-left.is-impact-light,
+.fr-rv-stage-in.is-from-left.is-impact-medium { animation: fr-rv-hit-left 560ms linear; }
+.fr-rv-stage-in.is-from-right.is-impact-light,
+.fr-rv-stage-in.is-from-right.is-impact-medium { animation: fr-rv-hit-right 560ms linear; }
+.fr-rv-stage-in.is-nudge.is-from-left { animation: fr-rv-hit-left 560ms linear, fr-rv-nudge 260ms 300ms ease-out; }
+.fr-rv-stage-in.is-nudge.is-from-right { animation: fr-rv-hit-right 560ms linear, fr-rv-nudge 260ms 300ms ease-out; }
+/* While the card flies in, its own pop-in would fight the motion. */
+.fr-rv-stage-in[class*="is-from-"] .fr-rv-hl { animation: none; }
+/* A heavy hit still shakes; the shake wins over the slide. */
+.fr-rv-stage-in.is-shake.is-from-left,
+.fr-rv-stage-in.is-shake.is-from-right { animation: fr-rv-shake 450ms cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+/* The finishing blow lands in slow motion. */
+.fr-rv-stage-in.is-finish-hit .fr-rv-item { animation: fr-rv-slowmo 1100ms cubic-bezier(0.1, 0.9, 0.2, 1); }
+/* Start fully past the screen edge: half the screen plus the card's own width. */
+@keyframes fr-rv-from-left { from { transform: translateX(calc(-50vw - 100%)); } to { transform: none; } }
+@keyframes fr-rv-from-right { from { transform: translateX(calc(50vw + 100%)); } to { transform: none; } }
+@keyframes fr-rv-hit-left {
+    0% { transform: translateX(calc(-50vw - 100%)); }
+    38% { transform: translateX(14px) scale(1.04); }
+    62% { transform: translateX(14px) scale(1.04); }
+    100% { transform: none; }
+}
+@keyframes fr-rv-hit-right {
+    0% { transform: translateX(calc(50vw + 100%)); }
+    38% { transform: translateX(-14px) scale(1.04); }
+    62% { transform: translateX(-14px) scale(1.04); }
+    100% { transform: none; }
+}
+@keyframes fr-rv-nudge {
+    25% { translate: -3px 1px; }
+    50% { translate: 3px -1px; }
+    75% { translate: -2px 0; }
+}
+@keyframes fr-rv-slowmo {
+    0% { opacity: 0; transform: scale(1.35); filter: blur(2px); }
+    40% { opacity: 1; transform: scale(1.06); filter: none; }
+    100% { transform: scale(1); }
+}
+
+/* The stoppage: the referee ends it. */
+.fr-rv-stoppage { text-align: center; padding: 10px 6px; }
+.fr-rv-stoppage-big {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: clamp(40px, 13vw, 76px);
+    line-height: 0.95;
+    letter-spacing: 2px;
+    color: #fff;
+    text-shadow: 0 4px 18px #000, 0 0 3px #000;
+    animation: fr-rv-slam-text 520ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.fr-rv-stoppage .fr-rv-ln { margin-top: 10px; font-size: 16px; color: #e2e2e6; text-shadow: 0 1px 6px #000; }
+@keyframes fr-rv-slam-text {
+    0% { opacity: 0; transform: scale(2.2); }
+    60% { opacity: 1; transform: scale(0.94); }
+    100% { transform: scale(1); }
+}
+@keyframes fr-rv-shake {
+    10%, 90% { transform: translate(-2px, 1px); }
+    20%, 80% { transform: translate(4px, -2px); }
+    30%, 50%, 70% { transform: translate(-7px, 3px); }
+    40%, 60% { transform: translate(7px, -3px); }
+}
+.fr-rv-flash {
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+    animation: fr-rv-flash 350ms ease-out;
+}
+@keyframes fr-rv-flash {
+    0% { opacity: 0.5; }
+    100% { opacity: 0; }
+}
+
+/* Passive pills ride the top of the stage, never in the flow (no layout shift). */
+.fr-rv-pills {
+    position: absolute;
+    top: 2px;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 2;
+}
+.fr-rv-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #101a10;
+    border: 1px solid var(--rarity-color, #22c55e);
+    border-radius: 20px;
+    padding: 3px 10px 3px 4px;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #bdf5cf;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    animation: fr-rv-fadein 300ms ease-out;
+}
+.fr-rv-pill .art-thumb { width: 18px; height: 26px; border: 0; border-radius: 2px; }
+
+@keyframes fr-rv-fadein {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fr-rv-pop {
+    from { transform: scale(0.6); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* Highlight card (blue for you, red for them) */
+.fr-rv-hl {
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: #141418;
+    border: 2px solid #2b2b31;
+    animation: fr-rv-pop 350ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.fr-rv-hl--you { border-color: #2e66e6; background: linear-gradient(135deg, #10203f, #141418); }
+.fr-rv-hl--opp { border-color: #c21434; background: linear-gradient(135deg, #3a0c16, #141418); }
+
+.fr-rv-ic {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: 2px;
+    opacity: 0.85;
+    text-transform: uppercase;
+}
+.fr-rv-big {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 34px;
+    line-height: 1;
+    margin: 4px 0 6px;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+}
+.fr-rv-ln { font-size: 16px; line-height: 1.35; color: #d7d7dc; }
+
+.fr-rv-quiet {
+    text-align: center;
+    color: #aaa;
+    font-size: 16px;
+    padding: 12px 14px;
+    animation: fr-rv-fadein 300ms ease-out;
+}
+
+.fr-rv-roundcard {
+    text-align: center;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #7fb0ff;
+    animation: fr-rv-pop 350ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.fr-rv-roundcard--opponent { color: #ff7085; }
+.fr-rv-roundcard--even { color: #aaa; }
+.fr-rv-roundcard.is-dominant { text-shadow: 0 0 12px currentColor; }
+
+/* Camp moment: gold card with a sheen sweep */
+.fr-rv-campcard {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 2px solid #d4a820;
+    background: linear-gradient(135deg, #3a2d06, #141418 70%);
+    animation: fr-rv-pop 350ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.fr-rv-campcard .fr-rv-ic { color: #d4a820; opacity: 1; }
+.fr-rv-campcard .fr-rv-big { font-size: 30px; line-height: 1; margin: 4px 0 2px; color: #ffe08a; }
+.fr-rv-eff {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: #e3c46a;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+.fr-rv-campcard .fr-rv-ln { color: #e9e2cc; }
+.fr-rv-campcard::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 60%;
+    left: -70%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.19), transparent);
+    animation: fr-rv-sheen 1100ms 150ms ease-out forwards;
+    pointer-events: none;
+}
+@keyframes fr-rv-sheen { to { left: 120%; } }
+
+/* Their wildcard: red striped card */
+.fr-rv-wild {
+    border-radius: 12px;
+    padding: 12px 16px;
+    border: 2px solid #c21434;
+    background: repeating-linear-gradient(135deg, #2a0910 0 10px, #1c070c 10px 20px);
+    animation: fr-rv-pop 350ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.fr-rv-wild .fr-rv-ic { color: #ff6b7d; opacity: 1; }
+.fr-rv-wild .fr-rv-big { font-size: 26px; line-height: 1.05; margin: 3px 0 4px; color: #ffb3be; }
+.fr-rv-wild .fr-rv-ln { font-size: 15px; color: #e7cfd3; }
+
+/* Move card slam */
+.fr-rv-movewrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 0;
+    padding: 0;
+}
+.fr-rv-movecard {
+    position: relative;
+    width: 140px;
+    height: 208px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 3px solid var(--rarity-color, #888);
+    box-sizing: border-box;
+    box-shadow: 0 0 30px var(--rarity-color, #888), 0 10px 30px #000;
+    background: #000;
+    animation: fr-rv-slam 500ms cubic-bezier(0.2, 1.5, 0.35, 1);
+}
+.fr-rv-movecard.is-sig { width: 168px; height: 250px; }
+@keyframes fr-rv-slam {
+    0% { transform: translateY(-60px) scale(1.35) rotate(-6deg); opacity: 0; }
+    60% { opacity: 1; }
+    100% { transform: none; }
+}
+.fr-rv-movecard .art-thumb {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    object-fit: cover;
+}
+.fr-rv-movecard .art-thumb--blank { font-size: 64px; }
+.fr-rv-movecard.is-sig::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.4), transparent 60%);
+    animation: fr-rv-burst 700ms ease-out forwards;
+    z-index: 2;
+    pointer-events: none;
+}
+@keyframes fr-rv-burst { from { opacity: 1; } to { opacity: 0; } }
+.fr-rv-rar {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    background: var(--rarity-color, #888);
+    color: #111;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    z-index: 3;
+}
+.fr-rv-nm {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 22px 8px 8px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.93) 45%);
+    text-align: center;
+    z-index: 3;
+}
+.fr-rv-nm b {
+    display: block;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 21px;
+    line-height: 1;
+    text-transform: uppercase;
+}
+.fr-rv-nm span {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--rarity-color, #888);
+    text-transform: uppercase;
+}
+.fr-rv-moveline { text-align: center; max-width: 300px; animation: fr-rv-fadein 300ms ease-out; }
+.fr-rv-tag {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--rarity-color, #888);
+}
+.fr-rv-moveline .fr-rv-ln { color: #e2e2e6; margin-top: 3px; }
+
+/* ── Finish card ────────────────────────────────────────────── */
+.fr-rv-finish {
+    text-align: center;
+    padding: 20px 16px;
+    border-radius: 12px;
+    background: #17171a;
+    border: 2px solid #3a3a40;
+    max-height: 100%;
+    overflow-y: auto;
+    animation: fr-rv-finish 420ms cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+.fr-rv-finish--win { border-color: #3a9a4a; }
+.fr-rv-finish--loss { border-color: #c8102e; }
+
+@keyframes fr-rv-finish {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.fr-rv-finish-method {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: clamp(34px, 11vw, 56px);
+    letter-spacing: 3px;
+    line-height: 1;
+}
+.fr-rv-finish-word {
+    margin-top: 8px;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 24px;
+    letter-spacing: 4px;
+    color: #d4a820;
+}
+.fr-rv-finish--win .fr-rv-finish-word { color: #4ade80; }
+.fr-rv-finish--loss .fr-rv-finish-word { color: #f87171; }
+.fr-rv-finish-sub {
+    margin-top: 6px;
+    font-size: 14px;
+    color: #bbb;
+}
+/* Decision: the scorecard, then who won under it. */
+.fr-rv-scorecard {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 3px;
+    font-family: var(--font-display, sans-serif);
+    font-variant-numeric: tabular-nums;
+}
+.fr-rv-sc-cap {
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #8a8a92;
+    margin-bottom: 6px;
+}
+.fr-rv-scorecard thead th { font-size: 11px; letter-spacing: 1px; color: #8a8a92; font-weight: 800; }
+.fr-rv-sc-name {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    max-width: 92px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.is-you .fr-rv-sc-name { color: #9cc0ff; }
+.is-opp .fr-rv-sc-name { color: #ff9aa8; }
+.fr-rv-sc-cell, .fr-rv-sc-total {
+    text-align: center;
+    animation: fr-rv-sc-in 260ms ease-out backwards;
+}
+td.fr-rv-sc-cell {
+    font-size: 18px;
+    font-weight: 800;
+    color: #8a8a92;
+    background: #202024;
+    border-radius: 4px;
+    padding: 5px 0;
+}
+td.fr-rv-sc-cell.is-won--you { color: #fff; background: #1d3f86; }
+td.fr-rv-sc-cell.is-won--opp { color: #fff; background: #8a1426; }
+td.fr-rv-sc-total { font-size: 22px; font-weight: 900; color: #fff; padding: 0 4px; }
+.fr-rv-scorecard thead .fr-rv-sc-total { color: #d4a820; }
+@keyframes fr-rv-sc-in {
+    from { opacity: 0; transform: translateY(-8px) scale(1.3); }
+    to { opacity: 1; transform: none; }
+}
+.fr-rv-verdict {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #2c2c32;
+    animation: fr-rv-finish 460ms cubic-bezier(0.2, 1.3, 0.4, 1) backwards;
+}
+.fr-rv-finish.has-card .fr-rv-finish-word { margin-top: 0; font-size: clamp(30px, 10vw, 48px); }
+.fr-rv-finish.has-card .fr-rv-finish-sub { font-size: 15px; color: #e2e2e6; }
+.fr-rv-fired { margin-top: 16px; text-align: left; }
+.fr-rv-fired h4 {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: #8a8a92;
+    margin: 0 0 6px;
+    text-transform: uppercase;
+}
+
+/* ── Bottom: controls ───────────────────────────────────────── */
+.fr-rv-controls {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.fr-rv-skip,
+.fr-rv-see-result,
+.fr-rv-speed {
+    min-height: 48px;
+    border-radius: 8px;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.fr-rv-skip,
+.fr-rv-see-result {
+    flex: 1 1 auto;
+    background: #c8102e;
+    border: 1px solid #e8102e;
+    color: #fff;
+}
+.fr-rv-skip:hover,
+.fr-rv-see-result:hover { background: #e8102e; }
+.fr-rv-see-result { background: #3a9a4a; border-color: #4ade80; }
+.fr-rv-see-result:hover { background: #46b058; }
+
+.fr-rv-speed {
+    flex: 0 0 76px;
+    background: #1d1d21;
+    border: 1px solid #3a3a40;
+    color: #bbb;
+}
+.fr-rv-speed.is-on { background: #3a2d06; border-color: #d4a820; color: #f5c542; }
+
+.fr-rv-skip:focus-visible,
+.fr-rv-see-result:focus-visible,
+.fr-rv-speed:focus-visible {
+    outline: 2px solid #d4a820;
+    outline-offset: 2px;
+}
+
+/* ── Reduced motion: no slam, burst, shake, flash, sheen, pulse or count-up; cards fade in ── */
+.fight-reveal--reduced,
+.fight-reveal--reduced * {
+    animation: none !important;
+    transition: none !important;
+}
+.fight-reveal--reduced .fr-rv-item { animation: fr-rv-fadein 200ms ease-out !important; }
+.fight-reveal--reduced .fr-rv-flash,
+.fight-reveal--reduced .fr-rv-bar-hit,
+.fight-reveal--reduced .fr-rv-bar-ghost { display: none; }
+.fight-reveal--reduced .fr-rv-dmg { opacity: 1; }
+.fight-reveal--reduced .fr-rv-movecard::before,
+.fight-reveal--reduced .fr-rv-campcard::after { display: none; }
+@media (prefers-reduced-motion: reduce) {
+    .fight-reveal,
+    .fight-reveal * {
+        animation: none !important;
+        transition: none !important;
+    }
+    .fight-reveal .fr-rv-item { animation: fr-rv-fadein 200ms ease-out !important; }
+    .fight-reveal .fr-rv-dmg { opacity: 1; }
+    .fight-reveal .fr-rv-flash,
+    .fight-reveal .fr-rv-bar-hit,
+    .fight-reveal .fr-rv-bar-ghost,
+    .fight-reveal .fr-rv-movecard::before,
+    .fight-reveal .fr-rv-campcard::after { display: none; }
+}
+
+/* Short screens: the card art shrinks so the line under it still fits. */
+@media (max-height: 640px) {
+    .fr-rv-movecard { width: 112px; height: 166px; }
+    .fr-rv-movecard.is-sig { width: 134px; height: 200px; }
+    .fr-rv-nm b { font-size: 18px; }
+}
+
+@media (max-width: 480px) {
+    .fr-rv-fname { font-size: 13px; }
+    .fr-rv-ln { font-size: 15px; }
+}
+
+/* 340px phone screens: one tight column, nothing wider than the viewport. */
+@media (max-width: 360px) {
+    .fight-reveal { padding-left: 10px; padding-right: 10px; }
+    .fr-rv-mini { width: 30px; height: 44px; }
+    .fr-rv-movecard { width: 128px; height: 190px; }
+    .fr-rv-movecard.is-sig { width: 150px; height: 224px; }
+    .fr-rv-hl,
+    .fr-rv-campcard,
+    .fr-rv-wild { padding: 12px; }
+    .fr-rv-big { font-size: 28px; }
+    .fr-rv-campcard .fr-rv-big { font-size: 26px; }
+    .fr-rv-campchip { max-width: 100%; }
+    .fr-rv-stage { min-height: 0; overflow: hidden; }
+}
+@media (max-width: 360px) and (max-height: 640px) {
+    .fr-rv-movecard { width: 112px; height: 166px; }
+    .fr-rv-movecard.is-sig { width: 134px; height: 200px; }
+}
+
+/* ── Health and stamina rows under the names ────────────────── */
+.fr-rv-vrow {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) 24px;
+    align-items: center;
+    gap: 4px;
+}
+.fr-rv-vlab {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #77777f;
+    text-align: left;
+}
+.fr-rv-vnum {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 11px;
+    color: #e3c46a;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.fr-rv-vitals { margin-top: 3px; }
+.fr-rv-sta-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: #2a2a2d;
+    overflow: hidden;
+    border: 1px solid #3a3a3e;
+    box-sizing: border-box;
+}
+.fr-rv-sta-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #b8860b, #f5b82e);
+    transition: width 700ms ease-out;
+}
+.fr-rv-sta--opponent .fr-rv-sta-fill { margin-left: auto; background: linear-gradient(270deg, #b8860b, #f5b82e); }
+.fr-rv-sta.is-low .fr-rv-sta-fill { background: linear-gradient(90deg, #a3281d, #e8553d); }
+.fr-rv-sta--opponent.is-low .fr-rv-sta-fill { background: linear-gradient(270deg, #a3281d, #e8553d); }
+.fr-rv-sta.is-low .fr-rv-vnum { color: #ff8a78; }
+/* Opponent side mirrors: number on the left, label on the right. */
+.fr-rv-fighter--opponent .fr-rv-vrow { grid-template-columns: 24px minmax(0, 1fr) 22px; }
+.fr-rv-fighter--opponent .fr-rv-vlab { order: 3; text-align: right; }
+.fr-rv-fighter--opponent .fr-rv-vnum { order: 1; text-align: left; }
+.fr-rv-fighter--opponent .fr-rv-bar,
+.fr-rv-fighter--opponent .fr-rv-sta-bar { order: 2; }
+
+/* ── Stage: active card in the middle, the round's earlier moments below ── */
+.fr-rv-stage-main {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.fr-rv-feed {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 640px;
+    margin: 4px auto 0;
+    min-height: 108px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+}
+.fr-rv-feed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 6px;
+    background: #101014;
+    border-left: 3px solid #3a3a40;
+    font-size: 13px;
+    color: #b9b9c0;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.fr-rv-feed-row--you { border-left-color: #2e66e6; }
+.fr-rv-feed-row--opp { border-left-color: #c21434; }
+.fr-rv-feed-time {
+    flex: none;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: #8a8a92;
+    min-width: 30px;
+    font-variant-numeric: tabular-nums;
+}
+.fr-rv-feed-line { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fr-rv-feed-chip {
+    flex: none;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid #3a3a40;
+}
+.fr-rv-feed-chip--camp { background: #3a2d06; color: #f5c542; border-color: #d4a820; }
+.fr-rv-feed-row--ready { border-left-color: #d4a820; height: auto; min-height: 24px; padding: 4px 8px; flex: none; }
+/* A READY line names a number; it wraps rather than cutting it off. */
+.fr-rv-feed-row--ready .fr-rv-feed-line { white-space: normal; overflow: visible; text-overflow: clip; }
+.fr-rv-feed-row--ready .fr-rv-feed-chip { margin-left: 0; margin-right: 8px; }
+.fr-rv-feed-chip--ready { background: #f5c542; color: #111; border-color: #f5c542; }
+.fr-rv-feed-chip--card { background: #14141a; color: #cfd6ff; border-color: #6d7bd1; }
+.fr-rv-feed-chip--wildcard { background: #3b0a12; color: #ff6b7d; border-color: #c8102e; }
+
+/* ── Round strip above the controls ─────────────────────────── */
+.fr-rv-rounds {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 640px;
+    margin: 6px auto 8px;
+    display: flex;
+    gap: 6px;
+}
+.fr-rv-rpill {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid #2b2b31;
+    background: #17171a;
+    color: #77777f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.1;
+    font-family: var(--font-display, sans-serif);
+    box-sizing: border-box;
+    transition: background 300ms ease, border-color 300ms ease;
+}
+.fr-rv-rpill b { font-size: 11px; font-weight: 900; letter-spacing: 1px; }
+.fr-rv-rpill span { font-size: 10px; font-weight: 800; white-space: nowrap; }
+.fr-rv-rpill.is-current { border-color: #d4a820; color: #f5c542; box-shadow: 0 0 0 1px #d4a820 inset; }
+.fr-rv-rpill.is-done { color: #fff; }
+.fr-rv-rpill.is-done.is-player { background: #1f4fc4; border-color: #2e66e6; }
+.fr-rv-rpill.is-done.is-opponent { background: #a3122c; border-color: #c21434; }
+.fr-rv-rpill.is-done.is-even { background: #3a3a40; border-color: #55555c; }
+
+@media (max-height: 640px) {
+    .fr-rv-feed { min-height: 80px; }
+    .fr-rv-feed-row:nth-child(n+4) { display: none; }
+}
+@media (max-height: 540px) {
+    .fr-rv-feed { display: none; }
+}
+@media (max-width: 360px) {
+    .fr-rv-vrow { grid-template-columns: 20px minmax(0, 1fr) 22px; }
+    .fr-rv-fighter--opponent .fr-rv-vrow { grid-template-columns: 22px minmax(0, 1fr) 20px; }
+    .fr-rv-feed-line { font-size: 12px; }
+    .fr-rv-rounds { gap: 4px; }
+}
+
+/* ── Arena backdrop (behind everything; .fight-reveal is the stacking context) ── */
+.fr-rv-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: #050508 url("/assets/arena/reveal-wide.webp") center 40% / cover no-repeat;
+}
+/* Portrait screens get the tall painting so the cage is not cropped to a sliver. */
+@media (max-aspect-ratio: 1/1) {
+    .fr-rv-bg { background-image: url("/assets/arena/reveal-phone.webp"); background-position: center 35%; }
+}
+.fr-rv-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    /* Keep the centre column readable: darken the middle a touch and the edges more. */
+    background:
+        linear-gradient(180deg, rgba(5, 5, 8, 0.55) 0%, rgba(5, 5, 8, 0.25) 35%, rgba(5, 5, 8, 0.35) 70%, rgba(5, 5, 8, 0.8) 100%),
+        radial-gradient(ellipse at 50% 45%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* ── Landscape phones (short screens on their side) ─────────────
+   The portrait stack (clock, corner, panels, card, feed, rounds, buttons) needs ~650 px of height;
+   a phone on its side has 360 to 430. Owner: "landscape mobile is overlapping everything".
+   Clock and corner share one row, the panels flank the card like desktop, the feed keeps one line,
+   and the rounds and buttons slim down. */
+@media (orientation: landscape) and (max-height: 520px) {
+    .fight-reveal { padding: max(6px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(6px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); }
+    .fr-rv-top { display: flex; align-items: center; gap: 10px; max-width: 900px; }
+    .fr-rv-clockrow { margin: 0; flex: none; }
+    .fr-rv-clockrow .fr-rv-clock { font-size: 18px; padding: 2px 10px; }
+    .fr-rv-corner { flex: 1 1 auto; margin: 0; padding: 3px 6px; }
+    .fr-rv-corner-lab { display: none; }
+    .fr-rv-mini { width: 22px; height: 32px; }
+    .fr-rv-mini-ready { font-size: 5px; }
+
+    .fr-rv-mid,
+    .fr-rv-mid.is-finish {
+        max-width: 900px;
+        margin-top: 6px;
+        grid-template-columns: minmax(130px, 1fr) minmax(0, 2.2fr) minmax(130px, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        grid-template-areas: "you stage opp";
+        gap: 0 10px;
+        align-items: center;
+    }
+    /* The card area fills its row (not just its content) so a tall result card scrolls inside it
+       instead of spilling over the top bar and the buttons. */
+    .fr-rv-mid > .fr-rv-stage { align-self: stretch; min-height: 0; }
+    .fr-rv-stage-main, .fr-rv-stage-in { min-height: 0; max-height: 100%; }
+    .fr-rv-finish { max-height: 100%; overflow-y: auto; }
+    /* The result card keeps the panels beside it here: there is room on the sides, not above. */
+    .fr-rv-mid.is-finish > .fr-rv-fp { display: block; }
+    .fr-rv-fp { padding: 6px 8px; border-top-width: 2px; }
+    .fr-rv-fp .fr-rv-fname { font-size: 12px; }
+    .fr-rv-fp-hpnum { font-size: 30px; }
+    .fr-rv-fp-hplab { font-size: 10px; }
+    .fr-rv-fp .fr-rv-bar { height: 10px; margin-top: 4px; }
+    .fr-rv-fp .fr-rv-vitals { margin-top: 4px; }
+    .fr-rv-fp-stats { gap: 10px; margin-top: 4px; }
+    .fr-rv-fp-stat b { font-size: 18px; }
+    .fr-rv-fp-stat span { font-size: 8px; }
+    .fr-rv-fp-ready { font-size: 9px; padding: 2px 6px; margin-top: 4px; white-space: normal; }
+    .fr-rv-fp .fr-rv-dmg { top: 16px; right: 8px; font-size: 26px; }
+    .fr-rv-fp.fr-rv-fighter--opponent .fr-rv-dmg { left: 8px; }
+
+    /* Cards fit the short stage: the move card sits beside its line instead of above it. */
+    .fr-rv-movewrap { flex-direction: row; justify-content: center; gap: 12px; }
+    .fr-rv-movecard { width: 92px; height: 136px; }
+    .fr-rv-movecard.is-sig { width: 104px; height: 154px; }
+    .fr-rv-moveline { text-align: left; }
+    .fr-rv-hl, .fr-rv-campcard, .fr-rv-wild { padding: 8px 12px; }
+    .fr-rv-big { font-size: 24px; }
+    .fr-rv-stoppage-big { font-size: 40px; }
+    .fr-rv-finish { padding: 10px 12px; }
+    .fr-rv-finish.has-card .fr-rv-finish-word { font-size: 26px; }
+    .fr-rv-verdict { margin-top: 6px; padding-top: 6px; }
+    td.fr-rv-sc-cell { font-size: 14px; padding: 2px 0; }
+    td.fr-rv-sc-total { font-size: 16px; }
+
+    .fr-rv-feed { min-height: 0; margin-top: 4px; max-width: 900px; }
+    .fr-rv-feed-row:nth-child(n+2) { display: none; }
+    .fr-rv-rounds { margin: 4px auto; max-width: 900px; }
+    .fr-rv-rpill { height: 24px; }
+    .fr-rv-controls { max-width: 900px; }
+    .fr-rv-skip, .fr-rv-see-result, .fr-rv-speed { min-height: 36px; font-size: 14px; }
+}
+
+/* ── Short portrait phones (iPhone SE, small and big Androids in Chrome) ─────────
+   Up to 800 px tall (a big Android shows ~780 in Chrome; the iPhones at 844 and 932 keep the full
+   card). With the fighter panels in the middle, such a screen leaves ~160 px for the card,
+   and a signature card is 250 px tall. Here the move card sits beside its line, sized to the
+   screen, and the feed keeps two lines. */
+@media (orientation: portrait) and (max-height: 800px) {
+    .fr-rv-movewrap { flex-direction: row; justify-content: center; align-items: center; gap: 12px; }
+    .fr-rv-movecard,
+    .fr-rv-movecard.is-sig { width: auto; height: min(150px, 20dvh); aspect-ratio: 140 / 208; }
+    .fr-rv-moveline { text-align: left; max-width: 190px; }
+    .fr-rv-nm b { font-size: 15px; }
+    .fr-rv-feed { min-height: 52px; }
+    .fr-rv-feed-row:nth-child(n+3) { display: none; }
+    .fr-rv-rounds { margin: 4px auto 6px; }
+}
+
+/* ── Very short portrait screens (iPhone SE in Safari with its bars: ~375 x 548) ──
+   Only below 600 px of visible height. Owner: "do the fix but only for very short screens".
+   Clock and Your corner share one row, the panels shrink, the feed keeps one line, and the round
+   strip and buttons slim down, so the card keeps about 200 px. */
+@media (orientation: portrait) and (max-height: 600px) {
+    .fight-reveal { padding-top: max(8px, env(safe-area-inset-top, 0px)); padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); }
+    .fr-rv-top { display: flex; align-items: center; gap: 8px; }
+    .fr-rv-clockrow { margin: 0; flex: none; }
+    .fr-rv-clockrow .fr-rv-clock { font-size: 16px; padding: 2px 8px; }
+    .fr-rv-corner { flex: 1 1 auto; margin: 0; padding: 3px 6px; }
+    .fr-rv-corner-lab { display: none; }
+    .fr-rv-mini { width: 22px; height: 32px; }
+    .fr-rv-mini-ready { font-size: 5px; }
+
+    .fr-rv-mid { margin-top: 6px; gap: 6px 8px; }
+    .fr-rv-fp { padding: 5px 8px; border-top-width: 2px; }
+    .fr-rv-fp .fr-rv-fname { font-size: 12px; margin-bottom: 0; }
+    .fr-rv-fp-hpnum { font-size: 26px; }
+    .fr-rv-fp-hplab { font-size: 10px; }
+    .fr-rv-fp .fr-rv-bar { height: 10px; margin-top: 3px; }
+    .fr-rv-fp .fr-rv-vitals { margin-top: 3px; }
+    .fr-rv-fp-stats { gap: 10px; margin-top: 3px; }
+    .fr-rv-fp-stat b { font-size: 16px; }
+    .fr-rv-fp-stat span { font-size: 7px; }
+    .fr-rv-fp-ready { font-size: 9px; padding: 2px 6px; margin-top: 3px; }
+    .fr-rv-fp .fr-rv-dmg { top: 14px; right: 8px; font-size: 24px; }
+    .fr-rv-fp.fr-rv-fighter--opponent .fr-rv-dmg { left: 8px; }
+
+    .fr-rv-movecard,
+    .fr-rv-movecard.is-sig { height: min(120px, 22dvh); }
+    .fr-rv-hl, .fr-rv-campcard, .fr-rv-wild { padding: 8px 12px; }
+    .fr-rv-big { font-size: 24px; }
+
+    .fr-rv-feed { min-height: 0; margin-top: 4px; }
+    .fr-rv-feed-row:nth-child(n+2) { display: none; }
+    .fr-rv-rounds { margin: 4px auto; }
+    .fr-rv-rpill { height: 26px; }
+    .fr-rv-skip, .fr-rv-see-result, .fr-rv-speed { min-height: 40px; font-size: 15px; }
+}

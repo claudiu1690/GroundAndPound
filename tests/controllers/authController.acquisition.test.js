@@ -111,3 +111,37 @@ test("failed validation tracks nothing (no acquisition event for a rejected sign
         assert.equal(calls.track.length, 0);
     });
 });
+
+// ── First session: fighter_created (docs/first-session-contract.md D.1) ──────
+
+test("register tracks fighter_created with style, weightClass, backstory, guest:false, device and acquisition", async () => {
+    const res = mockRes();
+    await withStubs(async (calls) => {
+        const body = {
+            email: "ok@test.com", password: "secret123",
+            fighter: { ...FIGHTER, backstory: "Army Veteran" }, acquisition: { src: "reddit", campaign: "launch-01" },
+        };
+        const req = { body, get: (h) => (h === "user-agent" ? "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)" : undefined) };
+        await authController.register(req, res);
+        assert.equal(res.statusCode, 201);
+        const t = calls.track.find((a) => a[1] === "fighter_created");
+        assert.ok(t, "fighter_created tracked");
+        assert.deepEqual(t[2], {
+            style: "Boxer", weightClass: "Lightweight", backstory: "Army Veteran",
+            guest: false, device: "phone", src: "reddit", campaign: "launch-01",
+        });
+    });
+});
+
+test("createGuest tracks fighter_created with guest:true; no user agent reads as unknown", async () => {
+    const res = mockRes();
+    await withStubs(async (calls) => {
+        await authController.createGuest({ body: { fighter: { ...FIGHTER } } }, res);
+        assert.equal(res.statusCode, 201);
+        const t = calls.track.find((a) => a[1] === "fighter_created");
+        assert.ok(t, "fighter_created tracked");
+        assert.deepEqual(t[2], {
+            style: "Boxer", weightClass: "Lightweight", backstory: null, guest: true, device: "unknown",
+        });
+    });
+});

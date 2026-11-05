@@ -1,7 +1,8 @@
 import { memo } from "react";
 import { createPortal } from "react-dom";
-import { RELIABILITY_LABELS } from "../../constants/campConfig";
+import { RELIABILITY_LABELS, CAMP_SESSIONS } from "../../constants/campConfig";
 import { t } from "@/lib/i18n";
+import "./debut.css";
 
 const STYLE_COLORS = {
     Wrestler:              { bg: "#1e3a5f", label: "#60a5fa" },
@@ -122,6 +123,13 @@ export const FighterReport = memo(function FighterReport({ report, onStartCamp, 
 
                     <div className="fr-section fr-section--last">
                         <div className="fr-info-rows">
+                            {/* Debut only: the server marks the one camp session that counters this opponent. */}
+                            {report.coachPick && CAMP_SESSIONS[report.coachPick] && (
+                                <div className="fr-info-row fr-info-row--coach">
+                                    <span className="fr-info-label fr-info-label--coach">{t("fights.report.coachPickLabel")}</span>
+                                    <span className="fr-info-text">{CAMP_SESSIONS[report.coachPick].label}</span>
+                                </div>
+                            )}
                             <div className="fr-info-row">
                                 <span className="fr-info-label">{t("fights.report.tendencyLabel")}</span>
                                 <span className="fr-info-text">{report.tendency}</span>

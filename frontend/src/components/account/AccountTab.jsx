@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useState } from "react";
-import { Lock, Pencil, Mail, Key, Bell, Trash2, LogOut } from "lucide-react";
+import { Lock, Pencil, Mail, Key, Bell, Trash2, LogOut, Swords } from "lucide-react";
 import { api, authStorage } from "../../api";
 import { DeleteAccountModal } from "./DeleteAccountModal";
 import { GuestClaimPanel } from "./GuestClaimPanel";
@@ -13,9 +13,10 @@ import { t } from "../../lib/i18n";
  *   3. Change Email
  *   4. Change Password
  *   5. Email Notifications
- *   6. Danger Zone (delete + logout)
+ *   6. Gameplay (play fights out, section tips)
+ *   7. Danger Zone (delete + logout)
  */
-export function AccountTab({ onMessage, onLogout, onFighterRefresh, onAccountStatusRefresh }) {
+export function AccountTab({ fighter, onMessage, onLogout, onFighterRefresh, onAccountStatusRefresh }) {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [deleteOpen, setDeleteOpen] = useState(false);
@@ -115,6 +116,12 @@ export function AccountTab({ onMessage, onLogout, onFighterRefresh, onAccountSta
                     onSaved={(emailEnabled) => {
                         setProfile((p) => p ? { ...p, notifications: { ...p.notifications, emailEnabled } } : p);
                     }}
+                    onMessage={onMessage}
+                />
+
+                <GameplaySection
+                    fighter={fighter}
+                    onRefresh={onFighterRefresh}
                     onMessage={onMessage}
                 />
 
@@ -486,6 +493,71 @@ function NotificationsSection({ profile, accountId, onSaved, onMessage }) {
                     <span className="account-switch-thumb" />
                 </button>
             </div>
+        </Section>
+    );
+}
+
+/**
+ * Per-fighter gameplay switches: play fights out (the fight reveal) and section tips.
+ * Both default to on. A switch flips at once and rolls back with a message if the save fails.
+ */
+function GameplaySection({ fighter, onRefresh, onMessage }) {
+    const fighterId = fighter?._id;
+    const serverValues = {
+        playFightsOut: fighter?.settings?.playFightsOut !== false,
+        sectionTips: fighter?.settings?.sectionTips !== false,
+    };
+    const [pending, setPending] = useState({}); // key -> optimistic value while saving
+
+    if (!fighterId) return null;
+
+    const valueOf = (key) => (key in pending ? pending[key] : serverValues[key]);
+    const toggle = async (key) => {
+        if (key in pending) return;
+        const next = !valueOf(key);
+        setPending((p) => ({ ...p, [key]: next }));
+        try {
+            await api.updateFighterSettings(fighterId, { [key]: next });
+            await onRefresh?.(fighterId, { clearMessage: false });
+        } catch (e) {
+            onMessage?.(e.message || t("common.error"));
+        } finally {
+            setPending((p) => {
+                const { [key]: _drop, ...rest } = p;
+                return rest;
+            });
+        }
+    };
+
+    const rows = [
+        { key: "playFightsOut", label: t("account.gameplay.playOutLabel"), sub: t("account.gameplay.playOutSub") },
+        { key: "sectionTips", label: t("account.gameplay.tipsLabel"), sub: t("account.gameplay.tipsSub") },
+    ];
+
+    return (
+        <Section title={t("account.gameplay.title")} icon={Swords} iconTone="bell">
+            {rows.map(({ key, label, sub }) => {
+                const on = valueOf(key);
+                return (
+                    <div className="account-toggle-row" key={key}>
+                        <div>
+                            <div className="account-toggle-label">{label}</div>
+                            <div className="account-toggle-sub">{sub}</div>
+                        </div>
+                        <button
+                            type="button"
+                            role="switch"
+                            aria-checked={on}
+                            aria-label={label}
+                            disabled={key in pending}
+                            onClick={() => toggle(key)}
+                            className={`account-switch ${on ? "account-switch-on" : ""}`}
+                        >
+                            <span className="account-switch-thumb" />
+                        </button>
+                    </div>
+                );
+            })}
         </Section>
     );
 }

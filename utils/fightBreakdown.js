@@ -10,8 +10,43 @@
  *
  * The combat loop is NOT rewritten; everything here is read-only derivation from
  * the engine's per-round { event, grapplingControl, playerDamage, opponentDamage,
- * playerHealth, opponentHealth, campCommentary } records.
+ * playerHealth, opponentHealth, campCommentary, moveFired } records plus the fight's
+ * `wildcard` ({ stat, countered, round }).
+ *
+ * Fight replay highlights (breakdown v2): every PROC/SIGNATURE move firing the engine recorded
+ * becomes a `move_fired` event, attached to the logged exchange it modified (same timestamp) or,
+ * when no such exchange is in the log, carried as a round-only event (timestamp null). A fired,
+ * uncountered wildcard becomes a round-only `wildcard_fired`; an opponent shot stuffed by a fired
+ * Sprawl becomes a `takedown_stuffed`. These are the ONLY new moments, and the replay and the
+ * full report both read them from the same persisted eventLog.
  */
+
+// move_fired record sites that open the round (placed first when round-only).
+const ROUND_START_SITES = new Set(["round_start"]);
+
+// Camp lane a move shares (combo): the camp event gets the move's anchor when both fired.
+const MOVE_CAMP_LANE = {
+    SPRAWL_SUCCESS: "camp_takedown_defence_fired",
+    ESCAPE_PROBABILITY: "camp_submission_escape_fired",
+    GNP_DAMAGE: "camp_gnp_fired",
+    SIG_TAKEDOWN_BLITZ: "camp_gnp_fired",
+    STRIKE_DAMAGE: "camp_striking_accuracy_fired",
+    SIG_FINISHER_STRIKE: "camp_striking_accuracy_fired",
+    SIG_FAST_START: "camp_striking_accuracy_fired",
+    CLINCH_DAMAGE: "camp_clinch_fired",
+};
+
+// Only PROC / SIGNATURE firings become events (PASSIVE never does, spec §5).
+function recordableMoveFires(list) {
+    if (!Array.isArray(list)) return [];
+    return list.filter(
+        (m) =>
+            m &&
+            (m.effectType === "PROC" || m.effectType === "SIGNATURE") &&
+            typeof m.count === "number" &&
+            m.count > 0
+    );
+}
 
 // ── Seeded PRNG ──────────────────────────────────────────────────────────────
 // FNV-1a 32-bit over the seed string → float in [0,1). Deterministic, no globals.
@@ -143,6 +178,10 @@ function deriveFightDetails(engineResult, ctx, fightId) {
     // Only consulted on the finish round; for legacy engine results lacking it we fall
     // back to a damage heuristic inside buildFinishEvent.
     const finishCause = engineResult.finishCause ?? null;
+    // Opponent wildcard: a moment only in the round it actually boosted (not countered).
+    const wildcard = engineResult.wildcard || null;
+    const wildcardRound =
+        wildcard && !wildcard.countered && Number.isInteger(wildcard.round) ? wildcard.round : null;
 
     const playerStyle = ctx.playerStyle;
     const opponentStyle = ctx.opponentStyle;
@@ -190,6 +229,13 @@ function deriveFightDetails(engineResult, ctx, fightId) {
     let consecutiveControlledByPlayer = 0; // for position escalation (player controlling)
     let consecutiveControlledByOpp = 0;
 
+    const endHealth = (idx, side) => {
+        const last = idx === rounds.length - 1;
+        const after = side === "player" ? engineResult.playerHealthAfter : engineResult.opponentHealthAfter;
+        if (last && typeof after === "number") return Math.max(0, after);
+        const v = side === "player" ? rounds[idx].playerHealth : rounds[idx].opponentHealth;
+        return typeof v === "number" ? Math.max(0, v) : null;
+    };
     for (let i = 0; i < rounds.length; i++) {
         const r = rounds[i];
         const round = r.round;
@@ -198,6 +244,7 @@ function deriveFightDetails(engineResult, ctx, fightId) {
         const dealt_p = r.opponentDamage || 0; // player dealt → opponent took
         const dealt_o = r.playerDamage || 0; // opponent dealt → player took
         const campKeys = Array.isArray(r.campCommentary) ? r.campCommentary : [];
+        const moveFired = recordableMoveFires(r.moveFired);
         const isFinishRound = isFinish && i === rounds.length - 1;
 
         const prevPlayerHealth = i === 0 ? 100 : rounds[i - 1].playerHealth ?? 100;
@@ -264,6 +311,12 @@ function deriveFightDetails(engineResult, ctx, fightId) {
             const forced = rand(fightId, round, "subforce") < 0.25 ? 2 : 1;
             if (winnerIsPlayer) subP = Math.max(subP, forced);
             else subO = Math.max(subO, forced);
+        }
+        // A move fired on a submission lane: the engine really attempted that submission, so
+        // the display roll above may not hide it (the move_fired event anchors to it).
+        if (arch !== ARCH.STRIKE) {
+            if (moveFired.some((m) => m.site === "submission_player")) subP = Math.max(subP, 1);
+            if (moveFired.some((m) => m.site === "submission_opponent")) subO = Math.max(subO, 1);
         }
         if (arch === ARCH.STRIKE) {
             subP = 0;
@@ -415,6 +468,13 @@ function deriveFightDetails(engineResult, ctx, fightId) {
             controlTimeOpponent: ctO,
             roundWinner,
             dominant,
+            // Stamina each fighter fought this round at (engine values; null for old engine output).
+            staminaPlayer: typeof r.playerStamina === "number" ? r.playerStamina : null,
+            staminaOpponent: typeof r.opponentStamina === "number" ? r.opponentStamina : null,
+            // Health each fighter ends the round on (engine values). The finishing round takes the
+            // fight's final health so a KO/TKO shows 0 for the fighter who was finished.
+            healthPlayer: endHealth(i, "player"),
+            healthOpponent: endHealth(i, "opponent"),
         });
         roundNets.push(net);
 
@@ -447,6 +507,9 @@ function deriveFightDetails(engineResult, ctx, fightId) {
             opponentStyle,
             positionEscalated,
             isContinuation,
+            moveFired,
+            wildcardHere: wildcardRound != null && wildcardRound === round,
+            wildcardStat: wildcard && typeof wildcard.stat === "string" ? wildcard.stat : null,
         });
 
         // ── KNOCKDOWN COUNTERS derived from emitted events (single source of truth) ──
@@ -464,43 +527,97 @@ function deriveFightDetails(engineResult, ctx, fightId) {
         roundStats[roundStats.length - 1].knockdownsOpponent = kdScoredByOpp;
 
         // ── TIMESTAMP SLOTTING ───────────────────────────────────────────────
+        // Only TIMED events are slotted: not the finish (pinned to T_f), not round-only
+        // events (timestamp null), not anchored events (they share their anchor's time).
+        // Rounds with no fired move and no wildcard slot exactly as before.
         const finishEvent = events.find((e) => e.isFinish) || null;
-        const nonFinish = events.filter((e) => !e.isFinish);
-        const N = nonFinish.length || 1;
+        const anchorTargets = new Set(events.map((e) => e._anchor).filter(Boolean));
+        // An anchor or a replay moment must never be dropped by the window trim below.
+        const protectedEvt = (e) => anchorTargets.has(e) || !!e._extra;
+        const timed = events.filter((e) => !e.isFinish && !e._roundOnly && !e._anchor);
+        const N = timed.length || 1;
         let prevT = -100;
         const slotMax = Math.max(15, T_end - 15);
-        for (let k = 0; k < nonFinish.length; k++) {
+        for (let k = 0; k < timed.length; k++) {
             let t =
                 15 +
                 Math.floor(((T_end - 30) * (k + 0.2 + 0.6 * rand(fightId, round, "ts:" + k))) / N);
             if (t < prevT + 10) t = prevT + 10;
             if (t > slotMax && k > 0) {
-                // drop trailing filler that would exceed window
-                nonFinish.length = k;
+                // drop trailing filler that would exceed window (protected events stay,
+                // squeezed in at the end of the window in their original order)
+                const rest = timed.slice(k).filter(protectedEvt);
+                timed.length = k;
+                const tMax = Math.max(15, T_end - 5);
+                for (const e of rest) {
+                    const tp = Math.max(prevT, Math.min(prevT + 1, tMax));
+                    e._t = tp;
+                    prevT = tp;
+                    timed.push(e);
+                }
                 break;
             }
             t = clamp(t, 15, Math.max(15, T_end - 5));
-            nonFinish[k]._t = t;
+            timed[k]._t = t;
             prevT = t;
         }
-        const ordered = nonFinish.slice();
-        if (finishEvent) {
-            finishEvent._t = T_f != null ? T_f : T_end;
-            ordered.push(finishEvent);
+        if (finishEvent) finishEvent._t = T_f != null ? T_f : T_end;
+
+        // Anchored events (combo camp, then moves) sit right after their anchor with its
+        // time. The finish stays the LAST event of its round, so a finish-anchored combo
+        // goes immediately before it, sharing its time.
+        const placedAnchors = new Set(timed);
+        if (finishEvent) placedAnchors.add(finishEvent);
+        const anchoredTo = new Map();
+        const roundOnly = [];
+        for (const e of events) {
+            if (e._anchor && placedAnchors.has(e._anchor)) {
+                if (!anchoredTo.has(e._anchor)) anchoredTo.set(e._anchor, []);
+                anchoredTo.get(e._anchor).push(e);
+            } else if (e._roundOnly || e._anchor) {
+                // An anchor that did not survive (defensive): never invent a time.
+                e._t = null;
+                roundOnly.push(e);
+            }
         }
+        const followers = (anchor) => {
+            const list = anchoredTo.get(anchor) || [];
+            const camp = list.filter((e) => e.type === "camp");
+            const rest = list.filter((e) => e.type !== "camp");
+            return [...camp, ...rest].map((e) => {
+                e._t = anchor._t;
+                return e;
+            });
+        };
+        const atStart = roundOnly.filter(
+            (e) => e.templateKey === "wildcard_fired" || ROUND_START_SITES.has(e._site)
+        );
+        const atEnd = roundOnly.filter((e) => !atStart.includes(e));
+
+        const ordered = [...atStart];
+        for (const e of timed) ordered.push(e, ...followers(e));
+        ordered.push(...atEnd);
+        if (finishEvent) ordered.push(...followers(finishEvent), finishEvent);
 
         for (const e of ordered) {
+            const v = e.vars || {};
             eventLog.push({
                 round,
-                timestamp: fmtTime(e._t),
+                timestamp: e._t == null ? null : fmtTime(e._t),
                 type: e.type,
                 actorIsPlayer: e.actorIsPlayer,
                 templateKey: e.templateKey,
                 vars: {
-                    strike: e.vars && e.vars.strike != null ? e.vars.strike : null,
-                    sub: e.vars && e.vars.sub != null ? e.vars.sub : null,
-                    position: e.vars && e.vars.position != null ? e.vars.position : null,
-                    bodyPart: e.vars && e.vars.bodyPart != null ? e.vars.bodyPart : null,
+                    strike: v.strike != null ? v.strike : null,
+                    sub: v.sub != null ? v.sub : null,
+                    position: v.position != null ? v.position : null,
+                    bodyPart: v.bodyPart != null ? v.bodyPart : null,
+                    moveIds: Array.isArray(v.moveIds) ? v.moveIds.slice() : [],
+                    bonusType: v.bonusType != null ? v.bonusType : null,
+                    effectType: v.effectType != null ? v.effectType : null,
+                    outcome: v.outcome != null ? v.outcome : null,
+                    stat: v.stat != null ? v.stat : null,
+                    count: typeof v.count === "number" ? v.count : null,
                 },
             });
         }
@@ -552,7 +669,11 @@ function deriveFightDetails(engineResult, ctx, fightId) {
     else if (ctx.isCallout) resultContextKey = "callout";
     else resultContextKey = "standard";
 
-    return { roundStats, eventLog, introTemplateKey, resultContextKey };
+    const ss = engineResult.staminaStart;
+    const staminaStart = Array.isArray(ss) && ss.length === 2 && ss.every((v) => typeof v === "number") ? [ss[0], ss[1]] : null;
+    const hs = engineResult.healthStart;
+    const healthStart = Array.isArray(hs) && hs.length === 2 && hs.every((v) => typeof v === "number") ? [hs[0], hs[1]] : null;
+    return { roundStats, eventLog, introTemplateKey, resultContextKey, staminaStart, healthStart };
 }
 
 function fmtTime(sec) {
@@ -584,6 +705,9 @@ function buildRoundEvents(o) {
         opponentStyle,
         positionEscalated,
         isContinuation,
+        moveFired = [],
+        wildcardHere = false,
+        wildcardStat = null,
     } = o;
 
     const events = [];
@@ -807,6 +931,85 @@ function buildRoundEvents(o) {
         guard++;
     }
 
+    // ── Replay moments (fight replay highlights) ─────────────────────────────
+    // Added AFTER padding so the normal narrative of the round is unchanged; they never
+    // count toward the 3-event minimum and get their own room under the cap.
+    const extras = [];
+    if (wildcardHere) {
+        // Round-only: the boost shaped every opponent exchange this round, not one.
+        extras.push({
+            type: "wildcard",
+            templateKey: "wildcard_fired",
+            actorIsPlayer: false,
+            priority: 0,
+            _extra: true,
+            _roundOnly: true,
+            vars: { stat: wildcardStat },
+        });
+    }
+    if (moveFired.some((m) => m.site === "takedown_opponent" && m.siteOutcome === "stuffed")) {
+        extras.push({
+            type: "takedown",
+            templateKey: "takedown_stuffed",
+            actorIsPlayer: false,
+            priority: 0,
+            _extra: true,
+            vars: { strike: takedownVar(opponentStyle, fightId, round, "tdstuff"), position: null },
+        });
+    }
+    if (extras.length) events.unshift(...extras);
+
+    const finishOfRound = events.find((e) => e.isFinish) || null;
+    const playerFinishedHere = !!(finishOfRound && !finishOfRound.actorIsPlayer);
+    for (const rec of moveFired) {
+        const { anchor, outcome: moveOutcome } = resolveMoveAnchor(rec, events, playerFinishedHere);
+        events.push({
+            type: "move",
+            templateKey: "move_fired",
+            actorIsPlayer: true, // always the player's card in PvE
+            priority: 0,
+            _extra: true,
+            _site: rec.site,
+            _anchor: anchor,
+            _roundOnly: !anchor,
+            vars: {
+                moveIds: Array.isArray(rec.moveIds) && rec.moveIds.length ? rec.moveIds.slice() : [rec.moveId],
+                bonusType: rec.bonusType ?? null,
+                effectType: rec.effectType ?? null,
+                outcome: moveOutcome,
+                count: rec.count,
+            },
+        });
+    }
+
+    // Camp combo: a camp event on the same lane as an anchored move shares its anchor.
+    for (const mv of events) {
+        if (mv.type !== "move" || !mv._anchor) continue;
+        const campKey = MOVE_CAMP_LANE[mv.vars.bonusType];
+        if (!campKey) continue;
+        const campEvt = events.find((e) => e.type === "camp" && e.templateKey === campKey && !e._anchor);
+        if (campEvt) campEvt._anchor = mv._anchor;
+    }
+
+    // ── Keep rule with replay moments ────────────────────────────────────────
+    // Forced = finish, every replay moment (move / wildcard / takedown_stuffed), every
+    // anchor and every anchored event. Cap = 6 + replay moments; only non-forced events
+    // are trimmed, lowest priority first. Rounds without replay moments use the original
+    // ≤6 trim below, unchanged.
+    const extraCount = events.filter((e) => e._extra).length;
+    if (extraCount > 0) {
+        const cap = 6 + extraCount;
+        if (events.length <= cap) return events;
+        const anchors = new Set(events.map((e) => e._anchor).filter(Boolean));
+        const forced = (e) => e.isFinish || e._extra || !!e._anchor || anchors.has(e);
+        const indexed = events.map((e, idx) => ({ e, idx }));
+        const forcedIdx = indexed.filter((x) => forced(x.e)).map((x) => x.idx);
+        const optional = indexed.filter((x) => !forced(x.e)).sort(trimComparator);
+        const room = Math.max(0, cap - forcedIdx.length);
+        const keep = new Set([...forcedIdx, ...optional.slice(0, room).map((x) => x.idx)]);
+        return events.filter((_, idx) => keep.has(idx));
+    }
+
     // ── Trim to ≤6 by priority (keep lowest priority number), preserving order ──
     // INVARIANT: the finish event (if any) ALWAYS survives and stays last in its round.
     if (events.length > 6) {
@@ -833,6 +1036,111 @@ function buildRoundEvents(o) {
         return events.filter((_, idx) => keep.has(idx));
     }
     return events;
+}
+
+// Same ordering the ≤6 trim uses: priority ascending, bigger hurt first, then log order.
+function trimComparator(a, b) {
+    if (a.e.priority !== b.e.priority) return a.e.priority - b.e.priority;
+    const ah = a.e.hurtDealt || 0;
+    const bh = b.e.hurtDealt || 0;
+    if (ah !== bh) return bh - ah;
+    return a.idx - b.idx;
+}
+
+/**
+ * Attach one engine move firing to the logged exchange it modified (contract B.2 step 5).
+ * Search order per site, first match wins; actor true = the player, false = the opponent.
+ * Returns { anchor: event|null, outcome: string|null }. No anchor ⇒ the move is a round-only
+ * event. `outcome` only ever claims what the engine or the anchor proves:
+ *   - engine-known site outcomes (stuffed, takedown_landed, sub_finished, tapped, escaped,
+ *     sub_attempt) hold with or without an anchor;
+ *   - "absorbed" is withheld (null) in a round where the player was finished;
+ *   - a striking firing with no player strike in the log has no proven outcome (null).
+ */
+function resolveMoveAnchor(rec, events, playerFinishedHere) {
+    const YOU = true;
+    const OPP = false;
+    const find = (templateKey, actor) =>
+        events.find((e) => e.type !== "move" && e.templateKey === templateKey && e.actorIsPlayer === actor) || null;
+    const first = (cands, fallbackOutcome) => {
+        for (const [key, actor, outcome] of cands) {
+            const ev = find(key, actor);
+            if (ev) return { anchor: ev, outcome };
+        }
+        return { anchor: null, outcome: fallbackOutcome };
+    };
+    const finished = rec.siteOutcome === "finished";
+
+    switch (rec.site) {
+        case "takedown_opponent":
+            if (rec.siteOutcome === "stuffed") return first([["takedown_stuffed", OPP, "stuffed"]], "stuffed");
+            return first([["takedown_secured", OPP, "takedown_landed"]], "takedown_landed");
+        case "takedown_player":
+            return first(
+                [
+                    ["tko_finish_ground", YOU, "finish"],
+                    ["ground_pound", YOU, "ground_pound"],
+                    ["takedown_secured", YOU, "takedown_landed"],
+                ],
+                "takedown_landed"
+            );
+        case "ground_top":
+            if (rec.siteOutcome === "escaped") return { anchor: null, outcome: "escaped" };
+            return first(
+                [
+                    ["tko_finish_ground", YOU, "finish"],
+                    ["ground_pound", YOU, "ground_pound"],
+                    ["ground_control_carried", YOU, "ground_pound"],
+                ],
+                "ground_pound"
+            );
+        case "ground_bottom": {
+            // Unreachable in today's engine (nothing fires on a bottom escape); never claim
+            // "absorbed" for a position the player got out of.
+            if (rec.siteOutcome === "escaped") return { anchor: null, outcome: "escaped" };
+            const absorbed = playerFinishedHere ? null : "absorbed";
+            return first(
+                [
+                    ["ground_pound", OPP, absorbed],
+                    ["takedown_secured", OPP, absorbed],
+                    ["ground_control_carried", OPP, absorbed],
+                ],
+                absorbed
+            );
+        }
+        case "submission_player":
+            if (finished) return first([["submission_finish", YOU, "sub_finished"]], "sub_finished");
+            return first([["submission_attempt", YOU, "sub_attempt"]], "sub_attempt");
+        case "submission_opponent":
+            if (finished) return first([["submission_finish", OPP, "tapped"]], "tapped");
+            return first([["submission_attempt", OPP, "escaped"]], "escaped");
+        case "striking":
+            return first(
+                [
+                    ["ko_finish", YOU, "finish"],
+                    ["tko_finish_strike", YOU, "finish"],
+                    ["knockdown", YOU, "knockdown"],
+                    ["strike_hurt", YOU, "hurt"],
+                    ["strike_body", YOU, "landed"],
+                    ["strike_clean", YOU, "landed"],
+                ],
+                null
+            );
+        case "defence": {
+            const absorbed = playerFinishedHere ? null : "absorbed";
+            return first(
+                [
+                    ["strike_hurt", OPP, absorbed],
+                    ["ground_pound", OPP, absorbed],
+                    ["strike_clean", OPP, absorbed],
+                ],
+                absorbed
+            );
+        }
+        case "round_start":
+        default:
+            return { anchor: null, outcome: null };
+    }
 }
 
 function addSubEvents(push, o) {

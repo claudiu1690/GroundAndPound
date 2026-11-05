@@ -1,13 +1,13 @@
 /**
- * Tutorial controllers — onboarding walkthrough state endpoints.
- * See: GnP Onboarding & Tutorial Spec v1.0, section 7.
+ * Tutorial controllers: first-session (debut) flow state and seen tips.
+ * Contract: docs/first-session-contract.md B.1. Response shapes: services/tutorialService.js
+ * `@typedef TutorialState`. All routes are ownership-guarded (routes/tutorialRoutes.js).
  */
 const tutorialService = require("../services/tutorialService");
 
 /**
  * GET /tutorial/:fighterId
- * Returns { completed, current_step }. Called on login to decide whether to
- * mount the tutorial overlay.
+ * 200 TutorialState { completed, current_step, version, tipsSeen }.
  */
 async function getTutorial(req, res) {
     try {
@@ -22,8 +22,8 @@ async function getTutorial(req, res) {
 
 /**
  * POST /tutorial/:fighterId/advance
- * Body: { step: 'step_id' }. Advances to the next step after validating that
- * the incoming step is the correct next step in sequence.
+ * Body: { step }. Advances to the next debut step after validating the sequence.
+ * "complete" is never a valid target here (400 TUTORIAL_INVALID_STEP).
  */
 async function advanceTutorial(req, res) {
     try {
@@ -44,7 +44,8 @@ async function advanceTutorial(req, res) {
 
 /**
  * POST /tutorial/:fighterId/complete
- * Marks the tutorial complete, credits 500 iron, stamps completed_at.
+ * Marks the tutorial complete ("End tutorial"). Credits nothing: ironRewarded is always 0
+ * (the signing bonus is paid by the first PvE fight's resolve). Idempotent.
  */
 async function completeTutorial(req, res) {
     try {
@@ -57,4 +58,22 @@ async function completeTutorial(req, res) {
     }
 }
 
-module.exports = { getTutorial, advanceTutorial, completeTutorial };
+/**
+ * POST /tutorial/:fighterId/tips/seen
+ * Body: { key } where key is one of consts/tutorialConfig TIP_KEYS. 200 { tipsSeen }.
+ */
+async function markTipSeen(req, res) {
+    try {
+        const out = await tutorialService.markTipSeen(req.params.fighterId, req.body?.key);
+        res.json(out);
+    } catch (err) {
+        if (err.code === "INVALID_TIP_KEY") {
+            return res.status(400).json({ message: "Invalid tip key", code: "INVALID_TIP_KEY" });
+        }
+        if (err.message === "Fighter not found") return res.status(404).json({ message: err.message });
+        console.error("[tutorial] markTipSeen failed:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+module.exports = { getTutorial, advanceTutorial, completeTutorial, markTipSeen };

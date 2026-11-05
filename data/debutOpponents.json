@@ -1,0 +1,450 @@
+[
+    {
+        "name": "Tommy Reyes-Bell",
+        "nickname": "Scrapper",
+        "weightClass": "Featherweight",
+        "style": "Boxer",
+        "overallRating": 9,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 10,
+        "gnd": 9,
+        "sub": 8,
+        "chn": 12,
+        "fiq": 9,
+        "record": {
+            "wins": 0,
+            "losses": 0,
+            "draws": 0
+        },
+        "fightHistory": []
+    },
+    {
+        "name": "Jakub Nowicki",
+        "nickname": "Sparrow",
+        "weightClass": "Featherweight",
+        "style": "Wrestler",
+        "overallRating": 9,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 11,
+        "gnd": 10,
+        "sub": 10,
+        "chn": 9,
+        "fiq": 10,
+        "record": {
+            "wins": 1,
+            "losses": 0,
+            "draws": 0
+        },
+        "fightHistory": [
+            {
+                "result": "win",
+                "method": "Decision",
+                "round": 3
+            }
+        ]
+    },
+    {
+        "name": "Lewis Ofori",
+        "nickname": "Lightfoot",
+        "weightClass": "Featherweight",
+        "style": "Capoeira",
+        "overallRating": 8,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 8,
+        "gnd": 10,
+        "sub": 9,
+        "chn": 10,
+        "fiq": 10,
+        "record": {
+            "wins": 0,
+            "losses": 1,
+            "draws": 0
+        },
+        "fightHistory": [
+            {
+                "result": "loss",
+                "method": "KO/TKO",
+                "round": 2
+            }
+        ]
+    },
+    {
+        "name": "Arturo Valle",
+        "nickname": "Rooster",
+        "weightClass": "Featherweight",
+        "style": "Sambo",
+        "overallRating": 9,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 12,
+        "gnd": 11,
+        "sub": 12,
+        "chn": 8,
+        "fiq": 9,
+        "record": {
+            "wins": 1,
+            "losses": 2,
+            "draws": 0
+        },
+        "fightHistory": [
+            {
+                "result": "loss",
+                "method": "Decision",
+                "round": 3
+            },
+            {
+                "result": "win",
+                "method": "KO/TKO",
+                "round": 1
+            },
+            {
+                "result": "loss",
+                "method": "Submission",
+                "round": 2
+            }
+        ]
+    },
+    {
+        "name": "Dean Hollis",
+        "nickname": "Tin Can",
+        "weightClass": "Lightweight",
+        "style": "Kickboxer",
+        "overallRating": 8,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 9,
+        "gnd": 10,
+        "sub": 8,
+        "chn": 9,
+        "fiq": 10,
+        "record": {
+            "wins": 0,
+            "losses": 0,
+            "draws": 0
+        },
+        "fightHistory": []
+    },
+    {
+        "name": "Marek Szabo",
+        "nickname": "The Plumber",
+        "weightClass": "Lightweight",
+        "style": "Brazilian Jiu-Jitsu",
+        "overallRating": 9,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 12,
+        "gnd": 10,
+        "sub": 11,
+        "chn": 10,
+        "fiq": 9,
+        "record": {
+            "wins": 1,
+            "losses": 0,
+            "draws": 0
+        },
+        "fightHistory": [
+            {
+                "result": "win",
+                "method": "Decision",
+                "round": 3
+            }
+        ]
+    },
+    {
+        "name": "Kofi Mensah-Lord",
+        "nickname": "Quickstep",
+        "weightClass": "Lightweight",
+        "style": "Muay Thai",
+        "overallRating": 8,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 8,
+        "gnd": 9,
+        "sub": 10,
+        "chn": 9,
+        "fiq": 8,
+        "record": {
+            "wins": 0,
+            "losses": 1,
+            "draws": 0
+        },
+        "fightHistory": [
+            {
+                "result": "loss",
+                "method": "KO/TKO",
+                "round": 2
+            }
+        ]
+    },
+    {
+        "name": "Ricky Dunmore",
+        "nickname": "Saturday Night",
+        "weightClass": "Lightweight",
+        "style": "Judo",
+        "overallRating": 9,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 11,
+        "gnd": 12,
+        "sub": 9,
+        "chn": 8,
+        "fiq": 10,
+        "record": {
+            "wins": 1,
+            "losses": 2,
+            "draws": 0
+        },
+        "fightHistory": [
+            {
+                "result": "loss",
+                "method": "Decision",
+                "round": 3
+            },
+            {
+                "result": "win",
+                "method": "KO/TKO",
+                "round": 1
+            },
+            {
+                "result": "loss",
+                "method": "Submission",
+                "round": 2
+            }
+        ]
+    },
+    {
+        "name": "Gareth Pryce",
+        "nickname": "The Bouncer",
+        "weightClass": "Middleweight",
+        "style": "Wrestler",
+        "overallRating": 9,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 12,
+        "gnd": 11,
+        "sub": 8,
+        "chn": 10,
+        "fiq": 9,
+        "record": {
+            "wins": 0,
+            "losses": 0,
+            "draws": 0
+        },
+        "fightHistory": []
+    },
+    {
+        "name": "Nico Albescu",
+        "nickname": "Lucky",
+        "weightClass": "Middleweight",
+        "style": "Boxer",
+        "overallRating": 9,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 9,
+        "gnd": 8,
+        "sub": 10,
+        "chn": 11,
+        "fiq": 10,
+        "record": {
+            "wins": 1,
+            "losses": 0,
+            "draws": 0
+        },
+        "fightHistory": [
+            {
+                "result": "win",
+                "method": "Decision",
+                "round": 3
+            }
+        ]
+    },
+    {
+        "name": "Sean Callow",
+        "nickname": "Brick",
+        "weightClass": "Middleweight",
+        "style": "Judo",
+        "overallRating": 9,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 10,
+        "gnd": 12,
+        "sub": 9,
+        "chn": 10,
+        "fiq": 8,
+        "record": {
+            "wins": 0,
+            "losses": 1,
+            "draws": 0
+        },
+        "fightHistory": [
+            {
+                "result": "loss",
+                "method": "KO/TKO",
+                "round": 2
+            }
+        ]
+    },
+    {
+        "name": "Ibrahim Tarek",
+        "nickname": "Dynamo",
+        "weightClass": "Middleweight",
+        "style": "Kickboxer",
+        "overallRating": 8,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 10,
+        "gnd": 9,
+        "sub": 10,
+        "chn": 8,
+        "fiq": 9,
+        "record": {
+            "wins": 1,
+            "losses": 2,
+            "draws": 0
+        },
+        "fightHistory": [
+            {
+                "result": "loss",
+                "method": "Decision",
+                "round": 3
+            },
+            {
+                "result": "win",
+                "method": "KO/TKO",
+                "round": 1
+            },
+            {
+                "result": "loss",
+                "method": "Submission",
+                "round": 2
+            }
+        ]
+    },
+    {
+        "name": "Victor Larsen",
+        "nickname": "Big Vic",
+        "weightClass": "Heavyweight",
+        "style": "Muay Thai",
+        "overallRating": 8,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 9,
+        "gnd": 10,
+        "sub": 8,
+        "chn": 9,
+        "fiq": 10,
+        "record": {
+            "wins": 0,
+            "losses": 0,
+            "draws": 0
+        },
+        "fightHistory": []
+    },
+    {
+        "name": "Ollie Brannigan",
+        "nickname": "Forklift",
+        "weightClass": "Heavyweight",
+        "style": "Sambo",
+        "overallRating": 9,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 12,
+        "gnd": 10,
+        "sub": 11,
+        "chn": 10,
+        "fiq": 9,
+        "record": {
+            "wins": 1,
+            "losses": 0,
+            "draws": 0
+        },
+        "fightHistory": [
+            {
+                "result": "win",
+                "method": "Decision",
+                "round": 3
+            }
+        ]
+    },
+    {
+        "name": "Darius Moldovan",
+        "nickname": "Barrel",
+        "weightClass": "Heavyweight",
+        "style": "Brazilian Jiu-Jitsu",
+        "overallRating": 9,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 10,
+        "gnd": 11,
+        "sub": 12,
+        "chn": 9,
+        "fiq": 8,
+        "record": {
+            "wins": 0,
+            "losses": 1,
+            "draws": 0
+        },
+        "fightHistory": [
+            {
+                "result": "loss",
+                "method": "KO/TKO",
+                "round": 2
+            }
+        ]
+    },
+    {
+        "name": "Hank Pruitt",
+        "nickname": "Haybale",
+        "weightClass": "Heavyweight",
+        "style": "Capoeira",
+        "overallRating": 9,
+        "str": 7,
+        "spd": 7,
+        "leg": 7,
+        "wre": 9,
+        "gnd": 10,
+        "sub": 9,
+        "chn": 8,
+        "fiq": 12,
+        "record": {
+            "wins": 1,
+            "losses": 2,
+            "draws": 0
+        },
+        "fightHistory": [
+            {
+                "result": "loss",
+                "method": "Decision",
+                "round": 3
+            },
+            {
+                "result": "win",
+                "method": "KO/TKO",
+                "round": 1
+            },
+            {
+                "result": "loss",
+                "method": "Submission",
+                "round": 2
+            }
+        ]
+    }
+]

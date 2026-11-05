@@ -43,6 +43,16 @@ function acquisitionMeta(raw) {
 }
 
 /**
+ * Coarse device class from a User-Agent header (first-session funnel split).
+ * @param {*} ua
+ * @returns {"phone"|"desktop"|"unknown"}
+ */
+function deviceFromUserAgent(ua) {
+    if (typeof ua !== "string" || ua.trim() === "") return "unknown";
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(ua) ? "phone" : "desktop";
+}
+
+/**
  * Record an analytics event.
  *
  * @param {string|ObjectId} userId  Account id (required — must come from req.user).
@@ -140,6 +150,7 @@ async function computeRetention(from, to) {
         pvpUnlock,
         energyReturn,
         acquisition,
+        firstSession,
     ] = await Promise.all([
         computeRetentionCohorts(range),
         computeFirstFight(range),
@@ -148,6 +159,7 @@ async function computeRetention(from, to) {
         computePvpUnlock(range),
         computeEnergyReturn(),
         computeAcquisition(range),
+        module.exports.computeFirstSession(range),
     ]);
 
     return {
@@ -162,6 +174,7 @@ async function computeRetention(from, to) {
             energyReturn,
         },
         acquisition,
+        firstSession,
     };
 }
 
@@ -390,6 +403,165 @@ async function computeAcquisition(range) {
         .sort((a, b) => b.signups - a.signups || (a.src < b.src ? -1 : 1));
 }
 
+// ── First-session funnel (docs/first-session-contract.md D.3) ───────────────
+
+/**
+ * @typedef {Object} StageCounts  distinct cohort users reaching each first-session stage
+ * @property {number} created         fighter_created
+ * @property {number} debutAccepted   fight_accepted, meta.fightNumber 1
+ * @property {number} revealWatched   fight_reveal, fightNumber 1, result "watched"
+ * @property {number} revealSkipped   fight_reveal, fightNumber 1, result "skipped"
+ * @property {number} debutResolved   fight_resolved, fightNumber 1
+ * @property {number} fight2Accepted  fight_accepted, fightNumber 2
+ * @property {number} fight3Resolved  fight_resolved, fightNumber 3
+ * @property {number} returnedD1      any event on created day + 1
+ *
+ * @typedef {Object} FirstSessionReport
+ * @property {number} cohort   distinct users with fighter_created in range
+ * @property {StageCounts} stages
+ * @property {{phone:StageCounts, desktop:StageCounts, unknown:StageCounts}} byDevice
+ * @property {Array<{src:string, campaign:?string} & StageCounts>} bySource  sorted by created desc
+ * @property {{n:number, median:?number, p75:?number}} msToBell  debut_step step 5 msSinceStart
+ */
+
+const FIRST_SESSION_EVENT_TYPES = Object.freeze(["fight_accepted", "fight_resolved", "fight_reveal", "debut_step"]);
+const FIRST_SESSION_DEVICES = Object.freeze(["phone", "desktop", "unknown"]);
+
+function emptyStages() {
+    return {
+        created: 0, debutAccepted: 0, revealWatched: 0, revealSkipped: 0,
+        debutResolved: 0, fight2Accepted: 0, fight3Resolved: 0, returnedD1: 0,
+    };
+}
+
+/** Nearest-rank percentile over an ascending array; null when empty. */
+function percentile(sorted, p) {
+    if (!sorted.length) return null;
+    const idx = Math.min(sorted.length - 1, Math.max(0, Math.ceil(p * sorted.length) - 1));
+    return sorted[idx];
+}
+
+/**
+ * Pure tally for the first-session funnel (unit-tested with stubbed rows).
+ * @param {Array<{userId:*, day:string, device?:string, src?:?string, campaign?:?string}>} cohortRows
+ *        one row per cohort user (their first fighter_created)
+ * @param {Array<{userId:*, type:string, day:string, fightNumber?:*, result?:*, step?:*, msSinceStart?:*}>} eventRows
+ *        the cohort's first-session events (any time), FIRST_SESSION_EVENT_TYPES
+ * @param {Array<{userId:*, day:string}>} activityRows  distinct (user, day) activity
+ * @returns {FirstSessionReport}
+ */
+function tallyFirstSession(cohortRows, eventRows, activityRows) {
+    const users = new Map(); // userId -> { day, device, src, campaign, flags:Set }
+    for (const r of cohortRows || []) {
+        const id = String(r.userId);
+        if (users.has(id)) continue;
+        const device = FIRST_SESSION_DEVICES.includes(r.device) ? r.device : "unknown";
+        users.set(id, {
+            day: r.day,
+            device,
+            src: typeof r.src === "string" && r.src ? r.src : "direct",
+            campaign: typeof r.campaign === "string" && r.campaign ? r.campaign : null,
+            flags: new Set(["created"]),
+        });
+    }
+
+    const bellMs = new Map(); // userId -> first step-5 msSinceStart
+    for (const e of eventRows || []) {
+        const u = users.get(String(e.userId));
+        if (!u) continue;
+        const n = e.fightNumber;
+        if (e.type === "fight_accepted") {
+            if (n === 1) u.flags.add("debutAccepted");
+            else if (n === 2) u.flags.add("fight2Accepted");
+        } else if (e.type === "fight_resolved") {
+            if (n === 1) u.flags.add("debutResolved");
+            else if (n === 3) u.flags.add("fight3Resolved");
+        } else if (e.type === "fight_reveal" && n === 1) {
+            if (e.result === "watched") u.flags.add("revealWatched");
+            else if (e.result === "skipped") u.flags.add("revealSkipped");
+        } else if (e.type === "debut_step" && e.step === 5
+            && typeof e.msSinceStart === "number" && Number.isFinite(e.msSinceStart)) {
+            const id = String(e.userId);
+            const prev = bellMs.get(id);
+            if (prev === undefined || e.msSinceStart < prev) bellMs.set(id, e.msSinceStart);
+        }
+    }
+
+    for (const a of activityRows || []) {
+        const u = users.get(String(a.userId));
+        if (u && a.day === addDays(u.day, 1)) u.flags.add("returnedD1");
+    }
+
+    const stages = emptyStages();
+    const byDevice = { phone: emptyStages(), desktop: emptyStages(), unknown: emptyStages() };
+    const bySourceMap = new Map();
+    for (const u of users.values()) {
+        const key = `${u.src}\u0000${u.campaign ?? ""}`;
+        if (!bySourceMap.has(key)) bySourceMap.set(key, { src: u.src, campaign: u.campaign, ...emptyStages() });
+        const targets = [stages, byDevice[u.device], bySourceMap.get(key)];
+        for (const flag of u.flags) for (const t of targets) t[flag] += 1;
+    }
+
+    const ms = [...bellMs.values()].sort((a, b) => a - b);
+    return {
+        cohort: users.size,
+        stages,
+        byDevice,
+        bySource: [...bySourceMap.values()].sort(
+            (a, b) => b.created - a.created || (a.src < b.src ? -1 : a.src > b.src ? 1 : 0)
+        ),
+        msToBell: { n: ms.length, median: percentile(ms, 0.5), p75: percentile(ms, 0.75) },
+    };
+}
+
+/**
+ * First-session funnel for fighters created in range (D.3). The cohort is the users with a
+ * fighter_created event in range; stages count their events at ANY time.
+ * @param {{$gte:Date,$lte:Date}} range
+ * @returns {Promise<FirstSessionReport>}
+ */
+async function computeFirstSession(range) {
+    const cohort = await AnalyticsEvent.aggregate([
+        { $match: { type: "fighter_created", createdAt: range } },
+        { $sort: { createdAt: 1 } },
+        {
+            $group: {
+                _id: "$userId",
+                day: { $first: "$day" },
+                device: { $first: "$meta.device" },
+                src: { $first: "$meta.src" },
+                campaign: { $first: "$meta.campaign" },
+            },
+        },
+    ]);
+    if (cohort.length === 0) return tallyFirstSession([], [], []);
+
+    const userIds = cohort.map((c) => c._id);
+    const [events, activity] = await Promise.all([
+        AnalyticsEvent.aggregate([
+            { $match: { userId: { $in: userIds }, type: { $in: [...FIRST_SESSION_EVENT_TYPES] } } },
+            {
+                $project: {
+                    _id: 0, userId: 1, type: 1, day: 1,
+                    fightNumber: "$meta.fightNumber", result: "$meta.result",
+                    step: "$meta.step", msSinceStart: "$meta.msSinceStart",
+                },
+            },
+        ]),
+        AnalyticsEvent.aggregate([
+            { $match: { userId: { $in: userIds } } },
+            { $group: { _id: { userId: "$userId", day: "$day" } } },
+            { $project: { _id: 0, userId: "$_id.userId", day: "$_id.day" } },
+        ]),
+    ]);
+
+    return tallyFirstSession(
+        cohort.map((c) => ({ userId: c._id, day: c.day, device: c.device, src: c.src, campaign: c.campaign })),
+        events,
+        activity
+    );
+}
+
 async function countSignups(range) {
     const res = await AnalyticsEvent.aggregate([
         { $match: { type: "signup", createdAt: range } },
@@ -490,6 +662,14 @@ async function computeEnergyReturn() {
 const ENERGY_OFFER_SOURCES = new Set(["pvp", "fight", "camp", "fightcamp"]);
 const PANEL_EXPAND_FROM = new Set(["bar", "chip", "offer", "purchase_return"]);
 const ENERGY_OFFER_CHOICES = new Set(["wait", "use_shot", "buy_use_shot", "use_drink", "see_bundles", "dismiss"]);
+// First-session beacons (docs/first-session-contract.md B.6).
+const DEBUT_DEVICES = new Set(["phone", "desktop"]);
+const REVEAL_RESULTS = new Set(["watched", "skipped"]);
+const NEXT_GOAL_CHOICES = new Set(["next_fight", "train"]);
+const SECTION_TIP_RESULTS = new Set(["done", "hidden"]);
+const MAX_MS_SINCE_START = 2592000000; // 30 days
+const { SECTION_TIP_KEYS } = require("../consts/tutorialConfig");
+const SECTION_TIP_SET = new Set(SECTION_TIP_KEYS);
 
 function intInRange(v, lo, hi) {
     return typeof v === "number" && Number.isInteger(v) && v >= lo && v <= hi;
@@ -506,6 +686,27 @@ const CLIENT_EVENT_SANITIZERS = {
     energy_offer_choice: (m) => (
         ENERGY_OFFER_SOURCES.has(m.source) && ENERGY_OFFER_CHOICES.has(m.choice)
             ? { source: m.source, choice: m.choice }
+            : null
+    ),
+    debut_step: (m) => (
+        intInRange(m.step, 1, 6) && intInRange(m.msSinceStart, 0, MAX_MS_SINCE_START) && DEBUT_DEVICES.has(m.device)
+            ? { step: m.step, msSinceStart: m.msSinceStart, device: m.device }
+            : null
+    ),
+    fight_reveal: (m) => (
+        REVEAL_RESULTS.has(m.result) && intInRange(m.beatIndex, 0, 500) && intInRange(m.beatsTotal, 0, 500)
+            && (m.speed === 1 || m.speed === 2) && intInRange(m.fightNumber, 1, 100000)
+            ? { result: m.result, beatIndex: m.beatIndex, beatsTotal: m.beatsTotal, speed: m.speed, fightNumber: m.fightNumber }
+            : null
+    ),
+    next_goal_click: (m) => (
+        NEXT_GOAL_CHOICES.has(m.choice) && intInRange(m.fightNumber, 1, 100000)
+            ? { choice: m.choice, fightNumber: m.fightNumber }
+            : null
+    ),
+    section_tip: (m) => (
+        typeof m.section === "string" && SECTION_TIP_SET.has(m.section) && SECTION_TIP_RESULTS.has(m.result)
+            ? { section: m.section, result: m.result }
             : null
     ),
 };
@@ -557,6 +758,9 @@ function trackClientEvent(userId, fighterId, type, meta) {
 module.exports = {
     track,
     computeRetention,
+    computeFirstSession,
+    tallyFirstSession,
+    deviceFromUserAgent,
     CLIENT_EVENT_TYPES,
     sanitizeClientEvent,
     trackClientEvent,

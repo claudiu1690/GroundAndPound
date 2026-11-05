@@ -254,16 +254,20 @@ test("SECOND_GEAR gate: contributes 0 at opponent stamina >= 70 and its full val
 });
 
 test("SECOND_GEAR gate is read at ROUND START: 75 -> drained below 70 opens it in round 2 only", () => {
+    // Per-round fires are read from rounds[].moveFired (a move-only fire no longer claims the
+    // camp's campStrikingAccuracy commentary, spec §7.4).
     const r = fight([], { o: { stamina: 75 }, maxRounds: 2, moveBonuses: built(["SECOND_GEAR"]) });
-    assert.ok(!r.rounds[0].campCommentary.includes("campStrikingAccuracy"));
-    assert.ok(r.rounds[1].campCommentary.includes("campStrikingAccuracy"));
+    const firedIn = (x) => x.moveFired.some((m) => m.bonusType === "STRIKE_DAMAGE");
+    assert.ok(!firedIn(r.rounds[0]));
+    assert.ok(firedIn(r.rounds[1]));
+    assert.ok(!r.rounds[1].campCommentary.includes("campStrikingAccuracy"), "no camp booked, no camp credit");
 });
 
 for (const [total, lateRounds] of [[3, [3]], [4, [3, 4]], [5, [4, 5]]]) {
     test(`DEEP_WATERS gate: fires only in rounds ${lateRounds.join(",")} of ${total}`, () => {
         const r = fight([], { maxRounds: total, moveBonuses: built(["DEEP_WATERS"]) });
         assert.equal(r.rounds.length, total, "fixture sanity: all-striking decision");
-        const fired = r.rounds.filter((x) => x.campCommentary.includes("campStrikingAccuracy")).map((x) => x.round);
+        const fired = r.rounds.filter((x) => x.moveFired.some((m) => m.bonusType === "STRIKE_DAMAGE")).map((x) => x.round);
         assert.deepEqual(fired, lateRounds);
         assert.equal(find(r, "STRIKE_DAMAGE").triggerCount, lateRounds.length);
     });

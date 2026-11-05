@@ -4,14 +4,15 @@
  * always pick the same template variant.
  */
 
-import { INTRO, EVENT, RESULT, ROUND_WINNER } from "./eventTemplates.js";
+import { INTRO, EVENT, RESULT, ROUND_WINNER, WILDCARD_AREA } from "./eventTemplates.js";
+import { TRIGGER_WORDS } from "../../../constants/specialMovesCatalog.js";
 
 // ── Seeded PRNG ──────────────────────────────────────────────────────────────
 /**
  * Simple string hash (djb2) → integer seed → pick index into array.
  * Deterministic for the same seedStr + array length.
  */
-function seededPick(array, seedStr) {
+export function seededPick(array, seedStr) {
   if (!array || array.length === 0) return "";
   let hash = 5381;
   for (let i = 0; i < seedStr.length; i++) {
@@ -33,20 +34,59 @@ function substitute(template, vars) {
     .replace(/\{strike\}/g, vars.strike ?? "right hand")
     .replace(/\{sub\}/g, vars.sub ?? "rear naked choke")
     .replace(/\{position\}/g, vars.position ?? "against the fence")
-    .replace(/\{bodyPart\}/g, vars.bodyPart ?? "body");
+    .replace(/\{bodyPart\}/g, vars.bodyPart ?? "body")
+    .replace(/\{move\}/g, vars.move ?? "")
+    .replace(/\{trigger\}/g, vars.trigger ?? "")
+    .replace(/\{area\}/g, vars.area ?? "")
+    // A move with no known trigger leaves "()" behind; drop it.
+    .replace(/\s*\(\)/g, "");
+}
+
+/** "SPRAWL_INSTINCT" -> "Sprawl Instinct": fallback when the loadout has no row for a move id. */
+export function titleCaseMoveId(id) {
+  return String(id ?? "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+/** The loadout rows (LoadoutMoveRow) behind a move_fired entry, in moveIds order. Never throws. */
+export function moveRowsOf(entry, moves) {
+  const ids = Array.isArray(entry?.vars?.moveIds) ? entry.vars.moveIds : [];
+  return ids.map((id) => (Array.isArray(moves) ? moves.find((m) => m.moveId === id) : null) ?? { moveId: id, name: titleCaseMoveId(id) });
+}
+
+/** Card name(s) for a move_fired entry; merged cards read "A and B". */
+export function moveNamesOf(entry, moves) {
+  return moveRowsOf(entry, moves).map((m) => m.name || titleCaseMoveId(m.moveId)).join(" and ");
+}
+
+/** The trigger condition of a move_fired entry in words ("" when unknown). */
+export function moveTriggerOf(entry, moves) {
+  const row = moveRowsOf(entry, moves).find((m) => m.triggerCondition);
+  return (row && TRIGGER_WORDS[row.triggerCondition]) || "";
 }
 
 // ── renderEvent ──────────────────────────────────────────────────────────────
 /**
  * @param {object} entry  - one eventLog entry from the breakdown payload
- * @param {object} ctx    - { playerName, opponentName, fightId, index }
+ * @param {object} ctx    - { playerName, opponentName, fightId, index, moves? }
+ *                          `moves` = breakdown.loadout.moves (optional), names the card in move_fired lines
  * @returns {{ text: string, styleClass: string }}
  */
-export function renderEvent(entry, { playerName, opponentName, fightId, index }) {
+export function renderEvent(entry, { playerName, opponentName, fightId, index, moves }) {
   const actor = entry.actorIsPlayer ? playerName : opponentName;
   const target = entry.actorIsPlayer ? opponentName : playerName;
 
-  const templates = EVENT[entry.templateKey];
+  let templates = EVENT[entry.templateKey];
+  if (entry.templateKey === "move_fired") {
+    // Object table: bonusType -> outcome -> lines, with "default" fallbacks at both levels.
+    const byType = templates?.[entry.vars?.bonusType];
+    const outcome = entry.vars?.outcome;
+    templates = (outcome != null ? byType?.[outcome] : null) ?? byType?.default ?? templates?.default;
+  }
   const seedStr = `${fightId}:${entry.round}:${index}`;
   const template = templates
     ? seededPick(templates, seedStr)
@@ -61,6 +101,9 @@ export function renderEvent(entry, { playerName, opponentName, fightId, index })
     sub: entry.vars?.sub ?? "rear naked choke",
     position: entry.vars?.position ?? "against the fence",
     bodyPart: entry.vars?.bodyPart ?? "body",
+    move: entry.templateKey === "move_fired" ? moveNamesOf(entry, moves) : "",
+    trigger: entry.templateKey === "move_fired" ? moveTriggerOf(entry, moves) : "",
+    area: WILDCARD_AREA[entry.vars?.stat] ?? "something new",
   });
 
   // Style class resolution
@@ -68,6 +111,10 @@ export function renderEvent(entry, { playerName, opponentName, fightId, index })
 
   if (entry.type === "camp") {
     styleClass = "camp";
+  } else if (entry.type === "move") {
+    styleClass = "move";
+  } else if (entry.type === "wildcard" || entry.templateKey === "wildcard_fired") {
+    styleClass = "wildcard";
   } else if (entry.type === "finish") {
     // covers ko_finish, submission_finish, tko_finish_strike, tko_finish_ground,
     // and legacy tko_finish

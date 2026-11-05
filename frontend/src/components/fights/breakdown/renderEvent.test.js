@@ -166,7 +166,7 @@ test("renderResult draw returns draw template", () => {
   const text = renderResult("Draw", "standard", {
     playerName: "Jack", opponentName: "Watson", sub: null, strike: null, fightId: "f1", youWon: false
   });
-  expect(text.toLowerCase()).toMatch(/draw|standstill|split/);
+  expect(text.toLowerCase()).toMatch(/draw|standstill|split|no clear winner/);
 });
 
 test("renderResult loss giantKiller falls back to standard", () => {

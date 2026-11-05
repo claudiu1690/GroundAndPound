@@ -85,7 +85,7 @@ async function run() {
     console.log("Connected to MongoDB");
 
     if (reset) {
-        await Opponent.deleteMany({});
+        await Opponent.deleteMany({ isDebut: { $ne: true } }); // keep the debut pool (seedDebutOpponents)
         console.log("Opponent collection cleared (--reset)");
     }
 
@@ -134,15 +134,18 @@ async function run() {
     // If gaps exist, duplicate from same tier with different weight class
     for (const tierDef of TIER_DISTRIBUTION) {
         for (const wc of WEIGHT_CLASSES) {
+            // Debut opponents (isDebut) are a separate pool: never counted, never donors.
             const count = await Opponent.countDocuments({
                 promotionTier: tierDef.tier,
                 weightClass: wc,
+                isDebut: { $ne: true },
             });
             if (count < 4) {
                 // Find opponents in this tier with different weight class
                 const donors = await Opponent.find({
                     promotionTier: tierDef.tier,
                     weightClass: { $ne: wc },
+                    isDebut: { $ne: true },
                 }).limit(4 - count).lean();
 
                 for (const d of donors) {

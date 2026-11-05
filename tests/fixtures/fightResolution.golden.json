@@ -39,9 +39,7 @@
         "opponentDamage": 16,
         "playerHealth": 83,
         "opponentHealth": 84,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -167,9 +165,7 @@
         "opponentDamage": 15,
         "playerHealth": 83,
         "opponentHealth": 85,
-        "campCommentary": [
-          "campBodyShot"
-        ]
+        "campCommentary": []
       },
       {
         "round": 2,
@@ -179,9 +175,7 @@
         "opponentDamage": 12,
         "playerHealth": 71,
         "opponentHealth": 73,
-        "campCommentary": [
-          "campBodyShot"
-        ]
+        "campCommentary": []
       },
       {
         "round": 3,
@@ -191,9 +185,7 @@
         "opponentDamage": 13,
         "playerHealth": 58,
         "opponentHealth": 60,
-        "campCommentary": [
-          "campBodyShot"
-        ]
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -223,7 +215,7 @@
     "winner": "opponent",
     "finishCause": null,
     "playerHealthAfter": 26,
-    "opponentHealthAfter": 87,
+    "opponentHealthAfter": 73,
     "playerStaminaAfter": 50,
     "rngDraws": 45,
     "rounds": [
@@ -232,9 +224,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 17,
-        "opponentDamage": 3,
+        "opponentDamage": 6,
         "playerHealth": 83,
-        "opponentHealth": 97,
+        "opponentHealth": 94,
         "campCommentary": []
       },
       {
@@ -242,9 +234,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 19,
-        "opponentDamage": 3,
+        "opponentDamage": 6,
         "playerHealth": 64,
-        "opponentHealth": 94,
+        "opponentHealth": 88,
         "campCommentary": []
       },
       {
@@ -252,9 +244,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 14,
-        "opponentDamage": 3,
+        "opponentDamage": 6,
         "playerHealth": 50,
-        "opponentHealth": 91,
+        "opponentHealth": 82,
         "campCommentary": []
       },
       {
@@ -262,9 +254,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 14,
-        "opponentDamage": 2,
+        "opponentDamage": 5,
         "playerHealth": 36,
-        "opponentHealth": 89,
+        "opponentHealth": 77,
         "campCommentary": []
       },
       {
@@ -272,9 +264,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 10,
-        "opponentDamage": 2,
+        "opponentDamage": 4,
         "playerHealth": 26,
-        "opponentHealth": 87,
+        "opponentHealth": 73,
         "campCommentary": []
       }
     ],
@@ -286,7 +278,7 @@
     "winner": "opponent",
     "finishCause": null,
     "playerHealthAfter": 26,
-    "opponentHealthAfter": 86,
+    "opponentHealthAfter": 72,
     "playerStaminaAfter": 50,
     "rngDraws": 45,
     "rounds": [
@@ -295,60 +287,50 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 17,
-        "opponentDamage": 3,
+        "opponentDamage": 7,
         "playerHealth": 83,
-        "opponentHealth": 97,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "opponentHealth": 93,
+        "campCommentary": []
       },
       {
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 19,
-        "opponentDamage": 3,
+        "opponentDamage": 6,
         "playerHealth": 64,
-        "opponentHealth": 94,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "opponentHealth": 87,
+        "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 14,
-        "opponentDamage": 3,
+        "opponentDamage": 6,
         "playerHealth": 50,
-        "opponentHealth": 91,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "opponentHealth": 81,
+        "campCommentary": []
       },
       {
         "round": 4,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 14,
-        "opponentDamage": 3,
+        "opponentDamage": 5,
         "playerHealth": 36,
-        "opponentHealth": 88,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "opponentHealth": 76,
+        "campCommentary": []
       },
       {
         "round": 5,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 10,
-        "opponentDamage": 2,
+        "opponentDamage": 4,
         "playerHealth": 26,
-        "opponentHealth": 86,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "opponentHealth": 72,
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -378,7 +360,7 @@
     "winner": "opponent",
     "finishCause": null,
     "playerHealthAfter": 29,
-    "opponentHealthAfter": 87,
+    "opponentHealthAfter": 73,
     "playerStaminaAfter": 50,
     "rngDraws": 45,
     "rounds": [
@@ -387,9 +369,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 16,
-        "opponentDamage": 3,
+        "opponentDamage": 6,
         "playerHealth": 84,
-        "opponentHealth": 97,
+        "opponentHealth": 94,
         "campCommentary": []
       },
       {
@@ -397,9 +379,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 19,
-        "opponentDamage": 3,
+        "opponentDamage": 6,
         "playerHealth": 65,
-        "opponentHealth": 94,
+        "opponentHealth": 88,
         "campCommentary": []
       },
       {
@@ -407,9 +389,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 13,
-        "opponentDamage": 3,
+        "opponentDamage": 6,
         "playerHealth": 52,
-        "opponentHealth": 91,
+        "opponentHealth": 82,
         "campCommentary": []
       },
       {
@@ -417,9 +399,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 13,
-        "opponentDamage": 2,
+        "opponentDamage": 5,
         "playerHealth": 39,
-        "opponentHealth": 89,
+        "opponentHealth": 77,
         "campCommentary": []
       },
       {
@@ -427,9 +409,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 10,
-        "opponentDamage": 2,
+        "opponentDamage": 4,
         "playerHealth": 29,
-        "opponentHealth": 87,
+        "opponentHealth": 73,
         "campCommentary": []
       }
     ],
@@ -460,7 +442,7 @@
     "winner": "player",
     "finishCause": null,
     "playerHealthAfter": 50,
-    "opponentHealthAfter": 55,
+    "opponentHealthAfter": 47,
     "playerStaminaAfter": 49,
     "rngDraws": 43,
     "rounds": [
@@ -469,9 +451,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 17,
-        "opponentDamage": 3,
+        "opponentDamage": 6,
         "playerHealth": 83,
-        "opponentHealth": 97,
+        "opponentHealth": 94,
         "campCommentary": []
       },
       {
@@ -479,21 +461,19 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 19,
-        "opponentDamage": 3,
+        "opponentDamage": 6,
         "playerHealth": 64,
-        "opponentHealth": 94,
-        "campCommentary": [
-          "campTakedownDefence"
-        ]
+        "opponentHealth": 88,
+        "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 14,
-        "opponentDamage": 2,
+        "opponentDamage": 4,
         "playerHealth": 50,
-        "opponentHealth": 92,
+        "opponentHealth": 84,
         "campCommentary": []
       },
       {
@@ -503,10 +483,8 @@
         "playerDamage": 0,
         "opponentDamage": 21,
         "playerHealth": 50,
-        "opponentHealth": 71,
-        "campCommentary": [
-          "campGnpPosture"
-        ]
+        "opponentHealth": 63,
+        "campCommentary": []
       },
       {
         "round": 5,
@@ -515,10 +493,8 @@
         "playerDamage": 0,
         "opponentDamage": 16,
         "playerHealth": 50,
-        "opponentHealth": 55,
-        "campCommentary": [
-          "campGnpPosture"
-        ]
+        "opponentHealth": 47,
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -548,7 +524,7 @@
     "winner": "opponent",
     "finishCause": "ko",
     "playerHealthAfter": 0,
-    "opponentHealthAfter": 97,
+    "opponentHealthAfter": 94,
     "playerStaminaAfter": 92,
     "rngDraws": 13,
     "rounds": [
@@ -557,9 +533,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 17,
-        "opponentDamage": 3,
+        "opponentDamage": 6,
         "playerHealth": 83,
-        "opponentHealth": 97,
+        "opponentHealth": 94,
         "campCommentary": []
       }
     ],
@@ -941,9 +917,7 @@
         "opponentDamage": 0,
         "playerHealth": 19,
         "opponentHealth": 100,
-        "campCommentary": [
-          "campCardio"
-        ]
+        "campCommentary": []
       },
       {
         "round": 5,
@@ -953,9 +927,7 @@
         "opponentDamage": 0,
         "playerHealth": 7,
         "opponentHealth": 100,
-        "campCommentary": [
-          "campCardio"
-        ]
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -984,8 +956,8 @@
     "outcome": "Loss (decision)",
     "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 53,
-    "opponentHealthAfter": 87,
+    "playerHealthAfter": 45,
+    "opponentHealthAfter": 79,
     "playerStaminaAfter": 52,
     "rngDraws": 47,
     "rounds": [
@@ -993,30 +965,30 @@
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 5,
-        "playerHealth": 96,
-        "opponentHealth": 95,
+        "playerDamage": 8,
+        "opponentDamage": 9,
+        "playerHealth": 92,
+        "opponentHealth": 91,
         "campCommentary": []
       },
       {
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 4,
-        "playerHealth": 92,
-        "opponentHealth": 91,
+        "playerDamage": 6,
+        "opponentDamage": 6,
+        "playerHealth": 86,
+        "opponentHealth": 85,
         "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 4,
-        "playerHealth": 88,
-        "opponentHealth": 87,
+        "playerDamage": 6,
+        "opponentDamage": 6,
+        "playerHealth": 80,
+        "opponentHealth": 79,
         "campCommentary": []
       },
       {
@@ -1025,8 +997,8 @@
         "grapplingControl": -1,
         "playerDamage": 19,
         "opponentDamage": 0,
-        "playerHealth": 69,
-        "opponentHealth": 87,
+        "playerHealth": 61,
+        "opponentHealth": 79,
         "campCommentary": []
       },
       {
@@ -1035,8 +1007,8 @@
         "grapplingControl": -1,
         "playerDamage": 16,
         "opponentDamage": 0,
-        "playerHealth": 53,
-        "opponentHealth": 87,
+        "playerHealth": 45,
+        "opponentHealth": 79,
         "campCommentary": []
       }
     ],
@@ -1047,46 +1019,40 @@
     "outcome": "Loss (decision)",
     "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 53,
-    "opponentHealthAfter": 86,
+    "playerHealthAfter": 45,
+    "opponentHealthAfter": 78,
     "playerStaminaAfter": 52,
-    "rngDraws": 47,
+    "rngDraws": 44,
     "rounds": [
       {
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 6,
-        "playerHealth": 96,
-        "opponentHealth": 94,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "playerDamage": 8,
+        "opponentDamage": 9,
+        "playerHealth": 92,
+        "opponentHealth": 91,
+        "campCommentary": []
       },
       {
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 4,
-        "playerHealth": 92,
-        "opponentHealth": 90,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "playerDamage": 6,
+        "opponentDamage": 7,
+        "playerHealth": 86,
+        "opponentHealth": 84,
+        "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 4,
-        "playerHealth": 88,
-        "opponentHealth": 86,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "playerDamage": 6,
+        "opponentDamage": 6,
+        "playerHealth": 80,
+        "opponentHealth": 78,
+        "campCommentary": []
       },
       {
         "round": 4,
@@ -1094,8 +1060,8 @@
         "grapplingControl": -1,
         "playerDamage": 19,
         "opponentDamage": 0,
-        "playerHealth": 69,
-        "opponentHealth": 86,
+        "playerHealth": 61,
+        "opponentHealth": 78,
         "campCommentary": []
       },
       {
@@ -1104,8 +1070,8 @@
         "grapplingControl": -1,
         "playerDamage": 16,
         "opponentDamage": 0,
-        "playerHealth": 53,
-        "opponentHealth": 86,
+        "playerHealth": 45,
+        "opponentHealth": 78,
         "campCommentary": []
       }
     ],
@@ -1135,8 +1101,8 @@
     "outcome": "Loss (decision)",
     "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 55,
-    "opponentHealthAfter": 87,
+    "playerHealthAfter": 47,
+    "opponentHealthAfter": 79,
     "playerStaminaAfter": 50,
     "rngDraws": 49,
     "rounds": [
@@ -1144,30 +1110,30 @@
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 5,
-        "playerHealth": 96,
-        "opponentHealth": 95,
+        "playerDamage": 8,
+        "opponentDamage": 9,
+        "playerHealth": 92,
+        "opponentHealth": 91,
         "campCommentary": []
       },
       {
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 4,
-        "playerHealth": 92,
-        "opponentHealth": 91,
+        "playerDamage": 6,
+        "opponentDamage": 6,
+        "playerHealth": 86,
+        "opponentHealth": 85,
         "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 3,
-        "opponentDamage": 4,
-        "playerHealth": 89,
-        "opponentHealth": 87,
+        "playerDamage": 5,
+        "opponentDamage": 6,
+        "playerHealth": 81,
+        "opponentHealth": 79,
         "campCommentary": []
       },
       {
@@ -1176,11 +1142,9 @@
         "grapplingControl": -1,
         "playerDamage": 19,
         "opponentDamage": 0,
-        "playerHealth": 70,
-        "opponentHealth": 87,
-        "campCommentary": [
-          "campSubmissionEscape"
-        ]
+        "playerHealth": 62,
+        "opponentHealth": 79,
+        "campCommentary": []
       },
       {
         "round": 5,
@@ -1188,11 +1152,9 @@
         "grapplingControl": -1,
         "playerDamage": 15,
         "opponentDamage": 0,
-        "playerHealth": 55,
-        "opponentHealth": 87,
-        "campCommentary": [
-          "campSubmissionEscape"
-        ]
+        "playerHealth": 47,
+        "opponentHealth": 79,
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -1221,8 +1183,8 @@
     "outcome": "Loss (decision)",
     "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 64,
-    "opponentHealthAfter": 87,
+    "playerHealthAfter": 56,
+    "opponentHealthAfter": 79,
     "playerStaminaAfter": 52,
     "rngDraws": 47,
     "rounds": [
@@ -1230,30 +1192,30 @@
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 5,
-        "playerHealth": 96,
-        "opponentHealth": 95,
+        "playerDamage": 8,
+        "opponentDamage": 9,
+        "playerHealth": 92,
+        "opponentHealth": 91,
         "campCommentary": []
       },
       {
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 4,
-        "playerHealth": 92,
-        "opponentHealth": 91,
+        "playerDamage": 6,
+        "opponentDamage": 6,
+        "playerHealth": 86,
+        "opponentHealth": 85,
         "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 4,
-        "playerHealth": 88,
-        "opponentHealth": 87,
+        "playerDamage": 6,
+        "opponentDamage": 6,
+        "playerHealth": 80,
+        "opponentHealth": 79,
         "campCommentary": []
       },
       {
@@ -1262,8 +1224,8 @@
         "grapplingControl": -1,
         "playerDamage": 13,
         "opponentDamage": 0,
-        "playerHealth": 75,
-        "opponentHealth": 87,
+        "playerHealth": 67,
+        "opponentHealth": 79,
         "campCommentary": []
       },
       {
@@ -1272,8 +1234,8 @@
         "grapplingControl": -1,
         "playerDamage": 11,
         "opponentDamage": 0,
-        "playerHealth": 64,
-        "opponentHealth": 87,
+        "playerHealth": 56,
+        "opponentHealth": 79,
         "campCommentary": []
       }
     ],
@@ -1300,55 +1262,62 @@
     "sessionBonuses": []
   },
   "grappler-mirror-sub-hunt-5r::tempo_U": {
-    "outcome": "Loss (submission)",
-    "winner": "opponent",
+    "outcome": "Decision (unanimous)",
+    "winner": "player",
     "finishCause": null,
-    "playerHealthAfter": 32,
-    "opponentHealthAfter": 94,
-    "playerStaminaAfter": 62,
-    "rngDraws": 34,
+    "playerHealthAfter": 69,
+    "opponentHealthAfter": 38,
+    "playerStaminaAfter": 49,
+    "rngDraws": 48,
     "rounds": [
       {
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 6,
-        "playerHealth": 96,
-        "opponentHealth": 94,
-        "campCommentary": [
-          "campBodyShot",
-          "campClinchControl"
-        ]
+        "playerDamage": 8,
+        "opponentDamage": 10,
+        "playerHealth": 92,
+        "opponentHealth": 90,
+        "campCommentary": []
       },
       {
         "round": 2,
         "event": "Opponent took you down.",
         "grapplingControl": -1,
-        "playerDamage": 24,
+        "playerDamage": 23,
         "opponentDamage": 0,
-        "playerHealth": 72,
-        "opponentHealth": 94,
+        "playerHealth": 69,
+        "opponentHealth": 90,
         "campCommentary": []
       },
       {
         "round": 3,
-        "event": "Opponent took you down.",
-        "grapplingControl": -1,
-        "playerDamage": 21,
-        "opponentDamage": 0,
-        "playerHealth": 51,
-        "opponentHealth": 94,
+        "event": "Takedown; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 20,
+        "playerHealth": 69,
+        "opponentHealth": 70,
         "campCommentary": []
       },
       {
         "round": 4,
-        "event": "Stuck on bottom; opponent grinds.",
-        "grapplingControl": -1,
-        "playerDamage": 19,
-        "opponentDamage": 0,
-        "playerHealth": 32,
-        "opponentHealth": 94,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 17,
+        "playerHealth": 69,
+        "opponentHealth": 53,
+        "campCommentary": []
+      },
+      {
+        "round": 5,
+        "event": "Holding top control; ground and pound.",
+        "grapplingControl": 1,
+        "playerDamage": 0,
+        "opponentDamage": 15,
+        "playerHealth": 69,
+        "opponentHealth": 38,
         "campCommentary": []
       }
     ],
@@ -1368,8 +1337,8 @@
       {
         "moveId": "SECOND_WIND",
         "bonusType": "STAMINA_DRAIN",
-        "triggered": false,
-        "triggerCount": 0
+        "triggered": true,
+        "triggerCount": 2
       }
     ],
     "sessionBonuses": []
@@ -1434,9 +1403,7 @@
         "opponentDamage": 18,
         "playerHealth": 82,
         "opponentHealth": 82,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "campCommentary": []
       },
       {
         "round": 2,
@@ -1446,9 +1413,7 @@
         "opponentDamage": 15,
         "playerHealth": 62,
         "opponentHealth": 67,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "campCommentary": []
       },
       {
         "round": 3,
@@ -1458,9 +1423,7 @@
         "opponentDamage": 16,
         "playerHealth": 47,
         "opponentHealth": 51,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -1636,9 +1599,7 @@
         "opponentDamage": 15,
         "playerHealth": 67,
         "opponentHealth": 68,
-        "campCommentary": [
-          "campBodyShot"
-        ]
+        "campCommentary": []
       },
       {
         "round": 3,
@@ -1648,9 +1609,7 @@
         "opponentDamage": 11,
         "playerHealth": 54,
         "opponentHealth": 57,
-        "campCommentary": [
-          "campClinchControl"
-        ]
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -1679,49 +1638,49 @@
     "outcome": "Loss (decision)",
     "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 74,
-    "opponentHealthAfter": 73,
-    "playerStaminaAfter": 54,
-    "rngDraws": 50,
+    "playerHealthAfter": 66,
+    "opponentHealthAfter": 67,
+    "playerStaminaAfter": 44,
+    "rngDraws": 45,
     "rounds": [
       {
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 6,
-        "opponentDamage": 7,
-        "playerHealth": 94,
-        "opponentHealth": 93,
+        "playerDamage": 9,
+        "opponentDamage": 10,
+        "playerHealth": 91,
+        "opponentHealth": 90,
         "campCommentary": []
       },
       {
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 6,
-        "opponentDamage": 6,
-        "playerHealth": 88,
-        "opponentHealth": 87,
+        "playerDamage": 8,
+        "opponentDamage": 7,
+        "playerHealth": 83,
+        "opponentHealth": 83,
         "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 5,
-        "opponentDamage": 5,
-        "playerHealth": 83,
-        "opponentHealth": 82,
+        "playerDamage": 7,
+        "opponentDamage": 7,
+        "playerHealth": 76,
+        "opponentHealth": 76,
         "campCommentary": []
       },
       {
         "round": 4,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 5,
+        "playerDamage": 6,
         "opponentDamage": 5,
-        "playerHealth": 78,
-        "opponentHealth": 77,
+        "playerHealth": 70,
+        "opponentHealth": 71,
         "campCommentary": []
       },
       {
@@ -1730,8 +1689,8 @@
         "grapplingControl": 0,
         "playerDamage": 4,
         "opponentDamage": 4,
-        "playerHealth": 74,
-        "opponentHealth": 73,
+        "playerHealth": 66,
+        "opponentHealth": 67,
         "campCommentary": []
       }
     ],
@@ -1739,73 +1698,63 @@
     "sessionBonuses": []
   },
   "default-mirror-5r::offense_L": {
-    "outcome": "Decision (split)",
-    "winner": "player",
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 74,
-    "opponentHealthAfter": 72,
-    "playerStaminaAfter": 54,
-    "rngDraws": 47,
+    "playerHealthAfter": 66,
+    "opponentHealthAfter": 66,
+    "playerStaminaAfter": 44,
+    "rngDraws": 42,
     "rounds": [
       {
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 6,
-        "opponentDamage": 7,
-        "playerHealth": 94,
-        "opponentHealth": 93,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "playerDamage": 9,
+        "opponentDamage": 10,
+        "playerHealth": 91,
+        "opponentHealth": 90,
+        "campCommentary": []
       },
       {
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 6,
+        "playerDamage": 8,
         "opponentDamage": 7,
-        "playerHealth": 88,
-        "opponentHealth": 86,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "playerHealth": 83,
+        "opponentHealth": 83,
+        "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 5,
-        "opponentDamage": 5,
-        "playerHealth": 83,
-        "opponentHealth": 81,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "playerDamage": 7,
+        "opponentDamage": 7,
+        "playerHealth": 76,
+        "opponentHealth": 76,
+        "campCommentary": []
       },
       {
         "round": 4,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 5,
+        "playerDamage": 6,
         "opponentDamage": 5,
-        "playerHealth": 78,
-        "opponentHealth": 76,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "playerHealth": 70,
+        "opponentHealth": 71,
+        "campCommentary": []
       },
       {
         "round": 5,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 4,
-        "opponentDamage": 4,
-        "playerHealth": 74,
-        "opponentHealth": 72,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "opponentDamage": 5,
+        "playerHealth": 66,
+        "opponentHealth": 66,
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -1818,8 +1767,8 @@
       {
         "moveId": "THE_FINISHER",
         "bonusType": "SIG_FINISHER_STRIKE",
-        "triggered": false,
-        "triggerCount": 0
+        "triggered": true,
+        "triggerCount": 1
       },
       {
         "moveId": "KILLER_INSTINCT",
@@ -1831,52 +1780,52 @@
     "sessionBonuses": []
   },
   "default-mirror-5r::defense_R": {
-    "outcome": "Decision (split)",
-    "winner": "player",
+    "outcome": "Loss (decision)",
+    "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 75,
-    "opponentHealthAfter": 73,
-    "playerStaminaAfter": 54,
-    "rngDraws": 47,
+    "playerHealthAfter": 67,
+    "opponentHealthAfter": 67,
+    "playerStaminaAfter": 44,
+    "rngDraws": 48,
     "rounds": [
       {
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 6,
-        "opponentDamage": 7,
-        "playerHealth": 94,
-        "opponentHealth": 93,
+        "playerDamage": 9,
+        "opponentDamage": 10,
+        "playerHealth": 91,
+        "opponentHealth": 90,
         "campCommentary": []
       },
       {
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 5,
-        "opponentDamage": 6,
-        "playerHealth": 89,
-        "opponentHealth": 87,
+        "playerDamage": 7,
+        "opponentDamage": 7,
+        "playerHealth": 84,
+        "opponentHealth": 83,
         "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 5,
-        "opponentDamage": 5,
-        "playerHealth": 84,
-        "opponentHealth": 82,
+        "playerDamage": 7,
+        "opponentDamage": 7,
+        "playerHealth": 77,
+        "opponentHealth": 76,
         "campCommentary": []
       },
       {
         "round": 4,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 5,
+        "playerDamage": 6,
         "opponentDamage": 5,
-        "playerHealth": 79,
-        "opponentHealth": 77,
+        "playerHealth": 71,
+        "opponentHealth": 71,
         "campCommentary": []
       },
       {
@@ -1885,8 +1834,8 @@
         "grapplingControl": 0,
         "playerDamage": 4,
         "opponentDamage": 4,
-        "playerHealth": 75,
-        "opponentHealth": 73,
+        "playerHealth": 67,
+        "opponentHealth": 67,
         "campCommentary": []
       }
     ],
@@ -1916,52 +1865,50 @@
     "outcome": "Loss (decision)",
     "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 74,
-    "opponentHealthAfter": 73,
-    "playerStaminaAfter": 52,
-    "rngDraws": 51,
+    "playerHealthAfter": 66,
+    "opponentHealthAfter": 67,
+    "playerStaminaAfter": 44,
+    "rngDraws": 45,
     "rounds": [
       {
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 6,
-        "opponentDamage": 7,
-        "playerHealth": 94,
-        "opponentHealth": 93,
+        "playerDamage": 9,
+        "opponentDamage": 10,
+        "playerHealth": 91,
+        "opponentHealth": 90,
         "campCommentary": []
       },
       {
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 6,
-        "opponentDamage": 6,
-        "playerHealth": 88,
-        "opponentHealth": 87,
+        "playerDamage": 8,
+        "opponentDamage": 7,
+        "playerHealth": 83,
+        "opponentHealth": 83,
         "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 5,
-        "opponentDamage": 5,
-        "playerHealth": 83,
-        "opponentHealth": 82,
+        "playerDamage": 7,
+        "opponentDamage": 7,
+        "playerHealth": 76,
+        "opponentHealth": 76,
         "campCommentary": []
       },
       {
         "round": 4,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 5,
+        "playerDamage": 6,
         "opponentDamage": 5,
-        "playerHealth": 78,
-        "opponentHealth": 77,
-        "campCommentary": [
-          "campTakedownDefence"
-        ]
+        "playerHealth": 70,
+        "opponentHealth": 71,
+        "campCommentary": []
       },
       {
         "round": 5,
@@ -1969,8 +1916,8 @@
         "grapplingControl": 0,
         "playerDamage": 4,
         "opponentDamage": 4,
-        "playerHealth": 74,
-        "opponentHealth": 73,
+        "playerHealth": 66,
+        "opponentHealth": 67,
         "campCommentary": []
       }
     ],
@@ -1978,8 +1925,8 @@
       {
         "moveId": "SPRAWL_INSTINCT",
         "bonusType": "SPRAWL_SUCCESS",
-        "triggered": true,
-        "triggerCount": 1
+        "triggered": false,
+        "triggerCount": 0
       },
       {
         "moveId": "MOUNT_REAPER",
@@ -1997,70 +1944,63 @@
     "sessionBonuses": []
   },
   "default-mirror-5r::tempo_U": {
-    "outcome": "Loss (decision)",
-    "winner": "opponent",
+    "outcome": "Decision (unanimous)",
+    "winner": "player",
     "finishCause": null,
-    "playerHealthAfter": 74,
-    "opponentHealthAfter": 74,
-    "playerStaminaAfter": 52,
-    "rngDraws": 61,
+    "playerHealthAfter": 63,
+    "opponentHealthAfter": 60,
+    "playerStaminaAfter": 49,
+    "rngDraws": 66,
     "rounds": [
       {
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 6,
-        "opponentDamage": 7,
-        "playerHealth": 94,
-        "opponentHealth": 93,
+        "playerDamage": 9,
+        "opponentDamage": 10,
+        "playerHealth": 91,
+        "opponentHealth": 90,
         "campCommentary": []
       },
       {
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 6,
-        "opponentDamage": 6,
-        "playerHealth": 88,
-        "opponentHealth": 87,
-        "campCommentary": [
-          "campBodyShot"
-        ]
+        "playerDamage": 8,
+        "opponentDamage": 9,
+        "playerHealth": 83,
+        "opponentHealth": 81,
+        "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 5,
-        "opponentDamage": 4,
-        "playerHealth": 83,
-        "opponentHealth": 83,
+        "playerDamage": 8,
+        "opponentDamage": 8,
+        "playerHealth": 75,
+        "opponentHealth": 73,
         "campCommentary": []
       },
       {
         "round": 4,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 5,
-        "opponentDamage": 5,
-        "playerHealth": 78,
-        "opponentHealth": 78,
-        "campCommentary": [
-          "campBodyShot"
-        ]
+        "playerDamage": 7,
+        "opponentDamage": 7,
+        "playerHealth": 68,
+        "opponentHealth": 66,
+        "campCommentary": []
       },
       {
         "round": 5,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 4,
-        "opponentDamage": 4,
-        "playerHealth": 74,
-        "opponentHealth": 74,
-        "campCommentary": [
-          "campCardio",
-          "campClinchControl"
-        ]
+        "playerDamage": 5,
+        "opponentDamage": 6,
+        "playerHealth": 63,
+        "opponentHealth": 60,
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -2068,40 +2008,40 @@
         "moveId": "BODY_SNATCHER",
         "bonusType": "BODY_DAMAGE",
         "triggered": true,
-        "triggerCount": 2
+        "triggerCount": 3
       },
       {
         "moveId": "CLINCH_KILLER",
         "bonusType": "CLINCH_DAMAGE",
         "triggered": true,
-        "triggerCount": 1
+        "triggerCount": 2
       },
       {
         "moveId": "SECOND_WIND",
         "bonusType": "STAMINA_DRAIN",
         "triggered": true,
-        "triggerCount": 1
+        "triggerCount": 2
       }
     ],
     "sessionBonuses": []
   },
   "grappler-vs-brawler-ironwill-5r::none": {
-    "outcome": "Loss (decision)",
+    "outcome": "Loss (KO/TKO)",
     "winner": "opponent",
-    "finishCause": null,
-    "playerHealthAfter": 39,
-    "opponentHealthAfter": 72,
-    "playerStaminaAfter": 48,
-    "rngDraws": 45,
+    "finishCause": "ko",
+    "playerHealthAfter": 0,
+    "opponentHealthAfter": 73,
+    "playerStaminaAfter": 69,
+    "rngDraws": 30,
     "rounds": [
       {
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 15,
-        "opponentDamage": 6,
+        "opponentDamage": 10,
         "playerHealth": 85,
-        "opponentHealth": 94,
+        "opponentHealth": 90,
         "campCommentary": []
       },
       {
@@ -2109,39 +2049,19 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 15,
-        "opponentDamage": 7,
+        "opponentDamage": 9,
         "playerHealth": 70,
-        "opponentHealth": 87,
+        "opponentHealth": 81,
         "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 12,
-        "opponentDamage": 5,
-        "playerHealth": 58,
-        "opponentHealth": 82,
-        "campCommentary": []
-      },
-      {
-        "round": 4,
-        "event": "Striking exchange.",
-        "grapplingControl": 0,
-        "playerDamage": 10,
-        "opponentDamage": 6,
-        "playerHealth": 48,
-        "opponentHealth": 76,
-        "campCommentary": []
-      },
-      {
-        "round": 5,
-        "event": "Striking exchange.",
-        "grapplingControl": 0,
-        "playerDamage": 9,
-        "opponentDamage": 4,
-        "playerHealth": 39,
-        "opponentHealth": 72,
+        "playerDamage": 14,
+        "opponentDamage": 8,
+        "playerHealth": 56,
+        "opponentHealth": 73,
         "campCommentary": []
       }
     ],
@@ -2152,9 +2072,9 @@
     "outcome": "Loss (decision)",
     "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 39,
-    "opponentHealthAfter": 72,
-    "playerStaminaAfter": 48,
+    "playerHealthAfter": 41,
+    "opponentHealthAfter": 57,
+    "playerStaminaAfter": 45,
     "rngDraws": 45,
     "rounds": [
       {
@@ -2162,60 +2082,50 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 15,
-        "opponentDamage": 6,
+        "opponentDamage": 10,
         "playerHealth": 85,
-        "opponentHealth": 94,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "opponentHealth": 90,
+        "campCommentary": []
       },
       {
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 15,
-        "opponentDamage": 7,
+        "opponentDamage": 10,
         "playerHealth": 70,
-        "opponentHealth": 87,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "opponentHealth": 80,
+        "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 12,
-        "opponentDamage": 5,
+        "opponentDamage": 7,
         "playerHealth": 58,
-        "opponentHealth": 82,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "opponentHealth": 73,
+        "campCommentary": []
       },
       {
         "round": 4,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 10,
-        "opponentDamage": 6,
-        "playerHealth": 48,
-        "opponentHealth": 76,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "playerDamage": 9,
+        "opponentDamage": 10,
+        "playerHealth": 49,
+        "opponentHealth": 63,
+        "campCommentary": []
       },
       {
         "round": 5,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 9,
-        "opponentDamage": 4,
-        "playerHealth": 39,
-        "opponentHealth": 72,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "playerDamage": 8,
+        "opponentDamage": 6,
+        "playerHealth": 41,
+        "opponentHealth": 57,
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -2228,8 +2138,8 @@
       {
         "moveId": "THE_FINISHER",
         "bonusType": "SIG_FINISHER_STRIKE",
-        "triggered": false,
-        "triggerCount": 0
+        "triggered": true,
+        "triggerCount": 1
       },
       {
         "moveId": "KILLER_INSTINCT",
@@ -2241,22 +2151,22 @@
     "sessionBonuses": []
   },
   "grappler-vs-brawler-ironwill-5r::defense_R": {
-    "outcome": "Loss (decision)",
+    "outcome": "Loss (KO/TKO)",
     "winner": "opponent",
-    "finishCause": null,
-    "playerHealthAfter": 43,
-    "opponentHealthAfter": 71,
-    "playerStaminaAfter": 50,
-    "rngDraws": 43,
+    "finishCause": "ko",
+    "playerHealthAfter": 0,
+    "opponentHealthAfter": 73,
+    "playerStaminaAfter": 69,
+    "rngDraws": 30,
     "rounds": [
       {
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 14,
-        "opponentDamage": 6,
+        "opponentDamage": 10,
         "playerHealth": 86,
-        "opponentHealth": 94,
+        "opponentHealth": 90,
         "campCommentary": []
       },
       {
@@ -2264,39 +2174,19 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 14,
-        "opponentDamage": 7,
+        "opponentDamage": 9,
         "playerHealth": 72,
-        "opponentHealth": 87,
+        "opponentHealth": 81,
         "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 12,
-        "opponentDamage": 5,
-        "playerHealth": 60,
-        "opponentHealth": 82,
-        "campCommentary": []
-      },
-      {
-        "round": 4,
-        "event": "Striking exchange.",
-        "grapplingControl": 0,
-        "playerDamage": 9,
-        "opponentDamage": 6,
-        "playerHealth": 51,
-        "opponentHealth": 76,
-        "campCommentary": []
-      },
-      {
-        "round": 5,
-        "event": "Striking exchange.",
-        "grapplingControl": 0,
-        "playerDamage": 8,
-        "opponentDamage": 5,
-        "playerHealth": 43,
-        "opponentHealth": 71,
+        "playerDamage": 14,
+        "opponentDamage": 8,
+        "playerHealth": 58,
+        "opponentHealth": 73,
         "campCommentary": []
       }
     ],
@@ -2305,13 +2195,13 @@
         "moveId": "GRANITE_JAW",
         "bonusType": "OPPONENT_DAMAGE_REDUCTION",
         "triggered": true,
-        "triggerCount": 5
+        "triggerCount": 3
       },
       {
         "moveId": "VETERAN_IQ",
         "bonusType": "ALL_DAMAGE_REDUCTION",
         "triggered": true,
-        "triggerCount": 5
+        "triggerCount": 3
       },
       {
         "moveId": "NEVER_TAP",
@@ -2323,22 +2213,22 @@
     "sessionBonuses": []
   },
   "grappler-vs-brawler-ironwill-5r::grapple_L": {
-    "outcome": "Loss (decision)",
+    "outcome": "Loss (KO/TKO)",
     "winner": "opponent",
-    "finishCause": null,
-    "playerHealthAfter": 39,
-    "opponentHealthAfter": 72,
-    "playerStaminaAfter": 48,
-    "rngDraws": 45,
+    "finishCause": "ko",
+    "playerHealthAfter": 0,
+    "opponentHealthAfter": 73,
+    "playerStaminaAfter": 69,
+    "rngDraws": 30,
     "rounds": [
       {
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 15,
-        "opponentDamage": 6,
+        "opponentDamage": 10,
         "playerHealth": 85,
-        "opponentHealth": 94,
+        "opponentHealth": 90,
         "campCommentary": []
       },
       {
@@ -2346,39 +2236,19 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 15,
-        "opponentDamage": 7,
+        "opponentDamage": 9,
         "playerHealth": 70,
-        "opponentHealth": 87,
+        "opponentHealth": 81,
         "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 12,
-        "opponentDamage": 5,
-        "playerHealth": 58,
-        "opponentHealth": 82,
-        "campCommentary": []
-      },
-      {
-        "round": 4,
-        "event": "Striking exchange.",
-        "grapplingControl": 0,
-        "playerDamage": 10,
-        "opponentDamage": 6,
-        "playerHealth": 48,
-        "opponentHealth": 76,
-        "campCommentary": []
-      },
-      {
-        "round": 5,
-        "event": "Striking exchange.",
-        "grapplingControl": 0,
-        "playerDamage": 9,
-        "opponentDamage": 4,
-        "playerHealth": 39,
-        "opponentHealth": 72,
+        "playerDamage": 14,
+        "opponentDamage": 8,
+        "playerHealth": 56,
+        "opponentHealth": 73,
         "campCommentary": []
       }
     ],
@@ -2408,70 +2278,60 @@
     "outcome": "Loss (decision)",
     "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 42,
-    "opponentHealthAfter": 73,
-    "playerStaminaAfter": 43,
-    "rngDraws": 61,
+    "playerHealthAfter": 41,
+    "opponentHealthAfter": 59,
+    "playerStaminaAfter": 48,
+    "rngDraws": 66,
     "rounds": [
       {
         "round": 1,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 15,
-        "opponentDamage": 7,
+        "opponentDamage": 10,
         "playerHealth": 85,
-        "opponentHealth": 93,
-        "campCommentary": [
-          "campBodyShot",
-          "campClinchControl"
-        ]
+        "opponentHealth": 90,
+        "campCommentary": []
       },
       {
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 15,
-        "opponentDamage": 7,
-        "playerHealth": 70,
-        "opponentHealth": 86,
-        "campCommentary": [
-          "campClinchControl"
-        ]
+        "playerDamage": 14,
+        "opponentDamage": 11,
+        "playerHealth": 71,
+        "opponentHealth": 79,
+        "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 10,
-        "opponentDamage": 5,
-        "playerHealth": 60,
-        "opponentHealth": 81,
+        "playerDamage": 14,
+        "opponentDamage": 7,
+        "playerHealth": 57,
+        "opponentHealth": 72,
         "campCommentary": []
       },
       {
         "round": 4,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 11,
-        "opponentDamage": 4,
-        "playerHealth": 49,
-        "opponentHealth": 77,
-        "campCommentary": [
-          "campCardio"
-        ]
+        "playerDamage": 9,
+        "opponentDamage": 6,
+        "playerHealth": 48,
+        "opponentHealth": 66,
+        "campCommentary": []
       },
       {
         "round": 5,
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 7,
-        "opponentDamage": 4,
-        "playerHealth": 42,
-        "opponentHealth": 73,
-        "campCommentary": [
-          "campCardio",
-          "campBodyShot"
-        ]
+        "opponentDamage": 7,
+        "playerHealth": 41,
+        "opponentHealth": 59,
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -2479,13 +2339,13 @@
         "moveId": "BODY_SNATCHER",
         "bonusType": "BODY_DAMAGE",
         "triggered": true,
-        "triggerCount": 2
+        "triggerCount": 3
       },
       {
         "moveId": "CLINCH_KILLER",
         "bonusType": "CLINCH_DAMAGE",
         "triggered": true,
-        "triggerCount": 2
+        "triggerCount": 3
       },
       {
         "moveId": "SECOND_WIND",
@@ -2500,7 +2360,7 @@
     "outcome": "Decision (unanimous)",
     "winner": "player",
     "finishCause": null,
-    "playerHealthAfter": 68,
+    "playerHealthAfter": 63,
     "opponentHealthAfter": 73,
     "playerStaminaAfter": 70,
     "rngDraws": 25,
@@ -2519,9 +2379,9 @@
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 3,
+        "playerDamage": 6,
         "opponentDamage": 14,
-        "playerHealth": 71,
+        "playerHealth": 68,
         "opponentHealth": 86,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2531,9 +2391,9 @@
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 3,
+        "playerDamage": 5,
         "opponentDamage": 13,
-        "playerHealth": 68,
+        "playerHealth": 63,
         "opponentHealth": 73,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2563,7 +2423,7 @@
     "outcome": "Decision (unanimous)",
     "winner": "player",
     "finishCause": null,
-    "playerHealthAfter": 68,
+    "playerHealthAfter": 63,
     "opponentHealthAfter": 72,
     "playerStaminaAfter": 70,
     "rngDraws": 25,
@@ -2582,9 +2442,9 @@
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 3,
+        "playerDamage": 6,
         "opponentDamage": 14,
-        "playerHealth": 71,
+        "playerHealth": 68,
         "opponentHealth": 86,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2594,9 +2454,9 @@
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 3,
+        "playerDamage": 5,
         "opponentDamage": 14,
-        "playerHealth": 68,
+        "playerHealth": 63,
         "opponentHealth": 72,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2645,7 +2505,7 @@
     "outcome": "Decision (unanimous)",
     "winner": "player",
     "finishCause": null,
-    "playerHealthAfter": 70,
+    "playerHealthAfter": 65,
     "opponentHealthAfter": 73,
     "playerStaminaAfter": 70,
     "rngDraws": 25,
@@ -2664,9 +2524,9 @@
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 3,
+        "playerDamage": 6,
         "opponentDamage": 14,
-        "playerHealth": 72,
+        "playerHealth": 69,
         "opponentHealth": 86,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2676,9 +2536,9 @@
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 2,
+        "playerDamage": 4,
         "opponentDamage": 13,
-        "playerHealth": 70,
+        "playerHealth": 65,
         "opponentHealth": 73,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2727,7 +2587,7 @@
     "outcome": "Decision (unanimous)",
     "winner": "player",
     "finishCause": null,
-    "playerHealthAfter": 76,
+    "playerHealthAfter": 71,
     "opponentHealthAfter": 73,
     "playerStaminaAfter": 70,
     "rngDraws": 25,
@@ -2746,9 +2606,9 @@
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 3,
+        "playerDamage": 6,
         "opponentDamage": 14,
-        "playerHealth": 79,
+        "playerHealth": 76,
         "opponentHealth": 86,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2758,9 +2618,9 @@
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 3,
+        "playerDamage": 5,
         "opponentDamage": 13,
-        "playerHealth": 76,
+        "playerHealth": 71,
         "opponentHealth": 73,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2809,7 +2669,7 @@
     "outcome": "Loss (decision)",
     "winner": "opponent",
     "finishCause": null,
-    "playerHealthAfter": 50,
+    "playerHealthAfter": 47,
     "opponentHealthAfter": 86,
     "playerStaminaAfter": 71,
     "rngDraws": 27,
@@ -2828,9 +2688,9 @@
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 3,
+        "playerDamage": 6,
         "opponentDamage": 14,
-        "playerHealth": 71,
+        "playerHealth": 68,
         "opponentHealth": 86,
         "campCommentary": [
           "campStrikingAccuracy"
@@ -2842,7 +2702,7 @@
         "grapplingControl": -1,
         "playerDamage": 21,
         "opponentDamage": 0,
-        "playerHealth": 50,
+        "playerHealth": 47,
         "opponentHealth": 86,
         "campCommentary": []
       }
@@ -3069,9 +2929,7 @@
         "opponentDamage": 47,
         "playerHealth": 100,
         "opponentHealth": 53,
-        "campCommentary": [
-          "campGnpPosture"
-        ]
+        "campCommentary": []
       },
       {
         "round": 2,
@@ -3081,9 +2939,7 @@
         "opponentDamage": 41,
         "playerHealth": 100,
         "opponentHealth": 12,
-        "campCommentary": [
-          "campGnpPosture"
-        ]
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -3174,7 +3030,7 @@
     "outcome": "KO/TKO",
     "winner": "player",
     "finishCause": "tko",
-    "playerHealthAfter": 100,
+    "playerHealthAfter": 97,
     "opponentHealthAfter": 0,
     "playerStaminaAfter": 64,
     "rngDraws": 30,
@@ -3193,9 +3049,9 @@
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 0,
+        "playerDamage": 2,
         "opponentDamage": 40,
-        "playerHealth": 100,
+        "playerHealth": 98,
         "opponentHealth": 38,
         "campCommentary": []
       },
@@ -3203,9 +3059,9 @@
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 0,
+        "playerDamage": 1,
         "opponentDamage": 30,
-        "playerHealth": 100,
+        "playerHealth": 97,
         "opponentHealth": 8,
         "campCommentary": []
       }
@@ -3217,7 +3073,7 @@
     "outcome": "KO/TKO",
     "winner": "player",
     "finishCause": "ko",
-    "playerHealthAfter": 100,
+    "playerHealthAfter": 97,
     "opponentHealthAfter": 0,
     "playerStaminaAfter": 64,
     "rngDraws": 29,
@@ -3236,25 +3092,21 @@
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 0,
+        "playerDamage": 2,
         "opponentDamage": 42,
-        "playerHealth": 100,
+        "playerHealth": 98,
         "opponentHealth": 36,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 0,
+        "playerDamage": 1,
         "opponentDamage": 38,
-        "playerHealth": 100,
+        "playerHealth": 97,
         "opponentHealth": 0,
-        "campCommentary": [
-          "campStrikingAccuracy"
-        ]
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -3283,7 +3135,7 @@
     "outcome": "KO/TKO",
     "winner": "player",
     "finishCause": "tko",
-    "playerHealthAfter": 100,
+    "playerHealthAfter": 98,
     "opponentHealthAfter": 0,
     "playerStaminaAfter": 64,
     "rngDraws": 30,
@@ -3302,9 +3154,9 @@
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 0,
+        "playerDamage": 1,
         "opponentDamage": 40,
-        "playerHealth": 100,
+        "playerHealth": 99,
         "opponentHealth": 38,
         "campCommentary": []
       },
@@ -3312,9 +3164,9 @@
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 0,
+        "playerDamage": 1,
         "opponentDamage": 30,
-        "playerHealth": 100,
+        "playerHealth": 98,
         "opponentHealth": 8,
         "campCommentary": []
       }
@@ -3345,7 +3197,7 @@
     "outcome": "KO/TKO",
     "winner": "player",
     "finishCause": "ko",
-    "playerHealthAfter": 100,
+    "playerHealthAfter": 99,
     "opponentHealthAfter": 0,
     "playerStaminaAfter": 61,
     "rngDraws": 36,
@@ -3358,9 +3210,7 @@
         "opponentDamage": 26,
         "playerHealth": 100,
         "opponentHealth": 74,
-        "campCommentary": [
-          "campGnpPosture"
-        ]
+        "campCommentary": []
       },
       {
         "round": 2,
@@ -3370,9 +3220,7 @@
         "opponentDamage": 23,
         "playerHealth": 100,
         "opponentHealth": 51,
-        "campCommentary": [
-          "campGnpPosture"
-        ]
+        "campCommentary": []
       },
       {
         "round": 3,
@@ -3382,21 +3230,17 @@
         "opponentDamage": 21,
         "playerHealth": 100,
         "opponentHealth": 30,
-        "campCommentary": [
-          "campGnpPosture"
-        ]
+        "campCommentary": []
       },
       {
         "round": 4,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 0,
+        "playerDamage": 1,
         "opponentDamage": 34,
-        "playerHealth": 100,
+        "playerHealth": 99,
         "opponentHealth": 0,
-        "campCommentary": [
-          "campTakedownDefence"
-        ]
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -3425,7 +3269,7 @@
     "outcome": "KO/TKO",
     "winner": "player",
     "finishCause": "ko",
-    "playerHealthAfter": 100,
+    "playerHealthAfter": 96,
     "opponentHealthAfter": 0,
     "playerStaminaAfter": 60,
     "rngDraws": 46,
@@ -3444,37 +3288,31 @@
         "round": 2,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 0,
+        "playerDamage": 2,
         "opponentDamage": 43,
-        "playerHealth": 100,
+        "playerHealth": 98,
         "opponentHealth": 35,
-        "campCommentary": [
-          "campClinchControl"
-        ]
+        "campCommentary": []
       },
       {
         "round": 3,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 0,
+        "playerDamage": 1,
         "opponentDamage": 31,
-        "playerHealth": 100,
+        "playerHealth": 97,
         "opponentHealth": 4,
-        "campCommentary": [
-          "campBodyShot"
-        ]
+        "campCommentary": []
       },
       {
         "round": 4,
         "event": "Striking exchange.",
         "grapplingControl": 0,
-        "playerDamage": 0,
+        "playerDamage": 1,
         "opponentDamage": 27,
-        "playerHealth": 100,
+        "playerHealth": 96,
         "opponentHealth": 0,
-        "campCommentary": [
-          "campCardio"
-        ]
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -3504,7 +3342,7 @@
     "winner": "player",
     "finishCause": null,
     "playerHealthAfter": 86,
-    "opponentHealthAfter": 38,
+    "opponentHealthAfter": 35,
     "playerStaminaAfter": 75,
     "rngDraws": 23,
     "rounds": [
@@ -3533,9 +3371,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 14,
-        "opponentDamage": 6,
+        "opponentDamage": 9,
         "playerHealth": 86,
-        "opponentHealth": 38,
+        "opponentHealth": 35,
         "campCommentary": []
       }
     ],
@@ -3609,7 +3447,7 @@
     "winner": "player",
     "finishCause": null,
     "playerHealthAfter": 87,
-    "opponentHealthAfter": 38,
+    "opponentHealthAfter": 35,
     "playerStaminaAfter": 75,
     "rngDraws": 23,
     "rounds": [
@@ -3638,9 +3476,9 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 13,
-        "opponentDamage": 6,
+        "opponentDamage": 9,
         "playerHealth": 87,
-        "opponentHealth": 38,
+        "opponentHealth": 35,
         "campCommentary": []
       }
     ],
@@ -3683,9 +3521,7 @@
         "opponentDamage": 34,
         "playerHealth": 100,
         "opponentHealth": 66,
-        "campCommentary": [
-          "campGnpPosture"
-        ]
+        "campCommentary": []
       },
       {
         "round": 2,
@@ -3695,9 +3531,7 @@
         "opponentDamage": 29,
         "playerHealth": 100,
         "opponentHealth": 37,
-        "campCommentary": [
-          "campGnpPosture"
-        ]
+        "campCommentary": []
       }
     ],
     "moveBonuses": [
@@ -3727,9 +3561,9 @@
     "winner": "player",
     "finishCause": null,
     "playerHealthAfter": 86,
-    "opponentHealthAfter": 38,
+    "opponentHealthAfter": 34,
     "playerStaminaAfter": 75,
-    "rngDraws": 26,
+    "rngDraws": 27,
     "rounds": [
       {
         "round": 1,
@@ -3756,12 +3590,10 @@
         "event": "Striking exchange.",
         "grapplingControl": 0,
         "playerDamage": 14,
-        "opponentDamage": 6,
+        "opponentDamage": 10,
         "playerHealth": 86,
-        "opponentHealth": 38,
-        "campCommentary": [
-          "campClinchControl"
-        ]
+        "opponentHealth": 34,
+        "campCommentary": []
       }
     ],
     "moveBonuses": [

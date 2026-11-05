@@ -30,6 +30,20 @@ const MAX_FIGHT_HISTORY    = 20;  // max fightHistory entries kept per opponent
 const NEMESIS_WIN_BONUS    = 150; // notoriety awarded for defeating your nemesis
 
 const OFFER_TYPE = { EASY: "Easy", EVEN: "Even", HARD: "Hard" };
+const { DEBUT_OFFER_TYPE } = require("../consts/offerBoardConfig");
+
+/**
+ * Lifetime resolved PvE fights (first-session contract D.2). Only resolveFightAndApply
+ * increments fighter.record (PvP uses PVPRecord), so wins + losses + draws is the count.
+ * One home: the board rule, the fingerprint, the accept / resolve analytics and the
+ * signing bonus all read it from here.
+ * @param {?Object} fighter
+ * @returns {number}
+ */
+function pveFightCount(fighter) {
+    const r = (fighter && fighter.record) || {};
+    return (Number(r.wins) || 0) + (Number(r.losses) || 0) + (Number(r.draws) || 0);
+}
 
 // ── Nemesis helpers ───────────────────────────────────────────────────────────
 const emptyNemesis = () => ({ opponentId: null, opponentName: null, lossCount: 0, setAt: null });
@@ -244,6 +258,7 @@ const fighterService = require("./fighterService");
 const questService = require("./questService");
 const { resolveFight } = require("../utils/fightResolution");
 const { deriveFightDetails } = require("../utils/fightBreakdown");
+const { buildLoadoutSnapshot } = require("../utils/fightLoadoutSnapshot");
 const { FIGHT_RESOLUTION_CONFIG: FIGHT_CFG } = require("../consts/fightResolutionConfig");
 const {
     rollForFightInjury,
@@ -381,9 +396,14 @@ function titleShotEligibility(fighter) {
  * stale nemesis and clearing pendingPromotion after an OVR drop. The board
  * fingerprint must therefore be computed AFTER this runs.
  *
+ * Debut rule (first-session contract B.3), checked first: a fighter with zero resolved
+ * PvE fights gets ONE slot, offer type "Debut", sampled from the isDebut pool of their
+ * weight class. An empty debut pool logs and falls through to the normal board, so a new
+ * player is never stranded on POOL_EMPTY because the debut seed was not run.
+ *
  * @param {Object} fighter hydrated Fighter doc
- * @returns {Promise<Array<{offerType:"Easy"|"Even"|"Hard"|"TitleShot", opponentId:*}>>}
- *          Easy, Even, Hard in ascending OVR, then TitleShot when present.
+ * @returns {Promise<Array<{offerType:"Easy"|"Even"|"Hard"|"TitleShot"|"Debut", opponentId:*}>>}
+ *          [Debut] alone; or Easy, Even, Hard in ascending OVR, then TitleShot when present.
  */
 async function pickOfferSlots(fighter) {
     const tier = fighter.promotionTier;
@@ -395,6 +415,12 @@ async function pickOfferSlots(fighter) {
 
     const randomOpp = (match) =>
         Opponent.aggregate([{ $match: match }, { $sample: { size: 1 } }]);
+
+    if (pveFightCount(fighter) === 0) {
+        const debutOpp = await randomOpp({ isDebut: true, weightClass });
+        if (debutOpp[0]) return [{ offerType: DEBUT_OFFER_TYPE, opponentId: debutOpp[0]._id }];
+        console.error(`[offerBoard] debut pool empty for ${weightClass}`);
+    }
 
     // Resolve nemesis first so we can force them into the correct slot
     let nemesisOpp = null;
@@ -414,7 +440,7 @@ async function pickOfferSlots(fighter) {
     // Determine which slot the nemesis belongs to based on OVR distance
     const nemesisType = nemesisOpp ? classifyOfferType(nemesisOpp.overallRating, overall) : null;
 
-    const base    = { weightClass, promotionTier: tier, isChampion: { $ne: true } };
+    const base    = { weightClass, promotionTier: tier, isChampion: { $ne: true }, isDebut: { $ne: true } };
     const exclude = [];
     if (nemesisOpp) exclude.push(nemesisOpp._id); // never double-pick the nemesis
 
@@ -533,7 +559,9 @@ async function hydrateOffers(fighter, slots) {
     }
 
     // Active callout: a live overlay on the difficulty slots, never stored on the board.
-    if (fighter.activeCallout?.opponentId) {
+    // Never on the single-slot Debut board (a Debut offer never carries isCallout).
+    const isDebutBoard = list.some((s) => s.offerType === DEBUT_OFFER_TYPE);
+    if (fighter.activeCallout?.opponentId && !isDebutBoard) {
         const calloutService = require("./calloutService");
         offers = await calloutService.injectIntoOffers(fighter, offers);
     }
@@ -690,10 +718,15 @@ async function acceptOffer(fighterId, fightId, userId) {
     await campService.createCamp(fight._id, fighterId, fight.promotionTier, false, fight.offerType);
 
     // Fire-and-forget analytics; userId is threaded from the controller (req.user.id).
+    // fightNumber: lifetime PvE number of THIS fight (1 = debut). The record is unchanged
+    // since accept, so count + 1. The first-session funnel reads it (contract D.1).
     analyticsService.track(
         userId,
         "fight_accepted",
-        { fightId: fight._id, tier: fight.promotionTier, kind: "pve" },
+        {
+            fightId: fight._id, tier: fight.promotionTier, kind: "pve",
+            fightNumber: pveFightCount(fighter) + 1, offerType: fight.offerType,
+        },
         { fighterId: fighter._id }
     );
 
@@ -799,6 +832,9 @@ async function resolveFightAndApply(fighterId, userId) {
 
     notorietyService.ensureNotorietyShape(fighter);
     if (!fighter.acceptedFightId) throw new Error("No accepted fight");
+
+    // First-session (contract B.5): resolved PvE fights BEFORE this one (record untouched yet).
+    const pveFightsBefore = pveFightCount(fighter);
 
     // ── Resolve claim (one resolve per accepted fight) ──────────────────────────
     // Nothing above writes. Before any read-modify-write we atomically move the Fight
@@ -1157,12 +1193,30 @@ async function resolveFightAndApply(fighterId, userId) {
                 },
                 String(fight._id)
             );
+            // Fight replay highlights: freeze the player's corner (moves + camp, fired counts)
+            // from the SAME engine result the eventLog came from, so every count matches.
+            const ownedRarities = {};
+            for (const o of fighter.specialMovesOwned || []) {
+                if (o && typeof o.moveId === "string") ownedRarities[o.moveId] = o.rarity ?? null;
+            }
+            const loadout = buildLoadoutSnapshot({
+                moveBonuses: result.moveBonuses,
+                sessionBonuses: result.sessionBonuses,
+                equippedOrder: fighter.specialMovesEquipped || [],
+                ownedRarities,
+            });
             fight.breakdown = {
-                version: 1,
+                version: 2,
                 roundStats: bd.roundStats,
                 eventLog: bd.eventLog,
                 introTemplateKey: bd.introTemplateKey,
                 resultContextKey: bd.resultContextKey,
+                loadout,
+                staminaStart: bd.staminaStart,
+                healthStart: bd.healthStart,
+                // Display-only: the scheduled length (LATE_ROUNDS is the back half of THIS, not of
+                // the rounds fought), for the replay's ready glow (docs/move-ready-glow-spec.md).
+                scheduledRounds: FIGHT_CFG.defaults.maxRounds,
             };
         } catch (e) {
             console.error("[fight] breakdown derive failed:", e.message);
@@ -1201,6 +1255,8 @@ async function resolveFightAndApply(fighterId, userId) {
         // block occupied (right after HP is known, before record mutation). xpMultiplier:1 →
         // stat XP === old Math.round(baseXp) (the outcome/comeback multiplier was never applied
         // to stat XP). Evaluated before the record is updated below.
+        // OVR before stat-XP banking + recompute (summary.ovrBefore / ovrAfter).
+        const ovrBefore = fighter.overallRating ?? 14;
         const cons = fightConsequenceService.applyFightConsequences(fighter, {
             outcomePerspective: result.outcome,
             endingHealth: result.playerHealthAfter ?? 100,
@@ -1259,9 +1315,12 @@ async function resolveFightAndApply(fighterId, userId) {
                 fighter.titleShotCooldown = 2;
             }
 
-            // Nemesis: the NPC that just beat us becomes (or stays) the nemesis
-            const nemesisResult = resolveNemesisOnLoss(fighter, opponent._id, opponent.name);
-            if (nemesisResult.wasNew) { nemesisSet = true; nemesisName = opponent.name; }
+            // Nemesis: the NPC that just beat us becomes (or stays) the nemesis. Never a debut
+            // opponent: it would be forced back onto the normal board (contract C.2).
+            if (fight.offerType !== DEBUT_OFFER_TYPE) {
+                const nemesisResult = resolveNemesisOnLoss(fighter, opponent._id, opponent.name);
+                if (nemesisResult.wasNew) { nemesisSet = true; nemesisName = opponent.name; }
+            }
         } else {
             fighter.record.draws += 1;
             fighter.winStreak = 0;
@@ -1278,12 +1337,16 @@ async function resolveFightAndApply(fighterId, userId) {
         })();
         const oppRound = result.rounds?.length ?? 1;
 
-        opponent.fightHistory = opponent.fightHistory || [];
-        opponent.fightHistory.push({ result: oppResult, method: oppMethod, round: oppRound });
-        if (opponent.fightHistory.length > MAX_FIGHT_HISTORY) {
-            opponent.fightHistory.splice(0, opponent.fightHistory.length - MAX_FIGHT_HISTORY);
+        // Debut opponents are shared by every new player: their seeded record must not drift,
+        // and concurrent debuts must not race on one document's history after the commit.
+        if (fight.offerType !== DEBUT_OFFER_TYPE) {
+            opponent.fightHistory = opponent.fightHistory || [];
+            opponent.fightHistory.push({ result: oppResult, method: oppMethod, round: oppRound });
+            if (opponent.fightHistory.length > MAX_FIGHT_HISTORY) {
+                opponent.fightHistory.splice(0, opponent.fightHistory.length - MAX_FIGHT_HISTORY);
+            }
+            await opponent.save();
         }
-        await opponent.save();
         // ─────────────────────────────────────────────────────────────────────
 
         const winStreakAfterWin = isWin ? (fighter.winStreak || 0) : 0;
@@ -1423,10 +1486,16 @@ async function resolveFightAndApply(fighterId, userId) {
         // Ranking System v1.0 — entry or movement based on this fight's result.
         // Champion fights pass opponentRank=1; regular ranked NPCs use their fixedRank.
         // PvP (future) will pass opponentRank=null which suppresses upset bonus/penalty.
+        // rankEarned (contract B.5): the display rank when THIS fight placed the fighter
+        // (rank null before, set now). Read before a promotion below can reset the rank.
+        let rankEarned = null;
         {
+            const rankBefore = fighter.ranking?.rank ?? null;
             const fightResult = rankingService.buildFightResultFromOutcome(result.outcome);
             fightResult.opponentRank = (typeof opponent.fixedRank === "number") ? opponent.fixedRank : null;
             rankingService.updatePlayerRank(fighter, fightResult);
+            const rankAfter = fighter.ranking?.rank ?? null;
+            if (rankBefore == null && rankAfter != null) rankEarned = rankingService.toDisplayRank(rankAfter);
         }
 
         // Title-shot gate: count this win only if it leaves the fighter ranked top-5
@@ -1450,6 +1519,28 @@ async function resolveFightAndApply(fighterId, userId) {
             else buffs[buffId] = remaining;
             used[buffId] = (used[buffId] || 0) + 1;
             fighter.markModified("inventory");
+        }
+
+        // -- First session (contract B.5): $500 signing bonus + tutorial completion --
+        // Paid exactly once per fighter, in the resolve of the FIRST PvE fight. In memory on
+        // purpose, before the first fighter.save() after the commit: the purse is credited
+        // the same way, and the fight claim (accepted -> resolving) already makes this
+        // resolve exactly-once. An atomic $inc here would be overwritten by the later saves
+        // that $set the hydrated `iron`. Only dotted tutorial paths are assigned (no
+        // markModified("tutorial")), so a concurrent tips/seen $addToSet is not clobbered.
+        let signingBonus = 0;
+        if (pveFightsBefore === 0) {
+            const { TUTORIAL_IRON_REWARD, FINAL_STEP } = require("../consts/tutorialConfig");
+            if (!fighter.tutorial?.signingBonusPaidAt) {
+                fighter.iron = (fighter.iron || 0) + TUTORIAL_IRON_REWARD;
+                fighter.tutorial.signingBonusPaidAt = new Date();
+                signingBonus = TUTORIAL_IRON_REWARD;
+            }
+            if (!fighter.tutorial.completed || fighter.tutorial.current_step !== FINAL_STEP) {
+                fighter.tutorial.completed = true;
+                fighter.tutorial.current_step = FINAL_STEP;
+                if (!fighter.tutorial.completed_at) fighter.tutorial.completed_at = new Date();
+            }
         }
 
         await fighter.save();
@@ -1724,7 +1815,10 @@ async function resolveFightAndApply(fighterId, userId) {
         analyticsService.track(
             userId,
             "fight_resolved",
-            { fightId: String(fight._id), tier: _tier, outcome: result.outcome, isWin },
+            {
+                fightId: String(fight._id), tier: _tier, outcome: result.outcome, isWin,
+                fightNumber: pveFightsBefore + 1, offerType: fight.offerType,
+            },
             { fighterId: fighter._id }
         );
         if (isWin)  activityLogService.log(fighterId, "FIGHT_WIN",
@@ -1836,7 +1930,36 @@ async function resolveFightAndApply(fighterId, userId) {
             newlyUnlockedBannerPieces = [];
         }
 
+        // Next goal for the result screen, computed on the POST-resolve fighter doc.
+        // Lazy require (nextGoalService reads fightService helpers). Non-fatal.
+        let nextGoal = null;
+        try {
+            nextGoal = require("./nextGoalService").computeNextGoal(fighter);
+        } catch (e) {
+            console.error("[fight] nextGoal build failed:", e.message);
+        }
+
+        /**
+         * Resolve summary. First-session additions (docs/first-session-contract.md B.5):
+         * @typedef {Object} FightResolveSummary
+         * @property {number}  fightNumber   lifetime PvE number of THIS fight (1 = debut)
+         * @property {boolean} isDebut       fight.offerType === "Debut"
+         * @property {number}  signingBonus  500 when this resolve credited the signing bonus, else 0
+         * @property {number}  ovrBefore     overallRating before fightConsequenceService ran
+         * @property {number}  ovrAfter      overallRating after
+         * @property {?number} rankEarned    display rank when this fight placed the fighter, else null
+         * @property {?import("./nextGoalService").NextGoal} nextGoal  null only if the build failed
+         * Plus every pre-existing field below. `ironEarned` stays the purse only; the
+         * signing bonus is its own line.
+         */
         const summary = {
+            fightNumber: pveFightsBefore + 1,
+            isDebut: fight.offerType === DEBUT_OFFER_TYPE,
+            signingBonus,
+            ovrBefore,
+            ovrAfter: fighter.overallRating ?? ovrBefore,
+            rankEarned,
+            nextGoal,
             outcome: result.outcome,
             recordChange: isWin ? "W" : isLoss ? "L" : "D",
             recordAfter: `${fighter.record.wins}-${fighter.record.losses}-${fighter.record.draws}`,
@@ -1939,6 +2062,7 @@ async function resolveFightAndApply(fighterId, userId) {
         // Non-fatal: a failure here just omits breakdownView (frontend falls back to legacy).
         // NOTE: returned at the TOP LEVEL of the response (alongside fight/fighter/result/summary)
         // because the frontend reads `response.breakdownView`. Do NOT nest it under `result`.
+        // Shape: BreakdownView (utils/fightBreakdownView.js), now with `loadout` + move events.
         let breakdownView = null;
         try {
             breakdownView = await getFightBreakdown(String(fight._id), String(fighter._id));
@@ -1981,6 +2105,9 @@ async function getOffers(fighterId) {
  * always the engine-player → perspective "player", no swap.
  *
  * Legacy fights (breakdown.version == null) return a thin legacy payload.
+ * Version 1 fights return `loadout: null`; version 2 adds `loadout` and move/wildcard events.
+ * @returns {Promise<import("../utils/fightBreakdownView").BreakdownView|Object|null>}
+ *          BreakdownView, the thin legacy payload, or null (missing / not owned).
  */
 async function getFightBreakdown(fightId, viewerFighterId) {
     const fight = await Fight.findById(fightId).populate("opponentId");
@@ -2066,6 +2193,7 @@ async function getFightBreakdown(fightId, viewerFighterId) {
 }
 
 module.exports = {
+    pveFightCount,
     pickOfferSlots,
     hydrateOffers,
     buildOfferContext,

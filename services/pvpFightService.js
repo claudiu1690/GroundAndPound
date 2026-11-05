@@ -1323,6 +1323,8 @@ async function setDefenseGameplan(fighterId, gameplan) {
  * attacker nor defender (controller maps null → 404). Persisted breakdown is in
  * ENGINE perspective (player = attacker); when the viewer is the DEFENDER we swap
  * every pair and flip every actorIsPlayer.
+ * PvP never carries move_fired/wildcard_fired events and its `loadout` is always null.
+ * @returns {Promise<import("../utils/fightBreakdownView").BreakdownView|Object|null>}
  */
 async function getFightBreakdown(fightId, viewerFighterId) {
     const fight = await PVPFight.findById(fightId);

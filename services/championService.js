@@ -11,6 +11,7 @@ async function seedNewChampion(tier, weightClass) {
         promotionTier: tier,
         weightClass,
         isChampion: false,
+        isDebut: { $ne: true }, // debut opponents are never champions (first-session C.2)
     }).sort({ overallRating: -1 });
 
     if (newChamp) {

@@ -1,14 +1,18 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { tierLabel } from "../../constants/fame";
 import { getRatingConfig, MATCH_STATUS_LABELS, MATCH_STATUS_COLORS } from "../../constants/campConfig";
 import { BELT_FAME, GCS_DEFENSE_FAME } from "../../constants/gameConstants";
 import { ArrowUpCircle, Trophy } from "lucide-react";
 import { t } from "@/lib/i18n";
+import { NextGoalCard } from "./NextGoalCard";
+import "./debut.css";
 
 /**
  * Post-fight summary: health/stamina lost, XP gained, fame, cash, injuries, comeback, weight miss, etc.
  */
-export const FightSummary = memo(function FightSummary({ summary, description }) {
+export const FightSummary = memo(function FightSummary({ summary, description, reportCollapsed = false }) {
+  // After a reveal the full report is one tap away; with the reveal off it opens expanded.
+  const [reportOpen, setReportOpen] = useState(!reportCollapsed);
   if (!summary) return null;
 
   const {
@@ -53,6 +57,11 @@ export const FightSummary = memo(function FightSummary({ summary, description })
     buff,
     drinksGranted,
     sponsorship,
+    signingBonus,
+    rankEarned,
+    ovrBefore,
+    ovrAfter,
+    nextGoal,
   } = summary;
 
   // Energy Drink free-earn notices (post-fight). All guarded with ?? 0 so a
@@ -72,6 +81,8 @@ export const FightSummary = memo(function FightSummary({ summary, description })
   const fameDisplay = fameGained > 0 ? `+${fameGained}` : fameGained === 0 ? "—" : fameGained;
 
   const hasDescription = !!description;
+  const showDescription = hasDescription && reportOpen;
+  const ovrMoved = Number.isFinite(ovrBefore) && Number.isFinite(ovrAfter) && ovrBefore !== ovrAfter;
 
   // ── Notice ticker ─────────────────────────────────────────────
   // Every post-fight notice as a compact {kind, glyph, text} chip; same
@@ -167,7 +178,24 @@ export const FightSummary = memo(function FightSummary({ summary, description })
             </div>
           </div>
         </div>
+
+        {(signingBonus > 0 || Number.isFinite(rankEarned)) && (
+          <div className="fs2-bonus-row">
+            {signingBonus > 0 && (
+              <span className="fs2-bonus-chip fs2-bonus-chip--cash" data-tut="result-signing">
+                {t("fights.summary.signingBonus", { n: Number(signingBonus).toLocaleString() })}
+              </span>
+            )}
+            {Number.isFinite(rankEarned) && (
+              <span className="fs2-bonus-chip fs2-bonus-chip--rank">
+                {t("fights.summary.rankEarned", { rank: rankEarned })}
+              </span>
+            )}
+          </div>
+        )}
       </div>
+
+      <NextGoalCard nextGoal={nextGoal} />
 
       {notices.length > 0 && (
         <div className="fs2-ticker">
@@ -181,7 +209,7 @@ export const FightSummary = memo(function FightSummary({ summary, description })
         </div>
       )}
 
-      <div className={`body-grid${hasDescription ? "" : " body-grid--single"}`}>
+      <div className={`body-grid${showDescription ? "" : " body-grid--single"}`}>
         <div className="fs-left-col">
           <div className="card">
             <div className="card-label">{t("fights.summary.cardFightToll")}</div>
@@ -215,21 +243,26 @@ export const FightSummary = memo(function FightSummary({ summary, description })
                 </span>
               </div>
             )}
-            {(hasXp || statLevelUps?.length > 0) && (
+            {(hasXp || statLevelUps?.length > 0 || ovrMoved) && (
               <>
                 <div className="card-label fs2-card-label--sub">{t("fights.summary.cardXpGained")}</div>
-                {hasXp && (
-                  <div className="xp-grid">
-                    {Object.entries(xpGained).map(([stat, xp]) => (
-                      <span key={stat} className="xp-tag">{stat} +{xp}</span>
-                    ))}
-                  </div>
-                )}
                 {statLevelUps?.length > 0 && (
                   <div className="xp-levelup-line">
                     <ArrowUpCircle size={12} /> {t("fights.summary.levelledUp")}
                     {statLevelUps.map((s) => (
                       <span key={s} className="levelup-tag">{s}</span>
+                    ))}
+                  </div>
+                )}
+                {ovrMoved && (
+                  <div className="stat-summary-row">
+                    <span className="stat-summary-label">{t("fights.summary.ovrLine", { before: ovrBefore, after: ovrAfter })}</span>
+                  </div>
+                )}
+                {hasXp && (
+                  <div className="xp-grid">
+                    {Object.entries(xpGained).map(([stat, xp]) => (
+                      <span key={stat} className="xp-tag">{stat} +{xp}</span>
                     ))}
                   </div>
                 )}
@@ -294,8 +327,19 @@ export const FightSummary = memo(function FightSummary({ summary, description })
           )}
         </div>
 
-        {description}
+        {showDescription ? description : null}
       </div>
+
+      {hasDescription && reportCollapsed && (
+        <button
+          type="button"
+          className="btn btn-secondary fs-report-toggle"
+          aria-expanded={reportOpen}
+          onClick={() => setReportOpen((v) => !v)}
+        >
+          {reportOpen ? t("fights.summary.hideReport") : t("fights.summary.fullReport")}
+        </button>
+      )}
     </section>
   );
 });

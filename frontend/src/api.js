@@ -252,6 +252,15 @@ export const api = {
     }),
   completeTutorial: (fighterId) =>
     request(`/tutorial/${fighterId}/complete`, { method: "POST" }),
+  /** Marks a section or moment tip as seen. Resolves `{ tipsSeen }`. */
+  markTipSeen: (fighterId, key) =>
+    request(`/tutorial/${fighterId}/tips/seen`, {
+      method: "POST",
+      body: JSON.stringify({ key }),
+    }),
+  /** Owner settings (play fights out, section tips). Resolves `{ settings }`. */
+  updateFighterSettings: (id, patch) =>
+    request(`/fighters/${id}/settings`, { method: "PATCH", body: JSON.stringify(patch) }),
 
   // ── Gyms ────────────────────────────────────────────────
   listGymsForFighter: (fighterId) =>

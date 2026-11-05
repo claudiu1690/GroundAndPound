@@ -7,6 +7,7 @@ const notorietyService = require("./notorietyService");
 const energyService = require("./energyService");
 const personaService = require("./personaService");
 const { validateNickname } = require("../utils/nickname");
+const { buildStartingStats } = require("../utils/startingStats");
 
 /** Persona (Role Model) hospital-bill discount fraction (≤0). Injury-clearing charges only. */
 function hospitalBillFrac(fighter) {
@@ -107,30 +108,6 @@ function getInjuryLockedStats(fighter) {
         }
     }
     return Array.from(locked);
-}
-
-/**
- * Build starting stats from style and optional backstory.
- */
-function buildStartingStats(style, backstory) {
-    const start = STYLES[style] && STYLES[style].start ? { ...STYLES[style].start } : {};
-    const stats = {};
-    for (const s of STAT_NAMES) {
-        const key = s.toLowerCase();
-        stats[key] = Math.min(100, Math.max(1, start[s] || 10));
-    }
-    if (backstory && BACKSTORIES[backstory]) {
-        const bonus = BACKSTORIES[backstory];
-        if (bonus.allStats) {
-            STAT_KEYS.forEach(k => { stats[k] = Math.min(100, stats[k] + bonus.allStats); });
-        }
-        STAT_NAMES.forEach(s => {
-            const key = s.toLowerCase();
-            if (bonus[key] || bonus[s]) stats[key] = Math.min(100, stats[key] + (bonus[key] || bonus[s] || 0));
-        });
-        if (bonus.maxStaminaBonus) stats.maxStaminaBonus = bonus.maxStaminaBonus;
-    }
-    return stats;
 }
 
 /**
@@ -486,6 +463,64 @@ async function updateFighter(id, { nickname }) {
     // media.podcastName is NOT regenerated here; it keeps whatever name it was built with.
     await reconcileEnergy(fighter);
     return toPublicFighter(fighter);
+}
+
+/** Keys PATCH /fighters/:id/settings may write (fighter.settings.*). */
+const SETTINGS_KEYS = Object.freeze(["playFightsOut", "sectionTips"]);
+
+/**
+ * Update owner-only gameplay settings (first-session contract B.2). The patch must already
+ * be validated by the controller (validateSettingsPatch): only SETTINGS_KEYS, booleans only.
+ * Atomic $set on dotted paths; never a whole-doc save, so it cannot clobber a concurrent
+ * fight resolve.
+ *
+ * @param {string} fighterId
+ * @param {{ playFightsOut?: boolean, sectionTips?: boolean }} patch
+ * @returns {Promise<{ settings: { playFightsOut: boolean, sectionTips: boolean } }>}
+ */
+async function updateSettings(fighterId, patch) {
+    const $set = {};
+    for (const k of SETTINGS_KEYS) {
+        if (typeof patch?.[k] === "boolean") $set[`settings.${k}`] = patch[k];
+    }
+    if (Object.keys($set).length === 0) {
+        const err = new Error("Invalid settings");
+        err.statusCode = 400;
+        throw err;
+    }
+    const res = await Fighter.updateOne({ _id: fighterId }, { $set });
+    if (!res || res.matchedCount === 0) throw new Error("Fighter not found");
+    const doc = await Fighter.findById(fighterId).select("settings").lean();
+    if (!doc) throw new Error("Fighter not found");
+    return { settings: readSettings(doc) };
+}
+
+/** Settings with schema defaults applied (legacy docs may lack the subdoc on a lean read). */
+function readSettings(doc) {
+    const s = doc?.settings || {};
+    return {
+        playFightsOut: s.playFightsOut !== false,
+        sectionTips: s.sectionTips !== false,
+    };
+}
+
+/**
+ * Validate a hostile PATCH /fighters/:id/settings body: a plain object, at least one key,
+ * only SETTINGS_KEYS, every value a real boolean. Returns the clean patch or null.
+ * @param {*} body
+ * @returns {?{ playFightsOut?: boolean, sectionTips?: boolean }}
+ */
+function validateSettingsPatch(body) {
+    if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+    const keys = Object.keys(body);
+    if (keys.length === 0) return null;
+    const out = {};
+    for (const k of keys) {
+        if (!SETTINGS_KEYS.includes(k)) return null;
+        if (typeof body[k] !== "boolean") return null;
+        out[k] = body[k];
+    }
+    return out;
 }
 
 /**
@@ -932,5 +967,8 @@ module.exports = {
     hospitalRestoreHealth,
     switchGym,
     buildStatProgress,
-    getInjuryLockedStats
+    getInjuryLockedStats,
+    updateSettings,
+    validateSettingsPatch,
+    SETTINGS_KEYS,
 };

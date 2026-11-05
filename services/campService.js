@@ -69,6 +69,23 @@ function assertCampOwnership(camp, fighterId) {
 }
 
 /**
+ * First-session "Coach's pick" (contract B.4): on a Debut fight only, the camp session that
+ * counters the opponent's style. The first STYLE_SESSION_MAP entry scores MATCHED by
+ * construction (getMatchStatus). Pure; one home for the Fighter Report and the camp state.
+ * @param {?{offerType?:string}} fight
+ * @param {?string} opponentStyle
+ * @returns {?string} a CAMP_SESSIONS key, or null
+ */
+function debutCoachPick(fight, opponentStyle) {
+    const { DEBUT_OFFER_TYPE } = require("../consts/offerBoardConfig");
+    if (!fight || fight.offerType !== DEBUT_OFFER_TYPE) return null;
+    if (typeof opponentStyle !== "string" || !Object.prototype.hasOwnProperty.call(STYLE_SESSION_MAP, opponentStyle)) {
+        return null;
+    }
+    return STYLE_SESSION_MAP[opponentStyle][0] ?? null;
+}
+
+/**
  * v2 match status: four-tier system.
  * - GAME_PLAN_STUDY → always PARTIAL
  * - SPARRING_GENERAL → always MATCHED (unconditional)
@@ -454,6 +471,9 @@ async function getFighterReport(fightId) {
         // Phase 4: flagged so the UI can render "Callout Intel" branding.
         fullIntel,
         isCallout: !!fight.isCallout,
+        // First session (contract B.4): debut flag + the Coach's pick session (debut only).
+        isDebut: fight.offerType === "Debut",
+        coachPick: debutCoachPick(fight, opp.style),
     };
 }
 
@@ -496,7 +516,7 @@ async function getCampState(fightId, fighterId) {
     if (!camp) throw new Error("Camp not found");
     assertCampOwnership(camp, fighterId);
 
-    const fight = await Fight.findById(fightId).lean();
+    const fight = await Fight.findById(fightId).populate("opponentId", "style").lean();
     const slotsUsed = camp.sessions.length;
     const slotsRemaining = Math.max(0, camp.maxSlots - slotsUsed);
 
@@ -506,6 +526,9 @@ async function getCampState(fightId, fighterId) {
         slotsRemaining,
         previewRating: buildPreview(camp),
         isTitleFight: fight?.offerType === "TitleShot",
+        // First session (contract B.4): same fields as the Fighter Report.
+        isDebut: fight?.offerType === "Debut",
+        coachPick: debutCoachPick(fight, fight?.opponentId?.style ?? null),
     };
 }
 
@@ -747,6 +770,7 @@ async function selectBuff(fightId, fighterId, buffId) {
 }
 
 module.exports = {
+    debutCoachPick,
     assertCampWritable,
     createCamp,
     selectBuff,

@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fight Replay Styles</title>
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08080a; --panel:#111114; --line:#26262b; --text:#e8e8ea; --muted:#8a8a92;
+  --red:#e0243f; --red-d:#7a0f1f; --blue:#3a7bff; --blue-d:#14306b; --gold:#e3b23c; --green:#4ade80;
+  --display:'Barlow Condensed','Barlow',sans-serif; --body:'Barlow',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);}
+header.page{padding:28px 20px 8px;max-width:1500px;margin:0 auto}
+header.page h1{font-family:var(--display);font-weight:900;font-size:40px;letter-spacing:1px;margin:0;text-transform:uppercase}
+header.page p{color:var(--muted);max-width:900px;line-height:1.5;margin:8px 0}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 4px}
+.btn{font-family:var(--display);font-weight:800;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--line);background:#18181c;color:var(--text);padding:9px 16px;border-radius:6px;cursor:pointer;font-size:15px}
+.btn:hover{border-color:#44444c}
+.btn.red{background:var(--red);border-color:var(--red)}
+.btn.on{background:#2a2a30;border-color:var(--gold);color:var(--gold)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:28px;padding:20px;max-width:1500px;margin:0 auto 60px}
+.card{display:flex;flex-direction:column;gap:10px}
+.card h2{font-family:var(--display);font-weight:900;font-size:26px;margin:0;text-transform:uppercase;letter-spacing:1px}
+.card h2 span{color:var(--gold);margin-right:8px}
+.card .pitch{color:var(--muted);font-size:14px;line-height:1.45;margin:0;min-height:62px}
+.card .row{display:flex;gap:8px}
+.card .row .btn{padding:6px 12px;font-size:13px}
+.phone{width:340px;height:640px;border-radius:30px;border:2px solid #2b2b31;background:#000;padding:10px;box-shadow:0 20px 50px rgba(0,0,0,.6);align-self:center}
+.screen{position:relative;width:100%;height:100%;border-radius:22px;overflow:hidden;background:#0b0b0d}
+.verdict{font-size:13px;line-height:1.45;color:#b9b9c0;border-left:3px solid var(--line);padding-left:10px}
+.verdict b{color:var(--text)}
+
+/* ── shared bits ───────────────────────────── */
+.top{position:absolute;left:0;right:0;top:0;padding:12px 12px 8px;background:linear-gradient(#000c,#0000);z-index:5}
+.names{display:flex;justify-content:space-between;font-family:var(--display);font-weight:800;font-size:14px;letter-spacing:.5px;text-transform:uppercase}
+.names .y{color:#9cc0ff}.names .o{color:#ff9aa8}
+.bars{display:flex;gap:8px;align-items:center;margin-top:5px}
+.hb{flex:1;height:8px;background:#26262b;border-radius:4px;overflow:hidden;position:relative}
+.hb i{position:absolute;top:0;bottom:0;transition:width .5s ease}
+.hb.y i{left:0;background:linear-gradient(90deg,#2e66e6,#6fa0ff)}
+.hb.o i{right:0;background:linear-gradient(270deg,#c21434,#ff5a70)}
+.clock{font-family:var(--display);font-weight:800;color:var(--gold);font-size:15px;min-width:64px;text-align:center}
+.shake{animation:shake .45s cubic-bezier(.36,.07,.19,.97)}
+@keyframes shake{10%,90%{transform:translate(-2px,1px)}20%,80%{transform:translate(4px,-2px)}30%,50%,70%{transform:translate(-7px,3px)}40%,60%{transform:translate(7px,-3px)}}
+.flash::after{content:"";position:absolute;inset:0;background:#fff;opacity:0;animation:flash .35s ease-out;pointer-events:none;z-index:50}
+@keyframes flash{0%{opacity:.55}100%{opacity:0}}
+.pop{animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.fadein{animation:fadein .3s ease-out}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.finish{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(#1b2a1bcc,#000e 70%);z-index:40;text-align:center}
+.finish .m{font-family:var(--display);font-weight:900;font-size:58px;letter-spacing:3px;line-height:1}
+.finish .w{font-family:var(--display);font-weight:900;font-size:30px;color:var(--green);letter-spacing:4px;margin-top:6px}
+.finish .s{color:#bbb;margin-top:8px;font-size:15px}
+.skip{position:absolute;right:12px;bottom:12px;z-index:60;font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:1px;text-transform:uppercase;background:#0009;border:1px solid #333;color:#ccc;border-radius:4px;padding:5px 9px}
+
+/* ── 1 Highlights ──────────────────────────── */
+.hl-stats{position:absolute;top:70px;left:12px;right:12px;display:grid;grid-template-columns:1fr auto 1fr;gap:4px 10px;font-family:var(--display);font-weight:800;font-size:22px;align-items:center}
+.hl-stats .lab{font-size:11px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;text-align:center}
+.hl-stats .l{text-align:right;color:#9cc0ff}.hl-stats .r{color:#ff9aa8}
+.hl-round{position:absolute;top:160px;left:0;right:0;text-align:center;font-family:var(--display);font-weight:900;font-size:16px;letter-spacing:3px;color:var(--muted)}
+.hl-stage{position:absolute;left:14px;right:14px;top:190px;bottom:60px;display:flex;flex-direction:column;justify-content:center;gap:12px}
+.hl-card{border-radius:12px;padding:16px;background:#141418;border:2px solid #2b2b31}
+.hl-card.you{border-color:#2e66e6;background:linear-gradient(135deg,#10203f,#141418)}
+.hl-card.opp{border-color:#c21434;background:linear-gradient(135deg,#3a0c16,#141418)}
+.hl-card.camp{border-color:var(--gold);background:linear-gradient(135deg,#3a2d06,#141418)}
+.hl-card .ic{font-family:var(--display);font-weight:900;font-size:12px;letter-spacing:2px;opacity:.8;text-transform:uppercase}
+.hl-card .big{font-family:var(--display);font-weight:900;font-size:36px;line-height:1;margin:4px 0 6px;text-transform:uppercase}
+.hl-card .ln{font-size:16px;line-height:1.35;color:#d7d7dc}
+.hl-quiet{text-align:center;color:#aaa;font-size:16px}
+.hl-res{text-align:center;font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:1px}
+
+/* ── 2 Momentum ────────────────────────────── */
+.mo-call{position:absolute;left:0;right:0;top:150px;text-align:center;font-family:var(--display);font-weight:900;font-size:54px;letter-spacing:2px;line-height:1;text-transform:uppercase}
+.mo-sub{position:absolute;left:16px;right:16px;top:215px;text-align:center;color:#c9c9cf;font-size:16px}
+.mo-track{position:absolute;left:18px;right:18px;top:300px;height:30px;border-radius:16px;background:linear-gradient(90deg,#14306b,#1a1a1f 50%,#7a0f1f);border:1px solid #333}
+.mo-track::before{content:"";position:absolute;left:50%;top:-6px;bottom:-6px;width:2px;background:#555}
+.mo-knob{position:absolute;top:-9px;width:46px;height:46px;margin-left:-23px;border-radius:50%;background:#eee;box-shadow:0 0 20px #fff8;transition:left .55s cubic-bezier(.2,1.3,.4,1);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:900;color:#111;font-size:13px}
+.mo-ends{position:absolute;left:18px;right:18px;top:342px;display:flex;justify-content:space-between;font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+.mo-pills{position:absolute;left:18px;right:18px;bottom:60px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.mo-pill{height:44px;border-radius:6px;border:1px solid #2b2b31;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:12px;color:var(--muted)}
+.mo-pill b{font-size:15px;color:var(--text)}
+.mo-pill.you{background:#14306b;border-color:#2e66e6}.mo-pill.opp{background:#5c0c19;border-color:#c21434}.mo-pill.even{background:#222}
+
+/* ── 3 Octagon ─────────────────────────────── */
+.oc-svg{position:absolute;left:10px;right:10px;top:70px;width:calc(100% - 20px);height:auto}
+.oc-cap{position:absolute;left:14px;right:14px;bottom:56px;min-height:74px;border-radius:10px;background:#141418;border:1px solid #2b2b31;padding:12px 14px;font-size:16px;line-height:1.35}
+.oc-cap .k{font-family:var(--display);font-weight:900;font-size:13px;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+.tok{transition:transform .7s cubic-bezier(.4,1.2,.4,1)}
+.spark{animation:spark .5s ease-out forwards}
+@keyframes spark{from{opacity:1;transform:scale(.3)}to{opacity:0;transform:scale(1.6)}}
+
+/* ── 4 Round cards ─────────────────────────── */
+.rc-dots{position:absolute;top:70px;left:0;right:0;display:flex;justify-content:center;gap:8px}
+.rc-dots i{width:34px;height:6px;border-radius:3px;background:#2b2b31}
+.rc-dots i.you{background:#3a7bff}.rc-dots i.opp{background:#e0243f}.rc-dots i.even{background:#777}.rc-dots i.cur{outline:2px solid var(--gold)}
+.rc-card{position:absolute;left:14px;right:14px;top:96px;bottom:104px;border-radius:14px;background:#141418;border:2px solid #2b2b31;padding:18px;display:flex;flex-direction:column;gap:12px;animation:flip .45s ease-out;transform-origin:left center}
+@keyframes flip{from{transform:perspective(900px) rotateY(-70deg);opacity:0}to{transform:none;opacity:1}}
+.rc-card .rn{font-family:var(--display);font-weight:900;font-size:14px;letter-spacing:3px;color:var(--muted)}
+.rc-card .win{font-family:var(--display);font-weight:900;font-size:34px;line-height:1;text-transform:uppercase}
+.rc-stat{display:grid;grid-template-columns:28px 1fr 28px;align-items:center;gap:8px;font-family:var(--display);font-weight:800;font-size:16px}
+.rc-stat .lab{grid-column:1/-1;font-size:11px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:-6px}
+.rc-stat .duo{display:flex;height:10px;border-radius:5px;overflow:hidden;background:#222}
+.rc-stat .duo i{display:block;transition:width .8s ease}
+.rc-stat .duo .a{background:#3a7bff}.rc-stat .duo .b{background:#e0243f;margin-left:auto}
+.rc-head{font-size:17px;line-height:1.4;color:#e2e2e6;border-top:1px solid #26262b;padding-top:12px}
+.chip{display:inline-block;font-family:var(--display);font-weight:800;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 7px;border-radius:3px;margin-right:6px}
+.chip.camp{background:#3a2d06;color:var(--gold);border:1px solid #d4a820}
+.chip.kd{background:#3b0a12;color:#ff6b7d;border:1px solid #c8102e}
+.rc-next{position:absolute;left:14px;right:14px;bottom:46px;height:46px;border:none;border-radius:8px;background:var(--red);color:#fff;font-family:var(--display);font-weight:900;font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;overflow:hidden}
+.rc-next i{position:absolute;left:0;bottom:0;height:4px;background:#fff8;width:0}
+
+/* ── 5 Broadcast ───────────────────────────── */
+.bc-bg{position:absolute;inset:0;background:url(assets/reveal/arena.jpg) center/cover;filter:brightness(.45) saturate(.9);transition:transform 1.2s ease}
+.bc-bg.zoom{transform:scale(1.15)}
+.bc-bug{position:absolute;left:10px;right:10px;top:12px;display:flex;align-items:stretch;border-radius:6px;overflow:hidden;z-index:5;font-family:var(--display);font-weight:800;box-shadow:0 6px 20px #0008}
+.bc-side{flex:1;display:flex;align-items:center;gap:6px;padding:5px 7px;font-size:14px;text-transform:uppercase}
+.bc-side img{width:30px;height:38px;object-fit:cover;border-radius:3px}
+.bc-side.y{background:#14306b}.bc-side.o{background:#5c0c19;flex-direction:row-reverse;text-align:right}
+.bc-mid{background:#000;color:var(--gold);padding:0 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;line-height:1.1}
+.bc-mid b{font-size:17px;color:#fff}
+.bc-hp{position:absolute;left:10px;right:10px;top:64px;display:flex;gap:6px;z-index:5}
+.bc-lower{position:absolute;left:0;right:0;bottom:46px;padding:0 12px;z-index:6}
+.bc-lower .tag{display:inline-block;background:var(--red);font-family:var(--display);font-weight:900;font-size:12px;letter-spacing:2px;padding:3px 8px;text-transform:uppercase}
+.bc-lower .txt{background:#000d;border-left:4px solid var(--red);padding:12px 14px;font-family:var(--display);font-weight:700;font-size:24px;line-height:1.15;text-transform:uppercase}
+.bc-replay{position:absolute;top:110px;left:14px;font-family:var(--display);font-weight:900;font-size:20px;letter-spacing:3px;color:#fff;background:#c21434;padding:4px 10px;z-index:7;animation:pop .3s}
+.bc-table{position:absolute;left:18px;right:18px;top:140px;background:#000e;border:1px solid #333;border-radius:8px;padding:14px;z-index:8;font-family:var(--display);font-weight:800}
+.bc-table h4{margin:0 0 10px;text-align:center;letter-spacing:3px;color:var(--gold);font-size:16px}
+.bc-table div{display:grid;grid-template-columns:40px 1fr 40px;text-align:center;font-size:20px;padding:4px 0;border-top:1px solid #222}
+.bc-table div span{font-size:12px;color:var(--muted);letter-spacing:1.5px;align-self:center}
+
+/* ── 6 Comic ───────────────────────────────── */
+.cm-page{position:absolute;left:10px;right:10px;top:104px;bottom:50px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px}
+.cm-panel{position:relative;border:3px solid #eee;border-radius:4px;overflow:hidden;background:#222;animation:drop .35s cubic-bezier(.2,1.3,.4,1)}
+@keyframes drop{from{transform:translateY(-30px) rotate(-3deg);opacity:0}to{transform:none;opacity:1}}
+.cm-panel.wide{grid-column:1/-1}
+.cm-panel img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:contrast(1.3) saturate(.6)}
+.cm-panel .tint{position:absolute;inset:0;mix-blend-mode:multiply}
+.cm-panel.you .tint{background:radial-gradient(circle at 30% 30%,#6fa0ff,#14306b)}
+.cm-panel.opp .tint{background:radial-gradient(circle at 70% 30%,#ff5a70,#5c0c19)}
+.cm-panel.camp .tint{background:radial-gradient(circle,#ffd866,#6b4a00)}
+.cm-panel .dots{position:absolute;inset:0;background-image:radial-gradient(#0006 1.2px,transparent 1.4px);background-size:6px 6px}
+.cm-panel .boom{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) rotate(-8deg);font-family:var(--display);font-weight:900;font-size:36px;color:#ffe14d;-webkit-text-stroke:2px #000;text-shadow:4px 4px 0 #000;white-space:nowrap}
+.cm-panel .cap{position:absolute;left:6px;right:6px;bottom:6px;background:#fff8e0;color:#111;font-weight:700;font-size:12.5px;line-height:1.25;padding:5px 7px;border:2px solid #000}
+.cm-stamp{position:absolute;top:68px;right:14px;font-family:var(--display);font-weight:900;font-size:15px;letter-spacing:2px;color:#111;background:#ffe14d;padding:4px 9px;border:2px solid #000;transform:rotate(3deg);z-index:6}
+.cm-title{position:absolute;top:66px;left:14px;font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:2px;z-index:6}
+
+@media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+</style>
+</head>
+<body>
+<header class="page">
+  <h1>Fight replay: six ways to show it</h1>
+  <p>The same 5-round debut (you win by rear-naked choke in round 5) shown six ways. The problem with the current replay: it is a stream of sentences, so it is either too fast to read or too slow to enjoy. Every style below moves the information out of sentences and into things you see at a glance (bars, positions, numbers, one or two words), and keeps full sentences for the one or two moments per round that earn them, held long enough to read.</p>
+  <div class="toolbar">
+    <button class="btn red" id="playAll">Play all</button>
+    <button class="btn" id="speedAll">2x all: off</button>
+  </div>
+</header>
+<main class="grid" id="grid"></main>
+
+<script>
+// ── The fight: one real-shaped debut, 5 rounds ─────────────────────────
+const Y = { name: "Alex Stone", short: "Stone", init: "AS", img: "assets/portraits/p03.webp" };
+const O = { name: "Ibrahim Tarek", short: "Tarek", init: "IT", img: "assets/portraits/p07.webp" };
+// kind: strike | big | clinch | takedown | camp | knockdown | ground | finish
+// pos: stand | clinch | yTop (you on top) | oTop
+const ROUNDS = [
+  { n:1, winner:"you", score:"10-9", strikes:[14,9], td:["0/0","0/0"], ev:[
+    { t:"4:21", kind:"strike", a:"you", w:"Jab", ln:"Stone pops the jab, finds his range.", dmg:[0,4], pos:"stand" },
+    { t:"3:02", kind:"strike", a:"opp", w:"Leg kick", ln:"Tarek chops the lead leg.", dmg:[5,4], pos:"stand" },
+    { t:"1:40", kind:"big", a:"you", w:"Overhand", ln:"Overhand right lands clean. Tarek blinks.", dmg:[5,11], pos:"stand" },
+  ]},
+  { n:2, winner:"opp", score:"10-9", strikes:[11,15], td:["0/0","0/1"], ev:[
+    { t:"4:10", kind:"camp", a:"you", w:"Sprawl!", ln:"Tarek shoots. Stone sprawls: the camp work pays off.", camp:"Takedown Defence", dmg:[5,11], pos:"stand" },
+    { t:"2:55", kind:"clinch", a:"opp", w:"Clinch", ln:"Tarek ties him up against the fence.", dmg:[9,12], pos:"clinch" },
+    { t:"0:48", kind:"big", a:"opp", w:"Knee", ln:"Knee to the body. Stone feels that one.", dmg:[17,12], pos:"clinch" },
+  ]},
+  { n:3, winner:"even", score:"10-10", strikes:[12,12], td:["0/0","0/0"], ev:[
+    { t:"3:30", kind:"strike", a:"you", w:"Body shot", ln:"Stone digs to the body.", dmg:[17,15], pos:"stand" },
+    { t:"1:12", kind:"strike", a:"opp", w:"Jab", ln:"Tarek answers with a stiff jab.", dmg:[19,16], pos:"stand" },
+  ], quiet:"A careful round. Nobody takes a risk." },
+  { n:4, winner:"you", score:"10-8", strikes:[16,10], td:["0/0","0/0"], ev:[
+    { t:"3:44", kind:"strike", a:"opp", w:"Combo", ln:"Tarek throws a three-piece.", dmg:[24,16], pos:"stand" },
+    { t:"2:20", kind:"knockdown", a:"you", w:"Down!", ln:"Counter left hook! Tarek goes down!", dmg:[24,38], pos:"stand" },
+    { t:"2:12", kind:"ground", a:"you", w:"Top", ln:"Stone follows him down and takes top.", dmg:[24,44], pos:"yTop" },
+  ]},
+  { n:5, winner:"you", score:"Finish", strikes:[6,3], td:["1/1","0/0"], ev:[
+    { t:"4:05", kind:"takedown", a:"you", w:"Takedown", ln:"Stone shoots a double and plants him.", dmg:[24,47], pos:"yTop" },
+    { t:"3:40", kind:"ground", a:"you", w:"Back taken", ln:"Stone takes the back. Hooks in.", dmg:[24,52], pos:"yTop" },
+    { t:"3:12", kind:"finish", a:"you", w:"Tap!", ln:"Rear-naked choke. Tarek taps!", dmg:[24,60], pos:"yTop" },
+  ]},
+];
+const FINISH = { method:"SUBMISSION", word:"VICTORY", sub:"Rear-naked choke, round 5, 3:12" };
+const BIG = new Set(["big","camp","knockdown","takedown","finish"]);
+const who = (a) => a === "you" ? Y : O;
+// Reading pace: about 3.5 words a second plus a beat to notice the line (inference, see notes).
+const hold = (text) => 900 + text.split(/\s+/).length * 280;
+
+// ── Runner: each style is an async function(screen, ctx) ───────────────
+function runner(screen, style, getSpeed){
+  let token = 0;
+  return () => {
+    const my = ++token;
+    screen.innerHTML = "";
+    screen.className = "screen";
+    const ctx = {
+      sleep: (ms) => new Promise((res, rej) => setTimeout(() => (my === token ? res() : rej("x")), ms / getSpeed())),
+      alive: () => my === token,
+    };
+    const skip = document.createElement("button");
+    skip.className = "skip"; skip.textContent = "Skip to result";
+    skip.onclick = () => { token++; showFinish(screen); };
+    style.play(screen, ctx).then(() => { if (ctx.alive()) showFinish(screen); }).catch(() => {});
+    screen.appendChild(skip);
+  };
+}
+function showFinish(screen){
+  const f = el("div", "finish fadein", `<div class="m">${FINISH.method}</div><div class="w">${FINISH.word}</div><div class="s">${FINISH.sub}</div>`);
+  screen.appendChild(f);
+}
+function el(tag, cls, html){ const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+function topBar(screen){
+  const t = el("div", "top", `<div class="names"><span class="y">${Y.short}</span><span class="o">${O.short}</span></div>
+    <div class="bars"><div class="hb y"><i style="width:100%"></i></div><div class="clock">R1 5:00</div><div class="hb o"><i style="width:100%"></i></div></div>`);
+  screen.appendChild(t);
+  return {
+    dmg(d){ t.querySelector(".hb.y i").style.width = (100 - d[0]) + "%"; t.querySelector(".hb.o i").style.width = (100 - d[1]) + "%"; },
+    clock(r, time){ t.querySelector(".clock").textContent = `R${r} ${time}`; },
+  };
+}
+function impact(screen, big){ screen.classList.remove("shake","flash"); void screen.offsetWidth; screen.classList.add("shake"); if (big) screen.classList.add("flash"); }
+
+// ── 1. Highlights ──────────────────────────────────────────────────────
+const highlights = { id:"highlights", name:"Highlights",
+  pitch:"Only the moments that matter. Small strikes never get a sentence: they tick up the strike counter and drain the bars. Two or three big moments a round get a bold card, held long enough to read. A quiet round is one line.",
+  verdict:"<b>Closest to what you have now,</b> so the cheapest to build. Readable and quick. Still mostly reading, just much less of it.",
+  async play(s, ctx){
+    const top = topBar(s);
+    const st = el("div","hl-stats",`<div class="l" id="sy">0</div><div class="lab">Strikes</div><div class="r" id="so">0</div><div class="l" id="ty">0/0</div><div class="lab">Takedowns</div><div class="r" id="to">0/0</div>`);
+    s.appendChild(st);
+    const rn = el("div","hl-round",""); s.appendChild(rn);
+    const stage = el("div","hl-stage",""); s.appendChild(stage);
+    let tot=[0,0];
+    for (const r of ROUNDS){
+      rn.textContent = `ROUND ${r.n}`; stage.innerHTML = "";
+      // tick the counter while the round "plays"
+      const from=[...tot]; tot=[tot[0]+r.strikes[0], tot[1]+r.strikes[1]];
+      for (let k=1;k<=8;k++){ st.querySelector("#sy").textContent = Math.round(from[0]+(tot[0]-from[0])*k/8); st.querySelector("#so").textContent = Math.round(from[1]+(tot[1]-from[1])*k/8); await ctx.sleep(70); }
+      st.querySelector("#ty").textContent = r.td[0]; st.querySelector("#to").textContent = r.td[1];
+      const big = r.ev.filter(e => BIG.has(e.kind) || e.kind==="clinch");
+      for (const e of r.ev){ top.clock(r.n, e.t); top.dmg(e.dmg); }
+      if (!big.length){ stage.appendChild(el("div","hl-quiet fadein", r.quiet || "A quiet round.")); await ctx.sleep(1600); }
+      for (const e of big){
+        top.clock(r.n, e.t); top.dmg(e.dmg);
+        const cls = e.kind==="camp" ? "camp" : e.a;
+        const label = e.kind==="camp" ? `Camp: ${e.camp}` : (e.a==="you"?Y.short:O.short) + " · " + e.t;
+        stage.innerHTML = "";
+        stage.appendChild(el("div",`hl-card ${cls} pop`,`<div class="ic">${label}</div><div class="big">${e.w}</div><div class="ln">${e.ln}</div>`));
+        if (e.kind==="knockdown"||e.kind==="finish"||e.kind==="big") impact(s, e.kind!=="big");
+        if (e.kind==="finish"){ await ctx.sleep(1400); return; }
+        await ctx.sleep(hold(e.ln));
+      }
+      stage.innerHTML = "";
+      const col = r.winner==="you"?"#6fa0ff":r.winner==="opp"?"#ff6b7d":"#aaa";
+      stage.appendChild(el("div","hl-res pop",`<span style="color:${col}">Round ${r.n}: ${r.winner==="even"?"Even":(r.winner==="you"?Y.short:O.short)+" "+r.score}</span>`));
+      await ctx.sleep(1100);
+    }
+  }};
+
+// ── 2. Momentum ────────────────────────────────────────────────────────
+const momentum = { id:"momentum", name:"Momentum",
+  pitch:"A tug of war. Every exchange nudges the ball toward one fighter, big moments yank it, and the screen shakes. One or two words in huge type, a short line under it. You feel who is winning without reading anything.",
+  verdict:"<b>The most game-like and the fastest to read.</b> The weakest at telling the story of how it was won. Pairs well with any other style as the top strip.",
+  async play(s, ctx){
+    const top = topBar(s);
+    const call = el("div","mo-call",""); const sub = el("div","mo-sub","");
+    const track = el("div","mo-track",`<div class="mo-knob" style="left:50%">0</div>`);
+    const ends = el("div","mo-ends",`<span>${Y.short}</span><span>Momentum</span><span>${O.short}</span>`);
+    const pills = el("div","mo-pills", [1,2,3,4,5].map(n=>`<div class="mo-pill" id="mp${n}">R${n}<b>·</b></div>`).join(""));
+    [call,sub,track,ends,pills].forEach(x=>s.appendChild(x));
+    const knob = track.querySelector(".mo-knob");
+    let m = 0; // -100 (you) .. +100 (opp)
+    const PUSH = { strike:9, clinch:10, big:20, camp:16, takedown:22, ground:14, knockdown:40, finish:100 };
+    for (const r of ROUNDS){
+      call.textContent = `Round ${r.n}`; call.style.color = "#888"; sub.textContent = ""; call.classList.remove("pop"); void call.offsetWidth; call.classList.add("pop");
+      await ctx.sleep(800);
+      for (const e of r.ev){
+        top.clock(r.n, e.t); top.dmg(e.dmg);
+        m += (e.a==="you" ? -1 : 1) * PUSH[e.kind];
+        m = Math.max(-100, Math.min(100, m * 0.92));
+        knob.style.left = (50 + m/2) + "%";
+        knob.textContent = Math.abs(Math.round(m));
+        call.textContent = e.w; call.style.color = e.kind==="camp" ? "var(--gold)" : (e.a==="you" ? "#7fb0ff" : "#ff7085");
+        sub.textContent = e.kind==="camp" ? `Camp: ${e.camp}` : (BIG.has(e.kind) ? e.ln : "");
+        call.classList.remove("pop"); void call.offsetWidth; call.classList.add("pop");
+        const big = BIG.has(e.kind);
+        if (big) impact(s, e.kind==="knockdown"||e.kind==="finish");
+        if (e.kind==="finish"){ await ctx.sleep(1500); return; }
+        await ctx.sleep(big ? Math.max(1500, hold(e.ln)) : 1000);
+      }
+      const p = s.querySelector("#mp"+r.n); p.className = "mo-pill pop " + r.winner;
+      p.innerHTML = `R${r.n}<b>${r.winner==="even"?"Even":(r.winner==="you"?Y.init:O.init)}</b>`;
+      await ctx.sleep(600);
+    }
+  }};
+
+// ── 3. Octagon ─────────────────────────────────────────────────────────
+const octagon = { id:"octagon", name:"Octagon view",
+  pitch:"Top-down cage with two fighters as tokens, like the 2D dots in a football manager. They circle, clinch on the fence, hit the mat with you on top. Sparks on each strike. One short caption underneath.",
+  verdict:"<b>Shows position, which text can't:</b> standing, clinch and ground read instantly. Needs position data from the engine (it already knows clinch and ground). Medium build.",
+  async play(s, ctx){
+    const top = topBar(s);
+    s.insertAdjacentHTML("beforeend", `
+      <svg class="oc-svg" viewBox="0 0 300 300">
+        <defs><radialGradient id="mat" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#2a2a32"/><stop offset="1" stop-color="#131317"/></radialGradient></defs>
+        <polygon points="88,10 212,10 290,88 290,212 212,290 88,290 10,212 10,88" fill="url(#mat)" stroke="#555" stroke-width="5"/>
+        <polygon points="96,22 204,22 278,96 278,204 204,278 96,278 22,204 22,96" fill="none" stroke="#c21434" stroke-width="1.5" opacity=".6"/>
+        <text x="150" y="160" text-anchor="middle" font-family="Barlow Condensed" font-weight="900" font-size="26" fill="#ffffff10" letter-spacing="3">GROUND &amp; POUND</text>
+        <g id="sparks"></g>
+        <g class="tok" id="to"><circle r="20" fill="#c21434" stroke="#ff8a9a" stroke-width="3"/><text y="6" text-anchor="middle" font-family="Barlow Condensed" font-weight="900" font-size="16" fill="#fff">${O.init}</text></g>
+        <g class="tok" id="ty"><circle r="20" fill="#2e66e6" stroke="#9cc0ff" stroke-width="3"/><text y="6" text-anchor="middle" font-family="Barlow Condensed" font-weight="900" font-size="16" fill="#fff">${Y.init}</text></g>
+      </svg>`);
+    const cap = el("div","oc-cap",`<span class="k" style="color:#888">Round 1</span>Touch gloves.`); s.appendChild(cap);
+    const ty = s.querySelector("#ty"), to = s.querySelector("#to"), sparks = s.querySelector("#sparks");
+    const POS = { stand:[[115,150],[185,150]], clinch:[[222,72],[246,96]], yTop:[[150,168],[150,186]], oTop:[[150,186],[150,168]] };
+    let ang = 0;
+    const place = (pos, jitter) => {
+      let [a,b] = POS[pos];
+      if (pos==="stand" && jitter){ ang += 0.9; const c=[150,150], r=38; a=[c[0]-r*Math.cos(ang), c[1]-r*Math.sin(ang)]; b=[c[0]+r*Math.cos(ang), c[1]+r*Math.sin(ang)]; }
+      ty.setAttribute("transform", `translate(${a[0]},${a[1]})`); to.setAttribute("transform", `translate(${b[0]},${b[1]})`);
+      return [a,b];
+    };
+    const spark = (p, color, big) => {
+      const g = document.createElementNS("http://www.w3.org/2000/svg","g");
+      g.setAttribute("transform",`translate(${p[0]},${p[1]})`);
+      g.innerHTML = `<g class="spark" style="transform-origin:0 0">${[0,45,90,135,180,225,270,315].map(d=>`<line x1="0" y1="0" x2="${big?30:18}" y2="0" stroke="${color}" stroke-width="${big?4:3}" transform="rotate(${d})"/>`).join("")}</g>`;
+      sparks.appendChild(g); setTimeout(()=>g.remove(), 600);
+    };
+    place("stand", true);
+    for (const r of ROUNDS){
+      cap.innerHTML = `<span class="k" style="color:#888">Round ${r.n}</span>${r.n===1?"Touch gloves.":"Back to the centre."}`;
+      for (let k=0;k<2;k++){ place("stand", true); await ctx.sleep(420); }
+      for (const e of r.ev){
+        top.clock(r.n, e.t); top.dmg(e.dmg);
+        const pts = place(e.pos, e.pos==="stand");
+        await ctx.sleep(500);
+        const target = e.a==="you" ? pts[1] : pts[0];
+        const col = e.kind==="camp" ? "#e3b23c" : (e.a==="you" ? "#9cc0ff" : "#ff8a9a");
+        spark(target, col, BIG.has(e.kind));
+        const big = BIG.has(e.kind);
+        if (big) impact(s, e.kind==="knockdown"||e.kind==="finish");
+        const k = e.kind==="camp" ? `Camp: ${e.camp}` : `${e.a==="you"?Y.short:O.short} · ${e.w}`;
+        cap.innerHTML = `<span class="k" style="color:${col}">${k}</span>${big || e.kind==="clinch" ? e.ln : ""}`;
+        if (e.kind==="finish"){ await ctx.sleep(1500); return; }
+        await ctx.sleep(big ? hold(e.ln) : 1100);
+      }
+      const col = r.winner==="you"?"#9cc0ff":r.winner==="opp"?"#ff8a9a":"#aaa";
+      cap.innerHTML = `<span class="k" style="color:${col}">End of round ${r.n}</span>${r.winner==="even"?"Even round, 10-10.":(r.winner==="you"?Y.short:O.short)+" takes it, "+r.score+"."}`;
+      await ctx.sleep(1300);
+    }
+  }};
+
+// ── 4. Round cards ─────────────────────────────────────────────────────
+const roundCards = { id:"cards", name:"Round cards",
+  pitch:"You set the pace. Each round is one card: who won it, three stat bars that fill, the one moment that decided it, and a CAMP tag if your session fired. Tap Next round (it also moves on by itself after 5 seconds).",
+  verdict:"<b>Never too fast, never boring:</b> the player controls the speed. Five taps for a whole fight. Least cinematic, but the clearest way to learn why you won.",
+  async play(s, ctx){
+    topBar(s).dmg([0,0]);
+    s.appendChild(el("div","rc-dots",[1,2,3,4,5].map(n=>`<i id="rd${n}"></i>`).join("")));
+    const next = el("button","rc-next",`Next round<i></i>`); s.appendChild(next);
+    const top = { dmg:(d)=>{ s.querySelector(".hb.y i").style.width=(100-d[0])+"%"; s.querySelector(".hb.o i").style.width=(100-d[1])+"%"; }, clock:(r,t)=>{ s.querySelector(".clock").textContent=`R${r} ${t}`; } };
+    for (const r of ROUNDS){
+      s.querySelectorAll(".rc-card").forEach(c=>c.remove());
+      s.querySelectorAll(".rc-dots i").forEach(i=>i.classList.remove("cur"));
+      s.querySelector("#rd"+r.n).classList.add("cur");
+      const key = r.ev.find(e=>e.kind==="finish") || r.ev.find(e=>e.kind==="knockdown") || r.ev.find(e=>e.kind==="camp") || r.ev.find(e=>BIG.has(e.kind)) || null;
+      const last = r.ev[r.ev.length-1]; top.dmg(last.dmg); top.clock(r.n, last.t);
+      const winTxt = r.n===5 ? `${Y.short} wins it` : r.winner==="even" ? "Even round" : `${r.winner==="you"?Y.short:O.short} ${r.score}`;
+      const col = r.winner==="you"?"#7fb0ff":r.winner==="opp"?"#ff7085":"#bbb";
+      const chips = r.ev.filter(e=>e.kind==="camp").map(e=>`<span class="chip camp">Camp: ${e.camp}</span>`).join("") + r.ev.filter(e=>e.kind==="knockdown").map(()=>`<span class="chip kd">Knockdown</span>`).join("");
+      const sumS = r.strikes[0]+r.strikes[1] || 1;
+      const card = el("div","rc-card",`
+        <div class="rn">ROUND ${r.n}</div>
+        <div class="win" style="color:${col}">${winTxt}</div>
+        <div class="rc-stat"><span class="lab">Strikes landed</span><b style="color:#7fb0ff">${r.strikes[0]}</b><div class="duo"><i class="a" style="width:0"></i><i class="b" style="width:0"></i></div><b style="color:#ff7085;text-align:right">${r.strikes[1]}</b></div>
+        <div class="rc-stat"><span class="lab">Damage dealt</span><b style="color:#7fb0ff">${last.dmg[1]}</b><div class="duo"><i class="a" style="width:0"></i><i class="b" style="width:0"></i></div><b style="color:#ff7085;text-align:right">${last.dmg[0]}</b></div>
+        <div class="rc-stat"><span class="lab">Takedowns</span><b style="color:#7fb0ff">${r.td[0]}</b><div class="duo"><i class="a" style="width:0"></i><i class="b" style="width:0"></i></div><b style="color:#ff7085;text-align:right">${r.td[1]}</b></div>
+        <div>${chips}</div>
+        <div class="rc-head">${key ? key.ln : (r.quiet || "")}</div>`);
+      s.insertBefore(card, next);
+      await ctx.sleep(150);
+      const duos = card.querySelectorAll(".duo");
+      duos[0].querySelector(".a").style.width = (r.strikes[0]/sumS*100)+"%"; duos[0].querySelector(".b").style.width = (r.strikes[1]/sumS*100)+"%";
+      const dd = (last.dmg[0]+last.dmg[1])||1; duos[1].querySelector(".a").style.width=(last.dmg[1]/dd*100)+"%"; duos[1].querySelector(".b").style.width=(last.dmg[0]/dd*100)+"%";
+      const tdy = parseInt(r.td[0]), tdo = parseInt(r.td[1]), tt = (tdy+tdo)||1; duos[2].querySelector(".a").style.width=(tdy/tt*100)+"%"; duos[2].querySelector(".b").style.width=(tdo/tt*100)+"%";
+      if (key && (key.kind==="knockdown"||key.kind==="finish")) impact(s, true);
+      s.querySelector("#rd"+r.n).className = r.winner + " cur";
+      if (r.n===5){ await ctx.sleep(2600); return; }
+      // wait for a tap, or 5 s
+      const bar = next.querySelector("i"); bar.style.transition="none"; bar.style.width="0"; void bar.offsetWidth; bar.style.transition="width 5s linear"; bar.style.width="100%";
+      await Promise.race([ ctx.sleep(5000), new Promise(res => { next.onclick = res; }) ]);
+      next.onclick = null;
+    }
+  }};
+
+// ── 5. Broadcast ───────────────────────────────────────────────────────
+const broadcast = { id:"broadcast", name:"TV broadcast",
+  pitch:"Fight night on TV: arena behind, a scorebug with both faces, commentary in big short lower-thirds, a stats table between rounds and a REPLAY tag with a slow zoom on the knockdown. Lines are short and held for reading time.",
+  verdict:"<b>The most atmosphere</b> and it sells the MMA fantasy. Uses the fighter portraits you already have. Still text-led, so lines must be rewritten short (8 words max).",
+  async play(s, ctx){
+    s.appendChild(el("div","bc-bg",""));
+    s.appendChild(el("div","bc-bug",`<div class="bc-side y"><img src="${Y.img}" alt="">${Y.short}</div><div class="bc-mid"><span id="br">R1</span><b id="bt">5:00</b></div><div class="bc-side o"><img src="${O.img}" alt="">${O.short}</div>`));
+    s.appendChild(el("div","bc-hp",`<div class="hb y"><i style="width:100%"></i></div><div class="hb o"><i style="width:100%"></i></div>`));
+    const lower = el("div","bc-lower",""); s.appendChild(lower);
+    const bg = s.querySelector(".bc-bg");
+    const dmg = (d)=>{ s.querySelector(".bc-hp .hb.y i").style.width=(100-d[0])+"%"; s.querySelector(".bc-hp .hb.o i").style.width=(100-d[1])+"%"; };
+    let tot=[0,0];
+    for (const r of ROUNDS){
+      s.querySelector("#br").textContent = "R"+r.n;
+      for (const e of r.ev){
+        s.querySelector("#bt").textContent = e.t; dmg(e.dmg);
+        const big = BIG.has(e.kind);
+        const tag = e.kind==="camp" ? `Camp: ${e.camp}` : (e.kind==="knockdown" ? "Knockdown" : (e.a==="you"?Y.short:O.short));
+        lower.innerHTML = `<span class="tag" style="${e.kind==="camp"?"background:#9a7410":(e.a==="you"?"background:#2e66e6":"")}">${tag}</span><div class="txt fadein">${e.ln}</div>`;
+        if (e.kind==="knockdown"){
+          impact(s, true); await ctx.sleep(900);
+          const rp = el("div","bc-replay","Replay"); s.appendChild(rp); bg.classList.add("zoom");
+          lower.innerHTML = `<span class="tag">Replay</span><div class="txt fadein">The counter left hook. Right on the chin.</div>`;
+          await ctx.sleep(2400); rp.remove(); bg.classList.remove("zoom");
+          continue;
+        }
+        if (big) impact(s, e.kind==="finish");
+        if (e.kind==="finish"){ await ctx.sleep(1500); return; }
+        await ctx.sleep(hold(e.ln));
+      }
+      tot=[tot[0]+r.strikes[0], tot[1]+r.strikes[1]];
+      lower.innerHTML = "";
+      const tb = el("div","bc-table fadein",`<h4>END OF ROUND ${r.n}</h4>
+        <div><b style="color:#7fb0ff">${r.strikes[0]}</b><span>Strikes this round</span><b style="color:#ff7085">${r.strikes[1]}</b></div>
+        <div><b style="color:#7fb0ff">${tot[0]}</b><span>Total strikes</span><b style="color:#ff7085">${tot[1]}</b></div>
+        <div><b style="color:#7fb0ff">${r.td[0]}</b><span>Takedowns</span><b style="color:#ff7085">${r.td[1]}</b></div>
+        <div style="grid-template-columns:1fr"><span style="color:${r.winner==="you"?"#7fb0ff":r.winner==="opp"?"#ff7085":"#aaa"};font-size:16px">${r.winner==="even"?"EVEN ROUND":(r.winner==="you"?Y.short:O.short).toUpperCase()+" "+r.score}</span></div>`);
+      s.appendChild(tb); await ctx.sleep(2000); tb.remove();
+    }
+  }};
+
+// ── 6. Comic panels ────────────────────────────────────────────────────
+const comic = { id:"comic", name:"Comic panels",
+  pitch:"Each round is a comic page. The key moments drop in as panels: the fighter's face in a halftone tint, a huge sound word (WHAM, SPRAWL, TAP) and a tiny caption. The page fills up, gets a round stamp, and turns.",
+  verdict:"<b>The most distinctive and shareable</b> (a finished page is a screenshot people post). Least serious tone. Uses existing portraits, so no new art is needed for the mockup.",
+  async play(s, ctx){
+    const top = topBar(s);
+    const SFX = { strike:"POP!", big:"WHAM!", clinch:"GRAB!", takedown:"SLAM!", camp:"SPRAWL!", knockdown:"BOOM!", ground:"MOUNT!", finish:"TAP!" };
+    for (const r of ROUNDS){
+      s.querySelectorAll(".cm-page,.cm-stamp,.cm-title").forEach(x=>x.remove());
+      const title = el("div","cm-title fadein",`ROUND ${r.n}`); s.appendChild(title);
+      const page = el("div","cm-page",""); s.appendChild(page);
+      const evs = r.ev.slice(0,3);
+      for (let i=0;i<evs.length;i++){
+        const e = evs[i];
+        top.clock(r.n, e.t); top.dmg(e.dmg);
+        const f = who(e.a);
+        const cls = e.kind==="camp" ? "camp" : e.a;
+        const wide = evs.length===3 && i===2;
+        const p = el("div",`cm-panel ${cls}${wide?" wide":""}`,`<img src="${f.img}" alt=""><div class="tint"></div><div class="dots"></div><div class="boom">${SFX[e.kind]}</div><div class="cap">${e.kind==="camp"?"Camp: "+e.camp+". ":""}${e.ln}</div>`);
+        page.appendChild(p);
+        const big = BIG.has(e.kind);
+        if (big) impact(s, e.kind==="knockdown"||e.kind==="finish");
+        if (e.kind==="finish"){ await ctx.sleep(1700); return; }
+        await ctx.sleep(Math.max(1300, hold(e.ln) - 400));
+      }
+      const stamp = el("div","cm-stamp pop", r.winner==="even" ? "EVEN 10-10" : `${(r.winner==="you"?Y.short:O.short).toUpperCase()} ${r.score}`);
+      s.appendChild(stamp); await ctx.sleep(1200);
+    }
+  }};
+
+const STYLES = [highlights, momentum, octagon, roundCards, broadcast, comic];
+
+// ── Page wiring ────────────────────────────────────────────────────────
+const grid = document.getElementById("grid");
+let globalSpeed = 1;
+const starters = [];
+STYLES.forEach((st, i) => {
+  let speed = 1;
+  const card = el("section","card",`
+    <h2><span>${String.fromCharCode(65+i)}</span>${st.name}</h2>
+    <p class="pitch">${st.pitch}</p>
+    <div class="row"><button class="btn red play">Play</button><button class="btn spd">2x: off</button></div>
+    <div class="phone"><div class="screen"></div></div>
+    <p class="verdict">${st.verdict}</p>`);
+  grid.appendChild(card);
+  const screen = card.querySelector(".screen");
+  const start = runner(screen, st, () => speed * globalSpeed);
+  card.querySelector(".play").onclick = start;
+  const sb = card.querySelector(".spd");
+  sb.onclick = () => { speed = speed === 1 ? 2 : 1; sb.textContent = `2x: ${speed===2?"on":"off"}`; sb.classList.toggle("on", speed===2); };
+  starters.push(start);
+  // idle frame: show the face-off state
+  screen.innerHTML = `<div class="finish" style="background:radial-gradient(#1a1a22,#000 70%)"><div class="m" style="font-size:34px">${Y.short} <span style="color:var(--red)">vs</span> ${O.short}</div><div class="s">Press Play</div></div>`;
+});
+document.getElementById("playAll").onclick = () => starters.forEach(f => f());
+const sa = document.getElementById("speedAll");
+sa.onclick = () => { globalSpeed = globalSpeed === 1 ? 2 : 1; sa.textContent = `2x all: ${globalSpeed===2?"on":"off"}`; sa.classList.toggle("on", globalSpeed===2); };
+</script>
+</body>
+</html>

@@ -138,3 +138,72 @@ test("Passive COLLAPSE rule end to end: GRANITE_JAW plus HIGH_GUARD equipped tog
     const stackedTotalDamageTaken = stackedResult.rounds.reduce((s, r) => s + r.playerDamage, 0);
     assert.ok(stackedTotalDamageTaken <= soloTotalDamageTaken, "stacked defensive value must reduce or match damage taken vs solo");
 });
+
+// ── Fight replay highlights (contract A.5): rounds[].moveFired accounts for every fire ─────
+// For every PROC/SIGNATURE entry, the per-round recorder's counts sum to the engine's own
+// triggerCount, and each record carries the entry's moveIds. PASSIVE / persona entries never
+// produce a record. Seeded so it is deterministic.
+const { SPECIAL_MOVES } = require("../../consts/specialMovesCatalog");
+
+function mulberry32(seed) {
+    let a = seed >>> 0;
+    return () => {
+        a = (a + 0x6d2b79f5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+function withSeed(seed, fn) {
+    const orig = Math.random;
+    Math.random = mulberry32(seed);
+    try { return fn(); } finally { Math.random = orig; }
+}
+
+test("moveFired: per-round counts sum to each PROC/SIGNATURE entry's triggerCount, with the entry's moveIds", () => {
+    const allIds = SPECIAL_MOVES.map((m) => m.id);
+    const nonPassive = SPECIAL_MOVES.filter((m) => m.effectType !== "PASSIVE").map((m) => m.id);
+    const loadouts = [allIds]; // everything equipped: exercises merged entries (Full Mount + Top Control)
+    for (let i = 0; i < nonPassive.length; i += 3) loadouts.push(nonPassive.slice(i, i + 3));
+    const matchups = [
+        [fighter({ str: 60, spd: 55, leg: 50, chn: 50 }), fighter({ wre: 65, gnd: 60, sub: 60 }), "Counter Striker", "Takedown Heavy"],
+        [fighter({ wre: 80, gnd: 75, sub: 80 }), fighter({ str: 60, spd: 55, chn: 30 }), "Ground & Pound", "Pressure Fighter"],
+        [fighter(), fighter(), null, "Submission Hunter"],
+        [fighter({ str: 90, spd: 80, leg: 70, chn: 80 }), fighter({ str: 15, spd: 15, chn: 10 }), "Pressure Fighter", null],
+    ];
+    const firedIds = new Set();
+    let records = 0;
+    for (const [li, ids] of loadouts.entries()) {
+        for (const [mi, [p, o, ps, os]] of matchups.entries()) {
+            for (const seed of [3, 17, 29, 101]) {
+                const moveBonuses = specialMovesService.buildMoveBonuses(ownedFighter(ids, RARITY.LEGENDARY));
+                const result = withSeed(seed * 31 + li * 7 + mi, () =>
+                    resolveFight({ ...p, stamina: 100 }, { ...o }, { maxRounds: 5, playerStrategy: ps, opponentStrategy: os, moveBonuses })
+                );
+                const where = `loadout ${li} matchup ${mi} seed ${seed}`;
+                const all = result.rounds.flatMap((r) => r.moveFired || []);
+                records += all.length;
+                for (const rec of all) {
+                    assert.ok(rec.effectType === "PROC" || rec.effectType === "SIGNATURE", `${where}: passive recorded`);
+                    assert.ok(rec.count > 0, `${where}: empty record`);
+                    assert.ok(typeof rec.site === "string" && rec.site.length > 0, `${where}: record without site`);
+                }
+                for (const entry of result.moveBonuses) {
+                    const recs = all.filter((r) => r.moveId === entry.moveId);
+                    if (entry.effectType !== "PROC" && entry.effectType !== "SIGNATURE") {
+                        assert.equal(recs.length, 0, `${where}: ${entry.moveId} (${entry.effectType}) must never record`);
+                        continue;
+                    }
+                    const sum = recs.reduce((s, r) => s + r.count, 0);
+                    assert.equal(sum, entry.triggerCount || 0, `${where}: ${entry.moveId} recorded ${sum} vs triggerCount ${entry.triggerCount}`);
+                    const expectedIds = entry.moveIds ?? [entry.moveId];
+                    for (const r of recs) assert.deepStrictEqual(r.moveIds, expectedIds, `${where}: ${entry.moveId} moveIds`);
+                    if (sum > 0) for (const id of expectedIds) firedIds.add(id);
+                }
+            }
+        }
+    }
+    assert.ok(records > 0, "fixture sanity: some move fired");
+    assert.ok(firedIds.size >= 8, `fixture sanity: a broad set of PROC/SIGNATURE moves fired (got ${[...firedIds].join(",")})`);
+});

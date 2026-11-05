@@ -1,0 +1,138 @@
+/* ───────────────────────────────────────────────────────────
+   First session: the Debut offer card, the debut board note, and the
+   result screen additions (signing bonus, Next goal, report toggle, buttons).
+   ─────────────────────────────────────────────────────────── */
+
+/* ── Debut offer card (variant sits beside easy / even / hard) ── */
+.offer-card.debut {
+    border-top: 3px solid #38bdf8;
+    border-color: rgba(56, 189, 248, 0.3);
+    background: linear-gradient(180deg, rgba(56, 189, 248, 0.05) 0%, var(--c-bg-tile, #1A1A1A) 60%);
+}
+.diff-badge.debut {
+    background: rgba(56, 189, 248, 0.12);
+    color: #7dd3fc;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+.special-banner.debut { background: rgba(56, 189, 248, 0.07); border-color: rgba(56, 189, 248, 0.2); }
+.sb-title.debut { color: #7dd3fc; }
+.accept-btn.debut { background: #0f4c6e; color: #bae6fd; }
+.accept-btn.debut:hover { background: #135e87; }
+
+/* A debut board is one card: keep it a sensible width instead of stretching. */
+.offers-grid:has(> .offer-card.debut:only-child) {
+    grid-template-columns: minmax(0, 420px);
+    justify-content: center;
+}
+
+.fight-offers-debut-more {
+    margin: 12px 0 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--c-text-2, #888);
+}
+
+/* ── Result screen: signing bonus and rank lines under the hero ── */
+.fs2-bonus-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin-top: 12px;
+}
+.fs2-bonus-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--c-border, #2a2a2a);
+    color: var(--text, #fff);
+}
+.fs2-bonus-chip--cash { color: #4ade80; border-color: rgba(74, 222, 128, 0.35); }
+.fs2-bonus-chip--rank { color: #f5c542; border-color: rgba(212, 168, 32, 0.4); }
+
+/* ── Next goal card ── */
+.next-goal {
+    margin: 12px 0 0;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--c-bg-tile, #1a1a1a);
+    border: 1px solid var(--c-border, #2a2a2a);
+    border-left: 3px solid var(--c-accent, #c8102e);
+}
+.next-goal-eyebrow {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--c-text-2, #888);
+}
+.next-goal-line {
+    margin-top: 4px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text, #fff);
+}
+.next-goal-bar {
+    margin-top: 8px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--c-bg-tile-2, #222);
+    overflow: hidden;
+}
+.next-goal-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #c8102e, #f87171);
+    transition: width 400ms ease-out;
+}
+.next-goal-secondary {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--c-text-2, #888);
+}
+
+/* ── Full fight report toggle ── */
+.fs-report-toggle {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    min-height: 44px;
+}
+
+/* ── Result buttons: Next fight (primary) and Train in My Camp ── */
+.result-actions {
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.result-actions .btn {
+    min-width: 200px;
+}
+@media (max-width: 640px) {
+    .result-actions { flex-direction: column; }
+    .result-actions .btn { width: 100%; min-height: 44px; }
+}
+
+/* ── Coach's pick (debut Fighter Report row and camp session chip) ── */
+.fr-info-label--coach { color: #f5c542; }
+.camp-coach-pick {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    background: #3a2d06;
+    color: #f5c542;
+    border: 1px solid #d4a820;
+    white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .next-goal-bar-fill { transition: none; }
+}

@@ -143,7 +143,7 @@ export function buildStatIntel(offer) {
   // Full intel (every stat CONFIRMED) for callouts AND Easy opponents — Easy
   // matchups are treated as fully scouted, so they read as known numbers under
   // the unified "number = Confirmed" display rule.
-  const fullIntel = !!offer.isCallout || offer.type === "Easy";
+  const fullIntel = !!offer.isCallout || offer.type === "Easy" || offer.type === "Debut";
   const isChampion = !!opp.isChampion;
   const maxLogs = isChampion ? 2 : 5;
 
@@ -365,8 +365,9 @@ export function describeOffer(offer, fighter) {
 /**
  * Orders offers into up to 4 card slots.
  *
- * Variants: easy / even / hard / title / callout / nemesis
+ * Variants: debut / easy / even / hard / title / callout / nemesis
  * Rules:
+ * - A Debut offer (the board of a fighter with no resolved fight) is the only card.
  * - The backend can attach nemesisMeta to ANY standard slot (Easy/Even/Hard).
  *   The slot is re-skinned to the "nemesis" variant in place — no extra card.
  * - Variant resolution per slot: callout > nemesis (when no title) > base difficulty.
@@ -380,6 +381,10 @@ export function describeOffer(offer, fighter) {
  */
 export function buildCardModel(offers) {
   if (!offers || offers.length === 0) return [];
+
+  // First-fight board: the single Debut bout is the whole board.
+  const debutOffer = offers.find((o) => o.type === "Debut");
+  if (debutOffer) return [{ variant: "debut", offer: debutOffer }];
 
   const easyOffer  = offers.find((o) => o.type === "Easy");
   const evenOffer  = offers.find((o) => o.type === "Even");

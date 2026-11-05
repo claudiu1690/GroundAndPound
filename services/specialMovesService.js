@@ -759,6 +759,7 @@ function buildMoveBonuses(fighter) {
                 effectiveValue: value,
                 triggerCondition: def.triggerCondition,
                 effectType: def.effectType,
+                rarity: ownedEntry.rarity, // display-only (fight loadout snapshot); the engine never reads it
                 triggered: false,
                 triggerCount: 0,
             });
@@ -776,6 +777,8 @@ function buildMoveBonuses(fighter) {
                 effectiveValue: value,
                 triggerCondition: def.triggerCondition,
                 effectType: def.effectType,
+                // Display-only (fight loadout snapshot). A merged entry keeps the FIRST move's rarity.
+                rarity: ownedEntry.rarity,
                 triggered: false,
                 triggerCount: 0,
             };
