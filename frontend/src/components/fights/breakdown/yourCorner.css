@@ -1,0 +1,86 @@
+/* Your corner: what the player brought and what fired. Shared by the report and the replay's finish card. */
+.your-corner {
+    margin: 12px 0 6px;
+    padding: 10px 12px;
+    border: 1px solid var(--c-border-3, #26262b);
+    border-radius: 8px;
+    background: #0e0e12;
+}
+.yc-head {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted, #8a8a92);
+    margin-bottom: 6px;
+}
+.yc-empty { font-size: 13px; color: var(--text-muted, #8a8a92); }
+.yc-rows { display: flex; flex-direction: column; }
+.yc-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-top: 1px solid #222;
+    font-size: 14px;
+    min-width: 0;
+}
+.yc-row:first-child { border-top: 0; }
+.yc-row.is-off { opacity: 0.5; }
+.art-thumb {
+    width: 26px;
+    height: 38px;
+    object-fit: cover;
+    border-radius: 3px;
+    border: 2px solid var(--rarity-color, #888);
+    flex: none;
+    box-sizing: border-box;
+    background: #000;
+}
+.art-thumb--blank {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--rarity-color, #888);
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 14px;
+}
+.yc-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid #d4a820;
+    color: #d4a820;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 900;
+    font-size: 12px;
+    flex: none;
+    box-sizing: border-box;
+}
+.yc-main { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.yc-name {
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.yc-sub { color: #8a8a92; font-size: 12px; }
+/* Ready glow lines (docs/move-ready-glow-spec.md): when the move was ready, or why it did not fire. */
+.yc-why { color: #9a9aa2; font-size: 12px; margin-top: 2px; line-height: 1.35; }
+.yc-why.is-ready { color: #e3c46a; }
+.yc-state {
+    margin-left: auto;
+    flex: none;
+    color: #9a9aa2;
+    font-family: var(--font-display, sans-serif);
+    font-weight: 800;
+}

@@ -18,6 +18,31 @@
 
 export const CHANGELOG_ENTRIES = [
   {
+    version: "2.4",
+    date: "2026-11-05",
+    // Auto-opens: every fight now plays out, which every returning player will notice.
+    major: true,
+    highlights: [
+      "Fights now play out as highlights: health and stamina bars, live strike counters, every real exchange of each round, and big cards for the big moments. Skip to result is always there, 2x speeds it up, and Account settings can turn it off.",
+      "Your special moves and camp are part of the show. Your cards light up when they fire, the first fire slams in with its art, camp sessions that pay off get a gold card, and the end card lists everything that fired.",
+      "After every fight, your next goal sits at the top of the result: fights left to earn your ranking, wins toward the Proving Ground, or how close the title shot is. Next fight takes you straight to your offers.",
+      "New fighters go straight to their debut: the promoter books a winnable first bout, four short tips walk you to the bell, and the $500 signing bonus arrives with your first purse.",
+      "Each screen now explains itself the first time you open it, in one to three tips. Hide tips is on every card, and Account settings turns them back on.",
+    ],
+    sections: {
+      changed: [],
+      fixed: [
+        "The banner unlock card now names a badge piece properly instead of showing a code.",
+        "On phones, a fight opened from the Career feed now shows fully on screen; its top, tabs and Close button were cut off.",
+        "When your takedown or submission defence from camp worked, the fight report no longer says it was the other way round.",
+      ],
+      balance: [
+        "Strikes hit harder early in your career: every landed exchange now does at least a little damage, with extra weight at low stats that fades out by the mid tiers. Why: low-level fighters lost only about 4 health a round, and debut opponents could not hurt you at all, so a five-round fight looked like nobody got hit. Top-tier fights are unchanged.",
+        "Ground and pound hits harder early in your career too. Why: a low-level fighter on top did about 2 health a round, so whole rounds on your back barely moved your bar. A round stuck underneath at debut level now costs about 7 health. Top-tier ground fights are unchanged.",
+      ],
+    },
+  },
+  {
     version: "2.3.1",
     date: "2026-11-03",
     major: false,

@@ -68,6 +68,7 @@ function baseFighter(over = {}) {
         titleShotCooldown: 0,
         topFiveWinsInTier: 0,
         ranking: { rank: 9 },
+        record: { wins: 5, losses: 2, draws: 0 }, // past the debut
         offerBoard: null,
         ...over,
     };
@@ -207,10 +208,18 @@ test("boardFingerprint does NOT change on activeCallout, titleShotCooldown, topF
     assert.equal(boardFingerprint({ ...f, topFiveWinsInTier: 3 }), base);
 });
 
+test("boardFingerprint: sixth segment is the debut token (zero PvE fights)", () => {
+    const fresh = baseFighter({ record: { wins: 0, losses: 0, draws: 0 } });
+    assert.equal(boardFingerprint(fresh).split("|")[5], "debut");
+    assert.equal(boardFingerprint(baseFighter({ record: undefined })).split("|")[5], "debut");
+    assert.equal(boardFingerprint(baseFighter({ record: { wins: 0, losses: 0, draws: 1 } })).split("|")[5], "-");
+    assert.notEqual(boardFingerprint(fresh), boardFingerprint(baseFighter({ record: { wins: 0, losses: 1, draws: 0 } })));
+});
+
 test("boardFingerprint is a plain joined string", () => {
     const f = baseFighter({ nemesis: { opponentId: "nem" }, pendingPromotion: "National" });
-    assert.equal(boardFingerprint(f), `${TIER}|Lightweight|nem|National|${f.lastFightDate.getTime()}`);
-    assert.equal(boardFingerprint(baseFighter({ lastFightDate: null })), `${TIER}|Lightweight|-|-|0`);
+    assert.equal(boardFingerprint(f), `${TIER}|Lightweight|nem|National|${f.lastFightDate.getTime()}|-`);
+    assert.equal(boardFingerprint(baseFighter({ lastFightDate: null })), `${TIER}|Lightweight|-|-|0|-`);
 });
 
 test("isBoardLive: false on null, expired, fingerprint mismatch, empty slots; true otherwise", () => {
@@ -492,7 +501,7 @@ test("resolveBoardOffer: frozen is FIGHT_ALREADY_BOOKED, injured is FIGHT_BLOCKE
 
 test("boardFingerprint: a GCS fighter carries the GCS contender token", () => {
     const f = baseFighter({ promotionTier: "GCS", pendingPromotion: null });
-    assert.equal(boardFingerprint(f), `GCS|Lightweight|-|GCS|${f.lastFightDate.getTime()}`);
+    assert.equal(boardFingerprint(f), `GCS|Lightweight|-|GCS|${f.lastFightDate.getTime()}|-`);
     // Lower tiers keep their old segment: the pending tier, or "-".
     assert.equal(boardFingerprint(baseFighter()).split("|")[3], "-");
     assert.equal(boardFingerprint(baseFighter({ pendingPromotion: "National" })).split("|")[3], "National");

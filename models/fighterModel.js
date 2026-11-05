@@ -392,7 +392,9 @@ const fighterSchema = new mongoose.Schema({
         type: new mongoose.Schema({
             slots: {
                 type: [new mongoose.Schema({
-                    offerType:  { type: String, enum: ["Easy", "Even", "Hard", "TitleShot"], required: true },
+                    // "Debut" = the single-slot board a fighter with zero resolved PvE fights gets
+                    // (fightService.pickOfferSlots, first-session contract B.3).
+                    offerType:  { type: String, enum: ["Easy", "Even", "Hard", "TitleShot", "Debut"], required: true },
                     opponentId: { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", required: true },
                 }, { _id: false })],
                 default: [],
@@ -518,11 +520,27 @@ const fighterSchema = new mongoose.Schema({
         }, { _id: false }),
         default: null,
     },
+    // First-session flow (docs/first-session-contract.md A.1). `completed` = guided onboarding
+    // over (debut flow, legacy tour, or End tutorial). The debut resolve sets it server-side.
+    // `version` 2 = first-session flow; legacy docs get it from the app.js boot migration.
+    // `signingBonusPaidAt` is stamped exactly once when the $500 is credited (in the first PvE
+    // resolve, or by the migration for players who already had it). `tipsSeen` holds section and
+    // moment tip keys (consts/tutorialConfig TIP_KEYS). Writes to tutorial.* go through atomic
+    // updateOne on dotted paths (tutorialService), except the resolve, which owns the fighter doc.
     tutorial: {
-        completed:    { type: Boolean, default: false },
-        current_step: { type: String,  default: "profile_intro" },
-        started_at:   { type: Date,    default: Date.now },
-        completed_at: { type: Date,    default: null },
+        completed:          { type: Boolean,  default: false },
+        current_step:       { type: String,   default: "debut_home" },
+        started_at:         { type: Date,     default: Date.now },
+        completed_at:       { type: Date,     default: null },
+        version:            { type: Number,   default: 2 },
+        signingBonusPaidAt: { type: Date,     default: null },
+        tipsSeen:           { type: [String], default: [] },
+    },
+    // Owner-only gameplay preferences (never in PUBLIC_FIGHTER_KEYS). Written only through
+    // fighterService.updateSettings (atomic $set on dotted paths).
+    settings: {
+        playFightsOut: { type: Boolean, default: true },  // fight reveal on/off
+        sectionTips:   { type: Boolean, default: true },  // section + moment tips on/off
     },
     // PVP New Player Experience — onboarding state for "The Proving Ground".
     // Mirrors the `tutorial` subdoc shape. Additive; legacy fighters default to all

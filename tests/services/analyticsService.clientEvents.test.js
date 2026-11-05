@@ -23,15 +23,18 @@ async function withStub(obj, key, impl, body) {
     }
 }
 
-test("the whitelist is exactly the three client events, and all are in the model enum", () => {
-    assert.deepEqual([...CLIENT_EVENT_TYPES].sort(), ["energy_offer_choice", "energy_offer_shown", "premium_panel_expanded"]);
+test("the whitelist is exactly the seven client events, and all are in the model enum", () => {
+    assert.deepEqual([...CLIENT_EVENT_TYPES].sort(), [
+        "debut_step", "energy_offer_choice", "energy_offer_shown", "fight_reveal",
+        "next_goal_click", "premium_panel_expanded", "section_tip",
+    ]);
     const allowed = new Set(AnalyticsEvent.schema.path("type").enumValues);
     for (const t of CLIENT_EVENT_TYPES) assert.ok(allowed.has(t), t);
     assert.ok(allowed.has("premium_panel_shown"), "server-side event is in the enum too");
 });
 
 test("premium_panel_shown and other server types are not accepted from the client", () => {
-    for (const type of ["premium_panel_shown", "signup", "purchase_fulfilled", "fight_resolved"]) {
+    for (const type of ["premium_panel_shown", "signup", "purchase_fulfilled", "fight_resolved", "fight_accepted", "fighter_created"]) {
         assert.equal(sanitizeClientEvent(type, { reason: "first_visit" }), null, type);
     }
 });
@@ -114,4 +117,74 @@ test("trackClientEvent throws invalid_event and writes nothing on a bad event", 
             (e) => e.code === "invalid_event");
     });
     assert.deepEqual(calls, []);
+});
+
+// ── First-session beacons (docs/first-session-contract.md B.6) ────────────────
+
+test("debut_step: step 1..6, msSinceStart 0..30 days, device phone|desktop; extras dropped", () => {
+    assert.deepEqual(sanitizeClientEvent("debut_step", { step: 5, msSinceStart: 61234, device: "phone", evil: 1 }),
+        { type: "debut_step", meta: { step: 5, msSinceStart: 61234, device: "phone" } });
+    assert.ok(sanitizeClientEvent("debut_step", { step: 1, msSinceStart: 0, device: "desktop" }));
+    assert.ok(sanitizeClientEvent("debut_step", { step: 6, msSinceStart: 2592000000, device: "desktop" }));
+    const bad = [
+        { step: 0, msSinceStart: 1, device: "phone" },
+        { step: 7, msSinceStart: 1, device: "phone" },
+        { step: 2.5, msSinceStart: 1, device: "phone" },
+        { step: "2", msSinceStart: 1, device: "phone" },
+        { step: 2, msSinceStart: -1, device: "phone" },
+        { step: 2, msSinceStart: 2592000001, device: "phone" },
+        { step: 2, msSinceStart: 1, device: "unknown" },
+        { step: 2, msSinceStart: 1, device: { $ne: null } },
+        { step: 2, msSinceStart: 1 },
+    ];
+    for (const meta of bad) assert.equal(sanitizeClientEvent("debut_step", meta), null, JSON.stringify(meta));
+});
+
+test("fight_reveal: result, beat counts 0..500, speed 1|2, fightNumber 1..100000", () => {
+    const ok = { result: "skipped", beatIndex: 7, beatsTotal: 18, speed: 2, fightNumber: 1 };
+    assert.deepEqual(sanitizeClientEvent("fight_reveal", { ...ok, x: "<script>" }), { type: "fight_reveal", meta: ok });
+    assert.ok(sanitizeClientEvent("fight_reveal", { ...ok, result: "watched", speed: 1 }));
+    const bad = [
+        { ...ok, result: "paused" },
+        { ...ok, beatIndex: 501 },
+        { ...ok, beatsTotal: -1 },
+        { ...ok, speed: 3 },
+        { ...ok, speed: "2" },
+        { ...ok, fightNumber: 0 },
+        { ...ok, fightNumber: 100001 },
+        { ...ok, fightNumber: 1.5 },
+    ];
+    for (const meta of bad) assert.equal(sanitizeClientEvent("fight_reveal", meta), null, JSON.stringify(meta));
+});
+
+test("next_goal_click: choice next_fight|train and a fightNumber", () => {
+    assert.deepEqual(sanitizeClientEvent("next_goal_click", { choice: "train", fightNumber: 3, y: 1 }),
+        { type: "next_goal_click", meta: { choice: "train", fightNumber: 3 } });
+    for (const meta of [{ choice: "shop", fightNumber: 1 }, { choice: "train" }, { choice: "train", fightNumber: 0 }]) {
+        assert.equal(sanitizeClientEvent("next_goal_click", meta), null, JSON.stringify(meta));
+    }
+});
+
+test("section_tip: section from SECTION_TIP_KEYS, result done|hidden; moment keys rejected", () => {
+    assert.deepEqual(sanitizeClientEvent("section_tip", { section: "hospital", result: "hidden" }),
+        { type: "section_tip", meta: { section: "hospital", result: "hidden" } });
+    const bad = [
+        { section: "moment_first_loss", result: "done" },
+        { section: "shop", result: "done" },
+        { section: "camp", result: "skipped" },
+        { section: ["camp"], result: "done" },
+        { section: "toString", result: "done" },
+    ];
+    for (const meta of bad) assert.equal(sanitizeClientEvent("section_tip", meta), null, JSON.stringify(meta));
+});
+
+test("deviceFromUserAgent: phone / desktop / unknown", () => {
+    const { deviceFromUserAgent } = analyticsService;
+    assert.equal(deviceFromUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)"), "phone");
+    assert.equal(deviceFromUserAgent("Mozilla/5.0 (Linux; Android 14; Pixel 8) Mobile"), "phone");
+    assert.equal(deviceFromUserAgent("Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)"), "phone");
+    assert.equal(deviceFromUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)"), "desktop");
+    assert.equal(deviceFromUserAgent(""), "unknown");
+    assert.equal(deviceFromUserAgent(undefined), "unknown");
+    assert.equal(deviceFromUserAgent(["iPhone"]), "unknown");
 });

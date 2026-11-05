@@ -9,6 +9,7 @@ import {
 } from "../../constants/campConfig";
 import { CampInjury } from "./CampInjury";
 import { CampSupplements } from "../shop/CampSupplements";
+import "./debut.css";
 
 const CAMP_SESSION_COLOR = {
     TAKEDOWN_DEFENCE: "blue",
@@ -41,7 +42,7 @@ function CampSlotDots({ maxSlots, slotsUsed, canRemove, onRemove }) {
     );
 }
 
-function CampSessionCard({ sessionKey, energyAvailable, isInjuredPending, alreadyLogged, onAddSession, onEnergyShort, loading }) {
+function CampSessionCard({ sessionKey, energyAvailable, isInjuredPending, alreadyLogged, onAddSession, onEnergyShort, loading, isCoachPick }) {
     const session = CAMP_SESSIONS[sessionKey];
     if (!session) return null;
     const color = CAMP_SESSION_COLOR[sessionKey] ?? "blue";
@@ -56,11 +57,15 @@ function CampSessionCard({ sessionKey, energyAvailable, isInjuredPending, alread
     else if (notEnoughEnergy) tooltip = t("fights.camp.sessionNeedEnergy", { need: session.energy, have: energyAvailable ?? 0 });
 
     return (
-        <div className={`camp-session-card${blocked || lowEnergy ? " camp-session-card--disabled" : ""}`}>
+        <div
+            className={`camp-session-card${blocked || lowEnergy ? " camp-session-card--disabled" : ""}`}
+            data-tut={isCoachPick ? "camp-coach-pick" : undefined}
+        >
             <div className={`camp-session-stripe camp-stripe-${color}`} />
             <div className="camp-session-body">
                 <div className="camp-session-top">
                     <span className="camp-session-name">{session.label}</span>
+                    {isCoachPick && <span className="camp-coach-pick">{t("fights.camp.coachPick")}</span>}
                     <span className="camp-session-energy"><Zap size={11} /> {session.energy}E</span>
                 </div>
                 <div className={`camp-session-effect camp-effect-${color}`}>{session.effectLabel}</div>
@@ -136,6 +141,8 @@ export const FightCamp = memo(function FightCamp({
     }, [slotsUsed, onFinalise]);
 
     const energyAvailable = fighter.energy?.current ?? fighter.energy ?? 0;
+    // Debut only: the session that counters this opponent (the camp state and the report both carry it).
+    const coachPick = campState?.coachPick ?? campReport?.coachPick ?? null;
 
     return (
         <div className={`fight-camp${isTitleFight ? " fight-camp--title" : ""}`} data-tut="fight-camp">
@@ -191,6 +198,7 @@ export const FightCamp = memo(function FightCamp({
                                 onAddSession={onAddSession}
                                 onEnergyShort={onEnergyShort}
                                 loading={addingSession === key}
+                                isCoachPick={!!coachPick && coachPick === key}
                             />
                         ))}
                     </div>
@@ -258,7 +266,7 @@ export const FightCamp = memo(function FightCamp({
                 />
 
                 {!isFinalised && (
-                    <div className="camp-finalise-row" data-tut="camp-finalise">
+                    <div className="camp-finalise-row" data-tut="camp-finalise-row">
                         {showEmptyConfirm ? (
                             <div className="camp-empty-confirm">
                                 <span className="camp-empty-confirm-msg">
@@ -285,6 +293,7 @@ export const FightCamp = memo(function FightCamp({
                                 <button
                                     type="button"
                                     className="camp-finalise-btn"
+                                    data-tut="camp-finalise"
                                     onClick={handleFinaliseClick}
                                     disabled={!canFinalise || finalising}
                                 >

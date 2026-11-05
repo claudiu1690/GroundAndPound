@@ -17,7 +17,11 @@
  *
  * @typedef {Object} BoardOffer
  * The element shape the old generateOffers returned, plus `acceptable`:
- * @property {"Easy"|"Even"|"Hard"|"TitleShot"} type
+ * @property {"Easy"|"Even"|"Hard"|"TitleShot"|"Debut"} type
+ *           "Debut": the ONLY offer on the board of a fighter with zero resolved PvE fights
+ *           (fightService.pickOfferSlots). It carries opponent, context, purse (1.00x the
+ *           tier signing fee, $500 at Amateur) and acceptable; never nemesisMeta, isCallout
+ *           or titleShotMeta. Card copy is client i18n keyed off `type`.
  * @property {Object} opponent       full lean Opponent + displayRank (TitleShot OVR is x1.05).
  *           opponent.displayRank is DISPLAY-READY: the number the Rankings tab prints
  *           (rankingService.npcDisplayRank), null for the champion and for an unranked
@@ -91,7 +95,9 @@ const toIso = (d) => {
  * Plain joined string of every field that decides which opponents are on the board.
  * activeCallout, titleShotCooldown, topFiveWinsInTier and gcsTitleWins are deliberately
  * NOT in it. The fourth segment is the contender token: the pending destination tier,
- * the top tier for a GCS fighter (always a contender), "-" otherwise.
+ * the top tier for a GCS fighter (always a contender), "-" otherwise. The sixth is the
+ * debut token: "debut" while the fighter has zero resolved PvE fights (single-slot Debut
+ * board), "-" otherwise, so a legacy zero-fight fighter's three-slot board turns over.
  * @returns {string}
  */
 function boardFingerprint(fighter) {
@@ -99,7 +105,8 @@ function boardFingerprint(fighter) {
     const nemesisId = f.nemesis?.opponentId ?? "-";
     const pending = fightService.isTitleContender(f) ? (f.pendingPromotion ?? fightService.TOP_TIER) : "-";
     const last = f.lastFightDate ? new Date(f.lastFightDate).getTime() : 0;
-    return `${f.promotionTier}|${f.weightClass}|${nemesisId}|${pending}|${Number.isFinite(last) ? last : 0}`;
+    const debut = fightService.pveFightCount(f) === 0 ? "debut" : "-";
+    return `${f.promotionTier}|${f.weightClass}|${nemesisId}|${pending}|${Number.isFinite(last) ? last : 0}|${debut}`;
 }
 
 /** @returns {boolean} */

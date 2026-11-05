@@ -47,6 +47,7 @@ const {
     divisionForDp,
     divisionMeta,
     bracketTier,
+    DEFENDER_MIN_HEALTH,
 } = require("../consts/pvpConfig");
 
 const DAY_MS = 24 * 3600 * 1000;
@@ -294,6 +295,13 @@ async function runResolution(attackerFighterId, defenderId, gameplan, seasonId) 
     const db = isFightBlocked(defender);
     if (db) {
         throw new PvpError("defender_recovering", "This fighter is recovering and can't be challenged right now.", 409);
+    }
+
+    // ── (b2) Hurt-defender rejection: under DEFENDER_MIN_HEALTH after the reconcile above
+    //    (passive regen since their last visit counts). Defenders are offline and PvP HP carries,
+    //    so a hurt defender cannot be challenged until they heal back up. ──
+    if ((typeof defender.health === "number" ? defender.health : 100) < DEFENDER_MIN_HEALTH) {
+        throw new PvpError("defender_hurt", "This fighter is hurt and can't be challenged until they heal.", 409);
     }
 
     // ── (d) Is THIS fight a placement fight for the attacker? ────────────────
@@ -1323,6 +1331,8 @@ async function setDefenseGameplan(fighterId, gameplan) {
  * attacker nor defender (controller maps null → 404). Persisted breakdown is in
  * ENGINE perspective (player = attacker); when the viewer is the DEFENDER we swap
  * every pair and flip every actorIsPlayer.
+ * PvP never carries move_fired/wildcard_fired events and its `loadout` is always null.
+ * @returns {Promise<import("../utils/fightBreakdownView").BreakdownView|Object|null>}
  */
 async function getFightBreakdown(fightId, viewerFighterId) {
     const fight = await PVPFight.findById(fightId);

@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
 const { FIGHT_OUTCOMES } = require("../consts/gameConstants");
-const { eventLogSchema, roundStatsSchema } = require("./fightBreakdownSchema");
+const { eventLogSchema, roundStatsSchema, loadoutSchema } = require("./fightBreakdownSchema");
 
 const fightSchema = new mongoose.Schema({
     fighterId: { type: mongoose.Schema.Types.ObjectId, ref: "Fighter", required: true },
     opponentId: { type: mongoose.Schema.Types.ObjectId, ref: "Opponent", required: true },
-    offerType: { type: String }, // Easy, Even, Hard, Short notice, Title shot
+    offerType: { type: String }, // Easy, Even, Hard, TitleShot, Debut (first PvE fight), legacy: Short notice, Title shot
     promotionTier: { type: String, required: true },
     playerStrategy: { type: String, default: null }, // GDD 8.3: Pressure Fighter, Counter Striker, etc.
     weightCut: { type: String, enum: ["easy", "moderate", "aggressive"], default: "easy" }, // GDD 8.8
@@ -44,13 +44,19 @@ const fightSchema = new mongoose.Schema({
         resolvedAt: { type: Date, default: null },
     },
     // Fight Description System — derived round-by-round breakdown (ENGINE perspective).
-    // version null = legacy/none; 1 = current. See models/fightBreakdownSchema.js.
+    // version null = legacy/none; 1 = pre-replay-highlights; 2 = current (adds loadout and
+    // move_fired / wildcard_fired / takedown_stuffed events). See models/fightBreakdownSchema.js.
     breakdown: {
         version: { type: Number, default: null },
         roundStats: { type: [roundStatsSchema], default: undefined },
         eventLog: { type: [eventLogSchema], default: undefined },
         introTemplateKey: { type: String, default: null },
         resultContextKey: { type: String, default: null },
+        // Fight replay highlights: the player's moves + camp for this fight (absent on version 1).
+        loadout: { type: loadoutSchema, default: undefined },
+        staminaStart: { type: [Number], default: undefined }, // [player, opponent] entering round 1 (replay bars)
+        healthStart: { type: [Number], default: undefined }, // [player, opponent] health entering round 1 (replay bars)
+        scheduledRounds: { type: Number, default: undefined }, // scheduled length (ready glow: LATE_ROUNDS); absent on older fights
     },
 }, { timestamps: true });
 

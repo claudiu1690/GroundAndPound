@@ -229,6 +229,7 @@ async function postInterview(req, res) {
     }
 }
 
+/** GET /fights/:fightId/breakdown → BreakdownView (utils/fightBreakdownView.js), 404 fight_not_found. */
 async function getFightBreakdown(req, res) {
     try {
         const { fightId } = req.params;

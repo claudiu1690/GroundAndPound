@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { FIGHT_ENERGY_COST } from "../../constants/gameConstants";
 import { Zap, Heart, TrendingUp, TrendingDown, AlertTriangle, Swords, Lock, Megaphone } from "lucide-react";
 import { t } from "@/lib/i18n";
@@ -214,33 +214,40 @@ function calloutGate(fighter) {
   return { eligible, disabled: blocked || !eligible, tooltip };
 }
 
-function BoardFooter({ board, fighter, onOpenCallout }) {
+function BoardFooter({ board, fighter, onOpenCallout, debutOnly }) {
   const callout = calloutGate(fighter);
   const time = formatTimeLeft(board?.expiresAt);
 
   return (
-    <div className="bottom-row fight-offers-footer">
+    <div className="bottom-row fight-offers-footer" data-tut="offers-footer">
       <span className="fight-offers-expires">
         {time ? t("fights.board.expiresIn", { time }) : t("fights.board.expiresReady")}
       </span>
-      <button
-        type="button"
-        className="btn btn-secondary btn-sm fight-offers-callout"
-        onClick={onOpenCallout}
-        disabled={callout.disabled}
-        title={callout.tooltip}
-      >
-        <Megaphone size={13} /> {t("fights.hub.callOut")}
-        {!callout.eligible && <Lock size={10} style={{ marginLeft: 4, opacity: 0.7 }} />}
-      </button>
+      {/* The debut board is one booked bout: calling someone out is not on the table yet. */}
+      {!debutOnly && (
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm fight-offers-callout"
+          onClick={onOpenCallout}
+          disabled={callout.disabled}
+          title={callout.tooltip}
+        >
+          <Megaphone size={13} /> {t("fights.hub.callOut")}
+          {!callout.eligible && <Lock size={10} style={{ marginLeft: 4, opacity: 0.7 }} />}
+        </button>
+      )}
     </div>
   );
 }
 
-export const FightOffers = memo(function FightOffers({ fighter, onAcceptOffer, onRefreshFighter, onMessage }) {
+export const FightOffers = memo(function FightOffers({ fighter, onAcceptOffer, onRefreshFighter, onMessage, onOffersChange }) {
   const fighterId = fighter?._id;
   const [calloutOpen, setCalloutOpen] = useState(false);
   const { offers, board, loading, error, reload } = useOfferBoard(fighterId);
+
+  // The section and moment tips read the board (normal board yet? anything acceptable?).
+  useEffect(() => { onOffersChange?.(offers); }, [offers, onOffersChange]);
+  useEffect(() => () => { onOffersChange?.([]); }, [onOffersChange]);
   const { requestAccept, acceptingId, injuryModal } = useAcceptOffer({
     fighter,
     onAcceptOffer,
@@ -265,6 +272,8 @@ export const FightOffers = memo(function FightOffers({ fighter, onAcceptOffer, o
   })();
 
   const bootLoading = loading && offers.length === 0 && !board;
+  const cards = buildCardModel(offers);
+  const debutOnly = cards.length === 1 && cards[0].variant === "debut";
 
   return (
     <section className="panel fight-offers">
@@ -308,8 +317,8 @@ export const FightOffers = memo(function FightOffers({ fighter, onAcceptOffer, o
           <>
             <OffersStandingBanner fighter={fighter} />
 
-            <div className={`offers-grid${buildCardModel(offers).length === 4 ? " offers-grid--four" : ""}`}>
-              {buildCardModel(offers).map(({ variant, offer }, idx) => {
+            <div className={`offers-grid${cards.length === 4 ? " offers-grid--four" : ""}`}>
+              {cards.map(({ variant, offer }, idx) => {
                 // Inject the resolved variant onto the offer so OfferCard can read it
                 const enrichedOffer = { ...offer, _variant: variant };
                 return (
@@ -324,10 +333,13 @@ export const FightOffers = memo(function FightOffers({ fighter, onAcceptOffer, o
               })}
             </div>
 
+            {debutOnly && <p className="fight-offers-debut-more">{t("fights.board.debutMore")}</p>}
+
             <BoardFooter
               board={board}
               fighter={fighter}
               onOpenCallout={() => setCalloutOpen(true)}
+              debutOnly={debutOnly}
             />
           </>
         )}

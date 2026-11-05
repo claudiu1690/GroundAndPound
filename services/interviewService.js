@@ -67,6 +67,7 @@ async function listCalloutCandidates(fighterId, excludeOpponentId) {
             $lte: Math.min(100, ovr + CALLOUT_OVR_WINDOW),
         },
         isChampion: { $ne: true },
+        isDebut: { $ne: true }, // debut opponents are never callout / beef targets
     };
     if (excludeIds.length) query._id = { $nin: excludeIds };
 
@@ -155,7 +156,8 @@ async function resolveInterview({ fighterId, fightId, choice, targetOpponentId }
             throw new Error("Cannot call out the fighter you just beat — pick someone new");
         }
         targetOpponent = await Opponent.findById(targetOpponentId).lean();
-        if (!targetOpponent) throw new Error("Target opponent not found");
+        // A debut opponent is never a callout / beef target (first-session C.2): same 404.
+        if (!targetOpponent || targetOpponent.isDebut) throw new Error("Target opponent not found");
         if (targetOpponent.weightClass !== fighter.weightClass) {
             throw new Error("Target must share your weight class");
         }

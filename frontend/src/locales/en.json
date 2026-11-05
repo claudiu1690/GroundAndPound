@@ -270,6 +270,13 @@
       "cooldownBtn": "Wait {n}s",
       "cooldownTitle": "Wait {n}s before generating another code",
       "cooldownMsg": "Please wait {n}s before generating another code."
+    },
+    "gameplay": {
+      "title": "Gameplay",
+      "playOutLabel": "Play fights out",
+      "playOutSub": "Watch each fight play out round by round before the result. Turn it off to jump straight to the result.",
+      "tipsLabel": "Section tips",
+      "tipsSub": "Short tips the first time you open a screen. Turn them off if you know the game."
     }
   },
   "legal": {
@@ -335,13 +342,16 @@
       "gotIt": "Got it",
       "letsGo": "Let's go"
     },
-    "complete": {
-      "headline": "YOU'RE READY.",
-      "subheadline": "The cage is waiting. The rankings are open. Your career starts now.",
-      "rewardLabel": "Signing Bonus",
-      "body": "Train hard. Pick smart fights. Climb the rankings. Reach the top 5 and challenge for the title. Everything else you'll figure out along the way.",
-      "cta": "Enter the Game",
-      "entering": "Entering…"
+    "debut": {
+      "homeTitle": "Your Debut",
+      "homeBody": "Your promoter booked your first pro fight. Tap to meet your opponent.",
+      "homeBodyBottomNav": "Your promoter booked your first pro fight. Tap Fight at the bottom of the screen to meet your opponent.",
+      "offerTitle": "Accept the Fight",
+      "offerBody": "Accepting costs 10 energy and books the fight. Tap Accept.",
+      "reportTitle": "Know Your Opponent",
+      "reportBody": "This is your opponent. Your coach has marked the camp session that counters their style.",
+      "campTitle": "Fight Camp",
+      "campBody": "Your coach's pick counters this opponent. Add it and one more session, then finalise and Begin Fight."
     }
   },
   "banner": {
@@ -372,7 +382,8 @@
       "kind": {
         "background": "Background",
         "accent": "Accent Color",
-        "frame": "Layout"
+        "frame": "Layout",
+        "badge": "Badge"
       },
       "earnedPrefix": "Earned:",
       "later": "Later",
@@ -462,7 +473,10 @@
       "streak": "Streak",
       "accept": "Accept",
       "accepting": "Signing...",
-      "otherBouts": "Other bouts"
+      "otherBouts": "Other bouts",
+      "chipDebut": "Debut",
+      "debutEyebrow": "Your debut is booked",
+      "seeOpponent": "See your opponent"
     },
     "book": {
       "title": "Bookings",
@@ -474,6 +488,7 @@
       "refresh": "Refresh",
       "frozenNote": "Locked while your fight is booked",
       "signed": "Signed",
+      "debutNote": "Your debut",
       "purse": "purse",
       "accept": "Accept",
       "nemesisTag": "Nemesis",
@@ -1241,7 +1256,8 @@
       "sessionAdded": "✓ Added",
       "sessionInjuryRisk": "⚠ Injury risk",
       "sessionResolveInjury": "Resolve camp injury first",
-      "sessionNeedEnergy": "Need {need}E (have {have}E)"
+      "sessionNeedEnergy": "Need {need}E (have {have}E)",
+      "coachPick": "Coach's pick"
     },
     "campSummary": {
       "eyebrowChampionship": "Championship Bout",
@@ -1276,7 +1292,8 @@
       "loadFailed": "Couldn't load your bookings.",
       "retry": "Retry",
       "expiresIn": "New set in {time}",
-      "expiresReady": "New set ready"
+      "expiresReady": "New set ready",
+      "debutMore": "More offers open after your debut."
     },
     "offerCard": {
       "purse": "Purse ${n} · ",
@@ -1343,7 +1360,10 @@
       "fogConfirmed": "Confirmed",
       "fogSuspected": "Suspected",
       "fogUnknown": "Unknown",
-      "giantKillerNote": "Giant Killer opportunity — {name} is +{n} OVR above you. Win for +300 fame bonus."
+      "giantKillerNote": "Giant Killer opportunity — {name} is +{n} OVR above you. Win for +300 fame bonus.",
+      "diffDebut": "Debut",
+      "specialDebutTitle": "Your debut bout",
+      "specialDebutSub": "Your promoter booked a winnable first fight."
     },
     "faceOff": {
       "aria": "Fight face-off",
@@ -1416,7 +1436,8 @@
       "warningLabel": "Warning",
       "calloutBanner": "📣 Callout intel: you called this fighter out — every stat revealed, no fog of war.",
       "startCamp": "Start Camp",
-      "closeLabel": "Close"
+      "closeLabel": "Close",
+      "coachPickLabel": "Coach's pick"
     },
     "summary": {
       "panelTitle": "Last Fight Summary",
@@ -1475,7 +1496,30 @@
       "cardFightToll": "Fight Toll",
       "subWin": "def. {name}",
       "subLoss": "lost to {name}",
-      "subDraw": "drew with {name}"
+      "subDraw": "drew with {name}",
+      "signingBonus": "Signing bonus +${n}",
+      "rankEarned": "You're ranked #{rank}. Top 5 opens the title shot.",
+      "ovrLine": "OVR {before} to {after}",
+      "fullReport": "Full fight report",
+      "hideReport": "Hide fight report",
+      "nextFight": "Next fight",
+      "trainCamp": "Train in My Camp",
+      "nextGoal": {
+        "title": "Next goal",
+        "rank": "Earn your ranking: fight {n} of {target} done",
+        "pvp_unlock": "Proving Ground: {n} of {target} wins",
+        "top5": "Climb into the top 5 for a title shot",
+        "top5Title": "Climb into the top 5 for the {titleTier} title shot",
+        "top5Rank": "You are ranked #{rank}",
+        "title_shot": "Title shot: {n} of {target} wins in the top 5",
+        "title_shotTier": "{titleTier} title shot: {n} of {target} wins in the top 5",
+        "tier": "Next: {tier} needs OVR {threshold}",
+        "tierTitle": "{titleTier} title shot: reach OVR {threshold}",
+        "tierTitleNow": "Your OVR is {ovr}. Beat the champion to move up to {tier}.",
+        "tierNow": "Your OVR is {ovr}",
+        "top": "You're at the top. Defend the belt.",
+        "secondary": "Proving Ground: {n} of {target} wins"
+      }
     },
     "fightDescription": {
       "cardLabel": "Fight Description",
@@ -1523,7 +1567,48 @@
       "takedowns": "Takedowns",
       "kds": "KDs",
       "control": "Control",
-      "dmgShare": "Dmg share"
+      "dmgShare": "Dmg share",
+      "stamina": "Stamina",
+      "health": "Health at round end",
+      "chipCamp": "Camp",
+      "chipCard": "Card",
+      "chipWildcard": "Wildcard",
+      "roundOnly": "R{n}",
+      "roundOnlyTitle": "Happened during round {n}; no clock time"
+    },
+    "yourCorner": {
+      "title": "Your corner",
+      "cards": "Cards",
+      "camp": "Camp",
+      "empty": "No cards or camp for this fight",
+      "fired": "fired",
+      "times": "x{n}",
+      "didntFire": "didn't fire",
+      "paidOff": "paid off",
+      "alwaysOn": "always on",
+      "campSession": "Camp session",
+      "typeSignature": "Signature",
+      "typeProc": "Proc",
+      "typePassive": "Passive",
+      "ready": {
+        "health_he": "Ready from round {n}: he started it on {value} health.",
+        "health_you": "Ready from round {n}: you started it on {value} health.",
+        "stamina_he": "Ready from round {n}: he started it on {value} stamina.",
+        "stamina_you": "Ready from round {n}: you started it on {value} stamina.",
+        "late": "Ready in the late rounds, from round {n}.",
+        "roundOne": "Ready in round 1."
+      },
+      "why": {
+        "readyNoExchange": "It never got a striking exchange while it was ready.",
+        "readyNoExchangeR1": "Round 1 never reached a striking exchange.",
+        "readyNoTop": "You never held top position after that.",
+        "readyNoHit": "No striking exchange or ground shot on you came while it was open.",
+        "never_health_he": "Never ready: he never started a round under {threshold} health.",
+        "never_health_you": "Never ready: you never started a round under {threshold} health.",
+        "never_stamina_he": "Never ready: he never started a round under {threshold} stamina.",
+        "never_stamina_you": "Never ready: you never started a round under {threshold} stamina.",
+        "neverLate": "Never ready: the fight ended in round {n}."
+      }
     },
     "interview": {
       "pickToneTitle": "Post-Fight Interview",
@@ -1772,7 +1857,8 @@
     "fighterPageHint": "Fighter details are in the left panel.",
     "continueBtn": "Continue",
     "actionUnavailable": "Action unavailable right now.",
-    "gymsRetiredMessage": "The gyms have closed — everything moved to My Camp. Your progress came with you."
+    "gymsRetiredMessage": "The gyms have closed — everything moved to My Camp. Your progress came with you.",
+    "energyShort": "Not enough energy. You have {have} and need {need}. Energy refills about 1 a minute."
   },
   "pvp": {
     "hub": {
@@ -2031,7 +2117,8 @@
       "errDefenderRecovering": "This fighter is recovering and can’t be challenged right now.",
       "errLocked": "The Proving Ground unlocks at 3 career wins.",
       "errProtected": "This fighter is protected and can’t be challenged right now.",
-      "errDefault": "Fight failed. Try again."
+      "errDefault": "Fight failed. Try again.",
+      "errDefenderHurt": "This fighter is under 50 health and can’t be challenged until they heal."
     },
     "defense": {
       "navTitle": "Defense Report",
@@ -2089,7 +2176,10 @@
       "challengeProtectedTooltip": "This fighter is protected — they’re still finding their footing.",
       "diffEasy": "Easy",
       "diffEven": "Even",
-      "diffHard": "Hard"
+      "diffHard": "Hard",
+      "hurt": "Hurt",
+      "challengeHurtTooltip": "This fighter is under 50 health and can’t be challenged until they heal.",
+      "hurtUntil": "Under 50 health. Can be challenged again at {time}."
     },
     "history": {
       "loading": "Loading history…",
@@ -2853,6 +2943,218 @@
       "insufficientCashDeepClean": "You need ${cost} to deep clean — you have ${have}.",
       "deepCleanFailed": "Deep clean failed — try again.",
       "claimTeachFailed": "Couldn't claim that move. Try again."
+    }
+  },
+  "tips": {
+    "buttons": {
+      "gotIt": "Got it",
+      "hide": "Hide tips"
+    },
+    "camp": {
+      "1": {
+        "title": "Your Camp",
+        "body": "Your head coach runs drills here. Each drill trains certain stats and costs energy. Train to raise your OVR."
+      },
+      "2": {
+        "title": "Drills and stats",
+        "body": "Pick drills that build your style's main stats. Stats grow faster when they're low."
+      }
+    },
+    "fight": {
+      "1": {
+        "title": "Your Offers",
+        "body": "Easy pays less and is safer. Hard pays more and is riskier. Even is in between. Pick the fight you think you can win."
+      },
+      "2": {
+        "title": "Fresh Offers",
+        "body": "A new set arrives after every fight and every 24 hours."
+      }
+    },
+    "fightcamp": {
+      "1": {
+        "title": "Match Status",
+        "body": "A session scores Matched when it counters how your opponent actually fights, Partial when it half fits, Unmatched when it doesn't. The Fighter Report is your clue."
+      },
+      "2": {
+        "title": "Wildcard",
+        "body": "Every opponent hides one tendency. The right session cancels it; otherwise it can fire in the fight."
+      }
+    },
+    "weightcut": {
+      "1": {
+        "title": "Weight Cut",
+        "body": "Easy is safe. Moderate and Aggressive can add stamina, or cost it, and might miss weight."
+      }
+    },
+    "rankings": {
+      "1": {
+        "title": "Your Division",
+        "body": "After 3 fights in a tier you get a rank. Win to climb. Top 5 puts a title shot in reach."
+      }
+    },
+    "events": {
+      "1": {
+        "title": "Fight Cards",
+        "body": "Weekly NPC cards you can bet on. Pick a winner, or winner plus method for a bigger payout."
+      },
+      "2": {
+        "title": "Your Stake",
+        "body": "Cash leaves when you bet. Limits grow with your tier. The house keeps an edge, so read the matchups."
+      }
+    },
+    "hospital": {
+      "1": {
+        "title": "Your Health",
+        "body": "Fights cost health and it refills over time. Fighting hurt makes you worse."
+      },
+      "2": {
+        "title": "Injuries",
+        "body": "Every injury heals on its own. Paying here only buys back the wait."
+      }
+    },
+    "pvp": {
+      "1": {
+        "title": "Player Ladder",
+        "body": "Fight other players' fighters. Pick a gameplan; your defense plan fights for you while you're away."
+      },
+      "2": {
+        "title": "Division Points",
+        "body": "Wins earn points, losses cost some. Your first 3 fights place you."
+      }
+    },
+    "moves": {
+      "1": {
+        "title": "Your Moves",
+        "body": "Equip moves into your slots. They fire in fights under the right conditions. New moves drop from camp drills and coaches."
+      }
+    },
+    "sponsors": {
+      "1": {
+        "title": "Sponsors",
+        "body": "Sponsors pay when you hit their goals. Read the terms before you sign."
+      }
+    },
+    "media": {
+      "1": {
+        "title": "The Media",
+        "body": "One podcast a day and appearances build fame. Fame unlocks callouts and sponsors."
+      }
+    },
+    "moment": {
+      "energyLowTitle": "Energy",
+      "energyLow": "Energy refills by 1 a minute, about 100 in under 2 hours. Training and fights both spend it.",
+      "healthLowTitle": "Health",
+      "healthLow": "You're carrying damage. Fighting hurt makes you worse in the cage. Health refills over time, or the Hospital can patch you up.",
+      "firstLossTitle": "Comeback Mode",
+      "firstLoss": "Losses happen. Your next fight is in Comeback Mode: 1.5x XP and +30% cash.",
+      "firstInjuryTitle": "Injury",
+      "firstInjury": "You picked up a {injury}. It heals on its own in {hours} h. Details in the Hospital.",
+      "firstInjuryNoHours": "You picked up a {injury}. It heals on its own. Details in the Hospital."
+    }
+  },
+  "reveal": {
+    "dialogLabel": "Fight reveal",
+    "skip": "Skip to result",
+    "speed": "2x",
+    "speedAria": "Play at double speed",
+    "you": "You",
+    "clock": "R{n} {time}",
+    "clockRound": "R{n}",
+    "barLabel": "Damage taken by {name}",
+    "roundTo": "Round {n} to {name}, {score}",
+    "roundEven": "Round {n}, even round",
+    "score": "{a} to {b}",
+    "chipCamp": "CAMP: {session}",
+    "chipCampGeneric": "CAMP",
+    "chipWildcard": "WILDCARD",
+    "chipCard": "CARD",
+    "hpShort": "HP",
+    "staminaShort": "STA",
+    "staminaLabel": "Stamina {value}",
+    "roundsLabel": "Rounds",
+    "pillFinish": "Finish",
+    "pillEven": "Even",
+    "corner": "Your corner",
+    "cornerSub": "cards · camp",
+    "cornerEmpty": "No cards or camp for this fight",
+    "counters": {
+      "label": "Fight counters",
+      "strikes": "Strikes",
+      "takedowns": "Takedowns"
+    },
+    "passiveOn": "{name} · always on",
+    "campPaidOff": "Camp paid off",
+    "theirWildcard": "Their wildcard",
+    "signatureCard": "Signature card",
+    "procCard": "Proc card",
+    "whatFired": "What fired",
+    "seeResult": "See result",
+    "didntFire": "didn't fire",
+    "paidOff": "paid off",
+    "campSession": "Camp session",
+    "times": "x{n}",
+    "alwaysOn": "always on",
+    "typeSignature": "Signature",
+    "typeProc": "Proc",
+    "typePassive": "Passive",
+    "roundLabel": "Round {n}",
+    "roundResult": "Round {n}: {name} {score}",
+    "roundEvenShort": "Round {n}: Even",
+    "rarity": {
+      "COMMON": "Common",
+      "UNCOMMON": "Uncommon",
+      "RARE": "Rare",
+      "LEGENDARY": "Legendary"
+    },
+    "finishAt": "Round {n}, {time}",
+    "tally": "Rounds: {you} to {opp}",
+    "finish": {
+      "ko": "KO",
+      "tko": "TKO",
+      "submission": "SUBMISSION",
+      "decision": "DECISION",
+      "split": "SPLIT DECISION",
+      "draw": "DRAW"
+    },
+    "word": {
+      "VICTORY": "VICTORY",
+      "DEFEAT": "DEFEAT",
+      "DRAW": "DRAW"
+    },
+    "stoppage": {
+      "big": "IT'S ALL OVER",
+      "waveOff": "The referee waves it off.",
+      "tap": "The tap. The referee steps in."
+    },
+    "scorecard": {
+      "title": "Scorecard",
+      "fighter": "Fighter",
+      "total": "Total"
+    },
+    "methodWord": {
+      "ko": "KO",
+      "tko": "TKO",
+      "submission": "submission",
+      "unanimous": "unanimous decision",
+      "split": "split decision",
+      "decision": "decision",
+      "draw": "draw"
+    },
+    "winsByAt": "{name} wins by {method}, round {n} at {time}",
+    "winsBy": "{name} wins by {method}",
+    "winsByScore": "{name} wins by {method}, {score}",
+    "drawRead": "A draw on the cards, {score}",
+    "ready": {
+      "tab": "READY",
+      "chip": "Ready: {names}",
+      "line": {
+        "health_he": "{name} is ready: he started round {n} on {value} health.",
+        "health_you": "{name} is ready: you started round {n} on {value} health.",
+        "stamina_he": "{name} is ready: he started round {n} on {value} stamina.",
+        "stamina_you": "{name} is ready: you started round {n} on {value} stamina.",
+        "late": "{name} is ready: the late rounds.",
+        "roundOne": "{name} is ready: round 1."
+      }
     }
   }
 }

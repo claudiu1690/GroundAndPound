@@ -42,6 +42,8 @@ function fighter(over = {}) {
         pendingPromotion: null, activeCallout: { opponentId: null },
         titleShotCooldown: 0, topFiveWinsInTier: 0, ranking: { rank: 9 },
         beefFlags: [], respectFlags: [],
+        // Past the debut: a fighter with resolved PvE fights gets the normal board.
+        record: { wins: 5, losses: 2, draws: 0 },
         saves: 0,
         ...over,
     };
@@ -405,4 +407,90 @@ test("hydrateOffers: unranked player sees unshifted ranks; an unranked opponent 
         const { offers } = await hydrateOffers(fighter({ ranking: { rank: null } }), SLOTS);
         assert.deepEqual(offers.map((o) => o.opponent.displayRank), [7, null, 1]);
     });
+});
+
+// ── First session: the Debut board (docs/first-session-contract.md B.3) ─────
+
+test("pveFightCount: wins + losses + draws, tolerant of missing fields", () => {
+    const { pveFightCount } = fightService;
+    assert.equal(pveFightCount({ record: { wins: 2, losses: 1, draws: 1 } }), 4);
+    assert.equal(pveFightCount({ record: { wins: 0, losses: 0, draws: 0 } }), 0);
+    assert.equal(pveFightCount({ record: {} }), 0);
+    assert.equal(pveFightCount({}), 0);
+    assert.equal(pveFightCount(null), 0);
+});
+
+test("pickOfferSlots: zero PvE fights samples the debut pool first and returns ONE Debut slot", async () => {
+    const f = fighter({ record: { wins: 0, losses: 0, draws: 0 }, ranking: { rank: null } });
+    const matches = [];
+    const agg = async (pipeline) => {
+        matches.push(pipeline[0].$match);
+        return [opp("d1", 9, { isDebut: true, promotionTier: "Amateur" })];
+    };
+    await withStub(Opponent, "aggregate", agg, () =>
+        withStub(Opponent, "findById", () => ({ lean: async () => null }), () =>
+            withStub(championService, "getChampion", async () => { throw new Error("no title lookup on a debut board"); }, async () => {
+                const slots = await pickOfferSlots(f);
+                assert.deepEqual(slots, [{ offerType: "Debut", opponentId: "d1" }]);
+            })));
+    assert.equal(matches.length, 1, "exactly one $sample");
+    assert.deepEqual(matches[0], { isDebut: true, weightClass: "Lightweight" });
+});
+
+test("pickOfferSlots: an empty debut pool logs and falls through to the normal board", async () => {
+    const f = fighter({ record: { wins: 0, losses: 0, draws: 0 } });
+    const matches = [];
+    const windows = [opp("e", 31), opp("v", 35), opp("h", 39)];
+    let i = 0;
+    const agg = async (pipeline) => {
+        const m = pipeline[0].$match;
+        matches.push(m);
+        if (m.isDebut === true) return [];
+        const pick = windows[i]; i += 1;
+        return pick ? [pick] : [];
+    };
+    const errors = [];
+    const origError = console.error;
+    console.error = (...a) => { errors.push(a.join(" ")); };
+    try {
+        await withStub(Opponent, "aggregate", agg, () =>
+            withStub(Opponent, "findById", () => ({ lean: async () => null }), () =>
+                withStub(championService, "getChampion", async () => null, async () => {
+                    const slots = await pickOfferSlots(f);
+                    assert.deepEqual(slots.map((s) => s.offerType), ["Easy", "Even", "Hard"]);
+                })));
+    } finally {
+        console.error = origError;
+    }
+    assert.ok(errors.some((e) => e.includes("[offerBoard] debut pool empty for Lightweight")), errors.join("|"));
+    // The normal windows exclude debut opponents.
+    for (const m of matches.slice(1)) assert.deepEqual(m.isDebut, { $ne: true });
+});
+
+test("pickOfferSlots: past the debut, every window and the backfill exclude debut opponents", async () => {
+    const f = fighter();
+    await withPick({ windows: [null, opp("v", 35), opp("h", 39)], fillers: [opp("fill", 37)] }, async (calls) => {
+        await pickOfferSlots(f);
+        for (const m of [...calls.windows, ...calls.backfill]) assert.deepEqual(m.isDebut, { $ne: true });
+        assert.equal(calls.windows.some((m) => m.isDebut === true), false);
+    });
+});
+
+test("hydrateOffers: a Debut slot hydrates with a 1.00x purse and never takes the callout overlay", async () => {
+    const f = fighter({
+        record: { wins: 0, losses: 0, draws: 0 }, promotionTier: "Amateur", overallRating: 14,
+        activeCallout: { opponentId: "c1", cost: 50, isStretch: false, calledAt: new Date() },
+    });
+    const debutOpp = opp("d1", 9, { isDebut: true, promotionTier: "Amateur", fixedRank: null });
+    await withStub(Opponent, "find", () => ({ lean: async () => [debutOpp] }), () =>
+        withStub(Opponent, "findById", () => ({ lean: async () => { throw new Error("callout must not be read"); } }), async () => {
+            const { offers, missing } = await hydrateOffers(f, [{ offerType: "Debut", opponentId: "d1" }]);
+            assert.equal(missing, false);
+            assert.equal(offers.length, 1);
+            assert.equal(offers[0].type, "Debut");
+            assert.equal(offers[0].purse, 500);
+            assert.equal(offers[0].isCallout, undefined);
+            assert.equal(offers[0].nemesisMeta, undefined);
+            assert.equal(offers[0].titleShotMeta, undefined);
+        }));
 });

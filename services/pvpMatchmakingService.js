@@ -15,9 +15,11 @@ const {
     bracketTier,
     MATCHMAKE_COUNT,
     MATCH_OVR_STEPS,
+    DEFENDER_MIN_HEALTH,
 } = require("../consts/pvpConfig");
 const { fighterName } = require("./pvpRecordService");
 const { isFightBlocked } = require("../utils/injuryUtils");
+const fighterService = require("./fighterService");
 
 /**
  * @param {object} fighter actor Fighter doc (needs _id, overallRating)
@@ -58,7 +60,7 @@ async function getOpponents(fighter, season, myRecord) {
     // Resolve names.
     const ids = candidates.map((c) => c.playerId);
     const fighters = await Fighter.find({ _id: { $in: ids } })
-        .select("firstName lastName nickname overallRating weightClass style pvpOnboarding injuries health")
+        .select("firstName lastName nickname overallRating weightClass style pvpOnboarding injuries health healthLastRegenAt gymPerks")
         .lean();
     const fighterMap = new Map(fighters.map((f) => [String(f._id), f]));
 
@@ -120,6 +122,9 @@ async function getOpponents(fighter, season, myRecord) {
             // Fight-blocking injury (needs a doctor visit). Shown with a pill + disabled,
             // NOT excluded from the pool (same UX as Protected).
             isRecovering: !!isFightBlocked(f || {}),
+            // Under DEFENDER_MIN_HEALTH after passive regen: shown with a pill + disabled, with
+            // the time regen brings them back to the threshold (same UX as Recovering).
+            ...hurtState(f),
             lastActiveAt: c.lastActiveAt,
             wins: c.wins,
             losses: c.losses,
@@ -128,4 +133,21 @@ async function getOpponents(fighter, season, myRecord) {
     });
 }
 
-module.exports = { getOpponents };
+/**
+ * Hurt-defender state for the opponent list: health after passive regen (on a copy; the lean doc
+ * is never saved) and, when under DEFENDER_MIN_HEALTH, when regen brings them back to it.
+ * @returns {{ isHurt: boolean, hurtUntil: string|null }}
+ */
+function hurtState(f, now = Date.now()) {
+    if (!f) return { isHurt: false, hurtUntil: null };
+    const copy = { health: f.health, healthLastRegenAt: f.healthLastRegenAt, gymPerks: f.gymPerks };
+    fighterService.reconcileHealth(copy);
+    const hp = typeof copy.health === "number" ? copy.health : 100;
+    if (hp >= DEFENDER_MIN_HEALTH) return { isHurt: false, hurtUntil: null };
+    const interval = fighterService.healthRegenIntervalFor(copy);
+    const last = copy.healthLastRegenAt ? new Date(copy.healthLastRegenAt).getTime() : now;
+    const until = last + (DEFENDER_MIN_HEALTH - hp) * interval;
+    return { isHurt: true, hurtUntil: new Date(Math.max(until, now)).toISOString() };
+}
+
+module.exports = { getOpponents, hurtState };

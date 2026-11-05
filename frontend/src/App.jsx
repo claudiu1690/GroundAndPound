@@ -36,6 +36,10 @@ import { HospitalTab } from "./components/hospital/HospitalTab";
 import { RankingsTab } from "./components/rankings/RankingsTab";
 import { PostFightInterview } from "./components/fights/PostFightInterview";
 import { TutorialOverlay } from "./components/tutorial/TutorialOverlay";
+import { TipsOverlay } from "./components/tutorial/TipsOverlay";
+import { FightReveal } from "./components/fights/reveal/FightReveal";
+import { RevealErrorBoundary } from "./components/fights/reveal/RevealErrorBoundary";
+import { canPlayReveal } from "./components/fights/reveal/revealModel";
 import { LibraryTab } from "./components/library/LibraryTab";
 import { AccountTab } from "./components/account/AccountTab";
 import { EmailVerifyBanner } from "./components/account/EmailVerifyBanner";
@@ -57,6 +61,10 @@ import { CAMP_SESSIONS } from "./constants/campConfig";
 import { useToasts } from "./hooks/useToasts";
 import { useShopNews } from "./hooks/useShopNews";
 import { useEnergyOffer } from "./hooks/useEnergyOffer";
+import { useTips } from "./hooks/useTips";
+import { useDebutFunnel } from "./hooks/useDebutFunnel";
+import { trackDebutStep } from "./utils/debutAnalytics";
+import { isPreDebut, pveFightCount } from "./utils/fighterMath";
 import { PvpHub } from "./components/pvp/PvpHub";
 import {
   LayoutDashboard,
@@ -125,6 +133,43 @@ function buildNavItems({ gymsRetired = false } = {}) {
 
 // ── Changelog / What's New ──────────────────────────────────
 const LAST_SEEN_VERSION_KEY = "gnp_last_seen_version";
+
+// ── Last fight result (reload mid-reveal lands on the result) ─
+// The resolve response is stored the moment it arrives, before the reveal plays. A reload while
+// the reveal is on screen (or a few minutes after) restores the result screen from it, never a
+// half-played reveal. Keyed by fighter, dropped when the result is dismissed or a new fight is
+// accepted, and ignored after 30 minutes.
+const LAST_RESULT_TTL_MS = 30 * 60 * 1000;
+const lastResultKey = (fighterId) => `gnp_last_result:${fighterId}`;
+
+function saveLastResult(fighterId, result) {
+  if (!fighterId || !result?.summary) return;
+  try {
+    sessionStorage.setItem(lastResultKey(fighterId), JSON.stringify({
+      fightId: result.summary.fightId ?? result.fight?._id ?? null,
+      at: Date.now(),
+      summary: result.summary,
+      breakdownView: result.breakdownView ?? result.fight?.breakdown ?? null,
+      commentary: result.fight?.commentary || result.result?.commentary || [],
+    }));
+  } catch (_) { /* storage full or blocked: the restore is a convenience */ }
+}
+
+function readLastResult(fighterId) {
+  if (!fighterId) return null;
+  try {
+    const raw = sessionStorage.getItem(lastResultKey(fighterId));
+    if (!raw) return null;
+    const rec = JSON.parse(raw);
+    if (!rec?.summary || !(Date.now() - rec.at < LAST_RESULT_TTL_MS)) return null;
+    return rec;
+  } catch (_) { return null; }
+}
+
+function clearLastResult(fighterId) {
+  if (!fighterId) return;
+  try { sessionStorage.removeItem(lastResultKey(fighterId)); } catch (_) { /* ignore */ }
+}
 
 // ── Tier ladder for display ────────────────────────────────
 const TIER_LADDER_DISPLAY = [
@@ -542,8 +587,9 @@ function App() {
   // appended) on every fight resolve so a stale queue can't leak into the
   // next fight's celebrations.
   const [overlayQueue, setOverlayQueue] = useState([]);
+  // Banner unlocks from the last fight, shown once the player leaves the result screen.
+  const deferredBannerRef = useRef(null);
   const advanceOverlay = useCallback(() => setOverlayQueue((q) => q.slice(1)), []);
-  const currentOverlay = overlayQueue[0] || null;
   // Nonce that tells the (always-mounted) sidebar FighterProfile to open its
   // banner editor — bumped by the banner-unlock modal's "Customize" CTA.
   const [openBannerEditorSignal, setOpenBannerEditorSignal] = useState(0);
@@ -561,7 +607,27 @@ function App() {
   }, []);
   const [fightLimitPopup, setFightLimitPopup] = useState({ open: false, message: "" });
   // Out-of-energy offer (A3): one instance for the whole app, opened by any in-scope screen.
-  const energyOffer = useEnergyOffer({ fighterId: fighter?._id });
+  // Suppressed while the debut tutorial runs: a new player is never pitched inside onboarding.
+  const energyOffer = useEnergyOffer({
+    fighterId: fighter?._id,
+    suppressed: !!fighter?.tutorial && !fighter.tutorial.completed,
+    onSuppressed: ({ need, have }) => setMessage(t("app.energyShort", { need, have })),
+  });
+  // Fight reveal. `reveal` holds the resolve response while the fight plays out; nothing from it
+  // reaches the screen (message bar, toasts, modals, sidebar, record) until the reveal ends or is
+  // skipped, and commitResolvedResult is the one place that applies it. revealActiveRef is the gate
+  // on loadFighter from the moment Begin Fight is pressed: a refresh in that window would show the
+  // new record before the finish card.
+  const [reveal, setReveal] = useState(null);
+  // Celebration overlays (belt, tier, banner) never sit on top of a fight replay: they wait for it.
+  const currentOverlay = reveal ? null : (overlayQueue[0] || null);
+  const revealActiveRef = useRef(false);
+  const reloadPendingRef = useRef(false);
+  const pendingResultRef = useRef(null);
+  const restoredResultRef = useRef(false);
+  const [reportCollapsed, setReportCollapsed] = useState(false);
+  // Offers the Fights tab has loaded, for the tips engine (normal board yet? anything acceptable?).
+  const [boardOffers, setBoardOffers] = useState([]);
   // One-time "you're a contender" announcement. We track the previous
   // pendingPromotion value so we only fire on the absent→set transition.
   const [contenderModal, setContenderModal] = useState(null);
@@ -626,6 +692,12 @@ function App() {
 
   const loadFighter = useCallback(async (id, options = {}) => {
     if (!id) return;
+    // The single choke point for fighter refreshes (60 s poll, every screen's refresh callback).
+    // While a fight is resolving or playing out it only remembers that a refresh is owed.
+    if (revealActiveRef.current) {
+      reloadPendingRef.current = true;
+      return;
+    }
     try {
       const f = await api.getFighter(id);
       setFighter(f);
@@ -710,6 +782,24 @@ function App() {
   useEffect(() => {
     if (fighter) syncCampState(fighter);
   }, [fighter?._id, fighter?.acceptedFightId, syncCampState]);
+
+  // Reload during (or soon after) a fight lands on its result screen, never a half-played reveal.
+  // Once per page load, after the first fighter load; only when no fight is booked.
+  useEffect(() => {
+    if (restoredResultRef.current || loading || !fighter?._id) return;
+    restoredResultRef.current = true;
+    if (fighter.acceptedFightId) {
+      clearLastResult(fighter._id);
+      return;
+    }
+    const rec = readLastResult(fighter._id);
+    if (!rec) return;
+    setLastFightCommentary(Array.isArray(rec.commentary) ? rec.commentary : []);
+    setLastFightBreakdown(rec.breakdownView ?? null);
+    setLastFightSummary(rec.summary);
+    setReportCollapsed(fighter.settings?.playFightsOut !== false);
+    setActiveTab("fights");
+  }, [loading, fighter?._id, fighter?.acceptedFightId, fighter?.settings?.playFightsOut]);
 
   // Once the gyms have retired, the "gym" tab no longer exists in NAV_ITEMS —
   // if the player is sitting on it (e.g. it was the last tab before the flag
@@ -882,7 +972,9 @@ function App() {
     const unseenEntries = seenIdx === -1 ? CHANGELOG_ENTRIES.slice(0, 1) : CHANGELOG_ENTRIES.slice(0, seenIdx);
     const isMajor = unseenEntries.some((e) => e.major === true);
     const inTutorial = !!(fighter?.tutorial && !fighter.tutorial.completed);
-    if (isMajor && inTutorial) {
+    // Also wait while a fight result is on screen: the debut completes the tutorial in its
+    // resolve, and What's New must not land on top of the first win and its Next goal card.
+    if (isMajor && (inTutorial || lastFightSummary)) {
       // Suppressed while onboarding — leave the ref unset so the effect
       // re-evaluates on later fighter refreshes and the auto-open still fires
       // once the tutorial completes. (Manually opening the modal writes the
@@ -893,7 +985,7 @@ function App() {
       openChangelog();
     }
     changelogCheckedRef.current = true;
-  }, [authed, loading, fighter, openChangelog]);
+  }, [authed, loading, fighter, openChangelog, lastFightSummary]);
 
   // Email-change confirmation redirect — the backend bounces the user here from
   // /account/email/confirm with one of two query params. Surface the result via
@@ -936,13 +1028,14 @@ function App() {
     // and the step jumped to the result with no fight. The camp is server state
     // (acceptedFightId) and renders on the Fights tab after a reload.
     const STEP_RESUME_TAB = {
-      training_session: gymsRetired ? "camp" : "gym",
-      fight_camp: "fights",
+      debut_offer: "fights",
+      debut_report: "fights",
+      debut_camp: "fights",
     };
     const tab = STEP_RESUME_TAB[tut.current_step];
     if (tab) setActiveTab(tab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fighter?.tutorial?.current_step, fighter?.tutorial?.completed, gymsRetired]);
+  }, [fighter?.tutorial?.current_step, fighter?.tutorial?.completed]);
 
   // Email-verification redirect — same pattern. On success we also flip the
   // local accountStatus so the banner disappears without needing a refetch.
@@ -988,6 +1081,12 @@ function App() {
     setFighter(null);
     setLastFightSummary(null);
     setLastFightCommentary([]);
+    setReveal(null);
+    pendingResultRef.current = null;
+    revealActiveRef.current = false;
+    reloadPendingRef.current = false;
+    restoredResultRef.current = false;
+    setBoardOffers([]);
     setActiveTab("home");
     setMessage("");
     setAccountStatus(null);
@@ -1194,6 +1293,7 @@ function App() {
           },
         });
         setMessage(t("app.fightAccepted"));
+        clearLastResult(fighter._id);
         loadFighter(fighter._id, { clearMessage: false });
         setActiveTab("fights");
         // NOTE: tutorialBus.emit("fight_accepted") fires from the FaceOff's
@@ -1277,13 +1377,15 @@ function App() {
     }
   }, [fighter?._id, fighter?.acceptedFightId, loadCampState]);
 
+  const preDebut = isPreDebut(fighter);
   const handleFinaliseCamp = useCallback(async (skip = false) => {
     const fightId = fighter?.acceptedFightId;
     if (!fightId || !fighter?._id) return;
     try {
       const summary = await api.finaliseCamp(fightId, fighter._id, skip);
       setCampSummaryData(summary);
-      setWeightCut(null);
+      // The debut defaults to the safe cut so Begin Fight is live at once (still changeable).
+      setWeightCut(preDebut ? "easy" : null);
       await loadCampState(fightId);
       setShowCampSummary(true);
       tutorialBus.emit("camp_finalised");
@@ -1291,7 +1393,7 @@ function App() {
     } catch (e) {
       setMessage(e.message || "Failed to finalise camp");
     }
-  }, [fighter?._id, fighter?.acceptedFightId, loadCampState]);
+  }, [fighter?._id, fighter?.acceptedFightId, loadCampState, preDebut]);
 
   // Resume path for an already-finalised but unresolved camp. The Camp Summary
   // (which holds the only "Begin Fight" button) lives in ephemeral state that is
@@ -1315,78 +1417,145 @@ function App() {
     tutorialBus.emit("camp_finalised");
   }, [campState]);
 
+  // Applies a resolved fight to the screen. The ONE commit point: the message bar line, badge toasts,
+  // belt / tier / banner modals, the result screen, the fighter and gym refreshes, the feed refresh
+  // and the tutorial event all happen here, after the reveal ends or is skipped (or at once when the
+  // reveal is off). Nothing in this function runs while a reveal is on screen.
+  const commitResolvedResult = useCallback((result, { collapsed = false } = {}) => {
+    const fighterId = fighter?._id;
+    const commentary = result.fight?.commentary || result.result?.commentary || [];
+    setLastFightCommentary(Array.isArray(commentary) ? commentary : []);
+    // prefer the shaped view the backend attaches as breakdownView (same shape
+    // as GET /fights/:id/breakdown); fall back to the raw subdoc for old deploys
+    setLastFightBreakdown(result.breakdownView ?? result.fight?.breakdown ?? null);
+    setLastFightSummary(result.summary ?? null);
+    setReportCollapsed(!!collapsed);
+    // Post-fight celebration overlays, priority order: belt > tier > banner.
+    // REPLACE (never append) — a fresh fight always overwrites any leftover
+    // queue from a previous resolve.
+    const queue = [];
+    // A GCS belt win has promoted === null (never a tier-up); beltTier names the belt.
+    // Older payloads have no beltTier, and always carry promoted on a belt win.
+    if (result.summary?.beltWon && (result.summary.promoted || result.summary.beltTier)) {
+      queue.push({
+        type: "belt",
+        from: result.summary.beltTier ?? result.summary.promoted?.from ?? null,
+        to: result.summary.promoted?.to ?? null,
+        titleDefense: !!result.summary.titleDefense,
+        gcsTitleWins: result.summary.gcsTitleWins ?? 0,
+        weightClass: result.fighter?.weightClass,
+      });
+    }
+    if (result.summary?.notorietyTierUp) {
+      queue.push({ type: "tier", ...result.summary.notorietyTierUp });
+    }
+    // Banner pieces are a small reward: they wait until the player leaves the result screen
+    // (leaveResult), so they never cover the outcome and the Next goal card. Belt and tier
+    // overlays stay immediate, they ARE the moment.
+    deferredBannerRef.current = result.summary?.newlyUnlockedBannerPieces?.length
+      ? result.summary.newlyUnlockedBannerPieces
+      : null;
+    setOverlayQueue(queue);
+    const out = result.fight?.outcome || "Fight over";
+    const iron = result.fight?.ironEarned ?? 0;
+    const rec = result.fighter?.record;
+    // First-fight hint: show once after first career win
+    const isFirstWin = rec && rec.wins === 1 && result.summary?.recordChange === "W";
+    const firstWinHint = isFirstWin ? t("app.firstWinHint") : "";
+    setMessage(`${out}: +$${iron}${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}${firstWinHint}`);
+    // Badge-unlock toasts — one per newly earned badge from the fight resolve.
+    const newBadges = result.summary?.newlyEarnedBadges;
+    if (Array.isArray(newBadges) && newBadges.length) {
+      for (const b of newBadges) {
+        addToast({
+          kind: "badge",
+          badgeName: b.name || prettifyBadgeId(b.badgeId),
+          badgeContext: b.context || null,
+        });
+      }
+    }
+    // The booked fight is over: drop it now so the Fights tab goes straight to the result instead of
+    // flashing the camp until the refresh below lands.
+    setFighter((prev) => (prev ? { ...prev, acceptedFightId: null } : prev));
+    loadFighter(fighterId);
+    // Refresh gyms too — a win updates gym rank progress (relevantWins, e.g.
+    // KO/TKO win requirements), which lives on the gyms payload, not the fighter.
+    loadGyms(fighterId);
+    setFeedRefreshKey((k) => k + 1);
+    // Clean up camp state after fight
+    setCampState(null);
+    setCampReport(null);
+    setCampSummaryData(null);
+    setShowCampSummary(false);
+    setSelectedBuffLabel(null);
+    tutorialBus.emit("fight_resolved");
+  }, [fighter?._id, loadFighter, loadGyms, addToast]);
+
+  // Lifts the refresh gate. `flush` runs the refresh that was held back (nothing was committed).
+  const releaseRevealGate = useCallback((flush = false) => {
+    const owed = reloadPendingRef.current;
+    revealActiveRef.current = false;
+    reloadPendingRef.current = false;
+    if (flush && owed && fighter?._id) loadFighter(fighter._id);
+  }, [fighter?._id, loadFighter]);
+
+  // The reveal ended (finish card played out) or was skipped. Fires once: the pending result is the
+  // latch, so a stray second call from the component is a no-op.
+  const handleRevealDone = useCallback(({ result: how, beatIndex, beatsTotal, speed }) => {
+    const result = pendingResultRef.current;
+    if (!result) return;
+    pendingResultRef.current = null;
+    setReveal(null);
+    const fighterId = fighter?._id;
+    if (fighterId) {
+      // The fighter in state is still the pre-fight one (the gate held every refresh), so +1 is this fight.
+      const summaryNumber = result.summary?.fightNumber;
+      const fightNumber = Number.isInteger(summaryNumber) && summaryNumber >= 1
+        ? summaryNumber
+        : pveFightCount(fighter) + 1;
+      api.trackClientEvent(fighterId, "fight_reveal", {
+        result: how,
+        beatIndex: Math.max(0, Math.min(500, beatIndex)),
+        beatsTotal: Math.max(0, Math.min(500, beatsTotal)),
+        speed: speed === 2 ? 2 : 1,
+        fightNumber,
+      }).catch(() => {});
+    }
+    releaseRevealGate();
+    commitResolvedResult(result, { collapsed: true });
+  }, [fighter, commitResolvedResult, releaseRevealGate]);
+
+  const playFightsOut = fighter?.settings?.playFightsOut !== false;
+
   const handleResolve = useCallback(async () => {
     if (!fighter?._id) return;
+    const fighterId = fighter._id;
     setResolving(true);
+    // Gate fighter refreshes from now until the result is committed (see loadFighter).
+    revealActiveRef.current = true;
+    reloadPendingRef.current = false;
     setMessage(t("app.fightNight"));
     setLastFightCommentary([]);
     setLastFightBreakdown(null);
     setLastFightSummary(null);
     try {
-      const result = await api.resolveFight(fighter._id);
-      const commentary = result.fight?.commentary || result.result?.commentary || [];
-      setLastFightCommentary(Array.isArray(commentary) ? commentary : []);
-      // prefer the shaped view the backend attaches as breakdownView (same shape
-      // as GET /fights/:id/breakdown); fall back to the raw subdoc for old deploys
-      setLastFightBreakdown(result.breakdownView ?? result.fight?.breakdown ?? null);
-      setLastFightSummary(result.summary ?? null);
-      // Post-fight celebration overlays, priority order: belt > tier > banner.
-      // REPLACE (never append) — a fresh fight always overwrites any leftover
-      // queue from a previous resolve.
-      const queue = [];
-      // A GCS belt win has promoted === null (never a tier-up); beltTier names the belt.
-      // Older payloads have no beltTier, and always carry promoted on a belt win.
-      if (result.summary?.beltWon && (result.summary.promoted || result.summary.beltTier)) {
-        queue.push({
-          type: "belt",
-          from: result.summary.beltTier ?? result.summary.promoted?.from ?? null,
-          to: result.summary.promoted?.to ?? null,
-          titleDefense: !!result.summary.titleDefense,
-          gcsTitleWins: result.summary.gcsTitleWins ?? 0,
-          weightClass: result.fighter?.weightClass,
-        });
+      const result = await api.resolveFight(fighterId);
+      // Keep it so a reload during the reveal lands on the result screen.
+      saveLastResult(fighterId, result);
+      if (result.summary?.isDebut) trackDebutStep(fighterId, 5);
+      if (playFightsOut && canPlayReveal(result.breakdownView)) {
+        pendingResultRef.current = result;
+        setReveal({ result });
+      } else {
+        releaseRevealGate();
+        commitResolvedResult(result, { collapsed: false });
       }
-      if (result.summary?.notorietyTierUp) {
-        queue.push({ type: "tier", ...result.summary.notorietyTierUp });
-      }
-      if (result.summary?.newlyUnlockedBannerPieces?.length) {
-        queue.push({ type: "banner", pieces: result.summary.newlyUnlockedBannerPieces });
-      }
-      setOverlayQueue(queue);
-      const out = result.fight?.outcome || "—";
-      const iron = result.fight?.ironEarned ?? 0;
-      const rec = result.fighter?.record;
-      // First-fight hint: show once after first career win
-      const isFirstWin = rec && rec.wins === 1 && result.summary?.recordChange === "W";
-      const firstWinHint = isFirstWin ? t("app.firstWinHint") : "";
-      setMessage(`${out} — +$${iron}${rec ? ` | Record: ${rec.wins}-${rec.losses}-${rec.draws}` : ""}${firstWinHint}`);
-      // Badge-unlock toasts — one per newly earned badge from the fight resolve.
-      const newBadges = result.summary?.newlyEarnedBadges;
-      if (Array.isArray(newBadges) && newBadges.length) {
-        for (const b of newBadges) {
-          addToast({
-            kind: "badge",
-            badgeName: b.name || prettifyBadgeId(b.badgeId),
-            badgeContext: b.context || null,
-          });
-        }
-      }
-      loadFighter(fighter._id);
-      // Refresh gyms too — a win updates gym rank progress (relevantWins, e.g.
-      // KO/TKO win requirements), which lives on the gyms payload, not the fighter.
-      loadGyms(fighter._id);
-      setFeedRefreshKey((k) => k + 1);
-      // Clean up camp state after fight
-      setCampState(null);
-      setCampReport(null);
-      setCampSummaryData(null);
-      setShowCampSummary(false);
-      setSelectedBuffLabel(null);
-      tutorialBus.emit("fight_resolved");
     } catch (e) {
+      // Nothing was committed: lift the gate and catch up on any refresh it held back.
+      releaseRevealGate(true);
       if (e.code === "FIGHT_ALREADY_RESOLVED") {
         // Another request already settled this fight; just resync, no error popup.
-        loadFighter(fighter._id);
+        loadFighter(fighterId);
         setFeedRefreshKey((k) => k + 1);
         setMessage(t("app.fightAlreadyResolved"));
         return;
@@ -1398,7 +1567,7 @@ function App() {
       resolveInFlightRef.current = false;
       setResolving(false);
     }
-  }, [fighter?._id, loadFighter, loadGyms, maybeShowBlockPopup, addToast]);
+  }, [fighter?._id, playFightsOut, loadFighter, maybeShowBlockPopup, commitResolvedResult, releaseRevealGate]);
 
   const handleBeginFight = useCallback(async () => {
     if (!weightCut || !fighter?._id || !fighter?.acceptedFightId) return;
@@ -1411,6 +1580,9 @@ function App() {
       setMessage(e.message || t("app.weightCutFailed"));
       return;
     }
+    // The debut tutorial's last beat ends here; the funnel counts it too. Only once the weight
+    // cut is saved: a failed save leaves the player in camp, so the guidance must stay.
+    tutorialBus.emit("fight_resolve_started");
     setShowCampSummary(false);
     await handleResolve();
   }, [weightCut, fighter?._id, fighter?.acceptedFightId, handleResolve]);
@@ -1424,6 +1596,26 @@ function App() {
   const handleNavTab = useCallback((id) => {
     setActiveTab(id);
   }, []);
+
+  // Leaving the result screen: Next fight (the board) or Train in My Camp. Both drop the stored
+  // result, tell the tutorial bus, and send the result-screen beacons.
+  const leaveResult = useCallback((choice) => {
+    const fighterId = fighter?._id;
+    const summary = lastFightSummary;
+    if (fighterId) {
+      clearLastResult(fighterId);
+      if (Number.isInteger(summary?.fightNumber) && summary.fightNumber >= 1) {
+        api.trackClientEvent(fighterId, "next_goal_click", { choice, fightNumber: summary.fightNumber }).catch(() => {});
+      }
+      if (summary?.isDebut) trackDebutStep(fighterId, 6);
+    }
+    setLastFightSummary(null);
+    const bannerPieces = deferredBannerRef.current;
+    deferredBannerRef.current = null;
+    if (bannerPieces) setOverlayQueue((q) => [...q, { type: "banner", pieces: bannerPieces }]);
+    tutorialBus.emit("result_dismissed");
+    if (choice === "train") handleNavTab("camp");
+  }, [fighter?._id, lastFightSummary, handleNavTab]);
 
   // Career sub-tab (Feed / Profile), lifted so the dashboard can deep-link to Profile.
   const [careerSubTab, setCareerSubTab] = useState("feed");
@@ -1448,6 +1640,19 @@ function App() {
   // "Something new in the Shop" dot, cleared the first time the Shop is opened.
   // Called above the early returns below, like every other hook here.
   const shopUnseen = useShopNews(activeTab);
+
+  // Section tips and moment tips (only once the debut tutorial is done), and the debut funnel.
+  const tips = useTips({
+    fighter,
+    activeTab,
+    showCampSummary,
+    lastFightSummary,
+    boardOffers,
+    suspended: !!reveal,
+    onFighterRefresh: loadFighter,
+    onMessage: setMessage,
+  });
+  useDebutFunnel({ fighter, activeTab, lastFightSummary });
 
   // Show auth page if not logged in. When the user arrived via the
   // password-reset email link we land directly on the forgot-password "apply"
@@ -1547,7 +1752,7 @@ function App() {
       />
 
       <PersonaMomentModal
-        moment={!currentOverlay ? (personaMomentQueue[0] || null) : null}
+        moment={!currentOverlay && !reveal ? (personaMomentQueue[0] || null) : null}
         onClose={advancePersonaMoment}
         onSeePersona={() => { advancePersonaMoment(); setActiveTab("media"); }}
       />
@@ -1596,15 +1801,38 @@ function App() {
           key="tutorial"
           fighterId={fighter._id}
           initialStep={fighter.tutorial.current_step}
-          lastFightOutcome={
-            lastFightSummary?.recordChange === "W" ? "win"
-              : lastFightSummary?.recordChange === "L" ? "loss"
-                : null
-          }
           onComplete={handleTutorialComplete}
           activeTab={activeTab}
           onNavigate={handleNavTab}
         />
+      )}
+
+      {/* ── SECTION + MOMENT TIPS ── (never alongside the debut tutorial) */}
+      {fighter?._id && fighter.tutorial?.completed && (
+        <TipsOverlay
+          card={tips.card}
+          index={tips.index}
+          total={tips.total}
+          onShown={tips.onShown}
+          onGotIt={tips.onGotIt}
+          onAbsent={tips.onAbsent}
+          onHide={tips.onHide}
+        />
+      )}
+
+      {/* ── FIGHT REVEAL ── (full screen; the result is applied only when it ends) */}
+      {reveal && (
+        <RevealErrorBoundary
+          key={reveal.result.fight?._id ?? "reveal"}
+          onError={() => handleRevealDone({ result: "skipped", beatIndex: 0, beatsTotal: 0, speed: 1 })}
+        >
+        <FightReveal
+          breakdownView={reveal.result.breakdownView}
+          playerName={fighter ? [fighter.firstName, fighter.nickname ? `"${fighter.nickname}"` : null, fighter.lastName].filter(Boolean).join(" ") : undefined}
+          opponentName={reveal.result.summary?.opponentName}
+          onDone={handleRevealDone}
+        />
+        </RevealErrorBoundary>
       )}
 
       {/* ── FIGHTER REPORT MODAL ── */}
@@ -1936,6 +2164,7 @@ function App() {
           {activeTab === "account" && (
             <div className="page-layout">
               <AccountTab
+                fighter={fighter}
                 onMessage={setMessage}
                 onLogout={handleLogout}
                 onFighterRefresh={loadFighter}
@@ -1985,7 +2214,7 @@ function App() {
               ) : lastFightSummary ? (
                 <>
                   <div className="fight-result-screen">
-                    <FightSummary summary={lastFightSummary} description={<FightDescription commentary={lastFightCommentary} breakdown={lastFightBreakdown} playerName={fighter ? [fighter.firstName, fighter.nickname ? `"${fighter.nickname}"` : null, fighter.lastName].filter(Boolean).join(" ") : undefined} />} />
+                    <FightSummary summary={lastFightSummary} reportCollapsed={reportCollapsed} description={<FightDescription commentary={lastFightCommentary} breakdown={lastFightBreakdown} playerName={fighter ? [fighter.firstName, fighter.nickname ? `"${fighter.nickname}"` : null, fighter.lastName].filter(Boolean).join(" ") : undefined} />} />
                   </div>
                   {/* Post-fight interview is offered only after wins. A loss skips the
                       press conference entirely — no fame opportunity, no flag-writing.
@@ -2022,14 +2251,22 @@ function App() {
                       onMessage={setMessage}
                     />
                   )}
-                  <div className="continue-row">
+                  <div className="continue-row result-actions">
                     <button
                       type="button"
                       data-tut="result-continue"
                       className="btn btn-primary continue-btn"
-                      onClick={() => { setLastFightSummary(null); tutorialBus.emit("result_dismissed"); }}
+                      onClick={() => leaveResult("next_fight")}
                     >
-                      {t("app.continueBtn")}
+                      {t("fights.summary.nextFight")}
+                    </button>
+                    <button
+                      type="button"
+                      data-tut="result-train"
+                      className="btn btn-secondary"
+                      onClick={() => leaveResult("train")}
+                    >
+                      {t("fights.summary.trainCamp")}
                     </button>
                   </div>
                 </>
@@ -2039,6 +2276,7 @@ function App() {
                   onAcceptOffer={handleAcceptOffer}
                   onRefreshFighter={loadFighter}
                   onMessage={setMessage}
+                  onOffersChange={setBoardOffers}
                 />
               )}
 

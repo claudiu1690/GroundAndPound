@@ -67,6 +67,10 @@ function BookingRow({ item, heroBout, acceptingId, onAccept }) {
       </div>
       {isLocked ? (
         <span className="ap-brow-locked-text">{lockedText}</span>
+      ) : item.type === "Debut" && !flags.isSigned ? (
+        // The debut is taken from the hero card above (the tutorial's path). A second Accept here
+        // raced the tutorial step and lost the Fighter Report tip on slow connections.
+        <span className="ap-brow-signed">{t("home.book.debutNote")}</span>
       ) : flags.isSigned ? (
         <span className="ap-brow-signed">{t("home.book.signed")}</span>
       ) : (
@@ -110,6 +114,8 @@ export function BookingsList({ offers, heroBout, loading, acceptingId, onAccept,
   // it makes no sense while a fight is locked in.
   const frozen = !!offers?.frozen;
   const list = Array.isArray(offers?.list) ? offers.list : [];
+  // A debut board has no callout (contract G.15); the row would offer something the board refuses.
+  const debutBoard = list.some((o) => o.type === "Debut");
 
   return (
     <div className="ap-book" ref={sectionRef}>
@@ -123,7 +129,7 @@ export function BookingsList({ offers, heroBout, loading, acceptingId, onAccept,
         {list.map((item, i) => (
           <BookingRow key={item.opponentId ?? i} item={item} heroBout={heroBout} acceptingId={acceptingId} onAccept={onAccept} />
         ))}
-        {!frozen ? (
+        {!frozen && !debutBoard ? (
           <div className="ap-brow ap-brow--callout">
             <div className="ap-sil" aria-hidden="true" />
             <div className="ap-brow-nm">

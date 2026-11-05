@@ -36,6 +36,25 @@ const FIGHT_RESOLUTION_CONFIG = {
         chinWeight: 0.35,
         varianceMin: 0.85,
         varianceRange: 0.3,
+        // Low-level weight (v2.4): extra damage per landed exchange that fades to 0 as the
+        // attacker's STR/LEG average reaches lowLevelFadeAt. Before, two stat-20 fighters lost about
+        // 4 health a round and debut opponents landed for 0 into a starting chin, so a five-round
+        // fight barely moved the bars. Simulated: an even stat-20 decision now costs about 34 health
+        // (was 18), KO rates at stat 55+ unchanged (fade), debut win rate unchanged (~83%).
+        lowLevelFlat: 10,
+        lowLevelFadeAt: 50,
+        // Every landed exchange does at least this much (before the variance roll).
+        minDamage: 2,
+    },
+    // Ground-and-pound (v2.4): same low-level weight as strikeDamage (fades to 0 as the top
+    // fighter's GND/STR average reaches lowLevelFadeAt). Before, a low-stat fighter on top did
+    // about 2 health a round after the stamina modifier (owner: "pounding away, my HP stayed the
+    // same"). Simulated: a debut round on your back costs ~7.5 (was 2.0), stat-20 ~10.5 (was 6.7),
+    // win rates unchanged, stat-60 grappler fights unchanged (fade).
+    groundDamage: {
+        lowLevelFlat: 10,
+        lowLevelFadeAt: 50,
+        minDamage: 2,
     },
     takedown: {
         // Higher base gives grapplers a fair shot; WRE gap scales with a tighter divisor.

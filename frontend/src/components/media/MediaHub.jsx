@@ -50,7 +50,7 @@ export function MediaHub({ fighter, onMessage, onRefreshFighter, onNavigate }) {
   const podcastReady = !!hub?.podcast?.canRecord;
 
   return (
-    <section className="media-hub">
+    <section className="media-hub" data-tut="media-root">
       <header className="media-page-hdr">
         <div className="media-page-eye">{t("media.hub.eyebrow")}</div>
         <h1 className="media-page-title">{t("media.hub.title")}</h1>

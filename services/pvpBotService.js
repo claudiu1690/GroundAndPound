@@ -42,6 +42,7 @@ const BENIGN_CODES = new Set([
     "attacker_injured",
     "defender_protected",
     "defender_recovering",
+    "defender_hurt",
     "defender_not_in_season",
     "defender_not_found",
     "season_not_active",
@@ -115,7 +116,7 @@ function computeNext(state, now, rand = Math.random) {
  * better (or different) pool than a player, or "the bots only ever hit me" becomes true.
  *
  * Filters on top of the shared pool:
- *  - drop isProtected / isRecovering (resolveFight would reject them anyway — this just
+ *  - drop isProtected / isRecovering / isHurt (resolveFight would reject them anyway — this just
  *    avoids burning the bot's one turn on a guaranteed rejection).
  *  - drop anyone this bot already attacked within BOT_SAME_DEFENDER_COOLDOWN_DAYS.
  *
@@ -129,7 +130,7 @@ async function selectDefender(botFighter, season, botRecord, rand = Math.random)
     const candidates = await pvpMatchmakingService.getOpponents(botFighter, season, botRecord);
     if (!Array.isArray(candidates) || candidates.length === 0) return null;
 
-    let pool = candidates.filter((c) => !c.isProtected && !c.isRecovering);
+    let pool = candidates.filter((c) => !c.isProtected && !c.isRecovering && !c.isHurt);
     if (pool.length === 0) return null;
 
     // Index-served by the existing { attackerId, defenderId, seasonId, fightAt } index —

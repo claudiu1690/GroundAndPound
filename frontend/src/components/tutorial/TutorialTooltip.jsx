@@ -16,6 +16,7 @@ export function TutorialTooltip({
     buttonLabel,
     onButton,
     onSkip,             // optional — renders an "End tutorial" link in the footer when provided
+    skipLabel,          // optional — label for that link (the section tips say "Hide tips")
     preferSide = false, // anchor sits in the desktop side menu: go beside it, not over its neighbours
     index = 0,
     total = 1,
@@ -115,7 +116,7 @@ export function TutorialTooltip({
                 )}
                 {onSkip && (
                     <button type="button" className="tut-tooltip-skip" onClick={onSkip}>
-                        {t("tutorial.tooltip.skipTutorial")}
+                        {skipLabel || t("tutorial.tooltip.skipTutorial")}
                     </button>
                 )}
                 <button type="button" className="tut-tooltip-btn" onClick={onButton}>

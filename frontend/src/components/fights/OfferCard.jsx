@@ -1,6 +1,6 @@
 /**
- * OfferCard.jsx — single card for all 6 offer variants:
- * easy / even / hard / title / callout / nemesis
+ * OfferCard.jsx — single card for all 7 offer variants:
+ * debut / easy / even / hard / title / callout / nemesis
  *
  * Props: { offer, fighter, energyCost, onAccept }
  * Pure presentational; all derived data comes from offerIntel.js.
@@ -14,12 +14,13 @@ import {
 } from "./offerIntel";
 import { FIGHT_ENERGY_COST, BELT_FAME, GCS_DEFENSE_FAME } from "../../constants/gameConstants";
 import { t } from "@/lib/i18n";
+import "./debut.css";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function ovrPillColor(variant) {
   // easy → grey (default op.ovr); even → white text; hard/title/callout/nemesis → red
-  if (variant === "easy") return "op ovr op-ovr-easy";
+  if (variant === "easy" || variant === "debut") return "op ovr op-ovr-easy";
   if (variant === "even") return "op ovr op-ovr-even";
   return "op ovr op-ovr-hard";
 }
@@ -125,6 +126,7 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
   const isTitle   = variant === "title";
   const isCallout = variant === "callout";
   const isNemesis = variant === "nemesis";
+  const isDebut   = variant === "debut";
   const isLocked  = !!offer.locked;
 
   const { ovrGap, finishes, lastThree, winStreak, specialType, giantKiller } = describeOffer(offer, fighter);
@@ -141,6 +143,7 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
 
   // ── Diff badge ──
   const diffBadgeMap = {
+    debut:   { cls: "diff-badge debut",   textKey: "fights.offerCard.diffDebut" },
     easy:    { cls: "diff-badge easy",    textKey: "fights.offerCard.diffEasy" },
     even:    { cls: "diff-badge even",    textKey: "fights.offerCard.diffEven" },
     hard:    { cls: "diff-badge hard",    textKey: "fights.offerCard.diffHard" },
@@ -191,6 +194,17 @@ export function OfferCard({ offer, fighter, energyCost, onAccept }) {
                 ? t("fights.offerCard.specialTitleSub", { targetTier: titleTargetTier, fame: titleFame })
                 : t("fights.offerCard.specialTitleSubNoTarget", { fame: titleFame })}
             </div>
+          </div>
+        </div>
+      );
+    }
+    if (isDebut) {
+      return (
+        <div className="special-banner debut">
+          <span className="sb-icon">★</span>
+          <div className="sb-text">
+            <div className="sb-title debut">{t("fights.offerCard.specialDebutTitle")}</div>
+            <div className="sb-sub">{t("fights.offerCard.specialDebutSub")}</div>
           </div>
         </div>
       );

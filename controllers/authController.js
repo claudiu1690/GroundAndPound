@@ -27,6 +27,27 @@ function signToken(user, opts = {}) {
 // Exposed so accountController can mint a fresh token after a same-session password change.
 module.exports.signToken = signToken;
 
+/**
+ * Meta for the server-side `fighter_created` event (first-session contract D.1). Values
+ * come from the created fighter (server truth), falling back to the validated body.
+ * Acquisition src/campaign are copied in so the funnel splits without a join.
+ */
+function fighterCreatedMeta(req, created, body, acquisition, guest) {
+    const pick = (k) => {
+        const v = created?.[k] ?? body?.[k];
+        return typeof v === "string" && v ? v.slice(0, 40) : null;
+    };
+    const ua = typeof req.get === "function" ? req.get("user-agent") : req.headers?.["user-agent"];
+    return {
+        style: pick("style"),
+        weightClass: pick("weightClass"),
+        backstory: pick("backstory"),
+        guest: !!guest,
+        device: analyticsService.deviceFromUserAgent(ua),
+        ...analyticsService.acquisitionMeta(acquisition),
+    };
+}
+
 async function register(req, res) {
     try {
         const { email, password, fighter, acquisition } = req.body;
@@ -72,6 +93,8 @@ async function register(req, res) {
         // Fire-and-forget analytics — never blocks or breaks registration.
         // `acquisition` is the link tag the player arrived with (?src=reddit), sanitised there.
         analyticsService.track(user._id, "signup", analyticsService.acquisitionMeta(acquisition), { fighterId: newFighter._id });
+        analyticsService.track(user._id, "fighter_created",
+            fighterCreatedMeta(req, newFighter, fighter, acquisition, false), { fighterId: newFighter._id });
 
         const token = signToken(user);
         res.status(201).json({ token, fighterId: newFighter._id });
@@ -157,6 +180,8 @@ async function createGuest(req, res) {
 
         // Fire-and-forget analytics — never blocks or breaks guest creation.
         analyticsService.track(user._id, "guest_signup", analyticsService.acquisitionMeta(acquisition), { fighterId: newFighter._id });
+        analyticsService.track(user._id, "fighter_created",
+            fighterCreatedMeta(req, newFighter, fighter, acquisition, true), { fighterId: newFighter._id });
 
         const token = signToken(user, { guest: true });
         return res.status(201).json({

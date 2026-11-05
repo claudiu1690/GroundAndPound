@@ -2,6 +2,7 @@ import { memo } from "react";
 import { IntroRow } from "./breakdown/IntroRow.jsx";
 import { RoundBlock } from "./breakdown/RoundBlock.jsx";
 import { ResultRow } from "./breakdown/ResultRow.jsx";
+import { YourCorner } from "./breakdown/YourCorner.jsx";
 import { t } from "@/lib/i18n";
 
 /**
@@ -32,6 +33,7 @@ export const FightDescription = memo(function FightDescription({ commentary, bre
       eventLog,
       outcome,
       youWon,
+      loadout,
     } = breakdown;
 
     const playerName = playerNameProp ?? header?.playerName ?? "You";
@@ -89,6 +91,7 @@ export const FightDescription = memo(function FightDescription({ commentary, bre
                   variant="summary"
                   finish={finish}
                   youWon={youWon}
+                  moves={loadout?.moves}
                 />
               </div>
             );
@@ -105,6 +108,8 @@ export const FightDescription = memo(function FightDescription({ commentary, bre
             finishStrike={finishStrike}
             finishTemplateKey={finishTemplateKey}
           />
+
+          <YourCorner loadout={loadout} eventLog={eventLog} view={breakdown} />
         </div>
       </div>
     );

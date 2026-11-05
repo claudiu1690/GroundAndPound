@@ -61,3 +61,26 @@ export const SLOT_TIER_LABELS = ["Amateur", "Regional Pro", "National"];
 export function rarityIndex(rarity) {
     return RARITY.indexOf(rarity);
 }
+
+/**
+ * Display-only mirror of the backend trigger conditions in plain words (fight reveal cards and the
+ * fight report). Unknown conditions fall back to no text.
+ */
+export const TRIGGER_WORDS = {
+    ALWAYS: "Always on",
+    OPPONENT_SHOOTS_TAKEDOWN: "When they shoot a takedown",
+    OPPONENT_ATTEMPTS_SUBMISSION: "When they go for a submission",
+    STRIKING_EXCHANGE: "In a striking exchange",
+    PLAYER_STAMINA_BELOW_70: "When your tank drops under 70%",
+    PLAYER_TOP_POSITION: "From top position",
+    OPPONENT_STAMINA_BELOW_70: "When they tire under 70%",
+    PLAYER_ATTEMPTS_SUBMISSION: "When you go for a submission",
+    LATE_ROUNDS: "In the late rounds",
+    PLAYER_HEALTH_BELOW_75: "When you're hurt, under 75%",
+    OPPONENT_HEALTH_BELOW_75: "When they're under 75% health",
+    PLAYER_ON_BOTTOM: "The first time you're on your back",
+    OPPONENT_HEALTH_BELOW_50: "When they're under 50% health",
+    ROUND_ONE: "Round one, opening exchange",
+    PLAYER_FIRST_TAKEDOWN_LANDED: "Your first takedown of the night",
+    FIRST_SUBMISSION_FROM_TOP: "Your first submission from top",
+};

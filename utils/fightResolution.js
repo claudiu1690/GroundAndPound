@@ -51,9 +51,29 @@ function strikeDamage(attacker, defender) {
     const attack = (getStat(attacker, "str") + getStat(attacker, "leg")) / 2;
     const spd = getStat(attacker, "spd");
     const chn = getStat(defender, "chn");
-    const base = Math.max(0, attack * CFG.strikeDamage.attackWeight + spd * CFG.strikeDamage.speedWeight - chn * CFG.strikeDamage.chinWeight);
+    // Low-level weight: a landed exchange between low-stat fighters used to do 0 to 4 damage, so a
+    // five-round fight barely moved the health bars. `lowLevelFlat` adds damage that fades to 0 as
+    // the attacker's power (STR/LEG average) reaches `lowLevelFadeAt`, so the top tiers keep their
+    // numbers; `minDamage` floors every landed exchange. Unset = the old formula.
+    const sd = CFG.strikeDamage;
+    const lowFlat = (sd.lowLevelFlat ?? 0) * Math.max(0, 1 - attack / (sd.lowLevelFadeAt || 1));
+    const base = Math.max(sd.minDamage ?? 0, lowFlat + attack * sd.attackWeight + spd * sd.speedWeight - chn * sd.chinWeight);
     const variance = CFG.strikeDamage.varianceMin + Math.random() * CFG.strikeDamage.varianceRange;
     return Math.max(0, Math.round(base * variance));
+}
+
+/**
+ * Ground-and-pound damage before stamina and modifiers, top fighter onto bottom fighter. Same
+ * low-level weight as strikeDamage (v2.4): low-stat ground rounds used to land for 1 point a round
+ * after the stamina modifier, so a fighter could sit on top for two rounds and barely move the bar.
+ * The flat part fades to 0 as the top fighter's GND/STR average reaches `lowLevelFadeAt`.
+ * No RNG (the draw count stays identical).
+ */
+function groundBase(top, bottom) {
+    const gd = CFG.groundDamage || {};
+    const power = (getStat(top, "gnd") + getStat(top, "str")) / 2;
+    const lowFlat = (gd.lowLevelFlat ?? 0) * Math.max(0, 1 - power / (gd.lowLevelFadeAt || 1));
+    return Math.max(gd.minDamage ?? 2, lowFlat + getStat(top, "gnd") * 0.55 + getStat(top, "str") * 0.15 - getStat(bottom, "chn") * 0.2);
 }
 
 /**
@@ -353,7 +373,48 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     // otherwise (decisions, non-finish rounds).
     let finishCause = null;
     let groundContinued = false; // when true, takedown + striking phases are skipped
-    const campCommentary = []; // Camp-specific commentary for this round
+    // Camp-specific commentary for this round. A key is pushed ONLY when the booked camp session
+    // itself fired on that lane (a move-only fire never claims camp credit).
+    const campCommentary = [];
+    // Commentary draw plan, one entry per pre-fix camp-commentary key, in order. resolveFight
+    // still draws one commentary line per entry (pickLine consumes Math.random interleaved with
+    // the fight's own rolls), so the RNG sequence stays byte-identical; it only PRINTS the line
+    // when `camp` is true. Display bookkeeping only, never read by a numeric path.
+    const commentaryDraws = [];
+    const pushCampCommentary = (key, campFired) => {
+        commentaryDraws.push({ key, camp: !!campFired });
+        if (campFired) campCommentary.push(key);
+    };
+
+    // ── Move-firing recorder (display bookkeeping, NO RNG, never feeds a numeric path) ──
+    // mark-and-diff over triggerCount: note(site, outcome) records every PROC/SIGNATURE entry
+    // whose triggerCount rose since the previous note. PASSIVE, persona:* and legacy entries
+    // without effectType are never recorded, but the mark still advances past them so a passive
+    // rise never leaks into a later site's delta.
+    const moveFired = [];
+    let fireMark = moveBonuses.map((b) => b.triggerCount || 0);
+    const note = (site, siteOutcome) => {
+        for (let i = 0; i < moveBonuses.length; i++) {
+            const b = moveBonuses[i];
+            const now = b.triggerCount || 0;
+            const before = fireMark[i] || 0;
+            if (now <= before) continue;
+            const recordable = (b.effectType === "PROC" || b.effectType === "SIGNATURE")
+                && !(typeof b.moveId === "string" && b.moveId.startsWith("persona:"));
+            if (recordable) {
+                moveFired.push({
+                    moveId: b.moveId,
+                    moveIds: Array.isArray(b.moveIds) && b.moveIds.length ? [...b.moveIds] : [b.moveId],
+                    bonusType: b.bonusType,
+                    effectType: b.effectType,
+                    site,
+                    siteOutcome: siteOutcome ?? null,
+                    count: now - before,
+                });
+            }
+        }
+        fireMark = moveBonuses.map((b) => b.triggerCount || 0);
+    };
 
     // ── Stamina drain ───────────────────────────────────────────────────
     // CARDIO_PUSH (camp) + SECOND_WIND (move) both fire below 70% stamina; additive reductions
@@ -366,7 +427,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         const moveCardioValue = triggerBonus(moveBonuses, 'STAMINA_DRAIN');
         if (cardioBonusValue > 0 || moveCardioValue > 0) {
             drainReduction += cardioBonusValue + moveCardioValue;
-            campCommentary.push('campCardio');
+            pushCampCommentary('campCardio', cardioBonusValue > 0);
         }
     }
     if (drainReduction > 0) {
@@ -381,6 +442,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     const oDrain = Math.round(staminaDrain * (1 + moveOppDrain));
     if (moveOppDrain > 0 && oDrain !== staminaDrain) triggerBonus(moveBonuses, 'OPPONENT_STAMINA_DRAIN');
     const oStamina = Math.max(0, currentOpponentStamina - oDrain);
+    note("round_start", null);
     const pStaminaMod = pStamina / 100;
     const oStaminaMod = oStamina / 100;
 
@@ -447,12 +509,13 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         if (Math.random() < escapeChance) {
             // Bottom escapes — fight resets to standing for the rest of the round.
             grapplingControl = 0;
+            note(playerOnTop ? "ground_top" : "ground_bottom", "escaped");
         } else {
             groundContinued = true;
             grapplingControl = groundPosition;
 
-            const base = getStat(top, "gnd") * 0.55 + getStat(top, "str") * 0.15 - getStat(bottom, "chn") * 0.2;
-            let gnpDamage = Math.round(Math.max(2, base) * topStaminaMod);
+            const base = groundBase(top, bottom);
+            let gnpDamage = Math.round(base * topStaminaMod);
 
             if (playerOnTop) {
                 // GROUND_AND_POUND_POSTURE (camp) + MOUNT_REAPER (move): additive from top.
@@ -461,7 +524,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
                 const gnpBonus = campGnp + moveGnp;
                 if (gnpBonus > 0) {
                     gnpDamage = Math.round(gnpDamage * (1 + gnpBonus));
-                    campCommentary.push('campGnpPosture');
+                    pushCampCommentary('campGnpPosture', campGnp > 0);
                 }
                 opponentDamage = gnpDamage;
                 event = "Holding top control; ground and pound.";
@@ -470,6 +533,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
                 playerDamage = reduceBottomDamage(gnpDamage);
                 event = "Stuck on bottom; opponent grinds.";
             }
+            note(playerOnTop ? "ground_top" : "ground_bottom", "held");
 
             // Top sub attempt. SUBMISSION_SUCCESS (Guillotine Choke) only when the PLAYER is top.
             const topSubChance = clamp(
@@ -488,6 +552,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
                     outcome = playerOnTop ? "Submission" : "Loss (submission)";
                 }
             }
+            note(playerOnTop ? "submission_player" : "submission_opponent", finished ? "finished" : "defended");
 
             // Bottom sub-from-guard — uses the same stat math but with attempt and
             // success multipliers, since hitting a triangle off your back is harder.
@@ -518,6 +583,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
                         outcome = playerOnTop ? "Loss (submission)" : "Submission";
                     }
                 }
+                note(playerOnTop ? "submission_opponent" : "submission_player", finished ? "finished" : "defended");
             }
         }
     }
@@ -546,8 +612,8 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     if (playerTdLanded) {
         // Player gets top position. GnP uses GND + a fraction of STR for raw power, partially
         // mitigated by the defender's chin — similar structure to striking but from top control.
-        const base = getStat(player, "gnd") * 0.55 + getStat(player, "str") * 0.15 - getStat(opponent, "chn") * 0.2;
-        let gnpDamage = Math.round(Math.max(2, base) * pStaminaMod);
+        const base = groundBase(player, opponent);
+        let gnpDamage = Math.round(base * pStaminaMod);
 
         // GROUND_AND_POUND_POSTURE (camp) + MOUNT_REAPER/TOP_CONTROL (move): additive GnP from top.
         const campGnp = triggerBonus(sessionBonuses, 'GNP_DAMAGE');
@@ -558,9 +624,10 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         if (gnpBonus > 0) {
             gnpDamage = Math.round(gnpDamage * (1 + gnpBonus));
         }
-        if (campGnp > 0 || moveGnp > 0) campCommentary.push('campGnpPosture');
+        if (campGnp > 0 || moveGnp > 0) pushCampCommentary('campGnpPosture', campGnp > 0);
 
         opponentDamage = gnpDamage;
+        note("takedown_player", "landed");
         event = "Takedown; ground and pound.";
         grapplingControl = 1;
 
@@ -580,6 +647,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
                 finishCause = "submission";
             }
         }
+        note("submission_player", finished ? "finished" : "defended");
     } else if (opponentGoesFirst || (playerGoesFirst && opponentWillShoot)) {
         // Opponent shoots — either they had initiative, or they picked up after the player's failed TD.
         // TAKEDOWN_DEFENCE (camp) + SPRAWL_INSTINCT (move): additive sprawl bonus.
@@ -597,16 +665,18 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             if (campSprawl > 0) triggerBonus(sessionBonuses, 'SPRAWL_SUCCESS');
             if (moveSprawl > 0) triggerBonus(moveBonuses, 'SPRAWL_SUCCESS');
             if (!tdSucceeded) {
-                campCommentary.push('campTakedownDefence');
+                pushCampCommentary('campTakedownDefence', campSprawl > 0);
             }
         } else {
             tdSucceeded = takedownSuccess(opponent, player);
         }
+        note("takedown_opponent", tdSucceeded ? "landed" : "stuffed");
 
         if (tdSucceeded) {
-            const base = getStat(opponent, "gnd") * 0.55 + getStat(opponent, "str") * 0.15 - getStat(player, "chn") * 0.2;
+            const base = groundBase(opponent, player);
             // Frame & Base / Veteran IQ / Rubber Guard: the player just got put on the bottom.
-            playerDamage = reduceBottomDamage(Math.round(Math.max(2, base) * oStaminaMod));
+            playerDamage = reduceBottomDamage(Math.round(base * oStaminaMod));
+            note("ground_bottom", "held");
             event = "Opponent took you down.";
             grapplingControl = -1;
 
@@ -642,11 +712,12 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
                     if (campEscape > 0) triggerBonus(sessionBonuses, 'ESCAPE_PROBABILITY');
                     if (moveEscape > 0) triggerBonus(moveBonuses, 'ESCAPE_PROBABILITY');
                     if (!subSucceeded) {
-                        campCommentary.push('campSubmissionEscape');
+                        pushCampCommentary('campSubmissionEscape', campEscape > 0);
                     }
                 } else {
                     subSucceeded = submissionSuccess(opponent, player);
                 }
+                note("submission_opponent", subSucceeded ? "finished" : "defended");
 
                 if (subSucceeded) {
                     finished = true;
@@ -681,7 +752,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         const strikeMult = campStrike + moveStrike + sigFinisherStrikeBonus + sigFastStartBonus;
         if (strikeMult > 0) {
             plStrike *= (1 + strikeMult);
-            if (campStrike > 0 || moveStrike > 0) campCommentary.push('campStrikingAccuracy');
+            if (campStrike > 0 || moveStrike > 0) pushCampCommentary('campStrikingAccuracy', campStrike > 0);
         }
 
         // FLASH_KO_RESISTANCE (Fighting Spirit) while hurt: its own multiplicative cut.
@@ -708,7 +779,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             plStrike *= (1 + bodyValue);
             if (bodyBonus) triggerBonus(sessionBonuses, 'BODY_DAMAGE');
             if (moveBodyValue > 0) triggerBonus(moveBonuses, 'BODY_DAMAGE');
-            campCommentary.push('campBodyShot');
+            pushCampCommentary('campBodyShot', !!bodyBonus);
         }
 
         // CLINCH_CONTROL (camp) + CLINCH_KILLER (move): chance of clinch during striking.
@@ -720,11 +791,12 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
             plStrike *= (1 + clinchValue);
             if (clinchBonus) triggerBonus(sessionBonuses, 'CLINCH_DAMAGE');
             if (moveClinchValue > 0) triggerBonus(moveBonuses, 'CLINCH_DAMAGE');
-            campCommentary.push('campClinchControl');
+            pushCampCommentary('campClinchControl', !!clinchBonus);
         }
 
         playerDamage = Math.round(oppStrike * oStaminaMod);
         opponentDamage = Math.round(plStrike * pStaminaMod);
+        note("striking", null);
         event = "Striking exchange.";
 
         // BODY_SHOT_FOCUS extra stamina drain on opponent
@@ -776,6 +848,7 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
     if (!finished && exhaustionTkoCheck(opponent, opponentDamage, false)) { finished = true; outcome = "KO/TKO"; finishCause = "tko"; }
     if (!finished && player.health < CFG.koCheck.healthWindow.normalWindow && koCheck(player, playerDamage, ironWillPerk, opponent)) { finished = true; outcome = "Loss (KO/TKO)"; finishCause = "tko"; }
     if (gritUsed) triggerBonus(moveBonuses, 'FLASH_KO_RESISTANCE');
+    note("defence", null);
     if (!finished && opponent.health < CFG.koCheck.healthWindow.normalWindow && koCheck(opponent, opponentDamage, false, player)) { finished = true; outcome = "KO/TKO"; finishCause = "tko"; }
 
     return {
@@ -791,6 +864,8 @@ function resolveRound(player, opponent, roundNum, playerStrategy, ironWillPerk =
         playerHealth: player.health,
         opponentHealth: opponent.health,
         campCommentary,
+        commentaryDraws,
+        moveFired,
     };
 }
 
@@ -980,6 +1055,11 @@ function resolveFight(player, opponent, options = {}) {
     }
 
     let groundPosition = 0; // carries between rounds: 1 = player on top, -1 = opponent on top
+    // Display-only (replay stamina bars): each fighter's stamina entering round 1, after the weight
+    // cut. Pure reads; nothing below uses it.
+    const staminaStart = [p.stamina ?? CFG.defaults.stamina, o.stamina ?? CFG.defaults.stamina];
+    // Display-only: each fighter's health walking in (the player's real current HP, not 100).
+    const healthStart = [p.health, o.health];
 
     // Scene-setting line before the action starts.
     const openerLine = comment("fightOpener");
@@ -1017,6 +1097,13 @@ function resolveFight(player, opponent, options = {}) {
             playerHealth: result.playerHealth,
             opponentHealth: result.opponentHealth,
             campCommentary: result.campCommentary,
+            // Display-only: PROC/SIGNATURE move firings this round, with the site that raised
+            // them (fightBreakdown turns these into move_fired events). Never read by maths.
+            moveFired: result.moveFired,
+            // Display-only: the stamina each fighter fights this round at (drained once at the round's
+            // start, fixed through the round, never recovered). Same values the round's maths used.
+            playerStamina: result.playerStamina,
+            opponentStamina: result.opponentStamina,
         });
 
         // Per-round dynamic tags layered on top of the fight-wide tags.
@@ -1033,10 +1120,12 @@ function resolveFight(player, opponent, options = {}) {
         const line = comment(eventKey, dynTags, { round: r });
         if (line) commentary.push(`Round ${r}: ${line}`);
 
-        // Add camp-specific commentary
-        for (const campKey of (result.campCommentary || [])) {
-            const campLine = comment(campKey, dynTags, { round: r });
-            if (campLine) commentary.push(campLine);
+        // Add camp-specific commentary. One line is DRAWN per pre-fix key (same Math.random
+        // sequence and same recentLines as before the camp-credit fix), but it is only printed
+        // when the booked camp session itself fired, so a move-only fire claims no camp credit.
+        for (const draw of (result.commentaryDraws || [])) {
+            const campLine = comment(draw.key, dynTags, { round: r });
+            if (campLine && draw.camp) commentary.push(campLine);
         }
 
         // Wildcard commentary
@@ -1069,7 +1158,11 @@ function resolveFight(player, opponent, options = {}) {
                 // ADDITIVE display field — why the (T)KO happened: "ko" | "tko" | "submission".
                 finishCause: result.finishCause ?? null,
                 playerHealthAfter, opponentHealthAfter, playerStaminaAfter: p.stamina,
-                commentary, sessionBonuses, moveBonuses, wildcard: wildcard ? { ...wildcard, countered: wildcardCountered } : null,
+                commentary, sessionBonuses, moveBonuses,
+                // `round` (display-only): the round the wildcard boost fired in (or would have, if countered).
+                wildcard: wildcard ? { ...wildcard, countered: wildcardCountered, round: wildcardRound } : null,
+                staminaStart,
+                healthStart,
             };
         }
     }
@@ -1102,7 +1195,9 @@ function resolveFight(player, opponent, options = {}) {
         finishCause: null, // decisions/draws have no finish cause
         playerHealthAfter: p.health, opponentHealthAfter: o.health, playerStaminaAfter: p.stamina,
         commentary, scorecard, sessionBonuses, moveBonuses,
-        wildcard: wildcard ? { ...wildcard, countered: wildcardCountered } : null,
+        wildcard: wildcard ? { ...wildcard, countered: wildcardCountered, round: wildcardRound } : null,
+                staminaStart,
+                healthStart,
     };
 }
 

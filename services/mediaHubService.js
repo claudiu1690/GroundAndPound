@@ -170,7 +170,7 @@ async function resolveValidTarget(fighter, opponentId) {
     const match = candidates.find((c) => String(c.id) === String(opponentId));
     if (!match) throw new Error("Target is not a valid opponent right now");
     const opp = await Opponent.findById(opponentId).lean();
-    if (!opp) throw new Error("Target opponent not found");
+    if (!opp || opp.isDebut) throw new Error("Target opponent not found");
     return opp;
 }
 

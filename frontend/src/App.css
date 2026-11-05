@@ -14676,6 +14676,28 @@ button.shop-wallet-chip:disabled { cursor: default; opacity: .7; }
 .ev-txt.danger  { color: #F87171; }
 .ev-txt.camp    { color: #93C5FD; font-style: italic; }
 .ev-txt.neutral { color: var(--text-secondary); }
+.ev-txt.move    { color: #e2e2e6; }
+.ev-txt.wildcard { color: #ffb3be; }
+
+/* CAMP / CARD / WILDCARD markers on the moments the fight replay highlights */
+.ev-chip {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 5px;
+  border-radius: 3px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  line-height: 1.5;
+  vertical-align: 1px;
+  font-style: normal;
+}
+.ev-chip--camp { background: #3a2d06; color: #f5c542; border: 1px solid #d4a820; }
+.ev-chip--card { background: #14141a; color: var(--rarity-color, #888); border: 1px solid var(--rarity-color, #888); }
+.ev-chip--wildcard { background: #3b0a12; color: #ff6b7d; border: 1px solid #c8102e; }
+.ev-time--round { opacity: 0.6; }
 
 /* ── Round stats row (summary) ─────────────────────────── */
 .rs-stats {
@@ -14711,6 +14733,18 @@ button.shop-wallet-chip:disabled { cursor: default; opacity: .7; }
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   margin-bottom: 8px;
+}
+/* Stamina through the round (summary variant): one slim row under the four-slot scoreboard. */
+.rsb ~ .rs-stamina {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -2px 0 8px;
+  padding: 4px 8px;
+  background: var(--c-bg-tile-2);
+  border: 1px solid var(--c-border-3);
+  border-radius: 6px;
 }
 .rsb-cell {
   background: var(--c-bg-tile-2);
@@ -16014,7 +16048,10 @@ button.shop-wallet-chip:disabled { cursor: default; opacity: .7; }
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: none; }
 }
-.main > * { animation: tabEnter 0.3s ease both; }
+/* fill-mode backwards, not both: a transform animation that stays filled after it ends keeps
+   making this element the containing block for position:fixed children, which pushed the phone
+   fight drawer (.drawer-side) off the top of the screen. Backwards drops the effect at the end. */
+.main > * { animation: tabEnter 0.3s ease backwards; }
 
 /* Smooth resource / progress bar fills — animate width changes so
    energy, health, XP, fame and contract progress glide instead of jump. */

@@ -36,6 +36,116 @@ export const INTRO = {
   ],
 };
 
+/** Opponent wildcard stat -> the area the surprise is in. Substituted for {area}; never invented. */
+export const WILDCARD_AREA = {
+  str: "knockout power",
+  spd: "speed combinations",
+  leg: "a kicking game",
+  wre: "a wrestling game",
+  gnd: "ground and pound",
+  sub: "submission chains",
+  chn: "durability",
+  fiq: "fight IQ",
+};
+
+const SUB_LINES = {
+  sub_attempt: [
+    "{actor}'s {move} fires and the hold goes on. {target} defends it.",
+    "{move} fires ({trigger}). {actor} locks it in, but {target} gets out of trouble.",
+  ],
+  sub_finished: [
+    "{actor}'s {move} fires and the hold is locked in. {target} taps.",
+    "{move} fires ({trigger}). The hold sinks in and {target} has to tap.",
+  ],
+  default: ["{actor}'s {move} fires as the submission goes in ({trigger})."],
+};
+
+const STRIKE_LINES = {
+  landed: [
+    "{actor}'s {move} fires ({trigger}). The shot lands.",
+    "{move} fires and lands clean on {target}.",
+  ],
+  hurt: [
+    "{actor}'s {move} fires ({trigger}). The shot lands and {target} is hurt.",
+    "{move} fires and {target} is hurt by the shot.",
+  ],
+  knockdown: [
+    "{actor}'s {move} fires ({trigger}). The shot lands and {target} goes down.",
+    "{move} fires and {target} is hurt and dropped.",
+  ],
+  finish: [
+    "{actor}'s {move} fires ({trigger}). The shot lands and it is over.",
+    "{move} fires and {target} does not get up.",
+  ],
+  default: ["{actor}'s {move} fires in the exchange ({trigger})."],
+};
+
+const GROUND_LINES = {
+  takedown_landed: ["{actor}'s {move} fires on the takedown. The shots from the top follow."],
+  ground_pound: [
+    "{actor}'s {move} fires ({trigger}). Heavy shots land on {target}.",
+    "{move} fires and {actor} hammers {target} from the top.",
+  ],
+  finish: ["{actor}'s {move} fires and the ground strikes end the fight."],
+  default: ["{actor}'s {move} fires ({trigger})."],
+};
+
+const SOAK_LINES = {
+  absorbed: ["{target} has {actor} in trouble, but {move} fires and the damage is soaked up."],
+  default: ["{actor}'s {move} fires when the pressure comes ({trigger})."],
+};
+
+// Special Move cards that fired. Looked up by vars.bonusType, then vars.outcome, then "default".
+// {move} = the card name(s), {trigger} = the condition in words. Each line claims only what its
+// outcome says; the generic default names the card and its trigger and nothing else.
+const MOVE_FIRED = {
+  SPRAWL_SUCCESS: {
+    stuffed: [
+      "{target} shoots and {actor}'s {move} fires. The takedown is stuffed.",
+      "{move} fires ({trigger}). {actor} sprawls and {target} goes nowhere.",
+    ],
+    takedown_landed: ["{actor}'s {move} fires as {target} shoots, but the takedown still lands."],
+    default: ["{actor}'s {move} fires as {target} shoots ({trigger})."],
+  },
+  ESCAPE_PROBABILITY: {
+    escaped: [
+      "{target} sinks in the hold, then {actor}'s {move} fires and the escape works.",
+      "{move} fires ({trigger}). {actor} slips out of the hold.",
+    ],
+    tapped: ["{actor}'s {move} fires as {target} squeezes, but it is not enough. {actor} taps."],
+    default: ["{actor}'s {move} fires as the submission comes in ({trigger})."],
+  },
+  GNP_DAMAGE: GROUND_LINES,
+  SIG_TAKEDOWN_BLITZ: {
+    takedown_landed: ["{actor}'s {move} fires on the first takedown of the night. {target} is planted."],
+    ground_pound: ["{actor}'s {move} fires on the first takedown of the night. The shots follow."],
+    finish: ["{actor}'s {move} fires on the first takedown of the night and the shots end it."],
+    default: ["{actor}'s {move} fires ({trigger})."],
+  },
+  SUBMISSION_SUCCESS: SUB_LINES,
+  SIG_SUBMISSION_HUNT: SUB_LINES,
+  STRIKE_DAMAGE: STRIKE_LINES,
+  SIG_FINISHER_STRIKE: STRIKE_LINES,
+  SIG_FAST_START: STRIKE_LINES,
+  CLINCH_DAMAGE: STRIKE_LINES,
+  STAMINA_DRAIN: {
+    default: ["{actor}'s {move} fires at the start of the round. {target} is already breathing harder."],
+  },
+  FLASH_KO_RESISTANCE: {
+    absorbed: ["{target} hurts {actor}, but {move} fires and {actor} stays on their feet."],
+    default: ["{actor}'s {move} fires when the pressure comes ({trigger})."],
+  },
+  GROUND_DAMAGE_REDUCTION: SOAK_LINES,
+  SIG_IRON_RECOVERY: SOAK_LINES,
+  SIG_KILLER_INSTINCT: {
+    ground_pound: ["{actor}'s {move} fires. The forearm pins {target} down while the shots land."],
+    finish: ["{actor}'s {move} fires and pins {target} down until the fight is stopped."],
+    escaped: ["{actor}'s {move} is set, but {target} still squirms out."],
+    default: ["{actor}'s {move} fires from the top ({trigger})."],
+  },
+  default: ["{actor}'s {move} fires ({trigger})."],
+};
+
 export const EVENT = {
   takedown_secured: [
     "{actor} shoots for the double — secured. {target} brought to the mat.",
@@ -57,12 +167,15 @@ export const EVENT = {
     "{actor} shoots low — {target} circles out and avoids it completely.",
     "{actor} telegraphed the shot. {target} was already sprawling.",
   ],
+  // Camp events are always logged with the player as the actor (fightBreakdown.js), so {actor} is
+  // the player who drilled the defence and {target} is the opponent who shot. These lines had the
+  // two swapped until 2026-11-04 and told the player their own takedown was stuffed.
   camp_takedown_defence_fired: [
-    "{target}'s takedown defence pays off — the shot is sprawled perfectly.",
-    "Camp work shows — {target} stuffs the takedown. Preparation met the moment.",
-    "{target} drilled this exact shot in camp. {actor} gets nothing.",
-    "The sprawl is there. {target} trained for this. {actor}'s takedown stuffed.",
-    "All those reps in camp — {target} sprawls and resets like it's nothing.",
+    "{actor}'s takedown defence pays off. {target}'s shot is sprawled perfectly.",
+    "Camp work shows. {actor} stuffs the takedown. Preparation met the moment.",
+    "{actor} drilled this exact shot in camp. {target} gets nothing.",
+    "The sprawl is there. {actor} trained for this. {target}'s takedown is stuffed.",
+    "All those reps in camp. {actor} sprawls and resets like it's nothing.",
   ],
   takedown_attempt_failed: [
     "{actor} reaches for the leg — {target} hops away. Nothing doing.",
@@ -132,11 +245,11 @@ export const EVENT = {
     "{target} rolls out of the {sub}. Smart escape work.",
   ],
   camp_submission_escape_fired: [
-    "{target} trained for this — escapes the {sub} with textbook defence.",
-    "Camp work pays off. {target} defends the {sub} and scrambles free.",
-    "{target} drilled submission escapes. It shows — {actor} gets nothing.",
-    "All those escape drills in camp. {target} works free of the {sub}.",
-    "The {sub} defence was in the game plan. {target} executes it clean.",
+    "{actor} trained for this and escapes the {sub} with textbook defence.",
+    "Camp work pays off. {actor} defends the {sub} and scrambles free.",
+    "{actor} drilled submission escapes. It shows: {target} gets nothing.",
+    "All those escape drills in camp. {actor} works free of the {sub}.",
+    "The {sub} defence was in the game plan. {actor} executes it clean.",
   ],
   submission_finish: [
     "{actor} locks in the {sub}. {target} taps. Fight over.",
@@ -238,12 +351,11 @@ export const EVENT = {
     "{actor} owns the clinch range. Exactly what was drilled in camp.",
   ],
   wildcard_fired: [
-    "Something {target} didn't see on tape — {actor} springs a surprise.",
-    "{actor} shows a side the scouting didn't cover. {target} has no answer.",
-    "The wildcard comes out — {actor} pulls something unexpected.",
-    "{target} had no answer for this. The wildcard makes itself known.",
-    "{actor} does something {target} clearly didn't prepare for.",
+    "{actor} shows something the tape never had: {area}. {target} did not prepare for it.",
+    "Out of nowhere, {actor} brings {area}. {target} has nothing ready for it.",
+    "The wildcard comes out: {actor} shows {area}. It was not covered in camp.",
   ],
+  move_fired: MOVE_FIRED,
 };
 
 export const RESULT = {

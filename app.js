@@ -374,6 +374,79 @@ async function backfillTutorialForLegacyFighters() {
 }
 
 /**
+ * First-session flow (docs/first-session-contract.md A.5). Moves every fighter that predates
+ * `tutorial.version` onto the v2 debut flow. Raw collection writes like the backfills above.
+ * Idempotent through the marker: every step filters `tutorial.version: { $exists: false }`
+ * and sets `tutorial.version: 2`, so a fighter is touched at most once, ever. New fighters
+ * get version 2 from the schema default and are never matched. Order matters:
+ *   1. completed, >= 1 PvE fight: bonus already paid by the old complete(); tips OFF.
+ *   2. mid-tutorial, >= 1 PvE fight: complete it and pay the $500 they were owed; tips ON.
+ *   3. zero PvE fights (any state): back into the debut flow at debut_home; tips ON.
+ *      3a. completed (old tour done, already paid): stamp signingBonusPaidAt so the debut
+ *          resolve pays nothing.  3b. not completed: leave it null so the debut resolve pays.
+ */
+async function backfillFirstSession() {
+    const fighters = mongoose.connection.collection("fighters");
+    const now = new Date();
+    const unmigrated = { "tutorial.version": { $exists: false } };
+    const pveFights = { $add: [
+        { $ifNull: ["$record.wins", 0] }, { $ifNull: ["$record.losses", 0] }, { $ifNull: ["$record.draws", 0] },
+    ] };
+    const hasFought = { $expr: { $gte: [pveFights, 1] } };
+    const neverFought = { $expr: { $lt: [pveFights, 1] } };
+
+    const step1 = await fighters.updateMany(
+        { ...unmigrated, "tutorial.completed": true, ...hasFought },
+        { $set: {
+            "tutorial.version": 2,
+            "tutorial.signingBonusPaidAt": now,
+            "settings.playFightsOut": true,
+            "settings.sectionTips": false,
+        } }
+    );
+    const step2 = await fighters.updateMany(
+        { ...unmigrated, "tutorial.completed": { $ne: true }, ...hasFought },
+        {
+            $set: {
+                "tutorial.version": 2,
+                "tutorial.completed": true,
+                "tutorial.current_step": "complete",
+                "tutorial.completed_at": now,
+                "tutorial.signingBonusPaidAt": now,
+                "settings.playFightsOut": true,
+                "settings.sectionTips": true,
+            },
+            $inc: { iron: 500 },
+        }
+    );
+    const debutReset = {
+        "tutorial.version": 2,
+        "tutorial.completed": false,
+        "tutorial.current_step": "debut_home",
+        "tutorial.completed_at": null,
+        "settings.playFightsOut": true,
+        "settings.sectionTips": true,
+    };
+    const step3a = await fighters.updateMany(
+        { ...unmigrated, "tutorial.completed": true, ...neverFought },
+        { $set: { ...debutReset, "tutorial.signingBonusPaidAt": now } }
+    );
+    const step3b = await fighters.updateMany(
+        { ...unmigrated, "tutorial.completed": { $ne: true }, ...neverFought },
+        { $set: { ...debutReset, "tutorial.signingBonusPaidAt": null } }
+    );
+    const total = step1.modifiedCount + step2.modifiedCount + step3a.modifiedCount + step3b.modifiedCount;
+    if (total > 0) {
+        console.log(
+            `[Migration] First session: ${step1.modifiedCount} completed (tips off), `
+            + `${step2.modifiedCount} mid-tutorial completed + paid $500, `
+            + `${step3a.modifiedCount} completed-never-fought back to debut (bonus stamped), `
+            + `${step3b.modifiedCount} never-fought back to debut.`
+        );
+    }
+}
+
+/**
  * Shop, Inventory & Pre-Fight Supplements v1.0 — fighters that predate the feature
  * have no `inventory` subdocument. Give them the empty inventory shape + null active
  * booster so reads/writes never hit an undefined map. New fighters get these from the
@@ -629,6 +702,7 @@ mongoose.connect(config.database.url, config.database.options)
         await migrateClearLegacyPredictions();
         await backfillFighterGymFromQuestProgress();
         await backfillTutorialForLegacyFighters();
+        await backfillFirstSession();
         await backfillDoctorInjuryTimers();
         await backfillClearNewFighterBlockingInjuries();
         await backfillInventoryShape();

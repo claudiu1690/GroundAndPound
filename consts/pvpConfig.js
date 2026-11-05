@@ -257,7 +257,15 @@ function badgeIdFor(divKey, seasonNumber, weightClass) {
     return `pvp_${divKey}_s${seasonNumber}`;
 }
 
+// Hurt-defender protection (v2.4, owner 2026-11-05: "protect the defenders at 50% health").
+// PvP now uses the v2.4 damage (about 42 HP per fight at ladder level, KOs doubled). Health carries
+// and defenders are offline, so a defender under this health cannot be challenged until passive
+// regen brings them back up: a defender attacked again at 55 HP was KO'd 43% of the time in
+// simulation, each KO a 12 h concussion.
+const DEFENDER_MIN_HEALTH = 50;
+
 module.exports = {
+    DEFENDER_MIN_HEALTH,
     WEIGHT_CLASSES_PVP,
     OPEN_WEIGHT_CLASS,
     SEASON_WEIGHT_CLASSES,

@@ -33,7 +33,7 @@
  *
  *    offers: {
  *      count: number,                     // offers with acceptable === true
- *      best: {offerType,opponentName,opponentOvr,isTitleShot,purse}|null,   // among acceptable only
+ *      best: {offerType,opponentName,opponentOvr,isTitleShot,purse}|null,   // among acceptable only; offerType may be "Debut"
  *      list: Array<OfferCard>,            // every board slot incl. a locked TitleShot and
  *                                         // frozen slots; max 4; board order; [] when none
  *      ...OfferBoardMeta                  // generatedAt, expiresAt, frozen,
@@ -53,7 +53,7 @@
  *    @property {?string} opponentWeightClass
  *    @property {{wins:number,losses:number,draws:number}} record   from offer.context
  *    @property {?{result:"win"|"loss"|"draw",count:number}} streak from offer.context
- *    @property {"Easy"|"Even"|"Hard"|"TitleShot"} type
+ *    @property {"Easy"|"Even"|"Hard"|"TitleShot"|"Debut"} type   (Debut: the single first-fight bout)
  *    @property {boolean} isTitleShot
  *    @property {boolean} isNemesis        offer.nemesisMeta != null
  *    @property {boolean} locked           true only for an ineligible TitleShot
@@ -84,7 +84,7 @@
  *                                         //   null for champion/unranked
  *      record: {wins,losses,draws},
  *      streak: {result,count}|null,       // from fightService.buildOfferContext
- *      offerType: "Easy"|"Even"|"Hard"|"TitleShot"|null,
+ *      offerType: "Easy"|"Even"|"Hard"|"TitleShot"|"Debut"|null,   // "Debut": client renders the debut hero
  *      isTitleShot: boolean,
  *      isCallout: boolean,
  *      isNemesis: boolean,

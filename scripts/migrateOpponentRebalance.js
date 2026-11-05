@@ -22,7 +22,8 @@ async function run() {
     await mongoose.connect(config.database.url, config.database.options);
     console.log("Connected to MongoDB");
 
-    const opponents = await Opponent.find({});
+    // Debut opponents keep the stats the Monte Carlo set (scripts/simDebutOvr.js); never rescale them.
+    const opponents = await Opponent.find({ isDebut: { $ne: true } });
     console.log(`Found ${opponents.length} opponents to rebalance`);
 
     let updated = 0;
